@@ -157,7 +157,7 @@ $appreciationLabels = [
 
     <!-- Alert Messages (Globally handled by AlertService in layout) -->
 
-    <form action="/notes/store" method="POST" id="gradeEntryForm">
+    <form action="/notes/store" method="POST" id="gradeEntryForm" class="no-loader">
         <input type="hidden" name="class_id" value="<?= $class_id ?>">
         <input type="hidden" name="subject_id" value="<?= $subject_id ?>">
         <input type="hidden" name="periode" value="<?= htmlspecialchars((string) $periode) ?>">
@@ -237,7 +237,7 @@ $appreciationLabels = [
 </div>
 
 <script>
-    (function () {
+    document.addEventListener('DOMContentLoaded', function () {
         const appreciationLabels = <?= json_encode($appreciationLabels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 
         function getAppreciation(note) {
@@ -303,7 +303,49 @@ $appreciationLabels = [
                 }
             });
         });
-    })();
+
+        // Confirmation avant enregistrement
+        const form = document.getElementById('gradeEntryForm');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                if (typeof AlertService === 'undefined') {
+                    form.submit();
+                    return;
+                }
+
+                AlertService.confirm({
+                    title: <?= json_encode(__('grade_save_confirm_title'), JSON_UNESCAPED_UNICODE) ?>,
+                    message: <?= json_encode(__('grade_save_confirm_text'), JSON_UNESCAPED_UNICODE) ?>,
+                    confirmText: <?= json_encode(__('confirm'), JSON_UNESCAPED_UNICODE) ?>,
+                    cancelText: <?= json_encode(__('cancel'), JSON_UNESCAPED_UNICODE) ?>,
+                    confirmButtonColor: '#4361ee'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Afficher le loader
+                        AlertService.loading(
+                            <?= json_encode(__('saving'), JSON_UNESCAPED_UNICODE) ?>, 
+                            <?= json_encode(__('please_wait'), JSON_UNESCAPED_UNICODE) ?>
+                        );
+                        
+                        // Soumission réelle du formulaire
+                        // Utilisation de requestSubmit si possible pour respecter les validations HTML5, 
+                        // sinon submit standard.
+                        setTimeout(() => {
+                            if (typeof form.requestSubmit === 'function') {
+                                // On enlève le listener temporairement pour éviter une boucle infinie
+                                // ou on utilise un flag. Ici form.submit() est plus simple car il ne redéclenche pas 'submit'.
+                                form.submit();
+                            } else {
+                                form.submit();
+                            }
+                        }, 50);
+                    }
+                });
+            });
+        }
+    });
 </script>
 
 <?php

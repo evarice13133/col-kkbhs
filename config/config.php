@@ -7,7 +7,7 @@
  */
 
 define('DB_HOST', 'localhost');
-define('DB_NAME', 'u290233073_copobimat_db');
+define('DB_NAME', 'u290233073_copobimatdb');
 define('DB_USER', 'u290233073_copobimat_root');
 define('DB_PASS', 'Tezempa12133!!');
 define('DB_CHARSET', 'utf8mb4');
