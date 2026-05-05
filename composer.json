@@ -1,0 +1,21 @@
+{
+    "name": "alphanumerique/notesmaster",
+    "description": "Projet de gestion de notes en PHP POO - Système de pilotage scolaire",
+    "type": "project",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "require": {
+        "php": ">=8.0",
+        "dompdf/dompdf": "^3.1",
+        "phpoffice/phpspreadsheet": "~1.29",
+        "thecodingmachine/safe": "^2.5"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    }
+}

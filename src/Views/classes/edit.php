@@ -1,0 +1,72 @@
+<?php
+$title = __('edit_class_title');
+ob_start();
+?>
+
+<div class="animate-fade-in container-fluid py-2">
+    <!-- Compact Header -->
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h2 class="fw-black text-main-theme mb-0 fs-4"><?= __('modify_class_room') ?></h2>
+            <p class="text-muted-theme small mb-0"><?= h($classe['nom'] ?? '') ?></p>
+        </div>
+        <a href="/classes" class="btn btn-sm btn-light-theme rounded-pill px-3 border-theme-light">
+            <i class="bi bi-arrow-left me-1"></i> <?= __('back_to_list') ?>
+        </a>
+    </div>
+
+    <form action="/classes/update?id=<?= $classe['id'] ?>" method="POST" id="classEditForm">
+        <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
+
+        <div class="subject-card-compact border-0 shadow-sm overflow-hidden mb-4">
+            <div class="card-body p-4">
+                
+                <!-- Identification Section -->
+                <div class="row g-4 mb-4">
+                    <div class="col-12 border-bottom border-theme-light pb-2 mb-2">
+                        <h6 class="fw-black text-primary m-0 text-uppercase letter-spacing-1"><?= __('class_identification') ?></h6>
+                    </div>
+                    
+                    <div class="col-md-12">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('class_designation') ?></label>
+                        <input type="text" name="nom" class="form-control premium-input" 
+                            value="<?= h($classe['nom'] ?? '') ?>" required autofocus>
+                        <div class="form-text extra-small mt-1 opacity-75"><?= __('class_naming_help') ?></div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('cycle_membership') ?></label>
+                        <select name="cycle_id" class="form-select premium-input">
+                            <option value=""><?= __('no_specific_cycle') ?></option>
+                            <?php foreach ($cycles as $cy): ?>
+                                <option value="<?= $cy['id'] ?>" <?= ($classe['cycle_id'] == $cy['id']) ? 'selected' : '' ?>><?= h($cy['nom']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('section_stream') ?></label>
+                        <select name="section_id" class="form-select premium-input">
+                            <option value=""><?= __('general_no_section') ?></option>
+                            <?php foreach ($sections as $sec): ?>
+                                <option value="<?= $sec['id'] ?>" <?= ($classe['section_id'] == $sec['id']) ? 'selected' : '' ?>><?= h($sec['nom']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Action Footer -->
+                <div class="d-flex justify-content-end border-top border-theme-light pt-4 mt-2">
+                    <button type="submit" class="btn btn-primary rounded-pill px-5 py-2 fw-bold shadow-sm transition-base scale-on-hover">
+                        <i class="bi bi-check-circle-fill me-2"></i> Valider
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </form>
+</div>
+
+<?php
+$content = ob_get_clean();
+include __DIR__ . '/../templates/layout.php';
+?>

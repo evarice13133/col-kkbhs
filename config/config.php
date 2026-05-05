@@ -1,0 +1,17 @@
+<?php
+
+/**
+ * Configuration Globale de NotesMaster
+ * Ce fichier contient les identifiants de base de données et les constantes d'environnement.
+ * Il est recommandé de garder ce fichier hors de la vue du public.
+ */
+
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'u290233073_copobimat_db');
+define('DB_USER', 'u290233073_copobimat_root');
+define('DB_PASS', 'Tezempa12133!!');
+define('DB_CHARSET', 'utf8mb4');
+define('APP_URL', 'https://copobimat.camertech.com');
+
+define('APP_ENV', 'production');
+define('DEBUG_MODE', false);

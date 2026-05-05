@@ -1,0 +1,129 @@
+/**
+ * PREMIUM ALERTS DESIGN SYSTEM - NotesMaster
+ * 
+ * Ce fichier définit l'identité visuelle haut de gamme pour toutes les alertes du système.
+ * Basé sur SweetAlert2, il applique un thème Premium, Glassmorphism et des animations fluides.
+ */
+
+:root {
+    --swal-success: #1ea896;
+    --swal-error: #d1495b;
+    --swal-warning: #f4b942;
+    --swal-info: #2f6fed;
+    --swal-radius: 28px;
+}
+
+/* Conteneur principal de la Popup */
+.premium-swal-popup {
+    border-radius: var(--swal-radius) !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 25px 60px rgba(16, 32, 51, 0.2) !important;
+    padding: 2.5rem 1.5rem !important;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+}
+
+/* Styles des Titres */
+.premium-swal-title {
+    font-weight: 800 !important;
+    color: #102033 !important;
+    letter-spacing: -0.02em !important;
+    font-size: 1.75rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+/* Styles du Contenu HTML/Texte */
+.premium-swal-html {
+    color: #627789 !important;
+    font-size: 1.05rem !important;
+    line-height: 1.6 !important;
+    font-weight: 500 !important;
+}
+
+/* Boutons Personnalisés */
+.premium-swal-confirm-btn {
+    border-radius: 100px !important;
+    padding: 0.8rem 2.2rem !important;
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.04em !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 10px 20px rgba(47, 111, 237, 0.2) !important;
+}
+
+.premium-swal-confirm-btn:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 15px 30px rgba(47, 111, 237, 0.3) !important;
+}
+
+.premium-swal-cancel-btn {
+    border-radius: 100px !important;
+    padding: 0.8rem 2.2rem !important;
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+    text-transform: uppercase !important;
+    background-color: #eef4fb !important;
+    color: #627789 !important;
+    border: 1px solid #dce6f0 !important;
+    transition: all 0.3s ease !important;
+}
+
+.premium-swal-cancel-btn:hover {
+    background-color: #fff !important;
+    color: #102033 !important;
+    transform: translateY(-2px) !important;
+}
+
+/* Icônes Animées */
+.swal2-icon {
+    border-width: 3px !important;
+    transform: scale(0.9);
+}
+
+.swal2-icon.swal2-success {
+    border-color: var(--swal-success) !important;
+    color: var(--swal-success) !important;
+}
+.swal2-icon.swal2-success [class^='swal2-success-line'] {
+    background-color: var(--swal-success) !important;
+}
+.swal2-icon.swal2-success .swal2-success-ring {
+    border-color: rgba(30, 168, 150, 0.2) !important;
+}
+
+.swal2-icon.swal2-error {
+    border-color: var(--swal-error) !important;
+    color: var(--swal-error) !important;
+}
+.swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
+    background-color: var(--swal-error) !important;
+}
+
+.swal2-icon.swal2-warning {
+    border-color: var(--swal-warning) !important;
+    color: var(--swal-warning) !important;
+}
+
+.swal2-icon.swal2-info {
+    border-color: var(--swal-info) !important;
+    color: var(--swal-info) !important;
+}
+
+/* Animations d'entrée douces */
+.swal2-show {
+    animation: premium-swal-in 0.45s cubic-bezier(0.2, 0, 0.2, 1) !important;
+}
+
+@keyframes premium-swal-in {
+    0% { transform: scale(0.85); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Toast personnalisé */
+.premium-toast {
+    border-radius: 18px !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
+    padding: 1rem !important;
+}

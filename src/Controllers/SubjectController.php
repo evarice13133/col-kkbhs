@@ -1,0 +1,376 @@
+<?php
+
+namespace App\Controllers;
+
+use App\Core\Database;
+use App\Core\Session;
+use App\Services\Import\ExcelTemplateService;
+use App\Services\Import\SubjectImportProcessor;
+use PDO;
+
+class SubjectController
+{
+    private $db;
+
+    public function __construct()
+    {
+        $this->db = Database::getInstance()->getConnection();
+        if (!Session::isLogged()) {
+            header("Location: /login");
+            exit;
+        }
+
+        $this->db->exec("CREATE TABLE IF NOT EXISTS subject_classes (
+            subject_id INT NOT NULL, class_id INT NOT NULL,
+            PRIMARY KEY (subject_id, class_id),
+            FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
+            FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
+        )");
+
+        // Ensure 'groupe' column exists in subjects table
+        try {
+            $this->db->exec("ALTER TABLE subjects ADD COLUMN groupe VARCHAR(50) DEFAULT 'Groupe 1'");
+        } catch (\PDOException $e) {
+            // Column probably already exists, ignore
+        }
+    }
+
+    public function index()
+    {
+        $page = (int) ($_GET['page'] ?? 1);
+        $limit = 16;
+        $offset = ($page - 1) * $limit;
+
+        [$subjects, $filters, $totalCount] = $this->fetchSubjectsFromFilters($limit, $offset);
+        $totalPages = (int) ceil($totalCount / $limit);
+
+        if ($page > $totalPages && $totalCount > 0) {
+            header("Location: /subjects?page=1");
+            exit;
+        }
+
+        $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        include __DIR__ . '/../Views/subjects/index.php';
+    }
+
+    public function export()
+    {
+        [$subjects] = $this->fetchSubjectsFromFilters();
+
+        $exportTitle = "Registre des matieres";
+        $exportSubtitle = "Liste filtree des matieres";
+        $exportColumns = ['Matiere', 'Coefficient', 'Classes'];
+        $exportRows = array_map(function ($subject) {
+            return [
+                $subject['nom'],
+                $subject['coefficient'],
+                $subject['classes_list'] ?: '-',
+            ];
+        }, $subjects);
+
+        include __DIR__ . '/../Views/templates/export.php';
+    }
+
+    public function create()
+    {
+        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+            header("Location: /subjects");
+            exit;
+        }
+        $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        include __DIR__ . '/../Views/subjects/create.php';
+    }
+
+    public function store()
+    {
+        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+            header("Location: /subjects");
+            exit;
+        }
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $nom = trim($_POST['nom'] ?? '');
+            $coeff = (int) ($_POST['coefficient'] ?? 1);
+            $groupe = trim($_POST['groupe'] ?? 'Groupe 1');
+            $classes_ids = array_values(array_unique(array_map('intval', $_POST['classes'] ?? [])));
+
+            if (empty($nom) || empty($classes_ids)) {
+                $error = \__('subject_name_and_class_required');
+                $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                include __DIR__ . '/../Views/subjects/create.php';
+                return;
+            }
+
+            $duplicateClasses = $this->findDuplicateClassesForSubjectName($nom, $classes_ids);
+            if (!empty($duplicateClasses)) {
+                $error = \__('subject_already_exists_in_classes', ['classes' => implode(', ', $duplicateClasses)]);
+                $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                include __DIR__ . '/../Views/subjects/create.php';
+                return;
+            }
+
+            try {
+                $this->db->beginTransaction();
+
+                $stmt = $this->db->prepare("INSERT INTO subjects (nom, coefficient, groupe) VALUES (?, ?, ?)");
+                $stmt->execute([$nom, $coeff, $groupe]);
+                $subject_id = $this->db->lastInsertId();
+
+                $stmt = $this->db->prepare("INSERT INTO subject_classes (subject_id, class_id) VALUES (?, ?)");
+                foreach ($classes_ids as $cid) {
+                    $stmt->execute([$subject_id, (int) $cid]);
+                }
+
+                $this->db->commit();
+                Session::setFlash('success', __('subject_created_success'));
+                header("Location: /subjects");
+                exit;
+            } catch (\PDOException $e) {
+                $this->db->rollBack();
+                $error = \__('server_error_subject_creation');
+                $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                include __DIR__ . '/../Views/subjects/create.php';
+            }
+        }
+    }
+
+    public function edit($id)
+    {
+        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+            header("Location: /subjects");
+            exit;
+        }
+
+        $stmt = $this->db->prepare("SELECT * FROM subjects WHERE id = ?");
+        $stmt->execute([$id]);
+        $subject = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$subject) {
+            header("Location: /subjects");
+            exit;
+        }
+
+        $stmt_assoc = $this->db->prepare("SELECT class_id FROM subject_classes WHERE subject_id = ?");
+        $stmt_assoc->execute([$id]);
+        $assigned_classes = $stmt_assoc->fetchAll(PDO::FETCH_COLUMN);
+
+        $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        include __DIR__ . '/../Views/subjects/edit.php';
+    }
+
+    public function update($id)
+    {
+        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+            header("Location: /subjects");
+            exit;
+        }
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $nom = trim($_POST['nom'] ?? '');
+            $coeff = (int) ($_POST['coefficient'] ?? 1);
+            $groupe = trim($_POST['groupe'] ?? 'Groupe 1');
+            $classes_ids = array_values(array_unique(array_map('intval', $_POST['classes'] ?? [])));
+
+            if (empty($nom) || empty($classes_ids)) {
+                $error = \__('subject_name_and_one_class_required');
+                $subject = ['id' => $id, 'nom' => $nom, 'coefficient' => $coeff, 'groupe' => $groupe];
+                $assigned_classes = $classes_ids;
+                $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                include __DIR__ . '/../Views/subjects/edit.php';
+                return;
+            }
+
+            $duplicateClasses = $this->findDuplicateClassesForSubjectName($nom, $classes_ids, (int) $id);
+            if (!empty($duplicateClasses)) {
+                $error = \__('subject_already_exists_in_classes', ['classes' => implode(', ', $duplicateClasses)]);
+                $subject = ['id' => $id, 'nom' => $nom, 'coefficient' => $coeff, 'groupe' => $groupe];
+                $assigned_classes = $classes_ids;
+                $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                include __DIR__ . '/../Views/subjects/edit.php';
+                return;
+            }
+
+            try {
+                $this->db->beginTransaction();
+
+                $stmt = $this->db->prepare("UPDATE subjects SET nom = ?, coefficient = ?, groupe = ? WHERE id = ?");
+                $stmt->execute([$nom, $coeff, $groupe, $id]);
+
+                $stmt_del = $this->db->prepare("DELETE FROM subject_classes WHERE subject_id = ?");
+                $stmt_del->execute([$id]);
+
+                $stmt_ins = $this->db->prepare("INSERT INTO subject_classes (subject_id, class_id) VALUES (?, ?)");
+                foreach ($classes_ids as $cid) {
+                    $stmt_ins->execute([$id, (int) $cid]);
+                }
+
+                $this->db->commit();
+                Session::setFlash('success', __('subject_updated_success'));
+                header("Location: /subjects");
+                exit;
+            } catch (\PDOException $e) {
+                $this->db->rollBack();
+                $error = \__('server_error_subject_update');
+                $subject = ['id' => $id, 'nom' => $nom, 'coefficient' => $coeff, 'groupe' => $groupe];
+                $assigned_classes = $classes_ids;
+                $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                include __DIR__ . '/../Views/subjects/edit.php';
+            }
+        }
+    }
+
+    public function delete($id)
+    {
+        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+            header("Location: /subjects");
+            exit;
+        }
+        $stmt = $this->db->prepare("DELETE FROM subjects WHERE id = ?");
+        if ($stmt->execute([$id])) {
+            Session::setFlash('success', __('subject_deleted_success'));
+        } else {
+            Session::setFlash('error', __('subject_delete_failed'));
+        }
+        header("Location: /subjects");
+        exit;
+    }
+
+    public function import(): void
+    {
+        include __DIR__ . '/../Views/subjects/import.php';
+    }
+
+    public function downloadTemplate(): void
+    {
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        ini_set('memory_limit', '512M');
+        $lang = Session::get('app_lang', 'fr') === 'en' ? 'en' : 'fr';
+
+        try {
+            $svc = new ExcelTemplateService($this->db);
+            $content = $svc->generateSubjectTemplate($lang);
+            $filename = $lang === 'fr' ? 'Modele_Import_Matieres_FR.xlsx' : 'Subject_Import_Template_EN.xlsx';
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="' . $filename . '"');
+            header('Cache-Control: max-age=0');
+            echo $content;
+            exit;
+        } catch (\Throwable $e) {
+            Session::setFlash('error', $e->getMessage());
+            header('Location: /subjects/import');
+            exit;
+        }
+    }
+
+    public function upload(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_FILES['import_file'])) {
+            header('Location: /subjects/import');
+            exit;
+        }
+        if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+            Session::setFlash('error', __('session_expired_retry') ?? 'Session expirée ou requête invalide.');
+            header('Location: /subjects/import');
+            exit;
+        }
+
+        $file = $_FILES['import_file'];
+        $ext = strtolower(pathinfo((string) $file['name'], PATHINFO_EXTENSION));
+        if ($ext !== 'xlsx') {
+            Session::setFlash('error', __('invalid_file_format_excel'));
+            header('Location: /subjects/import');
+            exit;
+        }
+
+        $processor = new SubjectImportProcessor($this->db);
+        $result = $processor->process((string) $file['tmp_name']);
+        if ($result['success']) {
+            Session::setFlash('success', __('subjects_imported_success', ['count' => $result['count']]));
+            header('Location: /subjects');
+            exit;
+        }
+
+        $errors = $result['errors'];
+        include __DIR__ . '/../Views/subjects/import.php';
+    }
+
+    private function fetchSubjectsFromFilters($limit = null, $offset = null)
+    {
+        $search = trim($_GET['q'] ?? '');
+        $classId = (int) ($_GET['class_id'] ?? 0);
+
+        // 1. Count total
+        $countSql = "SELECT COUNT(*) FROM subjects s WHERE 1=1";
+        $countParams = [];
+        if ($search !== '') {
+            $countSql .= " AND s.nom LIKE ?";
+            $countParams[] = '%' . $search . '%';
+        }
+        if ($classId > 0) {
+            $countSql .= " AND EXISTS (SELECT 1 FROM subject_classes sc2 WHERE sc2.subject_id = s.id AND sc2.class_id = ?)";
+            $countParams[] = $classId;
+        }
+        $stmtCount = $this->db->prepare($countSql);
+        $stmtCount->execute($countParams);
+        $totalCount = (int) $stmtCount->fetchColumn();
+
+        // 2. Fetch data
+        $sql = "SELECT s.*, GROUP_CONCAT(c.nom SEPARATOR ', ') as classes_list
+                FROM subjects s
+                LEFT JOIN subject_classes sc ON s.id = sc.subject_id
+                LEFT JOIN classes c ON sc.class_id = c.id
+                WHERE 1=1";
+        $params = [];
+
+        if ($search !== '') {
+            $sql .= " AND s.nom LIKE ?";
+            $params[] = '%' . $search . '%';
+        }
+
+        if ($classId > 0) {
+            $sql .= " AND EXISTS (
+                SELECT 1 FROM subject_classes sc2
+                WHERE sc2.subject_id = s.id AND sc2.class_id = ?
+            )";
+            $params[] = $classId;
+        }
+
+        $sql .= " GROUP BY s.id ORDER BY s.nom ASC";
+
+        if ($limit !== null && $offset !== null) {
+            $sql .= " LIMIT " . (int) $limit . " OFFSET " . (int) $offset;
+        }
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+
+        return [$stmt->fetchAll(PDO::FETCH_ASSOC), ['q' => $search, 'class_id' => $classId], $totalCount];
+    }
+
+    private function findDuplicateClassesForSubjectName(string $nom, array $classIds, ?int $excludeSubjectId = null): array
+    {
+        $classIds = array_values(array_unique(array_filter(array_map('intval', $classIds))));
+        if ($nom === '' || empty($classIds)) {
+            return [];
+        }
+
+        $placeholders = implode(', ', array_fill(0, count($classIds), '?'));
+        $sql = "SELECT DISTINCT c.nom
+                FROM subject_classes sc
+                JOIN subjects s ON s.id = sc.subject_id
+                JOIN classes c ON c.id = sc.class_id
+                WHERE sc.class_id IN ($placeholders)
+                  AND LOWER(TRIM(s.nom)) = LOWER(TRIM(?))";
+        $params = array_merge($classIds, [$nom]);
+
+        if ($excludeSubjectId !== null) {
+            $sql .= " AND s.id <> ?";
+            $params[] = $excludeSubjectId;
+        }
+
+        $sql .= " ORDER BY c.nom ASC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+
+        return array_map('strval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+    }
+}
