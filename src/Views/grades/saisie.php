@@ -157,7 +157,7 @@ $appreciationLabels = [
 
     <!-- Alert Messages (Globally handled by AlertService in layout) -->
 
-    <form action="/notes/store" method="POST" id="gradeEntryForm">
+    <form action="/notes/store" method="POST" id="gradeEntryForm" class="no-loader">
         <input type="hidden" name="class_id" value="<?= $class_id ?>">
         <input type="hidden" name="subject_id" value="<?= $subject_id ?>">
         <input type="hidden" name="periode" value="<?= htmlspecialchars((string) $periode) ?>">
@@ -229,7 +229,7 @@ $appreciationLabels = [
         </div>
 
         <?php if (!empty($students)): ?>
-            <button type="submit" class="btn btn-primary floating-save">
+            <button type="button" class="btn btn-primary floating-save" onclick="confirmGradeSubmission()">
                 <i class="bi bi-check2-circle me-2"></i><?= __('save_grades') ?>
             </button>
         <?php endif; ?>
@@ -237,7 +237,7 @@ $appreciationLabels = [
 </div>
 
 <script>
-    (function () {
+    document.addEventListener('DOMContentLoaded', function () {
         const appreciationLabels = <?= json_encode($appreciationLabels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 
         function getAppreciation(note) {
@@ -303,7 +303,95 @@ $appreciationLabels = [
                 }
             });
         });
-    })();
+
+        // Fonction de confirmation exposée globalement (Version Intuitive Premium)
+        window.confirmGradeSubmission = function() {
+            const form = document.getElementById('gradeEntryForm');
+            if (!form) return;
+
+            // Calculs pour le tableau de bord du popup
+            const noteInputs = form.querySelectorAll('.js-note-input');
+            const totalCount = noteInputs.length;
+            const filledCount = Array.from(noteInputs).filter(input => input.value.trim() !== '').length;
+            const remainingCount = totalCount - filledCount;
+
+            if (typeof AlertService === 'undefined') {
+                if (confirm("Confirmer l'enregistrement des notes ?")) form.submit();
+                return;
+            }
+
+            // Construction du contenu HTML intuitif (KPI Cards)
+            const htmlContent = `
+                <div class="mb-4 text-muted" style="font-size: 0.95rem;">
+                    <?= json_encode(__('grade_save_confirm_text'), JSON_UNESCAPED_UNICODE) ?>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 25px;">
+                    <!-- Total -->
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 15px 10px; text-align: center;">
+                        <div style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: #64748b; margin-bottom: 5px;"><?= __('grade_save_total_students') ?></div>
+                        <div style="font-size: 1.5rem; font-weight: 800; color: #1e293b;">${totalCount}</div>
+                    </div>
+                    
+                    <!-- Saisies -->
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 16px; padding: 15px 10px; text-align: center;">
+                        <div style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: #16a34a; margin-bottom: 5px;"><?= __('grade_save_filled') ?></div>
+                        <div style="font-size: 1.5rem; font-weight: 800; color: #15803d;">${filledCount}</div>
+                    </div>
+                    
+                    <!-- Restant -->
+                    <div style="background: ${remainingCount > 0 ? '#fffbeb' : '#f0fdf4'}; border: 1px solid ${remainingCount > 0 ? '#fde68a' : '#bbf7d0'}; border-radius: 16px; padding: 15px 10px; text-align: center;">
+                        <div style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: ${remainingCount > 0 ? '#d97706' : '#16a34a'}; margin-bottom: 5px;"><?= __('grade_save_remaining') ?></div>
+                        <div style="font-size: 1.5rem; font-weight: 800; color: ${remainingCount > 0 ? '#b45309' : '#15803d'};">${remainingCount}</div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info border-0 rounded-4 d-flex align-items-center gap-3 text-start mb-0" style="background: rgba(59, 130, 246, 0.08); color: #1e40af; font-size: 0.85rem;">
+                    <i class="bi bi-info-circle-fill fs-4"></i>
+                    <div>
+                        <strong>Action importante :</strong> L'enregistrement mettra à jour les dossiers académiques et calculera automatiquement les nouvelles moyennes.
+                    </div>
+                </div>
+            `;
+
+            AlertService.confirm({
+                title: <?= json_encode(__('grade_save_confirm_title'), JSON_UNESCAPED_UNICODE) ?>,
+                html: htmlContent,
+                icon: 'question',
+                confirmText: '<i class="bi bi-cloud-upload me-2"></i>' + <?= json_encode(__('confirm'), JSON_UNESCAPED_UNICODE) ?>,
+                cancelText: <?= json_encode(__('cancel'), JSON_UNESCAPED_UNICODE) ?>,
+                confirmButtonColor: '#4361ee',
+                customClass: {
+                    popup: 'premium-swal-popup rounded-5',
+                    confirmButton: 'premium-swal-confirm-btn px-5 py-3 rounded-pill fw-bold'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.dataset.confirmed = 'true';
+                    
+                    AlertService.loading(
+                        <?= json_encode(__('saving'), JSON_UNESCAPED_UNICODE) ?>, 
+                        <?= json_encode(__('please_wait'), JSON_UNESCAPED_UNICODE) ?>
+                    );
+                    
+                    setTimeout(() => {
+                        form.submit();
+                    }, 100);
+                }
+            });
+        };
+
+        // Empêcher aussi la soumission par "Entrée" sans confirmation
+        const form = document.getElementById('gradeEntryForm');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                if (form.dataset.confirmed !== 'true') {
+                    e.preventDefault();
+                    window.confirmGradeSubmission();
+                }
+            });
+        }
+    });
 </script>
 
 <?php
