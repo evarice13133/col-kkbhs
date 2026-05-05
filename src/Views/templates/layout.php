@@ -84,9 +84,9 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 
-    <link rel="stylesheet" href="/public/css/modern-dashboard.css">
-    <link rel="stylesheet" href="/public/css/alerts-premium.css">
-    <link rel="stylesheet" href="/public/css/ux-improvements.css">
+    <link rel="stylesheet" href="/public/css/modern-dashboard.css?v=1.1">
+    <link rel="stylesheet" href="/public/css/alerts-premium.css?v=1.1">
+    <link rel="stylesheet" href="/public/css/ux-improvements.css?v=1.1">
 
 
     <style>
@@ -444,8 +444,8 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <!-- Services Applicatifs -->
-    <script src="/public/js/AlertService.js"></script>
-    <script src="/public/js/ux-improvements.js"></script>
+    <script src="/public/js/AlertService.js?v=1.1"></script>
+    <script src="/public/js/ux-improvements.js?v=1.1"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
