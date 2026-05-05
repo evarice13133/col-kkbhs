@@ -25,10 +25,4 @@ Elle permet de centraliser la gestion des utilisateurs, des données académique
 
 ---
 
-## Installation
 
-### 1. Cloner le projet
-
-```bash
-git clone https://github.com/TON-USERNAME/TON-REPO.git
-cd TON-REPO
