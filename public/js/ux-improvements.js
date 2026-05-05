@@ -64,15 +64,24 @@ const UX = (function () {
                 const deleteTrigger = e.target.closest('.btn-confirm-delete');
                 if (deleteTrigger) {
                     e.preventDefault();
+                    
+                    // Sécurité spécifique pour les classes : interdire la suppression si non vide
+                    const studentCount = parseInt(deleteTrigger.dataset.studentCount || '0');
+                    if (studentCount > 0) {
+                        AlertService.warning(
+                            t('action_forbidden', 'Action Interdite'),
+                            t('class_not_empty_error', 'Cette classe contient encore des élèves. Vous devez les transférer ou les supprimer avant de pouvoir supprimer la salle.')
+                        );
+                        return;
+                    }
+
                     const url = deleteTrigger.getAttribute('href');
                     const message = deleteTrigger.dataset.confirm || t('confirm_delete_text', 'Cette action est irréversible.');
 
-                    AlertService.confirm({
-                        title: t('warning_title', 'Attention'),
-                        message: message,
-                        confirmText: t('confirm_delete_action', 'Oui, supprimer'),
-                        cancelButtonColor: '#eef4fb'
-                    }).then((result) => {
+                    AlertService.confirmDelete(
+                        t('warning_title', 'Attention'),
+                        message
+                    ).then((result) => {
                         if (result.isConfirmed) {
                             window.location.href = url;
                         }
@@ -87,12 +96,11 @@ const UX = (function () {
                     const url = withdrawTrigger.getAttribute('href');
                     const message = withdrawTrigger.dataset.confirm || t('confirm_withdraw_text', 'Marquer cet élève comme démissionnaire ?');
 
-                    AlertService.confirm({
-                        title: t('warning_title', 'Attention'),
-                        message: message,
-                        confirmText: t('confirm_withdraw_action', 'Oui, démissionner'),
-                        cancelButtonColor: '#eef4fb'
-                    }).then((result) => {
+                    AlertService.confirmDelete(
+                        t('warning_title', 'Attention'),
+                        message,
+                        { confirmText: t('confirm_withdraw_action', 'Oui, démissionner') }
+                    ).then((result) => {
                         if (result.isConfirmed) {
                             window.location.href = url;
                         }
@@ -107,12 +115,14 @@ const UX = (function () {
                     const url = restoreTrigger.getAttribute('href');
                     const message = restoreTrigger.dataset.confirm || t('confirm_restore_text', 'Restaurer cet élève dans sa classe ?');
 
-                    AlertService.confirm({
-                        title: t('info_title', 'Information'),
-                        message: message,
-                        confirmText: t('confirm_restore_action', 'Oui, restaurer'),
-                        cancelButtonColor: '#eef4fb'
-                    }).then((result) => {
+                    AlertService.confirmDelete(
+                        t('info_title', 'Information'),
+                        message,
+                        { 
+                            confirmText: t('confirm_restore_action', 'Oui, restaurer'),
+                            icon: 'info'
+                        }
+                    ).then((result) => {
                         if (result.isConfirmed) {
                             window.location.href = url;
                         }

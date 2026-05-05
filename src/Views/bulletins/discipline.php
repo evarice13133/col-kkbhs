@@ -84,7 +84,7 @@ ob_start();
     <?php else: ?>
         <div class="modern-card border-0 shadow-sm">
             <div class="modern-card-body p-2 p-md-4 p-lg-5">
-                <form method="POST" action="/bulletins/discipline/save">
+                <form method="POST" action="/bulletins/discipline/save" id="disciplineForm" class="no-loader">
                     <input type="hidden" name="class_id" value="<?= (int) $classId ?>">
                     <input type="hidden" name="academic_year_id" value="<?= (int) $academicYearId ?>">
                     <input type="hidden" name="term" value="<?= (int) $term ?>">
@@ -112,27 +112,27 @@ ob_start();
                                             <span class="d-block d-md-inline"><?= htmlspecialchars((string) ($student['prenom'] ?? '')) ?></span>
                                         </td>
                                         <td>
-                                            <input type="number" min="0" class="form-control form-control-sm"
+                                            <input type="number" min="0" class="form-control form-control-sm js-discipline-input"
                                                 name="absences_total[<?= $studentId ?>]"
                                                 value="<?= (int) ($disciplineMap[$studentId]['absences_total'] ?? 0) ?>">
                                         </td>
                                         <td>
-                                            <input type="number" min="0" class="form-control form-control-sm"
+                                            <input type="number" min="0" class="form-control form-control-sm js-discipline-input"
                                                 name="absences_justified[<?= $studentId ?>]"
                                                 value="<?= (int) ($disciplineMap[$studentId]['absences_justified'] ?? 0) ?>">
                                         </td>
                                         <td>
-                                            <input type="number" min="0" class="form-control form-control-sm"
+                                            <input type="number" min="0" class="form-control form-control-sm js-discipline-input"
                                                 name="absences_unjustified[<?= $studentId ?>]"
                                                 value="<?= (int) ($disciplineMap[$studentId]['absences_unjustified'] ?? 0) ?>">
                                         </td>
                                         <td>
-                                            <input type="number" min="0" class="form-control form-control-sm"
+                                            <input type="number" min="0" class="form-control form-control-sm js-discipline-input"
                                                 name="exclusion_days[<?= $studentId ?>]"
                                                 value="<?= (int) ($disciplineMap[$studentId]['exclusion_days'] ?? 0) ?>">
                                         </td>
                                         <td>
-                                            <input type="text" class="form-control form-control-sm" name="warning_conduct[<?= $studentId ?>]"
+                                            <input type="text" class="form-control form-control-sm js-discipline-input" name="warning_conduct[<?= $studentId ?>]"
                                                 value="<?= htmlspecialchars((string) ($disciplineMap[$studentId]['warning_conduct'] ?? '')) ?>"
                                                 maxlength="20">
                                         </td>
@@ -154,6 +154,56 @@ ob_start();
         </div>
     <?php endif; ?>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('disciplineForm');
+    if (!form) return;
+
+    form.addEventListener('submit', function(e) {
+        if (form.dataset.confirmed === 'true') return;
+        
+        e.preventDefault();
+        
+        const inputs = form.querySelectorAll('.js-discipline-input');
+        const filledCount = Array.from(inputs).filter(input => {
+            return input.type === 'number' ? (parseInt(input.value) > 0) : (input.value.trim() !== '');
+        }).length;
+
+        const htmlContent = `
+            <div style="font-size: 0.85rem; color: #000000;">
+                <p class="mb-2 fw-medium"><?= json_encode(__('confirm_save_discipline'), JSON_UNESCAPED_UNICODE) ?></p>
+                <div class="d-inline-block px-3 py-1 rounded-pill bg-warning-subtle text-warning-emphasis fw-bold small">
+                    ${filledCount} <?= json_encode(__('entries_detected'), JSON_UNESCAPED_UNICODE) ?>
+                </div>
+            </div>
+        `;
+
+        AlertService.confirm({
+            title: <?= json_encode(__('confirmation'), JSON_UNESCAPED_UNICODE) ?>,
+            html: htmlContent,
+            icon: 'question',
+            confirmText: <?= json_encode(__('confirm'), JSON_UNESCAPED_UNICODE) ?>,
+            cancelText: <?= json_encode(__('cancel'), JSON_UNESCAPED_UNICODE) ?>,
+            width: '320px',
+            background: '#ffffff',
+            customClass: {
+                popup: 'rounded-4 shadow-sm p-3 border border-light',
+                title: 'text-black fw-bolder fs-5',
+                confirmButton: 'btn btn-primary btn-sm w-100 mb-2 rounded-pill',
+                cancelButton: 'btn btn-light btn-sm w-100 rounded-pill',
+                actions: 'd-flex flex-column w-100 gap-1'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.dataset.confirmed = 'true';
+                AlertService.loading(<?= json_encode(__('saving'), JSON_UNESCAPED_UNICODE) ?>);
+                setTimeout(() => form.submit(), 50);
+            }
+        });
+    });
+});
+</script>
 
 <?php
 $content = ob_get_clean();

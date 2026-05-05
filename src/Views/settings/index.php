@@ -97,6 +97,9 @@
             </div>
         </div>
     </form>
+    
+    <!-- Formulaire de sauvegarde manuelle (externe pour éviter l'imbrication) -->
+    <form action="/settings/run_backup" method="POST" id="runBackupForm" class="d-none"></form>
 </div>
 
 <style>

@@ -205,7 +205,7 @@ class SettingController
         $fileType = mime_content_type($fileTmp);
 
         if ($fileType && strpos($fileType, 'image/') === 0 && move_uploaded_file($fileTmp, $destPath)) {
-            $webPath = '/uploads/' . $fileName;
+            $webPath = '/public/uploads/' . $fileName;
             
             // Utiliser le LogoManager pour le logo
             if ($fieldName === 'school_logo') {

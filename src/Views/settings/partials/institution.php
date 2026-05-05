@@ -33,7 +33,7 @@
                         $logoManager = \App\Core\LogoManager::getInstance($db);
                         ?>
                         <?php if ($logoManager->hasLogo()): ?>
-                            <?= $logoManager->getLogoHtml('Logo', 'img-fluid rounded-4 shadow-sm border border-theme-light', ['style' => 'max-height: 100px; min-width: 100px; object-fit: contain;']) ?>
+                            <img src="<?= $logoManager->getLogoBase64() ?>" alt="Logo" class="img-fluid rounded-4 shadow-sm border border-theme-light" style="max-height: 100px; min-width: 100px; object-fit: contain;">
                         <?php else: ?>
                             <div class="avatar-init bg-soft-primary text-primary rounded-4 d-flex align-items-center justify-content-center shadow-sm" style="width: 100px; height: 100px;">
                                 <i class="bi bi-image fs-1 opacity-25"></i>

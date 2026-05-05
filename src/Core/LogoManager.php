@@ -42,16 +42,16 @@ class LogoManager
         
         // Vérifier si le fichier existe physiquement
         $fullPath = $this->getFullFileSystemPath();
-        $this->logoExists = file_exists($fullPath);
+        $this->logoExists = !empty($fullPath) && file_exists($fullPath);
         
         if ($this->logoExists) {
             $this->logoInfo = [
                 'path' => $this->logoPath,
                 'url' => $this->logoUrl,
                 'full_path' => $fullPath,
-                'size' => filesize($fullPath),
-                'mime' => mime_content_type($fullPath),
-                'dimensions' => getimagesize($fullPath)
+                'size' => @filesize($fullPath),
+                'mime' => @mime_content_type($fullPath) ?: 'image/png',
+                'dimensions' => @getimagesize($fullPath)
             ];
         }
     }
@@ -79,18 +79,22 @@ class LogoManager
             return '';
         }
         
-        // Si le chemin commence par /uploads/, le traiter comme relatif au public
-        if (strpos($this->logoPath, '/uploads/') === 0) {
-            return __DIR__ . '/../../public' . $this->logoPath;
+        // Base directory: the project root (up from src/Core)
+        $baseDir = realpath(__DIR__ . '/../../');
+        if (!$baseDir) return '';
+
+        // Clean the stored path
+        $cleanPath = ltrim(str_replace('\\', '/', $this->logoPath), '/');
+
+        // If the path already starts with 'public/', it's already absolute from root
+        if (str_starts_with($cleanPath, 'public/')) {
+             $fullPath = $baseDir . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $cleanPath);
+        } else {
+             // Otherwise, it's relative to public/
+             $fullPath = $baseDir . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $cleanPath);
         }
-        
-        // Si le chemin est juste un nom de fichier
-        if (!str_contains($this->logoPath, '/')) {
-            return __DIR__ . '/../../public/uploads/' . $this->logoPath;
-        }
-        
-        // Sinon, considérer qu'il est déjà dans public/uploads
-        return __DIR__ . '/../../public/uploads/' . basename($this->logoPath);
+
+        return $fullPath;
     }
 
     public function hasLogo(): bool

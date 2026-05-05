@@ -70,6 +70,20 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
             const savedTheme = localStorage.getItem('theme') || 'light';
             document.documentElement.setAttribute('data-theme', savedTheme);
         })();
+        
+        // --- TRANSLATIONS FOR JAVASCRIPT ---
+        window.NM_I18N = {
+            'confirmation': "<?= addslashes((string) __('confirmation')) ?>",
+            'confirm': "<?= addslashes((string) __('confirm')) ?>",
+            'cancel': "<?= addslashes((string) __('cancel')) ?>",
+            'saving': "<?= addslashes((string) __('saving')) ?>",
+            'action_forbidden': "<?= addslashes((string) __('action_forbidden')) ?>",
+            'class_not_empty_error': "<?= addslashes((string) __('class_not_empty_error')) ?>",
+            'warning_title': "<?= addslashes((string) __('warning_title')) ?>",
+            'info_title': "<?= addslashes((string) __('info_title')) ?>",
+            'error_title': "<?= addslashes((string) __('error_title')) ?>",
+            'success_title': "<?= addslashes((string) __('success_title')) ?>"
+        };
     </script>
     <title><?= $title ?? 'NotesMaster' ?> - <?= __('app_name') ?></title>
 
@@ -496,6 +510,23 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
             <?php if ($flash_error = \App\Core\Session::getFlash('error')): ?>
                 AlertService.error("<?= addslashes((string) __('error_title')) ?>", "<?= addslashes((string) $flash_error) ?>");
+            <?php endif; ?>
+
+            // --- MESSAGE DE BIENVENUE FLASH (Connexion uniquement) ---
+            <?php if ($welcome_msg = \App\Core\Session::getFlash('welcome_user')): ?>
+                Swal.fire({
+                    title: "<?= addslashes((string) $welcome_msg) ?>",
+                    icon: 'success',
+                    timer: 5000,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                    width: '320px',
+                    background: '#ffffff',
+                    customClass: {
+                        popup: 'rounded-4 shadow-sm p-4 border border-light',
+                        title: 'text-black fw-bolder fs-5'
+                    }
+                });
             <?php endif; ?>
 
             // Initialisation des tooltips

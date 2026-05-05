@@ -136,12 +136,10 @@ $dayOptions = [
                     <div class="p-4 bg-white rounded-4 shadow-sm border border-theme-light mt-auto">
                         <h6 class="fw-bold mb-2 text-main-theme small"><?= __('backup_manual_run_heading') ?></h6>
                         <p class="text-muted-theme extra-small mb-3 opacity-75"><?= __('backup_manual_run_text') ?></p>
-                        <form action="/settings/run_backup" method="POST" id="runBackupForm">
-                            <button type="submit" class="btn btn-outline-primary fw-bold px-4 rounded-pill btn-sm w-100 transition-base"
-                                onclick="return confirmRunBackup()">
-                                <i class="bi bi-cloud-arrow-up-fill me-2"></i><?= __('run_backup_now') ?>
-                            </button>
-                        </form>
+                        <button type="submit" form="runBackupForm" class="btn btn-outline-primary fw-bold px-4 rounded-pill btn-sm w-100 transition-base"
+                            onclick="return confirmRunBackup()">
+                            <i class="bi bi-cloud-arrow-up-fill me-2"></i><?= __('run_backup_now') ?>
+                        </button>
                     </div>
                 </div>
             </div>

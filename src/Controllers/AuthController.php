@@ -113,6 +113,9 @@ class AuthController
                     Session::set('user_nom', $user->getNom());
                     Session::set('user_prenom', $user->getPrenom());
 
+                    // Message de bienvenue flash
+                    Session::setFlash('welcome_user', __('welcome_back', ['name' => $user->getPrenom()]));
+
                     // Configure le contexte de l'année académique active globale
                     $db = Database::getInstance()->getConnection();
                     $activeYearQuery = $db->query("SELECT nom FROM academic_years WHERE is_active = 1 LIMIT 1");
@@ -240,6 +243,9 @@ class AuthController
                 Session::set('user_role', 'enseignant');
                 Session::set('user_nom', $nom);
                 Session::set('user_prenom', $prenom);
+                
+                // Message de bienvenue flash
+                Session::setFlash('welcome_user', __('welcome_back', ['name' => $username]));
 
                 // Configurer l'année active
                 $activeYearQuery = $db->query("SELECT nom FROM academic_years WHERE is_active = 1 LIMIT 1");
