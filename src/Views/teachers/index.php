@@ -185,7 +185,7 @@ ob_start(); ?>
                                         <?php endif; ?>
                                         <a href="/teachers/delete?id=<?= $t['id'] ?>"
                                             class="btn btn-sm btn-action-modern text-danger btn-confirm-delete"
-                                            onclick="return confirm('<?= __('delete_teacher_confirm') ?>')"
+                                            data-confirm="<?= __('delete_teacher_confirm') ?>"
                                             title="<?= __('delete') ?>">
                                             <i class="bi bi-trash fs-5"></i>
                                         </a>

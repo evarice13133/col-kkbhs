@@ -118,7 +118,7 @@ ob_start(); ?>
                                         </a>
                                         <a href="/subjects/delete?id=<?= $s['id'] ?>"
                                             class="btn btn-sm btn-action-modern text-danger btn-confirm-delete"
-                                            onclick="return confirm('<?= __('delete_subject_confirm') ?>')"
+                                            data-confirm="<?= __('delete_subject_confirm') ?>"
                                             title="<?= __('delete') ?>">
                                             <i class="bi bi-trash fs-5"></i>
                                         </a>

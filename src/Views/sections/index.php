@@ -60,8 +60,8 @@
                                             <a href="/sections/edit?id=<?= $section['id'] ?>" class="btn btn-sm btn-light rounded-pill px-3 fw-bold transition-base border" title="<?= __('edit') ?>">
                                                 <i class="bi bi-pencil me-1"></i> <?= __('edit') ?>
                                             </a>
-                                            <a href="/sections/delete?id=<?= $section['id'] ?>" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold transition-base" 
-                                               onclick="return confirm('<?= __('confirm_delete_text') ?>')" title="<?= __('delete') ?>">
+                                            <a href="/sections/delete?id=<?= $section['id'] ?>&csrf_token=<?= \App\Core\Session::generateCsrfToken() ?>" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold transition-base btn-confirm-delete" 
+                                               data-confirm="<?= __('confirm_delete_text') ?>" title="<?= __('delete') ?>">
                                                 <i class="bi bi-trash me-1"></i> <?= __('delete') ?>
                                             </a>
                                         </div>

@@ -134,6 +134,30 @@ const AlertService = {
     },
 
     /**
+     * Spécialisé pour les SUPPRESSIONS (Noir sur Blanc / Compact)
+     */
+    confirmDelete(title, message, options = {}) {
+        return this.confirm({
+            title: title,
+            html: `<div style="color: #000; font-size: 0.9rem;">${message}</div>`,
+            icon: 'warning',
+            confirmText: 'Supprimer',
+            cancelText: 'Annuler',
+            confirmButtonColor: '#000000', // Noir sur Blanc
+            background: '#ffffff',
+            width: '320px',
+            customClass: {
+                popup: 'rounded-4 shadow-sm p-3 border border-light',
+                title: 'text-black fw-bolder fs-5',
+                confirmButton: 'btn btn-dark btn-sm w-100 mb-2 rounded-pill',
+                cancelButton: 'btn btn-light btn-sm w-100 rounded-pill',
+                actions: 'd-flex flex-column w-100 gap-1'
+            },
+            ...options
+        });
+    },
+
+    /**
      * Affiche un mini-message TOAST (discret, en haut à droite).
      * Idéal pour : Actions rapides en arrière-plan.
      */

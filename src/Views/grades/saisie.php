@@ -304,52 +304,24 @@ $appreciationLabels = [
             });
         });
 
-        // Fonction de confirmation exposée globalement (Version Intuitive Premium)
+        // Fonction de confirmation (Noir sur Blanc / Mobile Compact)
         window.confirmGradeSubmission = function() {
             const form = document.getElementById('gradeEntryForm');
             if (!form) return;
 
-            // Calculs pour le tableau de bord du popup
             const noteInputs = form.querySelectorAll('.js-note-input');
-            const totalCount = noteInputs.length;
             const filledCount = Array.from(noteInputs).filter(input => input.value.trim() !== '').length;
-            const remainingCount = totalCount - filledCount;
 
             if (typeof AlertService === 'undefined') {
-                if (confirm("Confirmer l'enregistrement des notes ?")) form.submit();
+                if (confirm("Enregistrer les notes ?")) form.submit();
                 return;
             }
 
-            // Construction du contenu HTML intuitif (KPI Cards)
             const htmlContent = `
-                <div class="mb-4 text-muted" style="font-size: 0.95rem;">
-                    <?= json_encode(__('grade_save_confirm_text'), JSON_UNESCAPED_UNICODE) ?>
-                </div>
-                
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 25px;">
-                    <!-- Total -->
-                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 15px 10px; text-align: center;">
-                        <div style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: #64748b; margin-bottom: 5px;"><?= __('grade_save_total_students') ?></div>
-                        <div style="font-size: 1.5rem; font-weight: 800; color: #1e293b;">${totalCount}</div>
-                    </div>
-                    
-                    <!-- Saisies -->
-                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 16px; padding: 15px 10px; text-align: center;">
-                        <div style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: #16a34a; margin-bottom: 5px;"><?= __('grade_save_filled') ?></div>
-                        <div style="font-size: 1.5rem; font-weight: 800; color: #15803d;">${filledCount}</div>
-                    </div>
-                    
-                    <!-- Restant -->
-                    <div style="background: ${remainingCount > 0 ? '#fffbeb' : '#f0fdf4'}; border: 1px solid ${remainingCount > 0 ? '#fde68a' : '#bbf7d0'}; border-radius: 16px; padding: 15px 10px; text-align: center;">
-                        <div style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: ${remainingCount > 0 ? '#d97706' : '#16a34a'}; margin-bottom: 5px;"><?= __('grade_save_remaining') ?></div>
-                        <div style="font-size: 1.5rem; font-weight: 800; color: ${remainingCount > 0 ? '#b45309' : '#15803d'};">${remainingCount}</div>
-                    </div>
-                </div>
-
-                <div class="alert alert-info border-0 rounded-4 d-flex align-items-center gap-3 text-start mb-0" style="background: rgba(59, 130, 246, 0.08); color: #1e40af; font-size: 0.85rem;">
-                    <i class="bi bi-info-circle-fill fs-4"></i>
-                    <div>
-                        <strong>Action importante :</strong> L'enregistrement mettra à jour les dossiers académiques et calculera automatiquement les nouvelles moyennes.
+                <div style="font-size: 0.85rem; color: #000000;">
+                    <p class="mb-2 fw-medium"><?= json_encode(__('grade_save_confirm_text'), JSON_UNESCAPED_UNICODE) ?></p>
+                    <div class="d-inline-block px-3 py-1 rounded-pill bg-warning-subtle text-warning-emphasis fw-bold small">
+                        ${filledCount} notes
                     </div>
                 </div>
             `;
@@ -358,25 +330,22 @@ $appreciationLabels = [
                 title: <?= json_encode(__('grade_save_confirm_title'), JSON_UNESCAPED_UNICODE) ?>,
                 html: htmlContent,
                 icon: 'question',
-                confirmText: '<i class="bi bi-cloud-upload me-2"></i>' + <?= json_encode(__('confirm'), JSON_UNESCAPED_UNICODE) ?>,
+                confirmText: <?= json_encode(__('confirm'), JSON_UNESCAPED_UNICODE) ?>,
                 cancelText: <?= json_encode(__('cancel'), JSON_UNESCAPED_UNICODE) ?>,
-                confirmButtonColor: '#4361ee',
+                width: '320px',
+                background: '#ffffff', // Fond blanc solide
                 customClass: {
-                    popup: 'premium-swal-popup rounded-5',
-                    confirmButton: 'premium-swal-confirm-btn px-5 py-3 rounded-pill fw-bold'
+                    popup: 'rounded-4 shadow-sm p-3 border border-light',
+                    title: 'text-black fw-bolder fs-5', // Titre noir
+                    confirmButton: 'btn btn-primary btn-sm w-100 mb-2 rounded-pill',
+                    cancelButton: 'btn btn-light btn-sm w-100 rounded-pill',
+                    actions: 'd-flex flex-column w-100 gap-1'
                 }
             }).then((result) => {
                 if (result.isConfirmed) {
                     form.dataset.confirmed = 'true';
-                    
-                    AlertService.loading(
-                        <?= json_encode(__('saving'), JSON_UNESCAPED_UNICODE) ?>, 
-                        <?= json_encode(__('please_wait'), JSON_UNESCAPED_UNICODE) ?>
-                    );
-                    
-                    setTimeout(() => {
-                        form.submit();
-                    }, 100);
+                    AlertService.loading(<?= json_encode(__('saving'), JSON_UNESCAPED_UNICODE) ?>);
+                    setTimeout(() => form.submit(), 50);
                 }
             });
         };

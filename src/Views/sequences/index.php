@@ -87,8 +87,8 @@ ob_start(); ?>
                                             <i class="bi bi-pencil-square fs-5"></i>
                                         </a>
                                         <a href="/sequences/delete?id=<?= $s['id'] ?>"
-                                            class="btn btn-sm btn-action-modern text-danger"
-                                            onclick="return confirm('<?= __('confirm_delete_sequence') ?>')"
+                                            class="btn btn-sm btn-action-modern text-danger btn-confirm-delete"
+                                            data-confirm="<?= __('confirm_delete_sequence') ?>"
                                             title="<?= __('delete') ?>">
                                             <i class="bi bi-trash fs-5"></i>
                                         </a>

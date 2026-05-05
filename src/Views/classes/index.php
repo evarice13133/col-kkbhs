@@ -123,6 +123,7 @@ ob_start(); ?>
                                             </a>
                                             <a href="/classes/delete?id=<?= $c['id'] ?>&csrf_token=<?= \App\Core\Session::generateCsrfToken() ?>"
                                                 class="btn-icon-action text-danger position-relative btn-confirm-delete"
+                                                data-student-count="<?= $c['student_count'] ?? 0 ?>"
                                                 style="z-index: 10; width: 28px; height: 28px; font-size: 0.8rem;"
                                                 title="<?= __('delete') ?>">
                                                 <i class="bi bi-trash-fill"></i>
