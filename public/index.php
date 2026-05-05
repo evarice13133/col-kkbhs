@@ -72,6 +72,15 @@ if (Session::isLogged()) {
     }
 }
 
+// 4. Route spéciale pour le changement de langue (Locale Switcher)
+if ($path === '/locale') {
+    $lang = $_GET['lang'] ?? 'fr';
+    $redirect = $_GET['redirect'] ?? '/';
+    Locale::set($lang);
+    header('Location: ' . $redirect);
+    exit;
+}
+
 // Route principale (Tableau de Bord / Accueil)
 if ($path === '/' || $path === '/index.php') {
     $c = new DashboardController();

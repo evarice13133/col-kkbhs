@@ -396,13 +396,13 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                             </li>
                             <li>
                                 <a class="dropdown-item dropdown-item-modern <?= $app_lang === 'fr' ? 'active' : '' ?>"
-                                    href="?lang=fr">
+                                    href="javascript:void(0)" onclick="UX.switchLanguage('fr')">
                                     <span class="fs-5">🇫🇷</span> Français
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item dropdown-item-modern <?= $app_lang === 'en' ? 'active' : '' ?>"
-                                    href="?lang=en">
+                                    href="javascript:void(0)" onclick="UX.switchLanguage('en')">
                                     <span class="fs-5">🇺🇸</span> English
                                 </a>
                             </li>
