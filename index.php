@@ -19,6 +19,7 @@ if ($path === '/' && !\App\Core\Session::has('splash_done') && !isset($_GET['ski
     $logoManager = \App\Core\LogoManager::getInstance($db);
     
     $school_name = $settingsStore->get('school_name', 'NotesMaster');
+    $school_code = $settingsStore->get('school_code', 'IMT');
     $logo_base64 = $logoManager->hasLogo() ? $logoManager->getLogoBase64() : '';
     $fallback_letter = $logoManager->getFallbackLetter();
     
@@ -85,36 +86,30 @@ if ($path === '/' && !\App\Core\Session::has('splash_done') && !isset($_GET['ski
                 animation: spin 1.5s linear infinite;
             }
 
-            .logo-img {
-                width: 100px;
-                height: 100px;
-                object-fit: contain;
+            .school-code-splash {
+                font-size: 3.5rem;
+                font-weight: 900;
+                background: linear-gradient(to right, #22c55e, #ef4444, #eab308, #22c55e);
+                background-size: 300% auto;
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                animation: colorSweep 3s linear infinite;
                 z-index: 2;
-                animation: pulse 2s ease-in-out infinite;
+                letter-spacing: -2px;
             }
 
-            .logo-fallback {
-                width: 100px;
-                height: 100px;
-                background: var(--primary-color);
-                color: white;
-                border-radius: 25px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 3rem;
-                font-weight: 800;
-                z-index: 2;
-                box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+            @keyframes colorSweep {
+                0% { background-position: 0% center; }
+                100% { background-position: 300% center; }
             }
 
             .school-name {
                 margin-top: 30px;
-                font-size: 1.5rem;
-                font-weight: 800;
+                font-size: 1.2rem;
+                font-weight: 700;
                 color: var(--text-color);
                 text-transform: uppercase;
-                letter-spacing: 2px;
+                letter-spacing: 4px;
                 opacity: 0;
                 animation: fadeIn 1s ease-out forwards 0.5s;
             }
@@ -151,13 +146,8 @@ if ($path === '/' && !\App\Core\Session::has('splash_done') && !isset($_GET['ski
         <div class="splash-container">
             <div class="loader-wrapper">
                 <div class="spinner"></div>
-                <?php if ($logo_base64): ?>
-                    <img src="<?= $logo_base64 ?>" alt="Logo" class="logo-img">
-                <?php else: ?>
-                    <div class="logo-fallback"><?= $fallback_letter ?></div>
-                <?php endif; ?>
+                <div class="school-code-splash"><?= htmlspecialchars((string) $school_code) ?></div>
             </div>
-            <div class="school-name"><?= htmlspecialchars($school_name) ?></div>
         </div>
         <div class="progress-bar" id="progressBar"></div>
 
