@@ -68,6 +68,9 @@ ob_start(); ?>
                         <th class="ps-4"><?= __('subject') ?></th>
                         <th><?= __('classes') ?></th>
                         <th><?= __('coefficient') ?></th>
+                        <?php if (App\Core\Session::get('user_role') === 'superadmin'): ?>
+                        <th><?= __('status') ?></th>
+                        <?php endif; ?>
                         <th><?= __('group') ?></th>
                         <?php if (in_array(App\Core\Session::get('user_role'), ['admin', 'superadmin'])): ?>
                         <th class="text-end pe-4"><?= __('actions') ?></th>
@@ -83,8 +86,10 @@ ob_start(); ?>
                             </td>
                         </tr>
                     <?php else: ?>
-                        <?php foreach ($subjects as $s): ?>
-                            <tr>
+                        <?php foreach ($subjects as $s): 
+                            $isActive = (int)($s['status'] ?? 1) === 1;
+                        ?>
+                            <tr class="<?= !$isActive ? 'opacity-50 grayscale bg-light' : '' ?>">
                                 <td class="ps-4">
                                     <div class="d-flex align-items-center gap-2">
                                         <div class="avatar-init bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center shadow-sm"
@@ -104,6 +109,19 @@ ob_start(); ?>
                                         <?= __('coef') ?>: <?= (int) $s['coefficient'] ?>
                                     </span>
                                 </td>
+                                <?php if (App\Core\Session::get('user_role') === 'superadmin'): ?>
+                                <td>
+                                    <?php if ($isActive): ?>
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-2 py-1" style="font-size: 0.7rem;">
+                                            <i class="bi bi-check-circle-fill me-1"></i> <?= __('active') ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill px-2 py-1" style="font-size: 0.7rem;">
+                                            <i class="bi bi-x-circle-fill me-1"></i> <?= __('inactive') ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </td>
+                                <?php endif; ?>
                                 <td>
                                     <span class="badge bg-success bg-opacity-10 text-success fw-bold px-3 py-1 rounded-3">
                                         <?= htmlspecialchars($s['groupe'] ?? 'Groupe 1') ?>
@@ -112,6 +130,14 @@ ob_start(); ?>
                                 <?php if (in_array(App\Core\Session::get('user_role'), ['admin', 'superadmin'])): ?>
                                 <td class="text-end pe-4">
                                     <div class="d-flex justify-content-end gap-1">
+                                        <?php if (App\Core\Session::get('user_role') === 'superadmin'): ?>
+                                        <a href="/subjects/toggleStatus?id=<?= $s['id'] ?>" 
+                                           class="btn btn-sm btn-action-modern btn-confirm-toggle <?= $isActive ? 'text-warning' : 'text-success' ?>" 
+                                           data-confirm="<?= $isActive ? __('deactivate_subject_confirm', ['name' => $s['nom']]) : __('activate_subject_confirm', ['name' => $s['nom']]) ?>"
+                                           title="<?= $isActive ? __('deactivate') : __('activate') ?>">
+                                            <i class="bi bi-power fs-5"></i>
+                                        </a>
+                                        <?php endif; ?>
                                         <a href="/subjects/edit?id=<?= $s['id'] ?>"
                                             class="btn btn-sm btn-action-modern text-primary" title="<?= __('edit') ?>">
                                             <i class="bi bi-pencil-square fs-5"></i>

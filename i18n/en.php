@@ -1,6 +1,10 @@
 <?php
 
 return [
+    'activate_subject_confirm' => 'Are you sure you want to activate the subject :name? It will become visible on all documents again.',
+    'deactivate_subject_confirm' => 'Are you sure you want to deactivate the subject :name? It will be hidden from bulletins and grade entry.',
+    'inactive_subjects' => 'Inactive Subjects',
+    'inactive_short' => 'Inactive',
     'login' => 'Login',
     'login_tagline' => 'Smart Education',
     'login_h1' => 'Manage School Life with Ease.',
@@ -369,6 +373,17 @@ return [
     'download_pdf' => 'Download PDF',
     'grades' => 'Marks',
     'departments' => 'Departments',
+    'add_department' => 'Add Department',
+    'edit_department' => 'Edit Department',
+    'department_name' => 'Department Name',
+    'department_code' => 'Department Code',
+    'department_status' => 'Department Status',
+    'activate_department' => 'Activate Department',
+    'deactivate_department' => 'Deactivate Department',
+    'department_details' => 'Department Details',
+    'no_department' => 'No department',
+    'department_classes' => 'Department classes',
+    'confirm_toggle_department' => 'Change status of this department?',
     'sequences' => 'Sequences',
     'terms' => 'Terms',
     'trimesters' => 'Trimesters',
@@ -1210,4 +1225,8 @@ return [
     'student_register' => 'Student Register',
     'withdrawn_students_list' => 'Complete list of students who have left the institution',
     'student_list_subtitle' => 'Filtered enrollment list',
+    'department' => 'Department',
+    'all_departments' => 'All Departments',
+    'choose_department_hint' => 'Choose Department',
+    'no_class_for_criteria' => 'No class found for these criteria',
 ];

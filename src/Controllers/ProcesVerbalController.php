@@ -289,7 +289,8 @@ class ProcesVerbalController extends BulletinController
         $sql = "SELECT g.student_id, g.subject_id, g.valeur
                 FROM grades g
                 JOIN students st ON st.id = g.student_id
-                WHERE st.class_id = ? AND g.periode = ? AND g.academic_year_id = ? AND st.is_withdrawn = 0";
+                JOIN subjects s ON s.id = g.subject_id
+                WHERE st.class_id = ? AND g.periode = ? AND g.academic_year_id = ? AND st.is_withdrawn = 0 AND s.status = 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$classeId, $sequenceLabel, $anneeId]);
 
@@ -323,7 +324,8 @@ class ProcesVerbalController extends BulletinController
         $sql = "SELECT g.student_id, g.subject_id, g.valeur
                 FROM grades g
                 JOIN students st ON st.id = g.student_id
-                WHERE st.class_id = ? AND g.periode IN ($placeholders) AND g.academic_year_id = ? AND st.is_withdrawn = 0";
+                JOIN subjects s ON s.id = g.subject_id
+                WHERE st.class_id = ? AND g.periode IN ($placeholders) AND g.academic_year_id = ? AND st.is_withdrawn = 0 AND s.status = 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
 
@@ -375,7 +377,8 @@ class ProcesVerbalController extends BulletinController
         $sql = "SELECT g.student_id, g.subject_id, g.valeur, g.periode
                 FROM grades g
                 JOIN students st ON st.id = g.student_id
-                WHERE st.class_id = ? AND g.periode IN ($placeholders) AND g.academic_year_id = ? AND st.is_withdrawn = 0";
+                JOIN subjects s ON s.id = g.subject_id
+                WHERE st.class_id = ? AND g.periode IN ($placeholders) AND g.academic_year_id = ? AND st.is_withdrawn = 0 AND s.status = 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
 

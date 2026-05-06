@@ -1,6 +1,10 @@
 <?php
 
 return [
+    'activate_subject_confirm' => 'Voulez-vous vraiment activer la matière :name ? Elle redeviendra visible sur tous les documents.',
+    'deactivate_subject_confirm' => 'Voulez-vous vraiment désactiver la matière :name ? Elle sera masquée des bulletins et de la saisie des notes.',
+    'inactive_subjects' => 'Matières Inactives',
+    'inactive_short' => 'Inactives',
     // ── Général ────────────────────────────────────────────────────────
     'login' => 'Connexion',
     'login_tagline' => 'Pilotage Scolaire',
@@ -273,6 +277,17 @@ return [
     'subjects' => 'Matières',
     'grades' => 'Notes',
     'departments' => 'Départements',
+    'add_department' => 'Ajouter un Département',
+    'edit_department' => 'Modifier le Département',
+    'department_name' => 'Nom du Département',
+    'department_code' => 'Code Département',
+    'department_status' => 'Statut du Département',
+    'activate_department' => 'Activer le Département',
+    'deactivate_department' => 'Désactiver le Département',
+    'department_details' => 'Détails du Département',
+    'no_department' => 'Aucun département',
+    'department_classes' => 'Classes du département',
+    'confirm_toggle_department' => 'Changer le statut de ce département ?',
     'sequences' => 'Séquences',
     'student_name'=>'Nom(s) et prenom(s)',
     'pv_class_avg_per_subject' => 'MOYENNE DE CLASSE PAR MATIÈRE',
@@ -1265,4 +1280,8 @@ return [
     'student_register' => 'Registre des Élèves',
     'withdrawn_students_list' => 'Liste complète des élèves ayant quitté l\'établissement',
     'student_list_subtitle' => 'Liste filtrée des effectifs',
+    'department' => 'Département',
+    'all_departments' => 'Tous les départements',
+    'choose_department_hint' => 'Choisir Département',
+    'no_class_for_criteria' => 'Aucune classe trouvée pour ces critères',
 ];

@@ -28,6 +28,7 @@ use App\Services\ActivityTracker;
 use App\Controllers\FicheNotesController;
 use App\Controllers\DocumentationController;
 use App\Controllers\HonorRollController;
+use App\Controllers\DepartmentController;
 
 
 // 0. Applique les mesures de sécurité globales
@@ -192,6 +193,26 @@ elseif (strpos($path, '/cycles') === 0) {
     elseif ($path === '/sections/update' && $method === 'POST')
         $c->update($_GET['id'] ?? 0);
     elseif ($path === '/sections/delete')
+        $c->delete($_GET['id'] ?? 0);
+} elseif (strpos($path, '/departments') === 0) {
+    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+        header('Location: /');
+        exit;
+    }
+    $c = new DepartmentController();
+    if ($path === '/departments')
+        $c->index();
+    elseif ($path === '/departments/create')
+        $c->create();
+    elseif ($path === '/departments/store' && $method === 'POST')
+        $c->store();
+    elseif ($path === '/departments/edit')
+        $c->edit($_GET['id'] ?? 0);
+    elseif ($path === '/departments/update' && $method === 'POST')
+        $c->update($_GET['id'] ?? 0);
+    elseif ($path === '/departments/toggle')
+        $c->toggleStatus($_GET['id'] ?? 0);
+    elseif ($path === '/departments/delete')
         $c->delete($_GET['id'] ?? 0);
 } elseif (strpos($path, '/classes') === 0) {
     if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
@@ -402,6 +423,8 @@ elseif (strpos($path, '/subjects') === 0) {
         $c->update($_GET['id'] ?? 0);
     elseif ($path === '/subjects/delete')
         $c->delete($_GET['id'] ?? 0);
+    elseif ($path === '/subjects/toggleStatus')
+        $c->toggleStatus($_GET['id'] ?? 0);
 }
 
 // ====== ROUTES: ANNEES ACADEMIQUES ======

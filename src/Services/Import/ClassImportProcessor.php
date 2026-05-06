@@ -13,6 +13,7 @@ class ClassImportProcessor
     private int $successCount = 0;
     private array $cyclesByName = [];
     private array $sectionsByName = [];
+    private array $departmentsByName = [];
 
     public function __construct(PDO $db)
     {
@@ -70,7 +71,7 @@ class ClassImportProcessor
 
     private function rowHasData(array $row): bool
     {
-        foreach (['A', 'B', 'C'] as $col) {
+        foreach (['A', 'B', 'C', 'D'] as $col) {
             if (trim((string) ($row[$col] ?? '')) !== '') {
                 return true;
             }
@@ -91,6 +92,7 @@ class ClassImportProcessor
         $className = trim((string) ($row['A'] ?? ''));
         $cycleName = trim((string) ($row['B'] ?? ''));
         $sectionName = trim((string) ($row['C'] ?? ''));
+        $deptName = trim((string) ($row['D'] ?? ''));
 
         if ($className === '') {
             $this->logError($line, 'Le nom de classe est obligatoire.');
@@ -106,6 +108,11 @@ class ClassImportProcessor
             return;
         }
 
+        $deptId = $this->resolveDepartmentId($deptName, $line);
+        if ($deptName !== '' && $deptId === false) {
+            return;
+        }
+
         try {
             $stmt = $this->db->prepare("SELECT id FROM classes WHERE LOWER(TRIM(nom)) = LOWER(TRIM(?)) LIMIT 1");
             $stmt->execute([$className]);
@@ -114,8 +121,8 @@ class ClassImportProcessor
                 return;
             }
 
-            $ins = $this->db->prepare("INSERT INTO classes (nom, cycle_id, section_id) VALUES (?, ?, ?)");
-            $ins->execute([$className, $cycleId ?: null, $sectionId ?: null]);
+            $ins = $this->db->prepare("INSERT INTO classes (nom, cycle_id, section_id, department_id) VALUES (?, ?, ?, ?)");
+            $ins->execute([$className, $cycleId ?: null, $sectionId ?: null, $deptId ?: null]);
             $this->successCount++;
         } catch (\Throwable $e) {
             $this->logError($line, 'Erreur base de donnees : ' . $e->getMessage());
@@ -148,6 +155,19 @@ class ClassImportProcessor
         return (int) $this->sectionsByName[$key];
     }
 
+    private function resolveDepartmentId(string $name, int $line)
+    {
+        if ($name === '') {
+            return null;
+        }
+        $key = mb_strtolower($name);
+        if (!isset($this->departmentsByName[$key])) {
+            $this->logError($line, "Departement introuvable : {$name}");
+            return false;
+        }
+        return (int) $this->departmentsByName[$key];
+    }
+
     private function warmupLookups(): void
     {
         $cycles = $this->db->query("SELECT id, nom FROM cycles")->fetchAll(PDO::FETCH_ASSOC);
@@ -158,6 +178,11 @@ class ClassImportProcessor
         $sections = $this->db->query("SELECT id, nom FROM sections")->fetchAll(PDO::FETCH_ASSOC);
         foreach ($sections as $row) {
             $this->sectionsByName[mb_strtolower((string) $row['nom'])] = (int) $row['id'];
+        }
+
+        $departments = $this->db->query("SELECT id, nom FROM departments")->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($departments as $row) {
+            $this->departmentsByName[mb_strtolower((string) $row['nom'])] = (int) $row['id'];
         }
     }
 

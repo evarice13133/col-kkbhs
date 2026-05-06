@@ -65,6 +65,14 @@ ob_start(); ?>
                         <?php endforeach; ?>
                     </select>
 
+                    <!-- Département -->
+                    <select name="department_id" class="form-select border-0 bg-white bg-opacity-10 shadow-none py-2 text-main rounded-pill px-3 flex-grow-1" style="min-width: 130px; max-width: 180px;">
+                        <option value=""><?= __('all_departments') ?? 'Tous les départements' ?></option>
+                        <?php foreach ($departments as $dept): ?>
+                            <option value="<?= $dept['id'] ?>" <?= (int) ($filters['department_id'] ?? 0) === (int) $dept['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $dept['nom']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+
                     <!-- Actions Filtre -->
                     <div class="d-flex gap-2 align-items-center ms-auto">
                         <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm text-nowrap"><?= __('filter') ?></button>
@@ -149,6 +157,12 @@ ob_start(); ?>
                                     <?php if ($c['section_nom']): ?>
                                         <div class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-10 extra-small px-2 py-1 rounded-pill fw-medium">
                                             <i class="bi bi-diagram-3-fill me-1"></i><?= htmlspecialchars((string) $c['section_nom']) ?>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <?php if (!empty($c['department_nom'])): ?>
+                                        <div class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-10 extra-small px-2 py-1 rounded-pill fw-medium">
+                                            <i class="bi bi-building me-1"></i><?= htmlspecialchars((string) $c['department_nom']) ?>
                                         </div>
                                     <?php endif; ?>
                                 </div>

@@ -180,7 +180,9 @@ class DashboardController
         // 1. Stats de base
         $stats_students = (int) $this->db->query("SELECT COUNT(*) FROM students WHERE is_withdrawn = 0")->fetchColumn();
         $stats_classes = (int) $this->db->query("SELECT COUNT(*) FROM classes")->fetchColumn();
-        $stats_subjects = (int) $this->db->query("SELECT COUNT(*) FROM subjects")->fetchColumn();
+        $stats_subjects = (int) $this->db->query("SELECT COUNT(*) FROM subjects WHERE status = 1")->fetchColumn();
+        $stats_subjects_inactive = (int) $this->db->query("SELECT COUNT(*) FROM subjects WHERE status = 0")->fetchColumn();
+        $inactive_subjects_list = $this->db->query("SELECT id, nom FROM subjects WHERE status = 0 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $stats_users = (int) $this->db->query("SELECT COUNT(*) FROM users")->fetchColumn();
         $stats_teachers_count = (int) $this->db->query("SELECT COUNT(*) FROM users WHERE role = 'enseignant'")->fetchColumn();
 
@@ -242,7 +244,7 @@ class DashboardController
             JOIN subjects s ON s.id = sc.subject_id
             JOIN classes c ON c.id = sc.class_id
             LEFT JOIN teacher_assignments ta ON ta.class_id = sc.class_id AND ta.subject_id = sc.subject_id
-            WHERE ta.user_id IS NULL
+            WHERE ta.user_id IS NULL AND s.status = 1
             ORDER BY c.nom ASC, s.nom ASC
         ")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -261,6 +263,8 @@ class DashboardController
             'stats_students' => $stats_students,
             'stats_classes' => $stats_classes,
             'stats_subjects' => $stats_subjects,
+            'stats_subjects_inactive' => $stats_subjects_inactive,
+            'inactive_subjects_list' => $inactive_subjects_list,
             'stats_users' => $stats_users,
             'stats_teachers' => $stats_teachers_count,
             'teachers_without_assignment' => $teachersWithoutAssignment,
@@ -429,8 +433,10 @@ class DashboardController
     private function getTeacherAssignments($teacherId)
     {
         $stmt = $this->db->prepare("SELECT ta.class_id, ta.subject_id, c.nom AS class_nom 
-                                    FROM teacher_assignments ta JOIN classes c ON c.id = ta.class_id
-                                    WHERE ta.user_id = ? ORDER BY c.nom ASC");
+                                    FROM teacher_assignments ta 
+                                    JOIN classes c ON c.id = ta.class_id
+                                    JOIN subjects s ON s.id = ta.subject_id
+                                    WHERE ta.user_id = ? AND s.status = 1 ORDER BY c.nom ASC");
         $stmt->execute([$teacherId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }

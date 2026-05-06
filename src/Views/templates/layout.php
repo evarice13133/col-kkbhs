@@ -33,6 +33,7 @@ $nav_items = [
     ['icon' => 'bi-check2-square', 'label' => __('evaluations'), 'url' => '/sequences', 'roles' => ['superadmin', 'admin']],
     ['icon' => 'bi-layers', 'label' => __('academic_cycles'), 'url' => '/cycles', 'roles' => ['superadmin']],
     ['icon' => 'bi-grid-3x3-gap', 'label' => __('academic_sections'), 'url' => '/sections', 'roles' => ['superadmin']],
+    ['icon' => 'bi-building', 'label' => __('departments'), 'url' => '/departments', 'roles' => ['superadmin', 'admin']],
     ['icon' => 'bi-door-open', 'label' => __('classes'), 'url' => '/classes', 'roles' => ['superadmin', 'admin']],
     ['icon' => 'bi-people', 'label' => __('students'), 'url' => '/students', 'roles' => ['superadmin', 'admin']],
     ['icon' => 'bi-person-badge', 'label' => __('teachers'), 'url' => '/teachers', 'roles' => ['superadmin', 'admin']],
