@@ -25,7 +25,6 @@ use App\Controllers\ProfileController;
 use App\Controllers\GradeController;
 use App\Controllers\DashboardController;
 use App\Services\ActivityTracker;
-use App\Controllers\FicheNotesController;
 use App\Controllers\DocumentationController;
 use App\Controllers\HonorRollController;
 use App\Controllers\DepartmentController;
@@ -360,28 +359,6 @@ elseif (strpos($path, '/proces-verbal') === 0) {
         $c->annuel();
 }
 
-// ====== ROUTES: FICHES DE NOTES ======
-elseif (strpos($path, '/fiches') === 0) {
-    if (!Session::isLogged()) {
-        header('Location: /login');
-        exit;
-    }
-    $c = new FicheNotesController();
-    if ($path === '/fiches')
-        $c->index();
-    elseif ($path === '/fiches/sequence')
-        $c->sequence();
-    elseif ($path === '/fiches/sequence/class')
-        $c->sequenceClass();
-    elseif ($path === '/fiches/trimestre')
-        $c->trimestre();
-    elseif ($path === '/fiches/trimestre/class')
-        $c->trimestreClass();
-    elseif ($path === '/fiches/annuel')
-        $c->annuel();
-    elseif ($path === '/fiches/annuel/class')
-        $c->annuelClass();
-}
 
 // ====== ROUTES: PROFIL UTILISATEUR ======
 elseif (strpos($path, '/profile') === 0) {
