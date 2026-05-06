@@ -32,8 +32,8 @@ class DepartmentController
      */
     public function index()
     {
-        // Seuls admin et superadmin peuvent voir la liste
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+        // Seul le superadmin peut voir la liste
+        if (Session::get('user_role') !== 'superadmin') {
             header("Location: /");
             exit;
         }

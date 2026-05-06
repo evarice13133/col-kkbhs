@@ -18,7 +18,7 @@ class SettingController
     public function __construct()
     {
         $this->db = Database::getInstance()->getConnection();
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'], true)) {
+        if (Session::get('user_role') !== 'superadmin') {
             header("Location: /");
             exit;
         }
