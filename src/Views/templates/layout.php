@@ -85,7 +85,44 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
             'success_title': "<?= addslashes((string) __('success_title')) ?>"
         };
     </script>
-    <title><?= $title ?? 'NotesMaster' ?> - <?= __('app_name') ?></title>
+    <title><?= (isset($title) ? $title . ' | ' : '') . __('app_name') ?> - <?= __('app_tagline') ?></title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="<?= isset($meta_description) ? h($meta_description) : __('meta_description_default') ?>">
+    <meta name="keywords" content="<?= isset($meta_keywords) ? h($meta_keywords) : __('meta_keywords_default') ?>">
+    <link rel="canonical" href="https://copobimat.camertech.com<?= parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?>">
+    <meta name="author" content="Copobimat">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://copobimat.camertech.com/">
+    <meta property="og:title" content="<?= (isset($title) ? $title . ' | ' : '') . __('app_name') ?>">
+    <meta property="og:description" content="<?= __('meta_description_default') ?>">
+    <meta property="og:image" content="https://copobimat.camertech.com/public/img/og-image.jpg">
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Copobimat",
+      "operatingSystem": "All",
+      "applicationCategory": "EducationalApplication",
+      "description": "<?= addslashes((string) __('app_description')) ?>",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "XAF"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Copobimat",
+        "url": "https://copobimat.camertech.com",
+        "logo": "https://copobimat.camertech.com/public/img/logo.png"
+      }
+    }
+    </script>
 
     <!-- Google Fonts: Inter & Outfit -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -443,8 +480,8 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
             <!-- Footer -->
             <footer class="footer mt-auto py-3 border-top bg-card shadow-sm">
                 <div class="container-fluid d-flex flex-wrap justify-content-between align-items-center gap-3">
-                    <span class="text-muted-theme small">&copy; <?= date('Y') ?> <strong>NotesMaster</strong>.
-                        <?= __('all_rights_reserved') ?></span>
+                    <span class="text-muted-theme small">&copy; <?= date('Y') ?> <strong><?= __('app_name') ?></strong>.
+                        <?= __('footer_made_with') ?></span>
                     <div class="d-flex gap-3">
                         <a href="#"
                             class="text-muted-theme text-decoration-none small hover-primary"><?= __('technical_support') ?></a>

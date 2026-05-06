@@ -29,7 +29,8 @@ if ($path === '/' && !\App\Core\Session::has('splash_done') && !isset($_GET['ski
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Chargement - <?= htmlspecialchars($school_name) ?></title>
+        <title>Copobimat - <?= htmlspecialchars($school_name) ?></title>
+        <meta name="description" content="<?= __('meta_description_default') ?>">
         <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800&display=swap" rel="stylesheet">
         <style>
             :root {

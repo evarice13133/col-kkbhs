@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Allow: /login
+Allow: /register-teacher
+
+# Sitemaps
+Sitemap: https://copobimat.camertech.com/sitemap.xml

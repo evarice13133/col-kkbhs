@@ -23,7 +23,8 @@ $isEn = __('lang') === 'en';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= __('login') ?> - <?= htmlspecialchars((string) $brandSettings['school_code']) ?></title>
+    <title><?= __('login_title_seo') ?> | <?= htmlspecialchars((string) $brandSettings['school_code']) ?></title>
+    <meta name="description" content="<?= __('meta_description_default') ?>">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
