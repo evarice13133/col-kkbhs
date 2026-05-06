@@ -57,18 +57,43 @@ class SubjectController
     {
         [$subjects] = $this->fetchSubjectsFromFilters();
 
-        $exportTitle = "Registre des matieres";
-        $exportSubtitle = "Liste filtree des matieres";
-        $exportColumns = ['Matiere', 'Coefficient', 'Classes'];
-        $exportRows = array_map(function ($subject) {
-            return [
-                $subject['nom'],
-                $subject['coefficient'],
-                $subject['classes_list'] ?: '-',
-            ];
-        }, $subjects);
+        $settingsStore = new \App\Services\SettingsStore($this->db);
+        $logoManager = \App\Core\LogoManager::getInstance($this->db);
+        
+        $school_name = $settingsStore->get('school_name', 'NotesMaster');
+        $logo_base64 = $logoManager->hasLogo() ? $logoManager->getLogoBase64() : '';
+        $title = "Registre des matières";
 
-        include __DIR__ . '/../Views/templates/export.php';
+        ob_start();
+        include __DIR__ . '/../Views/subjects/templates/export_pdf_subject.php';
+        $html = ob_get_clean();
+
+        $this->streamPdf($html, "Registre_Matieres_" . date('Y-m-d') . ".pdf");
+    }
+
+    protected function streamPdf(string $html, string $filename)
+    {
+        // Nettoyage complet des tampons de sortie
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+
+        $options = new \Dompdf\Options();
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isRemoteEnabled', true);
+        $options->set('defaultFont', 'Helvetica');
+
+        $dompdf = new \Dompdf\Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+
+        try {
+            $dompdf->render();
+            $dompdf->stream($filename, ["Attachment" => true]);
+        } catch (\Throwable $e) {
+            echo "Erreur lors de la génération du PDF : " . $e->getMessage();
+        }
+        exit;
     }
 
     public function create()
