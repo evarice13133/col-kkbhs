@@ -57,23 +57,65 @@ class StudentController
     public function export()
     {
         // Pas de pagination pour l'export
-        [$students] = $this->fetchStudentsFromFilters();
+        [$students, $filters] = $this->fetchStudentsFromFilters();
 
-        $exportTitle = ($filters['withdrawn'] ?? 0) ? __('withdrawn_students_register') : __('student_register');
-        $exportSubtitle = ($filters['withdrawn'] ?? 0) ? __('withdrawn_students_list') : __('student_list_subtitle');
-        $exportColumns = ['Nom', 'Prenom', 'Matricule', 'Cycle', 'Section', 'Classe'];
-        $exportRows = array_map(function ($student) {
-            return [
-                function_exists('mb_strtoupper') ? mb_strtoupper((string) $student['nom'], 'UTF-8') : strtoupper((string) $student['nom']),
-                $student['prenom'],
-                $student['email'] ?: '-',
-                $student['cycle_nom'] ?: '-',
-                $student['section_nom'] ?: '-',
-                $student['classe_nom'] ?: '-',
-            ];
-        }, $students);
+        $settingsStore = new \App\Services\SettingsStore($this->db);
+        $logoManager   = \App\Core\LogoManager::getInstance($this->db);
 
-        include __DIR__ . '/../Views/templates/export.php';
+        $school_name = $settingsStore->get('school_name', 'NotesMaster');
+        $logo_base64 = $logoManager->hasLogo() ? $logoManager->getLogoBase64() : '';
+
+        // Année académique active
+        $ayRow = $this->db->query("SELECT nom FROM academic_years WHERE is_active = 1 LIMIT 1")->fetch(\PDO::FETCH_ASSOC);
+        $academic_year_nom = $ayRow['nom'] ?? date('Y');
+
+        // Contexte des filtres actifs pour le sous-titre
+        $filter_class   = '';
+        $filter_section = '';
+        if (!empty($filters['class_id'])) {
+            $stmt = $this->db->prepare("SELECT nom FROM classes WHERE id = ?");
+            $stmt->execute([$filters['class_id']]);
+            $filter_class = (string) ($stmt->fetchColumn() ?: '');
+        }
+        if (!empty($filters['section_id'])) {
+            $stmt = $this->db->prepare("SELECT nom FROM sections WHERE id = ?");
+            $stmt->execute([$filters['section_id']]);
+            $filter_section = (string) ($stmt->fetchColumn() ?: '');
+        }
+
+        $isWithdrawn = (int) ($filters['withdrawn'] ?? 0);
+        $title = $isWithdrawn ? __('withdrawn_students_register') : __('student_register');
+
+        ob_start();
+        include __DIR__ . '/../Views/students/templates/export_pdf_students.php';
+        $html = ob_get_clean();
+
+        $filename = ($isWithdrawn ? 'Liste_Retires_' : 'Registre_Eleves_') . date('Y-m-d') . '.pdf';
+        $this->streamPdf($html, $filename);
+    }
+
+    protected function streamPdf(string $html, string $filename): void
+    {
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+
+        $options = new \Dompdf\Options();
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isRemoteEnabled', true);
+        $options->set('defaultFont', 'Helvetica');
+
+        $dompdf = new \Dompdf\Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+
+        try {
+            $dompdf->render();
+            $dompdf->stream($filename, ['Attachment' => true]);
+        } catch (\Throwable $e) {
+            echo 'Erreur lors de la génération du PDF : ' . $e->getMessage();
+        }
+        exit;
     }
 
     public function create()

@@ -1,6 +1,13 @@
 <?php
 
 return [
+    // ── Student PDF Export ──────────────────────────────────────────────
+    'generated_on'   => 'Generated on',
+    'matricule'      => 'Student ID',
+    'last_name'      => 'Last Name',
+    'first_name'     => 'First Name',
+    'total'          => 'Total',
+    // ── Subjects ───────────────────────────────────────────────────────
     'activate_subject_confirm' => 'Are you sure you want to activate the subject :name? It will become visible on all documents again.',
     'deactivate_subject_confirm' => 'Are you sure you want to deactivate the subject :name? It will be hidden from bulletins and grade entry.',
     'inactive_subjects' => 'Inactive Subjects',
@@ -490,6 +497,7 @@ return [
     'save_immediate_hint' => 'Saving is immediate.',
     'affiliation_desc' => 'Teacher departments.',
     'teacher_label' => 'Teacher',
+    'teacher_register' => 'Teachers Register',
     'affected_classes' => 'Assigned classes',
     'associated_classes' => 'Associated classes',
     'add_section' => 'Add section',

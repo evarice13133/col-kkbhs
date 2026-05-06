@@ -1,6 +1,13 @@
 <?php
 
 return [
+    // ── Export PDF Élèves ───────────────────────────────────────────────
+    'generated_on'   => 'Généré le',
+    'matricule'      => 'Matricule',
+    'last_name'      => 'Nom',
+    'first_name'     => 'Prénom',
+    'total'          => 'Total',
+    // ── Matières ───────────────────────────────────────────────────────
     'activate_subject_confirm' => 'Voulez-vous vraiment activer la matière :name ? Elle redeviendra visible sur tous les documents.',
     'deactivate_subject_confirm' => 'Voulez-vous vraiment désactiver la matière :name ? Elle sera masquée des bulletins et de la saisie des notes.',
     'inactive_subjects' => 'Matières Inactives',
@@ -443,6 +450,7 @@ return [
     'teacher_classic' => 'Enseignant Classique',
     'teacher_assignments_manage_later' => 'À gérer plus tard.',
     'employee_identity' => 'Identité de l\'employé',
+    'teacher_register' => 'Registre des Enseignants',
 
     // ── UI Affectations Enseignants ────────────────────────────────────
     'pedagogical_assignments' => 'Affectations Pédagogiques',
