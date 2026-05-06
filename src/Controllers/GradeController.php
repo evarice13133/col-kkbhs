@@ -105,6 +105,7 @@ class GradeController
     public function export()
     {
         $exportMode = trim((string) ($_GET['mode'] ?? 'list'));
+        $format = trim((string) ($_GET['format'] ?? 'html'));
 
         // Mode : Liste des notes déjà saisies
         if ($exportMode !== 'report') {
@@ -172,7 +173,47 @@ class GradeController
         $students = $this->getStudentsForClass($classId);
         $teacherName = trim((string) Session::get('user_prenom') . ' ' . (string) Session::get('user_nom'));
 
+        if ($format === 'pdf') {
+            $settingsStore = new \App\Services\SettingsStore($this->db);
+            $logoManager = \App\Core\LogoManager::getInstance($this->db);
+            
+            $school_name = $settingsStore->get('school_name', 'NotesMaster');
+            $logo_base64 = $logoManager->hasLogo() ? $logoManager->getLogoBase64() : '';
+            $title = "Fiche de collecte des notes";
+
+            ob_start();
+            include __DIR__ . '/../Views/grades/templates/export_pdf_file_report.php';
+            $html = ob_get_clean();
+
+            $this->streamPdf($html, "Fiche_Collecte_" . ($classInfo['nom'] ?? 'Classe') . "_" . date('Y-m-d') . ".pdf");
+            return;
+        }
+
         include __DIR__ . '/../Views/grades/export_report.php';
+    }
+
+    protected function streamPdf(string $html, string $filename)
+    {
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+
+        $options = new \Dompdf\Options();
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isRemoteEnabled', true);
+        $options->set('defaultFont', 'Helvetica');
+
+        $dompdf = new \Dompdf\Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+
+        try {
+            $dompdf->render();
+            $dompdf->stream($filename, ["Attachment" => true]);
+        } catch (\Throwable $e) {
+            echo "Erreur lors de la génération du PDF : " . $e->getMessage();
+        }
+        exit;
     }
 
     /**

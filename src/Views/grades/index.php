@@ -8,6 +8,7 @@ ob_start();
 
 $listExportUrl = '/notes/export?' . http_build_query(array_merge($filters, ['mode' => 'list']));
 $reportExportUrl = '/notes/export?' . http_build_query(array_merge($filters, ['mode' => 'report']));
+$reportPdfUrl = '/notes/export?' . http_build_query(array_merge($filters, ['mode' => 'report', 'format' => 'pdf']));
 $canExportList = (int) $filters['class_id'] > 0 && $classHasFilledGrades;
 $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'] > 0;
 ?>
@@ -82,6 +83,9 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
                             <?php if ($canExportReport): ?>
                                 <li><a class="dropdown-item dropdown-item-modern" href="<?= htmlspecialchars($reportExportUrl) ?>">
                                     <i class="bi bi-printer-fill text-primary"></i> <?= __('grade_report_sheet') ?>
+                                </a></li>
+                                <li><a class="dropdown-item dropdown-item-modern" href="<?= htmlspecialchars($reportPdfUrl) ?>">
+                                    <i class="bi bi-file-earmark-pdf-fill text-danger"></i> <?= __('grade_report_pdf') ?>
                                 </a></li>
                             <?php endif; ?>
                             <?php if (!$canExportList && !$canExportReport): ?>

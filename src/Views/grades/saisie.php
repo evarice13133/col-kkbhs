@@ -175,6 +175,14 @@ $appreciationLabels = [
                     <?php endforeach; ?>
                 </select>
             </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <a href="/notes/export?mode=report&format=pdf&class_id=<?= $class_id ?>&subject_id=<?= $subject_id ?>" 
+                   class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-bold d-flex align-items-center gap-2 shadow-sm border-2">
+                    <i class="bi bi-file-earmark-pdf-fill"></i>
+                    <span class="d-none d-md-inline"><?= __('grade_report_pdf') ?></span>
+                </a>
+            </div>
         </div>
 
         <div class="registry-card shadow-sm overflow-hidden">

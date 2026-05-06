@@ -47,7 +47,6 @@ $nav_items = [
     ['icon' => 'bi-award', 'label' => __('honor_roll_title'), 'url' => '/honors', 'roles' => ['superadmin', 'admin']],
     ['icon' => 'bi-shield-check', 'label' => __('discipline_management'), 'url' => '/bulletins/discipline', 'roles' => ['superadmin', 'admin']],
     ['icon' => 'bi-file-earmark-text', 'label' => __('proces_verbaux'), 'url' => '/proces-verbal', 'roles' => ['superadmin', 'admin']],
-    ['icon' => 'bi-journal-check', 'label' => __('fiches_recap'), 'url' => '/fiches', 'roles' => ['superadmin', 'admin']],
 
     // Teacher specifics (without section header for cleaner look)
     ['icon' => 'bi-people', 'label' => __('my_students'), 'url' => '/students', 'roles' => ['enseignant']],
@@ -149,6 +148,9 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         }
 
         .btn-logout:hover {
+            background: #fef2f2;
+            color: #b91c1c;
+        }
             background: #fef2f2;
             color: #b91c1c;
         }
