@@ -77,25 +77,46 @@ class TeacherController
     {
         [$teachers] = $this->fetchTeachersFromFilters();
 
-        $exportTitle = "Registre des enseignants";
-        $exportSubtitle = "Liste filtrée du corps enseignant";
-        $exportColumns = [
-            __('name'),
-            __('first_name'),
-            __('classes_assigned'),
-            __('subjects_count')
-        ];
+        $settingsStore = new \App\Services\SettingsStore($this->db);
+        $logoManager   = \App\Core\LogoManager::getInstance($this->db);
 
-        $exportRows = array_map(function ($teacher) {
-            return [
-                $teacher['nom'],
-                $teacher['prenom'],
-                $teacher['classes_list'] ?: '-',
-                $teacher['subjects_count'] ?: 0,
-            ];
-        }, $teachers);
+        $school_name = $settingsStore->get('school_name', 'NotesMaster');
+        $logo_base64 = $logoManager->hasLogo() ? $logoManager->getLogoBase64() : '';
 
-        include __DIR__ . '/../Views/templates/export.php';
+        $ayRow = $this->db->query("SELECT nom FROM academic_years WHERE is_active = 1 LIMIT 1")->fetch(\PDO::FETCH_ASSOC);
+        $academic_year_nom = $ayRow['nom'] ?? date('Y');
+
+        $title = __("teacher_register") ?: "Registre des Enseignants";
+
+        ob_start();
+        include __DIR__ . '/../Views/teachers/templates/export_pdf_teachers.php';
+        $html = ob_get_clean();
+
+        $this->streamPdf($html, 'Registre_Enseignants_' . date('Y-m-d') . '.pdf');
+    }
+
+    protected function streamPdf(string $html, string $filename): void
+    {
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+
+        $options = new \Dompdf\Options();
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isRemoteEnabled', true);
+        $options->set('defaultFont', 'Helvetica');
+
+        $dompdf = new \Dompdf\Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+
+        try {
+            $dompdf->render();
+            $dompdf->stream($filename, ['Attachment' => true]);
+        } catch (\Throwable $e) {
+            echo 'Erreur lors de la génération du PDF : ' . $e->getMessage();
+        }
+        exit;
     }
 
     /**
@@ -476,7 +497,11 @@ class TeacherController
 
         // 2. Récupérer les données avec limite
         $sql = "SELECT u.*,
-                (SELECT GROUP_CONCAT(DISTINCT c.nom SEPARATOR ', ')
+                (SELECT GROUP_CONCAT(DISTINCT s.nom ORDER BY s.nom SEPARATOR ', ')
+                    FROM teacher_assignments ta
+                    JOIN subjects s ON ta.subject_id = s.id
+                    WHERE ta.user_id = u.id) as subjects_list,
+                (SELECT GROUP_CONCAT(DISTINCT c.nom ORDER BY c.nom SEPARATOR ', ')
                     FROM teacher_assignments ta
                     JOIN classes c ON ta.class_id = c.id
                     WHERE ta.user_id = u.id) as classes_list,
