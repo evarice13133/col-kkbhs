@@ -91,6 +91,7 @@ class SubjectImportProcessor
     {
         $subjectName = trim((string) ($row['A'] ?? ''));
         $coefficientRaw = trim((string) ($row['B'] ?? ''));
+        $groupRaw = trim((string) ($row['C'] ?? 'Groupe 1'));
         $classNames = $this->extractClassNames($row);
 
         if ($subjectName === '' || empty($classNames)) {
@@ -101,6 +102,12 @@ class SubjectImportProcessor
         $coefficient = (int) ($coefficientRaw !== '' ? $coefficientRaw : 1);
         if ($coefficient < 1) {
             $coefficient = 1;
+        }
+
+        // Nettoyage du groupe (ex: "Groupe 1 - ..." -> "Groupe 1")
+        $groupe = 'Groupe 1';
+        if (preg_match('/(Groupe\s*\d+)/i', $groupRaw, $matches)) {
+            $groupe = ucwords(strtolower($matches[1]));
         }
 
         $classIds = $this->resolveClassIds($classNames, $line);
@@ -115,8 +122,8 @@ class SubjectImportProcessor
         }
 
         try {
-            $stmt = $this->db->prepare("INSERT INTO subjects (nom, coefficient) VALUES (?, ?)");
-            $stmt->execute([$subjectName, $coefficient]);
+            $stmt = $this->db->prepare("INSERT INTO subjects (nom, coefficient, groupe, status) VALUES (?, ?, ?, 1)");
+            $stmt->execute([$subjectName, $coefficient, $groupe]);
             $subjectId = (int) $this->db->lastInsertId();
 
             $ins = $this->db->prepare("INSERT INTO subject_classes (subject_id, class_id) VALUES (?, ?)");
@@ -156,19 +163,15 @@ class SubjectImportProcessor
     {
         $names = [];
 
-        // Nouveau format template : plusieurs colonnes de classes.
-        foreach (['C', 'D', 'E', 'F', 'G'] as $col) {
+        // Nouveau format template : plusieurs colonnes de classes (D à M).
+        foreach (['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'] as $col) {
             $value = trim((string) ($row[$col] ?? ''));
             if ($value !== '') {
                 $names[] = $value;
             }
         }
 
-        // Compatibilité ancien format : une seule colonne C avec valeurs séparées par virgule.
-        if (count($names) <= 1 && isset($row['C']) && str_contains((string) $row['C'], ',')) {
-            $split = array_map('trim', explode(',', (string) $row['C']));
-            $names = array_values(array_filter($split, static fn($v) => $v !== ''));
-        }
+        // Pas de compatibilité virgule pour C car c'est maintenant le Groupe.
 
         return array_values(array_unique($names));
     }

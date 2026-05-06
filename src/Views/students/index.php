@@ -73,6 +73,7 @@ ob_start(); ?>
                     <th><?= __('student') ?></th>
                     <th><?= __('class') ?></th>
                     <th><?= __('section') ?></th>
+                    <th><?= __('department') ?></th>
                     <?php if (in_array(App\Core\Session::get('user_role'), ['superadmin', 'admin'])): ?>
                     <th class="text-end"><?= __('actions') ?></th>
                     <?php endif; ?>
@@ -109,6 +110,12 @@ ob_start(); ?>
                         <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2 py-1 rounded-pill fw-medium"
                             style="font-size: 0.7rem;">
                             <i class="bi bi-layers-half me-1"></i><?= htmlspecialchars((string) ($s['section_nom'] ?: '-')) ?>
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-1 rounded-pill fw-medium"
+                            style="font-size: 0.7rem;">
+                            <i class="bi bi-building me-1"></i><?= htmlspecialchars((string) ($s['department_nom'] ?: '-')) ?>
                         </span>
                     </td>
                     <?php if (in_array(App\Core\Session::get('user_role'), ['superadmin', 'admin'])): ?>

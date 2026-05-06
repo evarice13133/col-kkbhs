@@ -82,9 +82,10 @@ class StudentController
             header("Location: /students");
             exit;
         }
-        $classes = $this->db->query("SELECT id, nom, cycle_id, section_id FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $departments = $this->db->query("SELECT id, nom FROM departments WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $formData = ['is_redoublant' => '0', 'sexe' => ''];
         include __DIR__ . '/../Views/students/create.php';
     }
@@ -226,6 +227,7 @@ class StudentController
             $class_id = !empty($_POST['class_id']) ? (int) $_POST['class_id'] : null;
             $cycle_id = !empty($_POST['cycle_id']) ? (int) $_POST['cycle_id'] : null;
             $section_id = !empty($_POST['section_id']) ? (int) $_POST['section_id'] : null;
+            $department_id = !empty($_POST['department_id']) ? (int) $_POST['department_id'] : null;
             $sexe = $this->normalizeSexe($_POST['sexe'] ?? '');
             $date_naissance = $this->normalizeOptionalDate($_POST['date_naissance'] ?? null);
             $lieu_naissance = $this->normalizeOptionalText($_POST['lieu_naissance'] ?? '');
@@ -233,9 +235,10 @@ class StudentController
 
             if (empty($nom) || empty($prenom)) {
                 $error = \__('student_name_required');
-                $classes = $this->db->query("SELECT id, nom, cycle_id, section_id FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $departments = $this->db->query("SELECT id, nom FROM departments WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $formData = [
                     'nom' => $nom,
                     'prenom' => $prenom,
@@ -243,6 +246,7 @@ class StudentController
                     'class_id' => $class_id,
                     'cycle_id' => $cycle_id,
                     'section_id' => $section_id,
+                    'department_id' => $department_id,
                     'sexe' => $sexe,
                     'date_naissance' => $date_naissance,
                     'lieu_naissance' => $lieu_naissance,
@@ -273,7 +277,7 @@ class StudentController
             header("Location: /students");
             exit;
         }
-        $stmt = $this->db->prepare("SELECT * FROM students WHERE id = ?");
+        $stmt = $this->db->prepare("SELECT s.*, c.cycle_id, c.section_id, c.department_id FROM students s LEFT JOIN classes c ON s.class_id = c.id WHERE s.id = ?");
         $stmt->execute([$id]);
         $student = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$student) {
@@ -281,9 +285,10 @@ class StudentController
             exit;
         }
 
-        $classes = $this->db->query("SELECT id, nom, cycle_id, section_id FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $departments = $this->db->query("SELECT id, nom FROM departments WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         include __DIR__ . '/../Views/students/edit.php';
     }
 
@@ -303,6 +308,7 @@ class StudentController
             $class_id = !empty($_POST['class_id']) ? (int) $_POST['class_id'] : null;
             $cycle_id = !empty($_POST['cycle_id']) ? (int) $_POST['cycle_id'] : null;
             $section_id = !empty($_POST['section_id']) ? (int) $_POST['section_id'] : null;
+            $department_id = !empty($_POST['department_id']) ? (int) $_POST['department_id'] : null;
             $sexe = $this->normalizeSexe($_POST['sexe'] ?? '');
             $date_naissance = $this->normalizeOptionalDate($_POST['date_naissance'] ?? null);
             $lieu_naissance = $this->normalizeOptionalText($_POST['lieu_naissance'] ?? '');
@@ -318,14 +324,16 @@ class StudentController
                     'class_id' => $class_id,
                     'cycle_id' => $cycle_id,
                     'section_id' => $section_id,
+                    'department_id' => $department_id,
                     'sexe' => $sexe,
                     'date_naissance' => $date_naissance,
                     'lieu_naissance' => $lieu_naissance,
                     'is_redoublant' => $is_redoublant,
                 ];
-                $classes = $this->db->query("SELECT id, nom, cycle_id, section_id FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $departments = $this->db->query("SELECT id, nom FROM departments WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/students/edit.php';
                 return;
             }
@@ -413,7 +421,9 @@ class StudentController
 
         if ($search !== '') {
             $like = '%' . $search . '%';
-            $where .= " AND (s.nom LIKE ? OR s.prenom LIKE ? OR s.email LIKE ?)";
+            $where .= " AND (s.nom LIKE ? OR s.prenom LIKE ? OR s.email LIKE ? OR d.nom LIKE ? OR d.code LIKE ?)";
+            $params[] = $like;
+            $params[] = $like;
             $params[] = $like;
             $params[] = $like;
             $params[] = $like;
@@ -430,17 +440,20 @@ class StudentController
         }
 
         // --- 2. Calcul du total (sans pagination) ---
-        $countSql = "SELECT COUNT(*) FROM students s LEFT JOIN classes c ON s.class_id = c.id " . $where;
+        $countSql = "SELECT COUNT(*) FROM students s 
+                     LEFT JOIN classes c ON s.class_id = c.id 
+                     LEFT JOIN departments d ON c.department_id = d.id" . $where;
         $countStmt = $this->db->prepare($countSql);
         $countStmt->execute($params);
         $totalCount = (int) $countStmt->fetchColumn();
 
         // --- 3. Récupération des données avec pagination si demandée ---
-        $sql = "SELECT s.*, c.nom as classe_nom, cy.nom as cycle_nom, sec.nom as section_nom
+        $sql = "SELECT s.*, c.nom as classe_nom, cy.nom as cycle_nom, sec.nom as section_nom, d.nom as department_nom
                 FROM students s
                 LEFT JOIN classes c ON s.class_id = c.id
                 LEFT JOIN cycles cy ON c.cycle_id = cy.id
-                LEFT JOIN sections sec ON c.section_id = sec.id" . $where;
+                LEFT JOIN sections sec ON c.section_id = sec.id
+                LEFT JOIN departments d ON c.department_id = d.id" . $where;
 
         $sql .= " ORDER BY s.nom ASC, s.prenom ASC";
 

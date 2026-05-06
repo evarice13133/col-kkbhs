@@ -52,6 +52,15 @@ ob_start();
                             <?php endforeach; ?>
                         </select>
                     </div>
+                    <div class="col-md-12">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('department') ?></label>
+                        <select name="department_id" class="form-select premium-input">
+                            <option value=""><?= __('no_department') ?></option>
+                            <?php foreach ($departments as $dept): ?>
+                                <option value="<?= $dept['id'] ?>" <?= (($classe['department_id'] ?? null) == $dept['id']) ? 'selected' : '' ?>><?= h($dept['nom']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Action Footer -->

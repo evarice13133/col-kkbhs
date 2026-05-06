@@ -216,6 +216,24 @@ class SubjectController
         }
     }
 
+    public function toggleStatus($id)
+    {
+        if (Session::get('user_role') !== 'superadmin') {
+            Session::setFlash('error', __('access_denied_superadmin_only'));
+            header("Location: /subjects");
+            exit;
+        }
+
+        $stmt = $this->db->prepare("UPDATE subjects SET status = 1 - status WHERE id = ?");
+        if ($stmt->execute([$id])) {
+            Session::setFlash('success', __('status_updated_success'));
+        } else {
+            Session::setFlash('error', __('status_update_failed'));
+        }
+        header("Location: /subjects");
+        exit;
+    }
+
     public function delete($id)
     {
         if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
@@ -309,6 +327,10 @@ class SubjectController
             $countSql .= " AND EXISTS (SELECT 1 FROM subject_classes sc2 WHERE sc2.subject_id = s.id AND sc2.class_id = ?)";
             $countParams[] = $classId;
         }
+
+        if (Session::get('user_role') !== 'superadmin') {
+            $countSql .= " AND s.status = 1";
+        }
         $stmtCount = $this->db->prepare($countSql);
         $stmtCount->execute($countParams);
         $totalCount = (int) $stmtCount->fetchColumn();
@@ -334,6 +356,10 @@ class SubjectController
             $params[] = $classId;
         }
 
+        if (Session::get('user_role') !== 'superadmin') {
+            $sql .= " AND s.status = 1";
+        }
+
         $sql .= " GROUP BY s.id ORDER BY s.nom ASC";
 
         if ($limit !== null && $offset !== null) {
@@ -342,8 +368,9 @@ class SubjectController
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        return [$stmt->fetchAll(PDO::FETCH_ASSOC), ['q' => $search, 'class_id' => $classId], $totalCount];
+        return [$data, ['q' => $search, 'class_id' => $classId], $totalCount];
     }
 
     private function findDuplicateClassesForSubjectName(string $nom, array $classIds, ?int $excludeSubjectId = null): array

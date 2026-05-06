@@ -176,6 +176,7 @@ class TeacherController
             JOIN classes c ON sc.class_id = c.id
             LEFT JOIN teacher_assignments ta ON (s.id = ta.subject_id AND c.id = ta.class_id)
             LEFT JOIN users u ON ta.user_id = u.id
+            WHERE s.status = 1
             ORDER BY s.nom ASC, c.nom ASC
         ")->fetchAll(PDO::FETCH_ASSOC);
 

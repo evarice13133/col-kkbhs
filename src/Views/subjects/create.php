@@ -36,9 +36,9 @@ ob_start();
                         <label
                             class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('subject_group') ?></label>
                         <select name="groupe" class="form-select premium-input">
-                            <option value="Groupe 1">Groupe 1</option>
-                            <option value="Groupe 2">Groupe 2</option>
-                            <option value="Groupe 3">Groupe 3</option>
+                            <option value="Groupe 1" <?= ($groupe ?? '') === 'Groupe 1' ? 'selected' : '' ?>>Groupe 1 - Matières Littéraires</option>
+                            <option value="Groupe 2" <?= ($groupe ?? '') === 'Groupe 2' ? 'selected' : '' ?>>Groupe 2 - Matières Scientifiques</option>
+                            <option value="Groupe 3" <?= ($groupe ?? '') === 'Groupe 3' ? 'selected' : '' ?>>Groupe 3 - Développement Personnel</option>
                         </select>
                     </div>
                     <div class="col-md-4">

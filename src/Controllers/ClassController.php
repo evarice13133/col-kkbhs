@@ -55,6 +55,13 @@ class ClassController
         $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         
+        // Seuls les départements actifs sont visibles pour le filtrage usuel
+        $deptQuery = "SELECT id, nom FROM departments WHERE status = 1 ORDER BY nom ASC";
+        if (Session::get('user_role') === 'superadmin') {
+            $deptQuery = "SELECT id, nom FROM departments ORDER BY nom ASC";
+        }
+        $departments = $this->db->query($deptQuery)->fetchAll(PDO::FETCH_ASSOC);
+        
         include __DIR__ . '/../Views/classes/index.php';
     }
 
@@ -68,13 +75,14 @@ class ClassController
 
         $exportTitle = __('classes_cohorts');
         $exportSubtitle = "Registre officiel des structures pédagogiques";
-        $exportColumns = [__('class'), __('cycle'), __('section')];
+        $exportColumns = [__('class'), __('cycle'), __('section'), __('department')];
         
         $exportRows = array_map(function ($class) {
             return [
                 $class['nom'],
                 $class['cycle_nom'] ?: '-',
                 $class['section_nom'] ?: '-',
+                $class['department_nom'] ?: '-',
             ];
         }, $classes);
 
@@ -90,6 +98,10 @@ class ClassController
         $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         
+        // Pour la création, on ne propose que les départements actifs (sauf SuperAdmin)
+        $deptQuery = Session::get('user_role') === 'superadmin' ? "SELECT id, nom FROM departments ORDER BY nom ASC" : "SELECT id, nom FROM departments WHERE status = 1 ORDER BY nom ASC";
+        $departments = $this->db->query($deptQuery)->fetchAll(PDO::FETCH_ASSOC);
+        
         include __DIR__ . '/../Views/classes/create.php';
     }
 
@@ -102,20 +114,22 @@ class ClassController
             $nom = trim((string)($_POST['nom'] ?? ''));
             $cycle_id = !empty($_POST['cycle_id']) ? (int) $_POST['cycle_id'] : null;
             $section_id = !empty($_POST['section_id']) ? (int) $_POST['section_id'] : null;
+            $department_id = !empty($_POST['department_id']) ? (int) $_POST['department_id'] : null;
 
             // Le nom de la classe est l'identifiant minimal requis
             if ($nom === '') {
                 $error = __('required');
                 $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $departments = $this->db->query("SELECT id, nom FROM departments ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/classes/create.php';
                 return;
             }
 
             try {
                 // Insertion avec gestion des relations optionnelles
-                $stmt = $this->db->prepare("INSERT INTO classes (nom, cycle_id, section_id) VALUES (?, ?, ?)");
-                $stmt->execute([$nom, $cycle_id, $section_id]);
+                $stmt = $this->db->prepare("INSERT INTO classes (nom, cycle_id, section_id, department_id) VALUES (?, ?, ?, ?)");
+                $stmt->execute([$nom, $cycle_id, $section_id, $department_id]);
                 
                 Session::setFlash('success', __('created_success'));
                 header("Location: /classes");
@@ -125,6 +139,7 @@ class ClassController
                 $error = __('error_generic');
                 $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $departments = $this->db->query("SELECT id, nom FROM departments ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/classes/create.php';
             }
         }
@@ -146,6 +161,7 @@ class ClassController
 
         $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $departments = $this->db->query("SELECT id, nom FROM departments ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         
         include __DIR__ . '/../Views/classes/edit.php';
     }
@@ -159,28 +175,31 @@ class ClassController
             $nom = trim((string)($_POST['nom'] ?? ''));
             $cycle_id = !empty($_POST['cycle_id']) ? (int) $_POST['cycle_id'] : null;
             $section_id = !empty($_POST['section_id']) ? (int) $_POST['section_id'] : null;
+            $department_id = !empty($_POST['department_id']) ? (int) $_POST['department_id'] : null;
 
             if ($nom === '') {
                 $error = __('required');
-                $classe = ['id' => $id, 'nom' => $nom, 'cycle_id' => $cycle_id, 'section_id' => $section_id];
+                $classe = ['id' => $id, 'nom' => $nom, 'cycle_id' => $cycle_id, 'section_id' => $section_id, 'department_id' => $department_id];
                 $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $departments = $this->db->query("SELECT id, nom FROM departments ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/classes/edit.php';
                 return;
             }
 
             try {
-                $stmt = $this->db->prepare("UPDATE classes SET nom = ?, cycle_id = ?, section_id = ? WHERE id = ?");
-                $stmt->execute([$nom, $cycle_id, $section_id, (int)$id]);
+                $stmt = $this->db->prepare("UPDATE classes SET nom = ?, cycle_id = ?, section_id = ?, department_id = ? WHERE id = ?");
+                $stmt->execute([$nom, $cycle_id, $section_id, $department_id, (int)$id]);
                 
                 Session::setFlash('success', __('updated_success'));
                 header("Location: /classes");
                 exit;
             } catch (\PDOException $e) {
                 $error = __('error_generic');
-                $classe = ['id' => $id, 'nom' => $nom, 'cycle_id' => $cycle_id, 'section_id' => $section_id];
+                $classe = ['id' => $id, 'nom' => $nom, 'cycle_id' => $cycle_id, 'section_id' => $section_id, 'department_id' => $department_id];
                 $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $departments = $this->db->query("SELECT id, nom FROM departments ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/classes/edit.php';
             }
         }
@@ -334,6 +353,7 @@ class ClassController
         $search = trim((string)($_GET['q'] ?? ''));
         $cycleId = (int) ($_GET['cycle_id'] ?? 0);
         $sectionId = (int) ($_GET['section_id'] ?? 0);
+        $departmentId = (int) ($_GET['department_id'] ?? 0);
 
         // 1. Count total
         $countSql = "SELECT COUNT(*) FROM classes c WHERE 1=1";
@@ -350,18 +370,23 @@ class ClassController
             $countSql .= " AND c.section_id = ?";
             $countParams[] = $sectionId;
         }
+        if ($departmentId > 0) {
+            $countSql .= " AND c.department_id = ?";
+            $countParams[] = $departmentId;
+        }
         $stmtCount = $this->db->prepare($countSql);
         $stmtCount->execute($countParams);
         $totalCount = (int) $stmtCount->fetchColumn();
 
         // 2. Fetch data
-        // Jointures pour récupérer les noms des cycles, sections et du professeur principal
-        $sql = "SELECT c.id, c.nom, cy.nom as cycle_nom, s.nom as section_nom, 
+        // Jointures pour récupérer les noms des cycles, sections, départements et du professeur principal
+        $sql = "SELECT c.id, c.nom, cy.nom as cycle_nom, s.nom as section_nom, d.nom as department_nom,
                        u.nom as main_teacher_nom, u.prenom as main_teacher_prenom,
                        (SELECT COUNT(*) FROM students WHERE class_id = c.id AND is_withdrawn = 0) as student_count
                 FROM classes c
                 LEFT JOIN cycles cy ON c.cycle_id = cy.id
                 LEFT JOIN sections s ON c.section_id = s.id
+                LEFT JOIN departments d ON c.department_id = d.id
                 LEFT JOIN users u ON c.main_teacher_id = u.id
                 WHERE 1=1";
         $params = [];
@@ -381,6 +406,10 @@ class ClassController
             $sql .= " AND c.section_id = ?";
             $params[] = $sectionId;
         }
+        if ($departmentId > 0) {
+            $sql .= " AND c.department_id = ?";
+            $params[] = $departmentId;
+        }
 
         $sql .= " ORDER BY c.nom ASC";
 
@@ -391,6 +420,6 @@ class ClassController
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
 
-        return [$stmt->fetchAll(PDO::FETCH_ASSOC), ['q' => $search, 'cycle_id' => $cycleId, 'section_id' => $sectionId], $totalCount];
+        return [$stmt->fetchAll(PDO::FETCH_ASSOC), ['q' => $search, 'cycle_id' => $cycleId, 'section_id' => $sectionId, 'department_id' => $departmentId], $totalCount];
     }
 }

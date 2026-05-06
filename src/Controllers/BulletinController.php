@@ -1179,7 +1179,7 @@ class BulletinController
                                      LIMIT 1) as teacher_name
             FROM subject_classes sc
             JOIN subjects s ON s.id = sc.subject_id
-            WHERE sc.class_id = ?
+            WHERE sc.class_id = ? AND s.status = 1
             ORDER BY s.nom ASC");
         $stmt->execute([$classId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -1202,9 +1202,11 @@ class BulletinController
         $sql = "SELECT g.student_id, g.subject_id, g.periode, g.valeur, g.appreciation
             FROM grades g
             JOIN students st ON st.id = g.student_id
+            JOIN subjects sub ON sub.id = g.subject_id
             WHERE st.class_id = ?
               AND g.academic_year_id = ?
-              AND g.periode IN ($placeholders)";
+              AND g.periode IN ($placeholders)
+              AND sub.status = 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
 
@@ -1620,7 +1622,8 @@ class BulletinController
         $sql = "SELECT g.subject_id, g.student_id, g.valeur
                 FROM grades g
                 JOIN students st ON st.id = g.student_id
-                WHERE st.class_id = ? AND g.periode = ? AND g.academic_year_id = ? AND st.is_withdrawn = 0";
+                JOIN subjects s ON s.id = g.subject_id
+                WHERE st.class_id = ? AND g.periode = ? AND g.academic_year_id = ? AND st.is_withdrawn = 0 AND s.status = 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$classId, $sequenceLabel, $academicYearId]);
         $grades = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -1664,7 +1667,8 @@ class BulletinController
         $sql = "SELECT g.subject_id, g.student_id, g.valeur, g.periode
                 FROM grades g
                 JOIN students st ON st.id = g.student_id
-                WHERE st.class_id = ? AND g.periode IN ($placeholders) AND g.academic_year_id = ? AND st.is_withdrawn = 0";
+                JOIN subjects s ON s.id = g.subject_id
+                WHERE st.class_id = ? AND g.periode IN ($placeholders) AND g.academic_year_id = ? AND st.is_withdrawn = 0 AND s.status = 1";
         $params = array_merge([$classId], $sequenceLabels, [$academicYearId]);
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
@@ -1725,7 +1729,8 @@ class BulletinController
         $sql = "SELECT g.subject_id, g.student_id, g.valeur, g.periode
                 FROM grades g
                 JOIN students st ON st.id = g.student_id
-                WHERE st.class_id = ? AND g.periode IN ($placeholders) AND g.academic_year_id = ? AND st.is_withdrawn = 0";
+                JOIN subjects s ON s.id = g.subject_id
+                WHERE st.class_id = ? AND g.periode IN ($placeholders) AND g.academic_year_id = ? AND st.is_withdrawn = 0 AND s.status = 1";
         $params = array_merge([$classId], $sequenceLabels, [$academicYearId]);
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);

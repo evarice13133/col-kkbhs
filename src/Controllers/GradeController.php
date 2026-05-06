@@ -352,6 +352,7 @@ class GradeController
                                      JOIN classes c ON sc.class_id = c.id
                                      LEFT JOIN teacher_assignments ta ON sc.subject_id = ta.subject_id AND sc.class_id = ta.class_id
                                      LEFT JOIN users u ON ta.user_id = u.id
+                                     WHERE s.status = 1
                                      ORDER BY c.nom ASC, s.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         }
 
@@ -361,7 +362,7 @@ class GradeController
                                     JOIN subjects s ON ta.subject_id = s.id
                                     JOIN classes c ON ta.class_id = c.id
                                     JOIN users u ON ta.user_id = u.id
-                                    WHERE ta.user_id = ?
+                                    WHERE ta.user_id = ? AND s.status = 1
                                     ORDER BY c.nom ASC, s.nom ASC");
         $stmt->execute([$user_id]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -403,7 +404,7 @@ class GradeController
             $sql .= " AND sub.id = ?";
             $params[] = $subjectId;
         }
-        $sql .= " AND s.is_withdrawn = 0";
+        $sql .= " AND s.is_withdrawn = 0 AND sub.status = 1";
 
         $sql .= " ORDER BY g.updated_at DESC, c.nom ASC, sub.nom ASC";
         $stmt = $this->db->prepare($sql);

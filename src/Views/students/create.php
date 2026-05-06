@@ -3,6 +3,7 @@ $title = __('enroll_student');
 $formData = $formData ?? [];
 $selectedCycle = (string) ($formData['cycle_id'] ?? '');
 $selectedSection = (string) ($formData['section_id'] ?? '');
+$selectedDepartment = (string) ($formData['department_id'] ?? '');
 $selectedClass = (string) ($formData['class_id'] ?? '');
 $selectedSexe = (string) ($formData['sexe'] ?? '');
 $isRedoublant = (string) ($formData['is_redoublant'] ?? '0');
@@ -89,11 +90,20 @@ ob_start();
                         </select>
                     </div>
                     <div class="col-md-3">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1 opacity-50"><?= __('department') ?></label>
+                        <select id="department_select" name="department_id" class="form-select premium-input">
+                            <option value=""><?= __('all_departments') ?? 'Tous les départements' ?></option>
+                            <?php foreach ($departments as $dept): ?>
+                                <option value="<?= $dept['id'] ?>" <?= $selectedDepartment === (string) $dept['id'] ? 'selected' : '' ?>><?= h($dept['nom']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
                         <label class="form-label text-primary fw-black extra-small text-uppercase mb-1"><?= __('student_class_label') ?> *</label>
                         <select name="class_id" id="class_select" class="form-select premium-input border-primary border-opacity-25" required data-current="<?= h($selectedClass) ?>">
                             <option value=""><?= __('select_class') ?></option>
                             <?php foreach ($classes as $cla): ?>
-                                <option value="<?= $cla['id'] ?>" data-cycle="<?= $cla['cycle_id'] ?>" data-section="<?= $cla['section_id'] ?>"><?= h($cla['nom']) ?></option>
+                                <option value="<?= $cla['id'] ?>" data-cycle="<?= $cla['cycle_id'] ?>" data-section="<?= $cla['section_id'] ?>" data-department="<?= $cla['department_id'] ?>"><?= h($cla['nom']) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -128,6 +138,7 @@ ob_start();
 document.addEventListener('DOMContentLoaded', function () {
     const cycleSelect = document.getElementById('cycle_select');
     const sectionSelect = document.getElementById('section_select');
+    const departmentSelect = document.getElementById('department_select');
     const classSelect = document.getElementById('class_select');
     const currentClassId = classSelect.getAttribute('data-current') || '';
     
@@ -141,14 +152,16 @@ document.addEventListener('DOMContentLoaded', function () {
     function filterClasses() {
         const selectedCycle = cycleSelect.value;
         const selectedSection = sectionSelect.value;
+        const selectedDept = departmentSelect.value;
         classSelect.innerHTML = '<option value="">' + labels.selectClass + '</option>';
 
         let addedCount = 0;
         originalOptions.forEach(opt => {
             const matchCycle = !selectedCycle || opt.getAttribute('data-cycle') === selectedCycle;
             const matchSection = !selectedSection || opt.getAttribute('data-section') === selectedSection;
+            const matchDept = !selectedDept || opt.getAttribute('data-department') === selectedDept;
 
-            if (matchCycle && matchSection) {
+            if (matchCycle && matchSection && matchDept) {
                 const clonedOption = opt.cloneNode(true);
                 if (clonedOption.value === currentClassId) clonedOption.selected = true;
                 classSelect.appendChild(clonedOption);
@@ -156,13 +169,14 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        if (addedCount === 0 && (selectedCycle || selectedSection)) {
+        if (addedCount === 0 && (selectedCycle || selectedSection || selectedDept)) {
             classSelect.innerHTML = '<option value="">' + labels.noClassForCriteria + '</option>';
         }
     }
 
     cycleSelect.addEventListener('change', filterClasses);
     sectionSelect.addEventListener('change', filterClasses);
+    departmentSelect.addEventListener('change', filterClasses);
     filterClasses();
 });
 </script>

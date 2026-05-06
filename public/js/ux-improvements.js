@@ -129,6 +129,28 @@ const UX = (function () {
                     });
                     return;
                 }
+
+                // TOGGLE Confirmation
+                const toggleTrigger = e.target.closest('.btn-confirm-toggle');
+                if (toggleTrigger) {
+                    e.preventDefault();
+                    const url = toggleTrigger.getAttribute('href');
+                    const message = toggleTrigger.dataset.confirm || t('confirm_toggle_text', 'Voulez-vous modifier le statut de cet élément ?');
+
+                    AlertService.confirm({
+                        title: t('confirmation', 'Confirmation'),
+                        message: message,
+                        icon: 'question',
+                        confirmText: t('confirm', 'Confirmer'),
+                        cancelText: t('cancel', 'Annuler'),
+                        confirmButtonColor: '#3b82f6', // Bleu pour action non-critique
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = url;
+                        }
+                    });
+                    return;
+                }
             });
         },
 

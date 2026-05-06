@@ -142,6 +142,13 @@ ob_start();
                 </div>
                 <div class="kpi-value" data-count-up="<?= (int) $stats_subjects ?>"><?= (int) $stats_subjects ?></div>
                 <div class="kpi-label"><?= __('subjects') ?></div>
+                <?php if (\App\Core\Session::get('user_role') === 'superadmin' && $stats_subjects_inactive > 0): ?>
+                    <div class="mt-2">
+                        <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill small">
+                            <?= $stats_subjects_inactive ?> <?= __('inactive_short') ?>
+                        </span>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
         <!-- Progression Globale -->
@@ -312,6 +319,35 @@ ob_start();
                     </table>
                 </div>
             </div>
+
+            <!-- Matières Inactives (Superadmin Only) -->
+            <?php if (\App\Core\Session::get('user_role') === 'superadmin' && !empty($inactive_subjects_list)): ?>
+            <div class="modern-card mb-4 border-0 shadow-sm border-top border-danger border-4">
+                <div class="modern-card-header border-bottom bg-transparent py-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-pause-circle-fill text-danger fs-5"></i>
+                        <h5 class="modern-card-title m-0 text-main-theme"><?= __('inactive_subjects') ?></h5>
+                    </div>
+                    <span class="badge bg-danger bg-opacity-10 text-danger fw-bold"><?= count($inactive_subjects_list) ?></span>
+                </div>
+                <div class="p-3">
+                    <div class="d-flex flex-wrap gap-2">
+                        <?php foreach ($inactive_subjects_list as $is): ?>
+                            <div class="d-flex align-items-center gap-2 bg-light bg-opacity-50 border rounded-pill px-3 py-2 animate-fade-in">
+                                <span class="fw-bold text-muted small"><?= h($is['nom']) ?></span>
+                                <a href="/subjects/toggleStatus?id=<?= $is['id'] ?>" 
+                                   class="btn btn-sm btn-success rounded-circle p-0 d-flex align-items-center justify-content-center btn-confirm-toggle" 
+                                   style="width: 24px; height: 24px;"
+                                   data-confirm="<?= __('activate_subject_confirm', ['name' => $is['nom']]) ?>"
+                                   title="<?= __('activate') ?>">
+                                    <i class="bi bi-play-fill"></i>
+                                </a>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
 
             <!-- Suivi Progression Enseignants -->
             <div class="modern-card mb-4 border-0 shadow-lg border-top border-success border-4">
