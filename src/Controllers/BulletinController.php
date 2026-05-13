@@ -85,7 +85,7 @@ class BulletinController
         }
 
         $students = $classId > 0 ? $this->getStudentsByClass($classId) : [];
-        $disciplineMap = $classId > 0 ? $this->getClassDisciplineFormMap($classId, 'trim_' . $term, $academicYearId) : [];
+        $disciplineMap = $classId > 0 ? $this->getClassDisciplineFormMap($classId, (string)$term, $academicYearId) : [];
 
         $flashSuccess = Session::getFlash('discipline_success');
         $flashError = Session::getFlash('discipline_error');
@@ -107,7 +107,13 @@ class BulletinController
         $absJustifiedMap = $_POST['absences_justified'] ?? [];
         $absUnjustifiedMap = $_POST['absences_unjustified'] ?? [];
         $exclusionDaysMap = $_POST['exclusion_days'] ?? [];
+        $consignesMap = $_POST['consignes'] ?? [];
         $warningConductMap = $_POST['warning_conduct'] ?? [];
+        $blameConductMap = $_POST['blame_conduct'] ?? [];
+        $warningWorkMap = $_POST['warning_work'] ?? [];
+        $tableauHonneurMap = $_POST['tableau_honneur'] ?? [];
+        $encouragementsMap = $_POST['encouragements'] ?? [];
+        $felicitationsMap = $_POST['felicitations'] ?? [];
 
         if (
             $classId <= 0
@@ -117,40 +123,57 @@ class BulletinController
             || !is_array($absJustifiedMap)
             || !is_array($absUnjustifiedMap)
             || !is_array($exclusionDaysMap)
+            || !is_array($consignesMap)
             || !is_array($warningConductMap)
+            || !is_array($blameConductMap)
+            || !is_array($warningWorkMap)
+            || !is_array($tableauHonneurMap)
+            || !is_array($encouragementsMap)
+            || !is_array($felicitationsMap)
         ) {
             Session::setFlash('discipline_error', __('discipline_save_failed'));
             header("Location: /bulletins/discipline?class_id={$classId}&term={$term}&academic_year_id={$academicYearId}");
             exit;
         }
 
-        $period = 'trim_' . $term;
+        $period = (string) $term; // Utiliser directement 1, 2 ou 3 comme période pour correspondre aux bulletins
 
         try {
             $this->db->beginTransaction();
 
+            // 1. Récupérer tous les élèves de la classe pour s'assurer de tout enregistrer (même les 0)
+            $studentIdsStmt = $this->db->prepare("SELECT id FROM students WHERE class_id = ?");
+            $studentIdsStmt->execute([$classId]);
+            $allStudentIds = $studentIdsStmt->fetchAll(PDO::FETCH_COLUMN);
+
+            // 2. Préparer les requêtes (Ciblées uniquement sur la discipline pour ne pas casser les mentions)
             $selectStmt = $this->db->prepare("SELECT id FROM discipline WHERE student_id = ? AND academic_year_id = ? AND periode = ? LIMIT 1");
-            $updateStmt = $this->db->prepare("UPDATE discipline SET absences_total = ?, absences_justified = ?, exclusion_days = ?, warning_conduct = ? WHERE id = ?");
+            
+            $updateStmt = $this->db->prepare("UPDATE discipline SET 
+                    absences_total = ?, absences_justified = ?, exclusion_days = ?, 
+                    consignes = ?, warning_conduct = ?, blame_conduct = ?
+                WHERE id = ?");
+
             $insertStmt = $this->db->prepare("INSERT INTO discipline (
                     student_id, academic_year_id, periode,
-                    absences_total, absences_justified, exclusion_days, warning_conduct,
-                    consignes, blame_conduct, warning_work, tableau_honneur, encouragements, felicitations
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, '', '', '', '', '')");
+                    absences_total, absences_justified, exclusion_days, 
+                    consignes, warning_conduct, blame_conduct,
+                    warning_work, tableau_honneur, encouragements, felicitations
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, '', '', '', '')");
 
-            foreach ($absTotalMap as $studentIdRaw => $totalRaw) {
-                $studentId = (int) $studentIdRaw;
-                if ($studentId <= 0) {
-                    continue;
-                }
+            foreach ($allStudentIds as $studentId) {
+                $studentId = (int) $studentId;
 
-                $total = max(0, (int) ($totalRaw ?? 0));
+                $total = max(0, (int) ($absTotalMap[$studentId] ?? 0));
                 $justified = max(0, (int) ($absJustifiedMap[$studentId] ?? 0));
                 $unjustified = max(0, (int) ($absUnjustifiedMap[$studentId] ?? 0));
                 $exclusionDays = max(0, (int) ($exclusionDaysMap[$studentId] ?? 0));
+                $consignes = max(0, (int) ($consignesMap[$studentId] ?? 0));
                 $warningConduct = trim((string) ($warningConductMap[$studentId] ?? ''));
+                $blameConduct = trim((string) ($blameConductMap[$studentId] ?? ''));
 
-                // Si "non justifiées" est saisi, on harmonise total/justifiées.
-                if ($unjustified > 0 || ($total > 0 && $justified + $unjustified > 0)) {
+                // Si "non justifiées" est saisi (même si lecture seule en JS), on harmonise.
+                if ($unjustified > 0) {
                     $total = max($total, $justified + $unjustified);
                     $justified = max(0, $total - $unjustified);
                 } elseif ($justified > $total) {
@@ -159,17 +182,27 @@ class BulletinController
 
                 if (function_exists('mb_substr')) {
                     $warningConduct = mb_substr($warningConduct, 0, 20, 'UTF-8');
+                    $blameConduct = mb_substr($blameConduct, 0, 20, 'UTF-8');
                 } else {
                     $warningConduct = substr($warningConduct, 0, 20);
+                    $blameConduct = substr($blameConduct, 0, 20);
                 }
 
                 $selectStmt->execute([$studentId, $academicYearId, $period]);
                 $existingId = (int) ($selectStmt->fetchColumn() ?: 0);
 
                 if ($existingId > 0) {
-                    $updateStmt->execute([$total, $justified, $exclusionDays, $warningConduct, $existingId]);
+                    $updateStmt->execute([
+                        $total, $justified, $exclusionDays, 
+                        $consignes, $warningConduct, $blameConduct,
+                        $existingId
+                    ]);
                 } else {
-                    $insertStmt->execute([$studentId, $academicYearId, $period, $total, $justified, $exclusionDays, $warningConduct]);
+                    $insertStmt->execute([
+                        $studentId, $academicYearId, $period, 
+                        $total, $justified, $exclusionDays, 
+                        $consignes, $warningConduct, $blameConduct
+                    ]);
                 }
             }
 
@@ -349,7 +382,7 @@ class BulletinController
 
         $sequenceLabels = array_column($termSequences, 'label');
         $classNotesMap = $this->getClassSequenceNotesMap($classId, $sequenceLabels, (int) $academicYear['id']);
-        $classDisciplineMap = $this->getClassDisciplineDataMap($classId, ['trim_' . $term], (int) $academicYear['id']);
+        $classDisciplineMap = $this->getClassDisciplineDataMap($classId, [$term], (int) $academicYear['id']);
 
         $bulletins = [];
         foreach ($students as $student) {
@@ -663,8 +696,8 @@ class BulletinController
         }), 'subject');
 
         $groupedRows = $this->groupRowsBySubjectGroup($rows);
-        // La période discipline correspond directement au trimestre
-        $discipline = $precomputedDiscipline ?? $this->buildDisciplineData($student, ['trim_' . $term], (int) $activeYear['id']);
+        // La période discipline correspond directement au trimestre (1, 2 ou 3)
+        $discipline = $precomputedDiscipline ?? $this->buildDisciplineData($student, [$term], (int) $activeYear['id']);
         $professor_name = $this->getProfessorPrincipalName((int) $student['class_id']);
         $evaluationLabels = array_map(function ($seq) {
             return $this->getShortSequenceLabel((string) $seq['label']);
@@ -792,8 +825,8 @@ class BulletinController
         $mention = $this->getMention($average);
         $tableFont = $this->getTableFontSize(count($rows));
         $groupedRows = $this->groupRowsBySubjectGroup($rows);
-        // L'annuel agrège les 3 trimestres
-        $discipline = $precomputedDiscipline ?? $this->buildDisciplineData($student, ['trim_1', 'trim_2', 'trim_3'], (int) $activeYear['id']);
+        // L'annuel agrège les 3 trimestres (périodes 1, 2, 3)
+        $discipline = $precomputedDiscipline ?? $this->buildDisciplineData($student, [1, 2, 3], (int) $activeYear['id']);
         $professor_name = $this->getProfessorPrincipalName($classId);
 
         return [
@@ -1244,17 +1277,20 @@ class BulletinController
 
         $results = [];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $d) {
+            $warn_c = trim((string) ($d['warning_conduct'] ?? ''));
+            $blame_c = trim((string) ($d['blame_conduct'] ?? ''));
+            
             $results[(int) $d['student_id']] = [
                 'absences' => [
-                    'total' => (int) $d['absences_total'],
-                    'justified' => (int) $d['absences_justified'],
-                    'unjustified' => (int) $d['absences_total'] - (int) $d['absences_justified']
+                    'total' => (int) ($d['absences_total'] ?? 0),
+                    'justified' => (int) ($d['absences_justified'] ?? 0),
+                    'unjustified' => (int) ($d['absences_total'] ?? 0) - (int) ($d['absences_justified'] ?? 0)
                 ],
-                'warning_conduct' => $d['warning_conduct'] ?: '',
+                'warning_conduct' => $warn_c !== '' ? $warn_c : '00',
                 'conduct' => (string) ($d['conduct'] ?? ''),
-                'blame_conduct' => $d['blame_conduct'] ?: '',
-                'exclusion_days' => (int) $d['exclusion_days'],
-                'consignes' => (int) $d['consignes'],
+                'blame_conduct' => $blame_c !== '' ? $blame_c : '00',
+                'exclusion_days' => (int) ($d['exclusion_days'] ?? 0),
+                'consignes' => (int) ($d['consignes'] ?? 0),
                 'tableau_honneur' => $d['tableau_honneur'] ?: '',
                 'encouragements' => $d['encouragements'] ?: '',
                 'felicitations' => $d['felicitations'] ?: '',
@@ -1859,8 +1895,8 @@ class BulletinController
             return [
                 'absences' => ['total' => 0, 'justified' => 0, 'unjustified' => 0],
                 'conduct' => '',
-                'warning_conduct' => '',
-                'blame_conduct' => '',
+                'warning_conduct' => '00',
+                'blame_conduct' => '00',
                 'exclusion_days' => 0,
                 'consignes' => 0,
                 'tableau_honneur' => '',
@@ -1872,6 +1908,8 @@ class BulletinController
 
         $abs_total = (int) ($d['absences_total'] ?? 0);
         $abs_just = (int) ($d['absences_justified'] ?? 0);
+        $warn_c = trim((string) ($d['warning_conduct'] ?? ''));
+        $blame_c = trim((string) ($d['blame_conduct'] ?? ''));
 
         return [
             'absences' => [
@@ -1880,8 +1918,8 @@ class BulletinController
                 'unjustified' => ($abs_total - $abs_just)
             ],
             'conduct' => (string) ($d['conduct'] ?? ''),
-            'warning_conduct' => $d['warning_conduct'] ? 'X' : '',
-            'blame_conduct' => $d['blame_conduct'] ? 'X' : '',
+            'warning_conduct' => $warn_c !== '' ? $warn_c : '00',
+            'blame_conduct' => $blame_c !== '' ? $blame_c : '00',
             'exclusion_days' => (int) ($d['exclusion_days'] ?? 0),
             'consignes' => (int) ($d['consignes'] ?? 0),
             'tableau_honneur' => $d['tableau_honneur'] ? 'X' : '',
@@ -1893,7 +1931,15 @@ class BulletinController
 
     protected function getClassDisciplineFormMap(int $classId, string $period, int $academicYearId): array
     {
-        $stmt = $this->db->prepare("SELECT student_id, absences_total, absences_justified, exclusion_days, warning_conduct FROM discipline WHERE academic_year_id = ? AND periode = ? AND student_id IN (SELECT id FROM students WHERE class_id = ?)");
+        $stmt = $this->db->prepare("
+            SELECT 
+                student_id, absences_total, absences_justified, exclusion_days, 
+                consignes, warning_conduct, blame_conduct, warning_work, 
+                tableau_honneur, encouragements, felicitations
+            FROM discipline 
+            WHERE academic_year_id = ? AND periode = ? 
+            AND student_id IN (SELECT id FROM students WHERE class_id = ?)
+        ");
         $stmt->execute([$academicYearId, $period, $classId]);
 
         $map = [];
@@ -1905,7 +1951,9 @@ class BulletinController
                 'absences_justified' => $justified,
                 'absences_unjustified' => max(0, $total - $justified),
                 'exclusion_days' => (int) ($row['exclusion_days'] ?? 0),
+                'consignes' => (int) ($row['consignes'] ?? 0),
                 'warning_conduct' => (string) ($row['warning_conduct'] ?? ''),
+                'blame_conduct' => (string) ($row['blame_conduct'] ?? ''),
             ];
         }
 

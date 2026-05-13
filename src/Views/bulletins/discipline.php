@@ -66,13 +66,7 @@ ob_start();
         </div>
     </div>
 
-    <?php if (!empty($flashSuccess)): ?>
-        <div class="alert alert-success"><?= htmlspecialchars((string) $flashSuccess) ?></div>
-    <?php endif; ?>
-    <?php if (!empty($flashError)): ?>
-        <div class="alert alert-danger"><?= htmlspecialchars((string) $flashError) ?></div>
-    <?php endif; ?>
-
+    <!-- Flash Messages gérés par JS/SweetAlert -->
     <?php if ($classId <= 0): ?>
         <div class="mb-empty-state text-center p-5 text-muted-theme mt-4">
             <div class="mb-empty-icon p-4 rounded-circle d-inline-flex mb-3 shadow-sm">
@@ -82,69 +76,105 @@ ob_start();
             <p class="mb-0 fs-5"><?= __('select_class_to_manage_discipline') ?></p>
         </div>
     <?php else: ?>
-        <div class="modern-card border-0 shadow-sm">
-            <div class="modern-card-body p-2 p-md-4 p-lg-5">
+        <div class="modern-card border-0 shadow-sm overflow-hidden animate-fade-in">
+            <div class="table-responsive">
                 <form method="POST" action="/bulletins/discipline/save" id="disciplineForm" class="no-loader">
                     <input type="hidden" name="class_id" value="<?= (int) $classId ?>">
                     <input type="hidden" name="academic_year_id" value="<?= (int) $academicYearId ?>">
                     <input type="hidden" name="term" value="<?= (int) $term ?>">
 
-                    <div class="table-responsive">
-                        <table class="table table-modern compact-table table-striped mb-0 align-middle bg-transparent">
-                            <thead>
-                                <tr>
-                                    <th class="d-none d-sm-table-cell" style="width: 50px;">#</th>
-                                    <th><?= __('name_and_surname') ?></th>
-                                    <th style="min-width: 70px;"><?= __('total') ?></th>
-                                    <th style="min-width: 70px;"><?= __('justified') ?></th>
-                                    <th style="min-width: 80px;"><?= __('unjustified') ?></th>
-                                    <th style="min-width: 90px;"><?= __('suspended') ?></th>
-                                    <th style="min-width: 120px;"><?= __('warn_conduct') ?></th>
+                    <table class="table-modern align-middle">
+                        <thead>
+                            <tr>
+                                <th class="ps-4" style="width: 50px;">#</th>
+                                <th><?= __('student') ?></th>
+                                <th class="text-center" style="width: 85px;"><?= __('total_absences') ?></th>
+                                <th class="text-center" style="width: 85px;"><?= __('justified') ?></th>
+                                <th class="text-center" style="width: 85px;"><?= __('unjustified') ?></th>
+                                <th class="text-center" style="width: 85px;"><?= __('suspended') ?></th>
+                                <th class="text-center" style="width: 85px;"><?= __('consignes') ?></th>
+                                <th class="text-center" style="width: 140px;"><?= __('warn_conduct') ?></th>
+                                <th class="text-center pe-4" style="width: 140px;"><?= __('blame_conduct') ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($students as $index => $student): ?>
+                                <?php $studentId = (int) $student['id']; ?>
+                                <tr class="student-row transition-base" data-student-id="<?= $studentId ?>">
+                                    <td class="ps-4 text-muted-theme small opacity-50"><?= $index + 1 ?></td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="avatar-init bg-primary bg-opacity-10 text-primary fw-bold rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+                                                style="width: 38px; height: 38px; font-size: 1rem; border: 1px solid rgba(var(--primary-rgb), 0.2);">
+                                                <?= strtoupper(substr((string) ($student['nom'] ?? 'S'), 0, 1)) ?>
+                                            </div>
+                                            <div class="text-nowrap overflow-hidden" style="max-width: 200px;">
+                                                <div class="fw-bold text-main-theme name-gradient text-truncate" style="font-size: 0.9rem;">
+                                                    <?= htmlspecialchars((string) ($student['nom'] ?? '')) ?>
+                                                </div>
+                                                <div class="text-muted-theme opacity-75 text-truncate" style="font-size: 0.75rem;">
+                                                    <?= htmlspecialchars((string) ($student['prenom'] ?? '')) ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <input type="number" min="0" class="form-control form-control-sm js-discipline-input js-abs-total text-center fw-bold bg-transparent text-main-theme border-theme-dynamic rounded-pill"
+                                            style="height: 36px;"
+                                            name="absences_total[<?= $studentId ?>]"
+                                            value="<?= sprintf('%02d', (int) ($disciplineMap[$studentId]['absences_total'] ?? 0)) ?>">
+                                    </td>
+                                    <td>
+                                        <input type="number" min="0" class="form-control form-control-sm js-discipline-input js-abs-justified text-center fw-bold bg-transparent text-main-theme border-theme-dynamic rounded-pill"
+                                            style="height: 36px;"
+                                            name="absences_justified[<?= $studentId ?>]"
+                                            value="<?= sprintf('%02d', (int) ($disciplineMap[$studentId]['absences_justified'] ?? 0)) ?>">
+                                    </td>
+                                    <td>
+                                        <input type="number" min="0" class="form-control form-control-sm js-discipline-input js-abs-unjustified text-center fw-bold bg-secondary bg-opacity-10 text-main-theme border-theme-dynamic rounded-pill"
+                                            style="height: 36px;"
+                                            name="absences_unjustified[<?= $studentId ?>]" readonly
+                                            value="<?= sprintf('%02d', (int) (max(0, ($disciplineMap[$studentId]['absences_total'] ?? 0) - ($disciplineMap[$studentId]['absences_justified'] ?? 0)))) ?>">
+                                    </td>
+                                    <td>
+                                        <input type="number" min="0" class="form-control form-control-sm js-discipline-input text-center fw-bold bg-transparent text-main-theme border-theme-dynamic rounded-pill"
+                                            style="height: 36px;"
+                                            name="exclusion_days[<?= $studentId ?>]"
+                                            value="<?= sprintf('%02d', (int) ($disciplineMap[$studentId]['exclusion_days'] ?? 0)) ?>">
+                                    </td>
+                                    <td>
+                                        <input type="number" min="0" class="form-control form-control-sm js-discipline-input text-center fw-bold bg-transparent text-main-theme border-theme-dynamic rounded-pill"
+                                            style="height: 36px;"
+                                            name="consignes[<?= $studentId ?>]"
+                                            value="<?= sprintf('%02d', (int) ($disciplineMap[$studentId]['consignes'] ?? 0)) ?>">
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm js-discipline-input text-center bg-transparent text-main-theme border-theme-dynamic rounded-pill px-2" 
+                                            style="height: 36px;"
+                                            name="warning_conduct[<?= $studentId ?>]"
+                                            <?php $wc = trim((string) ($disciplineMap[$studentId]['warning_conduct'] ?? '')); ?>
+                                            value="<?= htmlspecialchars($wc !== '' ? $wc : '00') ?>"
+                                            placeholder="00" maxlength="20">
+                                    </td>
+                                    <td class="pe-4">
+                                        <input type="text" class="form-control form-control-sm js-discipline-input text-center bg-transparent text-main-theme border-theme-dynamic rounded-pill px-2" 
+                                            style="height: 36px;"
+                                            name="blame_conduct[<?= $studentId ?>]"
+                                            <?php $bc = trim((string) ($disciplineMap[$studentId]['blame_conduct'] ?? '')); ?>
+                                            value="<?= htmlspecialchars($bc !== '' ? $bc : '00') ?>"
+                                            placeholder="00" maxlength="20">
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($students as $index => $student): ?>
-                                    <?php $studentId = (int) $student['id']; ?>
-                                    <tr class="bg-transparent">
-                                        <td class="d-none d-sm-table-cell"><?= $index + 1 ?></td>
-                                        <td>
-                                            <strong><?= htmlspecialchars((string) ($student['nom'] ?? '')) ?></strong>
-                                            <span class="d-block d-md-inline"><?= htmlspecialchars((string) ($student['prenom'] ?? '')) ?></span>
-                                        </td>
-                                        <td>
-                                            <input type="number" min="0" class="form-control form-control-sm js-discipline-input"
-                                                name="absences_total[<?= $studentId ?>]"
-                                                value="<?= (int) ($disciplineMap[$studentId]['absences_total'] ?? 0) ?>">
-                                        </td>
-                                        <td>
-                                            <input type="number" min="0" class="form-control form-control-sm js-discipline-input"
-                                                name="absences_justified[<?= $studentId ?>]"
-                                                value="<?= (int) ($disciplineMap[$studentId]['absences_justified'] ?? 0) ?>">
-                                        </td>
-                                        <td>
-                                            <input type="number" min="0" class="form-control form-control-sm js-discipline-input"
-                                                name="absences_unjustified[<?= $studentId ?>]"
-                                                value="<?= (int) ($disciplineMap[$studentId]['absences_unjustified'] ?? 0) ?>">
-                                        </td>
-                                        <td>
-                                            <input type="number" min="0" class="form-control form-control-sm js-discipline-input"
-                                                name="exclusion_days[<?= $studentId ?>]"
-                                                value="<?= (int) ($disciplineMap[$studentId]['exclusion_days'] ?? 0) ?>">
-                                        </td>
-                                        <td>
-                                            <input type="text" class="form-control form-control-sm js-discipline-input" name="warning_conduct[<?= $studentId ?>]"
-                                                value="<?= htmlspecialchars((string) ($disciplineMap[$studentId]['warning_conduct'] ?? '')) ?>"
-                                                maxlength="20">
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
 
-                    <div class="text-end border-top pt-3 pt-md-4 mt-3">
+                    <div class="p-4 border-top border-theme-dynamic bg-light bg-opacity-10 d-flex justify-content-end align-items-center">
+                        <div class="me-3 small text-muted-theme opacity-75">
+                            <i class="bi bi-info-circle me-1"></i> <?= __('save_discipline_hint') ?>
+                        </div>
                         <button type="submit"
-                            class="btn btn-primary rounded-pill px-4 px-md-5 py-2 py-md-3 fw-bold shadow-lg d-inline-flex align-items-center gap-2">
+                            class="btn btn-primary rounded-pill px-5 py-2 fw-bold shadow-lg d-inline-flex align-items-center gap-2">
                             <i class="bi bi-check2-circle fs-5"></i>
                             <?= __('save') ?>
                         </button>
@@ -155,10 +185,118 @@ ob_start();
     <?php endif; ?>
 </div>
 
+<style>
+    .name-gradient {
+        background: linear-gradient(135deg, var(--text-main), var(--primary-color));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    [data-theme="dark"] .name-gradient {
+        background: linear-gradient(135deg, #ffffff, var(--primary-color));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .table-modern tbody tr:hover {
+        background: rgba(var(--primary-rgb), 0.03);
+    }
+
+    .form-control-sm.js-discipline-input {
+        border-width: 1.5px;
+        transition: all 0.2s;
+        font-size: 0.8rem;
+        height: 32px;
+    }
+
+    .form-control-sm.js-discipline-input:focus {
+        border-color: var(--primary-color);
+        background: rgba(var(--primary-rgb), 0.05) !important;
+        box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.15);
+    }
+
+    /* Adaptabilité Thème Sombre */
+    [data-theme="dark"] .modern-card {
+        background: rgba(30, 30, 45, 0.6);
+        border-color: rgba(255, 255, 255, 0.08) !important;
+    }
+
+    [data-theme="dark"] .table-modern thead th {
+        background: rgba(255, 255, 255, 0.05);
+        color: #ffffff;
+        border-bottom-color: rgba(255, 255, 255, 0.1);
+    }
+
+    [data-theme="dark"] .table-modern tbody tr {
+        border-bottom-color: rgba(255, 255, 255, 0.05);
+    }
+
+    [data-theme="dark"] .table-modern tbody tr:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+</style>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Affichage des messages flash avec SweetAlert
+    <?php if ($flashSuccess): ?>
+        AlertService.success(<?= json_encode((string)$flashSuccess, JSON_UNESCAPED_UNICODE) ?>);
+    <?php endif; ?>
+    <?php if ($flashError): ?>
+        AlertService.error(<?= json_encode((string)$flashError, JSON_UNESCAPED_UNICODE) ?>);
+    <?php endif; ?>
+
     const form = document.getElementById('disciplineForm');
     if (!form) return;
+
+    // Gestion intelligente des valeurs par défaut (00) et calculs
+    form.addEventListener('focusout', function(e) {
+        if (e.target.classList.contains('js-discipline-input')) {
+            let val = e.target.value.trim();
+            
+            // Si le champ est vide, remettre "00"
+            if (val === '') {
+                e.target.value = '00';
+            } 
+            // Si c'est un nombre, s'assurer qu'il a 2 chiffres (ex: 5 -> 05)
+            else if (e.target.type === 'number') {
+                let n = parseInt(val, 10);
+                if (!isNaN(n)) {
+                    e.target.value = n.toString().padStart(2, '0');
+                }
+            }
+
+            // Recalcul des absences non justifiées si nécessaire
+            if (e.target.classList.contains('js-abs-total') || e.target.classList.contains('js-abs-justified')) {
+                const row = e.target.closest('tr');
+                const totalInput = row.querySelector('.js-abs-total');
+                const justifiedInput = row.querySelector('.js-abs-justified');
+                const unjustifiedInput = row.querySelector('.js-abs-unjustified');
+                
+                if (totalInput && justifiedInput && unjustifiedInput) {
+                    const total = parseInt(totalInput.value, 10) || 0;
+                    const justified = parseInt(justifiedInput.value, 10) || 0;
+                    unjustifiedInput.value = Math.max(0, total - justified).toString().padStart(2, '0');
+                }
+            }
+        }
+    });
+
+    // Mise à jour en temps réel simple
+    form.addEventListener('input', function(e) {
+        if (e.target.classList.contains('js-abs-total') || e.target.classList.contains('js-abs-justified')) {
+            const row = e.target.closest('tr');
+            const totalInput = row.querySelector('.js-abs-total');
+            const justifiedInput = row.querySelector('.js-abs-justified');
+            const unjustifiedInput = row.querySelector('.js-abs-unjustified');
+            
+            if (totalInput && justifiedInput && unjustifiedInput) {
+                const total = parseInt(totalInput.value, 10) || 0;
+                const justified = parseInt(justifiedInput.value, 10) || 0;
+                unjustifiedInput.value = Math.max(0, total - justified).toString().padStart(2, '0');
+            }
+        }
+    });
 
     form.addEventListener('submit', function(e) {
         if (form.dataset.confirmed === 'true') return;
@@ -205,7 +343,5 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<?php
-$content = ob_get_clean();
-include __DIR__ . '/../templates/layout.php';
-?>
+<?php $content = ob_get_clean(); ?>
+<?php include __DIR__ . '/../templates/layout.php'; ?>

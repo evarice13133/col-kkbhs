@@ -147,6 +147,9 @@ if (isset($styleOnly)) {
                 <button class="pv-btn pv-btn-print" onclick="window.print()">
                     <?= __('pv_print_btn') ?>
                 </button>
+                <a href="<?= $_SERVER['REQUEST_URI'] . (strpos($_SERVER['REQUEST_URI'], '?') !== false ? '&' : '?') ?>format=pdf" class="pv-btn pv-btn-download">
+                     <i class="bi bi-file-pdf"></i> <?= __('pv_download_btn') ?>
+                </a>
             </div>
         </div>
     <?php endif; ?>
@@ -156,9 +159,12 @@ if (isset($styleOnly)) {
         <div class="header-wrapper">
             <div class="header-left">
                 <div class="header-side-content">
-                    <p class="header-line"><?= htmlspecialchars((string) ($i['school_republic'] ?? __('republic_of_cameroon'))) ?></p>
+                    <p class="header-line">
+                        <?= htmlspecialchars((string) ($i['school_republic'] ?? __('republic_of_cameroon'))) ?></p>
                     <p class="header-line"><?= htmlspecialchars((string) ($i['school_motto'] ?? __('motto'))) ?></p>
-                    <p class="header-line"><?= htmlspecialchars((string) ($i['school_ministry'] ?? __('ministry_secondary_education'))) ?></p>
+                    <p class="header-line">
+                        <?= htmlspecialchars((string) ($i['school_ministry'] ?? __('ministry_secondary_education'))) ?>
+                    </p>
                     <p class="header-line"><?= htmlspecialchars((string) ($i['school_slogan'] ?? __('slogan'))) ?></p>
                     <p class="header-contact"><?= htmlspecialchars(strtoupper($contact)) ?></p>
                 </div>
@@ -169,8 +175,8 @@ if (isset($styleOnly)) {
                     <?php if (!empty($i['school_logo_base64'])): ?>
                         <img src="<?= $i['school_logo_base64'] ?>" alt="Logo">
                     <?php elseif (!empty($i['school_logo'])):
-                            $logoPath = \App\Core\Helpers::normalizeLogoPath((string) $i['school_logo']); ?>
-                            <img src="<?= htmlspecialchars($logoPath) ?>" alt="Logo de l'etablissement">
+                        $logoPath = \App\Core\Helpers::normalizeLogoPath((string) $i['school_logo']); ?>
+                        <img src="<?= htmlspecialchars($logoPath) ?>" alt="Logo de l'etablissement">
                     <?php else: ?>
                         <div class="logo-placeholder">LOGO</div>
                     <?php endif; ?>
@@ -179,10 +185,15 @@ if (isset($styleOnly)) {
 
             <div class="header-right">
                 <div class="header-side-content">
-                    <p class="header-line"><?= htmlspecialchars((string) ($i['school_republic_en'] ?? 'REPUBLIC OF CAMEROON')) ?></p>
-                    <p class="header-line"><?= htmlspecialchars((string) ($i['school_motto_en'] ?? 'PEACE - WORK - FATHERLAND')) ?></p>
-                    <p class="header-line"><?= htmlspecialchars((string) ($i['school_ministry_en'] ?? 'MINISTRY OF SECONDARY EDUCATION')) ?></p>
-                    <p class="header-line"><?= htmlspecialchars((string) ($i['school_slogan_en'] ?? 'DISCIPLINE - WORK - SUCCESS')) ?></p>
+                    <p class="header-line">
+                        <?= htmlspecialchars((string) ($i['school_republic_en'] ?? 'REPUBLIC OF CAMEROON')) ?></p>
+                    <p class="header-line">
+                        <?= htmlspecialchars((string) ($i['school_motto_en'] ?? 'PEACE - WORK - FATHERLAND')) ?></p>
+                    <p class="header-line">
+                        <?= htmlspecialchars((string) ($i['school_ministry_en'] ?? 'MINISTRY OF SECONDARY EDUCATION')) ?>
+                    </p>
+                    <p class="header-line">
+                        <?= htmlspecialchars((string) ($i['school_slogan_en'] ?? 'DISCIPLINE - WORK - SUCCESS')) ?></p>
                     <p class="header-contact"><?= htmlspecialchars(strtoupper($contact)) ?></p>
                 </div>
             </div>
@@ -198,10 +209,13 @@ if (isset($styleOnly)) {
 
         <table class="student-info-table">
             <tr>
-                <td colspan="4" class="nowrap" style="width: auto;"><span class="student-info-label"><?= __('name_and_surname') ?>
-                        :</span><span class="student-info-value uppercase"><?= htmlspecialchars($studentLastName . ' ' . ($student['prenom'] ?? '')) ?></span>
+                <td colspan="4" class="nowrap" style="width: auto;"><span
+                        class="student-info-label"><?= __('name_and_surname') ?>
+                        :</span><span
+                        class="student-info-value uppercase"><?= htmlspecialchars($studentLastName . ' ' . ($student['prenom'] ?? '')) ?></span>
                 </td>
-                <td class="nowrap" style="width: 1%;"><span class="student-info-label"><?= __('matricule') ?> :</span><span
+                <td class="nowrap" style="width: 1%;"><span class="student-info-label"><?= __('matricule') ?>
+                        :</span><span
                         class="student-info-value"><?= htmlspecialchars((string) ($displayMatricule ?? $student['matricule'] ?? '')) ?></span>
                 </td>
                 <td class="nowrap" style="width: 1%;"><span class="student-info-label"><?= __('class') ?> :</span><span
@@ -219,9 +233,11 @@ if (isset($styleOnly)) {
                 <td class="nowrap"><span class="student-info-label"><?= __('sex') ?> :</span><span
                         class="student-info-value"><?= htmlspecialchars((string) ($student['sexe'] ?? '-')) ?></span>
                 </td>
-                <td colspan="2" class="nowrap"><span class="student-info-label"><?= __('repeating') ?> :</span><span class="check-group student-info-value"><?= __('yes') ?><?= $isRedoublant ? '[X]' : '[ ]' ?> 
-                         <?= __('no') ?><?= !$isRedoublant ? '[X]' : '[ ]' ?></span></td>
-                <td class="nowrap"><span class="student-info-label"><?= __('effectif') ?> :</span><span class="student-info-value"><?= (int) $effectif ?></span>
+                <td colspan="2" class="nowrap"><span class="student-info-label"><?= __('repeating') ?> :</span><span
+                        class="check-group student-info-value"><?= __('yes') ?><?= $isRedoublant ? '[X]' : '[ ]' ?>
+                        <?= __('no') ?><?= !$isRedoublant ? '[X]' : '[ ]' ?></span></td>
+                <td class="nowrap"><span class="student-info-label"><?= __('effectif') ?> :</span><span
+                        class="student-info-value"><?= (int) $effectif ?></span>
                 </td>
             </tr>
         </table>
@@ -316,17 +332,11 @@ if (isset($styleOnly)) {
                     ?>
                     <div class="group-subtotal-line">
                         <span><?= htmlspecialchars($group['label']) ?></span>
-                        <span><?= __('trimester_short') ?> 1:
-                            <?= $groupTrimHasTotals[0] ? formatSimple($groupTrimTotals[0]) : '-' ?></span>
-                        <span><?= __('trimester_short') ?> 2:
-                            <?= $groupTrimHasTotals[1] ? formatSimple($groupTrimTotals[1]) : '-' ?></span>
-                        <span><?= __('trimester_short') ?> 3:
-                            <?= $groupTrimHasTotals[2] ? formatSimple($groupTrimTotals[2]) : '-' ?></span>
-                        <span>T.<?= __('annual_short_title') ?>:
-                            <?= $groupHasAnnualTotal ? formatSimple($groupAnnualTotal) : '-' ?></span>
+                        <span><?= strtoupper(__('points')) ?>: <?= formatSimple($groupAnnualTotal) ?></span>
                         <span><?= __('t_coefs') ?>: <?= (float) ($group['total_coeffs_all'] ?? 0) ?></span>
                         <span><?= strtoupper(__('total')) ?>: <?= formatSimple($groupPoints) ?></span>
-                        <span><?= __('mgp') ?>: <span class="<?= $mgp >= 10 ? 'vert' : 'rouge' ?>"><?= formatSimple($mgp) ?></span></span>
+                        <span><?= __('mgp') ?>: <span
+                                class="<?= $mgp >= 10 ? 'vert' : 'rouge' ?>"><?= formatSimple($mgp) ?></span></span>
                     </div>
                 <?php endforeach; ?>
             <?php endforeach; ?>
@@ -409,7 +419,7 @@ if (isset($styleOnly)) {
                             <td class="left"><?= strtoupper(__('trimester_short_title')) ?> 3</td>
                             <td><?= isset($termAverages[2]) ? formatSimple($termAverages[2]) : '-' ?></td>
                             <td><?= $termRanks[2] ?? '-' ?></td>
-                        </tr> 
+                        </tr>
                         <?php
                         // Consolidation finale de l'année (Somme des MGP et Coeffs)
                         $totalAllCoeffs = 0;
@@ -474,6 +484,10 @@ if (isset($styleOnly)) {
                             <td colspan="2" class="left"><?= __('suspended') ?> (<?= __('days') ?>)</td>
                             <td class="bold"><?= sprintf('%02d', $discipline['exclusion_days']) ?></td>
                         </tr>
+                        <tr>
+                            <td colspan="2" class="left"><?= __('warn_conduct') ?></td>
+                            <td class="bold"><?= $discipline['warning_conduct'] ?></td>
+                        </tr>
                     </table>
                 </td>
                 <!-- Décision annuelle du conseil -->
@@ -498,7 +512,7 @@ if (isset($styleOnly)) {
                         </tr>
                         <tr>
                             <td class="left"><?= __('blame_conduct') ?></td>
-                            <td><?= $discipline['warning_conduct'] ?></td>
+                            <td class="bold"><?= $discipline['blame_conduct'] ?></td>
                             <td class="left"><?= __('encouragements') ?></td>
                             <td class="bold">
                                 <?php

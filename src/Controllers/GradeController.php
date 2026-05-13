@@ -342,8 +342,12 @@ class GradeController
                 $valFloat = (float) str_replace(',', '.', (string) $valeur);
 
                 // Validation de la plage de note (0-20)
-                if ($student_id <= 0 || $valFloat < 0 || $valFloat > 20)
+                if ($student_id <= 0 || $valFloat < 0)
                     continue;
+                
+                if ($valFloat > 20) {
+                    throw new \Exception("La note ne doit pas être supérieure à 20.");
+                }
 
                 $appr = trim((string) ($appreciations[$student_id] ?? ''));
                 if ($appr === '')
@@ -372,6 +376,9 @@ class GradeController
         } catch (\PDOException $e) {
             $this->db->rollBack();
             Session::setFlash('error', __('grade_save_failed', ['message' => $e->getMessage()]));
+        } catch (\Exception $e) {
+            if ($this->db->inTransaction()) $this->db->rollBack();
+            Session::setFlash('error', $e->getMessage());
         }
 
         header("Location: /notes/saisie?class_id=$class_id&subject_id=$subject_id&periode=" . urlencode($periode));

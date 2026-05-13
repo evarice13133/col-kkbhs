@@ -201,6 +201,7 @@ class UserController
 
             $stmt = $this->db->prepare("DELETE FROM users WHERE id = ?");
             $stmt->execute([$id]);
+            Session::setFlash('success', \__('user_deleted_success') ?: 'Compte supprimé avec succès.');
         }
 
         header("Location: /users");
