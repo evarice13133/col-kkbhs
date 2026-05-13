@@ -705,9 +705,9 @@ return [
     'admin_restricted' => 'Accès restreint.',
 
     // ── Dashboard ─────────────────────────────────────────────────────
-    'command_center' => 'Héih!',
+    'command_center' => 'Hey Daniel!',
     'new_student' => 'Nouvel Élève',
-    'enter_marks' => 'Saisir Notes',
+    'enter_marks' => 'Saisir Notes', 
     'realtime_monitoring' => 'Surveillance en temps réel',
     'total_effectif' => 'Total Effectif',
     'active_rooms' => 'Salles actives',
