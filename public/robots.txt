@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /config/
+Disallow: /vendor/
+Disallow: /src/
+
+Sitemap: https://copobimat.camertech.com/sitemap.xml

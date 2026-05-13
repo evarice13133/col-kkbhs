@@ -28,6 +28,7 @@ use App\Services\ActivityTracker;
 use App\Controllers\DocumentationController;
 use App\Controllers\HonorRollController;
 use App\Controllers\DepartmentController;
+use App\Controllers\LandingController;
 
 
 // 0. Applique les mesures de sécurité globales
@@ -60,7 +61,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 // BARRAGE DE SÉCURITÉ GLOBAL (Middleware)
 // Redirige ABSOLUMENT tout visiteur non-authentifié ou session expirée vers l'écran de connexion.
-if (!in_array($path, ['/login', '/logout', '/register-teacher']) && !Security::validateSession()) {
+if (!in_array($path, ['/', '/login', '/logout', '/register-teacher', '/sitemap.xml', '/contact/send']) && !Security::validateSession()) {
     header('Location: /login');
     exit;
 }
@@ -81,10 +82,40 @@ if ($path === '/locale') {
     exit;
 }
 
-// Route principale (Tableau de Bord / Accueil)
+// 5. SEO & Public Actions
+if ($path === '/sitemap.xml') {
+    header('Content-Type: application/xml');
+    include __DIR__ . '/sitemap.xml.php';
+    exit;
+}
+
+if ($path === '/contact/send' && $method === 'POST') {
+    $c = new LandingController();
+    $c->sendContact();
+    exit;
+}
+
+if ($path === '/notifications/toggle-archive') {
+    $c = new LandingController();
+    $c->toggleArchiveNotification();
+    exit;
+}
+
+if ($path === '/notifications/delete') {
+    $c = new LandingController();
+    $c->deleteNotification();
+    exit;
+}
+
+// Route principale (Tableau de Bord ou Landing Page)
 if ($path === '/' || $path === '/index.php') {
-    $c = new DashboardController();
-    $c->index();
+    if (Session::isLogged()) {
+        $c = new DashboardController();
+        $c->index();
+    } else {
+        $c = new LandingController();
+        $c->index();
+    }
 }
 
 // ====== ROUTES: UTILISATEURS ======

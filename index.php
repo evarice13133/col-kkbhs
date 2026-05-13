@@ -8,6 +8,15 @@ require_once __DIR__ . '/config/config.php';
 
 \App\Core\Session::start();
 
+// Bootstrapping des helpers globaux nécessaires au splash screen
+if (!function_exists('__')) {
+    function __($key, $replacements = [], $count = null) {
+        if ($key === null) return '';
+        return \App\Core\Translator::translate((string)$key, $replacements, $count);
+    }
+}
+\App\Core\Locale::bootstrapFromRequest();
+
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
 // On n'affiche le splash QUE sur la racine "/" et si pas encore vu dans cette session
@@ -29,7 +38,8 @@ if ($path === '/' && !\App\Core\Session::has('splash_done') && !isset($_GET['ski
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Chargement - <?= htmlspecialchars($school_name) ?></title>
+        <title>Copobimat - <?= htmlspecialchars($school_name) ?></title>
+        <meta name="description" content="<?= __('meta_description_default') ?>">
         <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800&display=swap" rel="stylesheet">
         <style>
             :root {
