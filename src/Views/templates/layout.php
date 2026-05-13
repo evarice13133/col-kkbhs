@@ -95,22 +95,22 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
     <meta name="description" content="<?= isset($meta_description) ? h($meta_description) : __('meta_description_default') ?>">
     <meta name="keywords" content="<?= isset($meta_keywords) ? h($meta_keywords) : __('meta_keywords_default') ?>">
     <link rel="canonical" href="https://copobimat.camertech.com<?= parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?>">
-    <meta name="author" content="Copobimat">
+    <meta name="author" content="NoteMaster">
     <meta name="robots" content="index, follow">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://copobimat.camertech.com/">
+    <meta property="og:url" content="https://notemaster.camertech.com/">
     <meta property="og:title" content="<?= (isset($title) ? $title . ' | ' : '') . __('app_name') ?>">
     <meta property="og:description" content="<?= __('meta_description_default') ?>">
-    <meta property="og:image" content="https://copobimat.camertech.com/public/img/og-image.jpg">
+    <meta property="og:image" content="https://notemaster.camertech.com/public/img/og-image.jpg">
 
     <!-- Structured Data (JSON-LD) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
-      "name": "Copobimat",
+      "name": "NoteMaster",
       "operatingSystem": "All",
       "applicationCategory": "EducationalApplication",
       "description": "<?= addslashes((string) __('app_description')) ?>",
@@ -121,9 +121,9 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
       },
       "publisher": {
         "@type": "Organization",
-        "name": "Copobimat",
-        "url": "https://copobimat.camertech.com",
-        "logo": "https://copobimat.camertech.com/public/img/logo.png"
+        "name": "NoteMaster",
+        "url": "https://notemaster.camertech.com",
+        "logo": "https://notemaster.camertech.com/public/img/logo.png"
       }
     }
     </script>
