@@ -22,11 +22,11 @@ class LandingController
      */
     public function index()
     {
-        $school_name = $this->settingsStore->get('school_name', 'Copobimat');
+        $school_name = $this->settingsStore->get('school_name', 'NoteMaster');
         
-        // Variables SEO optimisées pour Camertech & Copobimat
-        $title = "Camertech - Logiciel de Gestion Scolaire de Référence au Cameroun";
-        $meta_description = "Découvrez Copobimat par Camertech : la solution vitrine pour la gestion de votre établissement scolaire au Cameroun. Saisie des notes, bulletins automatiques et suivi complet.";
+        // Variables SEO optimisées pour Camertech & NoteMaster
+        $title = "Camertech - NoteMaster : Logiciel de Gestion Scolaire de Référence au Cameroun";
+        $meta_description = "Découvrez NoteMaster par Camertech : la solution pour la gestion de votre établissement scolaire au Cameroun. Saisie des notes, bulletins automatiques et suivi complet.";
         
         include __DIR__ . '/../Views/landing/index.php';
     }
@@ -41,10 +41,12 @@ class LandingController
         try {
             $name = trim($_POST['name'] ?? '');
             $email = trim($_POST['email'] ?? '');
+            $phone = trim($_POST['phone'] ?? '');
+            $city = trim($_POST['city'] ?? '');
             $message = trim($_POST['message'] ?? '');
 
             if (empty($name) || empty($email) || empty($message)) {
-                throw new \Exception("Tous les champs sont obligatoires.");
+                throw new \Exception("Tous les champs obligatoires doivent être remplis.");
             }
 
             $notification = [
@@ -52,6 +54,8 @@ class LandingController
                 'type' => 'contact',
                 'name' => $name,
                 'email' => $email,
+                'phone' => $phone,
+                'city' => $city,
                 'message' => $message,
                 'created_at' => date('Y-m-d H:i:s'),
                 'read' => false
@@ -77,11 +81,13 @@ class LandingController
             // ENVOI D'EMAIL (Notification SuperAdmin)
             $to = "evaricekuete2@gmail.com";
             $subject = "Nouvelle demande de démo : " . $name;
-            $body = "Vous avez reçu une nouvelle demande de démo via la vitrine Copobimat.\n\n" .
-                    "Nom: " . $name . "\n" .
+            $body = "Vous avez reçu une nouvelle demande de démo via la vitrine NoteMaster.\n\n" .
+                    "Établissement: " . $name . "\n" .
                     "Email: " . $email . "\n" .
+                    "Téléphone: " . ($phone ?: 'Non précisé') . "\n" .
+                    "Ville: " . ($city ?: 'Non précisé') . "\n" .
                     "Message:\n" . $message . "\n\n" .
-                    "Gérez vos notifications ici : https://copobimat.camertech.com/dashboard";
+                    "Gérez vos notifications ici : https://notemaster.camertech.com/dashboard";
             $headers = "From: no-reply@camertech.com\r\n" .
                        "Reply-To: " . $email . "\r\n" .
                        "X-Mailer: PHP/" . phpversion();

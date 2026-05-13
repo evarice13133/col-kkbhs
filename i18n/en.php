@@ -1,13 +1,13 @@
-<?php
+﻿<?php
 
 return [
-    // ── Student PDF Export ──────────────────────────────────────────────
+    // â”€â”€ Student PDF Export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     'generated_on'   => 'Generated on',
     'matricule'      => 'Student ID',
     'last_name'      => 'Last Name',
     'first_name'     => 'First Name',
     'total'          => 'Total',
-    // ── Subjects ───────────────────────────────────────────────────────
+    // â”€â”€ Subjects â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     'activate_subject_confirm' => 'Are you sure you want to activate the subject :name? It will become visible on all documents again.',
     'deactivate_subject_confirm' => 'Are you sure you want to deactivate the subject :name? It will be hidden from bulletins and grade entry.',
     'inactive_subjects' => 'Inactive Subjects',
@@ -31,13 +31,13 @@ return [
     'contact_support' => 'Contact support',
     'validating' => 'Validating...',
     'command_center_home' => 'Dashboard',
-    'app_name' => 'Copobimat',
+    'app_name' => 'NoteMaster',
     'app_tagline' => 'Leading School Management Software in Cameroon',
-    'app_description' => 'Copobimat is a modern school management platform designed for institutions in Cameroon. Simplify grade management, report card generation, and administrative tracking.',
-    'meta_description_default' => 'Optimize your school with Copobimat, the best school management software in Cameroon. Grade management, online report cards, and student tracking.',
-    'meta_keywords_default' => 'school management Cameroon, school software, online report cards, school management app Africa, Copobimat, evaluation management',
-    'footer_made_with' => 'Powered by Copobimat - Intelligent School Management Solution',
-    'login_title_seo' => 'Login | Copobimat - School Management Software',
+    'app_description' => 'NoteMaster is a modern school management platform designed for institutions in Cameroon. Simplify grade management, report card generation, and administrative tracking.',
+    'meta_description_default' => 'Optimize your school with NoteMaster, the best school management software in Cameroon. Grade management, online report cards, and student tracking.',
+    'meta_keywords_default' => 'school management Cameroon, school software, online report cards, school management app Africa, NoteMaster, evaluation management',
+    'footer_made_with' => 'Powered by NoteMaster - Intelligent School Management Solution',
+    'login_title_seo' => 'Login | NoteMaster - School Management Software',
     'logout' => 'Logout',
     'username' => 'Username',
     'password' => 'Password',
@@ -154,7 +154,7 @@ return [
     'pv_principal' => 'PRINCIPAL',
     'pv_confidential_document' => 'Confidential administrative document.',
     'pv_generated_on' => 'Generated on',
-    'pv_official_log' => 'NotesMaster v2.0 - Official Procès-Verbal',
+    'pv_official_log' => 'NotesMaster v2.0 - Official ProcÃ¨s-Verbal',
     'pv_document_title' => 'SUMMARY REPORT OF MARKS',
     'student_name'=>'Name(s) and surname(s)',
     'marks_and_reports' => 'Marks & Reports',
@@ -447,7 +447,7 @@ return [
     'birth_date_full' => 'Full birth date',
     'birth_place' => 'Birth place',
     'birth_place_full' => 'Full birth place',
-    'birth_place_placeholder' => 'Ex: Yaoundé',
+    'birth_place_placeholder' => 'Ex: YaoundÃ©',
     'sex' => 'Sex',
     'class' => 'Class',
     'academic_year' => 'Academic Year',
@@ -1054,7 +1054,7 @@ return [
     'action_label' => 'Action',
     'active_days_short' => 'Active Days (30d)',
     'all_departments' => 'All departments',
-    'Aucune Classe Selectionnée' => 'No class selected',
+    'Aucune Classe SelectionnÃ©e' => 'No class selected',
     'back_to_registry' => 'Back to registry',
     'backup_center_subtitle' => 'Backup status and Github history',
     'backup_not_run_yet' => 'No backup performed yet.',
@@ -1133,7 +1133,7 @@ return [
     'excellence_award_label' => 'Award for exceptional commitment',
     'assignment_pending' => 'Assignment required immediately',
 
-    // ── Documentation & Guide ──────────────────────────────────────────
+    // â”€â”€ Documentation & Guide â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     'user_documentation' => 'User Doc.',
     'support_center' => 'Support Center',
     'documentation_intro_text' => 'Everything you need to know to master NotesMaster and optimize your academic management.',
@@ -1157,7 +1157,7 @@ return [
     'contact_it_support' => 'Our technical team is at your service.',
     'contact_support_action' => 'Contact IT Support',
 
-    // ── Evaluations (Sequences) ───────────────────────────────────────
+    // â”€â”€ Evaluations (Sequences) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     'evaluations' => 'Evaluations',
     'evaluation_sequences_mgmt' => 'Sequence Management',
     'sequences_defined' => 'Defined sequences',
