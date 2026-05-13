@@ -13,8 +13,8 @@ define('DB_PASS', 'Tezempa12133!!');
 define('DB_CHARSET', 'utf8mb4');
 define('APP_URL', 'https://copobimat.camertech.com');
 
-define('APP_ENV', 'production');
-define('DEBUG_MODE', false);
+ define('APP_ENV', 'production');
+ define('DEBUG_MODE', false);
 
 // en developpement pour la configuration locale
 //  define('DB_HOST', 'localhost');

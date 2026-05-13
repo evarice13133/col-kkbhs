@@ -34,8 +34,8 @@ ob_start();
             </div>
             <div class="col-lg-6 position-relative" data-aos="zoom-in" data-aos-delay="200">
                 <div class="position-absolute top-50 start-50 translate-middle w-100 h-100 bg-primary opacity-5 rounded-circle" style="filter: blur(80px);"></div>
-                <div class="hero-image-wrapper p-2 bg-white rounded-5 shadow-2xl border cursor-zoom" onclick="openLightbox('/assets/Dashbord_light.png')">
-                    <img src="/assets/Dashbord_light.png" alt="NoteMaster Dashboard" class="img-fluid rounded-4 animate-float">
+                <div class="hero-image-wrapper p-2 bg-white rounded-5 shadow-2xl border cursor-zoom" onclick="openLightbox('/public/assets/Dashbord_light.png')">
+                    <img src="/public/assets/Dashbord_light.png" alt="NoteMaster Dashboard" class="img-fluid rounded-4 animate-float">
                     <div class="zoom-overlay rounded-4"><i class="bi bi-search fs-1"></i></div>
                 </div>
             </div>
@@ -107,8 +107,8 @@ ob_start();
         <!-- Bulletin Section -->
         <div class="row g-5 align-items-center mb-5 pb-lg-5">
             <div class="col-lg-6" data-aos="fade-right">
-                <div class="image-showcase p-2 bg-white rounded-4 shadow-lg border cursor-zoom" onclick="openLightbox('/assets/bulletin%20de%20note.png')">
-                    <img src="/assets/bulletin%20de%20note.png" alt="Bulletin NoteMaster" class="img-fluid rounded-3">
+                <div class="image-showcase p-2 bg-white rounded-4 shadow-lg border cursor-zoom" onclick="openLightbox('/public/assets/bulletin%20de%20note.png')">
+                    <img src="/public/assets/bulletin%20de%20note.png" alt="Bulletin NoteMaster" class="img-fluid rounded-3">
                     <div class="zoom-overlay rounded-3"><i class="bi bi-search fs-1"></i></div>
                 </div>
             </div>
@@ -160,8 +160,8 @@ ob_start();
                 </div>
             </div>
             <div class="col-lg-6 order-1 order-lg-2" data-aos="fade-left">
-                <div class="image-showcase p-2 bg-white rounded-4 shadow-lg border cursor-zoom" onclick="openLightbox('/assets/dashbord_night.png')">
-                    <img src="/assets/dashbord_night.png" alt="Statistiques NoteMaster" class="img-fluid rounded-3">
+                <div class="image-showcase p-2 bg-white rounded-4 shadow-lg border cursor-zoom" onclick="openLightbox('/public/assets/dashbord_night.png')">
+                    <img src="/public/assets/dashbord_night.png" alt="Statistiques NoteMaster" class="img-fluid rounded-3">
                     <div class="zoom-overlay rounded-3"><i class="bi bi-search fs-1"></i></div>
                 </div>
             </div>
@@ -170,8 +170,8 @@ ob_start();
         <!-- Tableau d'Honneur Section -->
         <div class="row g-5 align-items-center">
             <div class="col-lg-6" data-aos="fade-right">
-                <div class="image-showcase p-2 bg-white rounded-4 shadow-lg border cursor-zoom" onclick="openLightbox('/assets/tableau%20d\'honneur.png')">
-                    <img src="/assets/tableau%20d'honneur.png" alt="Tableau d'Honneur NoteMaster" class="img-fluid rounded-3">
+                <div class="image-showcase p-2 bg-white rounded-4 shadow-lg border cursor-zoom" onclick="openLightbox('/public/assets/tableau%20d\'honneur.png')">
+                    <img src="/public/assets/tableau%20d'honneur.png" alt="Tableau d'Honneur NoteMaster" class="img-fluid rounded-3">
                     <div class="zoom-overlay rounded-3"><i class="bi bi-search fs-1"></i></div>
                 </div>
             </div>
