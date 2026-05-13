@@ -74,6 +74,83 @@ ob_start();
 
 
     <?php if (\App\Core\Session::get('user_role') === 'superadmin'): ?>
+        <!-- Notifications Vitrine -->
+        <?php if (!empty($landing_notifications)): ?>
+            <div class="row g-3 mb-5 animate-fade-in">
+                <div class="col-12">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-bell-fill text-accent fs-5"></i>
+                            <h6 class="fw-bold m-0 text-uppercase small letter-spacing-1">Notifications Vitrine (Demandes)</h6>
+                        </div>
+                        <span class="badge bg-accent bg-opacity-10 text-accent rounded-pill"><?= count($landing_notifications) ?> nouveaux</span>
+                    </div>
+                    <div class="table-responsive">
+                        <div class="d-flex gap-3 pb-3">
+                            <?php foreach ($landing_notifications as $notif): 
+                                $isArchived = $notif['archived'] ?? false;
+                            ?>
+                                <div class="modern-card p-3 shadow-sm border-start border-4 <?= $isArchived ? 'border-secondary opacity-75' : 'border-accent' ?> flex-shrink-0" id="notif-<?= h($notif['id']) ?>" style="min-width: 300px; max-width: 350px; background: <?= $isArchived ? 'rgba(0,0,0,0.02)' : 'rgba(var(--primary-rgb), 0.02)' ?>;">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div class="fw-bold text-main-theme small d-flex align-items-center gap-2">
+                                            <?= h($notif['name']) ?>
+                                            <?php if ($isArchived): ?>
+                                                <span class="badge bg-secondary extra-small">Archivé</span>
+                                            <?php endif; ?>
+                                        </div>
+                                        <div class="small text-muted" style="font-size: 0.7rem;"><?= h($formatDateTime($notif['created_at'])) ?></div>
+                                    </div>
+                                    <div class="small text-primary mb-2"><?= h($notif['email']) ?></div>
+                                    <div class="text-main-theme small text-truncate-2 mb-3" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                        <?= h($notif['message']) ?>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-0 extra-small" onclick="manageNotif('<?= h($notif['id']) ?>', 'toggle-archive')" title="<?= $isArchived ? 'Restaurer' : 'Archiver' ?>">
+                                                <i class="bi <?= $isArchived ? 'bi-arrow-counterclockwise' : 'bi-archive' ?>"></i>
+                                            </button>
+                                            <button class="btn btn-xs btn-outline-danger rounded-pill px-2 py-0 extra-small" onclick="manageNotif('<?= h($notif['id']) ?>', 'delete')" title="Supprimer">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                        <button class="btn btn-sm btn-link p-0 text-accent fw-bold text-decoration-none small" onclick="Swal.fire({title: 'Message de <?= h($notif['name']) ?>', text: '<?= h($notif['message']) ?>', footer: 'Contact: <?= h($notif['email']) ?>'})">Lire</button>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+            function manageNotif(id, action) {
+                const url = action === 'delete' ? '/notifications/delete' : '/notifications/toggle-archive';
+                const confirmMsg = action === 'delete' ? 'Supprimer définitivement ce message ?' : (document.querySelector(`#notif-${id}`).classList.contains('opacity-75') ? 'Restaurer ce message ?' : 'Archiver ce message ?');
+
+                Swal.fire({
+                    title: 'Confirmation',
+                    text: confirmMsg,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Oui',
+                    cancelButtonText: 'Annuler'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        fetch(`${url}?id=${id}`)
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.success) {
+                                location.reload();
+                            } else {
+                                Swal.fire('Erreur', data.error, 'error');
+                            }
+                        });
+                    }
+                });
+            }
+            </script>
+        <?php endif; ?>
+
         <div class="row g-3 mb-5">
             <div class="col-12">
                 <div class="d-flex align-items-center gap-2 mb-3">
@@ -89,7 +166,7 @@ ob_start();
                         style="--stats-index: <?= (int) $index ?>;">
                         <div class="d-flex align-items-center justify-content-between mb-2">
                             <div class="avatar-xs bg-<?= h($card['accent']) ?> bg-opacity-10 text-<?= h($card['accent']) ?> rounded-3 d-flex align-items-center justify-content-center"
-                                style="width: 32px; height: 32px;">
+                                 style="width: 32px; height: 32px;">
                                 <i class="bi <?= h($card['icon']) ?>"></i>
                             </div>
                         </div>

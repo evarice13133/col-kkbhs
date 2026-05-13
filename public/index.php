@@ -61,7 +61,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 // BARRAGE DE SÉCURITÉ GLOBAL (Middleware)
 // Redirige ABSOLUMENT tout visiteur non-authentifié ou session expirée vers l'écran de connexion.
-if (!in_array($path, ['/', '/login', '/logout', '/register-teacher']) && !Security::validateSession()) {
+if (!in_array($path, ['/', '/login', '/logout', '/register-teacher', '/sitemap.xml', '/contact/send']) && !Security::validateSession()) {
     header('Location: /login');
     exit;
 }
@@ -79,6 +79,31 @@ if ($path === '/locale') {
     $redirect = $_GET['redirect'] ?? '/';
     Locale::set($lang);
     header('Location: ' . $redirect);
+    exit;
+}
+
+// 5. SEO & Public Actions
+if ($path === '/sitemap.xml') {
+    header('Content-Type: application/xml');
+    include __DIR__ . '/sitemap.xml.php';
+    exit;
+}
+
+if ($path === '/contact/send' && $method === 'POST') {
+    $c = new LandingController();
+    $c->sendContact();
+    exit;
+}
+
+if ($path === '/notifications/toggle-archive') {
+    $c = new LandingController();
+    $c->toggleArchiveNotification();
+    exit;
+}
+
+if ($path === '/notifications/delete') {
+    $c = new LandingController();
+    $c->deleteNotification();
     exit;
 }
 

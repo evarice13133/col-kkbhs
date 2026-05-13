@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Database;
+use App\Core\Session;
 use App\Services\SettingsStore;
 
 class LandingController
@@ -23,11 +24,129 @@ class LandingController
     {
         $school_name = $this->settingsStore->get('school_name', 'Copobimat');
         
-        // Variables SEO
-        $title = "Logiciel de Gestion Scolaire au Cameroun";
-        $meta_description = "Copobimat : Solution complète de gestion scolaire au Cameroun. Gestion des notes, bulletins automatiques, suivi des élèves et des enseignants. Simplifiez votre administration dès aujourd'hui.";
+        // Variables SEO optimisées pour Camertech & Copobimat
+        $title = "Camertech - Logiciel de Gestion Scolaire de Référence au Cameroun";
+        $meta_description = "Découvrez Copobimat par Camertech : la solution vitrine pour la gestion de votre établissement scolaire au Cameroun. Saisie des notes, bulletins automatiques et suivi complet.";
         
         include __DIR__ . '/../Views/landing/index.php';
+    }
+
+    /**
+     * Gère l'envoi du formulaire de contact (Sans DB, via JSON Log)
+     */
+    public function sendContact()
+    {
+        header('Content-Type: application/json');
+        
+        try {
+            $name = trim($_POST['name'] ?? '');
+            $email = trim($_POST['email'] ?? '');
+            $message = trim($_POST['message'] ?? '');
+
+            if (empty($name) || empty($email) || empty($message)) {
+                throw new \Exception("Tous les champs sont obligatoires.");
+            }
+
+            $notification = [
+                'id' => uniqid(),
+                'type' => 'contact',
+                'name' => $name,
+                'email' => $email,
+                'message' => $message,
+                'created_at' => date('Y-m-d H:i:s'),
+                'read' => false
+            ];
+
+            // Stockage ultra-rapide en fichier JSON
+            $logPath = __DIR__ . '/../../logs/notifications.json';
+            $notifications = [];
+            
+            if (file_exists($logPath)) {
+                $content = file_get_contents($logPath);
+                $notifications = json_decode($content, true) ?: [];
+            }
+
+            // Ajouter au début (plus récent d'abord)
+            array_unshift($notifications, $notification);
+            
+            // Garder seulement les 50 derniers messages pour la performance
+            $notifications = array_slice($notifications, 0, 50);
+
+            file_put_contents($logPath, json_encode($notifications, JSON_PRETTY_PRINT));
+
+            // ENVOI D'EMAIL (Notification SuperAdmin)
+            $to = "evaricekuete2@gmail.com";
+            $subject = "Nouvelle demande de démo : " . $name;
+            $body = "Vous avez reçu une nouvelle demande de démo via la vitrine Copobimat.\n\n" .
+                    "Nom: " . $name . "\n" .
+                    "Email: " . $email . "\n" .
+                    "Message:\n" . $message . "\n\n" .
+                    "Gérez vos notifications ici : https://copobimat.camertech.com/dashboard";
+            $headers = "From: no-reply@camertech.com\r\n" .
+                       "Reply-To: " . $email . "\r\n" .
+                       "X-Mailer: PHP/" . phpversion();
+
+            @mail($to, $subject, $body, $headers);
+
+            echo json_encode(['success' => true]);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Archive ou restaure une notification
+     */
+    public function toggleArchiveNotification()
+    {
+        header('Content-Type: application/json');
+        $role = Session::get('user_role');
+        if ($role !== 'superadmin' && $role !== 'admin') {
+            echo json_encode(['success' => false, 'error' => 'Accès refusé']);
+            exit;
+        }
+
+        $id = $_GET['id'] ?? '';
+        $logPath = __DIR__ . '/../../logs/notifications.json';
+        
+        if (file_exists($logPath)) {
+            $notifications = json_decode(file_get_contents($logPath), true) ?: [];
+            foreach ($notifications as &$notif) {
+                if ($notif['id'] === $id) {
+                    $notif['archived'] = !($notif['archived'] ?? false);
+                    break;
+                }
+            }
+            file_put_contents($logPath, json_encode($notifications, JSON_PRETTY_PRINT));
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Fichier introuvable']);
+        }
+    }
+
+    /**
+     * Supprime définitivement une notification
+     */
+    public function deleteNotification()
+    {
+        header('Content-Type: application/json');
+        $role = Session::get('user_role');
+        if ($role !== 'superadmin' && $role !== 'admin') {
+            echo json_encode(['success' => false, 'error' => 'Accès refusé']);
+            exit;
+        }
+
+        $id = $_GET['id'] ?? '';
+        $logPath = __DIR__ . '/../../logs/notifications.json';
+        
+        if (file_exists($logPath)) {
+            $notifications = json_decode(file_get_contents($logPath), true) ?: [];
+            $notifications = array_filter($notifications, fn($n) => $n['id'] !== $id);
+            file_put_contents($logPath, json_encode(array_values($notifications), JSON_PRETTY_PRINT));
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Fichier introuvable']);
+        }
     }
 
     /**

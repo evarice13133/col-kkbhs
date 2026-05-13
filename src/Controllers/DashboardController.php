@@ -258,6 +258,13 @@ class DashboardController
         $usageMetrics = $this->getUsageMetrics();
         $teacherActivitySummary = $this->getTeacherActivitySummary();
         $backupOverview = $this->getBackupOverview();
+        
+        // 6. Notifications de la vitrine (Landing Page)
+        $notifications = [];
+        $logPath = __DIR__ . '/../../logs/notifications.json';
+        if (file_exists($logPath)) {
+            $notifications = json_decode(file_get_contents($logPath), true) ?: [];
+        }
 
         return [
             'stats_students' => $stats_students,
@@ -277,6 +284,7 @@ class DashboardController
             'usageMetrics' => $usageMetrics,
             'teacherActivitySummary' => $teacherActivitySummary,
             'backupOverview' => $backupOverview,
+            'landing_notifications' => $notifications,
         ];
     }
 

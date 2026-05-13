@@ -8,6 +8,15 @@ require_once __DIR__ . '/config/config.php';
 
 \App\Core\Session::start();
 
+// Bootstrapping des helpers globaux nécessaires au splash screen
+if (!function_exists('__')) {
+    function __($key, $replacements = [], $count = null) {
+        if ($key === null) return '';
+        return \App\Core\Translator::translate((string)$key, $replacements, $count);
+    }
+}
+\App\Core\Locale::bootstrapFromRequest();
+
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
 // On n'affiche le splash QUE sur la racine "/" et si pas encore vu dans cette session

@@ -27,33 +27,37 @@ $logoData = [
 $nav_items = [
     ['icon' => 'bi-speedometer2', 'label' => __('dashboard'), 'url' => '/', 'roles' => ['superadmin', 'admin', 'enseignant']],
 
-    // Admin specific sections
-    ['section' => __('academic_management'), 'roles' => ['superadmin']],
+    // SECTION: PILOTAGE
+    ['section' => __('pilotage'), 'roles' => ['superadmin', 'admin']],
     ['icon' => 'bi-calendar-event', 'label' => __('academic_years'), 'url' => '/academic_years', 'roles' => ['superadmin', 'admin']],
     ['icon' => 'bi-check2-square', 'label' => __('evaluations'), 'url' => '/sequences', 'roles' => ['superadmin', 'admin']],
+
+    // SECTION: STRUCTURE
+    ['section' => __('structure_et_classes'), 'roles' => ['superadmin']],
     ['icon' => 'bi-layers', 'label' => __('academic_cycles'), 'url' => '/cycles', 'roles' => ['superadmin']],
     ['icon' => 'bi-grid-3x3-gap', 'label' => __('academic_sections'), 'url' => '/sections', 'roles' => ['superadmin']],
     ['icon' => 'bi-building', 'label' => __('departments'), 'url' => '/departments', 'roles' => ['superadmin']],
     ['icon' => 'bi-door-open', 'label' => __('classes'), 'url' => '/classes', 'roles' => ['superadmin', 'admin']],
+
+    // SECTION: RESSOURCES HUMAINES
+    ['section' => __('ressources_humaines'), 'roles' => ['superadmin', 'admin', 'enseignant']],
     ['icon' => 'bi-people', 'label' => __('students'), 'url' => '/students', 'roles' => ['superadmin', 'admin']],
+    ['icon' => 'bi-people', 'label' => __('my_students'), 'url' => '/students', 'roles' => ['enseignant']],
     ['icon' => 'bi-person-badge', 'label' => __('teachers'), 'url' => '/teachers', 'roles' => ['superadmin', 'admin']],
+
+    // SECTION: PÉDAGOGIE
+    ['section' => __('pedagogie_et_resultats'), 'roles' => ['superadmin', 'admin', 'enseignant']],
     ['icon' => 'bi-book', 'label' => __('subjects'), 'url' => '/subjects', 'roles' => ['superadmin', 'admin']],
-
-    // enseignants & Admin section
-    ['section' => __('marks_and_reports'), 'roles' => ['superadmin', 'admin']],
     ['icon' => 'bi-pencil-square', 'label' => __('enter_marks'), 'url' => '/notes', 'roles' => ['superadmin', 'admin', 'enseignant']],
-
     ['icon' => 'bi-file-earmark-pdf', 'label' => __('bulletins'), 'url' => '/bulletins', 'roles' => ['superadmin', 'admin']],
     ['icon' => 'bi-award', 'label' => __('honor_roll_title'), 'url' => '/honors', 'roles' => ['superadmin', 'admin']],
     ['icon' => 'bi-shield-check', 'label' => __('discipline_management'), 'url' => '/bulletins/discipline', 'roles' => ['superadmin', 'admin']],
     ['icon' => 'bi-file-earmark-text', 'label' => __('proces_verbaux'), 'url' => '/proces-verbal', 'roles' => ['superadmin', 'admin']],
 
-    // Teacher specifics (without section header for cleaner look)
-    ['icon' => 'bi-people', 'label' => __('my_students'), 'url' => '/students', 'roles' => ['enseignant']],
-
-    ['section' => __('system'), 'roles' => ['superadmin']],
-    ['icon' => 'bi-gear', 'label' => __('settings'), 'url' => '/settings', 'roles' => ['superadmin']],
+    // SECTION: ADMINISTRATION
+    ['section' => __('administration'), 'roles' => ['superadmin']],
     ['icon' => 'bi-people-fill', 'label' => __('users'), 'url' => '/users', 'roles' => ['superadmin']],
+    ['icon' => 'bi-gear', 'label' => __('settings'), 'url' => '/settings', 'roles' => ['superadmin']],
     ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'roles' => ['superadmin', 'admin', 'enseignant']],
 ];
 
@@ -193,8 +197,62 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         }
 
         .nav-link-custom.active {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            box-shadow: 0 12px 24px -8px rgba(124, 58, 237, 0.45);
+            background: linear-gradient(135deg, var(--primary-color), #4f46e5);
+            box-shadow: 0 8px 20px -6px rgba(59, 130, 246, 0.5);
+            color: white !important;
+            transform: translateX(4px);
+        }
+
+        .nav-section {
+            padding: 1.5rem 1.5rem 0.5rem;
+            opacity: 0.8;
+        }
+
+        .nav-section-title {
+            font-size: 0.65rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--primary-color);
+            border-bottom: 1px solid rgba(var(--primary-rgb), 0.1);
+            padding-bottom: 4px;
+        }
+
+        .nav-link-custom {
+            margin: 0.2rem 0.75rem;
+            padding: 0.7rem 1rem;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #64748b;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+        }
+
+        .nav-link-custom:hover:not(.active) {
+            background: rgba(var(--primary-rgb), 0.05);
+            color: var(--primary-color);
+            transform: translateX(4px);
+        }
+
+        .nav-link-custom i {
+            font-size: 1.1rem;
+            transition: transform 0.2s;
+        }
+
+        .nav-link-custom:hover i {
+            transform: scale(1.1);
+        }
+
+        [data-theme="dark"] .nav-link-custom {
+            color: #94a3b8;
+        }
+
+        [data-theme="dark"] .nav-link-custom:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.05);
         }
 
         .dropdown-menu-modern {
@@ -353,31 +411,50 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                 <!-- end logo head -->
 
             <div class="sidebar-content">
-                <?php foreach ($nav_items as $item): ?>
-                    <?php if (isset($item['section'])): ?>
-                        <?php if (in_array($user_role, $item['roles'])): ?>
-                            <div class="nav-section">
-                                <div class="nav-section-title"><?= $item['section'] ?></div>
-                            </div>
+                <?php if (\App\Core\Session::isLogged()): ?>
+                    <?php foreach ($nav_items as $item): ?>
+                        <?php if (isset($item['section'])): ?>
+                            <?php if (in_array($user_role, $item['roles'])): ?>
+                                <div class="nav-section">
+                                    <div class="nav-section-title"><?= $item['section'] ?></div>
+                                </div>
+                            <?php endif; ?>
+                        <?php else: ?>
+                            <?php if (in_array($user_role, $item['roles'])): ?>
+                                <?php $isActive = ($current_path === $item['url']); ?>
+                                <a href="<?= $item['url'] ?>" class="nav-link-custom <?= $isActive ? 'active' : '' ?>">
+                                    <i class="bi <?= $item['icon'] ?>"></i>
+                                    <span><?= $item['label'] ?></span>
+                                </a>
+                            <?php endif; ?>
                         <?php endif; ?>
-                    <?php else: ?>
-                        <?php if (in_array($user_role, $item['roles'])): ?>
-                            <?php $isActive = ($current_path === $item['url']); ?>
-                            <a href="<?= $item['url'] ?>" class="nav-link-custom <?= $isActive ? 'active' : '' ?>">
-                                <i class="bi <?= $item['icon'] ?>"></i>
-                                <span><?= $item['label'] ?></span>
-                            </a>
-                        <?php endif; ?>
-                    <?php endif; ?>
-                <?php endforeach; ?>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="px-3 py-4">
+                        <div class="alert alert-info border-0 rounded-4 small mb-4" style="background: rgba(59, 130, 246, 0.05); color: #3b82f6;">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Accédez à votre espace pour gérer votre établissement.
+                        </div>
+                        <a href="/login" class="nav-link-custom mb-2">
+                            <i class="bi bi-box-arrow-in-right"></i>
+                            <span><?= __('login') ?></span>
+                        </a>
+                        <a href="/register-teacher" class="nav-link-custom">
+                            <i class="bi bi-person-plus"></i>
+                            <span>S'enregistrer</span>
+                        </a>
+                    </div>
+                <?php endif; ?>
             </div>
 
-            <div class="sidebar-footer">
-                <a href="/logout" class="nav-link-custom text-danger">
-                    <i class="bi bi-box-arrow-right"></i>
-                    <span><?= __('logout') ?></span>
-                </a>
-            </div>
+            <?php if (\App\Core\Session::isLogged()): ?>
+                <div class="sidebar-footer">
+                    <a href="/logout" class="nav-link-custom text-danger">
+                        <i class="bi bi-box-arrow-right"></i>
+                        <span><?= __('logout') ?></span>
+                    </a>
+                </div>
+            <?php endif; ?>
         </aside>
 
         <!-- Main Area -->
@@ -414,62 +491,79 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                         <i class="bi bi-moon-stars fs-5 text-main-theme"></i>
                     </button>
 
-                    <!-- User Profile Dropdown -->
-                    <div class="dropdown">
-                        <a href="#" class="user-profile user-profile-pill d-flex align-items-center gap-2 text-decoration-none p-1 pe-md-3 rounded-pill transition-all hover-elevate shadow-sm" data-bs-toggle="dropdown" aria-expanded="false">
-                            <div class="user-avatar bg-primary text-white d-flex align-items-center justify-content-center rounded-circle fw-bold shadow-sm" style="width: 34px; height: 34px; font-size: 0.9rem;">
-                                <?= $user_initials ?>
-                            </div>
-                            <div class="d-none d-md-flex flex-column justify-content-center text-start">
-                                <span class="text-main-theme fw-bold lh-1" style="font-size: 0.85rem;"><?= h($user_name) ?></span>
-                                <span class="text-muted" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 3px;"><?= h(__($user_role)) ?></span>
-                            </div>
-                            <i class="bi bi-chevron-down text-muted small d-none d-md-block ms-1"></i>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2 mt-2">
-                            <li>
-                                <h6 class="dropdown-header small text-uppercase fw-bold"><?= __('account') ?></h6>
-                            </li>
-                            <li>
-                                <a class="dropdown-item dropdown-item-modern" href="/profile">
-                                    <i class="bi bi-person text-primary"></i> <?= __('my_profile') ?>
-                                </a>
-                            </li>
-                            <?php if (in_array($user_role, ['superadmin'])): ?>
+                    <!-- User Actions -->
+                    <?php if (\App\Core\Session::isLogged()): ?>
+                        <div class="dropdown">
+                            <a href="#" class="user-profile user-profile-pill d-flex align-items-center gap-2 text-decoration-none p-1 pe-md-3 rounded-pill transition-all hover-elevate shadow-sm" data-bs-toggle="dropdown" aria-expanded="false">
+                                <div class="user-avatar bg-primary text-white d-flex align-items-center justify-content-center rounded-circle fw-bold shadow-sm" style="width: 34px; height: 34px; font-size: 0.9rem;">
+                                    <?= $user_initials ?>
+                                </div>
+                                <div class="d-none d-md-flex flex-column justify-content-center text-start">
+                                    <span class="text-main-theme fw-bold lh-1" style="font-size: 0.85rem;"><?= h($user_name) ?></span>
+                                    <span class="text-muted" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 3px;"><?= h(__($user_role)) ?></span>
+                                </div>
+                                <i class="bi bi-chevron-down text-muted small d-none d-md-block ms-1"></i>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2 mt-2">
                                 <li>
-                                    <a class="dropdown-item dropdown-item-modern" href="/settings">
-                                        <i class="bi bi-gear text-secondary"></i> <?= __('settings') ?>
+                                    <h6 class="dropdown-header small text-uppercase fw-bold"><?= __('account') ?></h6>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item dropdown-item-modern" href="/profile">
+                                        <i class="bi bi-person text-primary"></i> <?= __('my_profile') ?>
                                     </a>
                                 </li>
-                            <?php endif; ?>
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
-                            <li>
-                                <h6 class="dropdown-header small text-uppercase fw-bold"><?= __('language') ?></h6>
-                            </li>
-                            <li>
-                                <a class="dropdown-item dropdown-item-modern <?= $app_lang === 'fr' ? 'active' : '' ?>"
-                                    href="javascript:void(0)" onclick="UX.switchLanguage('fr')">
-                                    <span class="fs-5">🇫🇷</span> Français
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item dropdown-item-modern <?= $app_lang === 'en' ? 'active' : '' ?>"
-                                    href="javascript:void(0)" onclick="UX.switchLanguage('en')">
-                                    <span class="fs-5">🇺🇸</span> English
-                                </a>
-                            </li>
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
-                            <li>
-                                <a class="dropdown-item dropdown-item-modern text-danger" href="/logout">
-                                    <i class="bi bi-box-arrow-right"></i> <?= __('logout') ?>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
+                                <?php if (in_array($user_role, ['superadmin'])): ?>
+                                    <li>
+                                        <a class="dropdown-item dropdown-item-modern" href="/settings">
+                                            <i class="bi bi-gear text-secondary"></i> <?= __('settings') ?>
+                                        </a>
+                                    </li>
+                                <?php endif; ?>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li>
+                                    <h6 class="dropdown-header small text-uppercase fw-bold"><?= __('language') ?></h6>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item dropdown-item-modern <?= $app_lang === 'fr' ? 'active' : '' ?>"
+                                        href="javascript:void(0)" onclick="UX.switchLanguage('fr')">
+                                        <span class="fs-5">🇫🇷</span> Français
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item dropdown-item-modern <?= $app_lang === 'en' ? 'active' : '' ?>"
+                                        href="javascript:void(0)" onclick="UX.switchLanguage('en')">
+                                        <span class="fs-5">🇺🇸</span> English
+                                    </a>
+                                </li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li>
+                                    <a class="dropdown-item dropdown-item-modern text-danger" href="/logout">
+                                        <i class="bi bi-box-arrow-right"></i> <?= __('logout') ?>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    <?php else: ?>
+                        <div class="d-flex align-items-center gap-2">
+                            <a href="/login" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm hover-scale d-none d-md-inline-block">
+                                <?= __('login') ?>
+                            </a>
+                            <div class="dropdown d-md-none">
+                                <button class="btn btn-theme-soft rounded-circle d-flex align-items-center justify-content-center p-0 border-0 shadow-sm" data-bs-toggle="dropdown">
+                                    <i class="bi bi-person-circle fs-5"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2 mt-2">
+                                    <li><a class="dropdown-item dropdown-item-modern" href="/login"><?= __('login') ?></a></li>
+                                    <li><a class="dropdown-item dropdown-item-modern" href="/register-teacher">S'enregistrer</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </header>
             <!-- Page Content -->
