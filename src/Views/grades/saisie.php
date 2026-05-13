@@ -318,6 +318,30 @@ $appreciationLabels = [
             if (!form) return;
 
             const noteInputs = form.querySelectorAll('.js-note-input');
+            let hasInvalidGrade = false;
+
+            Array.from(noteInputs).forEach(input => {
+                const val = input.value.trim();
+                if (val !== '') {
+                    const fVal = parseFloat(val);
+                    if (fVal > 20) {
+                        hasInvalidGrade = true;
+                        input.classList.add('is-invalid', 'border-danger');
+                    } else {
+                        input.classList.remove('is-invalid', 'border-danger');
+                    }
+                }
+            });
+
+            if (hasInvalidGrade) {
+                if (typeof AlertService !== 'undefined') {
+                    AlertService.toast('error', 'La note ne doit pas être supérieure à 20');
+                } else {
+                    alert('La note ne doit pas être supérieure à 20');
+                }
+                return;
+            }
+
             const filledCount = Array.from(noteInputs).filter(input => input.value.trim() !== '').length;
 
             if (typeof AlertService === 'undefined') {

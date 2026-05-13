@@ -154,17 +154,17 @@ if (isset($styleOnly)) {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
     text-align: center;
-    padding-top: 120px;
-    font-size: 60px;
-    font-weight: 800;
-    color: #eeeeee;
-    letter-spacing: 4px;
+    padding-top: 150px;
+    font-size: 70px;
+    font-weight: 900;
+    color: #f2f2f2;
+    letter-spacing: 5px;
     text-transform: uppercase;
     pointer-events: none;
     user-select: none;
-    z-index: 0;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+    z-index: -1;
+    transform: rotate(-30deg);
+    opacity: 0.4;
     }
     .grades-table { position: relative; z-index: 1; table-layout: fixed; width: 100%; border-collapse: collapse; }
     .grades-table td:not(.left) { font-size: 0.9em; }
@@ -322,6 +322,10 @@ if (isset($styleOnly)) {
                 <button class="pv-btn pv-btn-print" onclick="window.print()">
                     <?= __('pv_print_btn') ?>
                 </button>
+                <a href="<?= $_SERVER['REQUEST_URI'] . (strpos($_SERVER['REQUEST_URI'], '?') !== false ? '&' : '?') ?>format=pdf"
+                    class="pv-btn pv-btn-download">
+                    <i class="bi bi-file-pdf"></i> <?= __('pv_download_btn') ?>
+                </a>
             </div>
         </div>
     <?php endif; ?>
@@ -348,8 +352,8 @@ if (isset($styleOnly)) {
                     <?php if (!empty($i['school_logo_base64'])): ?>
                         <img src="<?= $i['school_logo_base64'] ?>" alt="Logo">
                     <?php elseif (!empty($i['school_logo'])):
-                            $logoPath = \App\Core\Helpers::normalizeLogoPath((string) $i['school_logo']); ?>
-                            <img src="<?= htmlspecialchars($logoPath) ?>" alt="Logo">
+                        $logoPath = \App\Core\Helpers::normalizeLogoPath((string) $i['school_logo']); ?>
+                        <img src="<?= htmlspecialchars($logoPath) ?>" alt="Logo">
                     <?php else: ?>
                         <div class="logo-placeholder">LOGO</div>
                     <?php endif; ?>
@@ -661,6 +665,10 @@ if (isset($styleOnly)) {
                         <tr>
                             <td colspan="2" class="left"><?= __('suspended') ?> (<?= __('days') ?>)</td>
                             <td class="bold"><?= sprintf('%02d', $discipline['exclusion_days']) ?></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" class="left"><?= __('warn_conduct') ?></td>
+                            <td class="bold"><?= $discipline['warning_conduct'] ?></td>
                         </tr>
                     </table>
                 </td>

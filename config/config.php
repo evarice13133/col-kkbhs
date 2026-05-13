@@ -13,8 +13,8 @@ define('DB_PASS', 'Tezempa12133!!');
 define('DB_CHARSET', 'utf8mb4');
 define('APP_URL', 'https://copobimat.camertech.com');
 
- define('APP_ENV', 'production');
- define('DEBUG_MODE', false);
+define('APP_ENV', 'production');
+define('DEBUG_MODE', false);
 
 // en developpement pour la configuration locale
 //  define('DB_HOST', 'localhost');
@@ -28,6 +28,6 @@ define('APP_URL', 'https://copobimat.camertech.com');
 //  define('DEBUG_MODE', true);
 
 // Force error display for debugging
-// ini_set('display_errors', 1);
-// ini_set('display_startup_errors', 1);
-// error_reporting(E_ALL);
+//  ini_set('display_errors', 1);
+//  ini_set('display_startup_errors', 1);
+//  error_reporting(E_ALL);

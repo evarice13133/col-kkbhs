@@ -637,13 +637,13 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                 });
             }
 
-            // --- AUTO-DETECTION DES MESSAGES FLASH ---
+            // --- AUTO-DETECTION DES MESSAGES FLASH (Toasts discrets) ---
             <?php if ($flash_success = \App\Core\Session::getFlash('success')): ?>
-                AlertService.success("<?= addslashes((string) __('success_title')) ?>", "<?= addslashes((string) $flash_success) ?>");
+                AlertService.toast('success', "<?= addslashes((string) $flash_success) ?>");
             <?php endif; ?>
 
             <?php if ($flash_error = \App\Core\Session::getFlash('error')): ?>
-                AlertService.error("<?= addslashes((string) __('error_title')) ?>", "<?= addslashes((string) $flash_error) ?>");
+                AlertService.toast('error', "<?= addslashes((string) $flash_error) ?>");
             <?php endif; ?>
 
             // --- MESSAGE DE BIENVENUE FLASH (Connexion uniquement) ---

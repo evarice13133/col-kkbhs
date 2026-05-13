@@ -126,4 +126,15 @@
     border-radius: 18px !important;
     box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
     padding: 1rem !important;
+    background: #ffffff !important;
+}
+
+.premium-toast .swal2-title {
+    color: #000000 !important;
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+}
+
+.premium-toast .swal2-html-container {
+    color: #000000 !important;
 }

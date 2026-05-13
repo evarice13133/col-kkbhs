@@ -125,6 +125,9 @@
                 <button class="pv-btn pv-btn-print" onclick="window.print()">
                     <?= __('pv_print_btn') ?>
                 </button>
+                <a href="<?= $_SERVER['REQUEST_URI'] . (strpos($_SERVER['REQUEST_URI'], '?') !== false ? '&' : '?') ?>format=pdf" class="pv-btn pv-btn-download">
+                    <i class="bi bi-file-pdf"></i> <?= __('pv_download_btn') ?>
+                </a>
             </div>
         </div>
     <?php endif; ?>
