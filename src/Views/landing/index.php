@@ -12,7 +12,7 @@ ob_start();
         <div class="row align-items-center g-5">
             <div class="col-lg-6" data-aos="fade-right">
                 <h1 class="display-3 fw-extra-bold mb-4" style="line-height: 1.1;">
-                    NoteMaster : Le Système <span class="text-gradient">Intelligent & Bilingue</span>
+                   Le Système de Gestion Scolaire <span class="text-gradient">Intelligent & Bilingue</span>
                 </h1>
                 <p class="lead text-secondary mb-5">
                     Une solution complète qui automatise vos bulletins, gère la discipline et simplifie vos conseils de classe en un clic.
@@ -49,7 +49,7 @@ ob_start();
         <div class="row g-4 text-center">
             <div class="col-6 col-md-3" data-aos="fade-up">
                 <div class="p-4 glass-card border-0 animate-float-slow bg-light">
-                    <h2 class="display-6 fw-bold text-primary mb-1"><span class="counter" data-target="26">0</span></h2>
+                    <h2 class="display-6 fw-bold text-primary mb-1"><span class="counter" data-target="26">0</span>+</h2>
                     <p class="text-secondary small fw-bold text-uppercase">Établissements</p>
                 </div>
             </div>

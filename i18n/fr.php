@@ -13,7 +13,7 @@ return [
     'inactive_subjects' => 'Matières Inactives',
     'inactive_short' => 'Inactives',
     // ── Général ────────────────────────────────────────────────────────
-    'login' => 'Connexion',
+    'login' => 'Se Connecter',
     'login_tagline' => 'Pilotage Scolaire',
     'login_h1' => 'Pilotez la vie scolaire avec sérénité.',
     'login_desc' => 'Accédez à votre espace professionnel pour centraliser le suivi des élèves, les résultats et les indicateurs de réussite.',
@@ -705,7 +705,7 @@ return [
     'admin_restricted' => 'Accès restreint.',
 
     // ── Dashboard ─────────────────────────────────────────────────────
-    'command_center' => 'Hey Daniel!',
+    'command_center' => 'Tableau de Bord!',
     'new_student' => 'Nouvel Élève',
     'enter_marks' => 'Saisir Notes', 
     'realtime_monitoring' => 'Surveillance en temps réel',
@@ -1094,7 +1094,7 @@ return [
     'completed' => 'Terminé',
     'to_fill' => 'À remplir',
     'in_progress' => 'En cours',
-    'academic_assignment' => 'Affectation Académique',
+    'academic_assignment' => 'Affectation Scolaire',
     'academic_structure' => 'Structure Académique',
     'action_label' => 'Action',
     'active_days_short' => 'Jours Actifs (30j)',
