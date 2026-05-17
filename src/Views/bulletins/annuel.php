@@ -353,23 +353,23 @@ if (isset($styleOnly)) {
                         </tr>
                         <tr>
                             <td class="left"><?= __('class_avg_gen') ?></td>
-                            <td><?= formatSimple($classStats['average']) ?></td>
+                            <td><?= formatSimple($classStats['average'] ?? null) ?></td>
                         </tr>
                         <tr>
                             <td class="left"><?= __('note_max') ?></td>
-                            <td><?= formatSimple($classStats['max']) ?></td>
+                            <td><?= formatSimple($classStats['max'] ?? null) ?></td>
                         </tr>
                         <tr>
                             <td class="left"><?= __('note_min') ?></td>
-                            <td><?= formatSimple($classStats['min']) ?></td>
+                            <td><?= formatSimple($classStats['min'] ?? null) ?></td>
                         </tr>
                         <tr>
                             <td class="left"><?= __('avg_max') ?></td>
-                            <td><?= formatSimple($classStats['max']) ?></td>
+                            <td><?= formatSimple($classStats['max'] ?? null) ?></td>
                         </tr>
                         <tr>
                             <td class="left"><?= __('success_rate') ?></td>
-                            <td><?= formatSimple($classStats['success_rate'] ?? 0) ?>%</td>
+                            <td><?= isset($classStats['success_rate']) ? formatSimple($classStats['success_rate']) . '%' : '-' ?></td>
                         </tr>
                     </table>
                 </td>
