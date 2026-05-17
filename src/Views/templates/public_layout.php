@@ -499,11 +499,11 @@ $app_lang = \App\Core\Locale::get();
                         </li>
                         <li class="d-flex gap-3">
                             <div class="social-btn" style="width: 32px; height: 32px; pointer-events: none;"><i class="bi bi-envelope fs-6"></i></div>
-                            <span class="text-secondary small">evaricekuete2@gmail.com</span>
+                            <span class="text-secondary small">contact@camertech.com</span>
                         </li>
                         <li class="d-flex gap-3">
                             <div class="social-btn" style="width: 32px; height: 32px; pointer-events: none;"><i class="bi bi-whatsapp fs-6"></i></div>
-                            <span class="text-secondary small">+237 679 164 801</span>
+                            <span class="text-secondary small">+237 679 164 801 / +237 659 099 093</span>
                         </li>
                     </ul>
                 </div>

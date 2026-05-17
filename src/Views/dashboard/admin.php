@@ -58,7 +58,7 @@ $quickAccessLinks = [
     ['url' => '/notes', 'icon' => 'bi-pencil-square', 'label' => __('enter_marks'), 'meta' => (string) ((int) $globalPending)],
     //['url' => '/sections', 'icon' => 'bi-grid-3x3-gap', 'label' => __('academic_sections'), 'meta' => null],
     ['url' => '/bulletins', 'icon' => 'bi-file-earmark-pdf', 'label' => __('bulletins'), 'meta' => null],
-    ['url' => '/fiches', 'icon' => 'bi-journal-check', 'label' => __('fiches_recap'), 'meta' => null],
+    // ['url' => '/fiches', 'icon' => 'bi-journal-check', 'label' => __('fiches_recap'), 'meta' => null],
     ['url' => '/proces-verbal', 'icon' => 'bi-file-earmark-text', 'label' => __('proces_verbaux'), 'meta' => null],
 ];
 
