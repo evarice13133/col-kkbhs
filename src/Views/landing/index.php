@@ -312,7 +312,7 @@ document.getElementById('contactForm').addEventListener('submit', function(e) {
 
     const formData = new FormData(form);
 
-    fetch('/send-contact', {
+    fetch('/contact/send', {
         method: 'POST',
         body: formData
     })
