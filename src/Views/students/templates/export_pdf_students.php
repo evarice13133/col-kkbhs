@@ -90,11 +90,11 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
             margin-bottom: 20px;
         }
 
-        /* ===== TABLEAU (font-size 10pt) ===== */
+        /* ===== TABLEAU (taille des éléments réduite à 11px) ===== */
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 10pt;
+            font-size: 11px;
             table-layout: fixed;
         }
         thead tr {
@@ -103,27 +103,28 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
         }
         th {
             border: 1px solid #2c3e50;
-            padding: 5px 4px;
+            padding: 6px 5px;
             text-align: left;
             font-weight: bold;
-            font-size: 9pt;
+            font-size: 11px;
             white-space: nowrap;
             overflow: hidden;
         }
         td {
             border: 1px solid #ccc;
-            padding: 4px 4px;
+            padding: 6px 5px;
             vertical-align: middle;
             word-wrap: break-word;
             overflow: hidden;
+            font-size: 11px;
         }
         tr:nth-child(even) td {
             background-color: #f7f9fc;
         }
         .text-center { text-align: center; }
-        .num-col { text-align: center; width: 30px; font-size: 9pt; color: #888; }
-        .matricule-col { font-family: monospace; font-size: 9pt; color: #444; }
-        .nom-col { font-weight: bold; }
+        .num-col { text-align: center; font-size: 11px; color: #666; }
+        .matricule-col { font-family: monospace; font-size: 11px; color: #444; }
+        .nom-col { font-weight: bold; font-size: 11px; }
 
         /* ===== PIED DE PAGE ===== */
         .footer {
@@ -194,20 +195,19 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
     <table>
         <thead>
             <tr>
-                <th class="text-center" style="width:32px;">N°</th>
-                <th style="width:100px;"><?= __('matricule') ?></th>
-                <th style="width:140px;"><?= __('last_name') ?></th>
-                <th style="width:120px;"><?= __('first_name') ?></th>
-                <th style="width:70px;"><?= __('cycle') ?></th>
-                <th style="width:90px;"><?= __('section') ?></th>
-                <th style="width:110px;"><?= __('department') ?></th>
-                <th style="width:90px;"><?= __('class') ?></th>
+                <th class="text-center" style="width: 8px;">N°</th>
+                <th style="width: 90px;"><?= __('matricule') ?></th>
+                <th style="width: 220px;"><?= $app_lang === 'fr' ? 'Nom & Prénom' : 'Name & Surname' ?></th>
+                <th style="width: 60px;"><?= __('cycle') ?></th>
+                <th style="width: 80px;"><?= __('section') ?></th>
+                <th style="width: 90px;"><?= __('department') ?></th>
+                <th style="width: 80px;"><?= __('class') ?></th>
             </tr>
         </thead>
         <tbody>
             <?php if (empty($students)): ?>
                 <tr>
-                    <td colspan="8" class="text-center" style="padding: 20px; color: #999;">
+                    <td colspan="7" class="text-center" style="padding: 20px; color: #999;">
                         <?= __('no_data') ?>
                     </td>
                 </tr>
@@ -219,13 +219,16 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
                             <?= htmlspecialchars((string) ($student['email'] ?: '-')) ?>
                         </td>
                         <td class="nom-col">
-                            <?= htmlspecialchars(
-                                function_exists('mb_strtoupper')
-                                    ? mb_strtoupper((string) $student['nom'], 'UTF-8')
-                                    : strtoupper((string) $student['nom'])
-                            ) ?>
+                            <?php 
+                                $formatted_nom = function_exists('mb_strtoupper') 
+                                    ? mb_strtoupper((string) $student['nom'], 'UTF-8') 
+                                    : strtoupper((string) $student['nom']);
+                                $formatted_prenom = function_exists('mb_convert_case') 
+                                    ? mb_convert_case((string) $student['prenom'], MB_CASE_TITLE, 'UTF-8') 
+                                    : ucwords(strtolower((string) $student['prenom']));
+                                echo htmlspecialchars($formatted_nom . ' ' . $formatted_prenom);
+                            ?>
                         </td>
-                        <td><?= htmlspecialchars((string) $student['prenom']) ?></td>
                         <td class="text-center">
                             <?= htmlspecialchars((string) ($student['cycle_nom'] ?: '-')) ?>
                         </td>

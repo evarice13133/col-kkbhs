@@ -100,11 +100,11 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
             color: #444;
         }
 
-        /* ===== TABLEAU (font-size 10pt) ===== */
+        /* ===== TABLEAU (taille des éléments réduite à 11px) ===== */
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 10pt;
+            font-size: 11px;
             table-layout: fixed;
         }
         thead tr {
@@ -113,28 +113,29 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
         }
         th {
             border: 1px solid #1a3a5c;
-            padding: 5px 4px;
+            padding: 6px 5px;
             text-align: left;
             font-weight: bold;
-            font-size: 9pt;
+            font-size: 11px;
             white-space: nowrap;
             overflow: hidden;
         }
         td {
             border: 1px solid #ccc;
-            padding: 4px;
+            padding: 6px 5px;
             vertical-align: middle;
             word-wrap: break-word;
             overflow: hidden;
+            font-size: 11px;
         }
         tr:nth-child(even) td {
             background-color: #f4f7fb;
         }
         .text-center { text-align: center; }
-        .num-col   { text-align: center; color: #888; font-size: 9pt; }
-        .login-col { font-family: monospace; font-size: 9pt; color: #444; }
-        .nom-col   { font-weight: bold; }
-        .tag-list  { font-size: 8pt; color: #333; line-height: 1.4; }
+        .num-col   { text-align: center; color: #666; font-size: 11px; }
+        .login-col { font-family: monospace; font-size: 11px; color: #444; }
+        .nom-col   { font-weight: bold; font-size: 11px; }
+        .tag-list  { font-size: 10.5px; color: #333; line-height: 1.4; }
 
         /* ===== PIED DE PAGE ===== */
         .footer {
@@ -189,18 +190,17 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
     <table>
         <thead>
             <tr>
-                <th style="width:28px;"  class="text-center">N°</th>
-                <th style="width:100px;"><?= __('last_name') ?></th>
-                <th style="width:90px;"><?= __('first_name') ?></th>
-                <th style="width:90px;"><?= __('username') ?></th>
-                <th style="width:35%;"><?= __('subjects') ?></th>
-                <th style="width:35%;"><?= __('classes') ?></th>
+                <th class="text-center" style="width: 15px;">N°</th>
+                <th style="width: 30%;"><?= $app_lang === 'fr' ? 'Nom & Prénom' : 'Name & Surname' ?></th>
+                <th style="width: 15%;"><?= __('username') ?></th>
+                <th style="width: 25%;"><?= __('subjects') ?></th>
+                <th style="width: 25%;"><?= __('classes') ?></th>
             </tr>
         </thead>
         <tbody>
             <?php if (empty($teachers)): ?>
                 <tr>
-                    <td colspan="6" class="text-center" style="padding: 20px; color: #999;">
+                    <td colspan="5" class="text-center" style="padding: 20px; color: #999;">
                         <?= __('no_data') ?>
                     </td>
                 </tr>
@@ -209,13 +209,16 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
                     <tr>
                         <td class="num-col"><?= $index + 1 ?></td>
                         <td class="nom-col">
-                            <?= htmlspecialchars(
-                                function_exists('mb_strtoupper')
-                                    ? mb_strtoupper((string) $teacher['nom'], 'UTF-8')
-                                    : strtoupper((string) $teacher['nom'])
-                            ) ?>
+                            <?php 
+                                $formatted_nom = function_exists('mb_strtoupper') 
+                                    ? mb_strtoupper((string) $teacher['nom'], 'UTF-8') 
+                                    : strtoupper((string) $teacher['nom']);
+                                $formatted_prenom = function_exists('mb_convert_case') 
+                                    ? mb_convert_case((string) $teacher['prenom'], MB_CASE_TITLE, 'UTF-8') 
+                                    : ucwords(strtolower((string) $teacher['prenom']));
+                                echo htmlspecialchars($formatted_nom . ' ' . $formatted_prenom);
+                            ?>
                         </td>
-                        <td><?= htmlspecialchars((string) $teacher['prenom']) ?></td>
                         <td class="login-col"><?= htmlspecialchars((string) $teacher['username']) ?></td>
                         <td class="tag-list">
                             <?= htmlspecialchars((string) ($teacher['subjects_list'] ?: '-')) ?>
