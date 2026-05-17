@@ -192,32 +192,14 @@ if (isset($styleOnly)) {
     }
     .group-header { background-color: #e9e9e9; text-align: left; padding-left: 10px; }
     .group-subtotal-line {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
     width: 100%;
     margin: 1px 0 3px;
-    padding: 2px 7px;
     background: #d9e7f6;
     color: #17324d;
     font-weight: bold;
     white-space: nowrap;
     page-break-inside: avoid;
     break-inside: avoid;
-    }
-    .group-subtotal-line > span {
-    flex: 1 1 0;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    }
-    .group-subtotal-line > span:first-child {
-    flex: 0 0 30%;
-    max-width: 30%;
-    }
-    .group-subtotal-line > span:last-child {
-    text-align: right;
     }
     .teacher-name { font-size: 0.8em; text-transform: uppercase; display: block; margin-top: 1px; }
     .container-table { border: none; margin-bottom: 12px; width: 100%; border-collapse: collapse; }
@@ -235,7 +217,8 @@ if (isset($styleOnly)) {
     .rounded-legend { border: 1px solid #000; border-radius: 4px; border-collapse: separate; }
     .signature-table td { border: none; height: 35px; vertical-align: top; padding-top: 2px; }
     .no-border { border: none !important; }
-    .absences-title { writing-mode: vertical-rl; transform: rotate(180deg); width: 20px; font-weight: bold; }
+    .absences-title { text-align: center; vertical-align: middle; width: 15px; font-weight: bold; font-size: 7px;
+    line-height: 0.85; }
     .avg-box { border: 2px solid #000; padding: 3px; text-align: center; font-size: 10px; }
     .compact-note-box { border: 1px solid #000; border-radius: 4px; padding: 2px 3px; min-height: 85px; }
     .compact-note-title { text-align: center; margin-bottom: 1px; font-size: 7.5px; font-weight: bold; }
@@ -258,6 +241,123 @@ if (isset($styleOnly)) {
     @media screen and (max-width: 600px) {
     .pv-toolbar { flex-direction: column; align-items: stretch; gap: 8px; }
     .pv-btn { width: 100%; text-align: center; margin: 2px 0 !important; }
+    }
+    
+    /* MODAL DE GUIDAGE PDF EN HAUTE FIDÉLITÉ */
+    #pdf-guidance-modal {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; width: 100vw; height: 100vh;
+        z-index: 10000;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+    .pdf-modal-backdrop {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(15, 23, 42, 0.65);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+    .pdf-modal-card {
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        width: 90%;
+        max-width: 480px;
+        background: rgba(30, 41, 59, 0.98);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 16px;
+        padding: 24px;
+        color: white;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        animation: modalScaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes modalScaleUp {
+        from { transform: translate(-50%, -45%) scale(0.95); opacity: 0; }
+        to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+    .pdf-modal-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 12px;
+    }
+    .pdf-modal-header h2 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        color: #ffd700;
+    }
+    .pdf-modal-body p {
+        margin: 0 0 16px;
+        font-size: 13px;
+        line-height: 1.5;
+        color: #cbd5e1;
+    }
+    .pdf-step {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 12px;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 10px 14px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        text-align: left;
+    }
+    .pdf-step-num {
+        background: #ffd700;
+        color: #0f172a;
+        width: 22px; height: 22px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 12px;
+        flex-shrink: 0;
+    }
+    .pdf-step-text {
+        font-size: 12.5px;
+        line-height: 1.4;
+        color: #f1f5f9;
+    }
+    .pdf-modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 20px;
+    }
+    .pdf-modal-btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: bold;
+        transition: all 0.2s;
+    }
+    .pdf-modal-btn.cancel {
+        background: rgba(255, 255, 255, 0.1);
+        color: #cbd5e1;
+    }
+    .pdf-modal-btn.cancel:hover {
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+    }
+    .pdf-modal-btn.confirm {
+        background: #ffd700;
+        color: #0f172a;
+        box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
+    }
+    .pdf-modal-btn.confirm:hover {
+        background: #ffea00;
+        box-shadow: 0 4px 16px rgba(255, 215, 0, 0.35);
+    }
+    @media print {
+        #pdf-guidance-modal { display: none !important; }
     }
     <?php
     return;
@@ -486,13 +586,13 @@ if (isset($styleOnly)) {
                     $groupHasTrimTotal = false;
                     foreach ($group['rows'] as $groupRow) {
                         for ($sidx = 0; $sidx < $numSeqs; $sidx++) {
-                            if (($groupRow['sequence_values'][$sidx] ?? null) !== null) {
+                            if (($groupRow['sequence_values'][$sidx] ?? null) !== null && $groupRow['sequence_values'][$sidx] !== '') {
                                 // Somme brute des notes pour chaque séquence
                                 $groupSeqTotals[$sidx] += (float) $groupRow['sequence_values'][$sidx];
                                 $groupSeqHasTotals[$sidx] = true;
                             }
                         }
-                        if (($groupRow['term_note'] ?? null) !== null) {
+                        if (($groupRow['term_note'] ?? null) !== null && $groupRow['term_note'] !== '') {
                             $groupTrimTotal += (float) $groupRow['term_note'];
                             $groupHasTrimTotal = true;
                         }
@@ -502,262 +602,195 @@ if (isset($styleOnly)) {
                     $groupCoeffs = (int) ($group['total_coefficients'] ?? 0);
                     $mgp = $groupCoeffs > 0 ? round($groupPoints / $groupCoeffs, 2) : 0;
                     ?>
-                    <div class="group-subtotal-line">
-                        <span><?= htmlspecialchars($group['label']) ?></span>
-                        <span><?= strtoupper(__('points')) ?>: <?= formatSimple(array_sum($groupSeqTotals)) ?></span>
-                        <span><?= __('t_coefs') ?>: <?= (float) $groupCoeffs ?></span>
-                        <span><?= strtoupper(__('total')) ?>: <?= formatSimple($groupPoints) ?></span>
-                        <span><?= __('mgp') ?>: <span
-                                class="<?= $mgp >= 10 ? 'vert' : 'rouge' ?>"><?= formatSimple($mgp) ?></span></span>
-                    </div>
+                    <table class="group-subtotal-line" style="width: 100%; border-collapse: collapse; border: none; margin: 1px 0 3px; background-color: #d9e7f6; color: #17324d; font-weight: bold; font-size: 8.5px; white-space: nowrap;">
+                        <tr>
+                            <td style="text-align: left; padding: 2px 7px; border: none; font-weight: bold; width: 30%;"><?= htmlspecialchars($group['label']) ?></td>
+                            <td style="text-align: center; padding: 2px 7px; border: none; font-weight: bold;"><?= strtoupper(__('points')) ?>: <?= formatSimple(array_sum($groupSeqTotals)) ?></td>
+                            <td style="text-align: center; padding: 2px 7px; border: none; font-weight: bold;"><?= __('t_coefs') ?>: <?= (float) $groupCoeffs ?></td>
+                            <td style="text-align: center; padding: 2px 7px; border: none; font-weight: bold;"><?= strtoupper(__('total')) ?>: <?= formatSimple($groupPoints) ?></td>
+                            <td style="text-align: right; padding: 2px 7px; border: none; font-weight: bold; width: 20%;"><?= __('mgp') ?>: <span class="<?= $mgp >= 10 ? 'vert' : 'rouge' ?>" style="font-weight: bold;"><?= formatSimple($mgp) ?></span></td>
+                        </tr>
+                    </table>
                 <?php endforeach; ?>
             <?php endforeach; ?>
         </div>
 
-        <!-- D. RÉSULTATS GLOBAUX ET RÉCAPITULATIF SÉQUENTIEL DE LA CLASSE -->
-        <table class="container-table compact-layout">
+        <!-- D. RÉSULTATS GLOBAUX, RÉCAPITULATIF ET DÉCISION DU CONSEIL (TABLEAU UNIFIÉ À 3 COLONNES HORIZONTALES) -->
+        <table
+            style="width: 100%; border: 0.5px solid #000; border-collapse: collapse; font-size: 10px; margin-top: 5px;">
+            <!-- LIGNES D'EN-TÊTE PRINCIPALES -->
+            <tr style="background-color: #f2f2f2; font-weight: bold; text-align: center;">
+                <th colspan="2" style="width: 33%; border: 0.5px solid #000; padding: 3px; font-size: 10px;">
+                    <?= strtoupper(__('class_stats')) ?> & <?= strtoupper(__('student_summary')) ?></th>
+                <th colspan="2" style="width: 33%; border: 0.5px solid #000; padding: 3px; font-size: 10px;">
+                    <?= strtoupper(__('recall')) ?> & <?= strtoupper(__('conduct')) ?></th>
+                <th colspan="2" style="width: 34%; border: 0.5px solid #000; padding: 3px; font-size: 10px;">
+                    <?= strtoupper(__('council_decision')) ?></th>
+            </tr>
+            <?php
+            // Préparations des variables pour les séquences
+            $seq1_label = htmlspecialchars($termSequences[0]['short_label'] ?? 'S1');
+            $seq1_val = (isset($seqAverages[0]) ? formatSimple($seqAverages[0]) : '-') . ' (Rg: ' . ($seqRanks[0] ?? '-') . ')';
+            $seq2_label = htmlspecialchars($termSequences[1]['short_label'] ?? 'S2');
+            $seq2_val = (isset($seqAverages[1]) ? formatSimple($seqAverages[1]) : '-') . ' (Rg: ' . ($seqRanks[1] ?? '-') . ')';
+
+            // Consolidation des totaux consolidés (MGP et Coefficients)
+            $totalAllCoeffs = 0;
+            $totalMGPs = 0;
+            foreach ($groupedRows as $g) {
+                $totalAllCoeffs += (float) ($g['total_coeffs_all'] ?? 0);
+                $gPoints = (float) ($g['total_points'] ?? 0);
+                $gCoeffs = (int) ($g['total_coefficients'] ?? 0);
+                $gMgp = $gCoeffs > 0 ? round($gPoints / $gCoeffs, 2) : 0;
+                $totalMGPs += $gMgp;
+            }
+            ?>
+            <!-- ROW 1 -->
             <tr>
-                <!-- 1. Statistiques de la classe -->
-                <td width="29%">
-                    <table class="side-table compact-side">
-                        <tr>
-                            <th colspan="2"><?= __('class_stats') ?></th>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= __('class_avg_gen') ?></td>
-                            <td width="25%"><?= formatSimple($classStats['average'] ?? null) ?></td>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= __('avg_max') ?></td>
-                            <td><?= formatSimple($classStats['max'] ?? null) ?></td>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= __('success_rate') ?></td>
-                            <td><?= isset($classStats['success_rate']) ? formatSimple($classStats['success_rate']) . '%' : '-' ?></td>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= __('note_max') ?></td>
-                            <td><?= formatSimple($classStats['max'] ?? null) ?></td>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= __('note_min') ?></td>
-                            <td><?= formatSimple($classStats['min'] ?? null) ?></td>
-                        </tr>
-                    </table>
+                <!-- Partie 1: Statistiques & Synthèse -->
+                <td style="width: 22%; border: 0.5px solid #000; padding: 2px 4px;"><?= __('class_avg_gen') ?></td>
+                <td
+                    style="width: 11%; border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?= formatSimple($classStats['average'] ?? null) ?></td>
+                <!-- Partie 2: Rappels & Absences -->
+                <td style="width: 22%; border: 0.5px solid #000; padding: 2px 4px;"><?= $seq1_label ?></td>
+                <td
+                    style="width: 11%; border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?= $seq1_val ?></td>
+                <!-- Partie 3: Décision du Conseil -->
+                <td style="width: 22%; border: 0.5px solid #000; padding: 2px 4px;"><?= __('warn_conduct') ?> /
+                    <?= __('blame_conduct') ?></td>
+                <td
+                    style="width: 12%; border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?= $discipline['warning_conduct'] ?> / <?= $discipline['blame_conduct'] ?></td>
+            </tr>
+            <!-- ROW 2 -->
+            <tr>
+                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= __('avg_max') ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?= formatSimple($classStats['max'] ?? null) ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= $seq2_label ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?= $seq2_val ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= __('exclusions') ?> / <?= __('consignes') ?>
                 </td>
-                <!-- 2. Résumé de performance de l'élève -->
-                <td width="31%">
-                    <table class="side-table compact-side">
-                        <tr>
-                            <th colspan="2"><?= __('student_summary') ?></th>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= __('student_avg') ?></td>
-                            <td width="25%"><?= formatNote($average) ?></td>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= __('student_rank') ?></td>
-                            <td><?= $rank !== null ? $rank . ' / ' . $effectif : '-' ?></td>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= __('mention') ?></td>
-                            <td><?= htmlspecialchars($mention) ?></td>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= __('general_observation') ?></td>
-                            <td class="left"><?= htmlspecialchars($globalAppreciation) ?></td>
-                        </tr>
-                    </table>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?= sprintf('%02d', (int) ($discipline['exclusion_days'] ?? 0)) ?>j /
+                    <?= sprintf('%02d', (int) ($discipline['consignes'] ?? 0)) ?></td>
+            </tr>
+            <!-- ROW 3 -->
+            <tr>
+                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= __('success_rate') ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?= isset($classStats['success_rate']) ? formatSimple($classStats['success_rate']) . '%' : '-' ?>
                 </td>
-                <!-- 3. Rappel des moyennes séquentielles (Tableau dynamique) -->
-                <td width="40%">
-                    <table class="side-table compact-side">
-                        <tr>
-                            <th><?= __('recall') ?></th>
-                            <th width="25%"><?= __('average') ?></th>
-                            <th width="20%"><?= __('rank') ?></th>
-                        </tr>
-                        <?php for ($sidx = 0; $sidx < $numSeqs; $sidx++): ?>
-                            <tr>
-                                <td class="left">
-                                    <?= htmlspecialchars($termSequences[$sidx]['short_label'] ?? ('S' . ($sidx + 1))) ?>
-                                </td>
-                                <td><?= isset($seqAverages[$sidx]) ? formatSimple($seqAverages[$sidx]) : '-' ?></td>
-                                <td><?= $seqRanks[$sidx] ?? '-' ?></td>
-                            </tr>
-                        <?php endfor; ?>
-                        <?php
-                        // Consolidation des totaux consolidés (MGP et Coefficients)
-                        $totalAllCoeffs = 0;
-                        $totalMGPs = 0;
-                        foreach ($groupedRows as $g) {
-                            $totalAllCoeffs += (float) ($g['total_coeffs_all'] ?? 0);
-                            $gPoints = (float) ($g['total_points'] ?? 0);
-                            $gCoeffs = (int) ($g['total_coefficients'] ?? 0);
-                            $gMgp = $gCoeffs > 0 ? round($gPoints / $gCoeffs, 2) : 0;
-                            $totalMGPs += $gMgp;
-                        }
-                        ?>
-                        <tr>
-                            <td class="left" style="font-weight: bold;"><?= __('total_mgp') ?>
-                                | <?= __('total_coeffs') ?> </td>
-                            <td style="font-weight: bold;"><?= formatSimple($totalMGPs) ?></td>
-                            <td style="font-weight: bold;"><?= (float) $totalAllCoeffs ?></td>
-                        </tr>
-                    </table>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; font-weight: bold;"><?= __('total_mgp') ?> /
+                    <?= __('total_coeffs') ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?= formatSimple($totalMGPs) ?> / <?= (float) $totalAllCoeffs ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= __('honour_roll') ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?php if ($discipline['tableau_honneur'] === 'X'): ?>
+                        <span class="vert"><?= strtoupper(__('yes')) ?></span>
+                    <?php elseif ($discipline['tableau_honneur'] === '' && $average >= 12): ?>
+                        <span class="vert"><?= strtoupper(__('yes')) ?></span>
+                    <?php else: ?>
+                        <span class="rouge"><?= strtoupper(__('no')) ?></span>
+                    <?php endif; ?>
                 </td>
             </tr>
-        </table>
-
-        <!-- E. DISCIPLINE ET DÉCISION DU CONSEIL -->
-        <table class="container-table compact-layout">
+            <!-- ROW 4 -->
             <tr>
-                <!-- Légende des codes d'acquisition -->
-                <td width="28%">
-                    <div class="compact-note-box">
-                        <div class="uppercase compact-note-title"><?= __('legend_appreciation') ?></div>
-                        <div class="legend-text" style="font-size: 9px; white-space: nowrap; line-height: 1.2;">
-                            CTBA : <?= __('ctba_desc') ?><br>
-                            CBA : <?= __('cba_desc') ?><br>
-                            CA : <?= __('ca_desc') ?><br>
-                            CMA : <?= __('cma_desc') ?><br>
-                            CNA : <?= __('cna_desc') ?><br>
-                            <strong><?= __('mgp_group') ?></strong>
-                        </div>
-                    </div>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; font-weight: bold;"><?= __('student_avg') ?></td>
+                <td
+                    style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold; background-color: #fafafa;">
+                    <?= formatNote($average) ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px;">&bull; <?= __('total') ?> <?= __('absences') ?>
                 </td>
-                <!-- Suivi des absences -->
-                <td width="28%">
-                    <table class="side-table compact-side">
-                        <tr>
-                            <th colspan="3"><?= __('conduct') ?></th>
-                        </tr>
-                        <tr>
-                            <td rowspan="3" class="absences-title"><?= strtoupper(__('absences')) ?></td>
-                            <td class="left"><?= __('total') ?></td>
-                            <td class="bold" width="25%">
-                                <?= sprintf('%02d', (int) ($discipline['absences']['total'] ?? 0)) ?>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= __('justified') ?></td>
-                            <td class="bold">
-                                <?= sprintf('%02d', (int) ($discipline['absences']['justified'] ?? 0)) ?>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= __('unjustified') ?></td>
-                            <td class="bold">
-                                <?= sprintf('%02d', (int) ($discipline['absences']['unjustified'] ?? 0)) ?>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="2" class="left"><?= __('suspended') ?> (<?= __('days') ?>)</td>
-                            <td class="bold">
-                                <?= sprintf('%02d', (int) ($discipline['exclusion_days'] ?? 0)) ?>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="2" class="left"><?= __('warn_conduct') ?></td>
-                            <td class="bold">
-                                <?= $discipline['warning_conduct'] ?>
-                            </td>
-                        </tr>
-                    </table>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?= sprintf('%02d', (int) ($discipline['absences']['total'] ?? 0)) ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= __('encouragements') ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?php if ($discipline['encouragements'] === 'X'): ?>
+                        <span class="vert"><?= __('work_good') ?></span>
+                    <?php else: ?>
+                        <?php
+                        $workKey = 'work_bad';
+                        if ($average >= 14)
+                            $workKey = 'work_excellent';
+                        elseif ($average >= 12)
+                            $workKey = 'work_good';
+                        elseif ($average >= 10)
+                            $workKey = 'work_passable';
+                        ?>
+                        <span class="<?= ($average >= 10) ? 'vert' : 'rouge' ?>">
+                            <?= __($workKey) ?>
+                        </span>
+                    <?php endif; ?>
                 </td>
-                <!-- Décisions disciplinaires et de travail -->
-                <td width="44%">
-                    <table class="side-table compact-side">
-                        <tr>
-                            <th colspan="4"><?= __('council_decision') ?></th>
-                        </tr>
-                        <tr>
-                            <th colspan="2"><?= __('discipline') ?></th>
-                            <th colspan="2"><?= __('work') ?></th>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= __('warn_conduct') ?></td>
-                            <td class="bold" width="15%"><?= $discipline['warning_conduct'] ?></td>
-                            <td class="left"><?= __('honour_roll') ?></td>
-                            <td class="bold" width="15%">
-                                <?php if ($discipline['tableau_honneur'] === 'X'): ?>
-                                    <span class="vert"><?= strtoupper(__('yes')) ?></span>
-                                <?php elseif ($discipline['tableau_honneur'] === '' && $average >= 12): ?>
-                                    <span class="vert"><?= strtoupper(__('yes')) ?></span>
-                                <?php else: ?>
-                                    <span class="rouge"><?= strtoupper(__('no')) ?></span>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= __('blame_conduct') ?></td>
-                            <td class="bold"><?= $discipline['blame_conduct'] ?></td>
-                            <td class="left"><?= __('encouragements') ?></td>
-                            <td class="bold">
-                                <?php if ($discipline['encouragements'] === 'X'): ?>
-                                    <span class="vert"><?= __('work_good') ?></span>
-                                <?php else: ?>
-                                    <?php
-                                    $workKey = 'work_bad';
-                                    if ($average >= 14)
-                                        $workKey = 'work_excellent';
-                                    elseif ($average >= 12)
-                                        $workKey = 'work_good';
-                                    elseif ($average >= 10)
-                                        $workKey = 'work_passable';
-                                    ?>
-                                    <span class="<?= ($average >= 10) ? 'vert' : 'rouge' ?>">
-                                        <?= __($workKey) ?>
-                                    </span>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= __('exclusions') ?> (<?= __('days') ?>)</td>
-                            <td class="bold">
-                                <?= sprintf('%02d', (int) ($discipline['exclusion_days'] ?? 0)) ?>
-                            </td>
-                            <td class="left"><?= __('congratulations') ?></td>
-                            <td class="bold">
-                                <?php if ($discipline['felicitations'] === 'X'): ?>
-                                    <span class="vert"><?= strtoupper(__('yes')) ?></span>
-                                <?php elseif ($discipline['felicitations'] === '' && $average >= 14): ?>
-                                    <span class="vert"><?= strtoupper(__('yes')) ?></span>
-                                <?php else: ?>
-                                    <span class="rouge"><?= strtoupper(__('no')) ?></span>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= __('consignes') ?></td>
-                            <td class="bold">
-                                <?= sprintf('%02d', (int) ($discipline['consignes'] ?? 0)) ?>
-                            </td>
-                            <td class="left"><?= __('warn_work') ?></td>
-                            <td class="bold">
-                                <?php if ($discipline['warning_work'] === 'X'): ?>
-                                    <span class="rouge"><?= strtoupper(__('yes')) ?></span>
-                                <?php else: ?>
-                                    <?php
-                                    $trendText = '';
-                                    $trendClass = '';
-                                    if (count($seqAverages) >= 2) {
-                                        $currS = (float) $seqAverages[count($seqAverages) - 1];
-                                        $prevS = (float) $seqAverages[count($seqAverages) - 2];
-                                        if ($currS < $prevS) {
-                                            $trendText = __('trend_down');
-                                            $trendClass = 'rouge';
-                                        } else {
-                                            $trendText = __('trend_up');
-                                            $trendClass = 'vert';
-                                        }
-                                    }
-                                    ?>
-                                    <span class="<?= $trendClass ?>"><?= strtoupper((string) $trendText) ?></span>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                    </table>
+            </tr>
+            <!-- ROW 5 -->
+            <tr>
+                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= __('student_rank') ?> & <?= __('mention') ?>
+                </td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?= $rank !== null ? $rank . '/' . $effectif : '-' ?> (<?= htmlspecialchars($mention) ?>)</td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px;">&bull; <?= __('justified') ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?= sprintf('%02d', (int) ($discipline['absences']['justified'] ?? 0)) ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= __('congratulations') ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?php if ($discipline['felicitations'] === 'X'): ?>
+                        <span class="vert"><?= strtoupper(__('yes')) ?></span>
+                    <?php elseif ($discipline['felicitations'] === '' && $average >= 14): ?>
+                        <span class="vert"><?= strtoupper(__('yes')) ?></span>
+                    <?php else: ?>
+                        <span class="rouge"><?= strtoupper(__('no')) ?></span>
+                    <?php endif; ?>
+                </td>
+            </tr>
+            <!-- ROW 6 -->
+            <tr>
+                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= __('general_observation') ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?= htmlspecialchars($globalAppreciation) ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px;">&bull; <?= __('unjustified') ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?= sprintf('%02d', (int) ($discipline['absences']['unjustified'] ?? 0)) ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= __('warn_work') ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?php if ($discipline['warning_work'] === 'X'): ?>
+                        <span class="rouge"><?= strtoupper(__('yes')) ?></span>
+                    <?php else: ?>
+                        <?php
+                        $trendText = '';
+                        $trendClass = '';
+                        if (count($seqAverages) >= 2) {
+                            $currS = (float) $seqAverages[count($seqAverages) - 1];
+                            $prevS = (float) $seqAverages[count($seqAverages) - 2];
+                            if ($currS < $prevS) {
+                                $trendText = __('trend_down');
+                                $trendClass = 'rouge';
+                            } else {
+                                $trendText = __('trend_up');
+                                $trendClass = 'vert';
+                            }
+                        }
+                        ?>
+                        <span class="<?= $trendClass ?>"><?= strtoupper((string) $trendText) ?></span>
+                    <?php endif; ?>
+                </td>
+            </tr>
+
+            <!-- SECTION 4: LÉGENDE -->
+            <tr>
+                <td colspan="6"
+                    style="border: 0.5px solid #000; padding: 3px; font-size: 8.5px; line-height: 1.1; background-color: #fafafa;">
+                    <span
+                        style="font-weight: bold; text-decoration: underline;"><?= __('legend_appreciation') ?>:</span>
+                    CTBA : <?= __('ctba_desc') ?> | CBA : <?= __('cba_desc') ?> | CA : <?= __('ca_desc') ?> |
+                    CMA : <?= __('cma_desc') ?> | CNA : <?= __('cna_desc') ?> |
+                    <strong><?= __('mgp_group') ?></strong>
                 </td>
             </tr>
         </table>
@@ -778,6 +811,72 @@ if (isset($styleOnly)) {
     </div>
 
     <?php if (!$embeddedBatch): ?>
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const downloadBtns = document.querySelectorAll('.pv-btn-download');
+            downloadBtns.forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    showPdfGuidance();
+                });
+            });
+        });
+
+        function showPdfGuidance() {
+            let modal = document.getElementById('pdf-guidance-modal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'pdf-guidance-modal';
+                modal.innerHTML = `
+                    <div class="pdf-modal-backdrop" onclick="closePdfGuidance()"></div>
+                    <div class="pdf-modal-card">
+                        <div class="pdf-modal-header">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="#ffd700" viewBox="0 0 16 16" style="vertical-align: middle;">
+                                <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+                                <path d="M4.603 14.087a.81.81 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.68 7.68 0 0 1 1.482-.645 19.697 19.697 0 0 0 1.062-2.227 7.269 7.269 0 0 1-.43-1.295c-.086-.4-.119-.796-.046-1.136.075-.354.274-.672.65-.823.192-.077.4-.12.602-.077a.7.7 0 0 1 .471.215c.15.18-.162 1.305-.162 1.305v.006c-.316.427-.58.111-.58.111s.54.407.728.846c.155.362.29.74.405 1.134.208.718.36 1.4.453 1.954.555.15 1.144.33 1.705.513.29.096.55.195.74.296.262.138.45.321.492.51.042.19.014.39-.115.546-.129.155-.327.24-.546.269-.219.03-.466-.02-.713-.102a4.954 4.954 0 0 1-1.396-.757c-.88-.705-1.58-1.748-1.9-2.235-.351.054-.7.108-1.049.157-.428.06-1.08.125-1.764.125-.453.03-.9.08-1.332.146-.356.055-.705.12-1.05.19-.24.049-.49.123-.715.22z"/>
+                            </svg>
+                            <h2>Enregistrement PDF Premium</h2>
+                        </div>
+                        <div class="pdf-modal-body">
+                            <p>Pour exporter votre bulletin avec une <strong>qualité d'impression absolue</strong> (textes parfaits, aucun décalage de tableau, aucune coupure de page) :</p>
+                            <div class="pdf-step">
+                                <span class="pdf-step-num">1</span>
+                                <span class="pdf-step-text">La fenêtre d'impression système va s'ouvrir.</span>
+                            </div>
+                            <div class="pdf-step">
+                                <span class="pdf-step-num">2</span>
+                                <span class="pdf-step-text">Dans la case <strong>"Destination"</strong>, sélectionnez <strong>"Enregistrer au format PDF"</strong>.</span>
+                            </div>
+                            <div class="pdf-step">
+                                <span class="pdf-step-num">3</span>
+                                <span class="pdf-step-text">Cliquez sur le bouton bleu <strong>"Enregistrer"</strong>.</span>
+                            </div>
+                        </div>
+                        <div class="pdf-modal-footer">
+                            <button class="pdf-modal-btn cancel" onclick="closePdfGuidance()">Annuler</button>
+                            <button class="pdf-modal-btn confirm" onclick="launchPdfPrint()">Lancer l'Enregistrement PDF</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+            modal.style.display = 'block';
+        }
+
+        function closePdfGuidance() {
+            const modal = document.getElementById('pdf-guidance-modal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        function launchPdfPrint() {
+            closePdfGuidance();
+            setTimeout(() => {
+                window.print();
+            }, 300);
+        }
+        </script>
     </body>
 
     </html>

@@ -138,6 +138,72 @@
         include __DIR__ . '/annuel.php'; ?>
     <?php endforeach; ?>
 
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const downloadBtns = document.querySelectorAll('.pv-btn-download');
+        downloadBtns.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                showPdfGuidance();
+            });
+        });
+    });
+
+    function showPdfGuidance() {
+        let modal = document.getElementById('pdf-guidance-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'pdf-guidance-modal';
+            modal.innerHTML = `
+                <div class="pdf-modal-backdrop" onclick="closePdfGuidance()"></div>
+                <div class="pdf-modal-card">
+                    <div class="pdf-modal-header">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="#ffd700" viewBox="0 0 16 16" style="vertical-align: middle;">
+                            <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+                            <path d="M4.603 14.087a.81.81 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.68 7.68 0 0 1 1.482-.645 19.697 19.697 0 0 0 1.062-2.227 7.269 7.269 0 0 1-.43-1.295c-.086-.4-.119-.796-.046-1.136.075-.354.274-.672.65-.823.192-.077.4-.12.602-.077a.7.7 0 0 1 .471.215c.15.18-.162 1.305-.162 1.305v.006c-.316.427-.58.111-.58.111s.54.407.728.846c.155.362.29.74.405 1.134.208.718.36 1.4.453 1.954.555.15 1.144.33 1.705.513.29.096.55.195.74.296.262.138.45.321.492.51.042.19.014.39-.115.546-.129.155-.327.24-.546.269-.219.03-.466-.02-.713-.102a4.954 4.954 0 0 1-1.396-.757c-.88-.705-1.58-1.748-1.9-2.235-.351.054-.7.108-1.049.157-.428.06-1.08.125-1.764.125-.453.03-.9.08-1.332.146-.356.055-.705.12-1.05.19-.24.049-.49.123-.715.22z"/>
+                        </svg>
+                        <h2>Enregistrement PDF Premium (Lot)</h2>
+                    </div>
+                    <div class="pdf-modal-body">
+                        <p>Pour exporter les bulletins de toute la classe avec une <strong>qualité d'impression absolue</strong> (textes parfaits, aucun décalage de tableau, aucune coupure de page) :</p>
+                        <div class="pdf-step">
+                            <span class="pdf-step-num">1</span>
+                            <span class="pdf-step-text">La fenêtre d'impression système va s'ouvrir.</span>
+                        </div>
+                        <div class="pdf-step">
+                            <span class="pdf-step-num">2</span>
+                            <span class="pdf-step-text">Dans la case <strong>"Destination"</strong>, sélectionnez <strong>"Enregistrer au format PDF"</strong>.</span>
+                        </div>
+                        <div class="pdf-step">
+                            <span class="pdf-step-num">3</span>
+                            <span class="pdf-step-text">Cliquez sur le bouton bleu <strong>"Enregistrer"</strong>.</span>
+                        </div>
+                    </div>
+                    <div class="pdf-modal-footer">
+                        <button class="pdf-modal-btn cancel" onclick="closePdfGuidance()">Annuler</button>
+                        <button class="pdf-modal-btn confirm" onclick="launchPdfPrint()">Lancer l'Enregistrement PDF</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+        modal.style.display = 'block';
+    }
+
+    function closePdfGuidance() {
+        const modal = document.getElementById('pdf-guidance-modal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    function launchPdfPrint() {
+        closePdfGuidance();
+        setTimeout(() => {
+            window.print();
+        }, 300);
+    }
+    </script>
     <?php if (isset($_GET['autoprint']) && $_GET['autoprint'] == '1'): ?>
         <script>
             window.addEventListener('load', function () {

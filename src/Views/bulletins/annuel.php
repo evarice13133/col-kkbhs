@@ -147,8 +147,9 @@ if (isset($styleOnly)) {
                 <button class="pv-btn pv-btn-print" onclick="window.print()">
                     <?= __('pv_print_btn') ?>
                 </button>
-                <a href="<?= $_SERVER['REQUEST_URI'] . (strpos($_SERVER['REQUEST_URI'], '?') !== false ? '&' : '?') ?>format=pdf" class="pv-btn pv-btn-download">
-                     <i class="bi bi-file-pdf"></i> <?= __('pv_download_btn') ?>
+                <a href="<?= $_SERVER['REQUEST_URI'] . (strpos($_SERVER['REQUEST_URI'], '?') !== false ? '&' : '?') ?>format=pdf"
+                    class="pv-btn pv-btn-download">
+                    <i class="bi bi-file-pdf"></i> <?= __('pv_download_btn') ?>
                 </a>
             </div>
         </div>
@@ -160,7 +161,8 @@ if (isset($styleOnly)) {
             <div class="header-left">
                 <div class="header-side-content">
                     <p class="header-line">
-                        <?= htmlspecialchars((string) ($i['school_republic'] ?? __('republic_of_cameroon'))) ?></p>
+                        <?= htmlspecialchars((string) ($i['school_republic'] ?? __('republic_of_cameroon'))) ?>
+                    </p>
                     <p class="header-line"><?= htmlspecialchars((string) ($i['school_motto'] ?? __('motto'))) ?></p>
                     <p class="header-line">
                         <?= htmlspecialchars((string) ($i['school_ministry'] ?? __('ministry_secondary_education'))) ?>
@@ -186,14 +188,17 @@ if (isset($styleOnly)) {
             <div class="header-right">
                 <div class="header-side-content">
                     <p class="header-line">
-                        <?= htmlspecialchars((string) ($i['school_republic_en'] ?? 'REPUBLIC OF CAMEROON')) ?></p>
+                        <?= htmlspecialchars((string) ($i['school_republic_en'] ?? 'REPUBLIC OF CAMEROON')) ?>
+                    </p>
                     <p class="header-line">
-                        <?= htmlspecialchars((string) ($i['school_motto_en'] ?? 'PEACE - WORK - FATHERLAND')) ?></p>
+                        <?= htmlspecialchars((string) ($i['school_motto_en'] ?? 'PEACE - WORK - FATHERLAND')) ?>
+                    </p>
                     <p class="header-line">
                         <?= htmlspecialchars((string) ($i['school_ministry_en'] ?? 'MINISTRY OF SECONDARY EDUCATION')) ?>
                     </p>
                     <p class="header-line">
-                        <?= htmlspecialchars((string) ($i['school_slogan_en'] ?? 'DISCIPLINE - WORK - SUCCESS')) ?></p>
+                        <?= htmlspecialchars((string) ($i['school_slogan_en'] ?? 'DISCIPLINE - WORK - SUCCESS')) ?>
+                    </p>
                     <p class="header-contact"><?= htmlspecialchars(strtoupper($contact)) ?></p>
                 </div>
             </div>
@@ -315,12 +320,12 @@ if (isset($styleOnly)) {
                     $groupHasAnnualTotal = false;
                     foreach ($group['rows'] as $groupRow) {
                         foreach ([0, 1, 2] as $termIndex) {
-                            if (($groupRow['term_values'][$termIndex] ?? null) !== null) {
+                            if (($groupRow['term_values'][$termIndex] ?? null) !== null && $groupRow['term_values'][$termIndex] !== '') {
                                 $groupTrimTotals[$termIndex] += (float) $groupRow['term_values'][$termIndex];
                                 $groupTrimHasTotals[$termIndex] = true;
                             }
                         }
-                        if (($groupRow['annual_note'] ?? null) !== null) {
+                        if (($groupRow['annual_note'] ?? null) !== null && $groupRow['annual_note'] !== '') {
                             $groupAnnualTotal += (float) $groupRow['annual_note'];
                             $groupHasAnnualTotal = true;
                         }
@@ -330,244 +335,186 @@ if (isset($styleOnly)) {
                     $groupCoeffs = (int) ($group['total_coefficients'] ?? 0);
                     $mgp = $groupCoeffs > 0 ? round($groupPoints / $groupCoeffs, 2) : 0;
                     ?>
-                    <div class="group-subtotal-line">
-                        <span><?= htmlspecialchars($group['label']) ?></span>
-                        <span><?= strtoupper(__('points')) ?>: <?= formatSimple($groupAnnualTotal) ?></span>
-                        <span><?= __('t_coefs') ?>: <?= (float) ($group['total_coeffs_all'] ?? 0) ?></span>
-                        <span><?= strtoupper(__('total')) ?>: <?= formatSimple($groupPoints) ?></span>
-                        <span><?= __('mgp') ?>: <span
-                                class="<?= $mgp >= 10 ? 'vert' : 'rouge' ?>"><?= formatSimple($mgp) ?></span></span>
-                    </div>
+                    <table class="group-subtotal-line" style="width: 100%; border-collapse: collapse; border: none; margin: 1px 0 3px; background-color: #d9e7f6; color: #17324d; font-weight: bold; font-size: 8.5px; white-space: nowrap;">
+                        <tr>
+                            <td style="text-align: left; padding: 2px 7px; border: none; font-weight: bold; width: 30%;"><?= htmlspecialchars($group['label']) ?></td>
+                            <td style="text-align: center; padding: 2px 7px; border: none; font-weight: bold;"><?= strtoupper(__('points')) ?>: <?= formatSimple($groupAnnualTotal) ?></td>
+                            <td style="text-align: center; padding: 2px 7px; border: none; font-weight: bold;"><?= __('t_coefs') ?>: <?= (float) ($group['total_coeffs_all'] ?? 0) ?></td>
+                            <td style="text-align: center; padding: 2px 7px; border: none; font-weight: bold;"><?= strtoupper(__('total')) ?>: <?= formatSimple($groupPoints) ?></td>
+                            <td style="text-align: right; padding: 2px 7px; border: none; font-weight: bold; width: 20%;"><?= __('mgp') ?>: <span class="<?= $mgp >= 10 ? 'vert' : 'rouge' ?>" style="font-weight: bold;"><?= formatSimple($mgp) ?></span></td>
+                        </tr>
+                    </table>
                 <?php endforeach; ?>
             <?php endforeach; ?>
         </div>
 
-        <!-- D. RÉSULTATS GLOBAUX ET RAPPEL TRIMESTRIEL -->
-        <table class="container-table compact-layout">
+        <!-- D. RÉSULTATS GLOBAUX, RÉCAPITULATIF ET DÉCISION DU CONSEIL (TABLEAU UNIFIÉ À 3 COLONNES HORIZONTALES) -->
+        <table
+            style="width: 100%; border: 0.5px solid #000; border-collapse: collapse; font-size: 10px; margin-top: 5px;">
+            <!-- LIGNES D'EN-TÊTE PRINCIPALES -->
+            <tr style="background-color: #f2f2f2; font-weight: bold; text-align: center;">
+                <th colspan="2" style="width: 33%; border: 0.5px solid #000; padding: 3px; font-size: 10px;">
+                    <?= strtoupper(__('class_stats')) ?> & <?= strtoupper(__('student_summary')) ?></th>
+                <th colspan="2" style="width: 33%; border: 0.5px solid #000; padding: 3px; font-size: 10px;">
+                    <?= strtoupper(__('recall')) ?> & <?= strtoupper(__('conduct')) ?></th>
+                <th colspan="2" style="width: 34%; border: 0.5px solid #000; padding: 3px; font-size: 10px;">
+                    <?= strtoupper(__('council_decision')) ?></th>
+            </tr>
+            <?php
+            // Consolidation finale de l'année (Somme des MGP et Coeffs)
+            $totalAllCoeffs = 0;
+            $totalMGPs = 0;
+            foreach ($groupedRows as $g) {
+                $totalAllCoeffs += (float) ($g['total_coeffs_all'] ?? 0);
+                $gPoints = (float) ($g['total_points'] ?? 0);
+                $gCoeffs = (int) ($g['total_coefficients'] ?? 0);
+                $gMgp = $gCoeffs > 0 ? round($gPoints / $gCoeffs, 2) : 0;
+                $totalMGPs += $gMgp;
+            }
+            ?>
+            <!-- ROW 1 -->
             <tr>
-                <!-- 1. Statistiques de la classe (Annuel) -->
-                <td width="29%">
-                    <table class="side-table compact-side">
-                        <tr>
-                            <th colspan="2"><?= __('class_stats') ?></th>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= __('class_avg_gen') ?></td>
-                            <td><?= formatSimple($classStats['average'] ?? null) ?></td>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= __('note_max') ?></td>
-                            <td><?= formatSimple($classStats['max'] ?? null) ?></td>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= __('note_min') ?></td>
-                            <td><?= formatSimple($classStats['min'] ?? null) ?></td>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= __('avg_max') ?></td>
-                            <td><?= formatSimple($classStats['max'] ?? null) ?></td>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= __('success_rate') ?></td>
-                            <td><?= isset($classStats['success_rate']) ? formatSimple($classStats['success_rate']) . '%' : '-' ?></td>
-                        </tr>
-                    </table>
+                <!-- Partie 1: Statistiques & Synthèse -->
+                <td style="width: 22%; border: 0.5px solid #000; padding: 2px 4px;"><?= __('class_avg_gen') ?></td>
+                <td
+                    style="width: 11%; border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?= formatSimple($classStats['average'] ?? null) ?></td>
+                <!-- Partie 2: Rappels & Absences -->
+                <td style="width: 22%; border: 0.5px solid #000; padding: 2px 4px;">
+                    <?= strtoupper(__('trimester_short_title')) ?> 1</td>
+                <td
+                    style="width: 11%; border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?= (isset($termAverages[0]) ? formatSimple($termAverages[0]) : '-') . ' (Rg: ' . ($termRanks[0] ?? '-') . ')' ?>
                 </td>
-                <!-- 2. Résumé de l'élève (Annuel) -->
-                <td width="31%">
-                    <table class="side-table compact-side">
-                        <tr>
-                            <th colspan="2"><?= __('student_summary') ?></th>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= __('student_avg') ?></td>
-                            <td><?= formatNote($average) ?></td>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= __('student_rank') ?></td>
-                            <td><?= $rank !== null ? $rank . ' / ' . $effectif : '-' ?></td>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= __('mention') ?></td>
-                            <td><?= htmlspecialchars($mention) ?></td>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= __('general_observation') ?></td>
-                            <td class="left"><?= htmlspecialchars($globalAppreciation) ?></td>
-                        </tr>
-                    </table>
+                <!-- Partie 3: Décision du Conseil -->
+                <td style="width: 22%; border: 0.5px solid #000; padding: 2px 4px;"><?= __('warn_conduct') ?> /
+                    <?= __('blame_conduct') ?></td>
+                <td
+                    style="width: 12%; border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?= $discipline['warning_conduct'] ?> / <?= $discipline['blame_conduct'] ?></td>
+            </tr>
+            <!-- ROW 2 -->
+            <tr>
+                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= __('avg_max') ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?= formatSimple($classStats['max'] ?? null) ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= strtoupper(__('trimester_short_title')) ?> 2
                 </td>
-                <!-- 3. Rappel des moyennes des 3 trimestres -->
-                <td width="40%">
-                    <table class="side-table compact-side">
-                        <tr>
-                            <th><?= __('recall') ?></th>
-                            <th width="25%"><?= __('average') ?></th>
-                            <th width="20%"><?= __('rank') ?></th>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= strtoupper(__('trimester_short_title')) ?> 1</td>
-                            <td><?= isset($termAverages[0]) ? formatSimple($termAverages[0]) : '-' ?></td>
-                            <td><?= $termRanks[0] ?? '-' ?></td>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= strtoupper(__('trimester_short_title')) ?> 2</td>
-                            <td><?= isset($termAverages[1]) ? formatSimple($termAverages[1]) : '-' ?></td>
-                            <td><?= $termRanks[1] ?? '-' ?></td>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= strtoupper(__('trimester_short_title')) ?> 3</td>
-                            <td><?= isset($termAverages[2]) ? formatSimple($termAverages[2]) : '-' ?></td>
-                            <td><?= $termRanks[2] ?? '-' ?></td>
-                        </tr>
-                        <?php
-                        // Consolidation finale de l'année (Somme des MGP et Coeffs)
-                        $totalAllCoeffs = 0;
-                        $totalMGPs = 0;
-                        foreach ($groupedRows as $g) {
-                            $totalAllCoeffs += (float) ($g['total_coeffs_all'] ?? 0);
-                            $gPoints = (float) ($g['total_points'] ?? 0);
-                            $gCoeffs = (int) ($g['total_coefficients'] ?? 0);
-                            $gMgp = $gCoeffs > 0 ? round($gPoints / $gCoeffs, 2) : 0;
-                            $totalMGPs += $gMgp;
-                        }
-                        ?>
-                        <tr>
-                            <td class="left" style="font-weight: bold;"><?= __('total_mgp') ?> |
-                                <?= __('total_coeffs') ?>
-                            </td>
-                            <td style="font-weight: bold;"><?= formatSimple($totalMGPs) ?></td>
-                            <td style="font-weight: bold;"><?= (float) $totalAllCoeffs ?></td>
-                        </tr>
-                    </table>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?= (isset($termAverages[1]) ? formatSimple($termAverages[1]) : '-') . ' (Rg: ' . ($termRanks[1] ?? '-') . ')' ?>
+                </td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= __('exclusions') ?> / <?= __('consignes') ?>
+                </td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?= sprintf('%02d', $discipline['exclusion_days']) ?>j /
+                    <?= sprintf('%02d', $discipline['consignes']) ?></td>
+            </tr>
+            <!-- ROW 3 -->
+            <tr>
+                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= __('success_rate') ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?= isset($classStats['success_rate']) ? formatSimple($classStats['success_rate']) . '%' : '-' ?>
+                </td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= strtoupper(__('trimester_short_title')) ?> 3
+                </td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?= (isset($termAverages[2]) ? formatSimple($termAverages[2]) : '-') . ' (Rg: ' . ($termRanks[2] ?? '-') . ')' ?>
+                </td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= __('honour_roll') ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <span class="<?= ($average >= 12) ? 'vert' : 'rouge' ?>">
+                        <?= ($average >= 12) ? strtoupper(__('yes')) : strtoupper(__('no')) ?>
+                    </span>
                 </td>
             </tr>
-        </table>
-
-        <!-- E. DISCIPLINE ET DÉCISION DU CONSEIL -->
-        <table class="container-table compact-layout">
+            <!-- ROW 4 -->
             <tr>
-                <!-- Légende -->
-                <td width="32%">
-                    <div class="compact-note-box">
-                        <div class="uppercase compact-note-title"><?= __('legend_appreciation') ?></div>
-                        <div class="legend-text" style="font-size: 9px; white-space: nowrap; line-height: 1.2;">
-                            CTBA : <?= __('ctba_desc') ?><br>
-                            CBA : <?= __('cba_desc') ?><br>
-                            CA : <?= __('ca_desc') ?><br>
-                            CMA : <?= __('cma_desc') ?><br>
-                            CNA : <?= __('cna_desc') ?><br>
-                            <strong><?= __('mgp_group') ?></strong>
-                        </div>
-                    </div>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; font-weight: bold;"><?= __('student_avg') ?></td>
+                <td
+                    style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold; background-color: #fafafa;">
+                    <?= formatNote($average) ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; font-weight: bold;"><?= __('total_mgp') ?> /
+                    <?= __('total_coeffs') ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?= formatSimple($totalMGPs) ?> / <?= (float) $totalAllCoeffs ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= __('encouragements') ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?php
+                    $workKey = 'work_bad';
+                    if ($average >= 14)
+                        $workKey = 'work_excellent';
+                    elseif ($average >= 12)
+                        $workKey = 'work_good';
+                    elseif ($average >= 10)
+                        $workKey = 'work_passable';
+                    ?>
+                    <span class="<?= ($average >= 10) ? 'vert' : 'rouge' ?>">
+                        <?= __($workKey) ?>
+                    </span>
                 </td>
-                <!-- Discipline annuelle -->
-                <td width="26%">
-                    <table class="side-table compact-side">
-                        <tr>
-                            <th colspan="3"><?= __('conduct') ?></th>
-                        </tr>
-                        <tr>
-                            <td rowspan="3" class="absences-title"><?= strtoupper(__('absences')) ?></td>
-                            <td class="left"><?= __('total') ?></td>
-                            <td class="bold" width="25%"><?= sprintf('%02d', $discipline['absences']['total']) ?></td>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= __('justified') ?></td>
-                            <td class="bold"><?= sprintf('%02d', $discipline['absences']['justified']) ?></td>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= __('unjustified') ?></td>
-                            <td class="bold"><?= sprintf('%02d', $discipline['absences']['unjustified']) ?></td>
-                        </tr>
-                        <tr>
-                            <td colspan="2" class="left"><?= __('suspended') ?> (<?= __('days') ?>)</td>
-                            <td class="bold"><?= sprintf('%02d', $discipline['exclusion_days']) ?></td>
-                        </tr>
-                        <tr>
-                            <td colspan="2" class="left"><?= __('warn_conduct') ?></td>
-                            <td class="bold"><?= $discipline['warning_conduct'] ?></td>
-                        </tr>
-                    </table>
+            </tr>
+            <!-- ROW 5 -->
+            <tr>
+                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= __('student_rank') ?> & <?= __('mention') ?>
                 </td>
-                <!-- Décision annuelle du conseil -->
-                <td width="42%">
-                    <table class="side-table compact-side">
-                        <tr>
-                            <th colspan="4"><?= __('council_decision') ?></th>
-                        </tr>
-                        <tr>
-                            <th colspan="2"><?= __('discipline') ?></th>
-                            <th colspan="2"><?= __('work') ?></th>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= __('warn_conduct') ?></td>
-                            <td><?= $discipline['warning_conduct'] ?></td>
-                            <td class="left"><?= __('honour_roll') ?></td>
-                            <td class="bold">
-                                <span class="<?= ($average >= 12) ? 'vert' : 'rouge' ?>">
-                                    <?= ($average >= 12) ? strtoupper(__('yes')) : strtoupper(__('no')) ?>
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= __('blame_conduct') ?></td>
-                            <td class="bold"><?= $discipline['blame_conduct'] ?></td>
-                            <td class="left"><?= __('encouragements') ?></td>
-                            <td class="bold">
-                                <?php
-                                $workKey = 'work_bad';
-                                if ($average >= 14)
-                                    $workKey = 'work_excellent';
-                                elseif ($average >= 12)
-                                    $workKey = 'work_good';
-                                elseif ($average >= 10)
-                                    $workKey = 'work_passable';
-                                ?>
-                                <span class="<?= ($average >= 10) ? 'vert' : 'rouge' ?>">
-                                    <?= __($workKey) ?>
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= __('exclusions') ?> (<?= __('days') ?>)</td>
-                            <td class="bold"><?= sprintf('%02d', $discipline['exclusion_days']) ?></td>
-                            <td class="left"><?= __('congratulations') ?></td>
-                            <td class="bold">
-                                <span class="<?= ($average >= 14) ? 'vert' : 'rouge' ?>">
-                                    <?= ($average >= 14) ? strtoupper(__('yes')) : strtoupper(__('no')) ?>
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="left"><?= __('consignes') ?></td>
-                            <td class="bold"><?= sprintf('%02d', $discipline['consignes']) ?></td>
-                            <td class="left"><?= __('warn_work') ?></td>
-                            <td class="bold">
-                                <?php
-                                $trendText = '';
-                                $trendClass = '';
-                                // On filtre les moyennes valides (non nulles/vides)
-                                $validTerms = array_filter($termAverages, function ($v) {
-                                    return $v !== null && $v !== '' && $v !== '-';
-                                });
-                                if (count($validTerms) >= 2) {
-                                    $termsValues = array_values($validTerms);
-                                    $currT = (float) end($termsValues);
-                                    $prevT = (float) prev($termsValues);
-                                    if ($currT < $prevT) {
-                                        $trendText = __('trend_down');
-                                        $trendClass = 'rouge';
-                                    } else {
-                                        $trendText = __('trend_up');
-                                        $trendClass = 'vert';
-                                    }
-                                }
-                                ?>
-                                <span class="<?= $trendClass ?>"><?= strtoupper((string) $trendText) ?></span>
-                            </td>
-                        </tr>
-                    </table>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?= $rank !== null ? $rank . '/' . $effectif : '-' ?> (<?= htmlspecialchars($mention) ?>)</td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px;">&bull; <?= __('total') ?> <?= __('absences') ?>
+                </td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?= sprintf('%02d', $discipline['absences']['total']) ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= __('congratulations') ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <span class="<?= ($average >= 14) ? 'vert' : 'rouge' ?>">
+                        <?= ($average >= 14) ? strtoupper(__('yes')) : strtoupper(__('no')) ?>
+                    </span>
+                </td>
+            </tr>
+            <!-- ROW 6 -->
+            <tr>
+                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= __('general_observation') ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?= htmlspecialchars($globalAppreciation) ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px;">&bull; <?= __('justified') ?> /
+                    <?= __('unjustified') ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?= sprintf('%02d', $discipline['absences']['justified']) ?> /
+                    <?= sprintf('%02d', $discipline['absences']['unjustified']) ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= __('warn_work') ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    <?php
+                    $trendText = '';
+                    $trendClass = '';
+                    // On filtre les moyennes valides (non nulles/vides)
+                    $validTerms = array_filter($termAverages, function ($v) {
+                        return $v !== null && $v !== '' && $v !== '-';
+                    });
+                    if (count($validTerms) >= 2) {
+                        $termsValues = array_values($validTerms);
+                        $currT = (float) end($termsValues);
+                        $prevT = (float) prev($termsValues);
+                        if ($currT < $prevT) {
+                            $trendText = __('trend_down');
+                            $trendClass = 'rouge';
+                        } else {
+                            $trendText = __('trend_up');
+                            $trendClass = 'vert';
+                        }
+                    }
+                    ?>
+                    <span class="<?= $trendClass ?>"><?= strtoupper((string) $trendText) ?></span>
+                </td>
+            </tr>
+
+            <!-- SECTION 4: LÉGENDE -->
+            <tr>
+                <td colspan="6"
+                    style="border: 0.5px solid #000; padding: 3px; font-size: 8.5px; line-height: 1.1; background-color: #fafafa;">
+                    <span
+                        style="font-weight: bold; text-decoration: underline;"><?= __('legend_appreciation') ?>:</span>
+                    CTBA : <?= __('ctba_desc') ?> | CBA : <?= __('cba_desc') ?> | CA : <?= __('ca_desc') ?> |
+                    CMA : <?= __('cma_desc') ?> | CNA : <?= __('cna_desc') ?> |
+                    <strong><?= __('mgp_group') ?></strong>
                 </td>
             </tr>
         </table>
@@ -588,6 +535,72 @@ if (isset($styleOnly)) {
     </div>
 
     <?php if (!$embeddedBatch): ?>
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const downloadBtns = document.querySelectorAll('.pv-btn-download');
+            downloadBtns.forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    showPdfGuidance();
+                });
+            });
+        });
+
+        function showPdfGuidance() {
+            let modal = document.getElementById('pdf-guidance-modal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'pdf-guidance-modal';
+                modal.innerHTML = `
+                    <div class="pdf-modal-backdrop" onclick="closePdfGuidance()"></div>
+                    <div class="pdf-modal-card">
+                        <div class="pdf-modal-header">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="#ffd700" viewBox="0 0 16 16" style="vertical-align: middle;">
+                                <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+                                <path d="M4.603 14.087a.81.81 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.68 7.68 0 0 1 1.482-.645 19.697 19.697 0 0 0 1.062-2.227 7.269 7.269 0 0 1-.43-1.295c-.086-.4-.119-.796-.046-1.136.075-.354.274-.672.65-.823.192-.077.4-.12.602-.077a.7.7 0 0 1 .471.215c.15.18-.162 1.305-.162 1.305v.006c-.316.427-.58.111-.58.111s.54.407.728.846c.155.362.29.74.405 1.134.208.718.36 1.4.453 1.954.555.15 1.144.33 1.705.513.29.096.55.195.74.296.262.138.45.321.492.51.042.19.014.39-.115.546-.129.155-.327.24-.546.269-.219.03-.466-.02-.713-.102a4.954 4.954 0 0 1-1.396-.757c-.88-.705-1.58-1.748-1.9-2.235-.351.054-.7.108-1.049.157-.428.06-1.08.125-1.764.125-.453.03-.9.08-1.332.146-.356.055-.705.12-1.05.19-.24.049-.49.123-.715.22z"/>
+                            </svg>
+                            <h2>Enregistrement PDF Premium</h2>
+                        </div>
+                        <div class="pdf-modal-body">
+                            <p>Pour exporter votre bulletin avec une <strong>qualité d'impression absolue</strong> (textes parfaits, aucun décalage de tableau, aucune coupure de page) :</p>
+                            <div class="pdf-step">
+                                <span class="pdf-step-num">1</span>
+                                <span class="pdf-step-text">La fenêtre d'impression système va s'ouvrir.</span>
+                            </div>
+                            <div class="pdf-step">
+                                <span class="pdf-step-num">2</span>
+                                <span class="pdf-step-text">Dans la case <strong>"Destination"</strong>, sélectionnez <strong>"Enregistrer au format PDF"</strong>.</span>
+                            </div>
+                            <div class="pdf-step">
+                                <span class="pdf-step-num">3</span>
+                                <span class="pdf-step-text">Cliquez sur le bouton bleu <strong>"Enregistrer"</strong>.</span>
+                            </div>
+                        </div>
+                        <div class="pdf-modal-footer">
+                            <button class="pdf-modal-btn cancel" onclick="closePdfGuidance()">Annuler</button>
+                            <button class="pdf-modal-btn confirm" onclick="launchPdfPrint()">Lancer l'Enregistrement PDF</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+            modal.style.display = 'block';
+        }
+
+        function closePdfGuidance() {
+            const modal = document.getElementById('pdf-guidance-modal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        function launchPdfPrint() {
+            closePdfGuidance();
+            setTimeout(() => {
+                window.print();
+            }, 300);
+        }
+        </script>
     </body>
 
     </html>
