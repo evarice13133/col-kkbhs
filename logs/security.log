@@ -365,3 +365,8 @@
 [2026-05-17 01:34:26] [IP: ::1] [UID: 1] Connexion réussie pour l'utilisateur : sup
 [2026-05-17 16:12:01] [IP: ::1] [UID: GUEST] Session expirée pour inactivité prolongée.
 [2026-05-17 16:12:51] [IP: ::1] [UID: 2] Connexion réussie pour l'utilisateur : imt
+[2026-05-17 17:43:23] [IP: ::1] [UID: GUEST] Échec de connexion pour l'utilisateur : yuri
+[2026-05-17 17:43:32] [IP: ::1] [UID: GUEST] Échec de connexion pour l'utilisateur : yuri
+[2026-05-17 17:43:41] [IP: ::1] [UID: 2] Connexion réussie pour l'utilisateur : imt
+[2026-05-17 17:44:18] [IP: ::1] [UID: 29] Connexion réussie pour l'utilisateur : lonfo
+[2026-05-17 17:50:26] [IP: ::1] [UID: 2] Connexion réussie pour l'utilisateur : imt
