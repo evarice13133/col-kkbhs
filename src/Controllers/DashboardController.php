@@ -266,6 +266,134 @@ class DashboardController
             $notifications = json_decode(file_get_contents($logPath), true) ?: [];
         }
 
+        // 7. Statistiques Intelligentes du Tableau de Bord (Demande Utilisateur)
+        // A. Meilleurs élèves de l'établissement
+        $stmtTop = $this->db->prepare("
+            SELECT st.id as student_id, st.nom, st.prenom, c.nom as classe_nom,
+                   SUM(g.valeur * s.coefficient) / SUM(s.coefficient) as moyenne
+            FROM grades g
+            JOIN students st ON st.id = g.student_id
+            JOIN classes c ON c.id = st.class_id
+            JOIN subjects s ON s.id = g.subject_id
+            WHERE g.academic_year_id = ? AND st.is_withdrawn = 0
+            GROUP BY st.id, st.nom, st.prenom, c.nom
+            ORDER BY moyenne DESC
+            LIMIT 5
+        ");
+        $stmtTop->execute([$activeYearId]);
+        $topStudents = $stmtTop->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // B. Élèves en difficulté
+        $stmtStrug = $this->db->prepare("
+            SELECT st.id as student_id, st.nom, st.prenom, c.nom as classe_nom,
+                   SUM(g.valeur * s.coefficient) / SUM(s.coefficient) as moyenne
+            FROM grades g
+            JOIN students st ON st.id = g.student_id
+            JOIN classes c ON c.id = st.class_id
+            JOIN subjects s ON s.id = g.subject_id
+            WHERE g.academic_year_id = ? AND st.is_withdrawn = 0
+            GROUP BY st.id, st.nom, st.prenom, c.nom
+            HAVING moyenne < 10
+            ORDER BY moyenne ASC
+            LIMIT 5
+        ");
+        $stmtStrug->execute([$activeYearId]);
+        $strugglingStudents = $stmtStrug->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // C. Statistiques par classe
+        $stmtClassAvgs = $this->db->prepare("
+            SELECT st.class_id, c.nom as class_name, st.id as student_id,
+                   SUM(g.valeur * s.coefficient) / SUM(s.coefficient) as moyenne
+            FROM grades g
+            JOIN students st ON st.id = g.student_id
+            JOIN classes c ON c.id = st.class_id
+            JOIN subjects s ON s.id = g.subject_id
+            WHERE g.academic_year_id = ? AND st.is_withdrawn = 0
+            GROUP BY st.class_id, c.nom, st.id
+        ");
+        $stmtClassAvgs->execute([$activeYearId]);
+        $avgs = $stmtClassAvgs->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $classStats = [];
+        $distribution = [
+            'elite' => 0,       // >= 16
+            'satisfait' => 0,   // 12 to 15.99
+            'passable' => 0,    // 10 to 11.99
+            'soutien' => 0      // < 10
+        ];
+
+        foreach ($avgs as $row) {
+            $cId = $row['class_id'];
+            if (!isset($classStats[$cId])) {
+                $classStats[$cId] = [
+                    'class_name' => $row['class_name'],
+                    'total_students' => 0,
+                    'passing_students' => 0,
+                    'sum_averages' => 0
+                ];
+            }
+            $classStats[$cId]['total_students']++;
+            if ($row['moyenne'] >= 10) {
+                $classStats[$cId]['passing_students']++;
+            }
+            $classStats[$cId]['sum_averages'] += (float)$row['moyenne'];
+
+            // Distribution
+            $val = (float)$row['moyenne'];
+            if ($val >= 16) {
+                $distribution['elite']++;
+            } elseif ($val >= 12) {
+                $distribution['satisfait']++;
+            } elseif ($val >= 10) {
+                $distribution['passable']++;
+            } else {
+                $distribution['soutien']++;
+            }
+        }
+        foreach ($classStats as &$cs) {
+            $cs['class_avg'] = $cs['total_students'] > 0 ? ($cs['sum_averages'] / $cs['total_students']) : 0;
+            $cs['success_rate'] = $cs['total_students'] > 0 ? round(($cs['passing_students'] / $cs['total_students']) * 100) : 0;
+        }
+        unset($cs);
+        uasort($classStats, fn($a, $b) => $b['class_avg'] <=> $a['class_avg']);
+
+        // D. Évolution des moyennes par période (Séquences actives)
+        $activeSeqs = $this->getActiveEvaluations();
+        $seqAverages = [];
+        if (!empty($activeSeqs)) {
+            $placeholders = implode(',', array_fill(0, count($activeSeqs), '?'));
+            $stmtSeq = $this->db->prepare("
+                SELECT g.periode, AVG(g.valeur) as moyenne
+                FROM grades g
+                WHERE g.academic_year_id = ? AND g.periode IN ($placeholders)
+                GROUP BY g.periode
+            ");
+            $stmtSeq->execute(array_merge([$activeYearId], $activeSeqs));
+            $seqAvgsRaw = $stmtSeq->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
+            
+            foreach ($activeSeqs as $seq) {
+                $seqAverages[] = [
+                    'periode' => $seq,
+                    'moyenne' => isset($seqAvgsRaw[$seq]) ? (float)$seqAvgsRaw[$seq] : 0
+                ];
+            }
+        }
+
+        // E. Points forts & Faibles par matière
+        $stmtSubjectStats = $this->db->prepare("
+            SELECT s.nom, AVG(g.valeur) as moyenne
+            FROM grades g
+            JOIN subjects s ON s.id = g.subject_id
+            WHERE g.academic_year_id = ? AND s.status = 1
+            GROUP BY s.id, s.nom
+            ORDER BY moyenne DESC
+        ");
+        $stmtSubjectStats->execute([$activeYearId]);
+        $subjectStats = $stmtSubjectStats->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        
+        $bestSubject = !empty($subjectStats) ? $subjectStats[0] : null;
+        $worstSubject = !empty($subjectStats) && count($subjectStats) > 1 ? end($subjectStats) : null;
+
         return [
             'stats_students' => $stats_students,
             'stats_classes' => $stats_classes,
@@ -285,6 +413,13 @@ class DashboardController
             'teacherActivitySummary' => $teacherActivitySummary,
             'backupOverview' => $backupOverview,
             'landing_notifications' => $notifications,
+            'topStudents' => $topStudents,
+            'strugglingStudents' => $strugglingStudents,
+            'classStats' => array_values($classStats),
+            'seqAverages' => $seqAverages,
+            'distribution' => $distribution,
+            'bestSubject' => $bestSubject,
+            'worstSubject' => $worstSubject,
         ];
     }
 

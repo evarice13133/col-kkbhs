@@ -51,20 +51,33 @@ $usageCards = [
 ];
 
 $quickAccessLinks = [
-    ['url' => '/students', 'icon' => 'bi-people-fill', 'label' => __('students'), 'meta' => (string) ((int) $stats_students)],
-    ['url' => '/teachers', 'icon' => 'bi-person-badge-fill', 'label' => __('teachers'), 'meta' => (string) ((int) $stats_teachers)],
-    ['url' => '/teachers', 'icon' => 'bi-diagram-3-fill', 'label' => __('academic_assignment'), 'meta' => (string) ((int) $teachers_without_assignment)],
-    ['url' => '/subjects', 'icon' => 'bi-book-fill', 'label' => __('subjects'), 'meta' => (string) ((int) $stats_subjects)],
-    ['url' => '/notes', 'icon' => 'bi-pencil-square', 'label' => __('enter_marks'), 'meta' => (string) ((int) $globalPending)],
-    //['url' => '/sections', 'icon' => 'bi-grid-3x3-gap', 'label' => __('academic_sections'), 'meta' => null],
-    ['url' => '/bulletins', 'icon' => 'bi-file-earmark-pdf', 'label' => __('bulletins'), 'meta' => null],
-    // ['url' => '/fiches', 'icon' => 'bi-journal-check', 'label' => __('fiches_recap'), 'meta' => null],
-    ['url' => '/proces-verbal', 'icon' => 'bi-file-earmark-text', 'label' => __('proces_verbaux'), 'meta' => null],
+    // ── Ressources humaines ──────────────────────────────────
+    ['url' => '/students', 'icon' => 'bi-people-fill',           'label' => __('students'),            'meta' => (string) ((int) $stats_students)],
+    ['url' => '/teachers', 'icon' => 'bi-person-badge-fill',     'label' => __('teachers'),            'meta' => (string) ((int) $stats_teachers)],
+    // ── Structure ────────────────────────────────────────────
+    ['url' => '/classes',  'icon' => 'bi-door-open-fill',        'label' => __('classes'),             'meta' => (string) ((int) $stats_classes)],
+    ['url' => '/subjects', 'icon' => 'bi-book-fill',             'label' => __('subjects'),            'meta' => (string) ((int) $stats_subjects)],
+    // ── Pédagogie ────────────────────────────────────────────
+    ['url' => '/notes',    'icon' => 'bi-pencil-square',         'label' => __('enter_marks'),         'meta' => (string) ((int) $globalPending)],
+    ['url' => '/bulletins','icon' => 'bi-file-earmark-pdf',      'label' => __('bulletins'),           'meta' => null],
+    ['url' => '/honors',   'icon' => 'bi-award-fill',            'label' => __('honor_roll_title'),    'meta' => null],
+    ['url' => '/bulletins/discipline', 'icon' => 'bi-shield-check', 'label' => __('discipline_management'), 'meta' => null],
+    ['url' => '/proces-verbal', 'icon' => 'bi-file-earmark-text','label' => __('proces_verbaux'),      'meta' => null],
+    // ── Pilotage ─────────────────────────────────────────────
+    ['url' => '/sequences',       'icon' => 'bi-check2-square',  'label' => __('evaluations'),         'meta' => null],
+    ['url' => '/academic_years',  'icon' => 'bi-calendar-event', 'label' => __('academic_years'),      'meta' => null],
+    // ── Affectations ─────────────────────────────────────────
+    ['url' => '/teachers', 'icon' => 'bi-diagram-3-fill',        'label' => __('academic_assignment'), 'meta' => (string) ((int) $teachers_without_assignment)],
+    // ── Aide ─────────────────────────────────────────────────
+    ['url' => '/documentation', 'icon' => 'bi-question-circle-fill', 'label' => __('help'),            'meta' => null],
 ];
 
 if (\App\Core\Session::get('user_role') === 'superadmin') {
-    $quickAccessLinks[] = ['url' => '/users', 'icon' => 'bi-people-fill', 'label' => __('users'), 'meta' => (string) ((int) $stats_users)];
-    $quickAccessLinks[] = ['url' => '/settings', 'icon' => 'bi-gear-fill', 'label' => __('settings'), 'meta' => null];
+    $quickAccessLinks[] = ['url' => '/departments', 'icon' => 'bi-building',       'label' => __('departments'),       'meta' => null];
+    $quickAccessLinks[] = ['url' => '/sections',    'icon' => 'bi-grid-3x3-gap',   'label' => __('academic_sections'), 'meta' => null];
+    $quickAccessLinks[] = ['url' => '/cycles',      'icon' => 'bi-layers',          'label' => __('academic_cycles'),   'meta' => null];
+    $quickAccessLinks[] = ['url' => '/users',       'icon' => 'bi-people-fill',     'label' => __('users'),             'meta' => (string) ((int) $stats_users)];
+    $quickAccessLinks[] = ['url' => '/settings',    'icon' => 'bi-gear-fill',       'label' => __('settings'),          'meta' => null];
 }
 
 ob_start();
@@ -180,6 +193,7 @@ ob_start();
             <?php endforeach; ?>
         </div>
     <?php endif; ?>
+
     <div class="row g-3 mb-4 kpi-row">
         <!-- Étudiants -->
         <div class="col-sm-6 col-xl-3 stats-col">
@@ -259,7 +273,7 @@ ob_start();
     </div>
 
     <!-- Accès rapide - Scroll horizontal -->
-    <div class="modern-card mb-4 border-0 shadow-sm border-top border-primary border-4">
+    <div class="modern-card mb-4 border-0 shadow-sm border-top border-primary border-4 animate-fade-in" style="border-radius: 24px !important;">
         <div class="modern-card-header border-bottom bg-transparent py-3">
             <div class="d-flex align-items-center gap-2">
                 <i class="bi bi-lightning-fill text-primary fs-5"></i>
@@ -285,6 +299,371 @@ ob_start();
             </div>
         </div>
     </div>
+
+    <!-- ========================================== -->
+    <!-- SECTION : TABLEAU DE BORD INTELLIGENT AVANCÉ -->
+    <!-- ========================================== -->
+    <div class="row g-4 mb-5">
+        <!-- 1. Classement des Élèves & Répartition des Niveaux -->
+        <div class="col-xl-6">
+            <div class="modern-card border-0 shadow-lg border-top border-accent border-4 h-100 animate-fade-in" style="border-radius: 24px !important;">
+                <div class="modern-card-header bg-transparent p-4 border-bottom d-flex justify-content-between align-items-center" style="border-radius: 24px 24px 0 0 !important;">
+                    <div>
+                        <h5 class="fw-bold m-0 text-main-theme"><i class="bi bi-cpu-fill text-accent me-2"></i><?= __('db_predictive_dashboard') ?></h5>
+                        <p class="text-muted small m-0" style="font-size: 11px;"><?= __('db_predictive_subtitle') ?></p>
+                    </div>
+                </div>
+                
+                <div class="p-4">
+                    <!-- Nav tabs style ultra-premium -->
+                    <ul class="nav nav-pills mb-4 gap-2" id="studentTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active rounded-pill fw-bold text-uppercase px-3 py-2 btn-sm" id="top-students-tab" data-bs-toggle="tab" data-bs-target="#top-students" type="button" role="tab" aria-controls="top-students" aria-selected="true" style="font-size: 11px; transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);">
+                                <?= __('db_tab_excellences') ?>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link rounded-pill fw-bold text-uppercase px-3 py-2 btn-sm btn-outline-danger" id="strug-students-tab" data-bs-toggle="tab" data-bs-target="#strug-students" type="button" role="tab" aria-controls="strug-students" aria-selected="false" style="font-size: 11px; transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);">
+                                <?= __('db_tab_alerts') ?>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link rounded-pill fw-bold text-uppercase px-3 py-2 btn-sm btn-outline-info" id="distrib-tab" data-bs-toggle="tab" data-bs-target="#distrib-pane" type="button" role="tab" aria-controls="distrib-pane" aria-selected="false" style="font-size: 11px; transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);">
+                                <?= __('db_tab_distribution') ?>
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content" id="studentTabContent">
+                        <!-- A. Top Students -->
+                        <div class="tab-pane fade show active" id="top-students" role="tabpanel" aria-labelledby="top-students-tab">
+                            <?php if (empty($topStudents)): ?>
+                                <div class="text-center py-5 text-muted">
+                                    <i class="bi bi-journal-x fs-2 d-block mb-2"></i> <?= __('db_no_notes') ?>
+                                </div>
+                            <?php else: ?>
+                                <div class="d-flex flex-column gap-3">
+                                    <?php foreach ($topStudents as $index => $std): ?>
+                                        <div class="d-flex align-items-center justify-content-between p-3 rounded-4 transition-base scale-on-hover" style="border-radius: 16px !important; background: var(--bg-body); border: 1px solid var(--border-color) !important; box-shadow: 0 4px 12px rgba(0,0,0,0.01);">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="avatar-sm rounded-circle d-flex align-items-center justify-content-center fw-bold text-white shadow-sm" 
+                                                     style="width: 42px; height: 42px; background: linear-gradient(135deg, #fbbf24, #f59e0b);">
+                                                    #<?= $index + 1 ?>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-bold text-main-theme" style="font-size: 13.5px;"><?= htmlspecialchars(strtoupper($std['nom']) . ' ' . ucwords(strtolower($std['prenom']))) ?></div>
+                                                    <span class="badge bg-soft-primary extra-small rounded-pill px-2.5"><?= htmlspecialchars($std['classe_nom']) ?></span>
+                                                </div>
+                                            </div>
+                                            <div class="text-end">
+                                                <div class="fw-black text-success" style="font-size: 17px;"><?= number_format((float)$std['moyenne'], 2, ',', ' ') ?><span class="small text-muted" style="font-size: 10px;">/20</span></div>
+                                                <span class="extra-small text-muted-theme" style="font-size: 10px; font-weight: 600;"><?= __('db_general_average') ?></span>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                        
+                        <!-- B. Struggling Students -->
+                        <div class="tab-pane fade" id="strug-students" role="tabpanel" aria-labelledby="strug-students-tab">
+                            <?php if (empty($strugglingStudents)): ?>
+                                <div class="text-center py-5 text-muted">
+                                    <i class="bi bi-emoji-smile-fill text-success fs-1 d-block mb-2"></i>
+                                    <span class="fw-bold d-block text-success"><?= __('db_all_excellence') ?></span>
+                                </div>
+                            <?php else: ?>
+                                <div class="d-flex flex-column gap-3">
+                                    <?php foreach ($strugglingStudents as $index => $std): ?>
+                                        <div class="d-flex align-items-center justify-content-between p-3 rounded-4 transition-base scale-on-hover" style="border-radius: 16px !important; background: var(--bg-body); border: 1px solid var(--border-color) !important;">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="avatar-sm rounded-circle d-flex align-items-center justify-content-center fw-bold bg-soft-danger shadow-sm" 
+                                                     style="width: 42px; height: 42px;">
+                                                    <i class="bi bi-exclamation-triangle-fill"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-bold text-main-theme" style="font-size: 13.5px;"><?= htmlspecialchars(strtoupper($std['nom']) . ' ' . ucwords(strtolower($std['prenom']))) ?></div>
+                                                    <span class="badge bg-soft-danger extra-small rounded-pill px-2.5"><?= htmlspecialchars($std['classe_nom']) ?></span>
+                                                </div>
+                                            </div>
+                                            <div class="text-end">
+                                                <div class="fw-black text-danger" style="font-size: 17px;"><?= number_format((float)$std['moyenne'], 2, ',', ' ') ?><span class="small text-muted" style="font-size: 10px;">/20</span></div>
+                                                <span class="extra-small text-danger" style="font-size: 10px; font-weight: 600;"><?= __('db_academic_support') ?></span>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+ 
+                        <!-- C. Distribution Chart Grid -->
+                        <div class="tab-pane fade" id="distrib-pane" role="tabpanel" aria-labelledby="distrib-tab">
+                            <div class="p-2">
+                                <h6 class="fw-bold mb-3 text-main-theme small text-uppercase letter-spacing-1"><?= __('db_general_dist_curve') ?></h6>
+                                <div class="d-flex flex-column gap-3">
+                                    <?php 
+                                    $totalDist = array_sum($distribution ?? []);
+                                    $getPercent = fn($val) => $totalDist > 0 ? round(($val / $totalDist) * 100) : 0;
+                                    
+                                    $bands = [
+                                        ['label' => __('db_elite'), 'val' => $distribution['elite'] ?? 0, 'color' => 'bg-warning', 'badge' => 'Gold'],
+                                        ['label' => __('db_satisfactory'), 'val' => $distribution['satisfait'] ?? 0, 'color' => 'bg-success', 'badge' => 'Emerald'],
+                                        ['label' => __('db_passable'), 'val' => $distribution['passable'] ?? 0, 'color' => 'bg-primary', 'badge' => 'Indigo'],
+                                        ['label' => __('db_support_required'), 'val' => $distribution['soutien'] ?? 0, 'color' => 'bg-danger', 'badge' => 'Sunset'],
+                                    ];
+                                    
+                                    foreach ($bands as $b):
+                                        $p = $getPercent($b['val']);
+                                    ?>
+                                        <div>
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <span class="small fw-bold text-main-theme" style="font-size: 12px;"><?= $b['label'] ?></span>
+                                                <span class="small fw-black text-muted-theme" style="font-size: 11px;"><?= __('db_student_count', ['count' => $b['val'], 'percent' => $p]) ?></span>
+                                            </div>
+                                            <div class="progress" style="height: 10px; border-radius: 99px; background: rgba(0,0,0,0.04);">
+                                                <div class="progress-bar <?= $b['color'] ?> progress-bar-striped progress-bar-animated" style="width: <?= $p ?>%; border-radius: 99px;"></div>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+ 
+        <!-- 2. Diagnostic des Disciplines / Points Forts & Faibles -->
+        <div class="col-xl-6">
+            <div class="modern-card border-0 shadow-lg border-top border-warning border-4 h-100 animate-fade-in" style="border-radius: 24px !important;">
+                <div class="modern-card-header bg-transparent p-4 border-bottom d-flex justify-content-between align-items-center" style="border-radius: 24px 24px 0 0 !important;">
+                    <div>
+                        <h5 class="fw-bold m-0 text-main-theme"><i class="bi bi-compass-fill text-warning me-2"></i><?= __('db_diagnostic_disciplines') ?></h5>
+                        <p class="text-muted small m-0" style="font-size: 11px;"><?= __('db_diagnostic_subtitle') ?></p>
+                    </div>
+                </div>
+                
+                <div class="p-4 d-flex flex-column justify-content-center h-100 gap-4 animate-fade-in" style="min-height: 350px;">
+                    <!-- Discipline Majeure -->
+                    <div class="p-4 rounded-4 transition-base scale-on-hover d-flex align-items-center gap-4 shadow-sm" style="border-radius: 20px !important; background: var(--bg-body); border: 1px solid var(--border-color) !important;">
+                        <div class="avatar-md rounded-circle d-flex align-items-center justify-content-center bg-soft-success shadow-sm" style="width: 58px; height: 58px; flex-shrink: 0; font-size: 1.5rem;">
+                            <i class="bi bi-award-fill"></i>
+                        </div>
+                        <div>
+                            <span class="text-uppercase small text-muted font-weight-700 d-block" style="font-size: 9.5px; letter-spacing: 0.8px;"><?= __('db_major_discipline') ?></span>
+                            <h5 class="fw-black text-main-theme m-0 mt-0.5" style="font-size: 17px;"><?= $bestSubject ? htmlspecialchars($bestSubject['nom']) : 'N/A' ?></h5>
+                            <div class="d-flex align-items-center gap-2 mt-1.5">
+                                <span class="h3 fw-black text-success m-0"><?= $bestSubject ? number_format((float)$bestSubject['moyenne'], 2, ',', ' ') : '0.00' ?></span>
+                                <span class="small text-muted-theme"><?= __('db_school_avg') ?></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vigilance Discipline -->
+                    <div class="p-4 rounded-4 transition-base scale-on-hover d-flex align-items-center gap-4 shadow-sm" style="border-radius: 20px !important; background: var(--bg-body); border: 1px solid var(--border-color) !important;">
+                        <div class="avatar-md rounded-circle d-flex align-items-center justify-content-center bg-soft-danger shadow-sm" style="width: 58px; height: 58px; flex-shrink: 0; font-size: 1.5rem;">
+                            <i class="bi bi-lightning-fill"></i>
+                        </div>
+                        <div>
+                            <span class="text-uppercase small text-muted font-weight-700 d-block" style="font-size: 9.5px; letter-spacing: 0.8px;"><?= __('db_vigilance_discipline') ?></span>
+                            <h5 class="fw-black text-main-theme m-0 mt-0.5" style="font-size: 17px;"><?= $worstSubject ? htmlspecialchars($worstSubject['nom']) : 'N/A' ?></h5>
+                            <div class="d-flex align-items-center gap-2 mt-1.5">
+                                <span class="h3 fw-black text-danger m-0"><?= $worstSubject ? number_format((float)$worstSubject['moyenne'], 2, ',', ' ') : '0.00' ?></span>
+                                <span class="small text-muted-theme"><?= __('db_school_avg') ?></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+ 
+    <!-- ========================================== -->
+    <!-- SECTION : DYNAMIQUE DE PERFORMANCE & ÉVOLUTION -->
+    <!-- ========================================== -->
+    <div class="row g-4 mb-5">
+        <!-- 1. Performances Générales des Classes -->
+        <div class="col-xl-6">
+            <div class="modern-card border-0 shadow-lg border-top border-success border-4 h-100 animate-fade-in" style="border-radius: 24px !important;">
+                <div class="modern-card-header bg-transparent p-4 border-bottom d-flex justify-content-between align-items-center" style="border-radius: 24px 24px 0 0 !important;">
+                    <div>
+                        <h5 class="fw-bold m-0 text-main-theme"><i class="bi bi-building-fill text-success me-2"></i><?= __('db_class_performances') ?></h5>
+                        <p class="text-muted small m-0" style="font-size: 11px;"><?= __('db_class_subtitle') ?></p>
+                    </div>
+                </div>
+                
+                <div class="p-4" style="max-height: 400px; overflow-y: auto;">
+                    <?php if (empty($classStats)): ?>
+                        <div class="text-center py-5 text-muted">
+                            <i class="bi bi-building-fill-slash fs-1 d-block mb-3 text-muted"></i>
+                            <?= __('db_no_class_stats') ?>
+                        </div>
+                    <?php else: ?>
+                        <div class="d-flex flex-column gap-4">
+                            <?php foreach ($classStats as $cs): 
+                                $successRate = (int)($cs['success_rate'] ?? 0);
+                                $barColor = $successRate >= 75 ? 'bg-success' : ($successRate >= 50 ? 'bg-primary' : 'bg-warning');
+                                $softClass = $successRate >= 75 ? 'bg-soft-success' : ($successRate >= 50 ? 'bg-soft-primary' : 'bg-soft-warning');
+                            ?>
+                                <div>
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <div>
+                                            <span class="fw-black text-main-theme" style="font-size: 14px;"><?= htmlspecialchars($cs['class_name']) ?></span>
+                                            <small class="text-muted ms-2">(<?= $cs['total_students'] ?>)</small>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="fw-bold text-main-theme" style="font-size: 13.5px;"><?= number_format((float)$cs['class_avg'], 2, ',', ' ') ?> / 20</span>
+                                            <span class="badge rounded-pill px-2.5 py-1 ms-2 <?= $softClass ?> font-weight-700" style="font-size: 10.5px;"><?= __('db_success_rate', ['percent' => $successRate]) ?></span>
+                                        </div>
+                                    </div>
+                                    <div class="progress" style="height: 10px; border-radius: 99px; background: rgba(var(--primary-rgb), 0.05); box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
+                                        <div class="progress-bar <?= $barColor ?>" style="width: <?= $successRate ?>%; border-radius: 99px; background-image: linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent);"></div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Évolution Académique Globale -->
+        <div class="col-xl-6">
+            <div class="modern-card border-0 shadow-lg border-top border-info border-4 h-100 animate-fade-in" style="border-radius: 24px !important;">
+                <div class="modern-card-header bg-transparent p-4 border-bottom d-flex justify-content-between align-items-center" style="border-radius: 24px 24px 0 0 !important;">
+                    <div>
+                        <h5 class="fw-bold m-0 text-main-theme"><i class="bi bi-graph-up-arrow text-info me-2"></i><?= __('db_overall_evolution') ?></h5>
+                        <p class="text-muted small m-0" style="font-size: 11px;"><?= __('db_evolution_subtitle') ?></p>
+                    </div>
+                </div>
+                
+                <div class="p-4">
+                    <?php if (empty($seqAverages)): ?>
+                        <div class="text-center py-5 text-muted">
+                            <i class="bi bi-calendar2-x fs-2 d-block mb-2 text-muted"></i>
+                            <?= __('db_insufficient_eval') ?>
+                        </div>
+                    <?php else: ?>
+                        <div class="row g-4 align-items-center">
+                            <!-- Visual dynamic SVG Curve chart -->
+                            <div class="col-lg-8">
+                                <div class="p-3 bg-light bg-opacity-10" style="border-radius: 20px !important; border: 1px solid var(--border-color) !important;">
+                                    <?php
+                                        // Calculate points for the dynamic SVG Curve!
+                                        $svgWidth = 500;
+                                        $svgHeight = 130;
+                                        $padTop = 20;
+                                        $padBot = 20;
+                                        $countSeq = count($seqAverages);
+                                        $points = [];
+                                        
+                                        if ($countSeq > 1) {
+                                            $vals = array_column($seqAverages, 'moyenne');
+                                            $minVal = max(0, min($vals) - 1.5);
+                                            $maxVal = min(20, max($vals) + 1.5);
+                                            $range = $maxVal - $minVal;
+                                            if ($range <= 0) $range = 1;
+                                            
+                                            foreach ($seqAverages as $idx => $sa) {
+                                                $x = ($idx / ($countSeq - 1)) * $svgWidth;
+                                                $norm = ($sa['moyenne'] - $minVal) / $range;
+                                                $y = $svgHeight - ($norm * ($svgHeight - $padTop - $padBot)) - $padBot;
+                                                $points[] = "$x,$y";
+                                            }
+                                            $path = "M " . implode(" L ", $points);
+                                            $areaPath = $path . " L {$svgWidth},{$svgHeight} L 0,{$svgHeight} Z";
+                                        } else {
+                                            $path = "";
+                                            $areaPath = "";
+                                        }
+                                    ?>
+                                    
+                                    <?php if ($countSeq > 1): ?>
+                                        <div class="position-relative">
+                                            <svg viewBox="0 0 500 130" class="w-100 h-auto" style="overflow: visible;">
+                                                <defs>
+                                                    <linearGradient id="curve-grad" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="0%" stop-color="#0dcaf0" stop-opacity="0.35"/>
+                                                        <stop offset="100%" stop-color="#0dcaf0" stop-opacity="0.01"/>
+                                                    </linearGradient>
+                                                    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                                                        <feGaussianBlur stdDeviation="3" result="blur" />
+                                                        <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+                                                    </filter>
+                                                </defs>
+                                                <!-- Grid horizontal lines -->
+                                                <line x1="0" y1="20" x2="500" y2="20" stroke="var(--border-color)" stroke-opacity="0.5" stroke-dasharray="4"/>
+                                                <line x1="0" y1="65" x2="500" y2="65" stroke="var(--border-color)" stroke-opacity="0.5" stroke-dasharray="4"/>
+                                                <line x1="0" y1="110" x2="500" y2="110" stroke="var(--border-color)" stroke-opacity="0.5" stroke-dasharray="4"/>
+                                                
+                                                <!-- Gradient area -->
+                                                <path d="<?= $areaPath ?>" fill="url(#curve-grad)" />
+                                                <!-- Main stroke line -->
+                                                <path d="<?= $path ?>" fill="none" stroke="#0dcaf0" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
+                                                
+                                                <!-- Interactive circle markers -->
+                                                <?php foreach ($points as $idx => $pt): 
+                                                    list($cx, $cy) = explode(',', $pt);
+                                                ?>
+                                                    <circle cx="<?= $cx ?>" cy="<?= $cy ?>" r="6.5" fill="var(--bg-card)" stroke="#0dcaf0" stroke-width="3.5" class="transition-base cursor-pointer" style="transition: transform 0.18s; transform-origin: <?= $cx ?>px <?= $cy ?>px;" onmouseover="this.setAttribute('r', '8.5');" onmouseout="this.setAttribute('r', '6.5');"/>
+                                                <?php endforeach; ?>
+                                            </svg>
+                                            
+                                            <!-- Labels below chart -->
+                                            <div class="d-flex justify-content-between align-items-center mt-3 px-1">
+                                                <?php foreach ($seqAverages as $sa): ?>
+                                                    <div class="text-center">
+                                                        <span class="fw-black text-main-theme d-block" style="font-size: 11.5px;"><?= htmlspecialchars($sa['periode']) ?></span>
+                                                        <span class="badge bg-soft-primary extra-small fw-bold"><?= number_format((float)$sa['moyenne'], 2, ',', ' ') ?></span>
+                                                    </div>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="d-flex flex-wrap justify-content-between align-items-center py-2">
+                                            <?php foreach ($seqAverages as $sa): ?>
+                                                <div class="text-center p-3 rounded-4 bg-light flex-grow-1 mx-2">
+                                                    <span class="text-muted d-block small mb-1"><?= htmlspecialchars($sa['periode']) ?></span>
+                                                    <span class="h4 fw-black text-info m-0"><?= number_format((float)$sa['moyenne'], 2, ',', ' ') ?> / 20</span>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            
+                            <!-- Detailed Trend Report -->
+                            <div class="col-lg-4 border-start border-light ps-lg-4">
+                                <div class="p-4 rounded-4 bg-info bg-opacity-10 border border-info border-opacity-15 h-100" style="border-radius: 20px !important;">
+                                    <h6 class="fw-bold text-info mb-2"><i class="bi bi-lightning-charge-fill me-1"></i><?= __('db_predictive_report') ?></h6>
+                                    <p class="small text-main-theme mb-0 lh-base" style="font-size: 12px; font-weight: 500;">
+                                        <?php 
+                                            if ($countSeq >= 2) {
+                                                $first = $seqAverages[0]['moyenne'];
+                                                $last = $seqAverages[$countSeq - 1]['moyenne'];
+                                                $diff = $last - $first;
+                                                if ($diff > 0) {
+                                                    echo __('db_trend_up', ['diff' => number_format($diff, 2)]);
+                                                } elseif ($diff < 0) {
+                                                    echo __('db_trend_down', ['diff' => number_format(abs($diff), 2)]);
+                                                } else {
+                                                    echo __('db_trend_stable', ['last' => number_format($last, 2)]);
+                                                }
+                                            } else {
+                                                echo __('db_trend_insufficient');
+                                            }
+                                        ?>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
 
     <?php if (\App\Core\Session::get('user_role') === 'superadmin'): ?>
         <div class="row g-4 mb-5">

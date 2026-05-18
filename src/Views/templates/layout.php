@@ -74,7 +74,7 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
             const savedTheme = localStorage.getItem('theme') || 'light';
             document.documentElement.setAttribute('data-theme', savedTheme);
         })();
-        
+
         // --- TRANSLATIONS FOR JAVASCRIPT ---
         window.NM_I18N = {
             'confirmation': "<?= addslashes((string) __('confirmation')) ?>",
@@ -92,7 +92,8 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
     <title><?= (isset($title) ? $title . ' | ' : '') . __('app_name') ?> - <?= __('app_tagline') ?></title>
 
     <!-- SEO Meta Tags -->
-    <meta name="description" content="<?= isset($meta_description) ? h($meta_description) : __('meta_description_default') ?>">
+    <meta name="description"
+        content="<?= isset($meta_description) ? h($meta_description) : __('meta_description_default') ?>">
     <meta name="keywords" content="<?= isset($meta_keywords) ? h($meta_keywords) : __('meta_keywords_default') ?>">
     <link rel="canonical" href="https://copobimat.camertech.com<?= parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?>">
     <meta name="author" content="NoteMaster">
@@ -192,8 +193,9 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
             background: #fef2f2;
             color: #b91c1c;
         }
-            background: #fef2f2;
-            color: #b91c1c;
+
+        background: #fef2f2;
+        color: #b91c1c;
         }
 
         .nav-link-custom.active {
@@ -306,6 +308,7 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         .topbar-glass {
             background: rgba(255, 255, 255, 0.95);
         }
+
         [data-theme="dark"] .topbar-glass {
             background: rgba(15, 23, 42, 0.9) !important;
             border-bottom-color: rgba(255, 255, 255, 0.08) !important;
@@ -315,18 +318,21 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
             background: #f8fafc;
             color: #475569;
         }
+
         [data-theme="dark"] .btn-theme-soft {
             background: rgba(255, 255, 255, 0.1) !important;
             color: #f8fafc !important;
         }
+
         [data-theme="dark"] .btn-theme-soft:hover {
             background: rgba(255, 255, 255, 0.15) !important;
         }
 
         .user-profile-pill {
             background: #f8fafc;
-            border: 1px solid rgba(0,0,0,0.05);
+            border: 1px solid rgba(0, 0, 0, 0.05);
         }
+
         [data-theme="dark"] .user-profile-pill {
             background: rgba(255, 255, 255, 0.05) !important;
             border-color: rgba(255, 255, 255, 0.08) !important;
@@ -346,6 +352,7 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
             visibility: hidden;
             transition: all 0.3s ease-in-out;
         }
+
         .sidebar-overlay.active {
             opacity: 1;
             visibility: visible;
@@ -362,14 +369,15 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
             align-items: center;
             justify-content: center;
             border-radius: 50%;
-            background: rgba(0,0,0,0.05);
+            background: rgba(0, 0, 0, 0.05);
             border: none;
             color: var(--text-main);
             transition: all 0.2s ease;
             z-index: 10;
         }
+
         [data-theme="dark"] .sidebar-close-btn {
-            background: rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.1);
             color: #ffffff;
         }
     </style>
@@ -384,31 +392,33 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <!-- start logo head -->
-                <div class="sidebar-header d-flex justify-content-center py-4 position-relative">
-                     <!-- Bouton de fermeture mobile -->
-                     <button id="sidebarClose" class="sidebar-close-btn d-xl-none">
-                         <i class="bi bi-x-lg"></i>
-                     </button>
-                     <a href="/" class="sidebar-brand d-flex flex-column align-items-center text-center gap-2">
-                     <?php if ($logoData['has_logo'] && !empty($logoData['base64'])): ?>
-                 <div class="sidebar-logo-container">
-                     <img src="<?= htmlspecialchars($logoData['base64']) ?>" alt="Logo" class="sidebar-logo" style="width: 100%; height: 100%; object-fit: contain;">
-                 </div>
-                 <?php elseif ($logoData['has_logo'] && !empty($logoData['url'])): ?>
-                 <div class="sidebar-logo-container">
-                     <img src="<?= htmlspecialchars($logoData['url']) ?>" alt="Logo" class="sidebar-logo" style="width: 100%; height: 100%; object-fit: contain;">
-                 </div>
-                 <?php else: ?>
-                 <div class="logo-fallback-modern text-main-theme">
-                     <?= htmlspecialchars($logoData['fallback_letter']) ?>
-                 </div>
-                 <?php endif; ?>
-                 <span class="brand-text fw-bold fs-5 mt-1 text-main-theme">
-                 <?= htmlspecialchars((string) $school_identity) ?>
-                 </span>
-                 </a>
-                </div>
-                <!-- end logo head -->
+            <div class="sidebar-header d-flex justify-content-center py-4 position-relative">
+                <!-- Bouton de fermeture mobile -->
+                <button id="sidebarClose" class="sidebar-close-btn d-xl-none">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+                <a href="/" class="sidebar-brand d-flex flex-column align-items-center text-center gap-2">
+                    <?php if ($logoData['has_logo'] && !empty($logoData['base64'])): ?>
+                        <div class="sidebar-logo-container">
+                            <img src="<?= htmlspecialchars($logoData['base64']) ?>" alt="Logo" class="sidebar-logo"
+                                style="width: 100%; height: 100%; object-fit: contain;">
+                        </div>
+                    <?php elseif ($logoData['has_logo'] && !empty($logoData['url'])): ?>
+                        <div class="sidebar-logo-container">
+                            <img src="<?= htmlspecialchars($logoData['url']) ?>" alt="Logo" class="sidebar-logo"
+                                style="width: 100%; height: 100%; object-fit: contain;">
+                        </div>
+                    <?php else: ?>
+                        <div class="logo-fallback-modern text-main-theme">
+                            <?= htmlspecialchars($logoData['fallback_letter']) ?>
+                        </div>
+                    <?php endif; ?>
+                    <span class="brand-text fw-bold fs-5 mt-1 text-main-theme">
+                        <?= htmlspecialchars((string) $school_identity) ?>
+                    </span>
+                </a>
+            </div>
+            <!-- end logo head -->
 
             <div class="sidebar-content">
                 <?php if (\App\Core\Session::isLogged()): ?>
@@ -431,7 +441,8 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                     <?php endforeach; ?>
                 <?php else: ?>
                     <div class="px-3 py-4">
-                        <div class="alert alert-info border-0 rounded-4 small mb-4" style="background: rgba(59, 130, 246, 0.05); color: #3b82f6;">
+                        <div class="alert alert-info border-0 rounded-4 small mb-4"
+                            style="background: rgba(59, 130, 246, 0.05); color: #3b82f6;">
                             <i class="bi bi-info-circle me-2"></i>
                             Accédez à votre espace pour gérer votre établissement.
                         </div>
@@ -460,21 +471,28 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         <!-- Main Area -->
         <main class="main-area" id="mainArea">
             <!-- Topbar (Premium & Responsive) -->
-            <header class="topbar topbar-glass d-flex align-items-center justify-content-between px-3 px-md-4 py-2 py-md-3 shadow-sm border-bottom" style="position: sticky; top: 0; z-index: 1000; backdrop-filter: blur(10px);">
+            <header
+                class="topbar topbar-glass d-flex align-items-center justify-content-between px-3 px-md-4 py-2 py-md-3 shadow-sm border-bottom"
+                style="position: sticky; top: 0; z-index: 1000; backdrop-filter: blur(10px);">
                 <div class="d-flex align-items-center gap-2 gap-md-3" style="min-width: 0;">
                     <!-- Menu Toggle (Mobile) -->
-                    <button class="btn btn-theme-soft rounded-circle d-xl-none d-flex align-items-center justify-content-center p-0 border-0 shadow-sm hover-elevate transition-all" id="sidebarToggle" style="width: 40px; height: 40px; flex-shrink: 0;">
+                    <button
+                        class="btn btn-theme-soft rounded-circle d-xl-none d-flex align-items-center justify-content-center p-0 border-0 shadow-sm hover-elevate transition-all"
+                        id="sidebarToggle" style="width: 40px; height: 40px; flex-shrink: 0;">
                         <i class="bi bi-list fs-4 text-main-theme"></i>
                     </button>
-                    
+
                     <!-- Page Title & Breadcrumb -->
                     <div class="page-info d-flex flex-column justify-content-center" style="min-width: 0;">
-                        <h1 class="page-title fs-5 fs-md-4 fw-bold text-main-theme mb-0 text-truncate lh-1" style="letter-spacing: -0.02em;">
+                        <h1 class="page-title fs-5 fs-md-4 fw-bold text-main-theme mb-0 text-truncate lh-1"
+                            style="letter-spacing: -0.02em;">
                             <?= $title ?? __('dashboard') ?>
                         </h1>
                         <nav aria-label="breadcrumb" class="d-none d-md-block mt-1">
                             <ol class="breadcrumb mb-0" style="font-size: 0.75rem; font-weight: 500;">
-                                <li class="breadcrumb-item"><a href="/" class="text-decoration-none text-muted hover-primary transition-all"><?= __('home') ?></a></li>
+                                <li class="breadcrumb-item"><a href="/"
+                                        class="text-decoration-none text-muted hover-primary transition-all"><?= __('home') ?></a>
+                                </li>
                                 <li class="breadcrumb-item active text-primary" aria-current="page">
                                     <?= $title ?? __('dashboard') ?>
                                 </li>
@@ -485,22 +503,29 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
                 <!-- Actions Right -->
                 <div class="topbar-actions d-flex align-items-center gap-2 gap-md-3 flex-shrink-0">
-                    
+
                     <!-- Theme Toggle -->
-                    <button class="theme-toggle-btn btn btn-theme-soft rounded-circle d-flex align-items-center justify-content-center p-0 border-0 shadow-sm hover-elevate transition-all" id="themeToggle" title="<?= __('change_theme') ?>" style="width: 40px; height: 40px;">
+                    <button
+                        class="theme-toggle-btn btn btn-theme-soft rounded-circle d-flex align-items-center justify-content-center p-0 border-0 shadow-sm hover-elevate transition-all"
+                        id="themeToggle" title="<?= __('change_theme') ?>" style="width: 40px; height: 40px;">
                         <i class="bi bi-moon-stars fs-5 text-main-theme"></i>
                     </button>
 
                     <!-- User Actions -->
                     <?php if (\App\Core\Session::isLogged()): ?>
                         <div class="dropdown">
-                            <a href="#" class="user-profile user-profile-pill d-flex align-items-center gap-2 text-decoration-none p-1 pe-md-3 rounded-pill transition-all hover-elevate shadow-sm" data-bs-toggle="dropdown" aria-expanded="false">
-                                <div class="user-avatar bg-primary text-white d-flex align-items-center justify-content-center rounded-circle fw-bold shadow-sm" style="width: 34px; height: 34px; font-size: 0.9rem;">
+                            <a href="#"
+                                class="user-profile user-profile-pill d-flex align-items-center gap-2 text-decoration-none p-1 pe-md-3 rounded-pill transition-all hover-elevate shadow-sm"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                <div class="user-avatar bg-primary text-white d-flex align-items-center justify-content-center rounded-circle fw-bold shadow-sm"
+                                    style="width: 34px; height: 34px; font-size: 0.9rem;">
                                     <?= $user_initials ?>
                                 </div>
                                 <div class="d-none d-md-flex flex-column justify-content-center text-start">
-                                    <span class="text-main-theme fw-bold lh-1" style="font-size: 0.85rem;"><?= h($user_name) ?></span>
-                                    <span class="text-muted" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 3px;"><?= h(__($user_role)) ?></span>
+                                    <span class="text-main-theme fw-bold lh-1"
+                                        style="font-size: 0.85rem;"><?= h($user_name) ?></span>
+                                    <span class="text-muted"
+                                        style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 3px;"><?= h(__($user_role)) ?></span>
                                 </div>
                                 <i class="bi bi-chevron-down text-muted small d-none d-md-block ms-1"></i>
                             </a>
@@ -550,16 +575,21 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                         </div>
                     <?php else: ?>
                         <div class="d-flex align-items-center gap-2">
-                            <a href="/login" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm hover-scale d-none d-md-inline-block">
+                            <a href="/login"
+                                class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm hover-scale d-none d-md-inline-block">
                                 <?= __('login') ?>
                             </a>
                             <div class="dropdown d-md-none">
-                                <button class="btn btn-theme-soft rounded-circle d-flex align-items-center justify-content-center p-0 border-0 shadow-sm" data-bs-toggle="dropdown">
+                                <button
+                                    class="btn btn-theme-soft rounded-circle d-flex align-items-center justify-content-center p-0 border-0 shadow-sm"
+                                    data-bs-toggle="dropdown">
                                     <i class="bi bi-person-circle fs-5"></i>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2 mt-2">
-                                    <li><a class="dropdown-item dropdown-item-modern" href="/login"><?= __('login') ?></a></li>
-                                    <li><a class="dropdown-item dropdown-item-modern" href="/register-teacher">S'enregistrer</a></li>
+                                    <li><a class="dropdown-item dropdown-item-modern" href="/login"><?= __('login') ?></a>
+                                    </li>
+                                    <li><a class="dropdown-item dropdown-item-modern"
+                                            href="/register-teacher">S'enregistrer</a></li>
                                 </ul>
                             </div>
                         </div>
