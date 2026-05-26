@@ -18,14 +18,16 @@ ob_start();
     </div>
 
     <?php if (!empty($errors)): ?>
-        <div class="alert alert-danger border-0 shadow-sm rounded-4 mb-4 p-4">
-            <h5 class="fw-bold text-danger mb-3"><i class="bi bi-exclamation-octagon-fill me-2"></i><?= __('error_title') ?></h5>
-            <ul class="list-unstyled mb-0 small">
-                <?php foreach ($errors as $error): ?>
-                    <li class="mb-2"><?= htmlspecialchars((string) $error) ?></li>
-                <?php endforeach; ?>
-            </ul>
+        <div class="mb-4">
+            <div class="alert alert-warning border-0 shadow-sm rounded-4 p-3 d-flex align-items-center justify-content-between">
+                <div class="small text-secondary"><?= __('import_errors_summary') ?? 'Des erreurs ont été détectées lors de l\'import.' ?></div>
+                <div>
+                    <button id="show-import-errors" type="button" class="btn btn-sm btn-outline-danger"><?= __('view_import_errors') ?? 'Voir les erreurs' ?></button>
+                </div>
+            </div>
         </div>
+
+        <div id="import-errors-data" style="display:none;" data-errors='<?= json_encode($errors, JSON_UNESCAPED_UNICODE) ?>'></div>
     <?php endif; ?>
 
     <div class="row g-4">
@@ -77,11 +79,33 @@ ob_start();
 document.addEventListener('DOMContentLoaded', function () {
     const importFile = document.getElementById('student-import-file');
     const importSubmit = document.getElementById('student-import-submit');
-    if (!importFile || !importSubmit) return;
+    if (importFile && importSubmit) {
+        importFile.addEventListener('change', function () {
+            importSubmit.disabled = importFile.files.length === 0;
+        });
+    }
 
-    importFile.addEventListener('change', function () {
-        importSubmit.disabled = importFile.files.length === 0;
-    });
+    // Gestion du modal d'erreurs d'import (auto-open et bouton de réouverture)
+    const errorsDataEl = document.getElementById('import-errors-data');
+    if (errorsDataEl) {
+        let errors = [];
+        try {
+            errors = JSON.parse(errorsDataEl.getAttribute('data-errors') || '[]');
+        } catch (e) {
+            errors = [];
+        }
+        const escaped = errors.map(e => String(e).replace(/</g, '&lt;').replace(/>/g, '&gt;'));
+        const html = '<ul class="text-start small" style="margin:0;padding-left:1.2rem;">' + escaped.map(e => '<li>' + e + '</li>').join('') + '</ul>';
+
+        // Ouvrir automatiquement le modal listant les erreurs
+        AlertService.error("<?= addslashes((string) __('import_errors_title') ?? 'Erreurs d\'import') ?>", html);
+
+        // Bouton pour ré-afficher
+        const btn = document.getElementById('show-import-errors');
+        if (btn) btn.addEventListener('click', () => {
+            AlertService.error("<?= addslashes((string) __('import_errors_title') ?? 'Erreurs d\'import') ?>", html);
+        });
+    }
 });
 </script>
 

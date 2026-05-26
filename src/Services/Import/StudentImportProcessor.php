@@ -3,7 +3,6 @@
 namespace App\Services\Import;
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
-use App\Core\Database;
 use PDO;
 use Exception;
 
@@ -71,9 +70,51 @@ class StudentImportProcessor
                 // --- 1. VALIDATION SOMMAIRE DES EN-TÊTES ---
                 $headers = array_shift($data);
                 // Si la ligne 1 ne ressemble pas à un en-tête (ex: pas de colonne Nom), on ignore
-                if (!str_contains(strtolower(trim($headers['A'] ?? '')), 'nom') && 
-                    !str_contains(strtolower(trim($headers['A'] ?? '')), 'last')) {
+                $firstHeader = strtolower(trim($headers['A'] ?? ''));
+                if (!str_contains($firstHeader, 'nom') && !str_contains($firstHeader, 'last')) {
                     continue;
+                }
+
+                // Valider les en-têtes du fichier par rapport au template attendu
+                $this->validateHeaders($headers, $lang);
+
+                // Construire un mapping des colonnes (flexible pour les versions anciennes/nouvelles du template)
+                $headerMap = [];
+                foreach ($headers as $col => $text) {
+                    $norm = strtolower(trim((string) $text));
+                    if ($norm === '') continue;
+                    if (str_contains($norm, 'matric') || str_contains($norm, 'student id') || str_contains($norm, 'id')) {
+                        $headerMap['matricule'] = $col;
+                        continue;
+                    }
+                    if (str_contains($norm, 'prénom') || str_contains($norm, 'prenom') || str_contains($norm, 'first')) {
+                        $headerMap['prenom'] = $col;
+                        continue;
+                    }
+                    if (str_contains($norm, 'nom') || str_contains($norm, 'last')) {
+                        $headerMap['nom'] = $col;
+                        continue;
+                    }
+                    if (str_contains($norm, 'sexe') || str_contains($norm, 'gender')) {
+                        $headerMap['sexe'] = $col;
+                        continue;
+                    }
+                    if (str_contains($norm, 'date')) {
+                        $headerMap['date_naissance'] = $col;
+                        continue;
+                    }
+                    if (str_contains($norm, 'lieu') || str_contains($norm, 'place')) {
+                        $headerMap['lieu_naissance'] = $col;
+                        continue;
+                    }
+                    if (str_contains($norm, 'classe') || str_contains($norm, 'class')) {
+                        $headerMap['class'] = $col;
+                        continue;
+                    }
+                    if (str_contains($norm, 'redoubl') || str_contains($norm, 'repeating')) {
+                        $headerMap['redoubl'] = $col;
+                        continue;
+                    }
                 }
 
                 // --- 2. TRAITEMENT PAR LIGNE ---
@@ -81,7 +122,7 @@ class StudentImportProcessor
                     // On ignore les lignes totalement vides
                     if (empty(trim($row['A'] ?? ''))) continue;
 
-                    $this->processRow($row, $rowIndex + 2); // +2 car index 1-based + header
+                    $this->processRow($row, $rowIndex + 2, $headerMap); // +2 car index 1-based + header
                 }
             }
 
@@ -110,15 +151,22 @@ class StudentImportProcessor
     /**
      * Analyse et insère une ligne d'étudiant après validation.
      */
-    private function processRow(array $row, int $line)
+    private function processRow(array $row, int $line, array $headerMap = [])
     {
-        $nom = trim($row['A'] ?? '');
-        $prenom = trim($row['B'] ?? '');
-        $sexe = strtoupper(trim($row['C'] ?? ''));
-        $dob = trim($row['D'] ?? '');
-        $lieuNais = trim($row['E'] ?? '');
-        $className = trim($row['F'] ?? '');
-        $isRedoublantRaw = strtoupper(trim($row['G'] ?? ''));
+        // Extraire les colonnes en respectant le mapping si présent
+        $nom = trim($row[$headerMap['nom'] ?? 'A'] ?? '');
+        $prenom = trim($row[$headerMap['prenom'] ?? 'B'] ?? '');
+        $sexe = strtoupper(trim($row[$headerMap['sexe'] ?? 'C'] ?? ''));
+        $dob = trim($row[$headerMap['date_naissance'] ?? 'D'] ?? '');
+        $lieuNais = trim($row[$headerMap['lieu_naissance'] ?? 'E'] ?? '');
+        $className = trim($row[$headerMap['class'] ?? 'F'] ?? '');
+        $isRedoublantRaw = strtoupper(trim($row[$headerMap['redoubl'] ?? 'G'] ?? ''));
+        $providedMatricule = trim($row[$headerMap['matricule'] ?? 'C'] ?? '');
+
+        // Ignorer la ligne d'exemple si elle n'a pas été supprimée par l'utilisateur
+        if ($nom === 'Ndogmo' && $prenom === 'Evarice' && strtoupper($providedMatricule) === 'MT-0001') {
+            return;
+        }
 
         // -- Validation de base --
         if (empty($nom) || empty($prenom)) {
@@ -140,8 +188,19 @@ class StudentImportProcessor
 
         // -- Enregistrement --
         try {
-            // Utilisation du service centralisé pour une unicité absolue
-            $matricule = $this->matriculeService->generate($classId);
+            // Déterminer le matricule : utiliser celui fourni si présent, sinon générer
+            if ($providedMatricule !== '') {
+                // Vérifier l'unicité
+                $chk = $this->db->prepare("SELECT COUNT(*) FROM students WHERE email = ?");
+                $chk->execute([$providedMatricule]);
+                if ((int) $chk->fetchColumn() > 0) {
+                    $this->logError($line, "Matricule '{$providedMatricule}' déjà utilisé.");
+                    return;
+                }
+                $matricule = $providedMatricule;
+            } else {
+                $matricule = $this->matriculeService->generate($classId);
+            }
 
             $sql = "INSERT INTO students (nom, prenom, email, class_id, sexe, date_naissance, lieu_naissance, is_redoublant) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $this->db->prepare($sql);
@@ -179,13 +238,14 @@ class StudentImportProcessor
      */
     private function resolveClass(string $name, int $line): ?int
     {
-        if (empty($name)) {
+        $normalized = $this->normalizeString($name);
+        if ($normalized === '') {
             $this->logError($line, "La classe est obligatoire.");
             return null;
         }
 
-        if (isset($this->cache['classes'][$name])) {
-            return $this->cache['classes'][$name];
+        if (isset($this->cache['classes'][$normalized])) {
+            return $this->cache['classes'][$normalized];
         }
 
         $this->logError($line, "Classe '$name' introuvable dans le système.");
@@ -199,8 +259,20 @@ class StudentImportProcessor
     {
         $stmt = $this->db->query("SELECT id, nom FROM classes");
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $this->cache['classes'][$row['nom']] = $row['id'];
+            $normalized = $this->normalizeString($row['nom']);
+            $this->cache['classes'][$normalized] = $row['id'];
         }
+    }
+
+    /**
+     * Normalise une chaîne pour les recherches insensibles à la casse, aux espaces et aux accents.
+     */
+    private function normalizeString(string $value): string
+    {
+        $value = trim($value);
+        $value = preg_replace('/\s+/', ' ', $value);
+        $value = mb_strtolower($value, 'UTF-8');
+        return $value;
     }
 
     /**

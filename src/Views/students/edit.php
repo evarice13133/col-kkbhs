@@ -51,9 +51,9 @@ ob_start();
                     <div class="col-md-3">
                         <label
                             class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('matricule') ?></label>
-                        <input type="text" name="email" class="form-control premium-input bg-light border-theme-light fw-black opacity-75"
+                        <input type="text" name="email" class="form-control premium-input border-primary border-opacity-25 fw-black"
                             value="<?= h($student['email'] ?? '') ?>"
-                            readonly title="Le matricule n'est pas modifiable">
+                            placeholder="Laisser vide pour générer automatiquement">
                     </div>
                     <div class="col-md-3">
                         <label

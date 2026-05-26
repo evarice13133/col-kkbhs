@@ -5,7 +5,6 @@ namespace App\Services\Import;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Cell\DataValidation;
-use PhpOffice\PhpSpreadsheet\NamedRange;
 use PDO;
 
 /**
@@ -127,10 +126,13 @@ class ExcelTemplateService
         $valClasse = $this->createDropdown($classRange, __('choose_class_hint'));
 
         for ($i = 2; $i <= $rows; $i++) {
-            $sheet->getCell('C' . $i)->setDataValidation(clone $valSexe);
-            $sheet->getCell('F' . $i)->setDataValidation(clone $valClasse);
-            $sheet->getCell('G' . $i)->setDataValidation(clone $valRedoublant);
-            $sheet->getStyle('D' . $i . ':E' . $i)->getNumberFormat()->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT);
+            // Nouveau mapping : A=Nom, B=Prénom, C=Matricule, D=Sexe, E=Date, F=Lieu, G=Classe, H=Redoublant
+            $sheet->getCell('D' . $i)->setDataValidation(clone $valSexe);
+            $sheet->getCell('G' . $i)->setDataValidation(clone $valClasse);
+            $sheet->getCell('H' . $i)->setDataValidation(clone $valRedoublant);
+            // Forcer format texte sur Matricule et sur le couple Date/Lieu selon besoins
+            $sheet->getStyle('C' . $i)->getNumberFormat()->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT);
+            $sheet->getStyle('E' . $i . ':F' . $i)->getNumberFormat()->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT);
         }
     }
 
@@ -139,17 +141,18 @@ class ExcelTemplateService
         $sample = [
             'A' => 'Ndogmo',
             'B' => 'Evarice',
-            'C' => 'M',
-            'D' => ($lang === 'fr' ? '12/05/2012' : '2012-05-12'),
-            'E' => ($lang === 'fr' ? 'Yaoundé' : 'Yaounde'),
-            'F' => !empty($classList) ? $classList[0] : '---',
-            'G' => $lang === 'fr' ? 'NON' : 'NO'
+            'C' => 'MT-0001',
+            'D' => 'M',
+            'E' => ($lang === 'fr' ? '12/05/2012' : '2012-05-12'),
+            'F' => ($lang === 'fr' ? 'Yaoundé' : 'Yaounde'),
+            'G' => !empty($classList) ? $classList[0] : '---',
+            'H' => $lang === 'fr' ? 'NON' : 'NO'
         ];
         foreach ($sample as $col => $val) {
             $sheet->setCellValue($col . '2', $val);
         }
-        $sheet->getStyle('A2:G2')->getFont()->setItalic(true);
-        $sheet->getStyle('A2:G2')->getFont()->getColor()->setRGB('6B7280');
+        $sheet->getStyle('A2:H2')->getFont()->setItalic(true);
+        $sheet->getStyle('A2:H2')->getFont()->getColor()->setRGB('6B7280');
     }
 
     /**
@@ -161,22 +164,24 @@ class ExcelTemplateService
              return [
                 'A1' => 'Last Name',
                 'B1' => 'First Name',
-                'C1' => 'Gender (M/F)',
-                'D1' => 'Date of Birth',
-                'E1' => 'Place of Birth',
-                'F1' => 'Class',
-                'G1' => 'Repeating (YES/NO)'
+                'C1' => 'Student ID',
+                'D1' => 'Gender (M/F)',
+                'E1' => 'Date of Birth',
+                'F1' => 'Place of Birth',
+                'G1' => 'Class',
+                'H1' => 'Repeating (YES/NO)'
              ];
         }
 
         return [
             'A1' => 'Nom',
             'B1' => 'Prénom',
-            'C1' => 'Sexe (M/F)',
-            'D1' => 'Date de Naissance',
-            'E1' => 'Lieu de Naissance',
-            'F1' => 'Classe',
-            'G1' => 'Redoublant (OUI/NON)'
+            'C1' => 'Matricule',
+            'D1' => 'Sexe (M/F)',
+            'E1' => 'Date de Naissance',
+            'F1' => 'Lieu de Naissance',
+            'G1' => 'Classe',
+            'H1' => 'Redoublant (OUI/NON)'
         ];
     }
 

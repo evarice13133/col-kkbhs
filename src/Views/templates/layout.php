@@ -676,6 +676,10 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                 AlertService.toast('error', "<?= addslashes((string) $flash_error) ?>");
             <?php endif; ?>
 
+            <?php if ($popup_error = \App\Core\Session::getFlash('popup_error')): ?>
+                AlertService.error("<?= addslashes((string) ('Erreur')) ?>", "<?= addslashes((string) $popup_error) ?>");
+            <?php endif; ?>
+
             // --- MESSAGE DE BIENVENUE FLASH (Connexion uniquement) ---
             <?php if ($welcome_msg = \App\Core\Session::getFlash('welcome_user')): ?>
                 Swal.fire({
