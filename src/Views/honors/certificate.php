@@ -104,11 +104,16 @@ $schoolDisplayName = function_exists('mb_strtoupper') ? mb_strtoupper((string) (
 
                 <!-- 2. The Recipient (Focal Point) -->
                 <div class="recipient-flow">
-                    <p class="award-intro">Le Conseil d'Établissement du <strong><?= htmlspecialchars($schoolDisplayName) ?></strong> décerne ce titre à l'élève:</p>
-                    
+                    <?php
+                        $fullName = trim((string) (($student['nom'] ?? '') . ' ' . ($student['prenom'] ?? '')));
+                        $safeSchool = htmlspecialchars($schoolDisplayName);
+                        $safeStudent = htmlspecialchars($fullName);
+                        $safePeriod = htmlspecialchars($periodLabel ?? '');
+                    ?>
+                    <p class="award-intro"><?= __('award_intro', ['school' => $safeSchool, 'student' => $safeStudent, 'period' => $safePeriod]) ?></p>
+
                     <div class="student-name-premium">
-                        <?php 
-                            $fullName = $student['nom'] . ' ' . $student['prenom'];
+                        <?php
                             $nameLength = mb_strlen($fullName);
                             // Dynamic font size calculation (Base 48px, scales down for long names)
                             $baseSize = 48;
@@ -122,73 +127,62 @@ $schoolDisplayName = function_exists('mb_strtoupper') ? mb_strtoupper((string) (
 
                     <?php 
                         $avg = $student['average'];
-                        $phrases = [];
-                        
+
                         if ($avg >= 16) {
-                            $phrases = [
-                                "Votre quête de l'excellence honore notre institution et trace la voie du succès.",
-                                "L'intelligence et le travail acharné font de vous un modèle pour vos pairs.",
-                                "Ne fixez aucune limite à votre ambition, car votre potentiel est infini.",
-                                "L'excellence n'est pas un acte, mais une habitude que vous cultivez avec brio."
-                            ];
+                            $rawPhrases = __('award_phrases_high');
                         } elseif ($avg >= 14) {
-                            $phrases = [
-                                "Vos efforts constants portent leurs fruits. Continuez à viser les sommets.",
-                                "La persévérance est le chemin de la réussite, et vous êtes sur la bonne voie.",
-                                "Félicitations pour cette belle progression. L'excellence est à votre portée.",
-                                "Chaque pas compte dans la construction de votre brillant avenir académique."
-                            ];
+                            $rawPhrases = __('award_phrases_mid');
                         } else {
-                            $phrases = [
-                                "Un premier pas vers la grandeur. Votre détermination fera la différence.",
-                                "Le succès appartient à ceux qui n'abandonnent jamais. Continuez ainsi !",
-                                "Croyez en vos capacités, car chaque effort vous rapproche de vos rêves.",
-                                "La régularité et l'ambition sont vos meilleurs alliés pour le prochain trimestre."
-                            ];
+                            $rawPhrases = __('award_phrases_low');
                         }
-                        
+
+                        $phrases = array_map('trim', explode('||', (string) $rawPhrases));
+                        if (empty($phrases)) {
+                            $phrases = [''];
+                        }
+
                         $phrase = $phrases[$student['id'] % count($phrases)];
                     ?>
                     <div class="motivation-wrapper-elite">
                         <p class="motivational-phrase">« <?= htmlspecialchars($phrase) ?> »</p>
                         <div class="motivation-underline"></div>
                     </div>
-                    
-                    <p class="student-class">Élève en classe de <span class="class-highlight"><?= htmlspecialchars($classInfo['nom']) ?></span></p>
+
+                    <p class="student-class"><?= __('student_in_class') ?> <span class="class-highlight"><?= htmlspecialchars($classInfo['nom']) ?></span></p>
                 </div>
 
                 <!-- 3. Performance Metrics (Simplified) -->
                 <div class="metrics-elite">
                     <div class="metric-card-elite">
-                        <span class="m-label">Rang</span>
-                        <span class="m-value"><?= $student['rank'] ?><small><?= $student['rank'] == 1 ? 'er' : 'ème' ?></small></span>
+                        <span class="m-label"><?= __('rank_label') ?></span>
+                        <span class="m-value"><?= $student['rank'] ?><small><?= $student['rank'] == 1 ? __('rank_suffix_er') : __('rank_suffix_eme') ?></small></span>
                     </div>
 
                     <div class="metric-card-elite">
-                        <span class="m-label">Moyenne</span>
+                        <span class="m-label"><?= __('average_label') ?></span>
                         <span class="m-value"><?= number_format($student['average'], 2, ',', ' ') ?> / 20</span>
                     </div>
                     
                     <div class="metric-card-elite">
-                        <span class="m-label">Mention</span>
+                        <span class="m-label"><?= __('mention_label') ?></span>
                         <span class="m-value-mention"><?= htmlspecialchars($this->getMention($student['average'])) ?></span>
                     </div>
                 </div>
 
                 <!-- 4. Footer: Location, Date & Signatures -->
                 <div class="cert-metadata">
-                    Fait à <strong><?= htmlspecialchars($i['school_city'] ?? '') ?></strong>, le <strong><?= date('d/m/Y') ?></strong>
+                    <?= __('cert_made_at', ['city' => htmlspecialchars($i['school_city'] ?? ''), 'date' => date('d/m/Y')]) ?>
                 </div>
 
                 <footer class="signatures-elite">
                     <div class="sig-wrapper">
                         <div class="sig-field"></div>
-                        <span class="sig-role">Le Titulaire de Classe</span>
+                        <span class="sig-role"><?= __('sig_class_holder') ?></span>
                         <div class="sig-teacher-name"><?= htmlspecialchars(trim(($classInfo['main_teacher_nom'] ?? '') . ' ' . ($classInfo['main_teacher_prenom'] ?? ''))) ?></div>
                     </div>
                     <div class="sig-wrapper">
                         <div class="sig-field"></div>
-                        <span class="sig-role">Le Chef d'Établissement</span>
+                        <span class="sig-role"><?= __('sig_principal') ?></span>
                         <div class="sig-teacher-name"><?= htmlspecialchars($institution['school_principal'] ?? '') ?></div>
                     </div>
 
@@ -198,7 +192,7 @@ $schoolDisplayName = function_exists('mb_strtoupper') ? mb_strtoupper((string) (
                             <div class="seal-inner">
                                 <div class="seal-content">
                                     <span class="seal-year"><?= date('Y') ?></span>
-                                    <span class="seal-label">EXCELLENCE</span>
+                                    <span class="seal-label"><?= __('seal_label') ?></span>
                                 </div>
                             </div>
                         </div>
@@ -206,7 +200,7 @@ $schoolDisplayName = function_exists('mb_strtoupper') ? mb_strtoupper((string) (
                 </footer>
 
                 <div class="security-footer">
-                    <span>Certificat d'Excellence NotesMaster - ID: <?= strtoupper(substr(md5($student['id'] . time()), 0, 8)) ?></span>
+                    <span><?= __('cert_footer', ['id' => strtoupper(substr(md5($student['id'] . time()), 0, 8))]) ?></span>
                 </div>
             </div>
         </div>

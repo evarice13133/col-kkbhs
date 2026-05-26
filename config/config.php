@@ -17,15 +17,15 @@
     define('DEBUG_MODE', false);
 
 // en developpement pour la configuration locale
-   //   define('DB_HOST', 'localhost');
-   //   define('DB_NAME', 'notemaster_imt');
-   //   define('DB_USER', 'root');
-   //   define('DB_PASS', '');
-   //   define('DB_CHARSET', 'utf8mb4'); 
-   //   define('APP_URL', 'http://localhost:8000');
+      // define('DB_HOST', 'localhost');
+      // define('DB_NAME', 'notemaster_imt');
+      // define('DB_USER', 'root');
+      // define('DB_PASS', '');
+      // define('DB_CHARSET', 'utf8mb4'); 
+      // define('APP_URL', 'http://localhost:8000');
 
-   //   define('APP_ENV', 'development');
-   //   define('DEBUG_MODE', true);
+      // define('APP_ENV', 'development');
+      // define('DEBUG_MODE', true);
 
 // Force error display for debugging
    // ini_set('display_errors', 1);
