@@ -243,6 +243,8 @@ class StudentController
             } else {
                 // En cas d'erreurs (validation de données ou relations), on affiche le rapport
                 $errors = $result['errors'];
+                // Définit une flash contenant la liste JSON des erreurs pour affichage en modal
+                \App\Core\Session::setFlash('popup_errors', json_encode($errors, JSON_UNESCAPED_UNICODE));
                 $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/students/import.php';
             }
@@ -303,6 +305,16 @@ class StudentController
                 $email = $this->matriculeService->generate($class_id);
             }
 
+            // Vérifier l'unicité du matricule fourni ou généré
+            $checkStmt = $this->db->prepare("SELECT COUNT(*) FROM students WHERE email = ?");
+            $checkStmt->execute([$email]);
+            if ((int) $checkStmt->fetchColumn() > 0) {
+                $error = __('matricule_already_exists') ?? 'Matricule déjà utilisé.';
+                \App\Core\Session::setFlash('popup_error', $error);
+                header("Location: /students/create");
+                exit;
+            }
+
             // Enregistrement via le modèle normalisé (seul class_id est requis pour le lien)
             $stmt = $this->db->prepare("INSERT INTO students (nom, prenom, email, class_id, sexe, date_naissance, lieu_naissance, is_redoublant) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([$nom, $prenom, $email, $class_id, $sexe, $date_naissance, $lieu_naissance, $is_redoublant]);
@@ -356,6 +368,26 @@ class StudentController
             $lieu_naissance = $this->normalizeOptionalText($_POST['lieu_naissance'] ?? '');
             $is_redoublant = $this->normalizeRedoublantFlag($_POST['is_redoublant'] ?? 0);
 
+            // Récupérer l'email actuel pour déterminer si le matricule change
+            $stmt = $this->db->prepare("SELECT email FROM students WHERE id = ?");
+            $stmt->execute([$id]);
+            $currentRow = $stmt->fetch(PDO::FETCH_ASSOC);
+            $currentEmail = $currentRow['email'] ?? null;
+
+            $newEmail = trim($_POST['email'] ?? '');
+            $allowEmailChange = in_array(Session::get('user_role'), ['superadmin', 'admin']);
+
+            if ($allowEmailChange && $newEmail !== '' && $newEmail !== $currentEmail) {
+                $check = $this->db->prepare("SELECT COUNT(*) FROM students WHERE email = ? AND id != ?");
+                $check->execute([$newEmail, $id]);
+                if ((int) $check->fetchColumn() > 0) {
+                    $error = __('matricule_already_exists') ?? "Matricule déjà utilisé.";
+                    \App\Core\Session::setFlash('popup_error', $error);
+                    header("Location: /students/edit?id=" . $id);
+                    exit;
+                }
+            }
+
             if (empty($nom) || empty($prenom)) {
                 $error = \__('student_name_required');
                 $student = [
@@ -380,9 +412,19 @@ class StudentController
                 return;
             }
 
-            // Mise à jour normalisée (Le matricule 'email' est immuable et n'est pas inclus dans l'UPDATE)
-            $stmt = $this->db->prepare("UPDATE students SET nom = ?, prenom = ?, class_id = ?, sexe = ?, date_naissance = ?, lieu_naissance = ?, is_redoublant = ? WHERE id = ?");
-            $stmt->execute([$nom, $prenom, $class_id, $sexe, $date_naissance, $lieu_naissance, $is_redoublant, $id]);
+            // Préparer la mise à jour. Autoriser la modification du matricule pour admin/superadmin
+            $updateParts = ['nom = ?', 'prenom = ?', 'class_id = ?', 'sexe = ?', 'date_naissance = ?', 'lieu_naissance = ?', 'is_redoublant = ?'];
+            $params = [$nom, $prenom, $class_id, $sexe, $date_naissance, $lieu_naissance, $is_redoublant];
+
+            if ($allowEmailChange && $newEmail !== '' && $newEmail !== $currentEmail) {
+                array_unshift($params, $newEmail);
+                array_unshift($updateParts, 'email = ?');
+            }
+
+            $sql = "UPDATE students SET " . implode(', ', $updateParts) . " WHERE id = ?";
+            $params[] = $id;
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
 
             Session::setFlash('success', __('student_updated_success'));
             header("Location: /students");
@@ -546,6 +588,24 @@ class StudentController
 
             if (!$this->studentColumnExists('is_withdrawn')) {
                 $this->db->exec("ALTER TABLE students ADD COLUMN is_withdrawn TINYINT(1) NOT NULL DEFAULT 0 AFTER is_redoublant");
+            }
+
+            // Tenter de créer un index unique sur email si la colonne existe et qu'il n'y a pas de doublons
+            if ($this->studentColumnExists('email')) {
+                try {
+                    $dupStmt = $this->db->query("SELECT email, COUNT(*) c FROM students GROUP BY email HAVING c > 1 LIMIT 1");
+                    $dup = $dupStmt->fetch(\PDO::FETCH_ASSOC);
+                    if (!$dup) {
+                        // Vérifier si l'index existe
+                        $idxCheck = $this->db->prepare("SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'students' AND INDEX_NAME = 'uniq_students_email'");
+                        $idxCheck->execute();
+                        if ((int) $idxCheck->fetchColumn() === 0) {
+                            $this->db->exec("CREATE UNIQUE INDEX uniq_students_email ON students(email)");
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    // Ne pas empêcher l'application de démarrer si l'index ne peut pas être créé
+                }
             }
         } catch (\Throwable $e) {
         }
