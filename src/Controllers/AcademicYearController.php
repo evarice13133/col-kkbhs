@@ -320,4 +320,112 @@ class AcademicYearController
         header("Location: /academic_years");
         exit;
     }
+
+    public function edit($id)
+    {
+        // Autorisé pour admin et superadmin
+        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+            header("Location: /academic_years");
+            exit;
+        }
+
+        $id = (int) $id;
+        $stmt = $this->db->prepare("SELECT * FROM academic_years WHERE id = ?");
+        $stmt->execute([$id]);
+        $year = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$year) {
+            header("Location: /academic_years");
+            exit;
+        }
+
+        include __DIR__ . '/../Views/academic_years/edit.php';
+    }
+
+    public function update($id)
+    {
+        // Autorisé pour admin et superadmin
+        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+            header("Location: /academic_years");
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $id = (int) $id;
+            $nom = trim($_POST['nom'] ?? '');
+
+            if (empty($nom)) {
+                $error = \__('academic_year_name_required');
+                $stmt = $this->db->prepare("SELECT * FROM academic_years WHERE id = ?");
+                $stmt->execute([$id]);
+                $year = $stmt->fetch(PDO::FETCH_ASSOC);
+                include __DIR__ . '/../Views/academic_years/edit.php';
+                return;
+            }
+
+            try {
+                $stmt = $this->db->prepare("UPDATE academic_years SET nom = ? WHERE id = ?");
+                $stmt->execute([$nom, $id]);
+                Session::setFlash('success', __('academic_year_updated_success'));
+                header("Location: /academic_years");
+                exit;
+            } catch (\PDOException $e) {
+                // Erreur de duplicata SQL STATE 23000
+                $error = \__('academic_year_exists');
+                $stmt = $this->db->prepare("SELECT * FROM academic_years WHERE id = ?");
+                $stmt->execute([$id]);
+                $year = $stmt->fetch(PDO::FETCH_ASSOC);
+                include __DIR__ . '/../Views/academic_years/edit.php';
+            }
+        }
+    }
+
+    public function delete($id)
+    {
+        // Strictement limité au SuperAdmin
+        if (Session::get('user_role') !== 'superadmin') {
+            header("Location: /academic_years");
+            exit;
+        }
+
+        $id = (int) $id;
+        $stmt = $this->db->prepare("SELECT * FROM academic_years WHERE id = ?");
+        $stmt->execute([$id]);
+        $year = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$year) {
+            header("Location: /academic_years");
+            exit;
+        }
+
+        // Vérifier si l'année est active
+        if ($year['is_active']) {
+            Session::setFlash('error', __('cannot_delete_active_year'));
+            header("Location: /academic_years");
+            exit;
+        }
+
+        // Vérifier si l'année a des données associées
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM students WHERE academic_year_id = ?");
+        $stmt->execute([$id]);
+        $studentCount = $stmt->fetchColumn();
+
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM grades WHERE academic_year_id = ?");
+        $stmt->execute([$id]);
+        $gradeCount = $stmt->fetchColumn();
+
+        if ($studentCount > 0 || $gradeCount > 0) {
+            Session::setFlash('error', __('cannot_delete_year_with_data'));
+            header("Location: /academic_years");
+            exit;
+        }
+
+        // Supprimer l'année
+        $stmt = $this->db->prepare("DELETE FROM academic_years WHERE id = ?");
+        $stmt->execute([$id]);
+
+        Session::setFlash('success', __('academic_year_deleted_success'));
+        header("Location: /academic_years");
+        exit;
+    }
 }
