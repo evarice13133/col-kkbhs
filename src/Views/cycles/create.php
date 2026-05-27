@@ -29,6 +29,11 @@ ob_start();
                         <input type="text" name="nom" class="form-control premium-input" 
                             placeholder="<?= __('cycle_name_placeholder') ?>" required autofocus>
                     </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('honor_roll_threshold_label') ?></label>
+                        <input type="number" name="honor_roll_threshold" step="0.01" min="0" max="20" class="form-control premium-input">
+                        <div class="form-text extra-small mt-1 opacity-75"><?= __('honor_roll_threshold_help') ?></div>
+                    </div>
                 </div>
 
                 <!-- Action Footer -->
