@@ -665,6 +665,13 @@ return [
     'academic_year_config' => 'Configuration de l\'année académique',
     'archive' => 'Archiver',
     'no_active_year' => 'Aucune année active',
+    'edit_academic_year' => 'Modifier l\'année académique',
+    'year_info' => 'Informations sur l\'année',
+    'academic_year_updated_success' => 'Année académique modifiée avec succès',
+    'cannot_delete_active_year' => 'Impossible de supprimer l\'année active',
+    'cannot_delete_year_with_data' => 'Impossible de supprimer une année contenant des données',
+    'academic_year_deleted_success' => 'Année académique supprimée avec succès',
+    'confirm_delete_year' => 'Êtes-vous sûr de vouloir supprimer cette année académique ?',
 
     // ── Module Utilisateurs ────────────────────────────────────────────
     'user' => 'Utilisateur',

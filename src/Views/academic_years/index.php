@@ -60,6 +60,11 @@
                                                 <i class="bi bi-play-circle fs-5"></i>
                                             </a>
                                         <?php endif; ?>
+                                        <?php if (in_array(App\Core\Session::get('user_role'), ['superadmin', 'admin'])): ?>
+                                            <a href="/academic_years/edit?id=<?= $year['id'] ?>" class="btn btn-sm btn-action-modern text-primary" title="<?= __('edit') ?>">
+                                                <i class="bi bi-pencil-square fs-5"></i>
+                                            </a>
+                                        <?php endif; ?>
                                         <a href="/academic_years/archive_wizard?id=<?= $year['id'] ?>" class="btn btn-sm btn-action-modern text-danger" title="<?= __('archive_close') ?>">
                                             <i class="bi bi-archive fs-5"></i>
                                         </a>
@@ -74,6 +79,14 @@
                                         <?php else: ?>
                                             <span class="badge bg-light text-muted fw-normal px-2 py-1"><i class="bi bi-lock me-1"></i><?= __('locked') ?></span>
                                         <?php endif; ?>
+                                    <?php endif; ?>
+                                    <?php if (App\Core\Session::get('user_role') === 'superadmin' && !$year['is_active']): ?>
+                                        <a href="/academic_years/delete?id=<?= $year['id'] ?>" 
+                                           class="btn btn-sm btn-action-modern text-danger" 
+                                           title="<?= __('delete') ?>"
+                                           onclick="return confirm('<?= addslashes((string) __('confirm_delete_year')) ?>')">
+                                            <i class="bi bi-trash fs-5"></i>
+                                        </a>
                                     <?php endif; ?>
                                 </div>
                             </td>

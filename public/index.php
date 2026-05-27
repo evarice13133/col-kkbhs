@@ -457,6 +457,16 @@ elseif (strpos($path, '/academic_years') === 0) {
         $c->doArchive();
     elseif ($path === '/academic_years/restore')
         $c->restore($_GET['file'] ?? '');
+    elseif ($path === '/academic_years/edit')
+        $c->edit($_GET['id'] ?? 0);
+    elseif ($path === '/academic_years/update' && $method === 'POST')
+        $c->update($_GET['id'] ?? 0);
+    elseif ($path === '/academic_years/delete')
+        $c->delete($_GET['id'] ?? 0);
+    elseif ($path === '/academic_years/unarchive')
+        $c->unarchive($_GET['id'] ?? 0);
+    elseif ($path === '/academic_years/do_unarchive' && $method === 'POST')
+        $c->doUnarchive();
 }
 
 // ====== ROUTES: CONFIGURATIONS GLOBALES ======
