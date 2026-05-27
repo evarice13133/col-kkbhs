@@ -38,11 +38,9 @@ class HonorRollController extends BulletinController
 
         $termSequences = $this->getActiveSequencesByTerm($term);
         $ranking = $this->computeTrimesterRanking($classId, $termSequences, (int) $academicYear['id'], true);
-        
-        // Filter students with average >= 12
-        $honors = array_filter($ranking, fn($student) => $student['average'] >= 12);
-        
-        // Sort by average descending
+        $threshold = $this->getHonorRollThreshold($classId);
+
+        $honors = array_filter($ranking, fn($student) => $student['average'] >= $threshold);
         uasort($honors, fn($a, $b) => $b['average'] <=> $a['average']);
 
         $classInfo = $this->getClassInfo($classId);
@@ -66,8 +64,9 @@ class HonorRollController extends BulletinController
 
         $termSequences = $this->getActiveSequencesByTerm($term);
         $ranking = $this->computeTrimesterRanking($classId, $termSequences, (int) $academicYear['id'], true);
-        
-        $honors = array_filter($ranking, fn($student) => $student['average'] >= 12);
+        $threshold = $this->getHonorRollThreshold($classId);
+
+        $honors = array_filter($ranking, fn($student) => $student['average'] >= $threshold);
         uasort($honors, fn($a, $b) => $b['average'] <=> $a['average']);
 
         $classInfo = $this->getClassInfo($classId);
@@ -95,11 +94,9 @@ class HonorRollController extends BulletinController
             3 => $this->getActiveSequencesByTerm(3),
         ];
         $ranking = $this->computeAnnualRanking($classId, $termSequencesByTerm, (int) $academicYear['id'], true);
-        
-        // Filter students with average >= 12
-        $honors = array_filter($ranking, fn($student) => $student['average'] >= 12);
-        
-        // Sort by average descending
+        $threshold = $this->getHonorRollThreshold($classId);
+
+        $honors = array_filter($ranking, fn($student) => $student['average'] >= $threshold);
         uasort($honors, fn($a, $b) => $b['average'] <=> $a['average']);
 
         $classInfo = $this->getClassInfo($classId);
@@ -126,8 +123,9 @@ class HonorRollController extends BulletinController
             3 => $this->getActiveSequencesByTerm(3),
         ];
         $ranking = $this->computeAnnualRanking($classId, $termSequencesByTerm, (int) $academicYear['id'], true);
-        
-        $honors = array_filter($ranking, fn($student) => $student['average'] >= 12);
+        $threshold = $this->getHonorRollThreshold($classId);
+
+        $honors = array_filter($ranking, fn($student) => $student['average'] >= $threshold);
         uasort($honors, fn($a, $b) => $b['average'] <=> $a['average']);
 
         $classInfo = $this->getClassInfo($classId);

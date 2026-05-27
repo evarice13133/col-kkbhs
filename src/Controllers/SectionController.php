@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Database;
 use App\Core\Session;
+use App\Services\SettingsStore;
 use PDO;
 
 /**
@@ -16,6 +17,7 @@ class SectionController
 {
     /** @var PDO Instance de connexion à la base de données */
     private $db;
+    private SettingsStore $settingsStore;
 
     /**
      * Constructeur de SectionController.
@@ -24,9 +26,10 @@ class SectionController
     public function __construct()
     {
         $this->db = Database::getInstance()->getConnection();
+        $this->settingsStore = new SettingsStore($this->db);
         
-        // RÈGLE MÉTIER : Seul le SUPERADMIN peut modifier la structure de l'établissement
-        if (Session::get('user_role') !== 'superadmin') {
+        // RÈGLE MÉTIER : L'Admin et le SuperAdmin peuvent modifier la structure de l'établissement
+        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
             header("Location: /");
             exit;
         }
@@ -69,6 +72,11 @@ class SectionController
             try {
                 $stmt = $this->db->prepare("INSERT INTO sections (nom) VALUES (?)");
                 $stmt->execute([$nom]);
+                $newSectionId = (int)$this->db->lastInsertId();
+                $threshold = trim((string) ($_POST['honor_roll_threshold'] ?? ''));
+                if ($threshold !== '') {
+                    $this->settingsStore->set('honor_roll_threshold_section_' . $newSectionId, $threshold);
+                }
                 
                 Session::setFlash('success', __('created_success'));
                 header("Location: /sections");
@@ -95,6 +103,8 @@ class SectionController
             exit;
         }
 
+        $section['honor_roll_threshold'] = $this->settingsStore->get('honor_roll_threshold_section_' . $section['id'], '');
+
         include __DIR__ . '/../Views/sections/edit.php';
     }
 
@@ -116,6 +126,8 @@ class SectionController
             try {
                 $stmt = $this->db->prepare("UPDATE sections SET nom = ? WHERE id = ?");
                 $stmt->execute([$nom, (int)$id]);
+                $threshold = trim((string) ($_POST['honor_roll_threshold'] ?? ''));
+                $this->settingsStore->set('honor_roll_threshold_section_' . $id, $threshold);
                 
                 Session::setFlash('success', __('updated_success'));
                 header("Location: /sections");

@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Database;
 use App\Core\Session;
+use App\Services\SettingsStore;
 use PDO;
 
 class BulletinController
@@ -1158,13 +1159,51 @@ class BulletinController
     protected function getClassInfo(int $classId)
     {
         $stmt = $this->db->prepare("
-            SELECT c.id, c.nom, u.nom as main_teacher_nom, u.prenom as main_teacher_prenom 
+            SELECT c.id, c.nom, c.section_id, c.cycle_id, u.nom as main_teacher_nom, u.prenom as main_teacher_prenom 
             FROM classes c 
             LEFT JOIN users u ON c.main_teacher_id = u.id 
             WHERE c.id = ?
         ");
         $stmt->execute([$classId]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    protected function getHonorRollThreshold(int $classId): float
+    {
+        $settingsStore = new SettingsStore($this->db);
+        $defaultThreshold = (float) $settingsStore->get('honor_roll_default_threshold', '12');
+
+        $stmt = $this->db->prepare("SELECT cycle_id, section_id FROM classes WHERE id = ? LIMIT 1");
+        $stmt->execute([$classId]);
+        $class = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$class) {
+            return $defaultThreshold;
+        }
+
+        $classThreshold = trim((string) $settingsStore->get('honor_roll_threshold_class_' . $classId, ''));
+        if ($classThreshold !== '') {
+            return (float) $classThreshold;
+        }
+
+        $sectionId = (int) ($class['section_id'] ?? 0);
+        $cycleId = (int) ($class['cycle_id'] ?? 0);
+
+        if ($sectionId > 0) {
+            $sectionThreshold = trim((string) $settingsStore->get('honor_roll_threshold_section_' . $sectionId, ''));
+            if ($sectionThreshold !== '') {
+                return (float) $sectionThreshold;
+            }
+        }
+
+        if ($cycleId > 0) {
+            $cycleThreshold = trim((string) $settingsStore->get('honor_roll_threshold_cycle_' . $cycleId, ''));
+            if ($cycleThreshold !== '') {
+                return (float) $cycleThreshold;
+            }
+        }
+
+        return $defaultThreshold;
     }
 
     /**

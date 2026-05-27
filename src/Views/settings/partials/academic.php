@@ -61,15 +61,17 @@
                     </div>
                 </div>
             </div>
-
-            <div class="col-md-6 mt-5">
-                <div class="p-4 rounded-4 bg-soft-warning border border-warning border-opacity-10 h-100">
-                    <h6 class="fw-black text-warning-emphasis text-uppercase extra-small letter-spacing-1 mb-3">
-                        <i class="bi bi-funnel-fill me-2"></i><?= __('student_id_generation') ?>
-                    </h6>
+                <div class="col-md-6 mt-5">
                     <div class="mb-4">
-                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('format_structure') ?></label>
-                        <input type="text" name="matricule_format" class="form-control premium-input font-monospace border-0 shadow-sm bg-white"
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('honor_roll_default_threshold_label') ?></label>
+                        <div class="input-group">
+                            <span class="input-group-text border-theme-light bg-soft-info text-info"><i class="bi bi-award-fill"></i></span>
+                            <input type="number" name="honor_roll_default_threshold" class="form-control premium-input" step="0.01" min="0" max="20"
+                                value="<?= htmlspecialchars((string) ($settings['honor_roll_default_threshold'] ?? '12')) ?>" placeholder="12">
+                        </div>
+                        <small class="extra-small text-muted-theme opacity-75 mt-1 d-block"><?= __('honor_roll_default_threshold_help') ?></small>
+                    </div>
+                </div>
                             value="<?= htmlspecialchars((string) ($settings['matricule_format'] ?? '{SCHOOL_CODE}/{YEAR}/{CLASS}/{COUNTER}')) ?>">
                         <small class="extra-small text-muted-theme opacity-75 mt-1 px-1 d-block"><?= __('format_tokens_help') ?></small>
                     </div>

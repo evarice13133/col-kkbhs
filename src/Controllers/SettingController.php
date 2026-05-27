@@ -91,6 +91,7 @@ class SettingController
                 'backup_retention_count',
                 'backup_schedule_day',
                 'backup_schedule_time',
+                'honor_roll_default_threshold',
                 'backup_github_owner',
                 'backup_github_repository',
                 'backup_github_branch',

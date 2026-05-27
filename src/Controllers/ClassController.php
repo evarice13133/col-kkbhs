@@ -6,6 +6,7 @@ use App\Core\Database;
 use App\Core\Session;
 use App\Services\Import\ClassImportProcessor;
 use App\Services\Import\ExcelTemplateService;
+use App\Services\SettingsStore;
 use PDO;
 
 /**
@@ -18,6 +19,7 @@ class ClassController
 {
     /** @var PDO Instance de connexion à la base de données */
     private $db;
+    private SettingsStore $settingsStore;
 
     /**
      * Initialise le contrôleur et vérifie les autorisations d'administration.
@@ -25,6 +27,7 @@ class ClassController
     public function __construct()
     {
         $this->db = Database::getInstance()->getConnection();
+        $this->settingsStore = new SettingsStore($this->db);
         
         // Accès restreint aux rôles administratifs (Superadmin et Admin)
         if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
@@ -130,6 +133,11 @@ class ClassController
                 // Insertion avec gestion des relations optionnelles
                 $stmt = $this->db->prepare("INSERT INTO classes (nom, cycle_id, section_id, department_id) VALUES (?, ?, ?, ?)");
                 $stmt->execute([$nom, $cycle_id, $section_id, $department_id]);
+                $newClassId = (int) $this->db->lastInsertId();
+                $threshold = trim((string) ($_POST['honor_roll_threshold'] ?? ''));
+                if ($threshold !== '') {
+                    $this->settingsStore->set('honor_roll_threshold_class_' . $newClassId, $threshold);
+                }
                 
                 Session::setFlash('success', __('created_success'));
                 header("Location: /classes");
@@ -158,6 +166,8 @@ class ClassController
             header("Location: /classes");
             exit;
         }
+
+        $classe['honor_roll_threshold'] = $this->settingsStore->get('honor_roll_threshold_class_' . $classe['id'], '');
 
         $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -190,6 +200,9 @@ class ClassController
             try {
                 $stmt = $this->db->prepare("UPDATE classes SET nom = ?, cycle_id = ?, section_id = ?, department_id = ? WHERE id = ?");
                 $stmt->execute([$nom, $cycle_id, $section_id, $department_id, (int)$id]);
+                
+                $threshold = trim((string) ($_POST['honor_roll_threshold'] ?? ''));
+                $this->settingsStore->set('honor_roll_threshold_class_' . $id, $threshold);
                 
                 Session::setFlash('success', __('updated_success'));
                 header("Location: /classes");
