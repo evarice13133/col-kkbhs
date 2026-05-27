@@ -315,6 +315,7 @@ class BulletinController
         $students = $this->sortStudentsByRanking($students, $ranking);
 
         // Optimisation : précalculer les stats par matière une seule fois pour toute la classe
+        // Pour la section anglophone, on utilise uniquement les matières avec des notes saisies
         $subjectStats = $this->getSubjectStatsForSequence($classId, $sequence['label'], (int) $academicYear['id']);
 
         $classNotesMap = $this->getClassSequenceNotesMap($classId, [$sequence['label']], (int) $academicYear['id']);
@@ -374,6 +375,7 @@ class BulletinController
         $students = $this->sortStudentsByRanking($students, $ranking);
 
         // Optimisation : précalculer les stats par matière une seule fois pour toute la classe
+        // Pour la section anglophone, on utilise uniquement les matières avec des notes saisies
         $subjectStats = $this->getSubjectStatsForTrimester($classId, $termSequences, (int) $academicYear['id']);
 
         $precomputedSeqRankings = [];
@@ -480,6 +482,7 @@ class BulletinController
         $students = $this->sortStudentsByRanking($students, $ranking);
 
         // Optimisation : précalculer les stats par matière une seule fois pour toute la classe
+        // Pour la section anglophone, on utilise uniquement les matières avec des notes saisies
         $subjectStats = $this->getSubjectStatsForAnnual($classId, $termSequencesByTerm, (int) $academicYear['id']);
 
         $precomputedTrimRankings = [];
@@ -526,21 +529,41 @@ class BulletinController
     protected function buildSequenceBulletinData(array $student, array $sequence, ?array $academicYear = null, ?array $precomputedRanking = null, ?array $precomputedSubjectStats = null, ?array $precomputedNotesMap = null, ?array $precomputedDiscipline = null)
     {
         $activeYear = $academicYear ?? $this->getActiveAcademicYear();
-        $subjects = $this->getClassSubjects((int) $student['class_id']);
+        // Pour la section anglophone, on utilise uniquement les matières avec des notes saisies
+        $isEnglishSection = $this->isEnglishSection((int) $student['class_id']);
+        if ($isEnglishSection) {
+            $subjects = $this->getSubjectsWithGrades((int) $student['class_id'], [$sequence['label']], (int) $activeYear['id']);
+        } else {
+            $subjects = $this->getClassSubjects((int) $student['class_id']);
+        }
         $notesMap = $precomputedNotesMap ?? $this->getStudentSequenceNotesMap((int) $student['id'], (int) $student['class_id'], [$sequence['label']], (int) $activeYear['id']);
         $subjectStats = $precomputedSubjectStats ?? $this->getSubjectStatsForSequence((int) $student['class_id'], $sequence['label'], (int) $activeYear['id']);
 
         $rows = [];
         $weightedSum = 0.0;
         $coeffSum = 0.0;
+        $coeffValidSum = 0.0;
 
         foreach ($subjects as $subject) {
             $key = $subject['id'] . '|' . $sequence['label'];
             $note = $notesMap[$key] ?? null;
             $value = $note !== null ? (float) $note['valeur'] : null;
             $coefficient = (float) $subject['coefficient'];
-            $weightedSum += ($value ?? 0.0) * $coefficient;
-            $coeffSum += $coefficient;
+
+            // Pour la section anglophone, on n'inclut que les matières avec des notes dans le calcul
+            if ($isEnglishSection) {
+                if ($value !== null) {
+                    $weightedSum += $value * $coefficient;
+                    $coeffSum += $coefficient;
+                    $coeffValidSum += $coefficient;
+                }
+            } else {
+                $weightedSum += ($value ?? 0.0) * $coefficient;
+                $coeffSum += $coefficient;
+                if ($value !== null) {
+                    $coeffValidSum += $coefficient;
+                }
+            }
 
             $subjStats = $subjectStats[$subject['id']] ?? null;
             $classAverageSubj = $subjStats['average'] ?? null;
@@ -606,7 +629,14 @@ class BulletinController
     {
         $activeYear = $academicYear ?? $this->getActiveAcademicYear();
         $termSequences = $this->getActiveSequencesByTerm($term);
-        $subjects = $this->getClassSubjects((int) $student['class_id']);
+        // Pour la section anglophone, on utilise uniquement les matières avec des notes saisies
+        $isEnglishSection = $this->isEnglishSection((int) $student['class_id']);
+        if ($isEnglishSection) {
+            $sequenceLabels = array_column($termSequences, 'label');
+            $subjects = $this->getSubjectsWithGrades((int) $student['class_id'], $sequenceLabels, (int) $activeYear['id']);
+        } else {
+            $subjects = $this->getClassSubjects((int) $student['class_id']);
+        }
         $sequenceLabels = array_column($termSequences, 'label');
         $notesMap = $precomputedNotesMap ?? $this->getStudentSequenceNotesMap((int) $student['id'], (int) $student['class_id'], $sequenceLabels, (int) $activeYear['id']);
         $subjectStats = $precomputedSubjectStats ?? $this->getSubjectStatsForTrimester((int) $student['class_id'], $termSequences, (int) $activeYear['id']);
@@ -614,6 +644,7 @@ class BulletinController
         $rows = [];
         $weightedSum = 0.0;
         $coeffSum = 0.0;
+        $coeffValidSum = 0.0;
 
         foreach ($subjects as $subject) {
             $sequenceValues = [];
@@ -631,8 +662,20 @@ class BulletinController
             $coefficient = (float) $subject['coefficient'];
             $weighted = round($termNoteCalc * $coefficient, 2);
 
-            $weightedSum += $weighted;
-            $coeffSum += $coefficient;
+            // Pour la section anglophone, on n'inclut que les matières avec des notes dans le calcul
+            if ($isEnglishSection) {
+                if ($termNote !== null) {
+                    $weightedSum += $weighted;
+                    $coeffSum += $coefficient;
+                    $coeffValidSum += $coefficient;
+                }
+            } else {
+                $weightedSum += $weighted;
+                $coeffSum += $coefficient;
+                if ($termNote !== null) {
+                    $coeffValidSum += $coefficient;
+                }
+            }
 
             $subjStats = $subjectStats[$subject['id']] ?? null;
             $classAverageSubj = $subjStats['average'] ?? null;
@@ -650,13 +693,6 @@ class BulletinController
                 'rank_subject' => $studentRankSubj,
                 'appreciation' => $this->getAcquisitionLevel($termNote),
             ];
-        }
-
-        $coeffValidSum = 0.0;
-        foreach ($rows as $r) {
-            if (($r['term_note'] ?? 0) >= 10) {
-                $coeffValidSum += (float) $r['coefficient'];
-            }
         }
 
         $average = $coeffSum > 0 ? round($weightedSum / $coeffSum, 2) : null;
@@ -740,12 +776,26 @@ class BulletinController
         $activeYear = $academicYear ?? $this->getActiveAcademicYear();
         $classId = (int) $student['class_id'];
         $studentId = (int) $student['id'];
-        $subjects = $this->getClassSubjects($classId);
-        $termSequencesByTerm = [
-            1 => $this->getActiveSequencesByTerm(1),
-            2 => $this->getActiveSequencesByTerm(2),
-            3 => $this->getActiveSequencesByTerm(3),
-        ];
+        // Pour la section anglophone, on utilise uniquement les matières avec des notes saisies
+        $isEnglishSection = $this->isEnglishSection($classId);
+        if ($isEnglishSection) {
+            $termSequencesByTerm = [
+                1 => $this->getActiveSequencesByTerm(1),
+                2 => $this->getActiveSequencesByTerm(2),
+                3 => $this->getActiveSequencesByTerm(3),
+            ];
+            $allSeqLabels = [];
+            foreach ($termSequencesByTerm as $seqs)
+                $allSeqLabels = array_merge($allSeqLabels, array_column($seqs, 'label'));
+            $subjects = $this->getSubjectsWithGrades($classId, $allSeqLabels, (int) $activeYear['id']);
+        } else {
+            $subjects = $this->getClassSubjects($classId);
+            $termSequencesByTerm = [
+                1 => $this->getActiveSequencesByTerm(1),
+                2 => $this->getActiveSequencesByTerm(2),
+                3 => $this->getActiveSequencesByTerm(3),
+            ];
+        }
 
         $allSeqLabels = [];
         foreach ($termSequencesByTerm as $seqs)
@@ -757,6 +807,7 @@ class BulletinController
         $rows = [];
         $weightedSum = 0.0;
         $coeffSum = 0.0;
+        $coeffValidSum = 0.0;
 
         foreach ($subjects as $subject) {
             $subjectId = (int) $subject['id'];
@@ -778,8 +829,20 @@ class BulletinController
             $coefficient = (float) $subject['coefficient'];
             $weighted = round($annualNoteCalc * $coefficient, 2);
 
-            $weightedSum += $weighted;
-            $coeffSum += $coefficient;
+            // Pour la section anglophone, on n'inclut que les matières avec des notes dans le calcul
+            if ($isEnglishSection) {
+                if ($annualNote !== null) {
+                    $weightedSum += $weighted;
+                    $coeffSum += $coefficient;
+                    $coeffValidSum += $coefficient;
+                }
+            } else {
+                $weightedSum += $weighted;
+                $coeffSum += $coefficient;
+                if ($annualNote !== null) {
+                    $coeffValidSum += $coefficient;
+                }
+            }
 
             $subjStats = $subjectStats[$subjectId] ?? null;
             $classAverageSubj = $subjStats['average'] ?? null;
@@ -801,13 +864,6 @@ class BulletinController
                 'rank_subject' => $studentRankSubj,
                 'appreciation' => $this->getAcquisitionLevel($annualNote),
             ];
-        }
-
-        $coeffValidSum = 0.0;
-        foreach ($rows as $row) {
-            if (($row['annual_note'] ?? 0) >= 10) {
-                $coeffValidSum += (float) $row['coefficient'];
-            }
         }
 
         $average = $coeffSum > 0 ? round($weightedSum / $coeffSum, 2) : null;
@@ -856,7 +912,12 @@ class BulletinController
 
     protected function computeSequenceRanking(int $classId, string $sequenceLabel, int $academicYearId, bool $withNames = false)
     {
-        $subjects = $this->getClassSubjects($classId);
+        // Pour la section anglophone, on utilise uniquement les matières avec des notes saisies
+        if ($this->isEnglishSection($classId)) {
+            $subjects = $this->getSubjectsWithGrades($classId, [$sequenceLabel], $academicYearId);
+        } else {
+            $subjects = $this->getClassSubjects($classId);
+        }
         $subjectMap = [];
         foreach ($subjects as $subject) {
             $subjectMap[(int) $subject['id']] = (float) $subject['coefficient'];
@@ -891,7 +952,13 @@ class BulletinController
 
     protected function computeTrimesterRanking(int $classId, array $termSequences, int $academicYearId, bool $withNames = false)
     {
-        $subjects = $this->getClassSubjects($classId);
+        // Pour la section anglophone, on utilise uniquement les matières avec des notes saisies
+        if ($this->isEnglishSection($classId)) {
+            $sequenceLabels = array_column($termSequences, 'label');
+            $subjects = $this->getSubjectsWithGrades($classId, $sequenceLabels, $academicYearId);
+        } else {
+            $subjects = $this->getClassSubjects($classId);
+        }
         $subjectMap = [];
         foreach ($subjects as $subject) {
             $subjectMap[(int) $subject['id']] = (float) $subject['coefficient'];
@@ -949,7 +1016,18 @@ class BulletinController
 
     protected function computeAnnualRanking(int $classId, array $termSequencesByTerm, int $academicYearId, bool $withNames = false)
     {
-        $subjects = $this->getClassSubjects($classId);
+        // Pour la section anglophone, on utilise uniquement les matières avec des notes saisies
+        if ($this->isEnglishSection($classId)) {
+            $allSequenceLabels = [];
+            foreach ([1, 2, 3] as $term) {
+                foreach ($termSequencesByTerm[$term] ?? [] as $sequence) {
+                    $allSequenceLabels[] = $sequence['label'];
+                }
+            }
+            $subjects = $this->getSubjectsWithGrades($classId, $allSequenceLabels, $academicYearId);
+        } else {
+            $subjects = $this->getClassSubjects($classId);
+        }
         $subjectMap = [];
         foreach ($subjects as $subject) {
             $subjectMap[(int) $subject['id']] = (float) $subject['coefficient'];
@@ -1214,9 +1292,9 @@ class BulletinController
     protected function detectAndApplyBulletinLanguage(int $classId): void
     {
         $stmt = $this->db->prepare("
-            SELECT s.nom 
-            FROM sections s 
-            JOIN classes c ON c.section_id = s.id 
+            SELECT s.nom
+            FROM sections s
+            JOIN classes c ON c.section_id = s.id
             WHERE c.id = ?
         ");
         $stmt->execute([$classId]);
@@ -1227,6 +1305,24 @@ class BulletinController
         } else {
             \App\Core\Locale::set('fr');
         }
+    }
+
+    /**
+     * Vérifie si une classe appartient à la section anglophone.
+     * Pour la section anglophone, seules les matières composées sont utilisées dans le calcul de la moyenne.
+     */
+    protected function isEnglishSection(int $classId): bool
+    {
+        $stmt = $this->db->prepare("
+            SELECT s.nom
+            FROM sections s
+            JOIN classes c ON c.section_id = s.id
+            WHERE c.id = ?
+        ");
+        $stmt->execute([$classId]);
+        $sectionName = (string) $stmt->fetchColumn();
+
+        return stripos($sectionName, 'Anglophone') !== false || stripos($sectionName, 'English') !== false;
     }
 
     protected function canAccessClass(int $classId)
@@ -1243,17 +1339,44 @@ class BulletinController
     protected function getClassSubjects(int $classId)
     {
         // On recupere les matieres et le nom de l'enseignant (le premier trouve)
-        $stmt = $this->db->prepare("SELECT s.id, s.nom, s.coefficient, COALESCE(s.groupe, 'Groupe 1') AS groupe,
-                                    (SELECT CONCAT(u.nom, ' ', u.prenom) 
-                                     FROM teacher_assignments ta 
-                                     JOIN users u ON u.id = ta.user_id 
+        $sql = "SELECT s.id, s.nom, s.coefficient, COALESCE(s.groupe, 'Groupe 1') AS groupe,
+                                    (SELECT CONCAT(u.nom, ' ', u.prenom)
+                                     FROM teacher_assignments ta
+                                     JOIN users u ON u.id = ta.user_id
                                      WHERE ta.subject_id = s.id AND ta.class_id = sc.class_id AND u.role = 'enseignant'
                                      LIMIT 1) as teacher_name
             FROM subject_classes sc
             JOIN subjects s ON s.id = sc.subject_id
             WHERE sc.class_id = ? AND s.status = 1
-            ORDER BY s.nom ASC");
+            ORDER BY s.nom ASC";
+
+        $stmt = $this->db->prepare($sql);
         $stmt->execute([$classId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Récupère les matières qui ont des notes saisies pour une période donnée.
+     * Pour la section anglophone, seules ces matières seront utilisées dans le calcul de la moyenne.
+     */
+    protected function getSubjectsWithGrades(int $classId, array $periodLabels, int $academicYearId)
+    {
+        $placeholders = implode(', ', array_fill(0, count($periodLabels), '?'));
+        $sql = "SELECT DISTINCT s.id, s.nom, s.coefficient, COALESCE(s.groupe, 'Groupe 1') AS groupe,
+                                    (SELECT CONCAT(u.nom, ' ', u.prenom)
+                                     FROM teacher_assignments ta
+                                     JOIN users u ON u.id = ta.user_id
+                                     WHERE ta.subject_id = s.id AND ta.class_id = sc.class_id AND u.role = 'enseignant'
+                                     LIMIT 1) as teacher_name
+            FROM subject_classes sc
+            JOIN subjects s ON s.id = sc.subject_id
+            JOIN grades g ON g.subject_id = s.id
+            WHERE sc.class_id = ? AND s.status = 1 AND g.periode IN ($placeholders) AND g.academic_year_id = ?
+            ORDER BY s.nom ASC";
+
+        $params = array_merge([$classId], $periodLabels, [$academicYearId]);
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -1699,6 +1822,7 @@ class BulletinController
                 JOIN students st ON st.id = g.student_id
                 JOIN subjects s ON s.id = g.subject_id
                 WHERE st.class_id = ? AND g.periode = ? AND g.academic_year_id = ? AND st.is_withdrawn = 0 AND s.status = 1";
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$classId, $sequenceLabel, $academicYearId]);
         $grades = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -1744,6 +1868,7 @@ class BulletinController
                 JOIN students st ON st.id = g.student_id
                 JOIN subjects s ON s.id = g.subject_id
                 WHERE st.class_id = ? AND g.periode IN ($placeholders) AND g.academic_year_id = ? AND st.is_withdrawn = 0 AND s.status = 1";
+
         $params = array_merge([$classId], $sequenceLabels, [$academicYearId]);
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
@@ -1806,6 +1931,7 @@ class BulletinController
                 JOIN students st ON st.id = g.student_id
                 JOIN subjects s ON s.id = g.subject_id
                 WHERE st.class_id = ? AND g.periode IN ($placeholders) AND g.academic_year_id = ? AND st.is_withdrawn = 0 AND s.status = 1";
+
         $params = array_merge([$classId], $sequenceLabels, [$academicYearId]);
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);

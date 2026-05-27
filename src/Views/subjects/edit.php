@@ -42,7 +42,7 @@ ob_start();
                     </div>
                     <div class="col-md-4">
                         <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('base_coefficient') ?></label>
-                        <input type="number" name="coefficient" class="form-control premium-input text-center" 
+                        <input type="number" name="coefficient" class="form-control premium-input text-center"
                             value="<?= h($subject['coefficient'] ?? 1) ?>" min="1" required>
                     </div>
                 </div>
