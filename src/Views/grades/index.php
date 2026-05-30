@@ -155,8 +155,11 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
                             <?php foreach ($subjectsRaw as $sub): ?>
                                 <div class="col-6 col-sm-6 col-xl-4 subject-grid-item"
                                     data-subject-name="<?= strtolower($sub['subject_nom']) ?>">
-                                    <a href="<?= $sub['teacher_nom'] ? "/notes/saisie?class_id={$sub['class_id']}&subject_id={$sub['subject_id']}" : "/teachers?assign_subject={$sub['subject_id']}&assign_class={$sub['class_id']}" ?>"
-                                        class="subject-card-compact border-theme-dynamic h-100 <?= !$sub['teacher_nom'] ? 'is-unassigned' : '' ?>">
+                                    <?php if ($sub['teacher_nom']): ?>
+                                    <a href="/notes/saisie?class_id=<?= $sub['class_id'] ?>&subject_id=<?= $sub['subject_id'] ?>" class="subject-card-compact border-theme-dynamic h-100">
+                                    <?php else: ?>
+                                    <div class="subject-card-compact border-theme-dynamic h-100 is-unassigned">
+                                    <?php endif; ?>
                                         <div class="subject-card-glow"></div>
                                         <div class="card-body p-2 p-md-3 h-100 position-relative" style="z-index: 1;">
                                             <div class="d-flex flex-column h-100 justify-content-between gap-1">
@@ -187,22 +190,39 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
 
                                                 <div class="mt-auto pt-2 d-flex justify-content-between align-items-center">
                                                     <?php if (!$sub['teacher_nom']): ?>
-                                                        <div class="btn btn-xs btn-outline-warning rounded-pill py-0 px-2 extra-small fw-bold shadow-sm">
-                                                            <?= __('assign') ?>
+                                                        <div class="d-flex gap-2 w-100">
+                                                            <a href="/teachers?assign_subject=<?= $sub['subject_id'] ?>&assign_class=<?= $sub['class_id'] ?>" class="btn btn-xs btn-outline-warning rounded-pill py-0 px-2 extra-small fw-bold shadow-sm flex-grow-1 text-decoration-none text-center">
+                                                                <i class="bi bi-person-plus-fill me-1"></i><?= __('assign') ?>
+                                                            </a>
+                                                            <?php if ($isAdmin): ?>
+                                                            <a href="/notes/saisie?class_id=<?= $sub['class_id'] ?>&subject_id=<?= $sub['subject_id'] ?>" class="btn btn-xs btn-outline-primary rounded-pill py-0 px-2 extra-small fw-bold shadow-sm flex-grow-1 text-decoration-none text-center">
+                                                                <i class="bi bi-pencil-fill me-1"></i><?= __('enter_grades') ?>
+                                                            </a>
+                                                            <?php endif; ?>
                                                         </div>
                                                     <?php else: ?>
+                                                        <?php
+                                                            $filled = (int) ($sub['filled_count'] ?? 0);
+                                                            $total = (int) ($sub['total_count'] ?? 0);
+                                                            $isComplete = (bool) ($sub['is_complete'] ?? ($total > 0 && $filled >= $total));
+                                                        ?>
                                                         <div class="d-flex align-items-center gap-1">
-                                                            <?php if ($sub['is_complete']): ?>
-                                                                <span class="badge bg-success bg-opacity-10 text-success rounded-pill extra-small px-1 px-md-2 py-0.5 border border-success border-opacity-10">
-                                                                    <i class="bi bi-check-circle-fill me-1"></i><?= $sub['filled_count'] ?>/<?= $sub['total_count'] ?>
-                                                                </span>
-                                                            <?php elseif ($sub['filled_count'] > 0): ?>
-                                                                <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill extra-small px-1 px-md-2 py-0.5 border border-warning border-opacity-10">
-                                                                    <i class="bi bi-pencil-fill me-1"></i><?= $sub['filled_count'] ?>/<?= $sub['total_count'] ?>
+                                                            <?php if ($total <= 0 || $filled <= 0): ?>
+                                                                <span class="btn btn-xs btn-outline-primary rounded-pill py-0 px-2 extra-small fw-bold shadow-sm text-decoration-none text-center" style="pointer-events:none;">
+                                                                    <i class="bi bi-plus-circle-fill me-1"></i> Saisir les notes
                                                                 </span>
                                                             <?php else: ?>
-                                                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill extra-small px-1 px-md-2 py-0.5 border border-primary border-opacity-10">
-                                                                    <i class="bi bi-plus-circle-fill me-1"></i><?= __('to_fill') ?>
+                                                                <?php
+                                                                    $success = $isComplete && $filled >= $total;
+                                                                    // Partiel : affichage d'avancement (orange)
+                                                                    $badgeClass = $success
+                                                                        ? 'bg-success bg-opacity-10 text-success border border-success border-opacity-10'
+                                                                        : 'bg-warning bg-opacity-10 text-warning border border-warning border-opacity-10';
+                                                                    $icon = $success ? 'bi-check-circle-fill' : 'bi-pencil-fill';
+                                                                ?>
+                                                                <span class="badge <?= $badgeClass ?> rounded-pill extra-small px-1 px-md-2 py-0.5 d-inline-flex align-items-center gap-1" style="pointer-events:none;">
+                                                                    <i class="bi <?= $icon ?>"></i>
+                                                                    <?= $filled ?>/<?= $total ?><?= $success ? ' ✓' : '' ?>
                                                                 </span>
                                                             <?php endif; ?>
                                                         </div>
@@ -213,7 +233,11 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
                                                 </div>
                                             </div>
                                         </div>
+                                    <?php if ($sub['teacher_nom']): ?>
                                     </a>
+                                    <?php else: ?>
+                                    </div>
+                                    <?php endif; ?>
                                 </div>
                             <?php endforeach; ?>
                         </div>

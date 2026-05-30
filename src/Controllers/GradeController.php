@@ -112,7 +112,13 @@ class GradeController
 
         $evaluationTypes = $this->getAvailableEvaluationTypes();
 
-        $_completedAssignments = $this->getAssignmentCompletionStatus($filteredAssignments, $evaluationTypes);
+        // Par défaut, la vue de saisie choisit la 1ère évaluation active (si aucun paramètre 'periode' n'est passé)
+        $defaultPeriode = $evaluationTypes[0] ?? '';
+
+        $_completedAssignments = $this->getAssignmentGradesProgressStatus(
+            $filteredAssignments,
+            $defaultPeriode
+        );
 
 
 
@@ -147,8 +153,10 @@ class GradeController
             // 1. Toujours pour les enseignants si une évaluation est active
 
             // 2. Uniquement les non-terminés pour les admins (ou si pas d'éval active pour les profs)
+            //    MAIS: une matière NON affectée à un enseignant doit TOUJOURS rester visible (même si les notes sont déjà complètes)
+            $isUnassigned = empty($assignment['teacher_nom']);
 
-            if ((!$isAdmin && $hasActiveEval) || !$isComplete) {
+            if ((!$isAdmin && $hasActiveEval) || !$isComplete || ($isAdmin && $isUnassigned)) {
 
                 $dashboard[$assignment['class_nom']][] = [
 
@@ -1411,5 +1419,80 @@ class GradeController
 
     }
 
+    /**
+     * Progression (numérateur/dénominateur) par matière pour une SEULE période (séquence active par défaut).
+     *
+     * - Numérateur (X) = nombre d'élèves ayant au moins une note pour (classe + matière + période + année active)
+     * - Dénominateur (Y) = nombre total d'élèves concernés dans la classe
+     */
+    private function getAssignmentGradesProgressStatus(array $assignments, string $periode): array
+    {
+        if (empty($assignments) || $periode === '') {
+            return [];
+        }
+
+        $activeYear = $this->getActiveAcademicYear();
+        if (!$activeYear) {
+            return [];
+        }
+
+        // 1) Total élèves par classe (dénominateur)
+        $studentCounts = [];
+        $stmt = $this->db->query("SELECT class_id, COUNT(*) as count FROM students WHERE is_withdrawn = 0 GROUP BY class_id");
+        while ($row = $stmt->fetch()) {
+            $studentCounts[(int) $row['class_id']] = (int) $row['count'];
+        }
+
+        // 2) Total élèves ayant AU MOINS UNE note pour (classe + matière) sur la période choisie (numérateur)
+        $classIds = array_values(array_unique(array_map('intval', array_column($assignments, 'class_id'))));
+        $subjectIds = array_values(array_unique(array_map('intval', array_column($assignments, 'subject_id'))));
+
+        if (empty($classIds) || empty($subjectIds)) {
+            return [];
+        }
+
+        $classPlaceholders = implode(',', array_fill(0, count($classIds), '?'));
+        $subjectPlaceholders = implode(',', array_fill(0, count($subjectIds), '?'));
+
+        $sql = "SELECT s.class_id, g.subject_id, COUNT(DISTINCT g.student_id) as filled_count
+                FROM grades g
+                JOIN students s ON s.id = g.student_id
+                WHERE g.academic_year_id = ?
+                  AND g.periode = ?
+                  AND s.is_withdrawn = 0
+                  AND s.class_id IN ($classPlaceholders)
+                  AND g.subject_id IN ($subjectPlaceholders)
+                GROUP BY s.class_id, g.subject_id";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(array_merge([$activeYear['id'], $periode], $classIds, $subjectIds));
+
+        $gradeCounts = [];
+        while ($row = $stmt->fetch()) {
+            $gradeCounts[(int) $row['class_id'] . '_' . (int) $row['subject_id']] = (int) $row['filled_count'];
+        }
+
+        // 3) Mapper sur les affectations (matière/classe)
+        $results = [];
+        foreach ($assignments as $a) {
+            $classId = (int) $a['class_id'];
+            $subjectId = (int) $a['subject_id'];
+
+            $key = $classId . '_' . $subjectId;
+
+            $total = $studentCounts[$classId] ?? 0;
+            $filled = $gradeCounts[$key] ?? 0;
+
+            $results[$key] = [
+                'is_complete' => ($total > 0 && $filled >= $total),
+                'filled' => $filled,
+                'total' => $total
+            ];
+        }
+
+        return $results;
+    }
+
 }
+
 
