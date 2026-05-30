@@ -103,6 +103,7 @@ return [
     'grade_export_student' => 'Student',
     'grade_export_class' => 'Class',
     'grade_export_subject' => 'Subject',
+    'enter_grades' => 'Enter Grades',
     'grade_export_teacher' => 'Teacher',
     'grade_export_period' => 'Period',
     'grade_export_note' => 'Mark / 20',
