@@ -642,19 +642,30 @@ class GradeController
 
             $updatedCount = 0;
 
-
+            // Récupérer les informations de l'enseignant et de la matière pour les snapshots
+            $teacherInfo = $this->db->prepare("SELECT nom, prenom FROM users WHERE id = ?")->execute([$teacher_id]);
+            $teacherData = $this->db->query("SELECT nom, prenom FROM users WHERE id = $teacher_id LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+            $teacherNom = $teacherData['nom'] ?? 'Enseignant Supprimé';
+            $teacherPrenom = $teacherData['prenom'] ?? '';
+            
+            $subjectData = $this->db->query("SELECT nom FROM subjects WHERE id = $subject_id LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+            $subjectNom = $subjectData['nom'] ?? 'Matière Supprimée';
+            
+            $userRole = Session::get('user_role');
+            $createdByType = in_array($userRole, ['admin', 'superadmin']) ? 'admin' : 'enseignant';
 
             $this->db->beginTransaction();
 
 
 
             // Requête optimisée avec ON DUPLICATE KEY UPDATE pour gérer l'Upsert
+            // Inclut les snapshots pour archiver les données historiques
 
             $stmt = $this->db->prepare("
 
-                INSERT INTO grades (student_id, subject_id, teacher_id, academic_year_id, sequence_id, periode, valeur, appreciation)
+                INSERT INTO grades (student_id, subject_id, teacher_id, academic_year_id, sequence_id, periode, valeur, appreciation, teacher_nom_snapshot, teacher_prenom_snapshot, subject_nom_snapshot, created_by_type)
 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 
                 ON DUPLICATE KEY UPDATE
 
@@ -664,7 +675,15 @@ class GradeController
 
                     teacher_id = VALUES(teacher_id),
 
-                    sequence_id = VALUES(sequence_id)
+                    sequence_id = VALUES(sequence_id),
+
+                    teacher_nom_snapshot = VALUES(teacher_nom_snapshot),
+
+                    teacher_prenom_snapshot = VALUES(teacher_prenom_snapshot),
+
+                    subject_nom_snapshot = VALUES(subject_nom_snapshot),
+
+                    created_by_type = VALUES(created_by_type)
 
             ");
 
@@ -728,7 +747,15 @@ class GradeController
 
                     $valFloat,
 
-                    $appr
+                    $appr,
+
+                    $teacherNom,
+
+                    $teacherPrenom,
+
+                    $subjectNom,
+
+                    $createdByType
 
                 ]);
 
@@ -848,6 +875,9 @@ class GradeController
 
 
 
+        // Utilise LEFT JOIN pour gérer les cas où teacher_id est NULL (notes orphelines)
+        // Affiche les snapshots si l'enseignant a été supprimé
+
         $sql = "SELECT g.id, g.valeur, g.appreciation, g.periode, g.updated_at,
 
                        s.nom as student_nom, s.prenom as student_prenom,
@@ -860,7 +890,18 @@ class GradeController
 
                        ay.nom as academic_year_nom,
 
-                       u.nom as teacher_nom, u.prenom as teacher_prenom
+                       COALESCE(u.nom, g.teacher_nom_snapshot) as teacher_nom, 
+                       COALESCE(u.prenom, g.teacher_prenom_snapshot) as teacher_prenom,
+
+                       g.teacher_id,
+
+                       g.teacher_nom_snapshot,
+
+                       g.teacher_prenom_snapshot,
+
+                       g.subject_nom_snapshot,
+
+                       g.created_by_type
 
                 FROM grades g
 
@@ -870,7 +911,7 @@ class GradeController
 
                 JOIN subjects sub ON g.subject_id = sub.id
 
-                JOIN users u ON g.teacher_id = u.id
+                LEFT JOIN users u ON g.teacher_id = u.id
 
                 LEFT JOIN academic_years ay ON g.academic_year_id = ay.id";
 
