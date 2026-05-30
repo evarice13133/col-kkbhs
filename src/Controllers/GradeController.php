@@ -153,8 +153,10 @@ class GradeController
             // 1. Toujours pour les enseignants si une évaluation est active
 
             // 2. Uniquement les non-terminés pour les admins (ou si pas d'éval active pour les profs)
+            //    MAIS: une matière NON affectée à un enseignant doit TOUJOURS rester visible (même si les notes sont déjà complètes)
+            $isUnassigned = empty($assignment['teacher_nom']);
 
-            if ((!$isAdmin && $hasActiveEval) || !$isComplete) {
+            if ((!$isAdmin && $hasActiveEval) || !$isComplete || ($isAdmin && $isUnassigned)) {
 
                 $dashboard[$assignment['class_nom']][] = [
 
@@ -1434,14 +1436,24 @@ class GradeController
             return [];
         }
 
-        // 1) Total élèves par classe (dénominateur)
+        // On utilise toutes les périodes actives (évaluations activées), pas seulement $periode.
+        // Cela correspond au besoin "total de note a saisir pour les evaluations activé".
+        $evaluationTypes = $this->getAvailableEvaluationTypes();
+        $evalCount = count($evaluationTypes);
+
+        if ($evalCount <= 0) {
+            return [];
+        }
+
+        // 1) Total élèves par classe (dénominateur) * nombre d'évaluations actives
         $studentCounts = [];
         $stmt = $this->db->query("SELECT class_id, COUNT(*) as count FROM students WHERE is_withdrawn = 0 GROUP BY class_id");
         while ($row = $stmt->fetch()) {
             $studentCounts[(int) $row['class_id']] = (int) $row['count'];
         }
 
-        // 2) Total élèves ayant AU MOINS UNE note pour (classe + matière) sur la période choisie (numérateur)
+        // 2) Nombre de notes distinctes saisies sur TOUTES les périodes actives
+        // => on compte des paires (student_id, periode) pour coller au "nombre de notes"
         $classIds = array_values(array_unique(array_map('intval', array_column($assignments, 'class_id'))));
         $subjectIds = array_values(array_unique(array_map('intval', array_column($assignments, 'subject_id'))));
 
@@ -1452,18 +1464,35 @@ class GradeController
         $classPlaceholders = implode(',', array_fill(0, count($classIds), '?'));
         $subjectPlaceholders = implode(',', array_fill(0, count($subjectIds), '?'));
 
-        $sql = "SELECT s.class_id, g.subject_id, COUNT(DISTINCT g.student_id) as filled_count
+        $role = Session::get('user_role');
+        $teacherId = (int) Session::get('user_id');
+
+        $teacherFilterSql = '';
+        $teacherParams = [];
+
+        // Pour un enseignant, afficher la progression basée sur SES saisies uniquement
+        if (!in_array($role, ['superadmin', 'admin'], true)) {
+            $teacherFilterSql = " AND g.teacher_id = ? ";
+            $teacherParams[] = $teacherId;
+        }
+
+        $periodePlaceholders = implode(',', array_fill(0, $evalCount, '?'));
+
+        $sql = "SELECT s.class_id,
+                       g.subject_id,
+                       COUNT(DISTINCT CONCAT(g.student_id, ':', g.periode)) as filled_count
                 FROM grades g
                 JOIN students s ON s.id = g.student_id
                 WHERE g.academic_year_id = ?
-                  AND g.periode = ?
+                  AND g.periode IN ($periodePlaceholders)
                   AND s.is_withdrawn = 0
                   AND s.class_id IN ($classPlaceholders)
                   AND g.subject_id IN ($subjectPlaceholders)
+                  $teacherFilterSql
                 GROUP BY s.class_id, g.subject_id";
 
         $stmt = $this->db->prepare($sql);
-        $stmt->execute(array_merge([$activeYear['id'], $periode], $classIds, $subjectIds));
+        $stmt->execute(array_merge([$activeYear['id']], $evaluationTypes, $classIds, $subjectIds, $teacherParams));
 
         $gradeCounts = [];
         while ($row = $stmt->fetch()) {
@@ -1478,7 +1507,8 @@ class GradeController
 
             $key = $classId . '_' . $subjectId;
 
-            $total = $studentCounts[$classId] ?? 0;
+            $studentsInClass = $studentCounts[$classId] ?? 0;
+            $total = $studentsInClass * $evalCount;
             $filled = $gradeCounts[$key] ?? 0;
 
             $results[$key] = [

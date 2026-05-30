@@ -181,9 +181,17 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
                                                             <span class="text-truncate"><?= htmlspecialchars($sub['teacher_prenom'] . ' ' . $sub['teacher_nom']) ?></span>
                                                         </div>
                                                     <?php elseif (!$sub['teacher_nom']): ?>
+                                                        <?php
+                                                            $filled = (int) ($sub['filled_count'] ?? 0);
+                                                            $total = (int) ($sub['total_count'] ?? 0);
+                                                            $isComplete = (bool) ($sub['is_complete'] ?? ($total > 0 && $filled >= $total));
+                                                        ?>
                                                         <div class="extra-small text-warning fw-bold d-flex align-items-center gap-1 ps-4 ms-1">
                                                             <i class="bi bi-exclamation-triangle-fill"></i>
                                                             <span><?= __('not_assigned') ?></span>
+                                                            <span class="text-muted-theme fw-semibold opacity-75">
+                                                                <?= $filled ?>/<?= $total ?>
+                                                            </span>
                                                         </div>
                                                     <?php endif; ?>
                                                 </div>
@@ -208,8 +216,13 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
                                                         ?>
                                                         <div class="d-flex align-items-center gap-1">
                                                             <?php if ($total <= 0 || $filled <= 0): ?>
-                                                                <span class="btn btn-xs btn-outline-primary rounded-pill py-0 px-2 extra-small fw-bold shadow-sm text-decoration-none text-center" style="pointer-events:none;">
-                                                                    <i class="bi bi-plus-circle-fill me-1"></i> Saisir les notes
+                                                                <span class="d-inline-flex align-items-center gap-2">
+                                                                    <span class="btn btn-xs btn-outline-primary rounded-pill py-0 px-2 extra-small fw-bold shadow-sm text-decoration-none text-center" style="pointer-events:none;">
+                                                                        <i class="bi bi-plus-circle-fill me-1"></i> Saisir les notes
+                                                                    </span>
+                                                                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill extra-small px-1 px-md-2 py-0.5 border border-primary border-opacity-10" style="pointer-events:none;" title="À saisir">
+                                                                        <i class="bi bi-award-fill me-1"></i>À saisir
+                                                                    </span>
                                                                 </span>
                                                             <?php else: ?>
                                                                 <?php
