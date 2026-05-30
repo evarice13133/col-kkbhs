@@ -206,7 +206,6 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
                                                             <a href="/notes/saisie?class_id=<?= $sub['class_id'] ?>&subject_id=<?= $sub['subject_id'] ?>" class="btn btn-xs btn-outline-primary rounded-pill py-0 px-2 extra-small fw-bold shadow-sm flex-grow-1 text-decoration-none text-center">
                                                                 <i class="bi bi-pencil-fill me-1"></i><?= __('enter_grades') ?>
                                                             </a>
-                                                            
                                                             <?php endif; ?>
                                                         </div>
                                                     <?php else: ?>
