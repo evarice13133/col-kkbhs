@@ -442,36 +442,140 @@ ob_start();
                         <p class="text-muted small m-0" style="font-size: 11px;"><?= __('db_diagnostic_subtitle') ?></p>
                     </div>
                 </div>
-                
-                <div class="p-4 d-flex flex-column justify-content-center h-100 gap-4 animate-fade-in" style="min-height: 350px;">
-                    <!-- Discipline Majeure -->
-                    <div class="p-4 rounded-4 transition-base scale-on-hover d-flex align-items-center gap-4 shadow-sm" style="border-radius: 20px !important; background: var(--bg-body); border: 1px solid var(--border-color) !important;">
-                        <div class="avatar-md rounded-circle d-flex align-items-center justify-content-center bg-soft-success shadow-sm" style="width: 58px; height: 58px; flex-shrink: 0; font-size: 1.5rem;">
-                            <i class="bi bi-award-fill"></i>
-                        </div>
-                        <div>
-                            <span class="text-uppercase small text-muted font-weight-700 d-block" style="font-size: 9.5px; letter-spacing: 0.8px;"><?= __('db_major_discipline') ?></span>
-                            <h5 class="fw-black text-main-theme m-0 mt-0.5" style="font-size: 17px;"><?= $bestSubject ? htmlspecialchars($bestSubject['nom']) : 'N/A' ?></h5>
-                            <div class="d-flex align-items-center gap-2 mt-1.5">
-                                <span class="h3 fw-black text-success m-0"><?= $bestSubject ? number_format((float)$bestSubject['moyenne'], 2, ',', ' ') : '0.00' ?></span>
-                                <span class="small text-muted-theme"><?= __('db_school_avg') ?></span>
-                            </div>
+
+                <!-- Onglets de navigation style ultra-premium -->
+                <ul class="nav nav-pills mb-4 gap-2 px-4 pt-3" id="disciplineTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active rounded-pill fw-bold text-uppercase px-3 py-2 btn-sm" id="best-tab" data-bs-toggle="tab" data-bs-target="#best-content" type="button" role="tab" aria-controls="best-content" aria-selected="true" style="font-size: 11px; transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);">
+                            <i class="bi bi-trophy-fill me-1"></i><?= __('db_best_disciplines') ?>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link rounded-pill fw-bold text-uppercase px-3 py-2 btn-sm btn-outline-danger" id="critical-tab" data-bs-toggle="tab" data-bs-target="#critical-content" type="button" role="tab" aria-controls="critical-content" aria-selected="false" style="font-size: 11px; transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i><?= __('db_critical_disciplines') ?>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link rounded-pill fw-bold text-uppercase px-3 py-2 btn-sm btn-outline-info" id="average-tab" data-bs-toggle="tab" data-bs-target="#average-content" type="button" role="tab" aria-controls="average-content" aria-selected="false" style="font-size: 11px; transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);">
+                            <i class="bi bi-bar-chart-fill me-1"></i><?= __('db_average_disciplines') ?>
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content px-4 pb-4" id="disciplineTabsContent">
+                    <!-- Contenu: 5 Meilleures Disciplines -->
+                    <div class="tab-pane fade show active" id="best-content" role="tabpanel">
+                        <div class="d-flex flex-column gap-3">
+                            <?php if (empty($top5Subjects)): ?>
+                                <div class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                    <?= __('db_no_subject_stats') ?>
+                                </div>
+                            <?php else: ?>
+                                <?php foreach ($top5Subjects as $index => $subject): ?>
+                                    <div class="d-flex align-items-center justify-content-between p-3 rounded-4 transition-base scale-on-hover" style="border-radius: 16px !important; background: var(--bg-body); border: 1px solid var(--border-color) !important; box-shadow: 0 4px 12px rgba(0,0,0,0.01);">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="avatar-sm rounded-circle d-flex align-items-center justify-content-center fw-bold text-white shadow-sm" 
+                                                 style="width: 42px; height: 42px; background: linear-gradient(135deg, #10b981, #059669);">
+                                                #<?= $index + 1 ?>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold text-main-theme" style="font-size: 13.5px;"><?= htmlspecialchars($subject['nom']) ?></div>
+                                                <div class="small text-muted-theme" style="font-size: 11px;">
+                                                    <i class="bi bi-person-fill me-1"></i><?= htmlspecialchars($subject['teachers'] ?? '-') ?>
+                                                </div>
+                                                <div class="small text-muted-theme" style="font-size: 11px;">
+                                                    <i class="bi bi-door-open-fill me-1"></i><?= htmlspecialchars($subject['classes'] ?? '-') ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="fw-black text-success" style="font-size: 17px;"><?= number_format((float)$subject['moyenne'], 2, ',', ' ') ?><span class="small text-muted" style="font-size: 10px;">/20</span></div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </div>
                     </div>
 
-                    <!-- Vigilance Discipline -->
-                    <div class="p-4 rounded-4 transition-base scale-on-hover d-flex align-items-center gap-4 shadow-sm" style="border-radius: 20px !important; background: var(--bg-body); border: 1px solid var(--border-color) !important;">
-                        <div class="avatar-md rounded-circle d-flex align-items-center justify-content-center bg-soft-danger shadow-sm" style="width: 58px; height: 58px; flex-shrink: 0; font-size: 1.5rem;">
-                            <i class="bi bi-lightning-fill"></i>
+                    <!-- Contenu: 5 Pires Disciplines -->
+                    <div class="tab-pane fade" id="critical-content" role="tabpanel">
+                        <div class="d-flex flex-column gap-3">
+                            <?php if (empty($bottom5Subjects)): ?>
+                                <div class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                    <?= __('db_no_subject_stats') ?>
+                                </div>
+                            <?php else: ?>
+                                <?php foreach ($bottom5Subjects as $index => $subject): ?>
+                                    <div class="d-flex align-items-center justify-content-between p-3 rounded-4 transition-base scale-on-hover" style="border-radius: 16px !important; background: var(--bg-body); border: 1px solid var(--border-color) !important; box-shadow: 0 4px 12px rgba(0,0,0,0.01);">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="avatar-sm rounded-circle d-flex align-items-center justify-content-center fw-bold text-white shadow-sm" 
+                                                 style="width: 42px; height: 42px; background: linear-gradient(135deg, #ef4444, #dc2626);">
+                                                #<?= $index + 1 ?>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold text-main-theme" style="font-size: 13.5px;"><?= htmlspecialchars($subject['nom']) ?></div>
+                                                <div class="small text-muted-theme" style="font-size: 11px;">
+                                                    <i class="bi bi-person-fill me-1"></i><?= htmlspecialchars($subject['teachers'] ?? '-') ?>
+                                                </div>
+                                                <div class="small text-muted-theme" style="font-size: 11px;">
+                                                    <i class="bi bi-door-open-fill me-1"></i><?= htmlspecialchars($subject['classes'] ?? '-') ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="fw-black text-danger" style="font-size: 17px;"><?= number_format((float)$subject['moyenne'], 2, ',', ' ') ?><span class="small text-muted" style="font-size: 10px;">/20</span></div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </div>
-                        <div>
-                            <span class="text-uppercase small text-muted font-weight-700 d-block" style="font-size: 9.5px; letter-spacing: 0.8px;"><?= __('db_vigilance_discipline') ?></span>
-                            <h5 class="fw-black text-main-theme m-0 mt-0.5" style="font-size: 17px;"><?= $worstSubject ? htmlspecialchars($worstSubject['nom']) : 'N/A' ?></h5>
-                            <div class="d-flex align-items-center gap-2 mt-1.5">
-                                <span class="h3 fw-black text-danger m-0"><?= $worstSubject ? number_format((float)$worstSubject['moyenne'], 2, ',', ' ') : '0.00' ?></span>
-                                <span class="small text-muted-theme"><?= __('db_school_avg') ?></span>
+                    </div>
+
+                    <!-- Contenu: Disciplines Moyennes par Évaluation -->
+                    <div class="tab-pane fade" id="average-content" role="tabpanel">
+                        <?php if (empty($activeEvaluations)): ?>
+                            <div class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                <?= __('db_no_evaluations') ?>
                             </div>
-                        </div>
+                        <?php else: ?>
+                            <?php foreach ($activeEvaluations as $eval): ?>
+                                <div class="mb-4">
+                                    <h6 class="fw-bold text-main-theme mb-3" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        <i class="bi bi-calendar-check me-1"></i><?= htmlspecialchars($eval) ?>
+                                    </h6>
+                                    <div class="d-flex flex-column gap-2">
+                                        <?php if (empty($subjectByEval[$eval])): ?>
+                                            <div class="text-center text-muted small py-3">
+                                                <?= __('db_no_subject_stats') ?>
+                                            </div>
+                                        <?php else: ?>
+                                            <?php foreach ($subjectByEval[$eval] as $index => $subject): ?>
+                                                <div class="d-flex align-items-center justify-content-between p-2 rounded-3 transition-base scale-on-hover" style="border-radius: 12px !important; background: var(--bg-body); border: 1px solid var(--border-color) !important; box-shadow: 0 2px 8px rgba(0,0,0,0.01);">
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <div class="avatar-xs rounded-circle d-flex align-items-center justify-content-center fw-bold text-white shadow-sm" 
+                                                             style="width: 32px; height: 32px; background: linear-gradient(135deg, #3b82f6, #2563eb); font-size: 11px;">
+                                                            #<?= $index + 1 ?>
+                                                        </div>
+                                                        <div>
+                                                            <div class="fw-bold text-main-theme" style="font-size: 12px;"><?= htmlspecialchars($subject['nom']) ?></div>
+                                                            <div class="small text-muted-theme" style="font-size: 10px;">
+                                                                <i class="bi bi-person-fill me-1"></i><?= htmlspecialchars($subject['teachers'] ?? '-') ?>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <div class="fw-black text-info" style="font-size: 14px;"><?= number_format((float)$subject['moyenne'], 2, ',', ' ') ?><span class="small text-muted" style="font-size: 9px;">/20</span></div>
+                                                    </div>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>

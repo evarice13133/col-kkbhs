@@ -479,4 +479,106 @@ class ExcelTemplateService
 
         return $content;
     }
+
+    /**
+     * Modèle Excel pour import des notes avec plusieurs feuilles (une par matière).
+     */
+    public function generateGradeTemplate(string $lang = 'fr', int $classId = 0, int $subjectId = 0): string
+    {
+        $spreadsheet = new Spreadsheet();
+        $spreadsheet->removeSheetByIndex(0); // On enlève la feuille par défaut
+
+        // --- 1. EXTRACTION DES DONNÉES ---
+        // Périodes d'évaluation actives
+        $evaluationTypes = $this->db->query("SELECT label FROM sequences WHERE is_active = 1 ORDER BY position ASC")->fetchAll(PDO::FETCH_COLUMN);
+
+        // Élèves de la classe spécifiée
+        $students = [];
+        if ($classId > 0) {
+            $stmt = $this->db->prepare("SELECT id, nom, prenom FROM students WHERE class_id = ? AND is_withdrawn = 0 ORDER BY nom ASC, prenom ASC");
+            $stmt->execute([$classId]);
+            $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+
+        // Matières de la classe
+        $subjects = [];
+        if ($classId > 0) {
+            $stmt = $this->db->prepare("
+                SELECT s.id, s.nom
+                FROM subject_classes sc
+                JOIN subjects s ON sc.subject_id = s.id
+                WHERE sc.class_id = ? AND s.status = 1
+                ORDER BY s.nom ASC
+            ");
+            $stmt->execute([$classId]);
+            $subjects = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+
+        // Si une matière spécifique est demandée, filtrer
+        if ($subjectId > 0) {
+            $subjects = array_filter($subjects, function($s) use ($subjectId) {
+                return (int) $s['id'] === $subjectId;
+            });
+        }
+
+        if (empty($subjects)) {
+            throw new Exception('Aucune matière trouvée pour cette classe.');
+        }
+
+        // --- 2. CRÉATION DES FEUILLES PAR MATIÈRE ---
+        foreach ($subjects as $subject) {
+            // Nom de la feuille (limité à 31 caractères)
+            $sheetName = substr($subject['nom'], 0, 31);
+            $sheet = $spreadsheet->createSheet();
+            $sheet->setTitle($sheetName);
+
+            // En-têtes: Nom, Prénom, puis une colonne par période
+            $headers = [$lang === 'fr' ? 'Nom' : 'Last Name', $lang === 'fr' ? 'Prénom' : 'First Name'];
+            foreach ($evaluationTypes as $eval) {
+                $headers[] = $eval;
+            }
+
+            // Écrire les en-têtes
+            $col = 'A';
+            foreach ($headers as $header) {
+                $sheet->setCellValue($col . '1', $header);
+                $col++;
+            }
+
+            // Style des en-têtes
+            $lastCol = chr(ord('A') + count($headers) - 1);
+            $styleArray = [
+                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
+                'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]],
+                'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '2563EB']]
+            ];
+            $sheet->getStyle('A1:' . $lastCol . '1')->applyFromArray($styleArray);
+
+            // Remplir avec les élèves
+            $row = 2;
+            foreach ($students as $student) {
+                $sheet->setCellValue('A' . $row, $student['nom']);
+                $sheet->setCellValue('B' . $row, $student['prenom']);
+                // Les colonnes de périodes restent vides pour la saisie
+                $row++;
+            }
+
+            // Largeur des colonnes
+            foreach (range('A', $lastCol) as $col) {
+                $sheet->getColumnDimension($col)->setAutoSize(true);
+            }
+        }
+
+        // --- 3. GÉNÉRATION ---
+        $writer = new Xlsx($spreadsheet);
+        ob_start();
+        $writer->save('php://output');
+        $content = ob_get_clean();
+
+        $spreadsheet->disconnectWorksheets();
+        unset($spreadsheet);
+
+        return $content;
+    }
 }

@@ -1521,6 +1521,255 @@ class GradeController
         return $results;
     }
 
+    /**
+     * Affiche la page d'importation des notes.
+     */
+    public function import(): void
+    {
+        $class_id = (int) ($_GET['class_id'] ?? 0);
+        $subject_id = (int) ($_GET['subject_id'] ?? 0);
+
+        // Vérifier les autorisations
+        $userRole = Session::get('user_role');
+        $isAdmin = in_array($userRole, ['admin', 'superadmin'], true);
+
+        // Pour les admins, permettre l'accès même sans matière spécifique
+        if (!$isAdmin && !$this->canManageAssignment($subject_id, $class_id)) {
+            die(__('unauthorized_gradebook_access'));
+        }
+
+        // Récupérer les informations de classe
+        $classInfo = $this->fetchOne("SELECT id, nom FROM classes WHERE id = ?", [$class_id]);
+        if (!$classInfo) {
+            header("Location: /notes");
+            exit;
+        }
+
+        // Récupérer les informations de matière si spécifiée
+        $subjectInfo = null;
+        if ($subject_id > 0) {
+            $subjectInfo = $this->fetchOne("SELECT id, nom FROM subjects WHERE id = ?", [$subject_id]);
+            if (!$subjectInfo) {
+                header("Location: /notes");
+                exit;
+            }
+        }
+
+        include __DIR__ . '/../Views/grades/import.php';
+    }
+
+    /**
+     * Télécharge le modèle Excel pour l'import des notes.
+     */
+    public function downloadTemplate(): void
+    {
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        ini_set('memory_limit', '512M');
+        $lang = Session::get('app_lang', 'fr') === 'en' ? 'en' : 'fr';
+        $class_id = (int) ($_GET['class_id'] ?? 0);
+        $subject_id = (int) ($_GET['subject_id'] ?? 0);
+
+        try {
+            // Récupérer le nom de la classe pour le nom du fichier
+            $className = '';
+            if ($class_id > 0) {
+                $classInfo = $this->fetchOne("SELECT nom FROM classes WHERE id = ?", [$class_id]);
+                $className = $classInfo ? $classInfo['nom'] : '';
+            }
+
+            $svc = new \App\Services\Import\ExcelTemplateService($this->db);
+            $content = $svc->generateGradeTemplate($lang, $class_id, $subject_id);
+
+            // Construire le nom du fichier avec le nom de la classe
+            $classNameClean = $className ? preg_replace('/[^a-zA-Z0-9]/', '_', $className) : 'Classe';
+            if ($lang === 'fr') {
+                $filename = "Modele_Import_Notes_{$classNameClean}_FR.xlsx";
+            } else {
+                $filename = "Grade_Import_Template_{$classNameClean}_EN.xlsx";
+            }
+
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="' . $filename . '"');
+            header('Cache-Control: max-age=0');
+            echo $content;
+            exit;
+        } catch (\Throwable $e) {
+            Session::setFlash('error', $e->getMessage());
+            header('Location: /notes/import?class_id=' . $class_id . '&subject_id=' . $subject_id);
+            exit;
+        }
+    }
+
+    /**
+     * Traite le fichier Excel uploadé pour l'import des notes.
+     */
+    public function upload(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_FILES['import_file'])) {
+            header('Location: /notes');
+            exit;
+        }
+
+        $class_id = (int) ($_POST['class_id'] ?? 0);
+        $subject_id = (int) ($_POST['subject_id'] ?? 0);
+
+        // Vérifier les autorisations
+        $userRole = Session::get('user_role');
+        $isAdmin = in_array($userRole, ['admin', 'superadmin'], true);
+
+        // Pour les admins, permettre l'import même sans matière spécifique
+        if (!$isAdmin && !$this->canManageAssignment($subject_id, $class_id)) {
+            die(__('unauthorized_action'));
+        }
+
+        if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+            Session::setFlash('error', __('session_expired_retry') ?? 'Session expirée ou requête invalide.');
+            header('Location: /notes/import?class_id=' . $class_id . '&subject_id=' . $subject_id);
+            exit;
+        }
+
+        $file = $_FILES['import_file'];
+        $ext = strtolower(pathinfo((string) $file['name'], PATHINFO_EXTENSION));
+        if ($ext !== 'xlsx') {
+            Session::setFlash('error', __('invalid_file_format_excel'));
+            header('Location: /notes/import?class_id=' . $class_id . '&subject_id=' . $subject_id);
+            exit;
+        }
+
+        $teacherId = (int) Session::get('user_id');
+        $userRole = Session::get('user_role');
+
+        $processor = new \App\Services\Import\GradeImportProcessor($this->db, $teacherId, $userRole);
+        $result = $processor->process((string) $file['tmp_name'], $class_id, $subject_id);
+
+        if ($result['success']) {
+            Session::setFlash('success', __('grades_imported_success', ['count' => $result['count']]));
+            if ($subject_id > 0) {
+                header('Location: /notes/saisie?class_id=' . $class_id . '&subject_id=' . $subject_id);
+            } else {
+                header('Location: /notes');
+            }
+            exit;
+        }
+
+        $errors = $result['errors'];
+        $classInfo = $this->fetchOne("SELECT id, nom FROM classes WHERE id = ?", [$class_id]);
+        $subjectInfo = null;
+        if ($subject_id > 0) {
+            $subjectInfo = $this->fetchOne("SELECT id, nom FROM subjects WHERE id = ?", [$subject_id]);
+        }
+        include __DIR__ . '/../Views/grades/import.php';
+    }
+
+    /**
+     * Affiche l'historique complet des notes saisies.
+     */
+    public function history(): void
+    {
+        $userId = Session::get('user_id');
+        $userRole = Session::get('user_role');
+        $isAdmin = in_array($userRole, ['admin', 'superadmin'], true);
+
+        // Récupérer les filtres
+        $filters = [
+            'q' => $_GET['q'] ?? '',
+            'class_id' => (int) ($_GET['class_id'] ?? 0),
+            'subject_id' => (int) ($_GET['subject_id'] ?? 0),
+            'periode' => $_GET['periode'] ?? '',
+        ];
+
+        // Récupérer les données pour les filtres
+        $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $subjects = $this->db->query("SELECT id, nom FROM subjects WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $periods = $this->db->query("SELECT DISTINCT label FROM sequences WHERE is_active = 1 ORDER BY position ASC")->fetchAll(PDO::FETCH_COLUMN);
+
+        // Récupérer les notes récentes avec pagination
+        $page = (int) ($_GET['page'] ?? 1);
+        $perPage = 50;
+        $offset = ($page - 1) * $perPage;
+
+        // Construire les conditions WHERE
+        $whereConditions = ['g.academic_year_id = (SELECT id FROM academic_years WHERE is_active = 1 LIMIT 1)'];
+        $params = [];
+        $countParams = [];
+
+        if (!$isAdmin) {
+            $whereConditions[] = 'g.teacher_id = ?';
+            $params[] = $userId;
+            $countParams[] = $userId;
+        }
+
+        if (!empty($filters['q'])) {
+            $whereConditions[] = '(s.nom LIKE ? OR s.prenom LIKE ? OR sub.nom LIKE ?)';
+            $searchTerm = '%' . $filters['q'] . '%';
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $countParams[] = $searchTerm;
+            $countParams[] = $searchTerm;
+            $countParams[] = $searchTerm;
+        }
+
+        if ($filters['class_id'] > 0) {
+            $whereConditions[] = 'c.id = ?';
+            $params[] = $filters['class_id'];
+            $countParams[] = $filters['class_id'];
+        }
+
+        if ($filters['subject_id'] > 0) {
+            $whereConditions[] = 'sub.id = ?';
+            $params[] = $filters['subject_id'];
+            $countParams[] = $filters['subject_id'];
+        }
+
+        if (!empty($filters['periode'])) {
+            $whereConditions[] = 'g.periode = ?';
+            $params[] = $filters['periode'];
+            $countParams[] = $filters['periode'];
+        }
+
+        $whereClause = implode(' AND ', $whereConditions);
+
+        // Construire la requête
+        $sql = "
+            SELECT g.*, s.nom as student_nom, s.prenom as student_prenom,
+                   sub.nom as subject_nom, c.nom as class_nom, c.id as class_id,
+                   u.nom as teacher_nom, u.prenom as teacher_prenom
+            FROM grades g
+            JOIN students s ON g.student_id = s.id
+            JOIN subjects sub ON g.subject_id = sub.id
+            JOIN classes c ON s.class_id = c.id
+            LEFT JOIN users u ON g.teacher_id = u.id
+            WHERE {$whereClause}
+            ORDER BY g.created_at DESC
+            LIMIT ? OFFSET ?
+        ";
+        $params[] = $perPage;
+        $params[] = $offset;
+
+        $countSql = "
+            SELECT COUNT(*)
+            FROM grades g
+            JOIN students s ON g.student_id = s.id
+            JOIN subjects sub ON g.subject_id = sub.id
+            JOIN classes c ON s.class_id = c.id
+            WHERE {$whereClause}
+        ";
+
+        $grades = $this->db->prepare($sql);
+        $grades->execute($params);
+        $grades = $grades->fetchAll(PDO::FETCH_ASSOC);
+
+        $countStmt = $this->db->prepare($countSql);
+        $countStmt->execute($countParams);
+        $total = (int) $countStmt->fetchColumn();
+        $totalPages = (int) ceil($total / $perPage);
+
+        include __DIR__ . '/../Views/grades/history.php';
+    }
+
 }
 
 

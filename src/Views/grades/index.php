@@ -130,6 +130,10 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
                 <?php endif; ?>
 
                 <?php foreach ($dashboard as $class_name => $subjectsRaw): ?>
+                    <?php
+                        // Récupérer le class_id depuis le premier sujet
+                        $class_id = !empty($subjectsRaw) ? $subjectsRaw[0]['class_id'] : 0;
+                    ?>
                     <div class="class-section animate-slide-up mb-5" data-class="<?= strtolower($class_name) ?>">
                         <div class="class-header-premium mb-4">
                             <div class="d-flex align-items-center gap-3">
@@ -137,7 +141,14 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
                                     <i class="bi bi-door-open-fill"></i>
                                 </div>
                                 <div>
-                                    <h5 class="m-0 fw-black text-main-theme text-uppercase letter-spacing-2"><?= htmlspecialchars((string) $class_name) ?></h5>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <h5 class="m-0 fw-black text-main-theme text-uppercase letter-spacing-2"><?= htmlspecialchars((string) $class_name) ?></h5>
+                                        <?php if ($isAdmin && $class_id > 0): ?>
+                                        <a href="/notes/import?class_id=<?= $class_id ?>&subject_id=0" class="btn btn-outline-success rounded-pill px-2 py-1 small fw-bold shadow-sm text-nowrap" title="<?= __('import_grades') ?>">
+                                            <i class="bi bi-upload me-1"></i> <?= __('import') ?>
+                                        </a>
+                                        <?php endif; ?>
+                                    </div>
                                     <div class="small text-muted-theme opacity-50 d-flex align-items-center gap-2 mt-1">
                                         <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2 py-0 extra-small border border-primary border-opacity-10">
                                             <?= count($subjectsRaw) ?> <?= __('subjects') ?>
@@ -147,7 +158,7 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
                                 </div>
                             </div>
                         </div>
-                        <?php 
+                        <?php
                         $userRole = \App\Core\Session::get('user_role');
                         $isAdmin = in_array($userRole, ['admin', 'superadmin']);
                         ?>
@@ -300,7 +311,7 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
                     <?php endif; ?>
                 </div>
                 <div class="p-3 bg-theme-input text-center">
-                    <a href="#" class="small fw-bold text-primary text-decoration-none">
+                    <a href="/notes/history" class="small fw-bold text-primary text-decoration-none">
                         <i class="bi bi-arrow-right-circle me-1"></i><?= __('full_history') ?>
                     </a>
                 </div>
