@@ -192,12 +192,35 @@ class DashboardController
                                             FROM teacher_assignments ta 
                                             JOIN classes c ON c.id = ta.class_id")->fetchAll(PDO::FETCH_GROUP | PDO::FETCH_ASSOC);
 
-        // 3. Récupérer TOUTES les notes saisies pour l'année active par TOUS les profs (1 seule requête)
+        // 3. Récupérer TOUTES les notes saisies pour l'année active par classe/matière (sans distinction de l'enseignant)
         $allFilledCounts = $this->getBulkGlobalFilledCounts($activeYearId, $activeEvaluations);
 
-        $teacherMetrics = [];
+        // 4. Calculer la progression globale basée sur toutes les notes saisies
         $globalExpected = 0;
         $globalFilled = 0;
+
+        // Récupérer toutes les combinaisons classe/matière actives
+        $allSubjectClasses = $this->db->query("
+            SELECT sc.class_id, sc.subject_id
+            FROM subject_classes sc
+            JOIN subjects s ON s.id = sc.subject_id
+            WHERE s.status = 1
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($allSubjectClasses as $sc) {
+            $cId = (int) $sc['class_id'];
+            $sId = (int) $sc['subject_id'];
+            $studentCount = $allClassCounts[$cId] ?? 0;
+
+            $globalExpected += ($studentCount * $numEvals);
+            $globalFilled += ($allFilledCounts["{$cId}_{$sId}"] ?? 0);
+        }
+
+        $globalProgress = $globalExpected > 0 ? round(($globalFilled / $globalExpected) * 100) : 0;
+
+        // 5. Calculer la progression par enseignant basée sur les notes saisies dans leurs matières assignées
+        $teacherMetrics = [];
+        $teachersUnder50 = 0;
 
         $teachers = $this->db->query("SELECT id, nom, prenom FROM users WHERE role = 'enseignant' ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -214,11 +237,17 @@ class DashboardController
                 $studentCount = $allClassCounts[$cId] ?? 0;
 
                 $expected += ($studentCount * $numEvals);
-                $filled += ($allFilledCounts["{$tId}_{$cId}_{$sId}"] ?? 0);
+                // Utiliser les notes saisies globalement pour cette classe/matière (sans distinction de l'enseignant)
+                $filled += ($allFilledCounts["{$cId}_{$sId}"] ?? 0);
                 $classes[$a['class_nom']] = true;
             }
 
             $progress = $expected > 0 ? round(($filled / $expected) * 100) : 0;
+
+            if ($progress < 50 && $expected > 0) {
+                $teachersUnder50++;
+            }
+
             $teacherMetrics[] = [
                 'teacher_name' => trim($t['prenom'] . ' ' . $t['nom']),
                 'classes_count' => count($classes),
@@ -229,9 +258,6 @@ class DashboardController
                 'progress_percent' => $progress,
                 'level_label' => $this->getLevelLabel($progress),
             ];
-
-            $globalExpected += $expected;
-            $globalFilled += $filled;
         }
 
         // Tri par performance
@@ -379,20 +405,54 @@ class DashboardController
             }
         }
 
-        // E. Points forts & Faibles par matière
+        // E. Points forts & Faibles par matière avec enseignants affectés et classes
         $stmtSubjectStats = $this->db->prepare("
-            SELECT s.nom, AVG(g.valeur) as moyenne
+            SELECT s.id, s.nom, AVG(g.valeur) as moyenne,
+                   GROUP_CONCAT(DISTINCT CONCAT(u.nom, ' ', u.prenom) SEPARATOR ', ') as teachers,
+                   GROUP_CONCAT(DISTINCT c.nom SEPARATOR ', ') as classes
             FROM grades g
             JOIN subjects s ON s.id = g.subject_id
+            JOIN teacher_assignments ta ON ta.subject_id = s.id
+            JOIN users u ON ta.user_id = u.id
+            JOIN classes c ON ta.class_id = c.id
             WHERE g.academic_year_id = ? AND s.status = 1
             GROUP BY s.id, s.nom
             ORDER BY moyenne DESC
         ");
         $stmtSubjectStats->execute([$activeYearId]);
         $subjectStats = $stmtSubjectStats->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        
+
         $bestSubject = !empty($subjectStats) ? $subjectStats[0] : null;
         $worstSubject = !empty($subjectStats) && count($subjectStats) > 1 ? end($subjectStats) : null;
+
+        // 5 meilleures disciplines avec enseignants affectés
+        $top5Subjects = array_slice($subjectStats, 0, 5);
+
+        // 5 pires disciplines avec enseignants affectés
+        $bottom5Subjects = array_slice(array_reverse($subjectStats), 0, 5);
+
+        // F. Disciplines moyennes par évaluation active
+        $subjectByEval = [];
+        if (!empty($activeEvaluations)) {
+            foreach ($activeEvaluations as $eval) {
+                $stmtEval = $this->db->prepare("
+                    SELECT s.id, s.nom, AVG(g.valeur) as moyenne,
+                           GROUP_CONCAT(DISTINCT CONCAT(u.nom, ' ', u.prenom) SEPARATOR ', ') as teachers,
+                           GROUP_CONCAT(DISTINCT c.nom SEPARATOR ', ') as classes
+                    FROM grades g
+                    JOIN subjects s ON s.id = g.subject_id
+                    JOIN teacher_assignments ta ON ta.subject_id = s.id
+                    JOIN users u ON ta.user_id = u.id
+                    JOIN classes c ON ta.class_id = c.id
+                    WHERE g.academic_year_id = ? AND g.periode = ? AND s.status = 1
+                    GROUP BY s.id, s.nom
+                    ORDER BY moyenne DESC
+                    LIMIT 5
+                ");
+                $stmtEval->execute([$activeYearId, $eval]);
+                $subjectByEval[$eval] = $stmtEval->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            }
+        }
 
         return [
             'stats_students' => $stats_students,
@@ -406,7 +466,8 @@ class DashboardController
             'globalExpected' => $globalExpected,
             'globalFilled' => $globalFilled,
             'globalPending' => max(0, $globalExpected - $globalFilled),
-            'globalProgress' => $globalExpected > 0 ? round(($globalFilled / $globalExpected) * 100) : 0,
+            'globalProgress' => $globalProgress,
+            'teachersUnder50' => $teachersUnder50,
             'teacherMetrics' => $teacherMetrics,
             'unassignedSubjects' => $unassignedSubjectsRaw,
             'usageMetrics' => $usageMetrics,
@@ -420,6 +481,10 @@ class DashboardController
             'distribution' => $distribution,
             'bestSubject' => $bestSubject,
             'worstSubject' => $worstSubject,
+            'top5Subjects' => $top5Subjects,
+            'bottom5Subjects' => $bottom5Subjects,
+            'subjectByEval' => $subjectByEval,
+            'activeEvaluations' => $activeEvaluations,
         ];
     }
 
@@ -563,11 +628,12 @@ class DashboardController
         if (!$yearId || empty($evals))
             return [];
         $placeholders = implode(',', array_fill(0, count($evals), '?'));
-        $sql = "SELECT CONCAT(g.teacher_id, '_', st.class_id, '_', g.subject_id), COUNT(*)
+        // Compte les notes par classe/matière (sans distinction de l'enseignant qui a saisi)
+        $sql = "SELECT CONCAT(st.class_id, '_', g.subject_id), COUNT(*)
                 FROM grades g
                 JOIN students st ON st.id = g.student_id
                 WHERE g.academic_year_id = ? AND g.periode IN ($placeholders) AND st.is_withdrawn = 0
-                GROUP BY g.teacher_id, st.class_id, g.subject_id";
+                GROUP BY st.class_id, g.subject_id";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(array_merge([$yearId], $evals));
         return $stmt->fetchAll(PDO::FETCH_KEY_PAIR);

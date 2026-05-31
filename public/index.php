@@ -501,6 +501,14 @@ elseif (strpos($path, '/notes') === 0) {
         $c->saisie();
     elseif ($path === '/notes/store' && $method === 'POST')
         $c->store();
+    elseif ($path === '/notes/import')
+        $c->import();
+    elseif ($path === '/notes/downloadTemplate')
+        $c->downloadTemplate();
+    elseif ($path === '/notes/upload' && $method === 'POST')
+        $c->upload();
+    elseif ($path === '/notes/history')
+        $c->history();
 }
 
 
