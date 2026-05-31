@@ -108,6 +108,7 @@ return [
     'grade_export_class' => 'Classe',
     'grade_export_subject' => 'Matière',
     'enter_grades' => 'Saisir',
+    'to_enter' => 'Cliquez pour saisir',
     'grade_export_teacher' => 'Enseignant',
     'grade_export_period' => 'Période',
     'grade_export_note' => 'Note / 20',

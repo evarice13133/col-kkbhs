@@ -228,11 +228,11 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
                                                         <div class="d-flex align-items-center gap-1">
                                                             <?php if ($total <= 0 || $filled <= 0): ?>
                                                                 <span class="d-inline-flex align-items-center gap-2">
-                                                                    <span class="btn btn-xs btn-outline-primary rounded-pill py-0 px-2 extra-small fw-bold shadow-sm text-decoration-none text-center" style="pointer-events:none;">
+                                                                    <!-- <span class="btn btn-xs btn-outline-primary rounded-pill py-0 px-2 extra-small fw-bold shadow-sm text-decoration-none text-center" style="pointer-events:none;">
                                                                         <i class="bi bi-plus-circle-fill me-1"></i> Saisir les notes
-                                                                    </span>
+                                                                    </span> -->
                                                                     <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill extra-small px-1 px-md-2 py-0.5 border border-primary border-opacity-10" style="pointer-events:none;" title="À saisir">
-                                                                        <i class="bi bi-award-fill me-1"></i>À saisir
+                                                                        <i class="bi bi-award-fill me-1"></i><?=__('to_enter')?>
                                                                     </span>
                                                                 </span>
                                                             <?php else: ?>

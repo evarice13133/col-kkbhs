@@ -186,6 +186,7 @@ return [
     'bulletins' => 'Report Cards',
     'proces_verbaux' => 'Minutes of Meeting',
     'enter_marks' => 'Enter Marks',
+    'to_enter' => 'Click to enter',
     'my_students' => 'My Students',
     'admin' => 'Administrator',
     'superadmin' => 'Super Administrator',
