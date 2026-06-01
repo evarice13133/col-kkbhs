@@ -14,6 +14,8 @@ use App\Services\Import\ExcelTemplateService;
 
 use App\Services\Import\StudentImportProcessor;
 
+use App\Services\AcademicYearService;
+
 use PDO;
 
 
@@ -26,6 +28,8 @@ class StudentController
 
     private \App\Services\MatriculeService $matriculeService;
 
+    private AcademicYearService $academicYearService;
+
     private const PER_PAGE = 16;
 
 
@@ -37,6 +41,8 @@ class StudentController
         $this->db = Database::getInstance()->getConnection();
 
         $this->matriculeService = new \App\Services\MatriculeService($this->db);
+
+        $this->academicYearService = new AcademicYearService($this->db);
 
         if (!Session::isLogged()) {
 
@@ -83,18 +89,22 @@ class StudentController
 
 
         // Progression Sécurité : Les enseignants ne voient que les classes où ils interviennent
+        $academicYearId = $this->academicYearService->getActiveYearId();
 
         if (Session::get('user_role') === 'enseignant') {
 
-            $stmt = $this->db->prepare("SELECT id, nom FROM classes WHERE id IN (SELECT DISTINCT class_id FROM teacher_assignments WHERE user_id = ?) ORDER BY nom ASC");
+            // Classes are now shared across years, no year filtering on classes
+            $stmt = $this->db->prepare("SELECT id, nom FROM classes WHERE id IN (SELECT DISTINCT class_id FROM teacher_assignments WHERE user_id = ? AND academic_year_id = ?) ORDER BY nom ASC");
 
-            $stmt->execute([Session::get('user_id')]);
+            $stmt->execute([Session::get('user_id'), $academicYearId]);
 
             $classes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         } else {
 
-            $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+            // Classes are now shared across years, no year filtering
+            $stmt = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC");
+            $classes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         }
 
@@ -250,6 +260,7 @@ class StudentController
 
         }
 
+        // Classes are now shared across years, no year filtering
         $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -301,7 +312,7 @@ class StudentController
         // On récupère les classes pour l'affichage éventuel, bien que le template 
 
         // Excel contienne déjà ses propres menus déroulants dynamiques.
-
+        // Classes are now shared across years, no year filtering
         $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         include __DIR__ . '/../Views/students/import.php';
@@ -492,6 +503,7 @@ class StudentController
 
                 \App\Core\Session::setFlash('popup_errors', json_encode($errors, JSON_UNESCAPED_UNICODE));
 
+                // Classes are now shared across years, no year filtering
                 $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
                 include __DIR__ . '/../Views/students/import.php';
@@ -560,6 +572,7 @@ class StudentController
 
                 $error = \__('student_name_required');
 
+                // Classes are now shared across years, no year filtering
                 $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
                 $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -633,10 +646,11 @@ class StudentController
 
 
             // Enregistrement via le modèle normalisé (seul class_id est requis pour le lien)
+            $academicYearId = $this->academicYearService->getActiveYearId();
 
-            $stmt = $this->db->prepare("INSERT INTO students (nom, prenom, email, class_id, sexe, date_naissance, lieu_naissance, is_redoublant) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt = $this->db->prepare("INSERT INTO students (nom, prenom, email, class_id, sexe, date_naissance, lieu_naissance, is_redoublant, academic_year_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-            $stmt->execute([$nom, $prenom, $email, $class_id, $sexe, $date_naissance, $lieu_naissance, $is_redoublant]);
+            $stmt->execute([$nom, $prenom, $email, $class_id, $sexe, $date_naissance, $lieu_naissance, $is_redoublant, $academicYearId]);
 
 
 
@@ -678,8 +692,7 @@ class StudentController
 
         }
 
-
-
+        // Classes are now shared across years, no year filtering
         $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -758,9 +771,9 @@ class StudentController
 
             if ($allowEmailChange && $newEmail !== '' && $newEmail !== $currentEmail) {
 
-                $check = $this->db->prepare("SELECT COUNT(*) FROM students WHERE email = ? AND id != ?");
-
-                $check->execute([$newEmail, $id]);
+                $check = $this->db->prepare("SELECT COUNT(*) FROM students WHERE email = ? AND id != ? AND academic_year_id = ?");
+                $academicYearId = $this->academicYearService->getActiveYearId();
+                $check->execute([$newEmail, $id, $academicYearId]);
 
                 if ((int) $check->fetchColumn() > 0) {
 
@@ -810,6 +823,7 @@ class StudentController
 
                 ];
 
+                // Classes are now shared across years, no year filtering
                 $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
                 $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -988,6 +1002,8 @@ class StudentController
 
         $showWithdrawn = (int) ($_GET['withdrawn'] ?? 0);
 
+        $academicYearId = $this->academicYearService->getActiveYearId();
+
 
 
         // --- 1. Construction des conditions ---
@@ -998,11 +1014,20 @@ class StudentController
 
 
 
+        // Filter by academic year
+        if ($academicYearId > 0) {
+            $where .= " AND s.academic_year_id = ?";
+            $params[] = $academicYearId;
+        }
+
+
+
         if (Session::get('user_role') === 'enseignant') {
 
-            $where .= " AND s.class_id IN (SELECT DISTINCT class_id FROM teacher_assignments WHERE user_id = ?)";
+            $where .= " AND s.class_id IN (SELECT DISTINCT class_id FROM teacher_assignments WHERE user_id = ? AND academic_year_id = ?)";
 
             $params[] = Session::get('user_id');
+            $params[] = $academicYearId;
 
         }
 

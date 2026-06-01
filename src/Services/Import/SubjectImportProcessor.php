@@ -12,10 +12,12 @@ class SubjectImportProcessor
     private array $errors = [];
     private int $successCount = 0;
     private array $classesByName = [];
+    private int $activeYearId;
 
     public function __construct(PDO $db)
     {
         $this->db = $db;
+        $this->setActiveYear();
         $this->warmupClasses();
     }
 
@@ -126,9 +128,9 @@ class SubjectImportProcessor
             $stmt->execute([$subjectName, $coefficient, $groupe]);
             $subjectId = (int) $this->db->lastInsertId();
 
-            $ins = $this->db->prepare("INSERT INTO subject_classes (subject_id, class_id) VALUES (?, ?)");
+            $ins = $this->db->prepare("INSERT INTO subject_classes (subject_id, class_id, academic_year_id) VALUES (?, ?, ?)");
             foreach ($classIds as $classId) {
-                $ins->execute([$subjectId, $classId]);
+                $ins->execute([$subjectId, $classId, $this->activeYearId]);
             }
 
             $this->successCount++;
@@ -182,6 +184,13 @@ class SubjectImportProcessor
         foreach ($rows as $row) {
             $this->classesByName[mb_strtolower((string) $row['nom'])] = (int) $row['id'];
         }
+    }
+
+    private function setActiveYear(): void
+    {
+        $stmt = $this->db->prepare("SELECT id FROM academic_years WHERE is_active = 1 LIMIT 1");
+        $stmt->execute();
+        $this->activeYearId = (int) $stmt->fetchColumn();
     }
 
     private function findDuplicateClassesForSubjectName(string $name, array $classIds): array

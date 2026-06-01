@@ -6,6 +6,7 @@ use App\Core\Database;
 use App\Core\Session;
 use App\Services\Import\ExcelTemplateService;
 use App\Services\Import\TeacherImportProcessor;
+use App\Services\AcademicYearService;
 use PDO;
 
 /**
@@ -19,6 +20,7 @@ class TeacherController
 {
     /** @var PDO Instance de connexion à la base de données */
     private $db;
+    private AcademicYearService $academicYearService;
 
     /**
      * Initialise le contrôleur et verrouille l'accès aux administrateurs uniquement.
@@ -26,6 +28,7 @@ class TeacherController
     public function __construct()
     {
         $this->db = Database::getInstance()->getConnection();
+        $this->academicYearService = new AcademicYearService($this->db);
         if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
             header("Location: /");
             exit;
@@ -186,6 +189,7 @@ class TeacherController
             exit;
         }
 
+        $academicYearId = $this->academicYearService->getActiveYearId();
 
         // Analyse croisée : On cherche toutes les paires Matière-Classe définies, 
         // et on identifie celles déjà occupées par d'autres collègues.
@@ -195,9 +199,9 @@ class TeacherController
             FROM subjects s
             JOIN subject_classes sc ON s.id = sc.subject_id
             JOIN classes c ON sc.class_id = c.id
-            LEFT JOIN teacher_assignments ta ON (s.id = ta.subject_id AND c.id = ta.class_id)
+            LEFT JOIN teacher_assignments ta ON (s.id = ta.subject_id AND c.id = ta.class_id AND ta.academic_year_id = {$academicYearId})
             LEFT JOIN users u ON ta.user_id = u.id
-            WHERE s.status = 1
+            WHERE s.status = 1 AND sc.academic_year_id = {$academicYearId}
             ORDER BY s.nom ASC, c.nom ASC
         ")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -239,17 +243,19 @@ class TeacherController
             exit;
         }
 
+        $academicYearId = $this->academicYearService->getActiveYearId();
+
         try {
             // Vérifier s'il y a déjà une affectation pour ce couple Matière-Classe
-            $stmtCheck = $this->db->prepare("SELECT user_id FROM teacher_assignments WHERE subject_id = ? AND class_id = ?");
-            $stmtCheck->execute([$subject_id, $class_id]);
+            $stmtCheck = $this->db->prepare("SELECT user_id FROM teacher_assignments WHERE subject_id = ? AND class_id = ? AND academic_year_id = ?");
+            $stmtCheck->execute([$subject_id, $class_id, $academicYearId]);
             if ($stmtCheck->fetch()) {
-                $this->db->prepare("DELETE FROM teacher_assignments WHERE subject_id = ? AND class_id = ?")->execute([$subject_id, $class_id]);
+                $this->db->prepare("DELETE FROM teacher_assignments WHERE subject_id = ? AND class_id = ? AND academic_year_id = ?")->execute([$subject_id, $class_id, $academicYearId]);
             }
 
             // Créer la nouvelle affectation
-            $stmt = $this->db->prepare("INSERT INTO teacher_assignments (user_id, subject_id, class_id) VALUES (?, ?, ?)");
-            $stmt->execute([$teacher_id, $subject_id, $class_id]);
+            $stmt = $this->db->prepare("INSERT INTO teacher_assignments (user_id, subject_id, class_id, academic_year_id) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$teacher_id, $subject_id, $class_id, $academicYearId]);
 
             Session::setFlash('success', __('teacher_assigned_success'));
             header("Location: /"); // Retour au dashboard
@@ -276,6 +282,7 @@ class TeacherController
             }
 
             $assignments = $_POST['assignments'] ?? [];
+            $academicYearId = $this->academicYearService->getActiveYearId();
 
             try {
                 $this->db->beginTransaction();
@@ -290,10 +297,10 @@ class TeacherController
                         JOIN users u ON ta.user_id = u.id
                         JOIN subjects s ON ta.subject_id = s.id
                         JOIN classes c ON ta.class_id = c.id
-                        WHERE ta.subject_id = ? AND ta.class_id = ? AND ta.user_id != ?
+                        WHERE ta.subject_id = ? AND ta.class_id = ? AND ta.user_id != ? AND ta.academic_year_id = ?
                         LIMIT 1
                     ");
-                    $stmtCheck->execute([(int) $subj_id, (int) $cls_id, (int) $id]);
+                    $stmtCheck->execute([(int) $subj_id, (int) $cls_id, (int) $id, $academicYearId]);
                     $conflict = $stmtCheck->fetch(PDO::FETCH_ASSOC);
 
                     if ($conflict) {
@@ -310,13 +317,13 @@ class TeacherController
                 }
 
                 // 3. Purge et ré-affectation propre
-                $stmtDelAssig = $this->db->prepare("DELETE FROM teacher_assignments WHERE user_id = ?");
-                $stmtDelAssig->execute([$id]);
+                $stmtDelAssig = $this->db->prepare("DELETE FROM teacher_assignments WHERE user_id = ? AND academic_year_id = ?");
+                $stmtDelAssig->execute([$id, $academicYearId]);
 
-                $stmtInsAssig = $this->db->prepare("INSERT INTO teacher_assignments (user_id, subject_id, class_id) VALUES (?, ?, ?)");
+                $stmtInsAssig = $this->db->prepare("INSERT INTO teacher_assignments (user_id, subject_id, class_id, academic_year_id) VALUES (?, ?, ?, ?)");
                 foreach ($assignments as $pair) {
                     [$subj_id, $cls_id] = explode('_', $pair);
-                    $stmtInsAssig->execute([$id, (int) $subj_id, (int) $cls_id]);
+                    $stmtInsAssig->execute([$id, (int) $subj_id, (int) $cls_id, $academicYearId]);
                 }
 
                 $this->db->commit();
@@ -482,6 +489,7 @@ class TeacherController
     private function fetchTeachersFromFilters($limit = null, $offset = null)
     {
         $search = trim($_GET['q'] ?? '');
+        $academicYearId = $this->academicYearService->getActiveYearId();
 
         // 1. Compter le total sans limite pour la pagination
         $countSql = "SELECT COUNT(*) FROM users u WHERE u.role = 'enseignant'";
@@ -500,14 +508,14 @@ class TeacherController
                 (SELECT GROUP_CONCAT(DISTINCT s.nom ORDER BY s.nom SEPARATOR ', ')
                     FROM teacher_assignments ta
                     JOIN subjects s ON ta.subject_id = s.id
-                    WHERE ta.user_id = u.id) as subjects_list,
+                    WHERE ta.user_id = u.id AND ta.academic_year_id = {$academicYearId}) as subjects_list,
                 (SELECT GROUP_CONCAT(DISTINCT c.nom ORDER BY c.nom SEPARATOR ', ')
                     FROM teacher_assignments ta
                     JOIN classes c ON ta.class_id = c.id
-                    WHERE ta.user_id = u.id) as classes_list,
+                    WHERE ta.user_id = u.id AND ta.academic_year_id = {$academicYearId}) as classes_list,
                 (SELECT COUNT(DISTINCT ta.subject_id)
                     FROM teacher_assignments ta
-                    WHERE ta.user_id = u.id) as subjects_count
+                    WHERE ta.user_id = u.id AND ta.academic_year_id = {$academicYearId}) as subjects_count
                 FROM users u
                 WHERE u.role = 'enseignant'";
 

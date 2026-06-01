@@ -12,6 +12,8 @@ use App\Core\Session;
 
 use App\Services\ActivityTracker;
 
+use App\Services\AcademicYearService;
+
 use PDO;
 
 
@@ -35,6 +37,8 @@ class GradeController
     /** @var PDO Instance de connexion à la base de données */
 
     private $db;
+
+    private AcademicYearService $academicYearService;
 
 
 
@@ -69,6 +73,8 @@ class GradeController
     {
 
         $this->db = Database::getInstance()->getConnection();
+
+        $this->academicYearService = new AcademicYearService($this->db);
 
 
 
@@ -244,6 +250,7 @@ class GradeController
 
 
 
+            // Classes are now shared across years, no year filtering
             $classInfo = $this->fetchOne("SELECT id, nom FROM classes WHERE id = ?", [$classId]);
 
             $subjectInfo = null;
@@ -342,6 +349,7 @@ class GradeController
 
 
 
+        // Classes are now shared across years, no year filtering
         $classInfo = $this->fetchOne("SELECT id, nom FROM classes WHERE id = ?", [$classId]);
 
         $subjectInfo = $this->fetchOne("SELECT id, nom, coefficient FROM subjects WHERE id = ?", [$subjectId]);
@@ -484,6 +492,7 @@ class GradeController
 
 
 
+        // Classes are now shared across years, no year filtering
         $classInfo = $this->fetchOne("SELECT id, nom FROM classes WHERE id = ?", [$class_id]);
 
         $subjectInfo = $this->fetchOne("SELECT id, nom, coefficient FROM subjects WHERE id = ?", [$subject_id]);
@@ -1539,6 +1548,7 @@ class GradeController
         }
 
         // Récupérer les informations de classe
+        // Classes are now shared across years, no year filtering
         $classInfo = $this->fetchOne("SELECT id, nom FROM classes WHERE id = ?", [$class_id]);
         if (!$classInfo) {
             header("Location: /notes");
@@ -1575,6 +1585,7 @@ class GradeController
             // Récupérer le nom de la classe pour le nom du fichier
             $className = '';
             if ($class_id > 0) {
+                // Classes are now shared across years, no year filtering
                 $classInfo = $this->fetchOne("SELECT nom FROM classes WHERE id = ?", [$class_id]);
                 $className = $classInfo ? $classInfo['nom'] : '';
             }
@@ -1655,6 +1666,7 @@ class GradeController
         }
 
         $errors = $result['errors'];
+        // Classes are now shared across years, no year filtering
         $classInfo = $this->fetchOne("SELECT id, nom FROM classes WHERE id = ?", [$class_id]);
         $subjectInfo = null;
         if ($subject_id > 0) {
@@ -1681,9 +1693,10 @@ class GradeController
         ];
 
         // Récupérer les données pour les filtres
+        // Classes are now shared across years, no year filtering
         $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $subjects = $this->db->query("SELECT id, nom FROM subjects WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $periods = $this->db->query("SELECT DISTINCT label FROM sequences WHERE is_active = 1 ORDER BY position ASC")->fetchAll(PDO::FETCH_COLUMN);
+        $periods = $this->db->query("SELECT DISTINCT label FROM sequences WHERE is_active = 1 AND academic_year_id = {$academicYearId} ORDER BY position ASC")->fetchAll(PDO::FETCH_COLUMN);
 
         // Récupérer les notes récentes avec pagination
         $page = (int) ($_GET['page'] ?? 1);

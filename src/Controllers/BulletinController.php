@@ -40,14 +40,16 @@ class BulletinController
         $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $sectionId = (int) ($_GET['section_id'] ?? 0);
 
-        $classesQuery = "SELECT c.id, c.nom FROM classes c WHERE 1=1";
+        // Classes are now shared across years, no year filtering
+        $classesQuery = "SELECT c.id, c.nom FROM classes c";
         $classesParams = [];
         if ($sectionId > 0) {
             $classesQuery .= " AND c.section_id = ?";
             $classesParams[] = $sectionId;
         }
         if (!in_array(Session::get('user_role'), ['superadmin', 'admin'], true)) {
-            $classesQuery .= " AND EXISTS (SELECT 1 FROM teacher_assignments ta WHERE ta.class_id = c.id AND ta.user_id = ?)";
+            $academicYearId = $this->getActiveAcademicYear()['id'] ?? 0;
+            $classesQuery .= " AND EXISTS (SELECT 1 FROM teacher_assignments ta WHERE ta.class_id = c.id AND ta.user_id = ? AND ta.academic_year_id = {$academicYearId})";
             $classesParams[] = (int) Session::get('user_id');
         }
         $classesQuery .= " ORDER BY c.nom ASC";
@@ -78,6 +80,7 @@ class BulletinController
             $academicYearId = (int) ($activeYear['id'] ?? 0);
         }
 
+        // Classes are now shared across years, no year filtering
         $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $classId = (int) ($_GET['class_id'] ?? 0);
         $term = (int) ($_GET['term'] ?? 1);
@@ -1196,16 +1199,19 @@ class BulletinController
 
     protected function getAccessibleClasses()
     {
+        // Classes are now shared across years, no year filtering
         if (in_array(Session::get('user_role'), ['superadmin', 'admin'], true)) {
-            return $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+            $stmt = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC");
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
+        $academicYearId = $this->getActiveAcademicYear()['id'] ?? 0;
         $stmt = $this->db->prepare("SELECT DISTINCT c.id, c.nom
             FROM teacher_assignments ta
             JOIN classes c ON c.id = ta.class_id
-            WHERE ta.user_id = ?
+            WHERE ta.user_id = ? AND ta.academic_year_id = ?
             ORDER BY c.nom ASC");
-        $stmt->execute([(int) Session::get('user_id')]);
+        $stmt->execute([(int) Session::get('user_id'), $academicYearId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -1213,14 +1219,16 @@ class BulletinController
     {
         $sectionId = (int) ($_GET['section_id'] ?? 0);
 
-        $classesQuery = "SELECT id, nom FROM classes WHERE 1=1";
+        // Classes are now shared across years, no year filtering
+        $classesQuery = "SELECT id, nom FROM classes";
         $params = [];
         if ($sectionId > 0) {
             $classesQuery .= " AND section_id = ?";
             $params[] = $sectionId;
         }
         if (!in_array(Session::get('user_role'), ['superadmin', 'admin'], true)) {
-            $classesQuery .= " AND EXISTS (SELECT 1 FROM teacher_assignments ta WHERE ta.class_id = classes.id AND ta.user_id = ?)";
+            $academicYearId = $this->getActiveAcademicYear()['id'] ?? 0;
+            $classesQuery .= " AND EXISTS (SELECT 1 FROM teacher_assignments ta WHERE ta.class_id = classes.id AND ta.user_id = ? AND ta.academic_year_id = {$academicYearId})";
             $params[] = (int) Session::get('user_id');
         }
         $classesQuery .= " ORDER BY nom ASC";
@@ -1251,6 +1259,7 @@ class BulletinController
         $settingsStore = new SettingsStore($this->db);
         $defaultThreshold = (float) $settingsStore->get('honor_roll_default_threshold', '12');
 
+        // Classes are now shared across years, no year filtering
         $stmt = $this->db->prepare("SELECT cycle_id, section_id FROM classes WHERE id = ? LIMIT 1");
         $stmt->execute([$classId]);
         $class = $stmt->fetch(PDO::FETCH_ASSOC);
