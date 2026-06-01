@@ -44,6 +44,8 @@ class StudentImportProcessor
 
     private \App\Services\MatriculeService $matriculeService;
 
+    private int $activeYearId;
+
 
 
     // Cache pour optimiser les recherches de relations
@@ -78,6 +80,7 @@ class StudentImportProcessor
 
         $this->matriculeService = new \App\Services\MatriculeService($db);
 
+        $this->setActiveYear();
         $this->warmupCache();
 
     }
@@ -406,7 +409,7 @@ class StudentImportProcessor
 
 
 
-            $sql = "INSERT INTO students (nom, prenom, email, class_id, sexe, date_naissance, lieu_naissance, is_redoublant) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            $sql = "INSERT INTO students (nom, prenom, email, class_id, sexe, date_naissance, lieu_naissance, is_redoublant, academic_year_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             $stmt = $this->db->prepare($sql);
 
@@ -426,7 +429,9 @@ class StudentImportProcessor
 
                 $lieuNais,
 
-                $isRedoublant
+                $isRedoublant,
+
+                $this->activeYearId
 
             ]);
 
@@ -525,6 +530,20 @@ class StudentImportProcessor
             $this->cache['classes'][$normalized] = $row['id'];
 
         }
+
+    }
+
+
+
+    private function setActiveYear()
+
+    {
+
+        $stmt = $this->db->prepare("SELECT id FROM academic_years WHERE is_active = 1 LIMIT 1");
+
+        $stmt->execute();
+
+        $this->activeYearId = (int) $stmt->fetchColumn();
 
     }
 

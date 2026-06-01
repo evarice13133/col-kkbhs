@@ -119,6 +119,8 @@ class AcademicYearController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $nom = trim($_POST['nom'] ?? '');
+            $start_date = trim($_POST['start_date'] ?? '');
+            $end_date = trim($_POST['end_date'] ?? '');
 
 
 
@@ -136,9 +138,9 @@ class AcademicYearController
 
             try {
 
-                $stmt = $this->db->prepare("INSERT INTO academic_years (nom, status) VALUES (?, 'active')");
+                $stmt = $this->db->prepare("INSERT INTO academic_years (nom, start_date, end_date, status) VALUES (?, ?, ?, 'active')");
 
-                $stmt->execute([$nom]);
+                $stmt->execute([$nom, $start_date ?: null, $end_date ?: null]);
 
                 header("Location: /academic_years");
 
@@ -203,6 +205,214 @@ class AcademicYearController
         header("Location: /academic_years");
 
         exit;
+
+    }
+
+
+
+    public function rolloverWizard()
+
+    {
+
+        // Get current active year
+
+        $stmt = $this->db->query("SELECT * FROM academic_years WHERE is_active = 1 LIMIT 1");
+
+        $currentYear = $stmt->fetch(PDO::FETCH_ASSOC);
+
+
+
+        if (!$currentYear) {
+
+            Session::setFlash('error', __('no_active_year_for_rollover'));
+
+            header("Location: /academic_years");
+
+            exit;
+
+        }
+
+
+
+        include __DIR__ . '/../Views/academic_years/rollover_wizard.php';
+
+    }
+
+
+
+    public function doRollover()
+
+    {
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+
+            exit;
+
+        }
+
+
+
+        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+
+            header("Location: /academic_years");
+
+            exit;
+
+        }
+
+
+
+        $currentYearId = (int) $_POST['current_year_id'];
+
+        $newYearNom = trim($_POST['new_year_nom'] ?? '');
+
+        $cloneClasses = isset($_POST['clone_classes']);
+
+        $cloneSubjects = isset($_POST['clone_subjects']);
+
+        $cloneAssignments = isset($_POST['clone_assignments']);
+
+        $archiveCurrent = isset($_POST['archive_current']);
+
+
+
+        if (empty($newYearNom)) {
+
+            Session::setFlash('error', __('new_year_name_required'));
+
+            header("Location: /academic_years/rollover");
+
+            exit;
+
+        }
+
+
+
+        try {
+
+            // Augmenter le temps d'exécution pour les opérations de clonage de données
+            set_time_limit(300); // 5 minutes
+
+            $this->db->beginTransaction();
+
+
+
+            // 1. Create new academic year
+
+            $stmt = $this->db->prepare("INSERT INTO academic_years (nom, start_date, end_date, status) VALUES (?, ?, ?, 'active')");
+
+            $stmt->execute([$newYearNom, null, null]);
+
+            $newYearId = (int) $this->db->lastInsertId();
+
+
+
+            // 2. Clone structural data if requested
+            // Classes are now shared across years, no need to clone them
+            // if ($cloneClasses) {
+            //     $stmt = $this->db->prepare("
+            //         INSERT INTO classes (nom, cycle_id, section_id, department_id, main_teacher_id, academic_year_id)
+            //         SELECT nom, cycle_id, section_id, department_id, main_teacher_id, ?
+            //         FROM classes WHERE academic_year_id = ?
+            //     ");
+            //     $stmt->execute([$newYearId, $currentYearId]);
+            // }
+
+
+
+            if ($cloneSubjects) {
+
+                // Classes are now shared across years, so we can directly use the class_id
+                $stmt = $this->db->prepare("
+
+                    INSERT INTO subject_classes (subject_id, class_id, academic_year_id)
+
+                    SELECT subject_id, class_id, ?
+
+                    FROM subject_classes
+
+                    WHERE academic_year_id = ?
+
+                ");
+
+                $stmt->execute([$newYearId, $currentYearId]);
+
+            }
+
+
+
+            if ($cloneAssignments) {
+
+                // Classes are now shared across years, so we can directly use the class_id
+                $stmt = $this->db->prepare("
+
+                    INSERT INTO teacher_assignments (user_id, subject_id, class_id, academic_year_id)
+
+                    SELECT user_id, subject_id, class_id, ?
+
+                    FROM teacher_assignments
+
+                    WHERE academic_year_id = ?
+
+                ");
+
+                $stmt->execute([$newYearId, $currentYearId]);
+
+            }
+
+
+
+            // 3. Activate new year
+
+            $this->db->query("UPDATE academic_years SET is_active = FALSE");
+
+            $stmt = $this->db->prepare("UPDATE academic_years SET is_active = TRUE WHERE id = ?");
+
+            $stmt->execute([$newYearId]);
+
+
+
+            // 4. Archive current year if requested
+
+            if ($archiveCurrent) {
+
+                $stmt = $this->db->prepare("UPDATE academic_years SET status = 'archived' WHERE id = ?");
+
+                $stmt->execute([$currentYearId]);
+
+            }
+
+
+
+            $this->db->commit();
+
+
+
+            Session::setFlash('success', __('rollover_success', ['new_year' => $newYearNom]));
+
+            header("Location: /academic_years");
+
+            exit;
+
+
+
+        } catch (\Exception $e) {
+
+            if ($this->db->inTransaction()) {
+
+                $this->db->rollBack();
+
+            }
+
+
+
+            Session::setFlash('error', __('rollover_error') . ': ' . $e->getMessage());
+
+            header("Location: /academic_years/rollover");
+
+            exit;
+
+        }
 
     }
 
@@ -279,6 +489,9 @@ class AcademicYearController
 
 
         if ($year) {
+
+            // Augmenter le temps d'exécution pour les opérations de sauvegarde
+            set_time_limit(300); // 5 minutes
 
             $etablissement = "NotesMaster";
 
@@ -571,6 +784,9 @@ class AcademicYearController
                 // ✅ SÉCURISÉ : Exécution du SQL après validation
 
                 $this->db->setAttribute(PDO::ATTR_EMULATE_PREPARES, true);
+
+                // Augmenter le temps d'exécution pour les grandes bases de données
+                set_time_limit(300); // 5 minutes
 
                 try {
 

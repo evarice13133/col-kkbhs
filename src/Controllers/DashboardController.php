@@ -178,7 +178,9 @@ class DashboardController
         $numEvals = count($activeEvaluations);
 
         // 1. Stats de base
-        $stats_students = (int) $this->db->query("SELECT COUNT(*) FROM students WHERE is_withdrawn = 0")->fetchColumn();
+        $activeYearId = $this->getActiveAcademicYearId();
+        $stats_students = (int) $this->db->query("SELECT COUNT(*) FROM students WHERE is_withdrawn = 0 AND academic_year_id = {$activeYearId}")->fetchColumn();
+        // Classes are now shared across years, no year filtering
         $stats_classes = (int) $this->db->query("SELECT COUNT(*) FROM classes")->fetchColumn();
         $stats_subjects = (int) $this->db->query("SELECT COUNT(*) FROM subjects WHERE status = 1")->fetchColumn();
         $stats_subjects_inactive = (int) $this->db->query("SELECT COUNT(*) FROM subjects WHERE status = 0")->fetchColumn();
@@ -188,9 +190,10 @@ class DashboardController
 
         // 2. Récupérer TOUTES les affectations et TOUTES les classes avec effectifs (1 seule requête chacune)
         $allClassCounts = $this->getBulkClassStudentCounts([]);
+        // Classes are now shared across years, no year filtering on classes
         $allAssignments = $this->db->query("SELECT user_id, class_id, subject_id, c.nom as class_nom 
                                             FROM teacher_assignments ta 
-                                            JOIN classes c ON c.id = ta.class_id")->fetchAll(PDO::FETCH_GROUP | PDO::FETCH_ASSOC);
+                                            JOIN classes c ON c.id = ta.class_id AND ta.academic_year_id = {$activeYearId}")->fetchAll(PDO::FETCH_GROUP | PDO::FETCH_ASSOC);
 
         // 3. Récupérer TOUTES les notes saisies pour l'année active par classe/matière (sans distinction de l'enseignant)
         $allFilledCounts = $this->getBulkGlobalFilledCounts($activeYearId, $activeEvaluations);
@@ -200,11 +203,12 @@ class DashboardController
         $globalFilled = 0;
 
         // Récupérer toutes les combinaisons classe/matière actives
+        // Classes are now shared across years, but subject_classes are still year-specific
         $allSubjectClasses = $this->db->query("
             SELECT sc.class_id, sc.subject_id
             FROM subject_classes sc
             JOIN subjects s ON s.id = sc.subject_id
-            WHERE s.status = 1
+            WHERE sc.academic_year_id = {$activeYearId} AND s.status = 1
         ")->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($allSubjectClasses as $sc) {
@@ -603,8 +607,9 @@ class DashboardController
 
     private function getBulkClassStudentCounts(array $classIds): array
     {
+        $activeYearId = $this->getActiveAcademicYearId();
         $where = !empty($classIds) ? " AND class_id IN (" . implode(',', array_map('intval', $classIds)) . ")" : "";
-        $stmt = $this->db->query("SELECT class_id, COUNT(*) FROM students WHERE is_withdrawn = 0 $where GROUP BY class_id");
+        $stmt = $this->db->query("SELECT class_id, COUNT(*) FROM students WHERE is_withdrawn = 0 AND academic_year_id = {$activeYearId} $where GROUP BY class_id");
         return $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
     }
 

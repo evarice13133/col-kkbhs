@@ -7,6 +7,7 @@ use App\Core\Session;
 use App\Services\Import\ClassImportProcessor;
 use App\Services\Import\ExcelTemplateService;
 use App\Services\SettingsStore;
+use App\Services\AcademicYearService;
 use PDO;
 
 /**
@@ -20,6 +21,7 @@ class ClassController
     /** @var PDO Instance de connexion à la base de données */
     private $db;
     private SettingsStore $settingsStore;
+    private AcademicYearService $academicYearService;
 
     /**
      * Initialise le contrôleur et vérifie les autorisations d'administration.
@@ -28,6 +30,7 @@ class ClassController
     {
         $this->db = Database::getInstance()->getConnection();
         $this->settingsStore = new SettingsStore($this->db);
+        $this->academicYearService = new AcademicYearService($this->db);
         
         // Accès restreint aux rôles administratifs (Superadmin et Admin)
         if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
@@ -131,6 +134,7 @@ class ClassController
 
             try {
                 // Insertion avec gestion des relations optionnelles
+                // Classes are now shared across years, no academic_year_id
                 $stmt = $this->db->prepare("INSERT INTO classes (nom, cycle_id, section_id, department_id) VALUES (?, ?, ?, ?)");
                 $stmt->execute([$nom, $cycle_id, $section_id, $department_id]);
                 $newClassId = (int) $this->db->lastInsertId();
@@ -242,8 +246,10 @@ class ClassController
     public function manageTeam($id = 0)
     {
         $id = (int)($id ?: ($_GET['id'] ?? 0));
+        $academicYearId = $this->academicYearService->getActiveYearId();
         
         // Liste de toutes les classes pour le sélecteur
+        // Classes are now shared across years, no year filtering
         $allClasses = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         
         $class = null;
@@ -264,10 +270,10 @@ class ClassController
                            (SELECT GROUP_CONCAT(cl.nom SEPARATOR ', ') FROM classes cl WHERE cl.main_teacher_id = u.id AND cl.id != ?) as other_classes
                     FROM users u
                     JOIN teacher_assignments ta ON u.id = ta.user_id
-                    WHERE ta.class_id = ?
+                    WHERE ta.class_id = ? AND ta.academic_year_id = ?
                     ORDER BY u.nom ASC, u.prenom ASC
                 ");
-                $stmt->execute([$id, $id]);
+                $stmt->execute([$id, $id, $academicYearId]);
                 $teachers = $stmt->fetchAll(PDO::FETCH_ASSOC);
             }
         }
@@ -367,10 +373,14 @@ class ClassController
         $cycleId = (int) ($_GET['cycle_id'] ?? 0);
         $sectionId = (int) ($_GET['section_id'] ?? 0);
         $departmentId = (int) ($_GET['department_id'] ?? 0);
+        // Classes are now shared across years, no year filtering needed
 
         // 1. Count total
         $countSql = "SELECT COUNT(*) FROM classes c WHERE 1=1";
         $countParams = [];
+        
+        // No academic year filtering for classes
+        
         if ($search !== '') {
             $countSql .= " AND c.nom LIKE ?";
             $countParams[] = '%' . $search . '%';
@@ -403,6 +413,8 @@ class ClassController
                 LEFT JOIN users u ON c.main_teacher_id = u.id
                 WHERE 1=1";
         $params = [];
+
+        // No academic year filtering for classes
 
         // Application dynamique de la clause WHERE selon les entrées utilisateur
         if ($search !== '') {
