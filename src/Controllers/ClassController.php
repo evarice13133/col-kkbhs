@@ -403,9 +403,10 @@ class ClassController
 
         // 2. Fetch data
         // Jointures pour récupérer les noms des cycles, sections, départements et du professeur principal
+        $academicYearId = $this->academicYearService->getActiveYearId();
         $sql = "SELECT c.id, c.nom, cy.nom as cycle_nom, s.nom as section_nom, d.nom as department_nom,
                        u.nom as main_teacher_nom, u.prenom as main_teacher_prenom,
-                       (SELECT COUNT(*) FROM students WHERE class_id = c.id AND is_withdrawn = 0) as student_count
+                       (SELECT COUNT(*) FROM students WHERE class_id = c.id AND academic_year_id = {$academicYearId} AND is_withdrawn = 0) as student_count
                 FROM classes c
                 LEFT JOIN cycles cy ON c.cycle_id = cy.id
                 LEFT JOIN sections s ON c.section_id = s.id

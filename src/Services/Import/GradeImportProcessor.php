@@ -240,12 +240,12 @@ class GradeImportProcessor
         $key = mb_strtolower($nom . '|' . $prenom);
         if (isset($this->studentsByName[$key])) {
             $studentId = $this->studentsByName[$key];
-            // Vérifier que l'élève appartient bien à la classe spécifiée
-            $stmt = $this->db->prepare("SELECT class_id FROM students WHERE id = ?");
+            // Vérifier que l'élève appartient bien à la classe spécifiée et à l'année académique active
+            $stmt = $this->db->prepare("SELECT class_id, academic_year_id FROM students WHERE id = ?");
             $stmt->execute([$studentId]);
-            $studentClassId = $stmt->fetchColumn();
-            if ((int) $studentClassId !== $classId) {
-                $this->logError($line, "L'eleve {$nom} {$prenom} n'appartient pas a la classe specifiee.");
+            $studentData = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ((int) $studentData['class_id'] !== $classId || (int) $studentData['academic_year_id'] !== $this->activeYearId) {
+                $this->logError($line, "L'eleve {$nom} {$prenom} n'appartient pas a la classe specifiee ou a l'annee academique active.");
                 return null;
             }
             return $studentId;
@@ -272,7 +272,7 @@ class GradeImportProcessor
 
     private function warmupStudents(): void
     {
-        $rows = $this->db->query("SELECT id, nom, prenom FROM students WHERE is_withdrawn = 0")->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $this->db->query("SELECT id, nom, prenom FROM students WHERE academic_year_id = {$this->activeYearId} AND is_withdrawn = 0")->fetchAll(PDO::FETCH_ASSOC);
         foreach ($rows as $row) {
             $key = mb_strtolower($row['nom'] . '|' . $row['prenom']);
             $this->studentsByName[$key] = (int) $row['id'];

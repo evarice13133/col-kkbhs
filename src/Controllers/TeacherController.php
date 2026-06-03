@@ -163,13 +163,46 @@ class TeacherController
     }
 
     /**
-     * Supprime un profil enseignant (Attention aux contraintes d'intégrité si des notes existent).
+     * Désactive un profil enseignant (préservation de l'historique).
+     * Au lieu de supprimer, on utilise un flag is_active pour conserver l'historique pédagogique.
      */
     public function delete($id)
     {
-        $stmt = $this->db->prepare("DELETE FROM users WHERE id = ? AND role = 'enseignant'");
+        // Vérifier si l'enseignant a un historique pédagogique
+        $stmt = $this->db->prepare("
+            SELECT 
+                (SELECT COUNT(*) FROM teacher_assignments WHERE user_id = ?) as assignment_count,
+                (SELECT COUNT(*) FROM grades WHERE teacher_id = ?) as grade_count
+        ");
+        $stmt->execute([$id, $id]);
+        $history = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        $hasHistory = ($history['assignment_count'] > 0 || $history['grade_count'] > 0);
+        
+        if ($hasHistory) {
+            // Utiliser is_active au lieu de supprimer
+            $stmt = $this->db->prepare("UPDATE users SET is_active = 0 WHERE id = ? AND role = 'enseignant'");
+            $stmt->execute([$id]);
+            Session::setFlash('success', __('teacher_deactivated_success'));
+        } else {
+            // Pas d'historique, suppression autorisée
+            $stmt = $this->db->prepare("DELETE FROM users WHERE id = ? AND role = 'enseignant'");
+            $stmt->execute([$id]);
+            Session::setFlash('success', __('teacher_deleted_success'));
+        }
+        
+        header("Location: /teachers");
+        exit;
+    }
+
+    /**
+     * Réactive un enseignant désactivé (gestion des retours).
+     */
+    public function activate($id)
+    {
+        $stmt = $this->db->prepare("UPDATE users SET is_active = 1 WHERE id = ? AND role = 'enseignant'");
         $stmt->execute([$id]);
-        Session::setFlash('success', __('teacher_deleted_success'));
+        Session::setFlash('success', __('teacher_activated_success'));
         header("Location: /teachers");
         exit;
     }
@@ -177,6 +210,7 @@ class TeacherController
     /**
      * Interface de pilotage des affectations pour un enseignant spécifique.
      * Cette vue permet de distribuer la charge de travail (Matières/Classes).
+     * Ajout: Sélecteur d'année scolaire pour consultation historique.
      */
     public function assign($id)
     {
@@ -189,19 +223,27 @@ class TeacherController
             exit;
         }
 
-        $academicYearId = $this->academicYearService->getActiveYearId();
+        // Récupérer l'année scolaire sélectionnée pour consultation historique
+        $selectedYearId = (int) ($_GET['academic_year_id'] ?? $this->academicYearService->getActiveYearId());
+        $activeYearId = $this->academicYearService->getActiveYearId();
+        
+        // Récupérer toutes les années scolaires pour le sélecteur
+        $academicYears = $this->db->query("SELECT id, nom, is_active FROM academic_years ORDER BY nom DESC")->fetchAll(PDO::FETCH_ASSOC);
 
-        // Analyse croisée : On cherche toutes les paires Matière-Classe définies, 
-        // et on identifie celles déjà occupées par d'autres collègues.
+        // Vérifier si l'année sélectionnée est différente de l'année active (mode historique)
+        $isHistoricalView = ($selectedYearId !== $activeYearId);
+
+        // Pour l'interface d'affectation, on utilise toujours l'année active
+        // Le sélecteur sert uniquement à consulter l'historique
         $subjectsRaw = $this->db->query("
             SELECT s.id as subject_id, s.nom as subject_nom, c.id as class_id, c.nom as class_nom,
                    u.id as teacher_id, u.nom as teacher_nom, u.prenom as teacher_prenom
             FROM subjects s
             JOIN subject_classes sc ON s.id = sc.subject_id
             JOIN classes c ON sc.class_id = c.id
-            LEFT JOIN teacher_assignments ta ON (s.id = ta.subject_id AND c.id = ta.class_id AND ta.academic_year_id = {$academicYearId})
+            LEFT JOIN teacher_assignments ta ON (s.id = ta.subject_id AND c.id = ta.class_id AND ta.academic_year_id = {$activeYearId})
             LEFT JOIN users u ON ta.user_id = u.id
-            WHERE s.status = 1 AND sc.academic_year_id = {$academicYearId}
+            WHERE s.status = 1 AND sc.academic_year_id = {$activeYearId}
             ORDER BY s.nom ASC, c.nom ASC
         ")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -270,6 +312,7 @@ class TeacherController
     /**
      * Valide et enregistre la nouvelle charge de travail de l'enseignant.
      * Intègre un 'Barrage de Conflit' : Interdiction d'affecter une matière déjà prise dans une classe.
+     * Ajout: Blocage des modifications sur les années fermées.
      */
     public function storeAssignment($id)
     {

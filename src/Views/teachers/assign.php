@@ -18,12 +18,31 @@
             </div>
         </div>
         <div class="d-flex gap-2">
-            <button type="submit" form="mainAssignmentForm" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm scale-on-hover">
+            <button type="submit" form="mainAssignmentForm" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm scale-on-hover" 
+                    <?= $isHistoricalView ? 'disabled' : '' ?>>
                 <i class="bi bi-check2-circle me-1"></i> <?= __('save') ?>
             </button>
             <a href="/teachers" class="btn btn-light rounded-pill px-3 border shadow-none small fw-bold text-main-theme">
                 <i class="bi bi-arrow-left me-1"></i> <?= __('back') ?>
             </a>
+        </div>
+    </div>
+
+    <!-- SÉLECTEUR D'ANNÉE SCOLAIRE -->
+    <div class="d-flex justify-content-center mb-4 px-2">
+        <div class="filter-island px-3 py-2 shadow-lg animate-slide-down w-100" style="max-width: 400px;">
+            <div class="d-flex align-items-center gap-3">
+                <i class="bi bi-calendar3 text-primary fs-5"></i>
+                <select id="academic_year_selector" class="form-select border-0 shadow-none bg-transparent text-main-theme fw-bold" 
+                        onchange="changeAcademicYear(this.value)" style="font-weight: 500;">
+                    <?php foreach ($academicYears as $year): ?>
+                        <option value="<?= $year['id'] ?>" <?= $selectedYearId == $year['id'] ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($year['nom']) ?>
+                            <?= $year['is_active'] ? ' (' . __('active') . ')' : '' ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
         </div>
     </div>
 
@@ -37,6 +56,13 @@
             </div>
         </div>
     </div>
+
+    <?php if ($isHistoricalView): ?>
+    <div class="alert alert-warning border-0 shadow-sm mb-4 mx-2 rounded-4" role="alert">
+        <i class="bi bi-info-circle-fill me-2"></i>
+        <?= __('viewing_historical_assignments_read_only') ?? 'Consultation des affectations historiques (lecture seule)' ?>
+    </div>
+    <?php endif; ?>
 
     <?php if ($err = App\Core\Session::get('error_msg')): ?>
         <div class="alert alert-danger border-0 shadow-sm alert-dismissible fade show mb-4 mx-2 rounded-4" role="alert">
@@ -54,11 +80,13 @@
                     <i class="bi bi-journal-check me-2"></i> <?= __('current_load') ?>
                 </button>
             </li>
+            <?php if (!$isHistoricalView): ?>
             <li class="nav-item">
                 <button class="nav-link" id="catalog-tab" data-bs-toggle="pill" data-bs-target="#tab-catalog" type="button" role="tab">
                     <i class="bi bi-plus-circle me-2"></i> <?= __('available_catalog') ?>
                 </button>
             </li>
+            <?php endif; ?>
         </ul>
     </div>
 
@@ -307,6 +335,13 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.js-asg-checkbox').forEach(cb => {
         cb.addEventListener('change', () => updateVisuals(cb));
     });
+
+    // --- CHANGEMENT D'ANNÉE SCOLAIRE ---
+    function changeAcademicYear(yearId) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('academic_year_id', yearId);
+        window.location.href = url.toString();
+    }
 
     // --- PREMIUM CONFIRMATION POPUP ---
     if (form) {

@@ -36,13 +36,8 @@ $settings = [
     'school_ministry_en' => 'Ministry of Secondary Education',
     'school_motto' => 'Paix - Travail - Patrie',
     'school_motto_en' => 'Peace - Work - Fatherland',
-    'school_logo' => '',
+    'school_name' => 'NotesMaster',
     'school_code' => 'CMR-COL',
-    'school_po_box' => '13904-Douala',
-    'school_phone' => '+237 679 16 48 01',
-    'school_fax' => '+237 679 16 48 01',
-    'school_email' => 'notemaster@gmail.com',
-    'school_website' => 'www.notemaster.com',
 ];
 
 try {
@@ -54,17 +49,19 @@ try {
 } catch (\Throwable $e) {
 }
 
-$schoolMotto = $settings['school_motto']; // devise du pays
-$schoolLogo = $settings['school_logo'];
+// Utiliser LogoManager pour récupérer le logo comme dans le PV
+$logoManager = \App\Core\LogoManager::getInstance($db);
+$logoData = [
+    'has_logo' => $logoManager->hasLogo(),
+    'base64' => $logoManager->hasLogo() ? $logoManager->getLogoBase64() : '',
+    'url' => $logoManager->getLogoUrl(),
+    'fallback_letter' => $logoManager->getFallbackLetter()
+];
+
+$schoolMotto = $settings['school_motto'];
+$schoolMottoEn = $settings['school_motto_en'];
+$schoolName = $settings['school_name'];
 $schoolCode = $settings['school_code'];
-$schoolPoBox = strtoupper(trim((string) $settings['school_po_box']));
-$schoolPhone = trim((string) $settings['school_phone']);
-$schoolFax = trim((string) $settings['school_fax']);
-$schoolEmail = trim((string) $settings['school_email']);
-$schoolWebsite = trim((string) $settings['school_website']);
-$contactLine1 = 'B.P: ' . $schoolPoBox;
-$contactLine2 = 'TEL: ' . strtoupper($schoolPhone) . ' / TELECOPIE: ' . strtoupper($schoolFax);
-$contactLine3 = 'COURRIEL: ' . strtoupper($schoolEmail) . ' / SITE WEB : ' . strtoupper($schoolWebsite);
 $generatedAt = (new DateTime())->format('d/m/Y H:i');
 
 if (!function_exists('nm_report_short_label')) {
@@ -99,18 +96,17 @@ if (!function_exists('nm_report_short_label')) {
         .pv-btn-print { background: #0d6efd; color: white; }
         .pv-btn-back { background: rgba(255,255,255,0.15); color: white; margin-right: 5px; }
         .sheet { padding: 0 8px 12px; }
-        .header-block { border-bottom: 1px solid #000; padding-bottom: 6px; margin-bottom: 6px; }
-        .header-grid { display: grid; grid-template-columns: 1fr 110px 1fr; gap: 8px; align-items: center; }
-        .header-side { line-height: 1.15; }
-        .header-side.right { text-align: right; }
-        .header-line { margin: 0 0 1px; font-weight: bold; text-transform: uppercase; }
+        .header-block { border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 10px; }
+        .header-grid { display: flex; justify-content: space-between; align-items: center; }
+        .header-side { width: 38%; text-align: center; font-size: 8px; text-transform: uppercase; line-height: 1.4; }
+        .header-side.right { text-align: center; }
+        .header-line { margin: 0 0 1px; font-weight: bold; }
         .header-center { text-align: center; }
-        .logo-box { width: 78px; height: 78px; margin: 0 auto 4px; display: flex; align-items: center; justify-content: center; border: 1px solid #999; }
+        .logo-box { width: 50px; height: 50px; margin: 0 auto; display: flex; align-items: center; justify-content: center; }
         .logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
         .logo-fallback { font-weight: bold; font-size: 17px; }
+        .school-name { font-size: 13px; font-weight: 800; text-transform: uppercase; margin-top: 5px; }
         .school-code { font-weight: bold; text-transform: uppercase; font-size: 11px; }
-        .contact-block { font-size: 10px; text-transform: uppercase; line-height: 1.2; margin-top: 4px; }
-        .contact-block p { margin: 0 0 1px; }
         .doc-line { text-align: center; font-weight: bold; text-transform: uppercase; margin: 4px 0 2px; }
         .meta-line { text-align: center; margin: 0 0 5px; text-transform: uppercase; font-size: 10px; }
         .info-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin: 8px 0 10px; }
@@ -161,31 +157,30 @@ if (!function_exists('nm_report_short_label')) {
         <div class="header-block">
             <div class="header-grid">
                 <div class="header-side">
-                    <p class="header-line"><?= htmlspecialchars(nm_report_t('internal_tracking_document', 'Document de suivi interne')) ?></p>
-                    <p class="header-line"><?= htmlspecialchars(nm_report_t('pedagogical_service', 'Service pédagogique')) ?></p>
-                    <div class="contact-block">
-                        <p><?= htmlspecialchars((string) $contactLine1) ?></p>
-                        <p><?= htmlspecialchars((string) $contactLine2) ?></p>                        
-                    </div>
+                    <div><?= htmlspecialchars($settings['school_republic'] ?? 'REPUBLIQUE DU CAMEROUN') ?></div>
+                    <div style="font-weight: bold; font-style: italic;"><?= htmlspecialchars($schoolMotto) ?></div>
+                    <div>**********</div>
+                    <div><?= htmlspecialchars($settings['school_ministry'] ?? 'MINISTERE DES ENSEIGNEMENTS SECONDAIRES') ?></div>
                 </div>
 
                 <div class="header-center">
                     <div class="logo-box">
-                        <?php if ($schoolLogo !== ''): ?>
-                            <img src="<?= htmlspecialchars((string) $schoolLogo) ?>" alt="Logo">
+                        <?php if ($logoData['has_logo'] && !empty($logoData['base64'])): ?>
+                            <img src="<?= htmlspecialchars($logoData['base64']) ?>" alt="Logo">
+                        <?php elseif ($logoData['has_logo'] && !empty($logoData['url'])): ?>
+                            <img src="<?= htmlspecialchars($logoData['url']) ?>" alt="Logo">
                         <?php else: ?>
                             <div class="logo-fallback"><?= htmlspecialchars(substr((string) $schoolCode, 0, 3)) ?></div>
                         <?php endif; ?>
                     </div>
-                    <div class="school-code"><?= htmlspecialchars((string) $schoolCode) ?></div>
+                    <div class="school-name"><?= htmlspecialchars($schoolName) ?></div>
                 </div>
 
                 <div class="header-side right">
-                    <p class="header-line"><?= htmlspecialchars(nm_report_t('administrative_use', 'Usage administratif')) ?></p>
-                    <p class="header-line"><?= htmlspecialchars((string) $schoolMotto) ?></p>
-                    <div class="contact-block">
-                        <p><?= htmlspecialchars((string) $contactLine3) ?></p>
-                    </div>
+                    <div><?= htmlspecialchars($settings['school_republic_en'] ?? 'REPUBLIC OF CAMEROON') ?></div>
+                    <div style="font-weight: bold; font-style: italic;"><?= htmlspecialchars($schoolMottoEn) ?></div>
+                    <div>**********</div>
+                    <div><?= htmlspecialchars($settings['school_ministry_en'] ?? 'MINISTRY OF SECONDARY EDUCATION') ?></div>
                 </div>
             </div>
         </div>
