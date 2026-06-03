@@ -495,8 +495,12 @@ class ExcelTemplateService
         // Élèves de la classe spécifiée
         $students = [];
         if ($classId > 0) {
-            $stmt = $this->db->prepare("SELECT id, nom, prenom FROM students WHERE class_id = ? AND is_withdrawn = 0 ORDER BY nom ASC, prenom ASC");
-            $stmt->execute([$classId]);
+            $academicYearStmt = $this->db->prepare("SELECT id FROM academic_years WHERE is_active = 1 LIMIT 1");
+            $academicYearStmt->execute();
+            $academicYearId = (int) $academicYearStmt->fetchColumn();
+            
+            $stmt = $this->db->prepare("SELECT id, nom, prenom FROM students WHERE class_id = ? AND academic_year_id = ? AND is_withdrawn = 0 ORDER BY nom ASC, prenom ASC");
+            $stmt->execute([$classId, $academicYearId]);
             $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
