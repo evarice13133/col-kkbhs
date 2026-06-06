@@ -169,6 +169,8 @@ elseif (strpos($path, '/students') === 0) {
         $c->update($_GET['id'] ?? 0);
     } elseif ($path === '/students/export') {
         $c->export();
+    } elseif ($path === '/students/exportExcel') {
+        $c->exportExcel();
     } elseif ($path === '/students/delete' && in_array($role, ['superadmin', 'admin'])) {
         $c->delete($_GET['id'] ?? 0);
     } elseif ($path === '/students/withdraw' && in_array($role, ['superadmin', 'admin'])) {
