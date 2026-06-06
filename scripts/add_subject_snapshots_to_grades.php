@@ -14,14 +14,6 @@ $db = Database::getInstance()->getConnection();
 echo "Ajout des colonnes snapshot à la table grades...\n";
 
 try {
-    // Ajouter subject_nom_snapshot
-    $db->exec("ALTER TABLE grades ADD COLUMN subject_nom_snapshot VARCHAR(255)");
-    echo "✓ Colonne subject_nom_snapshot ajoutée\n";
-} catch (\PDOException $e) {
-    echo "ℹ Colonne subject_nom_snapshot existe déjà ou erreur: " . $e->getMessage() . "\n";
-}
-
-try {
     // Ajouter subject_coefficient_snapshot
     $db->exec("ALTER TABLE grades ADD COLUMN subject_coefficient_snapshot DECIMAL(3,2) DEFAULT 1.00");
     echo "✓ Colonne subject_coefficient_snapshot ajoutée\n";
