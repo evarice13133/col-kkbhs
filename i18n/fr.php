@@ -1221,6 +1221,7 @@ return [
     'active_in_system' => 'actifs dans le système',
     'search_student_placeholder' => 'Rechercher par nom ou matricule...',
     'export_list' => 'Exporter la liste',
+    'export_excel' => 'Exporter en Excel',
     'no_class' => 'Sans classe',
     'delete_student_confirm' => 'Supprimer l\'élève ?',
     'declared_in_academic_registry' => 'déclarées dans le registre académique',

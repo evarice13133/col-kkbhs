@@ -53,7 +53,11 @@ ob_start(); ?>
                     <a href="/students" class="btn btn-light rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" title="<?= __('reset') ?>">
                         <i class="bi bi-arrow-counterclockwise"></i>
                     </a>
-                    <div class="ms-2">
+                    <div class="ms-2 d-flex gap-2">
+                        <a href="/students/exportExcel?<?= http_build_query($filters) ?>"
+                            class="btn-export-minimal shadow-sm" title="<?= __('export_excel') ?>">
+                            <i class="bi bi-file-earmark-spreadsheet"></i>
+                        </a>
                         <a href="/students/export?<?= http_build_query($filters) ?>"
                             class="btn-export-minimal shadow-sm" title="<?= __('export_list') ?>">
                             <i class="bi bi-file-earmark-pdf"></i>

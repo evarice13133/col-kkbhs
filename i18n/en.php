@@ -318,6 +318,7 @@ return [
     'active_in_system' => 'active in system',
     'search_student_placeholder' => 'Search by name or ID...',
     'export_list' => 'Export List',
+    'export_excel' => 'Export to Excel',
     'no_class' => 'No class',
     'delete_student_confirm' => 'Delete student?',
     'declared_in_academic_registry' => 'declared in academic registry',

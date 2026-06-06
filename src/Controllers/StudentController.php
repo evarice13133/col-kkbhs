@@ -200,6 +200,184 @@ class StudentController
 
 
 
+    public function exportExcel()
+
+    {
+
+        // Pas de pagination pour l'export
+
+        [$students, $filters] = $this->fetchStudentsFromFilters();
+
+
+
+        // Nettoyer les buffers
+
+        while (ob_get_level()) {
+
+            ob_end_clean();
+
+        }
+
+
+
+        ini_set('memory_limit', '512M');
+
+
+
+        try {
+
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+
+            $sheet = $spreadsheet->getActiveSheet();
+
+            $sheet->setTitle('Export Eleves');
+
+
+
+            // En-têtes correspondant au modèle d'import
+
+            $headers = [
+
+                'A1' => 'Nom',
+
+                'B1' => 'Prénom',
+
+                'C1' => 'Matricule',
+
+                'D1' => 'Sexe (M/F)',
+
+                'E1' => 'Date de Naissance',
+
+                'F1' => 'Lieu de Naissance',
+
+                'G1' => 'Classe',
+
+                'H1' => 'Redoublant (OUI/NON)'
+
+            ];
+
+
+
+            foreach ($headers as $cell => $value) {
+
+                $sheet->setCellValue($cell, $value);
+
+            }
+
+
+
+            // Style des en-têtes
+
+            $styleArray = [
+
+                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+
+                'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
+
+                'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]],
+
+                'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '2563EB']]
+
+            ];
+
+            $sheet->getStyle('A1:H1')->applyFromArray($styleArray);
+
+
+
+            // Remplir les données
+
+            $row = 2;
+
+            foreach ($students as $student) {
+
+                $sheet->setCellValue('A' . $row, $student['nom'] ?? '');
+
+                $sheet->setCellValue('B' . $row, $student['prenom'] ?? '');
+
+                $sheet->setCellValue('C' . $row, $student['email'] ?? ''); // email sert de matricule
+
+                $sheet->setCellValue('D' . $row, $student['sexe'] ?? '');
+
+                $sheet->setCellValue('E' . $row, $student['date_naissance'] ?? '');
+
+                $sheet->setCellValue('F' . $row, $student['lieu_naissance'] ?? '');
+
+                $sheet->setCellValue('G' . $row, $student['classe_nom'] ?? '');
+
+                $sheet->setCellValue('H' . $row, ($student['is_redoublant'] ?? 0) ? 'OUI' : 'NON');
+
+
+
+                // Forcer le format texte sur les colonnes sensibles
+
+                $sheet->getStyle('C' . $row)->getNumberFormat()->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT);
+
+                $sheet->getStyle('E' . $row . ':F' . $row)->getNumberFormat()->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT);
+
+
+
+                $row++;
+
+            }
+
+
+
+            // Ajuster la largeur des colonnes
+
+            foreach(range('A','H') as $col) {
+
+                $sheet->getColumnDimension($col)->setAutoSize(true);
+
+            }
+
+
+
+            // Générer le fichier
+
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+
+            $isWithdrawn = (int) ($filters['withdrawn'] ?? 0);
+
+            $filename = ($isWithdrawn ? 'Export_Eleves_Retires_' : 'Export_Eleves_') . date('Y-m-d') . '.xlsx';
+
+
+
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+            header('Content-Disposition: attachment;filename="' . $filename . '"');
+
+            header('Cache-Control: max-age=0');
+
+            header('Pragma: public');
+
+
+
+            $writer->save('php://output');
+
+
+
+            $spreadsheet->disconnectWorksheets();
+
+            unset($spreadsheet);
+
+            exit;
+
+
+
+        } catch (\Throwable $e) {
+
+            Session::setFlash('error', __('error_generation') . " : " . $e->getMessage());
+
+            header("Location: /students");
+
+            exit;
+
+        }
+
+    }
+
+
+
     protected function streamPdf(string $html, string $filename): void
 
     {
