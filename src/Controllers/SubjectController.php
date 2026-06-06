@@ -178,8 +178,9 @@ class SubjectController
             exit;
         }
 
-        $stmt_assoc = $this->db->prepare("SELECT class_id FROM subject_classes WHERE subject_id = ?");
-        $stmt_assoc->execute([$id]);
+        $academicYearId = $this->academicYearService->getActiveYearId();
+        $stmt_assoc = $this->db->prepare("SELECT class_id FROM subject_classes WHERE subject_id = ? AND academic_year_id = ?");
+        $stmt_assoc->execute([$id, $academicYearId]);
         $assigned_classes = $stmt_assoc->fetchAll(PDO::FETCH_COLUMN);
 
         $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
