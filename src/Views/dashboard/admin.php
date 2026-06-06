@@ -59,7 +59,6 @@ $quickAccessLinks = [
     ['url' => '/subjects', 'icon' => 'bi-book-fill',             'label' => __('subjects'),            'meta' => (string) ((int) $stats_subjects)],
     // ── Pédagogie ────────────────────────────────────────────
     ['url' => '/notes',    'icon' => 'bi-pencil-square',         'label' => __('enter_marks'),         'meta' => (string) ((int) $globalPending)],
-    ['url' => '/bulletins','icon' => 'bi-file-earmark-pdf',      'label' => __('bulletins'),           'meta' => null],
     ['url' => '/honors',   'icon' => 'bi-award-fill',            'label' => __('honor_roll_title'),    'meta' => null],
     ['url' => '/bulletins/discipline', 'icon' => 'bi-shield-check', 'label' => __('discipline_management'), 'meta' => null],
     ['url' => '/proces-verbal', 'icon' => 'bi-file-earmark-text','label' => __('proces_verbaux'),      'meta' => null],
@@ -71,6 +70,11 @@ $quickAccessLinks = [
     // ── Aide ─────────────────────────────────────────────────
     ['url' => '/documentation', 'icon' => 'bi-question-circle-fill', 'label' => __('help'),            'meta' => null],
 ];
+
+// Ajouter conditionnellement le lien Bulletin si l'impression est activée
+if ($bulletin_printing_enabled ?? true) {
+    array_splice($quickAccessLinks, 6, 0, [['url' => '/bulletins','icon' => 'bi-file-earmark-pdf', 'label' => __('bulletins'), 'meta' => null]]);
+}
 
 if (\App\Core\Session::get('user_role') === 'superadmin') {
     $quickAccessLinks[] = ['url' => '/departments', 'icon' => 'bi-building',       'label' => __('departments'),       'meta' => null];

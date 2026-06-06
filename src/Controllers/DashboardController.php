@@ -491,6 +491,7 @@ class DashboardController
             'bottom5Subjects' => $bottom5Subjects,
             'subjectByEval' => $subjectByEval,
             'activeEvaluations' => $activeEvaluations,
+            'bulletin_printing_enabled' => $this->settingsStore->getBool('bulletin_printing_enabled', true),
         ];
     }
 

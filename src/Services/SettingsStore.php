@@ -72,6 +72,7 @@ class SettingsStore
         'backup_git_user_name' => 'NotesMaster Backup Bot',
         'backup_git_user_email' => 'backup-bot@notesmaster.local',
         'honor_roll_default_threshold' => '12',
+        'bulletin_printing_enabled' => '1',
     ];
 
     public function __construct(PDO $db)
