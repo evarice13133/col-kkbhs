@@ -1294,11 +1294,9 @@ class GradeController
 
             
 
-            $subjectData = $this->db->query("SELECT nom, coefficient, groupe FROM subjects WHERE id = $subject_id LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+            $subjectData = $this->db->query("SELECT nom FROM subjects WHERE id = $subject_id LIMIT 1")->fetch(PDO::FETCH_ASSOC);
 
             $subjectNom = $subjectData['nom'] ?? 'Matière Supprimée';
-            $subjectCoefficient = $subjectData['coefficient'] ?? 1.00;
-            $subjectGroupe = $subjectData['groupe'] ?? 'Groupe 1';
 
             
 
@@ -1326,11 +1324,11 @@ class GradeController
 
 
 
-                INSERT INTO grades (student_id, subject_id, teacher_id, academic_year_id, sequence_id, periode, valeur, appreciation, teacher_nom_snapshot, teacher_prenom_snapshot, subject_nom_snapshot, subject_coefficient_snapshot, subject_groupe_snapshot, created_by_type)
+                INSERT INTO grades (student_id, subject_id, teacher_id, academic_year_id, sequence_id, periode, valeur, appreciation, teacher_nom_snapshot, teacher_prenom_snapshot, subject_nom_snapshot, created_by_type)
 
 
 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 
 
 
@@ -1363,14 +1361,6 @@ class GradeController
 
 
                     subject_nom_snapshot = VALUES(subject_nom_snapshot),
-
-
-
-                    subject_coefficient_snapshot = VALUES(subject_coefficient_snapshot),
-
-
-
-                    subject_groupe_snapshot = VALUES(subject_groupe_snapshot),
 
 
 
@@ -1515,14 +1505,6 @@ class GradeController
 
 
                     $subjectNom,
-
-
-
-                    $subjectCoefficient,
-
-
-
-                    $subjectGroupe,
 
 
 
