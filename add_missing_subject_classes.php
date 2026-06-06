@@ -74,19 +74,14 @@ $db = Database::getInstance()->getConnection();
                             $subjectActive = $db->query("SELECT status FROM subjects WHERE id = $subjectId")->fetchColumn();
                             
                             if ($subjectActive == 1) {
-                                // Vérifier si cette combinaison existe déjà
-                                $exists = $db->query("
-                                    SELECT COUNT(*) FROM subject_classes
-                                    WHERE academic_year_id = $activeYearId
-                                    AND class_id = $classId
-                                    AND subject_id = $subjectId
-                                ")->fetchColumn();
+                                // Utiliser INSERT IGNORE pour éviter les doublons
+                                $stmt = $db->prepare("
+                                    INSERT IGNORE INTO subject_classes (academic_year_id, class_id, subject_id)
+                                    VALUES (?, ?, ?)
+                                ");
+                                $result = $stmt->execute([$activeYearId, $classId, $subjectId]);
                                 
-                                if ($exists == 0) {
-                                    $db->query("
-                                        INSERT INTO subject_classes (academic_year_id, class_id, subject_id)
-                                        VALUES ($activeYearId, $classId, $subjectId)
-                                    ");
+                                if ($result && $stmt->rowCount() > 0) {
                                     $added++;
                                 } else {
                                     $skipped++;
