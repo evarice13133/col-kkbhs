@@ -6,25 +6,29 @@ use App\Core\Database;
 use App\Core\Session;
 use App\Services\Import\ExcelTemplateService;
 use App\Services\Import\SubjectImportProcessor;
+use App\Services\AcademicYearService;
 use PDO;
 
 class SubjectController
 {
     private $db;
+    private AcademicYearService $academicYearService;
 
     public function __construct()
     {
         $this->db = Database::getInstance()->getConnection();
+        $this->academicYearService = new AcademicYearService($this->db);
         if (!Session::isLogged()) {
             header("Location: /login");
             exit;
         }
 
         $this->db->exec("CREATE TABLE IF NOT EXISTS subject_classes (
-            subject_id INT NOT NULL, class_id INT NOT NULL,
-            PRIMARY KEY (subject_id, class_id),
+            subject_id INT NOT NULL, class_id INT NOT NULL, academic_year_id INT NOT NULL,
+            PRIMARY KEY (subject_id, class_id, academic_year_id),
             FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
-            FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
+            FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
+            FOREIGN KEY (academic_year_id) REFERENCES academic_years(id) ON UPDATE CASCADE
         )");
 
         // Ensure 'groupe' column exists in subjects table
@@ -140,9 +144,10 @@ class SubjectController
                 $stmt->execute([$nom, $coeff, $groupe]);
                 $subject_id = $this->db->lastInsertId();
 
-                $stmt = $this->db->prepare("INSERT INTO subject_classes (subject_id, class_id) VALUES (?, ?)");
+                $academicYearId = $this->academicYearService->getActiveYearId();
+                $stmt = $this->db->prepare("INSERT INTO subject_classes (subject_id, class_id, academic_year_id) VALUES (?, ?, ?)");
                 foreach ($classes_ids as $cid) {
-                    $stmt->execute([$subject_id, (int) $cid]);
+                    $stmt->execute([$subject_id, (int) $cid, $academicYearId]);
                 }
 
                 $this->db->commit();
@@ -218,12 +223,13 @@ class SubjectController
                 $stmt = $this->db->prepare("UPDATE subjects SET nom = ?, coefficient = ?, groupe = ? WHERE id = ?");
                 $stmt->execute([$nom, $coeff, $groupe, $id]);
 
-                $stmt_del = $this->db->prepare("DELETE FROM subject_classes WHERE subject_id = ?");
-                $stmt_del->execute([$id]);
+                $academicYearId = $this->academicYearService->getActiveYearId();
+                $stmt_del = $this->db->prepare("DELETE FROM subject_classes WHERE subject_id = ? AND academic_year_id = ?");
+                $stmt_del->execute([$id, $academicYearId]);
 
-                $stmt_ins = $this->db->prepare("INSERT INTO subject_classes (subject_id, class_id) VALUES (?, ?)");
+                $stmt_ins = $this->db->prepare("INSERT INTO subject_classes (subject_id, class_id, academic_year_id) VALUES (?, ?, ?)");
                 foreach ($classes_ids as $cid) {
-                    $stmt_ins->execute([$id, (int) $cid]);
+                    $stmt_ins->execute([$id, (int) $cid, $academicYearId]);
                 }
 
                 $this->db->commit();
