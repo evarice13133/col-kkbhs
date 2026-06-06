@@ -178,9 +178,18 @@ class SubjectController
             exit;
         }
 
-        $academicYearId = $this->academicYearService->getActiveYearId();
+        // Récupérer l'année académique sélectionnée ou utiliser l'année active par défaut
+        $selectedYearId = (int) ($_GET['academic_year_id'] ?? 0);
+        if ($selectedYearId <= 0) {
+            $selectedYearId = $this->academicYearService->getActiveYearId();
+        }
+
+        // Récupérer toutes les années académiques pour le sélecteur
+        $academicYears = $this->db->query("SELECT id, nom, is_active FROM academic_years ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
+
+        // Récupérer les classes assignées pour l'année sélectionnée
         $stmt_assoc = $this->db->prepare("SELECT class_id FROM subject_classes WHERE subject_id = ? AND academic_year_id = ?");
-        $stmt_assoc->execute([$id, $academicYearId]);
+        $stmt_assoc->execute([$id, $selectedYearId]);
         $assigned_classes = $stmt_assoc->fetchAll(PDO::FETCH_COLUMN);
 
         $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -198,12 +207,14 @@ class SubjectController
             $coeff = (int) ($_POST['coefficient'] ?? 1);
             $groupe = trim($_POST['groupe'] ?? 'Groupe 1');
             $classes_ids = array_values(array_unique(array_map('intval', $_POST['classes'] ?? [])));
+            $academicYearId = (int) ($_POST['academic_year_id'] ?? $this->academicYearService->getActiveYearId());
 
             if (empty($nom) || empty($classes_ids)) {
                 $error = \__('subject_name_and_one_class_required');
                 $subject = ['id' => $id, 'nom' => $nom, 'coefficient' => $coeff, 'groupe' => $groupe];
                 $assigned_classes = $classes_ids;
                 $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $academicYears = $this->db->query("SELECT id, nom, is_active FROM academic_years ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/subjects/edit.php';
                 return;
             }
@@ -214,6 +225,7 @@ class SubjectController
                 $subject = ['id' => $id, 'nom' => $nom, 'coefficient' => $coeff, 'groupe' => $groupe];
                 $assigned_classes = $classes_ids;
                 $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $academicYears = $this->db->query("SELECT id, nom, is_active FROM academic_years ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/subjects/edit.php';
                 return;
             }
@@ -224,7 +236,6 @@ class SubjectController
                 $stmt = $this->db->prepare("UPDATE subjects SET nom = ?, coefficient = ?, groupe = ? WHERE id = ?");
                 $stmt->execute([$nom, $coeff, $groupe, $id]);
 
-                $academicYearId = $this->academicYearService->getActiveYearId();
                 $stmt_del = $this->db->prepare("DELETE FROM subject_classes WHERE subject_id = ? AND academic_year_id = ?");
                 $stmt_del->execute([$id, $academicYearId]);
 
@@ -243,6 +254,7 @@ class SubjectController
                 $subject = ['id' => $id, 'nom' => $nom, 'coefficient' => $coeff, 'groupe' => $groupe];
                 $assigned_classes = $classes_ids;
                 $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $academicYears = $this->db->query("SELECT id, nom, is_active FROM academic_years ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/subjects/edit.php';
             }
         }

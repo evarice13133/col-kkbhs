@@ -10,13 +10,23 @@ ob_start();
             <h2 class="fw-black text-main-theme mb-0 fs-5 fs-md-4"><?= __('edit_subject_title') ?></h2>
             <p class="text-muted-theme small mb-0 d-none d-md-block"><?= h($subject['nom'] ?? '') ?> • Coef: <?= (int)($subject['coefficient'] ?? 1) ?></p>
         </div>
-        <a href="/subjects" class="btn btn-sm btn-light-theme rounded-pill px-3 border-theme-light">
-            <i class="bi bi-arrow-left me-1"></i> <span class="d-none d-sm-inline"><?= __('back_to_list') ?></span>
-        </a>
+        <div class="d-flex align-items-center gap-2">
+            <select id="academicYearSelector" class="form-select form-select-sm premium-input" style="max-width: 250px;">
+                <?php foreach ($academicYears as $year): ?>
+                    <option value="<?= $year['id'] ?>" <?= $year['id'] == $selectedYearId ? 'selected' : '' ?>>
+                        <?= h($year['nom']) ?> <?= $year['is_active'] ? '(Actif)' : '' ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <a href="/subjects" class="btn btn-sm btn-light-theme rounded-pill px-3 border-theme-light">
+                <i class="bi bi-arrow-left me-1"></i> <span class="d-none d-sm-inline"><?= __('back_to_list') ?></span>
+            </a>
+        </div>
     </div>
 
     <form action="/subjects/update?id=<?= $subject['id'] ?>" method="POST" id="editSubjectForm">
         <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
+        <input type="hidden" name="academic_year_id" value="<?= $selectedYearId ?>">
 
         <div class="modern-card border-0 shadow-sm overflow-hidden mb-3 mb-md-4">
             <div class="card-body p-3 p-md-4">
@@ -128,6 +138,16 @@ ob_start();
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Gestion du sélecteur d'année académique
+    const academicYearSelector = document.getElementById('academicYearSelector');
+    if (academicYearSelector) {
+        academicYearSelector.addEventListener('change', function() {
+            const url = new URL(window.location.href);
+            url.searchParams.set('academic_year_id', this.value);
+            window.location.href = url.toString();
+        });
+    }
+
     const selectAll = document.getElementById('selectAllClasses');
     const checkboxes = document.querySelectorAll('.class-checkbox');
 

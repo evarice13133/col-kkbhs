@@ -561,7 +561,11 @@ class BulletinController
             $key = $subject['id'] . '|' . $sequence['label'];
             $note = $notesMap[$key] ?? null;
             $value = $note !== null ? (float) $note['valeur'] : null;
-            $coefficient = (float) $subject['coefficient'];
+
+            // Utiliser les snapshots si disponibles, sinon les valeurs actuelles de la matière
+            $subjectName = $note && !empty($note['subject_nom_snapshot']) ? $note['subject_nom_snapshot'] : $subject['nom'];
+            $coefficient = $note && !empty($note['subject_coefficient_snapshot']) ? (float) $note['subject_coefficient_snapshot'] : (float) $subject['coefficient'];
+            $subjectGroupe = $note && !empty($note['subject_groupe_snapshot']) ? $note['subject_groupe_snapshot'] : ($subject['groupe'] ?? __('group_default'));
 
             // Pour la section anglophone, on n'inclut que les matières avec des notes dans le calcul
             if ($isEnglishSection) {
@@ -583,9 +587,9 @@ class BulletinController
             $studentRankSubj = $subjStats['student_ranks'][$student['id']] ?? null;
 
             $rows[] = [
-                'subject' => $subject['nom'],
+                'subject' => $subjectName,
                 'teacher' => strtoupper((string) ($subject['teacher_name'] ?? '')),
-                'group' => $subject['groupe'] ?? __('group_default'),
+                'group' => $subjectGroupe,
                 'note' => $value,
                 'coefficient' => $coefficient,
                 'weighted' => ($value !== null ? round($value * $coefficient, 2) : null),
@@ -661,9 +665,14 @@ class BulletinController
 
         foreach ($subjects as $subject) {
             $sequenceValues = [];
+            $firstNote = null;
             foreach ($termSequences as $seq) {
                 $key = $subject['id'] . '|' . $seq['label'];
-                $sequenceValues[] = isset($notesMap[$key]) ? (float) $notesMap[$key]['valeur'] : null;
+                $noteData = $notesMap[$key] ?? null;
+                $sequenceValues[] = isset($noteData) ? (float) $noteData['valeur'] : null;
+                if ($firstNote === null && $noteData !== null) {
+                    $firstNote = $noteData;
+                }
             }
 
             $existingValues = array_values(array_filter($sequenceValues, function ($v) {
@@ -672,7 +681,11 @@ class BulletinController
             $numSeqs = count($termSequences) ?: 1;
             $termNoteCalc = array_sum($sequenceValues) / $numSeqs;
             $termNote = !empty($existingValues) ? round($termNoteCalc, 2) : null;
-            $coefficient = (float) $subject['coefficient'];
+
+            // Utiliser les snapshots si disponibles, sinon les valeurs actuelles de la matière
+            $subjectName = $firstNote && !empty($firstNote['subject_nom_snapshot']) ? $firstNote['subject_nom_snapshot'] : $subject['nom'];
+            $coefficient = $firstNote && !empty($firstNote['subject_coefficient_snapshot']) ? (float) $firstNote['subject_coefficient_snapshot'] : (float) $subject['coefficient'];
+            $subjectGroupe = $firstNote && !empty($firstNote['subject_groupe_snapshot']) ? $firstNote['subject_groupe_snapshot'] : ($subject['groupe'] ?? __('group_default'));
             $weighted = round($termNoteCalc * $coefficient, 2);
 
             // Pour la section anglophone, on n'inclut que les matières avec des notes dans le calcul
@@ -695,9 +708,9 @@ class BulletinController
             $studentRankSubj = $subjStats['student_ranks'][$student['id']] ?? null;
 
             $rows[] = [
-                'subject' => $subject['nom'],
+                'subject' => $subjectName,
                 'teacher' => strtoupper((string) ($subject['teacher_name'] ?? '')),
-                'group' => $subject['groupe'] ?? __('group_default'),
+                'group' => $subjectGroupe,
                 'sequence_values' => $sequenceValues,
                 'term_note' => $termNote,
                 'coefficient' => $coefficient,
@@ -827,11 +840,22 @@ class BulletinController
 
             $termNotes = [];
             $hasTermValue = false;
+            $firstNote = null;
             foreach ([1, 2, 3] as $term) {
                 $val = $this->computeSubjectAverageFromMap($subjectId, $notesMap, $termSequencesByTerm[$term]);
                 $termNotes[$term] = $val;
                 if ($val !== null)
                     $hasTermValue = true;
+                // Récupérer la première note disponible pour les snapshots
+                if ($firstNote === null && $termSequencesByTerm[$term]) {
+                    foreach ($termSequencesByTerm[$term] as $seq) {
+                        $key = $subjectId . '|' . $seq['label'];
+                        if (isset($notesMap[$key])) {
+                            $firstNote = $notesMap[$key];
+                            break;
+                        }
+                    }
+                }
             }
 
             $numTerms = 3;
@@ -839,7 +863,11 @@ class BulletinController
                 return $v ?? 0;
             }, $termNotes)) / $numTerms;
             $annualNote = ($hasTermValue) ? round($annualNoteCalc, 2) : null;
-            $coefficient = (float) $subject['coefficient'];
+
+            // Utiliser les snapshots si disponibles, sinon les valeurs actuelles de la matière
+            $subjectName = $firstNote && !empty($firstNote['subject_nom_snapshot']) ? $firstNote['subject_nom_snapshot'] : $subject['nom'];
+            $coefficient = $firstNote && !empty($firstNote['subject_coefficient_snapshot']) ? (float) $firstNote['subject_coefficient_snapshot'] : (float) $subject['coefficient'];
+            $subjectGroupe = $firstNote && !empty($firstNote['subject_groupe_snapshot']) ? $firstNote['subject_groupe_snapshot'] : ($subject['groupe'] ?? __('group_default'));
             $weighted = round($annualNoteCalc * $coefficient, 2);
 
             // Pour la section anglophone, on n'inclut que les matières avec des notes dans le calcul
@@ -862,9 +890,9 @@ class BulletinController
             $studentRankSubj = $subjStats['student_ranks'][$studentId] ?? null;
 
             $rows[] = [
-                'subject' => $subject['nom'],
+                'subject' => $subjectName,
                 'teacher' => strtoupper((string) ($subject['teacher_name'] ?? '')),
-                'group' => $subject['groupe'] ?? __('group_default'),
+                'group' => $subjectGroupe,
                 'term_values' => [
                     $termNotes[1] ?? null,
                     $termNotes[2] ?? null,
@@ -1416,7 +1444,8 @@ class BulletinController
 
         $placeholders = implode(', ', array_fill(0, count($sequenceLabels), '?'));
         $params = array_merge([$classId, $academicYearId], $sequenceLabels);
-        $sql = "SELECT g.student_id, g.subject_id, g.periode, g.valeur, g.appreciation
+        $sql = "SELECT g.student_id, g.subject_id, g.periode, g.valeur, g.appreciation,
+                       g.subject_nom_snapshot, g.subject_coefficient_snapshot, g.subject_groupe_snapshot
             FROM grades g
             JOIN students st ON st.id = g.student_id
             JOIN subjects sub ON sub.id = g.subject_id
