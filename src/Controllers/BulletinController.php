@@ -26,6 +26,15 @@ class BulletinController
         $this->db = Database::getInstance()->getConnection();
         $this->ensureSequencesSchema();
         $this->ensureDisciplineSchema();
+
+        // Vérifier si l'impression des bulletins est activée
+        $settingsStore = new SettingsStore($this->db);
+        $bulletinPrintingEnabled = $settingsStore->getBool('bulletin_printing_enabled', true);
+
+        if (!$bulletinPrintingEnabled && Session::get('user_role') !== 'superadmin') {
+            header("Location: /");
+            exit;
+        }
     }
 
     public function index()

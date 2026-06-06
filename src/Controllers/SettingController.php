@@ -98,12 +98,21 @@ class SettingController
                 'backup_github_auth',
                 'backup_git_user_name',
                 'backup_git_user_email',
+                'bulletin_printing_enabled',
             ];
 
             $updates = [];
             foreach ($allowed_keys as $key) {
                 if (isset($_POST[$key])) {
                     $updates[$key] = trim((string) $_POST[$key]);
+                }
+            }
+
+            // Gérer explicitement les checkboxes (elles ne sont pas envoyées si décochées)
+            $checkbox_keys = ['bulletin_printing_enabled', 'backup_enabled', 'backup_push_enabled'];
+            foreach ($checkbox_keys as $key) {
+                if (in_array($key, $allowed_keys)) {
+                    $updates[$key] = isset($_POST[$key]) ? '1' : '0';
                 }
             }
 

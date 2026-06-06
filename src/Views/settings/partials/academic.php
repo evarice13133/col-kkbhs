@@ -71,18 +71,17 @@
                         </div>
                         <small class="extra-small text-muted-theme opacity-75 mt-1 d-block"><?= __('honor_roll_default_threshold_help') ?></small>
                     </div>
-                </div>
-                            value="<?= htmlspecialchars((string) ($settings['matricule_format'] ?? '{SCHOOL_CODE}/{YEAR}/{CLASS}/{COUNTER}')) ?>">
-                        <small class="extra-small text-muted-theme opacity-75 mt-1 px-1 d-block"><?= __('format_tokens_help') ?></small>
-                    </div>
-                    <div class="row g-2">
-                        <div class="col-12">
-                            <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('initialize_counter') ?></label>
-                            <div class="input-group shadow-sm">
-                                <span class="input-group-text border-0 bg-white extra-small fw-bold text-muted"><?= __('next_counter') ?></span>
-                                <input type="number" name="matricule_counter" class="form-control premium-input border-0 bg-white"
-                                    value="<?= (int) ($settings['matricule_counter'] ?? 1) ?>">
+                    <div class="mb-0">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-2">Impression des bulletins</label>
+                        <div class="d-flex align-items-center gap-3 p-3 border-theme-dynamic rounded-4 bg-soft-primary">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="bulletin_printing_enabled" id="bulletin_printing_enabled"
+                                    value="1" <?= ($settings['bulletin_printing_enabled'] ?? '1') === '1' ? 'checked' : '' ?>>
+                                <label class="form-check-label fw-bold text-primary small" for="bulletin_printing_enabled">
+                                    <?= ($settings['bulletin_printing_enabled'] ?? '1') === '1' ? 'Activé' : 'Désactivé' ?>
+                                </label>
                             </div>
+                            <small class="extra-small text-muted-theme opacity-75">Active ou désactive l'accès à l'impression des bulletins pour les administrateurs.</small>
                         </div>
                     </div>
                 </div>
