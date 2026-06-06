@@ -215,9 +215,11 @@ class DashboardController
             $cId = (int) $sc['class_id'];
             $sId = (int) $sc['subject_id'];
             $studentCount = $allClassCounts[$cId] ?? 0;
+            $key = "{$cId}_{$sId}";
+            $filledCount = $allFilledCounts[$key] ?? 0;
 
             $globalExpected += ($studentCount * $numEvals);
-            $globalFilled += ($allFilledCounts["{$cId}_{$sId}"] ?? 0);
+            $globalFilled += $filledCount;
         }
 
         $globalProgress = $globalExpected > 0 ? round(($globalFilled / $globalExpected) * 100) : 0;
