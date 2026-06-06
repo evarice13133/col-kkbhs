@@ -6,9 +6,9 @@
  * Il est recommandé de garder ce fichier hors de la vue du public.
  */
 
-  define('DB_HOST', 'localhost');
- define('DB_NAME', 'u290233073_copobimat_db_2');
- define('DB_USER', 'u290233073_copobimat_db_2');
+   define('DB_HOST', 'localhost');
+   define('DB_NAME', 'u290233073_copobimat_db_2');
+   define('DB_USER', 'u290233073_copobimat_db_2');
    define('DB_PASS', 'Tezempa12133!!');
    define('DB_CHARSET', 'utf8mb4');
    define('APP_URL', 'https://copobimat.camertech.com');
