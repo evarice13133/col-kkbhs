@@ -1445,7 +1445,7 @@ class BulletinController
         $placeholders = implode(', ', array_fill(0, count($sequenceLabels), '?'));
         $params = array_merge([$classId, $academicYearId], $sequenceLabels);
         $sql = "SELECT g.student_id, g.subject_id, g.periode, g.valeur, g.appreciation,
-                       g.subject_nom_snapshot, g.subject_coefficient_snapshot, g.subject_groupe_snapshot
+                       g.subject_nom_snapshot
             FROM grades g
             JOIN students st ON st.id = g.student_id
             JOIN subjects sub ON sub.id = g.subject_id
