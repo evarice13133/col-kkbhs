@@ -48,6 +48,10 @@ class TeacherController
         [$teachers, $filters, $totalCount] = $this->fetchTeachersFromFilters($limit, $offset);
         $totalPages = (int) ceil($totalCount / $limit);
 
+        // Récupérer le paramètre d'affichage des noms d'enseignants sur les bulletins
+        $settingsStore = new \App\Services\SettingsStore($this->db);
+        $showTeacherNamesOnBulletins = (bool) $settingsStore->get('show_teacher_names_on_bulletins', '1');
+
         // Sécurité : si la page demandée est vide suite au changement de limite, on redirige
         if ($page > $totalPages && $totalCount > 0) {
             header("Location: /teachers?page=1");
@@ -71,6 +75,30 @@ class TeacherController
         }
 
         include __DIR__ . '/../Views/teachers/index.php';
+    }
+
+    /**
+     * Bascule l'affichage des noms d'enseignants sur les bulletins.
+     */
+    public function toggleTeacherNames()
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $show = isset($_POST['show']) ? (int) $_POST['show'] : 0;
+            
+            $settingsStore = new \App\Services\SettingsStore($this->db);
+            $settingsStore->set('show_teacher_names_on_bulletins', (string) $show);
+            
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'message' => $show ? __('teacher_names_enabled') : __('teacher_names_disabled')
+            ]);
+            exit;
+        }
+        
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'message' => __('invalid_request')]);
+        exit;
     }
 
     /**
@@ -163,46 +191,32 @@ class TeacherController
     }
 
     /**
-     * Désactive un profil enseignant (préservation de l'historique).
-     * Au lieu de supprimer, on utilise un flag is_active pour conserver l'historique pédagogique.
+     * Supprime un profil enseignant.
+     * IMPORTANT: Les notes saisies par l'enseignant ne sont JAMAIS supprimées.
+     * Si l'enseignant a des notes, la suppression est refusée pour préserver l'historique.
      */
     public function delete($id)
     {
-        // Vérifier si l'enseignant a un historique pédagogique
-        $stmt = $this->db->prepare("
-            SELECT 
-                (SELECT COUNT(*) FROM teacher_assignments WHERE user_id = ?) as assignment_count,
-                (SELECT COUNT(*) FROM grades WHERE teacher_id = ?) as grade_count
-        ");
-        $stmt->execute([$id, $id]);
+        // Vérifier si l'enseignant a des notes (grades)
+        $stmt = $this->db->prepare("SELECT COUNT(*) as grade_count FROM grades WHERE teacher_id = ?");
+        $stmt->execute([$id]);
         $history = $stmt->fetch(PDO::FETCH_ASSOC);
         
-        $hasHistory = ($history['assignment_count'] > 0 || $history['grade_count'] > 0);
+        $hasGrades = ($history['grade_count'] > 0);
         
-        if ($hasHistory) {
-            // Utiliser is_active au lieu de supprimer
-            $stmt = $this->db->prepare("UPDATE users SET is_active = 0 WHERE id = ? AND role = 'enseignant'");
-            $stmt->execute([$id]);
-            Session::setFlash('success', __('teacher_deactivated_success'));
-        } else {
-            // Pas d'historique, suppression autorisée
-            $stmt = $this->db->prepare("DELETE FROM users WHERE id = ? AND role = 'enseignant'");
-            $stmt->execute([$id]);
-            Session::setFlash('success', __('teacher_deleted_success'));
+        if ($hasGrades) {
+            // Refuser la suppression si l'enseignant a des notes
+            Session::setFlash('error', __('teacher_has_grades_cannot_delete'));
+            header("Location: /teachers");
+            exit;
         }
         
-        header("Location: /teachers");
-        exit;
-    }
-
-    /**
-     * Réactive un enseignant désactivé (gestion des retours).
-     */
-    public function activate($id)
-    {
-        $stmt = $this->db->prepare("UPDATE users SET is_active = 1 WHERE id = ? AND role = 'enseignant'");
+        // Suppression autorisée uniquement si pas de notes
+        // Les assignments seront supprimés en cascade par la contrainte FK
+        $stmt = $this->db->prepare("DELETE FROM users WHERE id = ? AND role = 'enseignant'");
         $stmt->execute([$id]);
-        Session::setFlash('success', __('teacher_activated_success'));
+        Session::setFlash('success', __('teacher_deleted_success'));
+        
         header("Location: /teachers");
         exit;
     }

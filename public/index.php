@@ -331,6 +331,8 @@ elseif (strpos($path, '/teachers') === 0) {
         $c->directAssign();
     elseif ($path === '/teachers/store_assignment' && $method === 'POST')
         $c->storeAssignment($_GET['id'] ?? 0);
+    elseif ($path === '/teachers/toggle-teacher-names' && $method === 'POST')
+        $c->toggleTeacherNames();
 } elseif (strpos($path, '/bulletins') === 0) {
     if (!Session::isLogged()) {
         header('Location: /login');

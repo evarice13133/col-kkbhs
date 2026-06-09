@@ -69,6 +69,19 @@ ob_start(); ?>
         </style>
     <?php endif; ?>
 
+    <!-- TOGGLE AFFICHAGE NOMS ENSEIGNANTS SUR BULLETINS -->
+    <div class="d-flex justify-content-end mb-3">
+        <div class="d-flex align-items-center gap-2 bg-white bg-opacity-10 px-4 py-2 rounded-pill shadow-sm" style="border: 1px solid rgba(var(--primary-rgb), 0.15);">
+            <span class="text-muted small fw-medium"><?= __('show_teacher_names_on_bulletins') ?></span>
+            <label class="form-check form-switch mb-0" style="cursor: pointer;">
+                <input class="form-check-input" type="checkbox" id="toggleTeacherNames" 
+                    <?= $showTeacherNamesOnBulletins ? 'checked' : '' ?>
+                    onchange="toggleTeacherNamesOnBulletins(this)">
+                <span class="form-check-label"></span>
+            </label>
+        </div>
+    </div>
+
     <!-- BARRE D'ACTIONS COMPLÈTE : Style Floating Island -->
     <div class="d-flex justify-content-center mb-5">
         <div class="filter-island px-3 py-2 shadow-lg animate-slide-down" style="min-width: 85%;">
@@ -428,7 +441,70 @@ ob_start(); ?>
     [data-theme="dark"] .table-modern tbody td .text-muted {
         color: #a0a0a0;
     }
+
+    /* Toggle Switch Style */
+    .form-check-input:checked {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+
+    .form-check-input {
+        cursor: pointer;
+        width: 3em;
+        height: 1.5em;
+    }
 </style>
+
+<script>
+function toggleTeacherNamesOnBulletins(checkbox) {
+    const newValue = checkbox.checked ? '1' : '0';
+    
+    fetch('/teachers/toggle-teacher-names', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'show=' + newValue
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success border-0 shadow-sm alert-dismissible fade show rounded-4 mb-4';
+            alertDiv.innerHTML = `
+                <i class="bi bi-check-circle-fill me-2"></i>${data.message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            const container = document.querySelector('.container-fluid');
+            container.insertBefore(alertDiv, container.firstChild);
+            
+            // Auto-remove after 3 seconds
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 3000);
+        } else {
+            // Show error message
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-danger border-0 shadow-sm alert-dismissible fade show rounded-4 mb-4';
+            alertDiv.innerHTML = `
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>${data.message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            const container = document.querySelector('.container-fluid');
+            container.insertBefore(alertDiv, container.firstChild);
+            
+            // Revert checkbox on error
+            checkbox.checked = !checkbox.checked;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // Revert checkbox on error
+        checkbox.checked = !checkbox.checked;
+    });
+}
+</script>
 
 <?php $content = ob_get_clean(); ?>
 

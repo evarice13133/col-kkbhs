@@ -592,7 +592,9 @@ if (isset($styleOnly)) {
                                 <tr>
                                     <td class="left">
                                         <div><?= htmlspecialchars($row['subject']) ?></div>
-                                        <span class="teacher-name"><?= htmlspecialchars($row['teacher']) ?></span>
+                                        <?php if ($showTeacherNamesOnBulletins): ?>
+                                            <span class="teacher-name"><?= htmlspecialchars($row['teacher']) ?></span>
+                                        <?php endif; ?>
                                     </td>
                                     <td><?= formatNote($row['note']) ?></td>
                                     <td><?= (int) $row['coefficient'] ?></td>

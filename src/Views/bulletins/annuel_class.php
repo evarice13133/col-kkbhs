@@ -133,8 +133,13 @@
     <?php endif; ?>
 
     <?php foreach ($bulletins as $index => $bulletin): ?>
-        <?php $embeddedBatch = true;
+        <?php 
+        $embeddedBatch = true;
+        // Preserve the teacher names setting before extract
+        $savedShowTeacherNames = $showTeacherNamesOnBulletins ?? true;
         extract($bulletin);
+        // Restore the teacher names setting
+        $showTeacherNamesOnBulletins = $savedShowTeacherNames;
         include __DIR__ . '/annuel.php'; ?>
     <?php endforeach; ?>
 
