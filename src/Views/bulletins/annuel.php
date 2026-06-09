@@ -294,7 +294,9 @@ if (isset($styleOnly)) {
                                 <tr>
                                     <td class="left">
                                         <div><?= htmlspecialchars($row['subject']) ?></div>
-                                        <span class="teacher-name"><?= htmlspecialchars($row['teacher']) ?></span>
+                                        <?php if ($showTeacherNamesOnBulletins): ?>
+                                            <span class="teacher-name"><?= htmlspecialchars($row['teacher']) ?></span>
+                                        <?php endif; ?>
                                     </td>
                                     <td><?= isset($row['term_values'][0]) ? formatNote($row['term_values'][0]) : '-' ?></td>
                                     <td><?= isset($row['term_values'][1]) ? formatNote($row['term_values'][1]) : '-' ?></td>

@@ -254,6 +254,12 @@ class BulletinController
         $data = $this->buildSequenceBulletinData($student, $sequence, $academicYear, $ranking);
         $pdf_filename = $this->buildPdfFileNameStudent($student, $sequence['label']);
         $data['pdf_filename'] = $pdf_filename;
+        
+        // Récupérer le paramètre d'affichage des noms d'enseignants sur les bulletins
+        $settingsStore = new SettingsStore($this->db);
+        $showTeacherNamesOnBulletins = (bool) $settingsStore->get('show_teacher_names_on_bulletins', '1');
+        $data['showTeacherNamesOnBulletins'] = $showTeacherNamesOnBulletins;
+        
         extract($data);
 
         if (($_GET['format'] ?? '') === 'pdf') {
@@ -289,6 +295,12 @@ class BulletinController
         $data = $this->buildTrimesterBulletinData($student, $term, $academicYear, $ranking);
         $pdf_filename = $this->buildPdfFileNameStudent($student, 'TRIMESTRE ' . $term);
         $data['pdf_filename'] = $pdf_filename;
+        
+        // Récupérer le paramètre d'affichage des noms d'enseignants sur les bulletins
+        $settingsStore = new SettingsStore($this->db);
+        $showTeacherNamesOnBulletins = (bool) $settingsStore->get('show_teacher_names_on_bulletins', '1');
+        $data['showTeacherNamesOnBulletins'] = $showTeacherNamesOnBulletins;
+        
         extract($data);
 
         if (($_GET['format'] ?? '') === 'pdf') {
@@ -351,6 +363,10 @@ class BulletinController
 
         $classInfo = $this->getClassInfo($classId);
         $pdf_filename = $this->buildPdfFileNameClass($sequence['label'], $classInfo['nom'] ?? 'classe');
+        
+        // Récupérer le paramètre d'affichage des noms d'enseignants sur les bulletins
+        $settingsStore = new SettingsStore($this->db);
+        $showTeacherNamesOnBulletins = (bool) $settingsStore->get('show_teacher_names_on_bulletins', '1');
 
         if (($_GET['format'] ?? '') === 'pdf') {
             ob_start();
@@ -417,6 +433,10 @@ class BulletinController
 
         $classInfo = $this->getClassInfo($classId);
         $pdf_filename = $this->buildPdfFileNameClass('TRIMESTRE ' . $term, $classInfo['nom'] ?? 'classe');
+        
+        // Récupérer le paramètre d'affichage des noms d'enseignants sur les bulletins
+        $settingsStore = new SettingsStore($this->db);
+        $showTeacherNamesOnBulletins = (bool) $settingsStore->get('show_teacher_names_on_bulletins', '1');
 
         if (($_GET['format'] ?? '') === 'pdf') {
             ob_start();
@@ -454,6 +474,12 @@ class BulletinController
         $data = $this->buildAnnualBulletinData($student, $academicYear, $ranking);
         $pdf_filename = $this->buildPdfFileNameStudent($student, 'ANNUEL');
         $data['pdf_filename'] = $pdf_filename;
+        
+        // Récupérer le paramètre d'affichage des noms d'enseignants sur les bulletins
+        $settingsStore = new SettingsStore($this->db);
+        $showTeacherNamesOnBulletins = (bool) $settingsStore->get('show_teacher_names_on_bulletins', '1');
+        $data['showTeacherNamesOnBulletins'] = $showTeacherNamesOnBulletins;
+        
         extract($data);
 
         if (($_GET['format'] ?? '') === 'pdf') {
@@ -526,6 +552,10 @@ class BulletinController
 
         $classInfo = $this->getClassInfo($classId);
         $pdf_filename = $this->buildPdfFileNameClass('ANNUEL', $classInfo['nom'] ?? 'classe');
+        
+        // Récupérer le paramètre d'affichage des noms d'enseignants sur les bulletins
+        $settingsStore = new SettingsStore($this->db);
+        $showTeacherNamesOnBulletins = (bool) $settingsStore->get('show_teacher_names_on_bulletins', '1');
 
         if (($_GET['format'] ?? '') === 'pdf') {
             ob_start();
