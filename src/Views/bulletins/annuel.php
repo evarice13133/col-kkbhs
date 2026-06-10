@@ -205,6 +205,7 @@ if (isset($styleOnly)) {
 
             <div class="school-name-row">
                 <div class="school-name-display"><?= htmlspecialchars($schoolDisplayName) ?></div>
+                <div class="academic-year-display">ANNEE : <?= htmlspecialchars((string) ($activeYear['nom'] ?? '')) ?></div>
             </div>
         </div>
 
@@ -225,9 +226,6 @@ if (isset($styleOnly)) {
                 </td>
                 <td class="nowrap" style="width: 1%;"><span class="student-info-label"><?= __('class') ?> :</span><span
                         class="student-info-value"><?= htmlspecialchars((string) ($student['class_nom'] ?? '')) ?></span>
-                </td>
-                <td class="nowrap" style="width: 1%;"><span class="student-info-label"><?= __('year') ?> :</span><span
-                        class="student-info-value"><?= htmlspecialchars((string) ($activeYear['nom'] ?? '')) ?></span>
                 </td>
             </tr>
             <tr>
@@ -284,8 +282,8 @@ if (isset($styleOnly)) {
                                 <th><?= __('coef') ?></th>
                                 <th><?= __('class_avg') ?></th>
                                 <th><?= __('rank') ?></th>
-                                <th><?= __('appreciation') ?></th>
-                            </tr>
+                                <th><?= __('mention') ?></th>
+                            </tr>   
                         </thead>
                     <?php endif; ?>
                     <tbody>
@@ -293,10 +291,12 @@ if (isset($styleOnly)) {
                             <?php foreach ($group['rows'] as $row): ?>
                                 <tr>
                                     <td class="left">
-                                        <div><?= htmlspecialchars($row['subject']) ?></div>
-                                        <?php if ($showTeacherNamesOnBulletins): ?>
-                                            <span class="teacher-name"><?= htmlspecialchars($row['teacher']) ?></span>
-                                        <?php endif; ?>
+                                        <div class="subject-line">
+                                            <span class="subject-name"><?= htmlspecialchars($row['subject']) ?></span>
+                                            <?php if ($showTeacherNamesOnBulletins): ?>
+                                                <span class="teacher-info">Eng: <?= htmlspecialchars($row['teacher']) ?></span>
+                                            <?php endif; ?>
+                                        </div>
                                     </td>
                                     <td><?= isset($row['term_values'][0]) ? formatNote($row['term_values'][0]) : '-' ?></td>
                                     <td><?= isset($row['term_values'][1]) ? formatNote($row['term_values'][1]) : '-' ?></td>
@@ -337,13 +337,25 @@ if (isset($styleOnly)) {
                     $groupCoeffs = (int) ($group['total_coefficients'] ?? 0);
                     $mgp = $groupCoeffs > 0 ? round($groupPoints / $groupCoeffs, 2) : 0;
                     ?>
-                    <table class="group-subtotal-line" style="width: 100%; border-collapse: collapse; border: none; margin: 1px 0 3px; background-color: #d9e7f6; color: #17324d; font-weight: bold; font-size: 8.5px; white-space: nowrap;">
+                    <table class="group-subtotal-line" style="width: 100%; border-collapse: collapse; border: none; margin: 8px 0 5px; background-color: #e8f4e8; color: #333; font-weight: normal; font-size: <?= $baseFontSize + 2 ?>px;">
+                        <colgroup>
+                            <col style="width:37.5%;">
+                            <col style="width:10%;">
+                            <col style="width:10%;">
+                            <col style="width:10%;">
+                            <col style="width:7%;">
+                            <col style="width:5%;">
+                            <col style="width:7.5%;">
+                            <col style="width:5%;">
+                            <col style="width:8%;">
+                        </colgroup>
                         <tr>
-                            <td style="text-align: left; padding: 2px 7px; border: none; font-weight: bold; width: 30%;"><?= htmlspecialchars($group['label']) ?></td>
-                            <td style="text-align: center; padding: 2px 7px; border: none; font-weight: bold;"><?= strtoupper(__('points')) ?>: <?= formatSimple($groupAnnualTotal) ?></td>
-                            <td style="text-align: center; padding: 2px 7px; border: none; font-weight: bold;"><?= __('t_coefs') ?>: <?= (float) ($group['total_coeffs_all'] ?? 0) ?></td>
-                            <td style="text-align: center; padding: 2px 7px; border: none; font-weight: bold;"><?= strtoupper(__('total')) ?>: <?= formatSimple($groupPoints) ?></td>
-                            <td style="text-align: right; padding: 2px 7px; border: none; font-weight: bold; width: 20%;"><?= __('mgp') ?>: <span class="<?= $mgp >= 10 ? 'vert' : 'rouge' ?>" style="font-weight: bold;"><?= formatSimple($mgp) ?></span></td>
+                            <td style="text-align: left; padding: 6px 8px; border: none;"><?= htmlspecialchars($group['label']) ?></td>
+                            <td style="text-align: center; padding: 6px 8px; border: none;">&nbsp;</td>
+                            <td style="text-align: center; padding: 6px 8px; border: none;">&nbsp;</td>
+                            <td style="text-align: center; padding: 6px 8px; border: none;">&nbsp;</td>
+                            <td style="text-align: center; padding: 6px 8px; border: none;" colspan="3"><strong><?= formatSimple($groupPoints) ?> Points / <?= (float) ($group['total_coeffs_all'] ?? 0) ?> Coef</strong></td>
+                            <td style="text-align: right; padding: 6px 8px; border: none;" colspan="2"><strong class="<?= $mgp >= 10 ? 'vert' : 'rouge' ?>">MGP: <?= formatSimple($mgp) ?></strong></td>
                         </tr>
                     </table>
                 <?php endforeach; ?>
@@ -511,7 +523,7 @@ if (isset($styleOnly)) {
             <!-- SECTION 4: LÉGENDE -->
             <tr>
                 <td colspan="6"
-                    style="border: 0.5px solid #000; padding: 3px; font-size: 8.5px; line-height: 1.1; background-color: #fafafa;">
+                    style="border: 1px solid green; padding: 3px; font-size: 8.5px; line-height: 1.1; background-color: #fafafa;">
                     <span
                         style="font-weight: bold; text-decoration: underline;"><?= __('legend_appreciation') ?>:</span>
                     CTBA : <?= __('ctba_desc') ?> | CBA : <?= __('cba_desc') ?> | CA : <?= __('ca_desc') ?> |
@@ -530,10 +542,48 @@ if (isset($styleOnly)) {
             </tr>
             <tr>
                 <td></td>
-                <td style="text-align: center;"><?= htmlspecialchars($professor_name ?? '') ?></td>
+                <td style="text-align: center;"><?php if ($showTeacherNamesOnBulletins): ?><?= htmlspecialchars($professor_name ?? '') ?><?php endif; ?></td>
                 <td style="text-align: right;"></td>
             </tr>
         </table>
+
+        <!-- G. SECTION FIN D'ANNÉE (Condition: is_end_of_year == true) -->
+        <?php if (isset($is_end_of_year) && $is_end_of_year === true): ?>
+        <table style="width: 100%; border: 2px solid green; border-collapse: collapse; margin-top: 10px;">
+            <tr>
+                <th colspan="2" style="background-color: green; color: white; font-weight: bold; padding: 5px; text-align: center; border: 1px solid green;">
+                    Decision du Conseil de Fin d'Année
+                </th>
+            </tr>
+            <tr>
+                <td style="border: 1px solid green; padding: 5px; width: 50%;">
+                    <strong>Promu en:</strong> <span style="margin-left: 10px;">_________________</span>
+                </td>
+                <td style="border: 1px solid green; padding: 5px; width: 50%;">
+                    <strong>Autorisé à redoubler:</strong> <span style="margin-left: 10px;">[ ] Oui  [ ] Non</span>
+                </td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid green; padding: 5px; width: 50%;">
+                    <strong>Devra recomposer:</strong> <span style="margin-left: 10px;">[ ] Oui  [ ] Non</span>
+                </td>
+                <td style="border: 1px solid green; padding: 5px; width: 50%;">
+                    <strong>Exclu pour:</strong>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" style="border: 1px solid green; padding: 5px;">
+                    <strong>Exclu pour (cocher si applicable):</strong>
+                    <div style="margin-top: 5px;">
+                        <label style="margin-right: 20px;"><input type="checkbox"> Age</label>
+                        <label style="margin-right: 20px;"><input type="checkbox"> Travail</label>
+                        <label style="margin-right: 20px;"><input type="checkbox"> Ne peut tripler</label>
+                        <label><input type="checkbox"> Mauvaise conduite</label>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        <?php endif; ?>
     </div>
 
     <?php if (!$embeddedBatch): ?>

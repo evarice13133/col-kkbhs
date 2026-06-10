@@ -112,17 +112,17 @@ if (isset($styleOnly)) {
     @page { size: A4 portrait; margin: <?= $pageMargin ?>; }
     body { font-family: 'Arial', sans-serif; font-size: <?= $baseFontSize ?>px; margin: 0; padding: 0; color: #000;
     background: #fff; line-height: <?= $lineHeight ?>; }
-    .bulletin-sheet { width: 100%; margin: 0 auto; page-break-after: always; padding: 0 2px; }
+    .bulletin-sheet { width: 100%; margin: 0 auto; page-break-after: always; padding: 5px; border: 2px solid green; }
     .bulletin-sheet:last-child { page-break-after: auto; }
-    table { width: 99.5%; margin: 0 auto 1px; border-collapse: collapse; table-layout: fixed; }
-    th, td { border: 1px solid #000; padding: 1px 2px; text-align: center; }
-    th { background-color: #f2f2f2; text-transform: uppercase; }
+    table { width: 99.5%; margin: 0 auto 1px; border-collapse: collapse; table-layout: fixed; border: 1px solid green; }
+    th, td { border: 1px solid green; padding: 3px 5px; text-align: center; color: black; }
+    th { background-color: green; color: white; text-transform: uppercase; font-weight: bold; }
     .left { text-align: left; }
     .bold { font-weight: bold; }
     .uppercase { text-transform: uppercase; }
-    .vert { color: #008000; }
+    .vert { color: green; font-weight: bold; }
     .rouge { color: #ff0000; }
-    .title-box { text-align: center; font-size: 14px; margin: 3px 0 2px; text-transform: uppercase; border: 2px solid #000;
+    .title-box { text-align: center; font-size: 16px; margin: 3px 0 2px; text-transform: uppercase; border: 2px solid #000;
     padding: 2px 3px; }
     .header-wrapper { width: 100%; margin-bottom: 10px; }
     .header-left { float: left; width: 40%; text-align: center; }
@@ -130,10 +130,12 @@ if (isset($styleOnly)) {
     .header-right { float: right; width: 40%; text-align: center; }
     .header-side-content { width: 100%; padding: 0 2px; min-height: 85px; }
     .school-name-row { clear: both; width: 100%; text-align: center; padding: 0; margin: 0; }
-    .school-name-display { width: 100%; margin: 0 auto; font-weight: bold; font-size: 12px; text-transform: uppercase;
+    .school-name-display { width: 100%; margin: 0 auto; font-weight: 900; font-size: 16px; text-transform: uppercase;
+    border: none; padding: 0; }
+    .academic-year-display { width: 100%; margin: 2px auto 0; font-weight: 700; font-size: 14px; text-transform: uppercase;
     border: none; padding: 0; }
     .header-line { font-size: 12px; font-weight: bold; margin: 0; text-transform: uppercase; }
-    .header-contact { font-size: 11px; margin: 0; width: 100%; text-align: center; }
+    .header-contact { font-size: 11px; margin: 0; width: 100%; text-align: center; opacity: 0.9; }
     .logo-box { width: <?= $logoSize ?>; height: <?= $logoSize ?>; margin: 0 auto; display: flex; align-items: center;
     justify-content: center;
     overflow: hidden; }
@@ -162,41 +164,43 @@ if (isset($styleOnly)) {
     }
     .grades-table { position: relative; z-index: 1; table-layout: fixed; width: 100%; border-collapse: collapse; }
     .grades-table td:not(.left) { font-size: 0.9em; }
-    .teacher-name { font-size: 7px; text-transform: uppercase; display: block; margin-top: 1px; color: #555; }
+    .subject-line { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+    .subject-name { font-weight: bold; font-size: <?= $baseFontSize + 2 ?>px; color: black; }
+    .teacher-info { font-size: <?= $baseFontSize - 3 ?>px; font-style: italic; color: #666; font-weight: normal; }
     .student-info-table {
     table-layout: auto;
     border: none;
-    border-radius: 6px;
-    margin: 4px 0 7px;
-    background: #f8f9fa;
+    margin: 10px 0 15px;
+    background: transparent;
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
     }
-    .student-info-table td { border: none !important; text-align: left; padding: 3px 6px; font-size:
-    <?= $baseFontSize - 0.5 ?>px; line-height: 1.3; }
+    .student-info-table td { border: none !important; text-align: left; padding: 8px 12px; font-size: <?= $baseFontSize + 3 ?>px; line-height: 1.5; }
     .student-info-table tr + tr td { border-top: none !important; }
-    .student-info-label { color: #3a5067; font-weight: 600; margin-right: 4px; }
-    .student-info-value { font-weight: 700; color: #1a1a1a; }
+    .student-info-label { color: #1a5f1a; font-weight: 700; margin-right: 8px; }
+    .student-info-value { font-weight: 700; color: black; font-size: <?= $baseFontSize + 2 ?>px; }
     .check-group { font-family: 'Courier New', monospace; white-space: nowrap; }
     .nowrap { white-space: nowrap; }
-    .grades-table th { font-size: <?= $baseFontSize ?>px; }
+    .grades-table th { font-size: <?= $baseFontSize ?>px; word-wrap: break-word; overflow-wrap: break-word; }
     .grades-table thead th {
-    background: #eaf1f8;
-    color: #1b3550;
+    background: green;
+    color: white;
     font-weight: 700;
     letter-spacing: 0.2px;
     text-transform: uppercase;
-    padding: 3px 4px;
-    border-color: #8ea8c6;
+    padding: 3px 5px;
+    border-color: green;
     }
     .group-header { background-color: #e9e9e9; text-align: left; padding-left: 10px; }
     .group-subtotal-line {
     width: 100%;
-    margin: 1px 0 3px;
-    background: #d9e7f6;
-    color: #17324d;
-    font-weight: bold;
+    margin: 8px 0 5px;
+    background: #e8f4e8;
+    color: #333;
+    font-weight: normal;
+    font-size: <?= $baseFontSize + 2 ?>px;
+    text-transform: uppercase;
     white-space: nowrap;
     page-break-inside: avoid;
     break-inside: avoid;
@@ -241,6 +245,22 @@ if (isset($styleOnly)) {
     @media screen and (max-width: 600px) {
     .pv-toolbar { flex-direction: column; align-items: stretch; gap: 8px; }
     .pv-btn { width: 100%; text-align: center; margin: 2px 0 !important; }
+    .bulletin-sheet { overflow-x: hidden; }
+    .grades-table { table-layout: auto; word-wrap: break-word; }
+    .grades-table th, .grades-table td { word-wrap: break-word; overflow-wrap: break-word; }
+    .student-info-table { display: block; overflow-x: auto; }
+    .student-info-table td { display: block; width: 100%; padding: 6px 8px; border-bottom: none !important; }
+    .student-info-table tr { display: block; margin-bottom: 5px; }
+    .header-wrapper { display: flex; flex-direction: column; }
+    .header-left, .header-center, .header-right { width: 100%; float: none; margin-bottom: 5px; }
+    .school-name-display { font-size: 14px; }
+    .academic-year-display { font-size: 12px; }
+    }
+    @media print {
+    .bulletin-sheet { page-break-inside: avoid; border: 2px solid green; padding: 5px; }
+    table { page-break-inside: avoid; }
+    tr { page-break-inside: avoid; }
+    th, td { border: 1px solid green; }
     }
     
     /* MODAL DE GUIDAGE PDF EN HAUTE FIDÉLITÉ */
@@ -457,6 +477,7 @@ if (isset($styleOnly)) {
 
             <div class="school-name-row">
                 <div class="school-name-display"><?= htmlspecialchars($schoolDisplayName) ?></div>
+                <div class="academic-year-display">ANNEE : <?= htmlspecialchars((string) ($activeYear['nom'] ?? '')) ?></div>
             </div>
         </div>
 
@@ -478,9 +499,6 @@ if (isset($styleOnly)) {
                 </td>
                 <td class="nowrap" style="width: 1%;"><span class="student-info-label"><?= __('class') ?> :</span><span
                         class="student-info-value"><?= htmlspecialchars((string) ($student['class_nom'] ?? '')) ?></span>
-                </td>
-                <td class="nowrap" style="width: 1%;"><span class="student-info-label"><?= __('year') ?> :</span><span
-                        class="student-info-value"><?= htmlspecialchars((string) ($activeYear['nom'] ?? '')) ?></span>
                 </td>
             </tr>
             <tr>
@@ -557,10 +575,12 @@ if (isset($styleOnly)) {
                             <?php foreach ($group['rows'] as $row): ?>
                                 <tr>
                                     <td class="left">
-                                        <div><?= htmlspecialchars($row['subject']) ?></div>
-                                        <?php if ($showTeacherNamesOnBulletins): ?>
-                                            <span class="teacher-name"><?= htmlspecialchars($row['teacher']) ?></span>
-                                        <?php endif; ?>
+                                        <div class="subject-line">
+                                            <span class="subject-name"><?= htmlspecialchars($row['subject']) ?></span>
+                                            <?php if ($showTeacherNamesOnBulletins): ?>
+                                                <span class="teacher-info">Eng: <?= htmlspecialchars($row['teacher']) ?></span>
+                                            <?php endif; ?>
+                                        </div>
                                     </td>
                                     <?php for ($sidx = 0; $sidx < $numSeqs; $sidx++): ?>
                                         <td><?= isset($row['sequence_values'][$sidx]) ? formatNote($row['sequence_values'][$sidx]) : '-' ?>
@@ -604,13 +624,25 @@ if (isset($styleOnly)) {
                     $groupCoeffs = (int) ($group['total_coefficients'] ?? 0);
                     $mgp = $groupCoeffs > 0 ? round($groupPoints / $groupCoeffs, 2) : 0;
                     ?>
-                    <table class="group-subtotal-line" style="width: 100%; border-collapse: collapse; border: none; margin: 1px 0 3px; background-color: #d9e7f6; color: #17324d; font-weight: bold; font-size: 8.5px; white-space: nowrap;">
+                    <table class="group-subtotal-line" style="width: 100%; border-collapse: collapse; border: none; margin: 8px 0 5px; background-color: #e8f4e8; color: #333; font-weight: normal; font-size: <?= $baseFontSize + 2 ?>px;">
+                        <colgroup>
+                            <col style="width:37.5%;">
+                            <?php for ($sidx = 0; $sidx < $numSeqs; $sidx++): ?>
+                                <col style="width:<?= $colWidth ?>%;">
+                            <?php endfor; ?>
+                            <col style="width:7%;">
+                            <col style="width:5%;">
+                            <col style="width:7.5%;">
+                            <col style="width:7%;">
+                            <col style="width:8%;">
+                        </colgroup>
                         <tr>
-                            <td style="text-align: left; padding: 2px 7px; border: none; font-weight: bold; width: 30%;"><?= htmlspecialchars($group['label']) ?></td>
-                            <td style="text-align: center; padding: 2px 7px; border: none; font-weight: bold;"><?= strtoupper(__('points')) ?>: <?= formatSimple(array_sum($groupSeqTotals)) ?></td>
-                            <td style="text-align: center; padding: 2px 7px; border: none; font-weight: bold;"><?= __('t_coefs') ?>: <?= (float) $groupCoeffs ?></td>
-                            <td style="text-align: center; padding: 2px 7px; border: none; font-weight: bold;"><?= strtoupper(__('total')) ?>: <?= formatSimple($groupPoints) ?></td>
-                            <td style="text-align: right; padding: 2px 7px; border: none; font-weight: bold; width: 20%;"><?= __('mgp') ?>: <span class="<?= $mgp >= 10 ? 'vert' : 'rouge' ?>" style="font-weight: bold;"><?= formatSimple($mgp) ?></span></td>
+                            <td style="text-align: left; padding: 6px 8px; border: none;"><?= htmlspecialchars($group['label']) ?></td>
+                            <?php for ($sidx = 0; $sidx < $numSeqs; $sidx++): ?>
+                                <td style="text-align: center; padding: 6px 8px; border: none;">&nbsp;</td>
+                            <?php endfor; ?>
+                            <td style="text-align: center; padding: 6px 8px; border: none;" colspan="3"><strong><?= formatSimple($groupPoints) ?> Points / <?= (float) $groupCoeffs ?> Coef</strong></td>
+                            <td style="text-align: right; padding: 6px 8px; border: none;" colspan="2"><strong class="<?= $mgp >= 10 ? 'vert' : 'rouge' ?>">MGP: <?= formatSimple($mgp) ?></strong></td>
                         </tr>
                     </table>
                 <?php endforeach; ?>
@@ -806,7 +838,7 @@ if (isset($styleOnly)) {
             </tr>
             <tr>
                 <td></td>
-                <td style="text-align: center;"><?= htmlspecialchars($professor_name ?? '') ?></td>
+                <td style="text-align: center;"><?php if ($showTeacherNamesOnBulletins): ?><?= htmlspecialchars($professor_name ?? '') ?><?php endif; ?></td>
                 <td style="text-align: right;"></td>
             </tr>
         </table>
