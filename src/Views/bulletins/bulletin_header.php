@@ -119,7 +119,7 @@ if (isset($styleOnly)) {
     .group-header { background-color: #e9e9e9; text-align: left; padding-left: 10px; }
     .group-subtotal-line {
     width: 100%;
-    margin: 8px 0 5px;
+    margin: 15px 0 10px;
     background: #e8f4e8;
     color: #333;
     font-weight: normal;

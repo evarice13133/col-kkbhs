@@ -198,9 +198,9 @@ if (isset($styleOnly)) {
                                 <th><?= __('trimester_short') ?> 3</th>
                                 <th><?= __('annual_avg_short') ?></th>
                                 <th><?= __('coef') ?></th>
-                                <th><?= __('class_avg') ?></th>
+                                <th>TOTAL</th>
                                 <th><?= __('rank') ?></th>
-                                <th><?= __('mention') ?></th>
+                                <th><?= __('appreciation') ?></th>
                             </tr>   
                         </thead>
                     <?php endif; ?>
@@ -221,7 +221,7 @@ if (isset($styleOnly)) {
                                     <td><?= isset($row['term_values'][2]) ? formatNote($row['term_values'][2]) : '-' ?></td>
                                     <td><?= formatNote($row['annual_note']) ?></td>
                                     <td><?= (int) $row['coefficient'] ?></td>
-                                    <td><?= formatSimple($row['class_average_subject']) ?></td>
+                                    <td><?= formatSimple($row['annual_note'] * $row['coefficient']) ?></td>
                                     <td><?= $row['rank_subject'] ?? '-' ?></td>
                                     <td><?= htmlspecialchars($row['appreciation']) ?></td>
                                 </tr>
@@ -253,27 +253,29 @@ if (isset($styleOnly)) {
 
                     $groupPoints = (float) ($group['total_points'] ?? 0);
                     $groupCoeffs = (int) ($group['total_coefficients'] ?? 0);
-                    $mgp = $groupCoeffs > 0 ? round($groupPoints / $groupCoeffs, 2) : 0;
+                    
+                    // Calcul de la moyenne groupée des notes annuelles
+                    $groupAnnualNotes = [];
+                    foreach ($group['rows'] as $groupRow) {
+                        if (($groupRow['annual_note'] ?? null) !== null && $groupRow['annual_note'] !== '') {
+                            $groupAnnualNotes[] = (float) $groupRow['annual_note'];
+                        }
+                    }
+                    $groupAverage = count($groupAnnualNotes) > 0 ? round(array_sum($groupAnnualNotes) / count($groupAnnualNotes), 2) : 0;
+                    
                     ?>
                     <table class="group-subtotal-line" style="width: 100%; border-collapse: collapse; border: none; margin: 8px 0 5px; background-color: #e8f4e8; color: #333; font-weight: normal; font-size: <?= $baseFontSize + 2 ?>px;">
                         <colgroup>
-                            <col style="width:37.5%;">
-                            <col style="width:10%;">
-                            <col style="width:10%;">
-                            <col style="width:10%;">
-                            <col style="width:7%;">
+                            <col style="width:50%;">
+                            <col style="width:25%;">
                             <col style="width:5%;">
-                            <col style="width:7.5%;">
-                            <col style="width:5%;">
-                            <col style="width:8%;">
+                            <col style="width:20%;">
                         </colgroup>
                         <tr>
-                            <td style="text-align: left; padding: 6px 8px; border: none;"><?= htmlspecialchars($group['label']) ?></td>
+                            <td style="text-align: left; padding: 6px 8px; border: none;"><?= chr(65 + $chunkIndex) ?> - <?= htmlspecialchars($group['label']) ?></td>
+                            <td style="text-align: center; padding: 6px 8px; border: none;"><strong><?= formatSimple($groupPoints) ?> Points / <?= (float) ($group['total_coeffs_all'] ?? 0) ?> Coef</strong></td>
                             <td style="text-align: center; padding: 6px 8px; border: none;">&nbsp;</td>
-                            <td style="text-align: center; padding: 6px 8px; border: none;">&nbsp;</td>
-                            <td style="text-align: center; padding: 6px 8px; border: none;">&nbsp;</td>
-                            <td style="text-align: center; padding: 6px 8px; border: none;" colspan="3"><strong><?= formatSimple($groupPoints) ?> Points / <?= (float) ($group['total_coeffs_all'] ?? 0) ?> Coef</strong></td>
-                            <td style="text-align: right; padding: 6px 8px; border: none;" colspan="2"><strong class="<?= $mgp >= 10 ? 'vert' : 'rouge' ?>">MGP: <?= formatSimple($mgp) ?></strong></td>
+                            <td style="text-align: right; padding: 6px 8px; border: none;"><strong class="<?= $groupAverage >= 10 ? 'vert' : 'rouge' ?>">Moy: <?= formatSimple($groupAverage) ?></strong></td>
                         </tr>
                     </table>
                 <?php endforeach; ?>
@@ -293,15 +295,13 @@ if (isset($styleOnly)) {
                     <?= strtoupper(__('council_decision')) ?></th>
             </tr>
             <?php
-            // Consolidation finale de l'année (Somme des MGP et Coeffs)
+            // Consolidation finale de l'année (Somme des TOTAUX et Coeffs)
             $totalAllCoeffs = 0;
-            $totalMGPs = 0;
+            $totalTotals = 0;
             foreach ($groupedRows as $g) {
                 $totalAllCoeffs += (float) ($g['total_coeffs_all'] ?? 0);
                 $gPoints = (float) ($g['total_points'] ?? 0);
-                $gCoeffs = (int) ($g['total_coefficients'] ?? 0);
-                $gMgp = $gCoeffs > 0 ? round($gPoints / $gCoeffs, 2) : 0;
-                $totalMGPs += $gMgp;
+                $totalTotals += $gPoints;
             }
             ?>
             <!-- ROW 1 -->
@@ -365,10 +365,9 @@ if (isset($styleOnly)) {
                 <td
                     style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold; background-color: #fafafa;">
                     <?= formatNote($average) ?></td>
-                <td style="border: 0.5px solid #000; padding: 2px 4px; font-weight: bold;"><?= __('total_mgp') ?> /
-                    <?= __('total_coeffs') ?></td>
+                <td style="border: 0.5px solid #000; padding: 2px 4px; font-weight: bold;">TOTAL A+B+C <br> <?= __('total_coeffs') ?></td>
                 <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
-                    <?= formatSimple($totalMGPs) ?> / <?= (float) $totalAllCoeffs ?></td>
+                    <?= formatSimple($totalTotals) ?> <br> <?= (float) $totalAllCoeffs ?></td>
                 <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= __('encouragements') ?></td>
                 <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
                     <?php

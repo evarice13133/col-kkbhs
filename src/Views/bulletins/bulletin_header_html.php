@@ -79,7 +79,6 @@ $i = $institution;
 
         <table class="student-info-table">
             <tr>
-                <td></td>
                 <td colspan="4" class="nowrap" style="width: auto;"><span
                         class="student-info-label"><?= __('name_and_surname') ?>
                         :</span><span

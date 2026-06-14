@@ -227,7 +227,7 @@ return [
     'mgp_group' => 'MGP : General Average by Group',
     'bulletin_annual' => 'Annual Report Card',
     'group_default' => 'Group 1',
-    'annual_avg_short' => 'Ann. Avg.',
+    'annual_avg_short' => 'Avg.',
     'pv_students_admitted' => 'ADMITTED',
     'pv_students_failed' => 'FAILED',
     'pv_worst_subject' => 'WORST SUBJECT',
