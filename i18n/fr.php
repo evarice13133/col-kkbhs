@@ -457,7 +457,6 @@ return [
     'birth_place_placeholder' => 'Ex: Yaoundé',
     'sex' => 'Sexe',
     'class' => 'Classe',
-    'academic_year' => 'Année Scolaire',
     'year' => 'Année',
     'repeating' => 'Redoublement',
     'repeat_status' => 'Statut de redoublement',
@@ -832,6 +831,7 @@ return [
     'format_tokens_help' => 'Variables : {SCHOOL_CODE}, {YEAR}, {CLASS}, {COUNTER}',
     'initialize_counter' => 'Initialiser le compteur',
     'next_counter' => 'Prochain numéro',
+    'academic_year' => 'ANNEE SCOLAIRE',
 
     // Apparence
     'dashboard_theme' => 'Thème du Tableau de bord',
@@ -924,7 +924,7 @@ return [
     'total_coeff_graded' => 'Total coef composé',
     'total_coeff_passed' => 'Total coef validé',
     'student_summary' => 'Synthèse',
-    'student_avg' => 'Moy. Élève',
+    'student_avg' => 'Moyenne de l\'élève',
     'student_rank' => 'Rang Élève',
     'general_observation' => 'Obs.',
     'legend_appreciation' => 'Légende',
@@ -949,6 +949,15 @@ return [
     'signature_principal' => "Chef d'Établissement",
     'administration_visa' => "Visa Administration",
     'pedagogical_service' => "Service Pédagogique",
+    'decision_end_of_year_title' => 'DECISION DE FIN D\'ANNEE',
+    'promoted_to' => 'Promu en',
+    'authorized_to_repeat' => 'Autorisé à redoubler',
+    'must_recompose' => 'Devra recomposer',
+    'exclusion_reasons' => 'Motifs d\'exclusions',
+    'age' => 'Âge',
+    'work' => 'Travail',
+    'cannot_triple' => 'Ne peut tripler',
+    'bad_conduct' => 'Mauvaise conduite',
 
     // ── Module Procès-Verbal ───────────────────────────────────────────
     'pv_title' => 'Procès-Verbaux',
