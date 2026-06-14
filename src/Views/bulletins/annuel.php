@@ -104,10 +104,11 @@ if (!function_exists('formatBulletinDate')) {
 
 /**
  * 3. LOGIQUE DES STYLES
- * Le bulletin annuel réutilise la feuille de style du bulletin trimestriel.
+ * Le bulletin annuel utilise le fichier partiel bulletin_header.php pour les styles et l'entête.
  */
 if (isset($styleOnly)) {
-    include __DIR__ . '/trimestre.php';
+    $styleOnly = true;
+    include __DIR__ . '/bulletin_header.php';
     return;
 }
 ?>
@@ -120,7 +121,7 @@ if (isset($styleOnly)) {
         <title><?= htmlspecialchars((string) ($pdf_filename ?? 'bulletin-annuel')) ?></title>
         <style>
             <?php $styleOnly = true;
-            include __FILE__; ?>
+            include __DIR__ . '/bulletin_header.php'; ?>
         </style>
     </head>
 
@@ -133,7 +134,7 @@ if (isset($styleOnly)) {
                     <path
                         d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z" />
                     <path
-                        d="M4.603 14.087a.81.81 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.68 7.68 0 0 1 1.482-.645 19.697 19.697 0 0 0 1.062-2.227 7.269 7.269 0 0 1-.43-1.295c-.086-.4-.119-.796-.046-1.136.075-.354.274-.672.65-.823.192-.077.4-.12.602-.077a.7.7 0 0 1 .471.215c.15.18-.162 1.305-.162 1.305v.006c-.316.427-.58.111-.58.111s.54.407.728.846c.155.362.29.74.405 1.134.208.718.36 1.4.453 1.954.555.15 1.144.33 1.705.513.29.096.55.195.74.296.262.138.45.321.492.51.042.19.014.39-.115.546-.129.155-.327.24-.546.269-.219.03-.466-.02-.713-.102a4.954 4.954 0 0 1-1.396-.757c-.88-.705-1.58-1.748-1.9-2.235-.351.054-.7.108-1.049.157-.428.06-1.08.125-1.764.125-.453.03-.9.08-1.332.146-.356.055-.705.12-1.05.19-.24.049-.49.123-.715.22z" />
+                        d="M4.603 14.087a.81.81 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.68 7.68 0 0 1 1.482-.645 19.697 19.697 0 0 0 1.062-2.227 7.269 7.269 0 0 1-.43-1.295c-.086-.4-.119-.796-.046-1.136.075-.354.274-.672.65-.823.192-.077.4-.12.602-.077a.7.7 0 0 1 .471.215c.15.18-.162 1.305-.162 1.305v.006c-.316.427-.58.111-.58.111s.54.407.728.846c.155.362.29.74.405 1.134.208.718 36 1.4.453 1.954.555.15 1.144.33 1.705.513.29.096.55.195.74.296.262.138.45.321.492.51.042.19.014.39-.115.546-.129.155-.327.24-.546.269-.219.03-.466-.02-.713-.102a4.954 4.954 0 0 1-1.396-.757c-.88-.705-1.58-1.748-1.9-2.235-.351.054-.7.108-1.049.157-.428.06-1.08.125-1.764.125-.453.03-.9.08-1.332.146-.356.055-.705.12-1.05.19-.24.049-.49.123-.715.22z" />
                 </svg>
                 Mode Impression & Export
             </div>
@@ -156,94 +157,11 @@ if (isset($styleOnly)) {
     <?php endif; ?>
 
     <div class="bulletin-sheet">
-        <!-- A. EN-TÊTE MINISTÉRIEL ET LOGO -->
-        <div class="header-wrapper">
-            <div class="header-left">
-                <div class="header-side-content">
-                    <p class="header-line">
-                        <?= htmlspecialchars((string) ($i['school_republic'] ?? __('republic_of_cameroon'))) ?>
-                    </p>
-                    <p class="header-line"><?= htmlspecialchars((string) ($i['school_motto'] ?? __('motto'))) ?></p>
-                    <p class="header-line">
-                        <?= htmlspecialchars((string) ($i['school_ministry'] ?? __('ministry_secondary_education'))) ?>
-                    </p>
-                    <p class="header-line"><?= htmlspecialchars((string) ($i['school_slogan'] ?? __('slogan'))) ?></p>
-                    <p class="header-contact"><?= htmlspecialchars(strtoupper($contact)) ?></p>
-                </div>
-            </div>
-
-            <div class="header-center">
-                <div class="logo-box">
-                    <?php if (!empty($i['school_logo_base64'])): ?>
-                        <img src="<?= $i['school_logo_base64'] ?>" alt="Logo">
-                    <?php elseif (!empty($i['school_logo'])):
-                        $logoPath = \App\Core\Helpers::normalizeLogoPath((string) $i['school_logo']); ?>
-                        <img src="<?= htmlspecialchars($logoPath) ?>" alt="Logo de l'etablissement">
-                    <?php else: ?>
-                        <div class="logo-placeholder">LOGO</div>
-                    <?php endif; ?>
-                </div>
-            </div>
-
-            <div class="header-right">
-                <div class="header-side-content">
-                    <p class="header-line">
-                        <?= htmlspecialchars((string) ($i['school_republic_en'] ?? 'REPUBLIC OF CAMEROON')) ?>
-                    </p>
-                    <p class="header-line">
-                        <?= htmlspecialchars((string) ($i['school_motto_en'] ?? 'PEACE - WORK - FATHERLAND')) ?>
-                    </p>
-                    <p class="header-line">
-                        <?= htmlspecialchars((string) ($i['school_ministry_en'] ?? 'MINISTRY OF SECONDARY EDUCATION')) ?>
-                    </p>
-                    <p class="header-line">
-                        <?= htmlspecialchars((string) ($i['school_slogan_en'] ?? 'DISCIPLINE - WORK - SUCCESS')) ?>
-                    </p>
-                    <p class="header-contact"><?= htmlspecialchars(strtoupper($contact)) ?></p>
-                </div>
-            </div>
-
-            <div class="school-name-row">
-                <div class="school-name-display"><?= htmlspecialchars($schoolDisplayName) ?></div>
-                <div class="academic-year-display">ANNEE : <?= htmlspecialchars((string) ($activeYear['nom'] ?? '')) ?></div>
-            </div>
-        </div>
-
-        <!-- B. TITRE ET CARTE D'IDENTITÉ -->
-        <div class="title-box" style="font-weight: bold;"><?= __('report_card') ?> <?= strtoupper(__('annual_short')) ?>
-        </div>
-
-        <table class="student-info-table">
-            <tr>
-                <td colspan="4" class="nowrap" style="width: auto;"><span
-                        class="student-info-label"><?= __('name_and_surname') ?>
-                        :</span><span
-                        class="student-info-value uppercase"><?= htmlspecialchars($studentLastName . ' ' . ($student['prenom'] ?? '')) ?></span>
-                </td>
-                <td class="nowrap" style="width: 1%;"><span class="student-info-label"><?= __('matricule') ?>
-                        :</span><span
-                        class="student-info-value"><?= htmlspecialchars((string) ($displayMatricule ?? $student['matricule'] ?? '')) ?></span>
-                </td>
-                <td class="nowrap" style="width: 1%;"><span class="student-info-label"><?= __('class') ?> :</span><span
-                        class="student-info-value"><?= htmlspecialchars((string) ($student['class_nom'] ?? '')) ?></span>
-                </td>
-            </tr>
-            <tr>
-                <td class="nowrap"><span class="student-info-label"><?= __('birth_date') ?> :</span><span
-                        class="student-info-value"><?= htmlspecialchars(formatBulletinDate($birthDate)) ?></span></td>
-                <td colspan="2" class="nowrap"><span class="student-info-label"><?= __('birth_place') ?> :</span><span
-                        class="student-info-value"><?= htmlspecialchars($birthPlace) ?></span></td>
-                <td class="nowrap"><span class="student-info-label"><?= __('sex') ?> :</span><span
-                        class="student-info-value"><?= htmlspecialchars((string) ($student['sexe'] ?? '-')) ?></span>
-                </td>
-                <td colspan="2" class="nowrap"><span class="student-info-label"><?= __('repeating') ?> :</span><span
-                        class="check-group student-info-value"><?= __('yes') ?><?= $isRedoublant ? '[X]' : '[ ]' ?>
-                        <?= __('no') ?><?= !$isRedoublant ? '[X]' : '[ ]' ?></span></td>
-                <td class="nowrap"><span class="student-info-label"><?= __('effectif') ?> :</span><span
-                        class="student-info-value"><?= (int) $effectif ?></span>
-                </td>
-            </tr>
-        </table>
+        <?php
+        // Inclure le partiel d'entête HTML
+        $bulletinType = __('annual_short');
+        include __DIR__ . '/bulletin_header_html.php';
+        ?>
 
         <!-- C. TABLEAU DES NOTES ANNUELLES (Synthèse des 3 trimestres) -->
         <div class="grades-table-wrap">
@@ -533,17 +451,61 @@ if (isset($styleOnly)) {
             </tr>
         </table>
 
-        <!-- F. BLOC DES SIGNATURES -->
-        <table class="signature-table" style="margin-top: 5px;">
-            <tr>
-                <td width="33%"><?= __('signature_student_parent') ?></td>
-                <td width="33%" style="text-align: center;"><?= __('signature_teacher') ?></td>
-                <td width="33%" style="text-align: right;"><?= __('signature_principal') ?></td>
+        <!-- F. BLOC DECISION DE FIN D'ANNEE -->
+        <table style="width: 100%; border-right: 1px solid black; border-collapse: collapse; margin-top: 5px; font-size: 9px;">
+            <colgroup>
+                <col style="width: 29px;">
+                <col style="width:31%;">
+                <col style="width:39%;">
+            </colgroup>
+            <tr style="background-color: #f2f2f2; font-weight: bold; text-align: center;">
+                <th colspan="3" style="border: 0.5px solid #000; padding: 3px; font-size: 10px;">
+                    <?= strtoupper(__('decision_end_of_year_title')) ?>
+                </th>
             </tr>
-            <tr>
-                <td></td>
-                <td style="text-align: center;"><?php if ($showTeacherNamesOnBulletins): ?><?= htmlspecialchars($professor_name ?? '') ?><?php endif; ?></td>
-                <td style="text-align: right;"></td>
+            <tr> 
+                <!-- toutes les bordures doivent avoir la meme couleur que les couleurs utilisé en background de chaque entete de tableau-->
+                <td style="border: none; border-right: 1px solid black; padding: 2px;  text-align: left; vertical-align: top; font-size:13px"><br>
+                    <strong><span style="margin-right: 10px;"></span> 1- <?= __('promoted_to') ?> : ........................................</strong><br><br>
+                    <strong><span style="margin-right: 10px;"></span> 2- <?= __('authorized_to_repeat') ?> : .....................</strong><br><br>
+                    <strong><span style="margin-right: 10px;"></span> 3- <?= __('must_recompose') ?> : ........................</strong><br>
+                </td>
+                <td style="border: none; border-right: 1px solid black;  padding: 2px; vertical-align: middle;">
+                    <table style="width: 100%; border: none; font-size: 9px;">
+                        <tr>
+                            <th colspan="2" style="background-color: #ffffff; color: #000000; font-weight: bold; text-align: center; border: none; padding: 2px; font-size: 9px;">
+                                4- <?= __('exclusion_reasons') ?> :
+                            </th>
+                        </tr>
+                        <tr>
+                            <td style="padding: 3px; border: none; vertical-align: top; ;">
+                                <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                                    <input type="text" style="width: 35px; height: 20px; margin-right: 8px; border: 1px solid #000;">
+                                    <span style="font-size:13px"><?= __('age') ?></span>
+                                </div><br><br>
+                                <div style="display: flex; align-items: center;">
+                                    <input type="text" style="width: 35px; height: 20px; margin-right: 8px; border: 1px solid #000;">
+                                    <span style="font-size:13px"><?= __('work') ?></span>
+                                </div>
+                            </td>
+                            <td style="padding: 3px; border: none; vertical-align: top;">
+                                <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                                    <input type="text" style="width: 35px; height: 20px; margin-right: 8px; border: 1px solid #000;">
+                                    <span style="font-size:13px"><?= __('cannot_triple') ?></span>
+                                </div><br><br>
+                                <div style="display: flex; align-items: center;">
+                                    <input type="text" style="width: 35px; height: 20px; margin-right: 8px; border: 1px solid #000;">
+                                    <span style="font-size:13px"><?= __('bad_conduct') ?></span>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+                <!-- signature du chef d'établissement et date -->
+                <td style="border: none;font-size: 12px; padding: 2px; vertical-align: middle; text-align: center;">
+                    <em><?= __('date') ?> : ..............................................</em><br><br>
+                    <strong style="font-weight: bold;"><?= __('signature_principal') ?></strong>
+                </td>
             </tr>
         </table>
 
