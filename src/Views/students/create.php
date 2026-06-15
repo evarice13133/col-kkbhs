@@ -19,7 +19,7 @@ ob_start();
         </a>
     </div>
 
-    <form action="/students/store" method="POST" id="studentEnrollForm">
+    <form action="/students/store" method="POST" id="studentEnrollForm" enctype="multipart/form-data" class="no-loader">
         <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
 
         <div class="subject-card-compact border-0 shadow-sm overflow-hidden mb-4">
@@ -62,6 +62,29 @@ ob_start();
                         <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('birth_place_full') ?></label>
                         <input type="text" name="lieu_naissance" class="form-control premium-input" 
                             placeholder="Lieu de naissance" value="<?= h($formData['lieu_naissance'] ?? '') ?>">
+                    </div>
+                </div>
+
+                <!-- Photo Section -->
+                <div class="row g-4 mb-4">
+                    <div class="col-12 border-bottom border-theme-light pb-2 mb-2">
+                        <h6 class="fw-black text-info m-0 text-uppercase letter-spacing-1"><?= __('student_photo') ?></h6>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('photo_upload') ?> <span class="text-muted">(<?= __('optional') ?>)</span></label>
+                        <input type="file" name="photo_eleve" class="form-control premium-input" accept="image/jpeg,image/jpg,image/png,image/webp" id="photoInput">
+                        <div class="form-text small text-muted">
+                            <?= __('photo_formats') ?>: JPG, JPEG, PNG, WEBP<br>
+                            <?= __('photo_max_size') ?>: 5MB
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('photo_preview') ?></label>
+                        <div id="photoPreview" class="border rounded d-flex align-items-center justify-content-center bg-light" style="width: 150px; height: 150px; overflow: hidden;">
+                            <span class="text-muted small text-center px-2"><?= __('no_photo_selected') ?></span>
+                        </div>
                     </div>
                 </div>
 
@@ -178,6 +201,23 @@ document.addEventListener('DOMContentLoaded', function () {
     sectionSelect.addEventListener('change', filterClasses);
     departmentSelect.addEventListener('change', filterClasses);
     filterClasses();
+
+    // Photo preview
+    const photoInput = document.getElementById('photoInput');
+    const photoPreview = document.getElementById('photoPreview');
+    
+    photoInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                photoPreview.innerHTML = '<img src="' + e.target.result + '" alt="Aperçu" style="width: 100%; height: 100%; object-fit: cover;">';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            photoPreview.innerHTML = '<span class="text-muted small text-center px-2"><?= __('no_photo_selected') ?></span>';
+        }
+    });
 });
 </script>
 

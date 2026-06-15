@@ -34,32 +34,33 @@ if (isset($styleOnly)) {
     ?>
     * { box-sizing: border-box; }
     @page { size: A4 portrait; margin: <?= $pageMargin ?>; }
+    @page :first { margin-top: <?= $pageMargin ?>; }
     body { font-family: 'Arial', sans-serif; font-size: <?= $baseFontSize ?>px; margin: 0; padding: 0; color: #000;
     background: #fff; line-height: <?= $lineHeight ?>; }
-    .bulletin-sheet { width: 100%; margin: 0 auto; page-break-after: always; padding: 5px; border: 2px solid green; }
+    .bulletin-sheet { width: 100%; margin: 0 auto; page-break-after: always; page-break-inside: avoid; padding: 3px; border: 2px solid green; }
     .bulletin-sheet:last-child { page-break-after: auto; }
-    table { width: 99.5%; margin: 0 auto 2px; border-collapse: collapse; table-layout: fixed; border: 1px solid green; }
-    th, td { border: 1px solid green; padding: 3px 5px; text-align: center; color: black; }
+    table { width: 99.5%; margin: 0 auto 1px; border-collapse: collapse; table-layout: fixed; border: 1px solid green; }
+    th, td { border: 1px solid green; padding: 2px 4px; text-align: center; color: black; }
     th { background-color: green; color: white; text-transform: uppercase; font-weight: bold; }
     .left { text-align: left; }
     .bold { font-weight: bold; }
     .uppercase { text-transform: uppercase; }
     .vert { color: green; font-weight: bold; }
     .rouge { color: #ff0000; }
-    .title-box { text-align: center; font-size: 16px; margin: 3px 0 2px; text-transform: uppercase; border: 2px solid #000;
+    .title-box { text-align: center; font-size: 14px; margin: 2px 0 1px; text-transform: uppercase; border: 2px solid #000;
     padding: 2px 3px; }
-    .header-wrapper { width: 100%; margin-bottom: 10px; }
+    .header-wrapper { width: 100%; margin-bottom: 5px; }
     .header-left { float: left; width: 40%; text-align: center; }
     .header-center { float: left; width: 20%; text-align: center; }
     .header-right { float: right; width: 40%; text-align: center; }
-    .header-side-content { width: 100%; padding: 0 2px; min-height: 85px; }
+    .header-side-content { width: 100%; padding: 0 2px; min-height: <?= $logoSize ?>px; }
     .school-name-row { clear: both; width: 100%; text-align: center; padding: 0; margin: 0; }
-    .school-name-display { width: 100%; margin: 0 auto; font-weight: 900; font-size: 16px; text-transform: uppercase;
+    .school-name-display { width: 100%; margin: 0 auto; font-weight: 900; font-size: 14px; text-transform: uppercase;
     border: none; padding: 0; }
-    .academic-year-display { width: 100%; margin: 2px auto 0; font-weight: 700; font-size: 14px; text-transform: uppercase;
+    .academic-year-display { width: 100%; margin: 1px auto 0; font-weight: 700; font-size: 12px; text-transform: uppercase;
     border: none; padding: 0; }
-    .header-line { font-size: 12px; font-weight: bold; margin: 0; text-transform: uppercase; }
-    .header-contact { font-size: 11px; margin: 0; width: 100%; text-align: center; opacity: 0.9; }
+    .header-line { font-size: 11px; font-weight: bold; margin: 0; text-transform: uppercase; }
+    .header-contact { font-size: 10px; margin: 0; width: 100%; text-align: center; opacity: 0.9; }
     .logo-box { width: <?= $logoSize ?>; height: <?= $logoSize ?>; margin: 0 auto; display: flex; align-items: center;
     justify-content: center;
     overflow: hidden; }
@@ -68,14 +69,14 @@ if (isset($styleOnly)) {
     justify-content: center; font-size:
     8px; font-weight: bold; letter-spacing: 1px; color: #8b97a3; line-height: 1.2; background: #f4f6f8; border-radius: 50%;
     }
-    .school-name { font-weight: bold; font-size: 14px; margin-top: 2px; line-height: 1.1; }
-    .grades-table-wrap { position: relative; margin-bottom: 2px; }
+    .school-name { font-weight: bold; font-size: 13px; margin-top: 1px; line-height: 1.1; }
+    .grades-table-wrap { position: relative; margin-bottom: 1px; }
     .grades-watermark {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
     text-align: center;
-    padding-top: 150px;
-    font-size: 70px;
+    padding-top: 120px;
+    font-size: 60px;
     font-weight: 900;
     color: #f2f2f2;
     letter-spacing: 5px;
@@ -86,73 +87,133 @@ if (isset($styleOnly)) {
     transform: rotate(-30deg);
     opacity: 0.4;
     }
-    .grades-table { position: relative; z-index: 1; table-layout: fixed; width: 100%; border-collapse: collapse; }
-    .grades-table td:not(.left) { font-size: 0.9em; }
+    .grades-table { position: relative; z-index: 1; table-layout: fixed; width: 100%; border-collapse: collapse; page-break-inside: avoid; }
+    .grades-table td:not(.left) { font-size: 0.85em; }
     .subject-line { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-    .subject-name { font-weight: bold; font-size: <?= $baseFontSize + 2 ?>px; color: black; }
-    .teacher-info { font-size: <?= $baseFontSize - 3 ?>px; font-style: italic; color: #666; font-weight: normal; }
+    .subject-name { font-weight: bold; font-size: <?= $baseFontSize + 1 ?>px; color: black; }
+    .teacher-info { font-size: <?= $baseFontSize - 4 ?>px; font-style: italic; color: #666; font-weight: normal; }
     .student-info-table {
     table-layout: auto;
     border: none;
-    margin: 10px 0 15px;
+    margin: 5px 0 8px;
     background: transparent;
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
     }
-    .student-info-table td { border: none !important; text-align: left; padding: 8px 12px; font-size: <?= $baseFontSize + 3 ?>px; line-height: 1.5; }
+    .student-info-table td { border: none !important; text-align: left; padding: 4px 8px; font-size: <?= $baseFontSize + 2 ?>px; line-height: 1.3; }
     .student-info-table tr + tr td { border-top: none !important; }
-    .student-info-label { color: #1a5f1a; font-weight: 700; margin-right: 8px; }
-    .student-info-value { font-weight: 700; color: black; font-size: <?= $baseFontSize + 2 ?>px; }
+    .student-info-label { color: #1a5f1a; font-weight: 700; margin-right: 6px; }
+    .student-info-value { font-weight: 700; color: black; font-size: <?= $baseFontSize + 1 ?>px; }
+    .student-photo-cell {
+    width: 100px;
+    vertical-align: top;
+    padding: 4px 8px 4px 0;
+    border-right: 1px solid #000 !important;
+    }
+    .student-photo-container {
+    width: 90px;
+    height: 100px;
+    border: 1px solid #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    }
+    .student-photo-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    }
+    .student-photo-placeholder {
+    width: 90px;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 35px;
+    color: #000;
+    line-height: 1.2;
+    border: 1px solid #000;
+    }
+    .student-identity-row {
+    padding: 4px 6px;
+    border-bottom: 1px solid #000;
+    line-height: 1.2;
+    }
+    .student-identity-label {
+    font-weight: 700;
+    margin-right: 3px;
+    font-size: <?= $baseFontSize - 1 ?>px;
+    }
+    .student-identity-value {
+    font-weight: 700;
+    color: #000;
+    font-size: <?= $baseFontSize - 1 ?>px;
+    }
+    .student-identity-item {
+    display: inline-block;
+    margin-right: 12px;
+    }
+    .student-identity-item:last-child {
+    margin-right: 0;
+    }
+    .student-name-value {
+    font-weight: 900;
+    font-size: <?= $baseFontSize + 2 ?>px;
+    text-transform: uppercase;
+    }
     .check-group { font-family: 'Courier New', monospace; white-space: nowrap; }
     .nowrap { white-space: nowrap; }
-    .grades-table th { font-size: <?= $baseFontSize ?>px; word-wrap: break-word; overflow-wrap: break-word; }
+    .grades-table th { font-size: <?= $baseFontSize - 1 ?>px; word-wrap: break-word; overflow-wrap: break-word; }
     .grades-table thead th {
     background: green;
     color: white;
     font-weight: 700;
     letter-spacing: 0.2px;
     text-transform: uppercase;
-    padding: 3px 5px;
+    padding: 2px 4px;
     border-color: green;
     }
-    .group-header { background-color: #e9e9e9; text-align: left; padding-left: 10px; }
+    .group-header { background-color: #e9e9e9; text-align: left; padding-left: 8px; }
     .group-subtotal-line {
     width: 100%;
-    margin: 15px 0 10px;
-    background: #e8f4e8;
+    margin: 6px 0 4px;
+    background: transparent;
     color: #333;
     font-weight: normal;
-    font-size: <?= $baseFontSize + 2 ?>px;
+    font-size: <?= $baseFontSize + 1 ?>px;
     text-transform: uppercase;
     white-space: nowrap;
     page-break-inside: avoid;
     break-inside: avoid;
     }
-    .teacher-name { font-size: 0.8em; text-transform: uppercase; display: block; margin-top: 1px; }
-    .container-table { border: none; margin-bottom: 12px; width: 100%; border-collapse: collapse; }
+    .teacher-name { font-size: 0.75em; text-transform: uppercase; display: block; margin-top: 1px; }
+    .container-table { border: none; margin-bottom: 8px; width: 100%; border-collapse: collapse; }
     .container-table td { border: none; padding: 0; vertical-align: top; }
-    .container-table > tr > td:not(:last-child), .container-table > tbody > tr > td:not(:last-child) { padding-right: 15px;
+    .container-table > tr > td:not(:last-child), .container-table > tbody > tr > td:not(:last-child) { padding-right: 10px;
     }
     .compact-layout { margin-bottom: 1px; }
     .compact-layout > tbody > tr > td { padding-right: 0; }
     .compact-layout > tbody > tr > td:last-child { padding-right: 0; }
     .side-table { width: 100%; border: 1px solid #000; }
-    .side-table th { font-size: <?= $baseFontSize - 1 ?>px; border: 1px solid #000; padding: 1px 2px; }
-    .side-table td { border: 1px solid #000; padding: 1px 2px; font-size: <?= $baseFontSize - 1 ?>px; }
+    .side-table th { font-size: <?= $baseFontSize - 2 ?>px; border: 1px solid #000; padding: 1px 2px; }
+    .side-table td { border: 1px solid #000; padding: 1px 2px; font-size: <?= $baseFontSize - 2 ?>px; }
     .compact-side { width: 100%; margin-bottom: 0; }
-    .compact-side th, .compact-side td { padding: 1px 2px; line-height: 1.0; }
+    .compact-side th, .compact-side td { padding: 1px 2px; line-height: 0.95; }
     .rounded-legend { border: 1px solid #000; border-radius: 4px; border-collapse: separate; }
-    .signature-table td { border: none; height: 35px; vertical-align: top; padding-top: 2px; }
+    .signature-table td { border: none; height: 30px; vertical-align: top; padding-top: 1px; }
     .no-border { border: none !important; }
-    .absences-title { text-align: center; vertical-align: middle; width: 15px; font-weight: bold; font-size: 7px;
-    line-height: 0.85; }
-    .avg-box { border: 2px solid #000; padding: 3px; text-align: center; font-size: 10px; }
-    .compact-note-box { border: 1px solid #000; border-radius: 4px; padding: 2px 3px; min-height: 85px; }
-    .compact-note-title { text-align: center; margin-bottom: 1px; font-size: 7.5px; font-weight: bold; }
-    .legend-text { font-size: 7px; line-height: 1.0; text-align: left; }
+    .absences-title { text-align: center; vertical-align: middle; width: 15px; font-weight: bold; font-size: 6.5px;
+    line-height: 0.8; }
+    .avg-box { border: 2px solid #000; padding: 2px; text-align: center; font-size: 9px; }
+    .compact-note-box { border: 1px solid #000; border-radius: 4px; padding: 2px 3px; min-height: 75px; }
+    .compact-note-title { text-align: center; margin-bottom: 1px; font-size: 7px; font-weight: bold; }
+    .legend-text { font-size: 6.5px; line-height: 0.95; text-align: left; }
     .summary-total td { background-color: #f7f7f7; font-weight: bold; }
-    .compact-value { font-weight: bold; font-size: 10px; }
+    .compact-value { font-weight: bold; font-size: 9px; }
     /* BARRE D'OUTILS */
     @media print { .pv-toolbar { display: none !important; } }
     .pv-toolbar {
@@ -414,32 +475,62 @@ $i = $institution;
 
         <table class="student-info-table">
             <tr>
-                <td colspan="4" class="nowrap" style="width: auto;"><span
-                        class="student-info-label"><?= __('name_and_surname') ?>
-                        :</span><span
-                        class="student-info-value uppercase"><?= htmlspecialchars($studentLastName . ' ' . ($student['prenom'] ?? '')) ?></span>
+                <td class="student-photo-cell" rowspan="3">
+                    <?php if (!empty($student['photo_eleve'])): ?>
+                        <?php
+                        $photoPath = $student['photo_eleve'];
+                        // Gérer les deux formats de chemin: /uploads/ et /public/uploads/
+                        if (strpos($photoPath, '/public/uploads/') === 0) {
+                            // Le chemin est déjà au bon format
+                        } elseif (strpos($photoPath, '/uploads/') === 0) {
+                            // Ancien format, ajouter /public/
+                            $photoPath = '/public' . $photoPath;
+                        }
+                        ?>
+                        <div class="student-photo-container">
+                            <img src="<?= $photoPath ?>" alt="Photo de l'élève">
+                        </div>
+                    <?php else: ?>
+                        <div class="student-photo-placeholder">
+                            👤
+                        </div>
+                    <?php endif; ?>
                 </td>
-                <td class="nowrap" style="width: 1%;"><span class="student-info-label"><?= __('matricule') ?>
-                        :</span><span
-                        class="student-info-value"><?= htmlspecialchars((string) ($displayMatricule ?? $student['matricule'] ?? '')) ?></span>
-                </td>
-                <td class="nowrap" style="width: 1%;"><span class="student-info-label"><?= __('class') ?> :</span><span
-                        class="student-info-value"><?= htmlspecialchars((string) ($student['class_nom'] ?? '')) ?></span>
+                <td colspan="5" class="student-identity-row">
+                    <span class="student-identity-label"><?= __('name_and_surname') ?> :</span>
+                    <span class="student-name-value"><?= htmlspecialchars($studentLastName . ' ' . ($student['prenom'] ?? '')) ?></span>
                 </td>
             </tr>
             <tr>
-                <td class="nowrap"><span class="student-info-label"><?= __('birth_date') ?> :</span><span
-                        class="student-info-value"><?= htmlspecialchars(formatBulletinDate($birthDate)) ?></span></td>
-                <td colspan="2" class="nowrap"><span class="student-info-label"><?= __('birth_place') ?> :</span><span
-                        class="student-info-value"><?= htmlspecialchars($birthPlace) ?></span></td>
-                <td class="nowrap"><span class="student-info-label"><?= __('sex') ?> :</span><span
-                        class="student-info-value"><?= htmlspecialchars((string) ($student['sexe'] ?? '-')) ?></span>
+                <td class="student-identity-row">
+                    <span class="student-identity-label"><?= __('birth_date') ?> :</span>
+                    <span class="student-identity-value"><?= htmlspecialchars(formatBulletinDate($birthDate)) ?></span>
                 </td>
-                <td colspan="2" class="nowrap"><span class="student-info-label"><?= __('repeating') ?> :</span><span
-                        class="check-group student-info-value"><?= __('yes') ?><?= $isRedoublant ? '[X]' : '[ ]' ?>
-                        <?= __('no') ?><?= !$isRedoublant ? '[X]' : '[ ]' ?></span></td>
-                <td class="nowrap"><span class="student-info-label"><?= __('effectif') ?> :</span><span
-                        class="student-info-value"><?= (int) $effectif ?></span>
+                <td colspan="2" class="student-identity-row">
+                    <span class="student-identity-label"><?= __('birth_place') ?> :</span>
+                    <span class="student-identity-value"><?= htmlspecialchars($birthPlace) ?></span>
+                </td>
+                <td class="student-identity-row">
+                    <span class="student-identity-label"><?= __('matricule') ?> :</span>
+                    <span class="student-identity-value"><?= htmlspecialchars((string) ($displayMatricule ?? $student['matricule'] ?? '')) ?></span>
+                </td>
+            </tr>
+            <tr>
+                <td class="student-identity-row">
+                    <span class="student-identity-label"><?= __('class') ?> :</span>
+                    <span class="student-identity-value"><?= htmlspecialchars((string) ($student['class_nom'] ?? '')) ?></span>
+                </td>
+                <td class="student-identity-row">
+                    <span class="student-identity-label"><?= __('effectif') ?> :</span>
+                    <span class="student-identity-value"><?= (int) $effectif ?></span>
+                </td>
+                <td class="student-identity-row">
+                    <span class="student-identity-label"><?= __('sex') ?> :</span>
+                    <span class="student-identity-value"><?= htmlspecialchars((string) ($student['sexe'] ?? '-')) ?></span>
+                </td>
+                <td colspan="2" class="student-identity-row">
+                    <span class="student-identity-label"><?= __('repeating') ?> :</span>
+                    <span class="student-identity-value"><?= $isRedoublant ? __('yes') : __('no') ?></span>
                 </td>
             </tr>
         </table>

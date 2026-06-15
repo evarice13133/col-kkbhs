@@ -21,6 +21,69 @@
 $i = $institution;
 ?>
 
+<style>
+    .student-photo-cell {
+        width: 115px;
+        vertical-align: top;
+        padding: 8px 12px 8px 0;
+        border-right: 1px solid #000 !important;
+    }
+    .student-photo-container {
+        width: 105px;
+        height: 120px;
+        border: 1px solid #000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+    .student-photo-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+    .student-photo-placeholder {
+        width: 105px;
+        height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        font-size: 40px;
+        color: #000;
+        line-height: 1.2;
+        border: 1px solid #000;
+    }
+    .student-identity-row {
+        padding: 4px 6px;
+        border-bottom: 1px solid #000;
+        line-height: 1.2;
+    }
+    .student-identity-label {
+        font-weight: 700;
+        margin-right: 3px;
+        font-size: 12px;
+    }
+    .student-identity-value {
+        font-weight: 700;
+        color: #000;
+        font-size: 12px;
+    }
+    .student-identity-item {
+        display: inline-block;
+        margin-right: 15px;
+    }
+    .student-identity-item:last-child {
+        margin-right: 0;
+    }
+    .student-name-value {
+        font-weight: 900;
+        font-size: 14px;
+        text-transform: uppercase;
+    }
+</style>
+
         <!-- A. EN-TÊTE MINISTÉRIEL ET LOGO -->
         <div class="header-wrapper">
             <div class="header-left">
@@ -79,32 +142,62 @@ $i = $institution;
 
         <table class="student-info-table">
             <tr>
-                <td colspan="4" class="nowrap" style="width: auto;"><span
-                        class="student-info-label"><?= __('name_and_surname') ?>
-                        :</span><span
-                        class="student-info-value uppercase"><?= htmlspecialchars($studentLastName . ' ' . ($student['prenom'] ?? '')) ?></span>
+                <td class="student-photo-cell" rowspan="3">
+                    <?php if (!empty($student['photo_eleve'])): ?>
+                        <?php
+                        $photoPath = $student['photo_eleve'];
+                        // Gérer les deux formats de chemin: /uploads/ et /public/uploads/
+                        if (strpos($photoPath, '/public/uploads/') === 0) {
+                            // Le chemin est déjà au bon format
+                        } elseif (strpos($photoPath, '/uploads/') === 0) {
+                            // Ancien format, ajouter /public/
+                            $photoPath = '/public' . $photoPath;
+                        }
+                        ?>
+                        <div class="student-photo-container">
+                            <img src="<?= $photoPath ?>" alt="Photo de l'élève">
+                        </div>
+                    <?php else: ?>
+                        <div class="student-photo-placeholder">
+                            👤
+                        </div>
+                    <?php endif; ?>
                 </td>
-                <td class="nowrap" style="width: 1%;"><span class="student-info-label"><?= __('matricule') ?>
-                        :</span><span
-                        class="student-info-value"><?= htmlspecialchars((string) ($displayMatricule ?? $student['matricule'] ?? '')) ?></span>
-                </td>
-                <td class="nowrap" style="width: 1%;"><span class="student-info-label"><?= __('class') ?> :</span><span
-                        class="student-info-value"><?= htmlspecialchars((string) ($student['class_nom'] ?? '')) ?></span>
+                <td colspan="5" class="student-identity-row">
+                    <span class="student-identity-label"><?= __('name_and_surname') ?> :</span>
+                    <span class="student-name-value"><?= htmlspecialchars($studentLastName . ' ' . ($student['prenom'] ?? '')) ?></span>
                 </td>
             </tr>
             <tr>
-                <td class="nowrap"><span class="student-info-label"><?= __('birth_date') ?> :</span><span
-                        class="student-info-value"><?= htmlspecialchars(formatBulletinDate($birthDate)) ?></span></td>
-                <td colspan="2" class="nowrap"><span class="student-info-label"><?= __('birth_place') ?> :</span><span
-                        class="student-info-value"><?= htmlspecialchars($birthPlace) ?></span></td>
-                <td class="nowrap"><span class="student-info-label"><?= __('sex') ?> :</span><span
-                        class="student-info-value"><?= htmlspecialchars((string) ($student['sexe'] ?? '-')) ?></span>
+                <td class="student-identity-row">
+                    <span class="student-identity-label"><?= __('birth_date') ?> :</span>
+                    <span class="student-identity-value"><?= htmlspecialchars(formatBulletinDate($birthDate)) ?></span>
                 </td>
-                <td colspan="2" class="nowrap"><span class="student-info-label"><?= __('repeating') ?> :</span><span
-                        class="check-group student-info-value"><?= __('yes') ?><?= $isRedoublant ? '[X]' : '[ ]' ?>
-                        <?= __('no') ?><?= !$isRedoublant ? '[X]' : '[ ]' ?></span></td>
-                <td class="nowrap"><span class="student-info-label"><?= __('effectif') ?> :</span><span
-                        class="student-info-value"><?= (int) $effectif ?></span>
+                <td colspan="2" class="student-identity-row">
+                    <span class="student-identity-label"><?= __('birth_place') ?> :</span>
+                    <span class="student-identity-value"><?= htmlspecialchars($birthPlace) ?></span>
+                </td>
+                <td class="student-identity-row">
+                    <span class="student-identity-label"><?= __('matricule') ?> :</span>
+                    <span class="student-identity-value"><?= htmlspecialchars((string) ($displayMatricule ?? $student['matricule'] ?? '')) ?></span>
+                </td>
+            </tr>
+            <tr>
+                <td class="student-identity-row">
+                    <span class="student-identity-label"><?= __('class') ?> :</span>
+                    <span class="student-identity-value"><?= htmlspecialchars((string) ($student['class_nom'] ?? '')) ?></span>
+                </td>
+                <td class="student-identity-row">
+                    <span class="student-identity-label"><?= __('effectif') ?> :</span>
+                    <span class="student-identity-value"><?= (int) $effectif ?></span>
+                </td>
+                <td class="student-identity-row">
+                    <span class="student-identity-label"><?= __('sex') ?> :</span>
+                    <span class="student-identity-value"><?= htmlspecialchars((string) ($student['sexe'] ?? '-')) ?></span>
+                </td>
+                <td colspan="2" class="student-identity-row">
+                    <span class="student-identity-label"><?= __('repeating') ?> :</span>
+                    <span class="student-identity-value"><?= $isRedoublant ? __('yes') : __('no') ?></span>
                 </td>
             </tr>
         </table>
