@@ -453,7 +453,7 @@ return [
     'birth_date' => 'Date nais.',
     'birth_date_full' => 'Date de naissance complète',
     'born_on' => 'Né(e) le : ',
-    'birth_place' => 'À : ',
+    'birth_place' => 'À  ',
     'birth_place_full' => 'Lieu de naissance complet',
     'birth_place_placeholder' => 'Ex: Yaoundé',
     'sex' => 'Sexe',
