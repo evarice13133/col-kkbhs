@@ -61,14 +61,16 @@ $i = $institution;
         line-height: 1.2;
     }
     .student-identity-label {
-        font-weight: 700;
+        font-weight: 900;
         margin-right: 3px;
-        font-size: 12px;
+        font-size: 14px;
+        color: #1b6e26;
     }
     .student-identity-value {
-        font-weight: 700;
+        font-weight: 900;
         color: #000;
         font-size: 12px;
+        border-bottom: 1px solid #000;
     }
     .student-identity-item {
         display: inline-block;
@@ -81,6 +83,7 @@ $i = $institution;
         font-weight: 900;
         font-size: 14px;
         text-transform: uppercase;
+        border-bottom: 1px solid #000;
     }
 </style>
 
