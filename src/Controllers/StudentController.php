@@ -826,11 +826,64 @@ class StudentController
             // Enregistrement via le modèle normalisé (seul class_id est requis pour le lien)
             $academicYearId = $this->academicYearService->getActiveYearId();
 
-            $stmt = $this->db->prepare("INSERT INTO students (nom, prenom, email, class_id, sexe, date_naissance, lieu_naissance, is_redoublant, academic_year_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            // D'abord insérer l'étudiant sans photo pour obtenir l'ID
+            $stmt = $this->db->prepare("INSERT INTO students (nom, prenom, email, class_id, sexe, date_naissance, lieu_naissance, is_redoublant, academic_year_id, photo_eleve) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$nom, $prenom, $email, $class_id, $sexe, $date_naissance, $lieu_naissance, $is_redoublant, $academicYearId, null]);
 
-            $stmt->execute([$nom, $prenom, $email, $class_id, $sexe, $date_naissance, $lieu_naissance, $is_redoublant, $academicYearId]);
+            $studentId = (int) $this->db->lastInsertId();
 
+            // Gestion de la photo (optionnelle) - maintenant avec le véritable ID de l'étudiant
+            $photoPath = null;
+            if (isset($_FILES['photo_eleve']) && $_FILES['photo_eleve']['error'] === UPLOAD_ERR_OK) {
+                $photoService = new \App\Services\PhotoUploadService();
+                $uploadResult = $photoService->uploadPhoto($_FILES['photo_eleve'], $studentId);
 
+                if (!$uploadResult['success']) {
+                    $error = $uploadResult['error'];
+
+                    \App\Core\Security::log(
+                        "Student::store photo upload failed (studentId={$studentId}, error={$error}, fileName=" .
+                        ($_FILES['photo_eleve']['name'] ?? 'NA') . ", size=" .
+                        ($_FILES['photo_eleve']['size'] ?? 'NA') . ", phpUploadError=" .
+                        ($_FILES['photo_eleve']['error'] ?? 'NA') . ")"
+                    );
+
+                    Session::setFlash('error', $error);
+
+                    // Supprimer l'étudiant créé si l'upload échoue
+                    $deleteStmt = $this->db->prepare("DELETE FROM students WHERE id = ?");
+                    $deleteStmt->execute([$studentId]);
+
+                    // Classes are now shared across years, no year filtering
+                    $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                    $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                    $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                    $departments = $this->db->query("SELECT id, nom FROM departments WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+                    $formData = [
+                        'nom' => $nom,
+                        'prenom' => $prenom,
+                        'email' => $email,
+                        'class_id' => $class_id,
+                        'cycle_id' => $cycle_id,
+                        'section_id' => $section_id,
+                        'department_id' => $department_id,
+                        'sexe' => $sexe,
+                        'date_naissance' => $date_naissance,
+                        'lieu_naissance' => $lieu_naissance,
+                        'is_redoublant' => (string) $is_redoublant,
+                    ];
+
+                    header("Location: /students/create");
+                    exit;
+                }
+
+                $photoPath = $uploadResult['path'];
+
+                // Mettre à jour le chemin de la photo dans la base de données
+                $updateStmt = $this->db->prepare("UPDATE students SET photo_eleve = ? WHERE id = ?");
+                $updateStmt->execute([$photoPath, $studentId]);
+            }
 
             Session::setFlash('success', __('student_created_success'));
 
@@ -929,15 +982,15 @@ class StudentController
 
 
 
-            // Récupérer l'email actuel pour déterminer si le matricule change
-
-            $stmt = $this->db->prepare("SELECT email FROM students WHERE id = ?");
+            // Récupérer l'email actuel et la photo actuelle pour déterminer si le matricule change
+            $stmt = $this->db->prepare("SELECT email, photo_eleve FROM students WHERE id = ?");
 
             $stmt->execute([$id]);
 
             $currentRow = $stmt->fetch(PDO::FETCH_ASSOC);
 
             $currentEmail = $currentRow['email'] ?? null;
+            $currentPhoto = $currentRow['photo_eleve'] ?? null;
 
 
 
@@ -965,6 +1018,47 @@ class StudentController
 
                 }
 
+            }
+
+
+
+            // Gestion de la photo
+            $photoService = new \App\Services\PhotoUploadService();
+            $newPhotoPath = $currentPhoto;
+
+            // Suppression de la photo si demandé
+            if (isset($_POST['delete_photo']) && $_POST['delete_photo'] === '1') {
+                if ($currentPhoto) {
+                    $photoService->deletePhoto($currentPhoto);
+                    $newPhotoPath = null;
+                }
+            }
+            // Upload d'une nouvelle photo
+            elseif (isset($_FILES['photo_eleve']) && $_FILES['photo_eleve']['error'] === UPLOAD_ERR_OK) {
+                $uploadResult = $photoService->uploadPhoto($_FILES['photo_eleve'], $id);
+
+                if (!$uploadResult['success']) {
+                    $error = $uploadResult['error'];
+
+                    \App\Core\Security::log(
+                        "Student::update photo upload failed (studentId={$id}, error={$error}, fileName=" .
+                        ($_FILES['photo_eleve']['name'] ?? 'NA') . ", size=" .
+                        ($_FILES['photo_eleve']['size'] ?? 'NA') . ", phpUploadError=" .
+                        ($_FILES['photo_eleve']['error'] ?? 'NA') . ")"
+                    );
+
+                    Session::setFlash('error', $error);
+
+                    header("Location: /students/edit?id=" . $id);
+                    exit;
+                }
+
+                // Supprimer l'ancienne photo si elle existe
+                if ($currentPhoto) {
+                    $photoService->deletePhoto($currentPhoto);
+                }
+
+                $newPhotoPath = $uploadResult['path'];
             }
 
 
@@ -1020,9 +1114,9 @@ class StudentController
 
             // Préparer la mise à jour. Autoriser la modification du matricule pour admin/superadmin
 
-            $updateParts = ['nom = ?', 'prenom = ?', 'class_id = ?', 'sexe = ?', 'date_naissance = ?', 'lieu_naissance = ?', 'is_redoublant = ?'];
+            $updateParts = ['nom = ?', 'prenom = ?', 'class_id = ?', 'sexe = ?', 'date_naissance = ?', 'lieu_naissance = ?', 'is_redoublant = ?', 'photo_eleve = ?'];
 
-            $params = [$nom, $prenom, $class_id, $sexe, $date_naissance, $lieu_naissance, $is_redoublant];
+            $params = [$nom, $prenom, $class_id, $sexe, $date_naissance, $lieu_naissance, $is_redoublant, $newPhotoPath];
 
 
 
@@ -1380,6 +1474,14 @@ class StudentController
             if (!$this->studentColumnExists('is_withdrawn')) {
 
                 $this->db->exec("ALTER TABLE students ADD COLUMN is_withdrawn TINYINT(1) NOT NULL DEFAULT 0 AFTER is_redoublant");
+
+            }
+
+
+
+            if (!$this->studentColumnExists('photo_eleve')) {
+
+                $this->db->exec("ALTER TABLE students ADD COLUMN photo_eleve VARCHAR(255) NULL AFTER is_withdrawn");
 
             }
 
