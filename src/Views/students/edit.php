@@ -19,7 +19,7 @@ ob_start();
         </a>
     </div>
 
-    <form action="/students/update?id=<?= $student['id'] ?>" method="POST" id="studentEditForm">
+    <form action="/students/update?id=<?= $student['id'] ?>" method="POST" id="studentEditForm" enctype="multipart/form-data" class="no-loader">
         <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
 
         <div class="subject-card-compact border-0 shadow-sm overflow-hidden mb-4">
@@ -75,6 +75,56 @@ ob_start();
                             class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('birth_place_full') ?></label>
                         <input type="text" name="lieu_naissance" class="form-control premium-input"
                             placeholder="Lieu de naissance" value="<?= h($student['lieu_naissance'] ?? '') ?>">
+                    </div>
+                </div>
+
+                <!-- Photo Section -->
+                <div class="row g-4 mb-4">
+                    <div class="col-12 border-bottom border-theme-light pb-2 mb-2">
+                        <h6 class="fw-black text-info m-0 text-uppercase letter-spacing-1"><?= __('student_photo') ?></h6>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('current_photo') ?></label>
+                        <div class="d-flex align-items-center gap-3">
+                            <?php if (!empty($student['photo_eleve'])): ?>
+                                <div class="border rounded overflow-hidden" style="width: 100px; height: 100px;">
+                                    <?php 
+                                    $photoPath = $student['photo_eleve'];
+                                    // S'assurer que le chemin commence par /
+                                    if (strpos($photoPath, '/') !== 0) {
+                                        $photoPath = '/' . $photoPath;
+                                    }
+                                    // Gérer les deux formats de chemin: /uploads/ et /public/uploads/
+                                    if (strpos($photoPath, '/public/uploads/') === 0) {
+                                        // Le chemin est déjà au bon format
+                                    } elseif (strpos($photoPath, '/uploads/') === 0) {
+                                        // Ancien format, ajouter /public/
+                                        $photoPath = '/public' . $photoPath;
+                                    }
+                                    ?>
+                                    <img src="<?= $photoPath ?>" alt="Photo actuelle" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'; this.parentElement.innerHTML='<span class=\\'text-muted small text-center px-2\\'>Erreur chargement</span>';">
+                                </div>
+                                <div>
+                                    <button type="submit" name="delete_photo" value="1" class="btn btn-sm btn-outline-danger rounded-pill">
+                                        <i class="bi bi-trash me-1"></i> <?= __('delete_photo') ?>
+                                    </button>
+                                </div>
+                            <?php else: ?>
+                                <div class="border rounded d-flex align-items-center justify-content-center bg-light" style="width: 100px; height: 100px;">
+                                    <span class="text-muted small text-center px-2"><?= __('no_photo') ?></span>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('replace_photo') ?></label>
+                        <input type="file" name="photo_eleve" class="form-control premium-input" accept="image/jpeg,image/jpg,image/png,image/webp" id="photoInputEdit">
+                        <div class="form-text small text-muted">
+                            <?= __('photo_formats') ?>: JPG, JPEG, PNG, WEBP<br>
+                            <?= __('photo_max_size') ?>: 5MB
+                        </div>
                     </div>
                 </div>
 
@@ -206,6 +256,22 @@ ob_start();
         sectionSelect.addEventListener('change', filterClasses);
         departmentSelect.addEventListener('change', filterClasses);
         filterClasses();
+
+        // Photo preview for edit form
+        const photoInputEdit = document.getElementById('photoInputEdit');
+        if (photoInputEdit) {
+            photoInputEdit.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        // Show preview in a modal or alert
+                        alert('Nouvelle photo sélectionnée: ' + file.name);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
     });
 </script>
 

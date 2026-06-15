@@ -30,15 +30,19 @@ $pageMargin = '0.5cm';
 $lineHeight = 1.3;
 $logoSize = '85px';
 
-if ($subjectCount >= 13 && $subjectCount <= 16) {
+if ($subjectCount >= 10 && $subjectCount <= 12) {
     $baseFontSize = 12;
-    $pageMargin = '0.4cm';
-    $lineHeight = 1.2;
-} elseif ($subjectCount > 16) {
-    $baseFontSize = 10;
     $pageMargin = '0.3cm';
+    $lineHeight = 1.2;
+} elseif ($subjectCount >= 13 && $subjectCount <= 15) {
+    $baseFontSize = 11;
+    $pageMargin = '0.25cm';
+    $lineHeight = 1.15;
+} elseif ($subjectCount > 15) {
+    $baseFontSize = 10;
+    $pageMargin = '0.2cm';
     $lineHeight = 1.1;
-    $logoSize = '85px';
+    $logoSize = '70px';
 }
 
 $lang = \App\Core\Session::get('app_lang', 'fr');
@@ -264,7 +268,7 @@ if (isset($styleOnly)) {
                     $groupAverage = count($groupAnnualNotes) > 0 ? round(array_sum($groupAnnualNotes) / count($groupAnnualNotes), 2) : 0;
                     
                     ?>
-                    <table class="group-subtotal-line" style="width: 100%; border-collapse: collapse; border: none; margin: 8px 0 5px; background-color: #e8f4e8; color: #333; font-weight: normal; font-size: <?= $baseFontSize + 2 ?>px;">
+                    <table class="group-subtotal-line" style="width: 100%; border-collapse: collapse; border: none; margin: 4px 0 3px; background-color: transparent; color: #333; font-weight: normal; font-size: <?= $baseFontSize + 1 ?>px;">
                         <colgroup>
                             <col style="width:50%;">
                             <col style="width:25%;">
@@ -272,10 +276,10 @@ if (isset($styleOnly)) {
                             <col style="width:20%;">
                         </colgroup>
                         <tr>
-                            <td style="text-align: left; padding: 6px 8px; border: none;"><?= chr(65 + $chunkIndex) ?> - <?= htmlspecialchars($group['label']) ?></td>
-                            <td style="text-align: center; padding: 6px 8px; border: none;"><strong><?= formatSimple($groupPoints) ?> Points / <?= (float) ($group['total_coeffs_all'] ?? 0) ?> Coef</strong></td>
-                            <td style="text-align: center; padding: 6px 8px; border: none;">&nbsp;</td>
-                            <td style="text-align: right; padding: 6px 8px; border: none;"><strong class="<?= $groupAverage >= 10 ? 'vert' : 'rouge' ?>">Moy: <?= formatSimple($groupAverage) ?></strong></td>
+                            <td style="text-align: left; padding: 3px 6px; border: none;"><?= chr(65 + $chunkIndex) ?> - <?= htmlspecialchars($group['label']) ?></td>
+                            <td style="text-align: center; padding: 3px 6px; border: none;"><strong><?= formatSimple($groupPoints) ?> Points / <?= (float) ($group['total_coeffs_all'] ?? 0) ?> Coef</strong></td>
+                            <td style="text-align: center; padding: 3px 6px; border: none;">&nbsp;</td>
+                            <td style="text-align: right; padding: 3px 6px; border: none;"><strong class="<?= $groupAverage >= 10 ? 'vert' : 'rouge' ?>">Moy: <?= formatSimple($groupAverage) ?></strong></td>
                         </tr>
                     </table>
                 <?php endforeach; ?>
@@ -284,7 +288,7 @@ if (isset($styleOnly)) {
 
         <!-- D. RÉSULTATS GLOBAUX, RÉCAPITULATIF ET DÉCISION DU CONSEIL (TABLEAU UNIFIÉ À 3 COLONNES HORIZONTALES) -->
         <table
-            style="width: 100%; border: 0.5px solid #000; border-collapse: collapse; font-size: 10px; margin-top: 5px;">
+            style="width: 100%; border: 0.5px solid #000; border-collapse: collapse; font-size: 9px; margin-top: 3px;">
             <!-- LIGNES D'EN-TÊTE PRINCIPALES -->
             <tr style="background-color: #f2f2f2; font-weight: bold; text-align: center;">
                 <th colspan="2" style="width: 33%; border: 0.5px solid #000; padding: 3px; font-size: 10px;">
@@ -307,53 +311,53 @@ if (isset($styleOnly)) {
             <!-- ROW 1 -->
             <tr>
                 <!-- Partie 1: Statistiques & Synthèse -->
-                <td style="width: 22%; border: 0.5px solid #000; padding: 2px 4px;"><?= __('class_avg_gen') ?></td>
+                <td style="width: 22%; border: 0.5px solid #000; padding: 1px 3px;"><?= __('class_avg_gen') ?></td>
                 <td
-                    style="width: 11%; border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    style="width: 11%; border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
                     <?= formatSimple($classStats['average'] ?? null) ?></td>
                 <!-- Partie 2: Rappels & Absences -->
-                <td style="width: 22%; border: 0.5px solid #000; padding: 2px 4px;">
+                <td style="width: 22%; border: 0.5px solid #000; padding: 1px 3px;">
                     <?= strtoupper(__('trimester_short_title')) ?> 1</td>
                 <td
-                    style="width: 11%; border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    style="width: 11%; border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
                     <?= (isset($termAverages[0]) ? formatSimple($termAverages[0]) : '-') . ' (Rg: ' . ($termRanks[0] ?? '-') . ')' ?>
                 </td>
                 <!-- Partie 3: Décision du Conseil -->
-                <td style="width: 22%; border: 0.5px solid #000; padding: 2px 4px;"><?= __('warn_conduct') ?> /
+                <td style="width: 22%; border: 0.5px solid #000; padding: 1px 3px;"><?= __('warn_conduct') ?> /
                     <?= __('blame_conduct') ?></td>
                 <td
-                    style="width: 12%; border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                    style="width: 12%; border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
                     <?= $discipline['warning_conduct'] ?> / <?= $discipline['blame_conduct'] ?></td>
             </tr>
             <!-- ROW 2 -->
             <tr>
-                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= __('avg_max') ?></td>
-                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                <td style="border: 0.5px solid #000; padding: 1px 3px;"><?= __('avg_max') ?></td>
+                <td style="border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
                     <?= formatSimple($classStats['max'] ?? null) ?></td>
-                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= strtoupper(__('trimester_short_title')) ?> 2
+                <td style="border: 0.5px solid #000; padding: 1px 3px;"><?= strtoupper(__('trimester_short_title')) ?> 2
                 </td>
-                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                <td style="border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
                     <?= (isset($termAverages[1]) ? formatSimple($termAverages[1]) : '-') . ' (Rg: ' . ($termRanks[1] ?? '-') . ')' ?>
                 </td>
-                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= __('exclusions') ?> / <?= __('consignes') ?>
+                <td style="border: 0.5px solid #000; padding: 1px 3px;"><?= __('exclusions') ?> / <?= __('consignes') ?>
                 </td>
-                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                <td style="border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
                     <?= sprintf('%02d', $discipline['exclusion_days']) ?>j /
                     <?= sprintf('%02d', $discipline['consignes']) ?></td>
             </tr>
             <!-- ROW 3 -->
             <tr>
-                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= __('success_rate') ?></td>
-                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                <td style="border: 0.5px solid #000; padding: 1px 3px;"><?= __('success_rate') ?></td>
+                <td style="border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
                     <?= isset($classStats['success_rate']) ? formatSimple($classStats['success_rate']) . '%' : '-' ?>
                 </td>
-                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= strtoupper(__('trimester_short_title')) ?> 3
+                <td style="border: 0.5px solid #000; padding: 1px 3px;"><?= strtoupper(__('trimester_short_title')) ?> 3
                 </td>
-                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                <td style="border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
                     <?= (isset($termAverages[2]) ? formatSimple($termAverages[2]) : '-') . ' (Rg: ' . ($termRanks[2] ?? '-') . ')' ?>
                 </td>
-                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= __('honour_roll') ?></td>
-                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                <td style="border: 0.5px solid #000; padding: 1px 3px;"><?= __('honour_roll') ?></td>
+                <td style="border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
                     <span class="<?= ($average >= 12) ? 'vert' : 'rouge' ?>">
                         <?= ($average >= 12) ? strtoupper(__('yes')) : strtoupper(__('no')) ?>
                     </span>
@@ -361,15 +365,15 @@ if (isset($styleOnly)) {
             </tr>
             <!-- ROW 4 -->
             <tr>
-                <td style="border: 0.5px solid #000; padding: 2px 4px; font-weight: bold;"><?= __('student_avg') ?></td>
+                <td style="border: 0.5px solid #000; padding: 1px 3px; font-weight: bold;"><?= __('student_avg') ?></td>
                 <td
-                    style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold; background-color: #fafafa;">
+                    style="border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold; background-color: #fafafa;">
                     <?= formatNote($average) ?></td>
-                <td style="border: 0.5px solid #000; padding: 2px 4px; font-weight: bold;">TOTAL A+B+C <br> <?= __('total_coeffs') ?></td>
-                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                <td style="border: 0.5px solid #000; padding: 1px 3px; font-weight: bold;">TOTAL A+B+C <br> <?= __('total_coeffs') ?></td>
+                <td style="border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
                     <?= formatSimple($totalTotals) ?> <br> <?= (float) $totalAllCoeffs ?></td>
-                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= __('encouragements') ?></td>
-                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                <td style="border: 0.5px solid #000; padding: 1px 3px;"><?= __('encouragements') ?></td>
+                <td style="border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
                     <?php
                     $workKey = 'work_bad';
                     if ($average >= 14)
@@ -386,16 +390,16 @@ if (isset($styleOnly)) {
             </tr>
             <!-- ROW 5 -->
             <tr>
-                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= __('student_rank') ?> & <?= __('mention') ?>
+                <td style="border: 0.5px solid #000; padding: 1px 3px;"><?= __('student_rank') ?> & <?= __('mention') ?>
                 </td>
-                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                <td style="border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
                     <?= $rank !== null ? $rank . '/' . $effectif : '-' ?> (<?= htmlspecialchars($mention) ?>)</td>
-                <td style="border: 0.5px solid #000; padding: 2px 4px;">&bull; <?= __('total') ?> <?= __('absences') ?>
+                <td style="border: 0.5px solid #000; padding: 1px 3px;">&bull; <?= __('total') ?> <?= __('absences') ?>
                 </td>
-                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                <td style="border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
                     <?= sprintf('%02d', $discipline['absences']['total']) ?></td>
-                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= __('congratulations') ?></td>
-                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                <td style="border: 0.5px solid #000; padding: 1px 3px;"><?= __('congratulations') ?></td>
+                <td style="border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
                     <span class="<?= ($average >= 14) ? 'vert' : 'rouge' ?>">
                         <?= ($average >= 14) ? strtoupper(__('yes')) : strtoupper(__('no')) ?>
                     </span>
@@ -403,16 +407,16 @@ if (isset($styleOnly)) {
             </tr>
             <!-- ROW 6 -->
             <tr>
-                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= __('general_observation') ?></td>
-                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                <td style="border: 0.5px solid #000; padding: 1px 3px;"><?= __('general_observation') ?></td>
+                <td style="border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
                     <?= htmlspecialchars($globalAppreciation) ?></td>
-                <td style="border: 0.5px solid #000; padding: 2px 4px;">&bull; <?= __('justified') ?> /
+                <td style="border: 0.5px solid #000; padding: 1px 3px;">&bull; <?= __('justified') ?> /
                     <?= __('unjustified') ?></td>
-                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                <td style="border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
                     <?= sprintf('%02d', $discipline['absences']['justified']) ?> /
                     <?= sprintf('%02d', $discipline['absences']['unjustified']) ?></td>
-                <td style="border: 0.5px solid #000; padding: 2px 4px;"><?= __('warn_work') ?></td>
-                <td style="border: 0.5px solid #000; padding: 2px 4px; text-align: center; font-weight: bold;">
+                <td style="border: 0.5px solid #000; padding: 1px 3px;"><?= __('warn_work') ?></td>
+                <td style="border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
                     <?php
                     $trendText = '';
                     $trendClass = '';
@@ -451,7 +455,7 @@ if (isset($styleOnly)) {
         </table>
 
         <!-- F. BLOC DECISION DE FIN D'ANNEE -->
-        <table style="width: 100%; border-right: 1px solid black; border-collapse: collapse; margin-top: 5px; font-size: 9px;">
+        <table style="width: 100%; border-right: 1px solid black; border-collapse: collapse; margin-top: 3px; font-size: 8px;">
             <colgroup>
                 <col style="width: 29px;">
                 <col style="width:31%;">
@@ -462,46 +466,46 @@ if (isset($styleOnly)) {
                     <?= strtoupper(__('decision_end_of_year_title')) ?>
                 </th>
             </tr>
-            <tr> 
+            <tr>
                 <!-- toutes les bordures doivent avoir la meme couleur que les couleurs utilisé en background de chaque entete de tableau-->
-                <td style="border: none; border-right: 1px solid black; padding: 2px;  text-align: left; vertical-align: top; font-size:13px"><br>
-                    <strong><span style="margin-right: 10px;"></span> 1- <?= __('promoted_to') ?> : ........................................</strong><br><br>
-                    <strong><span style="margin-right: 10px;"></span> 2- <?= __('authorized_to_repeat') ?> : .....................</strong><br><br>
-                    <strong><span style="margin-right: 10px;"></span> 3- <?= __('must_recompose') ?> : ........................</strong><br>
+                <td style="border: none; border-right: 1px solid black; padding: 1px;  text-align: left; vertical-align: top; font-size:10px"><br>
+                    <strong><span style="margin-right: 5px;"></span> 1- <?= __('promoted_to') ?> : ........................................</strong><br><br>
+                    <strong><span style="margin-right: 5px;"></span> 2- <?= __('authorized_to_repeat') ?> : .....................</strong><br><br>
+                    <strong><span style="margin-right: 5px;"></span> 3- <?= __('must_recompose') ?> : ........................</strong><br>
                 </td>
-                <td style="border: none; border-right: 1px solid black;  padding: 2px; vertical-align: middle;">
-                    <table style="width: 100%; border: none; font-size: 9px;">
+                <td style="border: none; border-right: 1px solid black;  padding: 1px; vertical-align: middle;">
+                    <table style="width: 100%; border: none; font-size: 8px;">
                         <tr>
-                            <th colspan="2" style="background-color: #ffffff; color: #000000; font-weight: bold; text-align: center; border: none; padding: 2px; font-size: 9px;">
+                            <th colspan="2" style="background-color: #ffffff; color: #000000; font-weight: bold; text-align: center; border: none; padding: 1px; font-size: 8px;">
                                 4- <?= __('exclusion_reasons') ?> :
                             </th>
                         </tr>
                         <tr>
-                            <td style="padding: 3px; border: none; vertical-align: top; ;">
-                                <div style="display: flex; align-items: center; margin-bottom: 4px;">
-                                    <input type="text" style="width: 35px; height: 20px; margin-right: 8px; border: 1px solid #000;">
-                                    <span style="font-size:13px"><?= __('age') ?></span>
+                            <td style="padding: 2px; border: none; vertical-align: top; ;">
+                                <div style="display: flex; align-items: center; margin-bottom: 2px;">
+                                    <input type="text" style="width: 30px; height: 18px; margin-right: 5px; border: 1px solid #000;">
+                                    <span style="font-size:10px"><?= __('age') ?></span>
                                 </div><br><br>
                                 <div style="display: flex; align-items: center;">
-                                    <input type="text" style="width: 35px; height: 20px; margin-right: 8px; border: 1px solid #000;">
-                                    <span style="font-size:13px"><?= __('work') ?></span>
+                                    <input type="text" style="width: 30px; height: 18px; margin-right: 5px; border: 1px solid #000;">
+                                    <span style="font-size:10px"><?= __('work') ?></span>
                                 </div>
                             </td>
-                            <td style="padding: 3px; border: none; vertical-align: top;">
-                                <div style="display: flex; align-items: center; margin-bottom: 4px;">
-                                    <input type="text" style="width: 35px; height: 20px; margin-right: 8px; border: 1px solid #000;">
-                                    <span style="font-size:13px"><?= __('cannot_triple') ?></span>
+                            <td style="padding: 2px; border: none; vertical-align: top;">
+                                <div style="display: flex; align-items: center; margin-bottom: 2px;">
+                                    <input type="text" style="width: 30px; height: 18px; margin-right: 5px; border: 1px solid #000;">
+                                    <span style="font-size:10px"><?= __('cannot_triple') ?></span>
                                 </div><br><br>
                                 <div style="display: flex; align-items: center;">
-                                    <input type="text" style="width: 35px; height: 20px; margin-right: 8px; border: 1px solid #000;">
-                                    <span style="font-size:13px"><?= __('bad_conduct') ?></span>
+                                    <input type="text" style="width: 30px; height: 18px; margin-right: 5px; border: 1px solid #000;">
+                                    <span style="font-size:10px"><?= __('bad_conduct') ?></span>
                                 </div>
                             </td>
                         </tr>
                     </table>
                 </td>
                 <!-- signature du chef d'établissement et date -->
-                <td style="border: none;font-size: 12px; padding: 2px; vertical-align: middle; text-align: center;">
+                <td style="border: none;font-size: 10px; padding: 1px; vertical-align: middle; text-align: center;">
                     <em><?= __('date') ?> : ..............................................</em><br><br>
                     <strong style="font-weight: bold;"><?= __('signature_principal') ?></strong>
                 </td>
@@ -510,36 +514,36 @@ if (isset($styleOnly)) {
 
         <!-- G. SECTION FIN D'ANNÉE (Condition: is_end_of_year == true) -->
         <?php if (isset($is_end_of_year) && $is_end_of_year === true): ?>
-        <table style="width: 100%; border: 2px solid green; border-collapse: collapse; margin-top: 10px;">
+        <table style="width: 100%; border: 2px solid green; border-collapse: collapse; margin-top: 5px;">
             <tr>
-                <th colspan="2" style="background-color: green; color: white; font-weight: bold; padding: 5px; text-align: center; border: 1px solid green;">
+                <th colspan="2" style="background-color: green; color: white; font-weight: bold; padding: 3px; text-align: center; border: 1px solid green; font-size: 9px;">
                     Decision du Conseil de Fin d'Année
                 </th>
             </tr>
             <tr>
-                <td style="border: 1px solid green; padding: 5px; width: 50%;">
-                    <strong>Promu en:</strong> <span style="margin-left: 10px;">_________________</span>
+                <td style="border: 1px solid green; padding: 2px; width: 50%; font-size: 8px;">
+                    <strong>Promu en:</strong> <span style="margin-left: 5px;">_________________</span>
                 </td>
-                <td style="border: 1px solid green; padding: 5px; width: 50%;">
-                    <strong>Autorisé à redoubler:</strong> <span style="margin-left: 10px;">[ ] Oui  [ ] Non</span>
+                <td style="border: 1px solid green; padding: 2px; width: 50%; font-size: 8px;">
+                    <strong>Autorisé à redoubler:</strong> <span style="margin-left: 5px;">[ ] Oui  [ ] Non</span>
                 </td>
             </tr>
             <tr>
-                <td style="border: 1px solid green; padding: 5px; width: 50%;">
-                    <strong>Devra recomposer:</strong> <span style="margin-left: 10px;">[ ] Oui  [ ] Non</span>
+                <td style="border: 1px solid green; padding: 2px; width: 50%; font-size: 8px;">
+                    <strong>Devra recomposer:</strong> <span style="margin-left: 5px;">[ ] Oui  [ ] Non</span>
                 </td>
-                <td style="border: 1px solid green; padding: 5px; width: 50%;">
+                <td style="border: 1px solid green; padding: 2px; width: 50%; font-size: 8px;">
                     <strong>Exclu pour:</strong>
                 </td>
             </tr>
             <tr>
-                <td colspan="2" style="border: 1px solid green; padding: 5px;">
+                <td colspan="2" style="border: 1px solid green; padding: 2px; font-size: 8px;">
                     <strong>Exclu pour (cocher si applicable):</strong>
-                    <div style="margin-top: 5px;">
-                        <label style="margin-right: 20px;"><input type="checkbox"> Age</label>
-                        <label style="margin-right: 20px;"><input type="checkbox"> Travail</label>
-                        <label style="margin-right: 20px;"><input type="checkbox"> Ne peut tripler</label>
-                        <label><input type="checkbox"> Mauvaise conduite</label>
+                    <div style="margin-top: 2px;">
+                        <label style="margin-right: 15px; font-size: 8px;"><input type="checkbox"> Age</label>
+                        <label style="margin-right: 15px; font-size: 8px;"><input type="checkbox"> Travail</label>
+                        <label style="margin-right: 15px; font-size: 8px;"><input type="checkbox"> Ne peut tripler</label>
+                        <label style="font-size: 8px;"><input type="checkbox"> Mauvaise conduite</label>
                     </div>
                 </td>
             </tr>
