@@ -44,6 +44,28 @@ ob_start();
                     </div>
                 </div>
 
+
+                <!-- Teaching Type Section -->
+                <div class="row g-4 mb-4">
+                    <div class="col-12 border-bottom border-theme-light pb-2 mb-2">
+                        <h6 class="fw-black text-warning m-0 text-uppercase letter-spacing-1">Type d'Enseignement</h6>
+                    </div>
+                    
+                    <div class="col-12">
+                        <div class="d-flex flex-wrap gap-3">
+                            <?php foreach ($teachingTypes as $tt): ?>
+                                <?php $isChecked = in_array((string)$tt['id'], array_map('strval', $teacher['teaching_type_ids'] ?? []), true); ?>
+                                <div class="form-check">
+                                    <input class="form-check-input border-primary" type="checkbox" name="teaching_type_ids[]" value="<?= $tt['id'] ?>" id="tt_<?= $tt['id'] ?>" <?= $isChecked ? 'checked' : '' ?>>
+                                    <label class="form-check-label fw-bold" for="tt_<?= $tt['id'] ?>">
+                                        <?= h($tt['nom']) ?>
+                                    </label>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Account Section -->
                 <div class="row g-4 mb-4">
                     <div class="col-12 border-bottom border-theme-light pb-2 mb-2">

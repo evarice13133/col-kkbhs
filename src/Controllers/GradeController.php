@@ -215,6 +215,7 @@ class GradeController
 
 
         $classes = $this->extractAccessibleClasses($assignments);
+        $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
 
 
@@ -1210,6 +1211,23 @@ class GradeController
 
 
 
+        // Vérification de la cohérence Type Enseignement vs Département
+        $stmtCheck = $this->db->prepare("
+            SELECT c.teaching_type_id as class_type, s.teaching_type_id as subject_type
+            FROM classes c, subjects s
+            WHERE c.id = ? AND s.id = ?
+        ");
+        $stmtCheck->execute([$class_id, $subject_id]);
+        $typeCheck = $stmtCheck->fetch(PDO::FETCH_ASSOC);
+
+        if ($typeCheck && $typeCheck['class_type'] != $typeCheck['subject_type']) {
+            Session::setFlash('error', __('incoherent_teaching_type_grade') ?? 'Erreur : Incohérence de Type d\'Enseignement entre la classe et la matière.');
+            header("Location: /notes/saisie?class_id=$class_id&subject_id=$subject_id");
+            exit;
+        }
+
+
+
 
 
 
@@ -1628,10 +1646,7 @@ class GradeController
 
 
 
-            return $this->db->query("SELECT sc.subject_id, sc.class_id, s.nom as subject_nom, c.nom as class_nom,
-
-
-
+            return $this->db->query("SELECT sc.subject_id, sc.class_id, s.nom as subject_nom, c.nom as class_nom, c.teaching_type_id,
                                             u.nom as teacher_nom, u.prenom as teacher_prenom
 
 
@@ -1672,9 +1687,7 @@ class GradeController
 
 
 
-        $stmt = $this->db->prepare("SELECT ta.subject_id, ta.class_id, s.nom as subject_nom, c.nom as class_nom,
-
-
+        $stmt = $this->db->prepare("SELECT ta.subject_id, ta.class_id, s.nom as subject_nom, c.nom as class_nom, c.teaching_type_id,
 
                                            u.nom as teacher_nom, u.prenom as teacher_prenom
 
@@ -2005,7 +2018,11 @@ class GradeController
 
 
 
-        return ['class_id' => (int) ($_GET['class_id'] ?? 0), 'subject_id' => (int) ($_GET['subject_id'] ?? 0)];
+        return [
+            'class_id' => (int) ($_GET['class_id'] ?? 0), 
+            'subject_id' => (int) ($_GET['subject_id'] ?? 0),
+            'teaching_type_id' => (int) ($_GET['teaching_type_id'] ?? 0)
+        ];
 
 
 
@@ -2033,19 +2050,15 @@ class GradeController
 
 
 
+        $tI = (int) ($filters['teaching_type_id'] ?? 0);
+
         return array_values(array_filter(
-
-
 
             $assignments,
 
-
-
             fn($a) =>
 
-
-
-            ($cI <= 0 || (int) $a['class_id'] === $cI) && ($sI <= 0 || (int) $a['subject_id'] === $sI)
+            ($cI <= 0 || (int) $a['class_id'] === $cI) && ($sI <= 0 || (int) $a['subject_id'] === $sI) && ($tI <= 0 || (int) ($a['teaching_type_id'] ?? 0) === $tI)
 
 
 

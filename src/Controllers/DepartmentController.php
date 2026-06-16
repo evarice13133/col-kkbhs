@@ -38,11 +38,11 @@ class DepartmentController
             exit;
         }
 
-        $query = "SELECT * FROM departments";
+        $query = "SELECT d.*, t.nom as teaching_type_nom FROM departments d LEFT JOIN teaching_types t ON d.teaching_type_id = t.id";
         if (Session::get('user_role') !== 'superadmin') {
-            $query .= " WHERE status = 1";
+            $query .= " WHERE d.status = 1";
         }
-        $query .= " ORDER BY nom ASC";
+        $query .= " ORDER BY d.nom ASC";
         
         $departments = $this->db->query($query)->fetchAll(PDO::FETCH_ASSOC);
         
@@ -58,6 +58,7 @@ class DepartmentController
             header("Location: /departments");
             exit;
         }
+        $teachingTypes = $this->db->query("SELECT * FROM teaching_types ORDER BY position ASC")->fetchAll(PDO::FETCH_ASSOC);
         include __DIR__ . '/../Views/departments/create.php';
     }
 
@@ -74,16 +75,18 @@ class DepartmentController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $nom = trim((string)($_POST['nom'] ?? ''));
             $code = strtoupper(trim((string)($_POST['code'] ?? '')));
+            $teaching_type_id = !empty($_POST['teaching_type_id']) ? (int) $_POST['teaching_type_id'] : null;
 
-            if ($nom === '' || $code === '') {
+            if ($nom === '' || $code === '' || !$teaching_type_id) {
                 $error = __('required');
+                $teachingTypes = $this->db->query("SELECT * FROM teaching_types ORDER BY position ASC")->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/departments/create.php';
                 return;
             }
 
             try {
-                $stmt = $this->db->prepare("INSERT INTO departments (nom, code, status) VALUES (?, ?, 1)");
-                $stmt->execute([$nom, $code]);
+                $stmt = $this->db->prepare("INSERT INTO departments (nom, code, status, teaching_type_id) VALUES (?, ?, 1, ?)");
+                $stmt->execute([$nom, $code, $teaching_type_id]);
                 
                 Session::setFlash('success', __('created_success'));
                 header("Location: /departments");
@@ -114,6 +117,7 @@ class DepartmentController
             exit;
         }
 
+        $teachingTypes = $this->db->query("SELECT * FROM teaching_types ORDER BY position ASC")->fetchAll(PDO::FETCH_ASSOC);
         include __DIR__ . '/../Views/departments/edit.php';
     }
 
@@ -130,24 +134,27 @@ class DepartmentController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $nom = trim((string)($_POST['nom'] ?? ''));
             $code = strtoupper(trim((string)($_POST['code'] ?? '')));
+            $teaching_type_id = !empty($_POST['teaching_type_id']) ? (int) $_POST['teaching_type_id'] : null;
 
-            if ($nom === '' || $code === '') {
+            if ($nom === '' || $code === '' || !$teaching_type_id) {
                 $error = __('required');
-                $department = ['id' => $id, 'nom' => $nom, 'code' => $code];
+                $department = ['id' => $id, 'nom' => $nom, 'code' => $code, 'teaching_type_id' => $teaching_type_id];
+                $teachingTypes = $this->db->query("SELECT * FROM teaching_types ORDER BY position ASC")->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/departments/edit.php';
                 return;
             }
 
             try {
-                $stmt = $this->db->prepare("UPDATE departments SET nom = ?, code = ? WHERE id = ?");
-                $stmt->execute([$nom, $code, (int)$id]);
+                $stmt = $this->db->prepare("UPDATE departments SET nom = ?, code = ?, teaching_type_id = ? WHERE id = ?");
+                $stmt->execute([$nom, $code, $teaching_type_id, (int)$id]);
                 
                 Session::setFlash('success', __('updated_success'));
                 header("Location: /departments");
                 exit;
             } catch (\PDOException $e) {
                 $error = __('error_generic');
-                $department = ['id' => $id, 'nom' => $nom, 'code' => $code];
+                $department = ['id' => $id, 'nom' => $nom, 'code' => $code, 'teaching_type_id' => $teaching_type_id];
+                $teachingTypes = $this->db->query("SELECT * FROM teaching_types ORDER BY position ASC")->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/departments/edit.php';
             }
         }

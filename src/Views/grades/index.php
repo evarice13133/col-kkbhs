@@ -51,6 +51,19 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
                 <div class="d-flex gap-2 pe-3 border-end border-opacity-10 border-secondary me-2">
 
                     <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-2 py-1">
+                        <span class="input-group-text border-0 bg-transparent text-primary small fw-bold text-uppercase me-2 d-none d-xl-inline-block">
+                            Type Ensg
+                        </span>
+                        <select name="teaching_type_id" class="form-select border-0 bg-transparent shadow-none fw-bold text-main"
+                                onchange="this.form.submit()">
+                            <option value="">Tous les types</option>
+                            <?php foreach ($teachingTypes as $tt): ?>
+                                <option value="<?= $tt['id'] ?>" <?= (int) $filters['teaching_type_id'] === (int) $tt['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $tt['nom']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-2 py-1">
 
                         <span class="input-group-text border-0 bg-transparent text-primary small fw-bold text-uppercase me-2 d-none d-xl-inline-block">
 

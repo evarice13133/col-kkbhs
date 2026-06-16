@@ -37,12 +37,32 @@ ob_start();
                         <h6 class="fw-black text-primary m-0 text-uppercase letter-spacing-1"><?= __('subject_identification') ?></h6>
                     </div>
                     
-                    <div class="col-md-5">
+                    <div class="col-md-4">
                         <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('subject_official_name') ?></label>
                         <input type="text" name="nom" class="form-control premium-input" 
                             placeholder="<?= __('subject_name_placeholder') ?>" value="<?= h($subject['nom'] ?? '') ?>" required autofocus>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Type Enseignement *</label>
+                        <select name="teaching_type_id" class="form-select premium-input border-primary border-opacity-25" required>
+                            <option value="">Sélectionner un type</option>
+                            <?php foreach ($teachingTypes as $tt): ?>
+                                <option value="<?= $tt['id'] ?>" <?= (($subject['teaching_type_id'] ?? null) == $tt['id']) ? 'selected' : '' ?>><?= h($tt['nom']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('department') ?></label>
+                        <select name="department_id" id="department_id" class="form-select premium-input">
+                            <option value=""><?= __('no_department') ?? 'Aucun département' ?></option>
+                            <?php foreach ($departments as $dept): ?>
+                                <option value="<?= $dept['id'] ?>" data-teaching-type-id="<?= $dept['teaching_type_id'] ?>" <?= (($subject['department_id'] ?? null) == $dept['id']) ? 'selected' : '' ?>>
+                                    <?= h($dept['nom']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-8">
                         <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('subject_group') ?></label>
                         <select name="groupe" class="form-select premium-input">
                             <option value="Groupe 1" <?= ($subject['groupe'] ?? '') === 'Groupe 1' ? 'selected' : '' ?>>Groupe 1 - Matières Littéraires</option>
@@ -269,6 +289,43 @@ document.addEventListener('DOMContentLoaded', function() {
         background: rgba(255, 255, 255, 0.05);
     }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const teachingTypeSelect = document.querySelector('select[name="teaching_type_id"]');
+    const departmentSelect = document.getElementById('department_id');
+    const originalDeptOptions = Array.from(departmentSelect.options);
+
+    function filterDepartments() {
+        const selectedType = teachingTypeSelect.value;
+        const currentDeptValue = departmentSelect.value;
+        
+        departmentSelect.innerHTML = '';
+        
+        let foundCurrent = false;
+        
+        originalDeptOptions.forEach(opt => {
+            if (opt.value === '' || !selectedType || opt.dataset.teachingTypeId == selectedType || !opt.dataset.teachingTypeId) {
+                departmentSelect.appendChild(opt.cloneNode(true));
+                if (opt.value === currentDeptValue) {
+                    foundCurrent = true;
+                }
+            }
+        });
+        
+        if (!foundCurrent) {
+            departmentSelect.value = '';
+        } else {
+            departmentSelect.value = currentDeptValue;
+        }
+    }
+
+    if(teachingTypeSelect && departmentSelect) {
+        teachingTypeSelect.addEventListener('change', filterDepartments);
+        filterDepartments(); // Initial call
+    }
+});
+</script>
 
 <?php 
 $content = ob_get_clean(); 

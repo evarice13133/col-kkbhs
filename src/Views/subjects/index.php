@@ -32,7 +32,14 @@ ob_start(); ?>
                             value="<?= htmlspecialchars((string) $filters['q']) ?>"
                             placeholder="<?= __('subject_name') ?>...">
                     </div>
-                    
+                    <!-- Type Enseignement -->
+                    <select name="teaching_type_id" class="form-select border-0 bg-white bg-opacity-10 shadow-none py-2 text-main rounded-pill px-3 flex-shrink-0" style="max-width: 150px; min-width: 120px;">
+                        <option value="">Tous les Types</option>
+                        <?php foreach ($teachingTypes as $tt): ?>
+                            <option value="<?= $tt['id'] ?>" <?= (int) ($filters['teaching_type_id'] ?? 0) === (int) $tt['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $tt['nom']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+
                     <select name="class_id" class="form-select border-0 bg-white bg-opacity-10 shadow-none py-2 text-main rounded-pill px-3 flex-shrink-0" style="max-width: 150px; min-width: 120px;">
                         <option value=""><?= __('all_classes') ?></option>
                         <?php foreach ($classes as $class): ?>
@@ -108,6 +115,13 @@ ob_start(); ?>
                                     <span class="badge bg-primary bg-opacity-10 text-primary fw-bold px-3 py-1 rounded-3">
                                         <?= __('coef') ?>: <?= (int) $s['coefficient'] ?>
                                     </span>
+                                    <?php if (!empty($s['teaching_type_nom'])): ?>
+                                        <div class="mt-1">
+                                            <span class="badge bg-success bg-opacity-10 text-success fw-bold px-2 py-1 rounded-pill" style="font-size: 0.65rem;">
+                                                <i class="bi bi-diagram-3-fill me-1"></i><?= htmlspecialchars((string) $s['teaching_type_nom']) ?>
+                                            </span>
+                                        </div>
+                                    <?php endif; ?>
                                 </td>
                                 <?php if (App\Core\Session::get('user_role') === 'superadmin'): ?>
                                 <td>

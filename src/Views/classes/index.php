@@ -49,6 +49,14 @@ ob_start(); ?>
                             placeholder="<?= __('class_name') ?>...">
                     </div>
 
+                    <!-- Type Enseignement -->
+                    <select name="teaching_type_id" class="form-select border-0 bg-white bg-opacity-10 shadow-none py-2 text-main rounded-pill px-3 flex-grow-1" style="min-width: 130px; max-width: 180px;">
+                        <option value="">Tous les Types</option>
+                        <?php foreach ($teachingTypes as $tt): ?>
+                            <option value="<?= $tt['id'] ?>" <?= (int) ($filters['teaching_type_id'] ?? 0) === (int) $tt['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $tt['nom']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+
                     <!-- Cycle -->
                     <select name="cycle_id" class="form-select border-0 bg-white bg-opacity-10 shadow-none py-2 text-main rounded-pill px-3 flex-grow-1" style="min-width: 130px; max-width: 180px;">
                         <option value=""><?= __('all_cycles') ?></option>
@@ -151,6 +159,13 @@ ob_start(); ?>
                                         <div class="badge bg-primary text-white px-2 py-1 rounded-pill fw-bold shadow-sm"
                                             style="font-size: 0.65rem;">
                                             <i class="bi bi-layers-fill me-1"></i><?= htmlspecialchars((string) $c['cycle_nom']) ?>
+                                        </div>
+                                    <?php endif; ?>
+                                    
+                                    <?php if ($c['teaching_type_nom']): ?>
+                                        <div class="badge bg-success text-white px-2 py-1 rounded-pill fw-bold shadow-sm"
+                                            style="font-size: 0.65rem;">
+                                            <i class="bi bi-diagram-3-fill me-1"></i><?= htmlspecialchars((string) $c['teaching_type_nom']) ?>
                                         </div>
                                     <?php endif; ?>
                                     

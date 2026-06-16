@@ -31,6 +31,16 @@ ob_start();
                     </div>
 
                     <div class="col-md-6">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Type Enseignement *</label>
+                        <select name="teaching_type_id" class="form-select premium-input border-primary border-opacity-25" required>
+                            <option value="">Sélectionner un type</option>
+                            <?php foreach ($teachingTypes as $tt): ?>
+                                <option value="<?= $tt['id'] ?>"><?= h($tt['nom']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
                         <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('cycle_membership') ?></label>
                         <select name="cycle_id" class="form-select premium-input">
                             <option value=""><?= __('no_specific_cycle') ?></option>
@@ -48,12 +58,14 @@ ob_start();
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="col-md-12">
+                    <div class="col-md-6">
                         <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('department') ?></label>
-                        <select name="department_id" class="form-select premium-input">
+                        <select name="department_id" id="department_id" class="form-select premium-input">
                             <option value=""><?= __('no_department') ?></option>
                             <?php foreach ($departments as $dept): ?>
-                                <option value="<?= $dept['id'] ?>"><?= h($dept['nom']) ?></option>
+                                <option value="<?= $dept['id'] ?>" data-teaching-type-id="<?= $dept['teaching_type_id'] ?>">
+                                    <?= h($dept['nom']) ?>
+                                </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -76,6 +88,41 @@ ob_start();
         </div>
     </form>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const teachingTypeSelect = document.querySelector('select[name="teaching_type_id"]');
+    const departmentSelect = document.getElementById('department_id');
+    const originalDeptOptions = Array.from(departmentSelect.options);
+
+    function filterDepartments() {
+        const selectedType = teachingTypeSelect.value;
+        const currentDeptValue = departmentSelect.value;
+        
+        departmentSelect.innerHTML = '';
+        
+        let foundCurrent = false;
+        
+        originalDeptOptions.forEach(opt => {
+            if (opt.value === '' || !selectedType || opt.dataset.teachingTypeId == selectedType || !opt.dataset.teachingTypeId) {
+                departmentSelect.appendChild(opt.cloneNode(true));
+                if (opt.value === currentDeptValue) {
+                    foundCurrent = true;
+                }
+            }
+        });
+        
+        if (!foundCurrent) {
+            departmentSelect.value = '';
+        } else {
+            departmentSelect.value = currentDeptValue;
+        }
+    }
+
+    teachingTypeSelect.addEventListener('change', filterDepartments);
+    filterDepartments(); // Initial call
+});
+</script>
 
 <?php
 $content = ob_get_clean();

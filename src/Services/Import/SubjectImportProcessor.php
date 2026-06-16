@@ -12,13 +12,15 @@ class SubjectImportProcessor
     private array $errors = [];
     private int $successCount = 0;
     private array $classesByName = [];
+    private array $teachingTypesByName = [];
+    private array $departmentsByName = [];
     private int $activeYearId;
 
     public function __construct(PDO $db)
     {
         $this->db = $db;
         $this->setActiveYear();
-        $this->warmupClasses();
+        $this->warmupData();
     }
 
     /**
@@ -92,12 +94,14 @@ class SubjectImportProcessor
     private function processRow(array $row, int $line): void
     {
         $subjectName = trim((string) ($row['A'] ?? ''));
-        $coefficientRaw = trim((string) ($row['B'] ?? ''));
-        $groupRaw = trim((string) ($row['C'] ?? 'Groupe 1'));
+        $teachingTypeRaw = trim((string) ($row['B'] ?? ''));
+        $departmentRaw = trim((string) ($row['C'] ?? ''));
+        $coefficientRaw = trim((string) ($row['D'] ?? ''));
+        $groupRaw = trim((string) ($row['E'] ?? 'Groupe 1'));
         $classNames = $this->extractClassNames($row);
 
-        if ($subjectName === '' || empty($classNames)) {
-            $this->logError($line, 'Matiere et classes sont obligatoires.');
+        if ($subjectName === '' || empty($classNames) || $teachingTypeRaw === '') {
+            $this->logError($line, 'Matiere, Type d\'Enseignement et classes sont obligatoires.');
             return;
         }
 
@@ -112,6 +116,24 @@ class SubjectImportProcessor
             $groupe = ucwords(strtolower($matches[1]));
         }
 
+        $teachingTypeId = $this->resolveTeachingTypeId($teachingTypeRaw, $line);
+        if (!$teachingTypeId) return;
+
+        $departmentId = null;
+        if ($departmentRaw !== '') {
+            $departmentId = $this->resolveDepartmentId($departmentRaw, $line);
+            if (!$departmentId) return;
+
+            // Validation de la cohérence: le département doit appartenir au type d'enseignement
+            $stmtDeptCheck = $this->db->prepare("SELECT teaching_type_id FROM departments WHERE id = ?");
+            $stmtDeptCheck->execute([$departmentId]);
+            $deptTtId = $stmtDeptCheck->fetchColumn();
+            if ($deptTtId && $deptTtId != $teachingTypeId) {
+                $this->logError($line, 'Le departement n\'appartient pas a ce Type d\'Enseignement.');
+                return;
+            }
+        }
+
         $classIds = $this->resolveClassIds($classNames, $line);
         if (empty($classIds)) {
             return;
@@ -124,8 +146,8 @@ class SubjectImportProcessor
         }
 
         try {
-            $stmt = $this->db->prepare("INSERT INTO subjects (nom, coefficient, groupe, status) VALUES (?, ?, ?, 1)");
-            $stmt->execute([$subjectName, $coefficient, $groupe]);
+            $stmt = $this->db->prepare("INSERT INTO subjects (nom, coefficient, groupe, teaching_type_id, department_id, status) VALUES (?, ?, ?, ?, ?, 1)");
+            $stmt->execute([$subjectName, $coefficient, $groupe, $teachingTypeId, $departmentId]);
             $subjectId = (int) $this->db->lastInsertId();
 
             $ins = $this->db->prepare("INSERT INTO subject_classes (subject_id, class_id, academic_year_id) VALUES (?, ?, ?)");
@@ -165,24 +187,52 @@ class SubjectImportProcessor
     {
         $names = [];
 
-        // Nouveau format template : plusieurs colonnes de classes (D à M).
-        foreach (['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'] as $col) {
+        // Nouveau format template : plusieurs colonnes de classes (F à O).
+        foreach (['F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O'] as $col) {
             $value = trim((string) ($row[$col] ?? ''));
             if ($value !== '') {
                 $names[] = $value;
             }
         }
 
-        // Pas de compatibilité virgule pour C car c'est maintenant le Groupe.
-
         return array_values(array_unique($names));
     }
 
-    private function warmupClasses(): void
+    private function resolveTeachingTypeId(string $name, int $line): ?int
+    {
+        $key = mb_strtolower($name);
+        if (isset($this->teachingTypesByName[$key])) {
+            return (int) $this->teachingTypesByName[$key];
+        }
+        $this->logError($line, "Type d'Enseignement introuvable: " . $name);
+        return null;
+    }
+
+    private function resolveDepartmentId(string $name, int $line): ?int
+    {
+        $key = mb_strtolower($name);
+        if (isset($this->departmentsByName[$key])) {
+            return (int) $this->departmentsByName[$key];
+        }
+        $this->logError($line, "Département introuvable: " . $name);
+        return null;
+    }
+
+    private function warmupData(): void
     {
         $rows = $this->db->query("SELECT id, nom FROM classes")->fetchAll(PDO::FETCH_ASSOC);
         foreach ($rows as $row) {
             $this->classesByName[mb_strtolower((string) $row['nom'])] = (int) $row['id'];
+        }
+
+        $tts = $this->db->query("SELECT id, nom FROM teaching_types")->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($tts as $tt) {
+            $this->teachingTypesByName[mb_strtolower((string) $tt['nom'])] = (int) $tt['id'];
+        }
+
+        $depts = $this->db->query("SELECT id, nom FROM departments")->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($depts as $dept) {
+            $this->departmentsByName[mb_strtolower((string) $dept['nom'])] = (int) $dept['id'];
         }
     }
 

@@ -29,6 +29,8 @@ use App\Controllers\DocumentationController;
 use App\Controllers\HonorRollController;
 use App\Controllers\DepartmentController;
 use App\Controllers\LandingController;
+use App\Controllers\TeachingTypeController;
+
 
 
 // 0. Applique les mesures de sécurité globales
@@ -296,6 +298,28 @@ elseif (strpos($path, '/cycles') === 0) {
         $c->delete($_GET['id'] ?? 0);
     elseif ($path === '/sequences/toggle')
         $c->toggle($_GET['id'] ?? 0);
+} elseif (strpos($path, '/teaching_types') === 0) {
+    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+        header('Location: /');
+        exit;
+    }
+    $c = new TeachingTypeController();
+    if ($path === '/teaching_types' || $path === '/teaching_types/' || $path === '/teaching_types/index.php')
+        $c->index();
+    elseif ($path === '/teaching_types/create')
+        $c->create();
+    elseif ($path === '/teaching_types/store' && $method === 'POST')
+        $c->store();
+    elseif ($path === '/teaching_types/edit')
+        $c->edit($_GET['id'] ?? 0);
+    elseif ($path === '/teaching_types/update' && $method === 'POST')
+        $c->update($_GET['id'] ?? 0);
+    elseif ($path === '/teaching_types/delete')
+        $c->delete($_GET['id'] ?? 0);
+    else {
+        header('Location: /teaching_types');
+        exit;
+    }
 }
 
 // ====== ROUTES: CORPS ENSEIGNANT ======
