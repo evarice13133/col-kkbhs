@@ -167,7 +167,8 @@ if (isset($styleOnly)) {
         </div>
     <?php endif; ?>
 
-    <div class="bulletin-sheet">
+    <div class="bulletin-wrapper">
+        <div class="bulletin-sheet">
         <?php
         /**
          * B. CALCUL DU TITRE DU BULLETIN
@@ -213,6 +214,28 @@ if (isset($styleOnly)) {
             }
             ?>
             <?php foreach ($groupedRowsChunks as $chunkIndex => $groupsChunk): ?>
+                <?php if ($chunkIndex === 0): ?>
+                    <table class="grades-table-header">
+                        <colgroup>
+                            <col style="width:40%;">
+                            <col style="width:10%;">
+                            <col style="width:5%;">
+                            <col style="width:10%;">
+                            <col style="width:10%;">
+                            <col style="width:10%;">
+                            <col style="width:15%;">
+                        </colgroup>
+                        <tr class="grades-header-row">
+                            <th><?= __('subjects') ?></th>
+                            <th><?= __('average') ?></th>
+                            <th><?= __('coef') ?></th>
+                            <th><?= __('weighted_mark') ?></th>
+                            <th>TOTAL</th>
+                            <th><?= __('rank') ?></th>
+                            <th><?= __('appreciation') ?></th>
+                        </tr>
+                    </table>
+                <?php endif; ?>
                 <table class="grades-table">
                     <colgroup>
                         <col style="width:40%;">
@@ -223,19 +246,6 @@ if (isset($styleOnly)) {
                         <col style="width:10%;">
                         <col style="width:15%;">
                     </colgroup>
-                    <?php if ($chunkIndex === 0): ?>
-                        <thead>
-                            <tr class="grades-header-row">
-                                <th><?= __('subjects') ?></th>
-                                <th><?= __('average') ?></th>
-                                <th><?= __('coef') ?></th>
-                                <th><?= __('weighted_mark') ?></th>
-                                <th>TOTAL</th>
-                                <th><?= __('rank') ?></th>
-                                <th><?= __('appreciation') ?></th>
-                            </tr>
-                        </thead>
-                    <?php endif; ?>
                     <tbody>
                         <?php foreach ($groupsChunk as $group): ?>
                             <?php foreach ($group['rows'] as $row): ?>
@@ -294,7 +304,7 @@ if (isset($styleOnly)) {
                             <col style="width:5%;">
                             <col style="width:20%;">
                         </colgroup>
-                        <tr>
+                        <tr class="subject-group">
                             <td style="text-align: left; padding: 3px 6px; border: none;"><?= chr(65 + $chunkIndex) ?> - <?= htmlspecialchars($group['label']) ?></td>
                             <td style="text-align: center; padding: 3px 6px; border: none;"><strong><?= formatSimple($groupPoints) ?> Points / <?= (float) ($group['total_coeffs_all'] ?? 0) ?> Coef</strong></td>
                             <td style="text-align: center; padding: 3px 6px; border: none;">&nbsp;</td>
@@ -306,17 +316,33 @@ if (isset($styleOnly)) {
         </div>
 
         <!-- E. RÉSULTATS GLOBAUX, RÉCAPITULATIF ET DÉCISION DU CONSEIL (TABLEAU UNIFIÉ À 3 COLONNES HORIZONTALES) -->
-        <table
-            style="width: 100%; border: 0.5px solid #000; border-collapse: collapse; font-size: 9px; margin-top: 3px;">
-            <!-- LIGNES D'EN-TÊTE PRINCIPALES -->
-            <tr style="background-color: #f2f2f2; font-weight: bold; text-align: center;">
-                <th colspan="2" style="width: 33%; border: 0.5px solid #000; padding: 3px; font-size: 10px;">
-                    <?= strtoupper(__('class_stats')) ?> & <?= strtoupper(__('student_summary')) ?></th>
-                <th colspan="2" style="width: 33%; border: 0.5px solid #000; padding: 3px; font-size: 10px;">
-                    <?= strtoupper(__('general_observation')) ?> & <?= strtoupper(__('conduct')) ?></th>
-                <th colspan="2" style="width: 34%; border: 0.5px solid #000; padding: 3px; font-size: 10px;">
-                    <?= strtoupper(__('council_decision')) ?></th>
-            </tr>
+        <div class="grades-table-wrap">
+            <table class="grades-table-header">
+                <colgroup>
+                    <col style="width:22%;">
+                    <col style="width:11%;">
+                    <col style="width:22%;">
+                    <col style="width:11%;">
+                    <col style="width:22%;">
+                    <col style="width:12%;">
+                </colgroup>
+                <!-- LIGNES D'EN-TÊTE PRINCIPALES -->
+                <tr class="grades-header-row">
+                    <th colspan="2" style="white-space: nowrap; padding-left: 2px; padding-right: 2px;"><?= __('stat_classe_short') ?></th>
+                    <th colspan="2" style="white-space: nowrap; padding-left: 2px; padding-right: 2px;"><?= __('synthesis_conduct_short') ?></th>
+                    <th colspan="2" style="white-space: nowrap; padding-left: 2px; padding-right: 2px;"><?= __('council_decision_short') ?></th>
+                </tr>
+            </table>
+            <table class="grades-table">
+                <colgroup>
+                    <col style="width:22%;">
+                    <col style="width:11%;">
+                    <col style="width:22%;">
+                    <col style="width:11%;">
+                    <col style="width:22%;">
+                    <col style="width:12%;">
+                </colgroup>
+                <tbody>
             <?php
             // Consolidation des totaux consolidés (TOTAUX et Coefficients)
             $totalAllCoeffs = 0;
@@ -330,49 +356,46 @@ if (isset($styleOnly)) {
             <!-- ROW 1 -->
             <tr>
                 <!-- Partie 1: Statistiques & Synthèse -->
-                <td style="width: 22%; border: 0.5px solid #000; padding: 1px 3px;"><?= __('class_avg_gen') ?></td>
-                <td
-                    style="width: 11%; border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
+                <td><?= __('class_avg_gen') ?></td>
+                <td style="text-align: center; font-weight: bold;">
                     <?= formatSimple($classStats['average'] ?? null) ?></td>
                 <!-- Partie 2: Période & Absences -->
-                <td style="width: 22%; border: 0.5px solid #000; padding: 1px 3px; font-weight: bold;">
+                <td style="font-weight: bold;">
                     <?= __('period') ?></td>
-                <td
-                    style="width: 11%; border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
+                <td style="text-align: center; font-weight: bold;">
                     <?= htmlspecialchars($evalTitle) ?></td>
                 <!-- Partie 3: Décision du Conseil -->
-                <td style="width: 22%; border: 0.5px solid #000; padding: 1px 3px;"><?= __('warn_conduct') ?> /
+                <td><?= __('warn_conduct') ?> /
                     <?= __('blame_conduct') ?></td>
-                <td
-                    style="width: 12%; border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
+                <td style="text-align: center; font-weight: bold;">
                     <?= $discipline['warning_conduct'] ?> / <?= $discipline['blame_conduct'] ?></td>
             </tr>
             <!-- ROW 2 -->
             <tr>
-                <td style="border: 0.5px solid #000; padding: 1px 3px;"><?= __('avg_max') ?></td>
-                <td style="border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
+                <td><?= __('avg_max') ?></td>
+                <td style="text-align: center; font-weight: bold;">
                     <?= formatSimple($classStats['max'] ?? null) ?></td>
-                <td style="border: 0.5px solid #000; padding: 1px 3px; font-weight: bold;"><?= __('appreciation') ?>
+                <td style="font-weight: bold;"><?= __('appreciation') ?>
                 </td>
-                <td style="border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
+                <td style="text-align: center; font-weight: bold;">
                     <?= htmlspecialchars($globalAppreciation) ?></td>
-                <td style="border: 0.5px solid #000; padding: 1px 3px;"><?= __('exclusions') ?> / <?= __('consignes') ?>
+                <td><?= __('exclusions') ?> / <?= __('consignes') ?>
                 </td>
-                <td style="border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
+                <td style="text-align: center; font-weight: bold;">
                     <?= sprintf('%02d', $discipline['exclusion_days']) ?>j /
                     <?= sprintf('%02d', $discipline['consignes']) ?></td>
             </tr>
             <!-- ROW 3 -->
             <tr>
-                <td style="border: 0.5px solid #000; padding: 1px 3px;"><?= __('success_rate') ?></td>
-                <td style="border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
+                <td><?= __('success_rate') ?></td>
+                <td style="text-align: center; font-weight: bold;">
                     <?= isset($classStats['success_rate']) ? formatSimple($classStats['success_rate']) . '%' : '-' ?>
                 </td>
-                <td style="border: 0.5px solid #000; padding: 1px 3px; font-weight: bold;">TOTAL A+B+C <br> <?= __('total_coeffs') ?></td>
-                <td style="border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
+                <td style="font-weight: bold;">TOTAL A+B+C <br> <?= __('total_coeffs') ?></td>
+                <td style="text-align: center; font-weight: bold;">
                     <?= formatSimple($totalTotals) ?> <br> <?= (float) $totalAllCoeffs ?></td>
-                <td style="border: 0.5px solid #000; padding: 1px 3px;"><?= __('honour_roll') ?></td>
-                <td style="border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
+                <td><?= __('honour_roll') ?></td>
+                <td style="text-align: center; font-weight: bold;">
                     <?php if ($discipline['tableau_honneur'] === 'X'): ?>
                         <span class="vert"><?= strtoupper(__('yes')) ?></span>
                     <?php elseif ($discipline['tableau_honneur'] === '' && $average >= 12): ?>
@@ -384,16 +407,15 @@ if (isset($styleOnly)) {
             </tr>
             <!-- ROW 4 -->
             <tr>
-                <td style="border: 0.5px solid #000; padding: 1px 3px; font-weight: bold;"><?= __('student_avg') ?></td>
-                <td
-                    style="border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold; background-color: #fafafa;">
+                <td style="font-weight: bold;"><?= __('student_avg') ?></td>
+                <td style="text-align: center; font-weight: bold;">
                     <?= formatNote($average) ?></td>
-                <td style="border: 0.5px solid #000; padding: 1px 3px;">&bull; <?= __('total') ?> <?= __('absences') ?>
+                <td>&bull; <?= __('total') ?> <?= __('absences') ?>
                 </td>
-                <td style="border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
+                <td style="text-align: center; font-weight: bold;">
                     <?= sprintf('%02d', (int) ($discipline['absences']['total'] ?? 0)) ?></td>
-                <td style="border: 0.5px solid #000; padding: 1px 3px;"><?= __('encouragements') ?></td>
-                <td style="border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
+                <td><?= __('encouragements') ?></td>
+                <td style="text-align: center; font-weight: bold;">
                     <?php if ($discipline['encouragements'] === 'X'): ?>
                         <span class="vert"><?= __('work_good') ?></span>
                     <?php else: ?>
@@ -414,15 +436,15 @@ if (isset($styleOnly)) {
             </tr>
             <!-- ROW 5 -->
             <tr>
-                <td style="border: 0.5px solid #000; padding: 1px 3px;"><?= __('student_rank') ?> & <?= __('mention') ?>
+                <td><?= __('student_rank') ?> & <?= __('mention') ?>
                 </td>
-                <td style="border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
+                <td style="text-align: center; font-weight: bold;">
                     <?= $rank !== null ? $rank . '/' . $effectif : '-' ?> (<?= htmlspecialchars($mention) ?>)</td>
-                <td style="border: 0.5px solid #000; padding: 1px 3px;">&bull; <?= __('justified') ?></td>
-                <td style="border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
+                <td>&bull; <?= __('justified') ?></td>
+                <td style="text-align: center; font-weight: bold;">
                     <?= sprintf('%02d', (int) ($discipline['absences']['justified'] ?? 0)) ?></td>
-                <td style="border: 0.5px solid #000; padding: 1px 3px;"><?= __('congratulations') ?></td>
-                <td style="border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
+                <td><?= __('congratulations') ?></td>
+                <td style="text-align: center; font-weight: bold;">
                     <?php if ($discipline['felicitations'] === 'X'): ?>
                         <span class="vert"><?= strtoupper(__('yes')) ?></span>
                     <?php elseif ($discipline['felicitations'] === '' && $average >= 14): ?>
@@ -434,21 +456,21 @@ if (isset($styleOnly)) {
             </tr>
             <!-- ROW 6 -->
             <tr>
-                <td style="border: 0.5px solid #000; padding: 1px 3px;"><?= __('general_observation') ?></td>
-                <td style="border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
+                <td><?= __('general_observation') ?></td>
+                <td style="text-align: center; font-weight: bold;">
                     <?= htmlspecialchars($globalAppreciation) ?></td>
-                <td style="border: 0.5px solid #000; padding: 1px 3px;">&bull; <?= __('unjustified') ?></td>
-                <td style="border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
+                <td>&bull; <?= __('unjustified') ?></td>
+                <td style="text-align: center; font-weight: bold;">
                     <?= sprintf('%02d', (int) ($discipline['absences']['unjustified'] ?? 0)) ?></td>
-                <td style="border: 0.5px solid #000; padding: 1px 3px;"><?= __('warn_work') ?></td>
-                <td style="border: 0.5px solid #000; padding: 1px 3px; text-align: center; font-weight: bold;">
+                <td><?= __('warn_work') ?></td>
+                <td style="text-align: center; font-weight: bold;">
                     <?= $discipline['warning_work'] ?></td>
             </tr>
 
             <!-- SECTION 4: LÉGENDE -->
             <tr>
                 <td colspan="6"
-                    style="border: 0.5px solid #000; padding: 3px; font-size: 8.5px; line-height: 1.1; background-color: #fafafa;">
+                    style="padding: 3px; font-size: 8.5px; line-height: 1.1; background-color: #fafafa;">
                     <span
                         style="font-weight: bold; text-decoration: underline;"><?= __('legend_appreciation') ?>:</span>
                     CTBA : <?= __('ctba_desc') ?> | CBA : <?= __('cba_desc') ?> | CA : <?= __('ca_desc') ?> |
@@ -456,21 +478,27 @@ if (isset($styleOnly)) {
                     <strong><?= __('mgp_group') ?></strong>
                 </td>
             </tr>
-        </table>
+                </tbody>
+            </table>
+        </div>
 
         <!-- G. BLOC DES SIGNATURES -->
-        <table class="signature-table" style="margin-top: 5px;">
-            <tr>
-                <td width="33%"><?= __('signature_student_parent') ?></td>
-                <td width="33%" style="text-align: center;"><?= __('signature_teacher') ?></td>
-                <td width="33%" style="text-align: right;"><?= __('signature_principal') ?></td>
-            </tr>
-            <tr>
-                <td></td>
-                <td style="text-align: center;"><?php if ($showTeacherNamesOnBulletins): ?><?= htmlspecialchars($professor_name ?? '') ?><?php endif; ?></td>
-                <td style="text-align: right;"></td>
-            </tr>
-        </table>
+        <div class="grades-table-wrap" style="padding: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <div style="flex: 1;"><?= __('signature_student_parent') ?></div>
+                <div style="flex: 1; text-align: center;"><?= __('signature_teacher') ?><?php if ($showTeacherNamesOnBulletins): ?> <?= htmlspecialchars($professor_name ?? '') ?><?php endif; ?></div>
+                <div style="flex: 1; text-align: center; font-size: 10px;">
+                    <em><?= __('date') ?> : ..............................................</em><br><br>
+                    <strong style="font-weight: bold;"><?= __('signature_principal') ?></strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- H. BANDE DE PIED DE PAGE (Extérieur du cadre) -->
+    <div class="bulletin-footer">
+        © NoteMaster - Douala-Cameroun. <?= htmlspecialchars($i['school_code'] ?? '') ?>.camertech.com
+    </div>
     </div>
 
     <?php if (!$embeddedBatch): ?>

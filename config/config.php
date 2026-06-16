@@ -17,7 +17,7 @@
    define('DEBUG_MODE', false); //evite l'affichage des erreures PHP au utilisateurs en production
 
 // en developpement pour la configuration locale
-/** 
+ /** 
     define('DB_HOST', 'localhost');
     define('DB_NAME', 'notemaster_imt');
     define('DB_USER', 'root');

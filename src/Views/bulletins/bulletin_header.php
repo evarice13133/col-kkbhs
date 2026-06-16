@@ -37,11 +37,15 @@ if (isset($styleOnly)) {
     @page :first { margin-top: <?= $pageMargin ?>; }
     body { font-family: 'Arial', sans-serif; font-size: <?= $baseFontSize ?>px; margin: 0; padding: 0; color: #000;
     background: #fff; line-height: <?= $lineHeight ?>; }
-    .bulletin-sheet { width: 100%; margin: 0 auto; page-break-after: always; page-break-inside: avoid; padding: 3px; border: 2px solid green; }
+    .bulletin-sheet { width: 100%; margin: 0 auto; page-break-after: auto; page-break-inside: avoid; padding: 3px; border: 4px solid green; }
     .bulletin-sheet:last-child { page-break-after: auto; }
+    .bulletin-wrapper { page-break-after: always; page-break-inside: avoid; margin-bottom: 10px; }
     table { width: 99.5%; margin: 0 auto 1px; border-collapse: collapse; table-layout: fixed; border: 1px solid green; }
     th, td { border: 1px solid green; padding: 2px 4px; text-align: center; color: black; }
-    th { background-color: green; color: white; text-transform: uppercase; font-weight: bold; }
+    th { background-color: green; color: white; text-transform: uppercase; font-weight: bold; border: 2px solid white; }
+    .grades-header-row th { border: 2px solid white; background-color: green; color: white; }
+    tbody tr:first-child td { border-top: 2px solid green; }
+    .subject-group { background: linear-gradient(180deg, #e8f5e9 0%, #c8e6c9 100%); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .left { text-align: left; }
     .bold { font-weight: bold; }
     .uppercase { text-transform: uppercase; }
@@ -88,6 +92,7 @@ if (isset($styleOnly)) {
     opacity: 0.4;
     }
     .grades-table { position: relative; z-index: 1; table-layout: fixed; width: 100%; border-collapse: collapse; page-break-inside: avoid; }
+    .grades-table-header { table-layout: fixed; width: 100%; border-collapse: collapse; }
     .grades-table td:not(.left) { font-size: 0.85em; }
     .subject-line { display: flex; justify-content: space-between; align-items: center; width: 100%; }
     .subject-name { font-weight: bold; font-size: <?= $baseFontSize + 1 ?>px; color: black; }
@@ -205,6 +210,7 @@ if (isset($styleOnly)) {
     .compact-side th, .compact-side td { padding: 1px 2px; line-height: 0.95; }
     .rounded-legend { border: 1px solid #000; border-radius: 4px; border-collapse: separate; }
     .signature-table td { border: none; height: 30px; vertical-align: top; padding-top: 1px; }
+    .bulletin-footer { width: 100%; height: 15px; background-color: green; color: white; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold; margin-top: 10px; text-align: center; }
     .no-border { border: none !important; }
     .absences-title { text-align: center; vertical-align: middle; width: 15px; font-weight: bold; font-size: 6.5px;
     line-height: 0.8; }
@@ -242,10 +248,15 @@ if (isset($styleOnly)) {
     .academic-year-display { font-size: 12px; }
     }
     @media print {
-    .bulletin-sheet { page-break-inside: avoid; border: 2px solid green; padding: 5px; }
-    table { page-break-inside: avoid; }
+    .bulletin-wrapper { page-break-after: always; page-break-inside: avoid; }
+    .bulletin-sheet { page-break-inside: avoid; border: 4px solid green; padding: 5px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    table { page-break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     tr { page-break-inside: avoid; }
-    th, td { border: 1px solid green; }
+    th, td { border: 1px solid green; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    th { background-color: green !important; color: white !important; border: 2px solid white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .bulletin-footer { background-color: green !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .subject-group { background: linear-gradient(180deg, #e8f5e9 0%, #c8e6c9 100%) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
     
     /* MODAL DE GUIDAGE PDF EN HAUTE FIDÉLITÉ */
