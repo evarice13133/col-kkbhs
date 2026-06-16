@@ -111,6 +111,8 @@ class StudentController
 
 
         $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        
+        $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
 
 
@@ -252,7 +254,11 @@ class StudentController
 
                 'G1' => 'Classe',
 
-                'H1' => 'Redoublant (OUI/NON)'
+                'H1' => 'Redoublant (OUI/NON)',
+
+                'I1' => 'Contact Père/Mère',
+
+                'J1' => 'Contact Tuteur'
 
             ];
 
@@ -280,7 +286,7 @@ class StudentController
 
             ];
 
-            $sheet->getStyle('A1:H1')->applyFromArray($styleArray);
+            $sheet->getStyle('A1:J1')->applyFromArray($styleArray);
 
 
 
@@ -306,6 +312,10 @@ class StudentController
 
                 $sheet->setCellValue('H' . $row, ($student['is_redoublant'] ?? 0) ? 'OUI' : 'NON');
 
+                $sheet->setCellValue('I' . $row, $student['parent_contact'] ?? '');
+
+                $sheet->setCellValue('J' . $row, $student['guardian_contact'] ?? '');
+
 
 
                 // Forcer le format texte sur les colonnes sensibles
@@ -324,7 +334,7 @@ class StudentController
 
             // Ajuster la largeur des colonnes
 
-            foreach(range('A','H') as $col) {
+            foreach(range('A','J') as $col) {
 
                 $sheet->getColumnDimension($col)->setAutoSize(true);
 
@@ -439,13 +449,15 @@ class StudentController
         }
 
         // Classes are now shared across years, no year filtering
-        $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id, teaching_type_id FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        
+        $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
-        $departments = $this->db->query("SELECT id, nom FROM departments WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $departments = $this->db->query("SELECT id, nom, teaching_type_id FROM departments WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         $formData = ['is_redoublant' => '0', 'sexe' => ''];
 
@@ -731,6 +743,8 @@ class StudentController
             $class_id = !empty($_POST['class_id']) ? (int) $_POST['class_id'] : null;
 
             $cycle_id = !empty($_POST['cycle_id']) ? (int) $_POST['cycle_id'] : null;
+            
+            $teaching_type_id = !empty($_POST['teaching_type_id']) ? (int) $_POST['teaching_type_id'] : null;
 
             $section_id = !empty($_POST['section_id']) ? (int) $_POST['section_id'] : null;
 
@@ -744,6 +758,10 @@ class StudentController
 
             $is_redoublant = $this->normalizeRedoublantFlag($_POST['is_redoublant'] ?? 0);
 
+            $parent_contact = $this->normalizeOptionalText($_POST['parent_contact'] ?? '');
+
+            $guardian_contact = $this->normalizeOptionalText($_POST['guardian_contact'] ?? '');
+
 
 
             if (empty($nom) || empty($prenom)) {
@@ -754,10 +772,12 @@ class StudentController
                 $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
                 $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                
+                $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
                 $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
-                $departments = $this->db->query("SELECT id, nom FROM departments WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $departments = $this->db->query("SELECT id, nom, teaching_type_id FROM departments WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
                 $formData = [
 
@@ -770,6 +790,8 @@ class StudentController
                     'class_id' => $class_id,
 
                     'cycle_id' => $cycle_id,
+                    
+                    'teaching_type_id' => $teaching_type_id,
 
                     'section_id' => $section_id,
 
@@ -782,6 +804,10 @@ class StudentController
                     'lieu_naissance' => $lieu_naissance,
 
                     'is_redoublant' => (string) $is_redoublant,
+
+                    'parent_contact' => $parent_contact,
+
+                    'guardian_contact' => $guardian_contact,
 
                 ];
 
@@ -827,8 +853,8 @@ class StudentController
             $academicYearId = $this->academicYearService->getActiveYearId();
 
             // D'abord insérer l'étudiant sans photo pour obtenir l'ID
-            $stmt = $this->db->prepare("INSERT INTO students (nom, prenom, email, class_id, sexe, date_naissance, lieu_naissance, is_redoublant, academic_year_id, photo_eleve) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$nom, $prenom, $email, $class_id, $sexe, $date_naissance, $lieu_naissance, $is_redoublant, $academicYearId, null]);
+            $stmt = $this->db->prepare("INSERT INTO students (nom, prenom, email, class_id, sexe, date_naissance, lieu_naissance, is_redoublant, academic_year_id, photo_eleve, parent_contact, guardian_contact, teaching_type_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$nom, $prenom, $email, $class_id, $sexe, $date_naissance, $lieu_naissance, $is_redoublant, $academicYearId, null, $parent_contact, $guardian_contact, $teaching_type_id]);
 
             $studentId = (int) $this->db->lastInsertId();
 
@@ -924,9 +950,11 @@ class StudentController
         }
 
         // Classes are now shared across years, no year filtering
-        $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id, teaching_type_id FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        
+        $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -967,6 +995,8 @@ class StudentController
             $class_id = !empty($_POST['class_id']) ? (int) $_POST['class_id'] : null;
 
             $cycle_id = !empty($_POST['cycle_id']) ? (int) $_POST['cycle_id'] : null;
+            
+            $teaching_type_id = !empty($_POST['teaching_type_id']) ? (int) $_POST['teaching_type_id'] : null;
 
             $section_id = !empty($_POST['section_id']) ? (int) $_POST['section_id'] : null;
 
@@ -979,6 +1009,10 @@ class StudentController
             $lieu_naissance = $this->normalizeOptionalText($_POST['lieu_naissance'] ?? '');
 
             $is_redoublant = $this->normalizeRedoublantFlag($_POST['is_redoublant'] ?? 0);
+
+            $parent_contact = $this->normalizeOptionalText($_POST['parent_contact'] ?? '');
+
+            $guardian_contact = $this->normalizeOptionalText($_POST['guardian_contact'] ?? '');
 
 
 
@@ -1080,6 +1114,8 @@ class StudentController
                     'class_id' => $class_id,
 
                     'cycle_id' => $cycle_id,
+                    
+                    'teaching_type_id' => $teaching_type_id,
 
                     'section_id' => $section_id,
 
@@ -1093,12 +1129,18 @@ class StudentController
 
                     'is_redoublant' => $is_redoublant,
 
+                    'parent_contact' => $parent_contact,
+
+                    'guardian_contact' => $guardian_contact,
+
                 ];
 
                 // Classes are now shared across years, no year filtering
-                $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id, teaching_type_id FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
                 $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                
+                $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
                 $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -1114,9 +1156,9 @@ class StudentController
 
             // Préparer la mise à jour. Autoriser la modification du matricule pour admin/superadmin
 
-            $updateParts = ['nom = ?', 'prenom = ?', 'class_id = ?', 'sexe = ?', 'date_naissance = ?', 'lieu_naissance = ?', 'is_redoublant = ?', 'photo_eleve = ?'];
+            $updateParts = ['nom = ?', 'prenom = ?', 'class_id = ?', 'sexe = ?', 'date_naissance = ?', 'lieu_naissance = ?', 'is_redoublant = ?', 'photo_eleve = ?', 'parent_contact = ?', 'guardian_contact = ?', 'teaching_type_id = ?'];
 
-            $params = [$nom, $prenom, $class_id, $sexe, $date_naissance, $lieu_naissance, $is_redoublant, $newPhotoPath];
+            $params = [$nom, $prenom, $class_id, $sexe, $date_naissance, $lieu_naissance, $is_redoublant, $newPhotoPath, $parent_contact, $guardian_contact, $teaching_type_id];
 
 
 
@@ -1271,6 +1313,8 @@ class StudentController
         $classId = (int) ($_GET['class_id'] ?? 0);
 
         $sectionId = (int) ($_GET['section_id'] ?? 0);
+        
+        $teachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
 
         $showWithdrawn = (int) ($_GET['withdrawn'] ?? 0);
 
@@ -1343,6 +1387,14 @@ class StudentController
 
         }
 
+        if ($teachingTypeId > 0) {
+
+            $where .= " AND s.teaching_type_id = ?";
+
+            $params[] = $teachingTypeId;
+
+        }
+
 
 
         // --- 2. Calcul du total (sans pagination) ---
@@ -1363,7 +1415,7 @@ class StudentController
 
         // --- 3. Récupération des données avec pagination si demandée ---
 
-        $sql = "SELECT s.*, c.nom as classe_nom, cy.nom as cycle_nom, sec.nom as section_nom, d.nom as department_nom
+        $sql = "SELECT s.*, c.nom as classe_nom, cy.nom as cycle_nom, sec.nom as section_nom, d.nom as department_nom, tt.nom as teaching_type_nom
 
                 FROM students s
 
@@ -1373,7 +1425,9 @@ class StudentController
 
                 LEFT JOIN sections sec ON c.section_id = sec.id
 
-                LEFT JOIN departments d ON c.department_id = d.id" . $where;
+                LEFT JOIN departments d ON c.department_id = d.id
+                
+                LEFT JOIN teaching_types tt ON s.teaching_type_id = tt.id" . $where;
 
 
 
@@ -1399,7 +1453,7 @@ class StudentController
 
             $stmt->fetchAll(PDO::FETCH_ASSOC), 
 
-            ['q' => $search, 'class_id' => $classId, 'section_id' => $sectionId, 'withdrawn' => $showWithdrawn],
+            ['q' => $search, 'class_id' => $classId, 'section_id' => $sectionId, 'teaching_type_id' => $teachingTypeId, 'withdrawn' => $showWithdrawn],
 
             $totalCount
 
@@ -1482,6 +1536,18 @@ class StudentController
             if (!$this->studentColumnExists('photo_eleve')) {
 
                 $this->db->exec("ALTER TABLE students ADD COLUMN photo_eleve VARCHAR(255) NULL AFTER is_withdrawn");
+
+            }
+
+            if (!$this->studentColumnExists('parent_contact')) {
+
+                $this->db->exec("ALTER TABLE students ADD COLUMN parent_contact VARCHAR(50) NULL AFTER photo_eleve");
+
+            }
+
+            if (!$this->studentColumnExists('guardian_contact')) {
+
+                $this->db->exec("ALTER TABLE students ADD COLUMN guardian_contact VARCHAR(50) NULL AFTER parent_contact");
 
             }
 

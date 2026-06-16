@@ -235,6 +235,22 @@ class StudentImportProcessor
 
                     }
 
+                    if (str_contains($norm, 'père') || str_contains($norm, 'pere') || str_contains($norm, 'parent') || str_contains($norm, 'mère') || str_contains($norm, 'mere')) {
+
+                        $headerMap['parent_contact'] = $col;
+
+                        continue;
+
+                    }
+
+                    if (str_contains($norm, 'tuteur') || str_contains($norm, 'guardian')) {
+
+                        $headerMap['guardian_contact'] = $col;
+
+                        continue;
+
+                    }
+
                 }
 
 
@@ -325,9 +341,13 @@ class StudentImportProcessor
 
         $className = trim($row[$headerMap['class'] ?? 'F'] ?? '');
 
-        $isRedoublantRaw = strtoupper(trim($row[$headerMap['redoubl'] ?? 'G'] ?? ''));
+        $isRedoublantRaw = strtoupper(trim($row[$headerMap['redoubl'] ?? 'H'] ?? ''));
 
         $providedMatricule = trim($row[$headerMap['matricule'] ?? 'C'] ?? '');
+
+        $parentContact = trim($row[$headerMap['parent_contact'] ?? ''] ?? '');
+
+        $guardianContact = trim($row[$headerMap['guardian_contact'] ?? ''] ?? '');
 
 
 
@@ -409,7 +429,7 @@ class StudentImportProcessor
 
 
 
-            $sql = "INSERT INTO students (nom, prenom, email, class_id, sexe, date_naissance, lieu_naissance, is_redoublant, academic_year_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $sql = "INSERT INTO students (nom, prenom, email, class_id, teaching_type_id, sexe, date_naissance, lieu_naissance, is_redoublant, academic_year_id, parent_contact, guardian_contact) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             $stmt = $this->db->prepare($sql);
 
@@ -422,6 +442,7 @@ class StudentImportProcessor
                 $matricule, // Email sert de matricule dans ce système
 
                 $classId,
+                $this->cache['class_teaching_types'][$classId] ?? null,
 
                 $sexe,
 
@@ -431,7 +452,11 @@ class StudentImportProcessor
 
                 $isRedoublant,
 
-                $this->activeYearId
+                $this->activeYearId,
+
+                $parentContact,
+
+                $guardianContact
 
             ]);
 
@@ -521,13 +546,13 @@ class StudentImportProcessor
 
     {
 
-        $stmt = $this->db->query("SELECT id, nom FROM classes");
+        $stmt = $this->db->query("SELECT id, nom, teaching_type_id FROM classes");
 
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 
-            $normalized = $this->normalizeString($row['nom']);
+            $this->cache['classes'][$this->normalizeString($row['nom'])] = (int) $row['id'];
 
-            $this->cache['classes'][$normalized] = $row['id'];
+            $this->cache['class_teaching_types'][(int) $row['id']] = $row['teaching_type_id'] ? (int) $row['teaching_type_id'] : null;
 
         }
 

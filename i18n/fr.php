@@ -933,6 +933,8 @@ return [
     'stat_classe_short' => 'STAT. CLASSE',
     'synthesis_conduct_short' => 'SYNTHÈSE & CONDUITE',
     'council_decision_short' => 'DÉCISION',
+    'parent_contact' => 'Contact Père/Mère',
+    'guardian_contact' => 'Contact Tuteur',
     'class_avg_gen' => 'Moy. Gén. Classe',
     'note_max' => 'Note max',
     'note_min' => 'Note min',

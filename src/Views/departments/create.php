@@ -50,6 +50,23 @@
                             </small>
                         </div>
 
+                        <div class="mb-4">
+                            <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-2">
+                                <?= __('teaching_type') ?? 'Type Enseignement' ?> <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group-modern">
+                                <span class="input-group-text-modern"><i class="bi bi-diagram-3"></i></span>
+                                <select name="teaching_type_id" class="form-select premium-input" required>
+                                    <option value="" disabled selected><?= __('select_teaching_type') ?? 'Sélectionner le type' ?></option>
+                                    <?php foreach ($teachingTypes as $tt): ?>
+                                        <option value="<?= $tt['id'] ?>">
+                                            <?= htmlspecialchars((string) $tt['nom']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+
                         <div class="d-flex gap-3 mt-5">
                             <a href="/departments" class="btn btn-light rounded-pill px-4 fw-bold flex-grow-1 scale-on-hover">
                                 <?= __('cancel') ?>

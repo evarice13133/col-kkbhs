@@ -155,6 +155,7 @@ class TeacherController
      */
     public function create()
     {
+        $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         include __DIR__ . '/../Views/teachers/create.php';
     }
 
@@ -169,22 +170,40 @@ class TeacherController
             $username = trim($_POST['username'] ?? '');
             $email = trim($_POST['email'] ?? '');
             $password = trim($_POST['password'] ?? '');
+            $teaching_type_ids = $_POST['teaching_type_ids'] ?? [];
 
             if (empty($nom) || empty($username) || empty($password)) {
                 $error = __('teacher_required_fields');
+                $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/teachers/create.php';
                 return;
             }
 
             try {
+                $this->db->beginTransaction();
+
                 $pwdHash = password_hash($password, PASSWORD_BCRYPT);
                 $stmt = $this->db->prepare("INSERT INTO users (nom, prenom, username, email, password, role) VALUES (?, ?, ?, ?, ?, 'enseignant')");
                 $stmt->execute([$nom, $prenom, $username, $email ?: null, $pwdHash]);
+                $teacherId = $this->db->lastInsertId();
+
+                if (!empty($teaching_type_ids)) {
+                    $stmtPivot = $this->db->prepare("INSERT INTO user_teaching_types (user_id, teaching_type_id) VALUES (?, ?)");
+                    foreach ($teaching_type_ids as $tt_id) {
+                        $stmtPivot->execute([$teacherId, (int) $tt_id]);
+                    }
+                }
+
+                $this->db->commit();
                 Session::setFlash('success', __('teacher_created_success'));
                 header("Location: /teachers");
                 exit;
             } catch (\PDOException $e) {
+                if ($this->db->inTransaction()) {
+                    $this->db->rollBack();
+                }
                 $error = strpos($e->getMessage(), 'Duplicate') !== false ? __('teacher_username_taken') : __('teacher_db_error');
+                $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/teachers/create.php';
             }
         }
@@ -247,6 +266,17 @@ class TeacherController
         // Vérifier si l'année sélectionnée est différente de l'année active (mode historique)
         $isHistoricalView = ($selectedYearId !== $activeYearId);
 
+        // Récupérer les types d'enseignement de l'enseignant
+        $stmtTt = $this->db->prepare("SELECT teaching_type_id FROM user_teaching_types WHERE user_id = ?");
+        $stmtTt->execute([$id]);
+        $teacherTeachingTypes = $stmtTt->fetchAll(PDO::FETCH_COLUMN);
+
+        $ttCondition = "";
+        if (!empty($teacherTeachingTypes)) {
+            $inTypes = implode(',', array_map('intval', $teacherTeachingTypes));
+            $ttCondition = " AND s.teaching_type_id IN ($inTypes)";
+        }
+
         // Pour l'interface d'affectation, on utilise toujours l'année active
         // Le sélecteur sert uniquement à consulter l'historique
         $subjectsRaw = $this->db->query("
@@ -257,7 +287,7 @@ class TeacherController
             JOIN classes c ON sc.class_id = c.id
             LEFT JOIN teacher_assignments ta ON (s.id = ta.subject_id AND c.id = ta.class_id AND ta.academic_year_id = {$activeYearId})
             LEFT JOIN users u ON ta.user_id = u.id
-            WHERE s.status = 1
+            WHERE s.status = 1 {$ttCondition}
             ORDER BY s.nom ASC, c.nom ASC
         ")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -469,6 +499,13 @@ class TeacherController
             header('Location: /teachers');
             exit;
         }
+
+        $teacherTeachingTypes = $this->db->prepare("SELECT teaching_type_id FROM user_teaching_types WHERE user_id = ?");
+        $teacherTeachingTypes->execute([$id]);
+        $teacher['teaching_type_ids'] = $teacherTeachingTypes->fetchAll(PDO::FETCH_COLUMN);
+
+        $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+
         include __DIR__ . '/../Views/teachers/edit.php';
     }
 
@@ -495,12 +532,15 @@ class TeacherController
         $username = trim((string) ($_POST['username'] ?? ''));
         $email = trim((string) ($_POST['email'] ?? ''));
         $password = trim((string) ($_POST['password'] ?? ''));
+        $teaching_type_ids = $_POST['teaching_type_ids'] ?? [];
 
         if ($nom === '' || $prenom === '' || $username === '') {
             $error = __('teacher_required_fields');
             $stmt = $this->db->prepare('SELECT * FROM users WHERE id = ? AND role = ?');
             $stmt->execute([$id, 'enseignant']);
             $teacher = $stmt->fetch(PDO::FETCH_ASSOC);
+            $teacher['teaching_type_ids'] = $teaching_type_ids;
+            $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
             include __DIR__ . '/../Views/teachers/edit.php';
             return;
         }
@@ -519,6 +559,8 @@ class TeacherController
                 }
             }
 
+            $this->db->beginTransaction();
+
             if ($password !== '') {
                 $hash = password_hash($password, PASSWORD_BCRYPT);
                 $this->db->prepare('UPDATE users SET nom = ?, prenom = ?, username = ?, email = ?, password = ? WHERE id = ? AND role = ?')
@@ -528,14 +570,30 @@ class TeacherController
                     ->execute([$nom, $prenom, $username, $email ?: null, $id, 'enseignant']);
             }
 
+            // Mettre à jour les types d'enseignement
+            $this->db->prepare("DELETE FROM user_teaching_types WHERE user_id = ?")->execute([$id]);
+            if (!empty($teaching_type_ids)) {
+                $stmtPivot = $this->db->prepare("INSERT INTO user_teaching_types (user_id, teaching_type_id) VALUES (?, ?)");
+                foreach ($teaching_type_ids as $tt_id) {
+                    $stmtPivot->execute([$id, (int) $tt_id]);
+                }
+            }
+
+            $this->db->commit();
+
             Session::setFlash('success', __('teacher_updated_success'));
             header('Location: /teachers');
             exit;
         } catch (\Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
             $error = $e->getMessage();
             $stmt = $this->db->prepare('SELECT * FROM users WHERE id = ? AND role = ?');
             $stmt->execute([$id, 'enseignant']);
             $teacher = $stmt->fetch(PDO::FETCH_ASSOC);
+            $teacher['teaching_type_ids'] = $teaching_type_ids;
+            $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
             include __DIR__ . '/../Views/teachers/edit.php';
         }
     }

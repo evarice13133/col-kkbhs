@@ -54,6 +54,9 @@ class SubjectController
         }
 
         $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $deptQuery = Session::get('user_role') === 'superadmin' ? "SELECT id, nom, teaching_type_id FROM departments ORDER BY nom ASC" : "SELECT id, nom, teaching_type_id FROM departments WHERE status = 1 ORDER BY nom ASC";
+        $departments = $this->db->query($deptQuery)->fetchAll(PDO::FETCH_ASSOC);
         include __DIR__ . '/../Views/subjects/index.php';
     }
 
@@ -107,6 +110,9 @@ class SubjectController
             exit;
         }
         $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $deptQuery = Session::get('user_role') === 'superadmin' ? "SELECT id, nom, teaching_type_id FROM departments ORDER BY nom ASC" : "SELECT id, nom, teaching_type_id FROM departments WHERE status = 1 ORDER BY nom ASC";
+        $departments = $this->db->query($deptQuery)->fetchAll(PDO::FETCH_ASSOC);
         include __DIR__ . '/../Views/subjects/create.php';
     }
 
@@ -120,19 +126,43 @@ class SubjectController
             $nom = trim($_POST['nom'] ?? '');
             $coeff = (int) ($_POST['coefficient'] ?? 1);
             $groupe = trim($_POST['groupe'] ?? 'Groupe 1');
+            $teaching_type_id = !empty($_POST['teaching_type_id']) ? (int) $_POST['teaching_type_id'] : null;
+            $department_id = !empty($_POST['department_id']) ? (int) $_POST['department_id'] : null;
             $classes_ids = array_values(array_unique(array_map('intval', $_POST['classes'] ?? [])));
 
             if (empty($nom) || empty($classes_ids)) {
                 $error = \__('subject_name_and_class_required');
                 $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $deptQuery = Session::get('user_role') === 'superadmin' ? "SELECT id, nom, teaching_type_id FROM departments ORDER BY nom ASC" : "SELECT id, nom, teaching_type_id FROM departments WHERE status = 1 ORDER BY nom ASC";
+                $departments = $this->db->query($deptQuery)->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/subjects/create.php';
                 return;
+            }
+
+            // Validation: teaching_type_id doit correspondre à celui du département si un département est sélectionné
+            if ($department_id) {
+                $deptStmt = $this->db->prepare("SELECT teaching_type_id FROM departments WHERE id = ?");
+                $deptStmt->execute([$department_id]);
+                $deptTeachingTypeId = $deptStmt->fetchColumn();
+                if ($deptTeachingTypeId && $deptTeachingTypeId != $teaching_type_id) {
+                    $error = __('department_teaching_type_mismatch') ?? 'Le type d\'enseignement de la matière doit correspondre à celui du département.';
+                    $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                    $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                    $deptQuery = Session::get('user_role') === 'superadmin' ? "SELECT id, nom, teaching_type_id FROM departments ORDER BY nom ASC" : "SELECT id, nom, teaching_type_id FROM departments WHERE status = 1 ORDER BY nom ASC";
+                    $departments = $this->db->query($deptQuery)->fetchAll(PDO::FETCH_ASSOC);
+                    include __DIR__ . '/../Views/subjects/create.php';
+                    return;
+                }
             }
 
             $duplicateClasses = $this->findDuplicateClassesForSubjectName($nom, $classes_ids);
             if (!empty($duplicateClasses)) {
                 $error = \__('subject_already_exists_in_classes', ['classes' => implode(', ', $duplicateClasses)]);
                 $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $deptQuery = Session::get('user_role') === 'superadmin' ? "SELECT id, nom, teaching_type_id FROM departments ORDER BY nom ASC" : "SELECT id, nom, teaching_type_id FROM departments WHERE status = 1 ORDER BY nom ASC";
+                $departments = $this->db->query($deptQuery)->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/subjects/create.php';
                 return;
             }
@@ -140,8 +170,8 @@ class SubjectController
             try {
                 $this->db->beginTransaction();
 
-                $stmt = $this->db->prepare("INSERT INTO subjects (nom, coefficient, groupe) VALUES (?, ?, ?)");
-                $stmt->execute([$nom, $coeff, $groupe]);
+                $stmt = $this->db->prepare("INSERT INTO subjects (nom, coefficient, groupe, teaching_type_id, department_id) VALUES (?, ?, ?, ?, ?)");
+                $stmt->execute([$nom, $coeff, $groupe, $teaching_type_id, $department_id]);
                 $subject_id = $this->db->lastInsertId();
 
                 $academicYearId = $this->academicYearService->getActiveYearId();
@@ -158,6 +188,9 @@ class SubjectController
                 $this->db->rollBack();
                 $error = \__('server_error_subject_creation');
                 $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $deptQuery = Session::get('user_role') === 'superadmin' ? "SELECT id, nom, teaching_type_id FROM departments ORDER BY nom ASC" : "SELECT id, nom, teaching_type_id FROM departments WHERE status = 1 ORDER BY nom ASC";
+                $departments = $this->db->query($deptQuery)->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/subjects/create.php';
             }
         }
@@ -193,6 +226,9 @@ class SubjectController
         $assigned_classes = $stmt_assoc->fetchAll(PDO::FETCH_COLUMN);
 
         $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $deptQuery = Session::get('user_role') === 'superadmin' ? "SELECT id, nom, teaching_type_id FROM departments ORDER BY nom ASC" : "SELECT id, nom, teaching_type_id FROM departments WHERE status = 1 ORDER BY nom ASC";
+        $departments = $this->db->query($deptQuery)->fetchAll(PDO::FETCH_ASSOC);
         include __DIR__ . '/../Views/subjects/edit.php';
     }
 
@@ -206,26 +242,53 @@ class SubjectController
             $nom = trim($_POST['nom'] ?? '');
             $coeff = (int) ($_POST['coefficient'] ?? 1);
             $groupe = trim($_POST['groupe'] ?? 'Groupe 1');
+            $teaching_type_id = !empty($_POST['teaching_type_id']) ? (int) $_POST['teaching_type_id'] : null;
+            $department_id = !empty($_POST['department_id']) ? (int) $_POST['department_id'] : null;
             $classes_ids = array_values(array_unique(array_map('intval', $_POST['classes'] ?? [])));
             $academicYearId = (int) ($_POST['academic_year_id'] ?? $this->academicYearService->getActiveYearId());
 
             if (empty($nom) || empty($classes_ids)) {
                 $error = \__('subject_name_and_one_class_required');
-                $subject = ['id' => $id, 'nom' => $nom, 'coefficient' => $coeff, 'groupe' => $groupe];
+                $subject = ['id' => $id, 'nom' => $nom, 'coefficient' => $coeff, 'groupe' => $groupe, 'teaching_type_id' => $teaching_type_id, 'department_id' => $department_id];
                 $assigned_classes = $classes_ids;
                 $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $academicYears = $this->db->query("SELECT id, nom, is_active FROM academic_years ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
+                $deptQuery = Session::get('user_role') === 'superadmin' ? "SELECT id, nom, teaching_type_id FROM departments ORDER BY nom ASC" : "SELECT id, nom, teaching_type_id FROM departments WHERE status = 1 ORDER BY nom ASC";
+                $departments = $this->db->query($deptQuery)->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/subjects/edit.php';
                 return;
+            }
+
+            // Validation: teaching_type_id doit correspondre à celui du département si un département est sélectionné
+            if ($department_id) {
+                $deptStmt = $this->db->prepare("SELECT teaching_type_id FROM departments WHERE id = ?");
+                $deptStmt->execute([$department_id]);
+                $deptTeachingTypeId = $deptStmt->fetchColumn();
+                if ($deptTeachingTypeId && $deptTeachingTypeId != $teaching_type_id) {
+                    $error = __('department_teaching_type_mismatch') ?? 'Le type d\'enseignement de la matière doit correspondre à celui du département.';
+                    $subject = ['id' => $id, 'nom' => $nom, 'coefficient' => $coeff, 'groupe' => $groupe, 'teaching_type_id' => $teaching_type_id, 'department_id' => $department_id];
+                    $assigned_classes = $classes_ids;
+                    $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                    $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                    $academicYears = $this->db->query("SELECT id, nom, is_active FROM academic_years ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
+                    $deptQuery = Session::get('user_role') === 'superadmin' ? "SELECT id, nom, teaching_type_id FROM departments ORDER BY nom ASC" : "SELECT id, nom, teaching_type_id FROM departments WHERE status = 1 ORDER BY nom ASC";
+                    $departments = $this->db->query($deptQuery)->fetchAll(PDO::FETCH_ASSOC);
+                    include __DIR__ . '/../Views/subjects/edit.php';
+                    return;
+                }
             }
 
             $duplicateClasses = $this->findDuplicateClassesForSubjectName($nom, $classes_ids, (int) $id);
             if (!empty($duplicateClasses)) {
                 $error = \__('subject_already_exists_in_classes', ['classes' => implode(', ', $duplicateClasses)]);
-                $subject = ['id' => $id, 'nom' => $nom, 'coefficient' => $coeff, 'groupe' => $groupe];
+                $subject = ['id' => $id, 'nom' => $nom, 'coefficient' => $coeff, 'groupe' => $groupe, 'teaching_type_id' => $teaching_type_id, 'department_id' => $department_id];
                 $assigned_classes = $classes_ids;
                 $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $academicYears = $this->db->query("SELECT id, nom, is_active FROM academic_years ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
+                $deptQuery = Session::get('user_role') === 'superadmin' ? "SELECT id, nom, teaching_type_id FROM departments ORDER BY nom ASC" : "SELECT id, nom, teaching_type_id FROM departments WHERE status = 1 ORDER BY nom ASC";
+                $departments = $this->db->query($deptQuery)->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/subjects/edit.php';
                 return;
             }
@@ -233,8 +296,8 @@ class SubjectController
             try {
                 $this->db->beginTransaction();
 
-                $stmt = $this->db->prepare("UPDATE subjects SET nom = ?, coefficient = ?, groupe = ? WHERE id = ?");
-                $stmt->execute([$nom, $coeff, $groupe, $id]);
+                $stmt = $this->db->prepare("UPDATE subjects SET nom = ?, coefficient = ?, groupe = ?, teaching_type_id = ?, department_id = ? WHERE id = ?");
+                $stmt->execute([$nom, $coeff, $groupe, $teaching_type_id, $department_id, $id]);
 
                 $stmt_del = $this->db->prepare("DELETE FROM subject_classes WHERE subject_id = ? AND academic_year_id = ?");
                 $stmt_del->execute([$id, $academicYearId]);
@@ -251,9 +314,10 @@ class SubjectController
             } catch (\PDOException $e) {
                 $this->db->rollBack();
                 $error = \__('server_error_subject_update');
-                $subject = ['id' => $id, 'nom' => $nom, 'coefficient' => $coeff, 'groupe' => $groupe];
+                $subject = ['id' => $id, 'nom' => $nom, 'coefficient' => $coeff, 'groupe' => $groupe, 'teaching_type_id' => $teaching_type_id];
                 $assigned_classes = $classes_ids;
                 $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $academicYears = $this->db->query("SELECT id, nom, is_active FROM academic_years ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/subjects/edit.php';
             }
@@ -359,6 +423,7 @@ class SubjectController
     {
         $search = trim($_GET['q'] ?? '');
         $classId = (int) ($_GET['class_id'] ?? 0);
+        $teachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
 
         // 1. Count total
         $countSql = "SELECT COUNT(*) FROM subjects s WHERE 1=1";
@@ -371,6 +436,10 @@ class SubjectController
             $countSql .= " AND EXISTS (SELECT 1 FROM subject_classes sc2 WHERE sc2.subject_id = s.id AND sc2.class_id = ?)";
             $countParams[] = $classId;
         }
+        if ($teachingTypeId > 0) {
+            $countSql .= " AND s.teaching_type_id = ?";
+            $countParams[] = $teachingTypeId;
+        }
 
         if (Session::get('user_role') !== 'superadmin') {
             $countSql .= " AND s.status = 1";
@@ -380,10 +449,11 @@ class SubjectController
         $totalCount = (int) $stmtCount->fetchColumn();
 
         // 2. Fetch data
-        $sql = "SELECT s.*, GROUP_CONCAT(c.nom SEPARATOR ', ') as classes_list
+        $sql = "SELECT s.*, tt.nom as teaching_type_nom, GROUP_CONCAT(c.nom SEPARATOR ', ') as classes_list
                 FROM subjects s
                 LEFT JOIN subject_classes sc ON s.id = sc.subject_id
                 LEFT JOIN classes c ON sc.class_id = c.id
+                LEFT JOIN teaching_types tt ON s.teaching_type_id = tt.id
                 WHERE 1=1";
         $params = [];
 
@@ -400,6 +470,11 @@ class SubjectController
             $params[] = $classId;
         }
 
+        if ($teachingTypeId > 0) {
+            $sql .= " AND s.teaching_type_id = ?";
+            $params[] = $teachingTypeId;
+        }
+
         if (Session::get('user_role') !== 'superadmin') {
             $sql .= " AND s.status = 1";
         }
@@ -414,7 +489,7 @@ class SubjectController
         $stmt->execute($params);
         $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        return [$data, ['q' => $search, 'class_id' => $classId], $totalCount];
+        return [$data, ['q' => $search, 'class_id' => $classId, 'teaching_type_id' => $teachingTypeId], $totalCount];
     }
 
     private function findDuplicateClassesForSubjectName(string $nom, array $classIds, ?int $excludeSubjectId = null): array

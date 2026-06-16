@@ -32,9 +32,16 @@
                                 </div>
                                 <div>
                                     <h5 class="fw-black m-0 text-main-theme"><?= h($dept['nom']) ?></h5>
-                                    <span class="badge bg-soft-primary text-primary extra-small fw-bold px-2 py-1 rounded-pill mt-1">
-                                        <?= h($dept['code']) ?>
-                                    </span>
+                                    <div class="d-flex align-items-center gap-2 mt-1">
+                                        <span class="badge bg-soft-primary text-primary extra-small fw-bold px-2 py-1 rounded-pill">
+                                            <?= h($dept['code']) ?>
+                                        </span>
+                                        <?php if (!empty($dept['teaching_type_nom'])): ?>
+                                            <span class="badge bg-success bg-opacity-10 text-success extra-small fw-bold px-2 py-1 rounded-pill border border-success border-opacity-10">
+                                                <i class="bi bi-diagram-3 me-1"></i> <?= h($dept['teaching_type_nom']) ?>
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
                             </div>
                             

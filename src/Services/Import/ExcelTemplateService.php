@@ -88,7 +88,7 @@ class ExcelTemplateService
             $this->applySheetValidations($sheet, $dataSheet, $colLetter, count($classList), $lang);
 
             // Largeurs
-            foreach(range('A','G') as $col) {
+            foreach(range('A','J') as $col) {
                 $sheet->getColumnDimension($col)->setAutoSize(true);
             }
 
@@ -146,13 +146,15 @@ class ExcelTemplateService
             'E' => ($lang === 'fr' ? '12/05/2012' : '2012-05-12'),
             'F' => ($lang === 'fr' ? 'Yaoundé' : 'Yaounde'),
             'G' => !empty($classList) ? $classList[0] : '---',
-            'H' => $lang === 'fr' ? 'NON' : 'NO'
+            'H' => $lang === 'fr' ? 'NON' : 'NO',
+            'I' => '690000000',
+            'J' => '690000001'
         ];
         foreach ($sample as $col => $val) {
             $sheet->setCellValue($col . '2', $val);
         }
-        $sheet->getStyle('A2:H2')->getFont()->setItalic(true);
-        $sheet->getStyle('A2:H2')->getFont()->getColor()->setRGB('6B7280');
+        $sheet->getStyle('A2:J2')->getFont()->setItalic(true);
+        $sheet->getStyle('A2:J2')->getFont()->getColor()->setRGB('6B7280');
     }
 
     /**
@@ -169,7 +171,9 @@ class ExcelTemplateService
                 'E1' => 'Date of Birth',
                 'F1' => 'Place of Birth',
                 'G1' => 'Class',
-                'H1' => 'Repeating (YES/NO)'
+                'H1' => 'Repeating (YES/NO)',
+                'I1' => 'Parent Contact',
+                'J1' => 'Guardian Contact'
              ];
         }
 
@@ -181,7 +185,9 @@ class ExcelTemplateService
             'E1' => 'Date de Naissance',
             'F1' => 'Lieu de Naissance',
             'G1' => 'Classe',
-            'H1' => 'Redoublant (OUI/NON)'
+            'H1' => 'Redoublant (OUI/NON)',
+            'I1' => 'Contact Père/Mère',
+            'J1' => 'Contact Tuteur'
         ];
     }
 
@@ -300,8 +306,8 @@ class ExcelTemplateService
         $dataSheet->setSheetState(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet::SHEETSTATE_VERYHIDDEN);
 
         $headers = $lang === 'fr'
-            ? ['A1' => 'Matiere', 'B1' => 'Coefficient', 'C1' => 'Groupe', 'D1' => 'Classe 1', 'E1' => 'Classe 2', 'F1' => 'Classe 3', 'G1' => 'Classe 4', 'H1' => 'Classe 5', 'I1' => 'Classe 6', 'J1' => 'Classe 7', 'K1' => 'Classe 8', 'L1' => 'Classe 9', 'M1' => 'Classe 10']
-            : ['A1' => 'Subject', 'B1' => 'Coefficient', 'C1' => 'Group', 'D1' => 'Class 1', 'E1' => 'Class 2', 'F1' => 'Class 3', 'G1' => 'Class 4', 'H1' => 'Class 5', 'I1' => 'Class 6', 'J1' => 'Class 7', 'K1' => 'Class 8', 'L1' => 'Class 9', 'M1' => 'Class 10'];
+            ? ['A1' => 'Matiere', 'B1' => 'Type Enseignement', 'C1' => 'Departement', 'D1' => 'Coefficient', 'E1' => 'Groupe', 'F1' => 'Classe 1', 'G1' => 'Classe 2', 'H1' => 'Classe 3', 'I1' => 'Classe 4', 'J1' => 'Classe 5', 'K1' => 'Classe 6', 'L1' => 'Classe 7', 'M1' => 'Classe 8', 'N1' => 'Classe 9', 'O1' => 'Classe 10']
+            : ['A1' => 'Subject', 'B1' => 'Teaching Type', 'C1' => 'Department', 'D1' => 'Coefficient', 'E1' => 'Group', 'F1' => 'Class 1', 'G1' => 'Class 2', 'H1' => 'Class 3', 'I1' => 'Class 4', 'J1' => 'Class 5', 'K1' => 'Class 6', 'L1' => 'Class 7', 'M1' => 'Class 8', 'N1' => 'Class 9', 'O1' => 'Class 10'];
 
         foreach ($headers as $cell => $value) {
             $sheet->setCellValue($cell, $value);
@@ -313,7 +319,7 @@ class ExcelTemplateService
             'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]],
             'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '2563EB']]
         ];
-        $sheet->getStyle('A1:M1')->applyFromArray($styleArray);
+        $sheet->getStyle('A1:O1')->applyFromArray($styleArray);
 
         $classes = $this->db->query("SELECT nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_COLUMN);
         $i = 1;
@@ -338,17 +344,37 @@ class ExcelTemplateService
             $i++;
         }
 
-        $exampleClass = (string) ($classes[0] ?? '6eme A');
-        $sheet->setCellValue('A2', $lang === 'fr' ? 'Mathematiques' : 'Mathematics');
-        $sheet->setCellValue('B2', 4);
-        $sheet->setCellValue('C2', $groups[0]);
-        $sheet->setCellValue('D2', $exampleClass);
-        if (!empty($classes[1])) {
-            $sheet->setCellValue('E2', (string) $classes[1]);
+        // Ajout des Types Enseignement dans colonne C
+        $teachingTypes = $this->db->query("SELECT nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_COLUMN);
+        $i = 1;
+        foreach ($teachingTypes as $ttName) {
+            $dataSheet->setCellValue('C' . $i, (string) $ttName);
+            $i++;
         }
 
-        $sheet->getStyle('A2:H2')->getFont()->setItalic(true);
-        $sheet->getStyle('A2:H2')->getFont()->getColor()->setRGB('6B7280');
+        // Ajout des Départements dans colonne D
+        $departments = $this->db->query("SELECT nom FROM departments WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_COLUMN);
+        $i = 1;
+        foreach ($departments as $deptName) {
+            $dataSheet->setCellValue('D' . $i, (string) $deptName);
+            $i++;
+        }
+
+        $exampleClass = (string) ($classes[0] ?? '6eme A');
+        $exampleTt = (string) ($teachingTypes[0] ?? 'Secondaire');
+        $exampleDept = (string) ($departments[0] ?? 'Sciences');
+        $sheet->setCellValue('A2', $lang === 'fr' ? 'Mathematiques' : 'Mathematics');
+        $sheet->setCellValue('B2', $exampleTt);
+        $sheet->setCellValue('C2', $exampleDept);
+        $sheet->setCellValue('D2', 4);
+        $sheet->setCellValue('E2', $groups[0]);
+        $sheet->setCellValue('F2', $exampleClass);
+        if (!empty($classes[1])) {
+            $sheet->setCellValue('G2', (string) $classes[1]);
+        }
+
+        $sheet->getStyle('A2:O2')->getFont()->setItalic(true);
+        $sheet->getStyle('A2:O2')->getFont()->getColor()->setRGB('6B7280');
 
         if (!empty($classes)) {
             $validationClasse = $this->createDropdown(
@@ -356,7 +382,7 @@ class ExcelTemplateService
                 __('choose_class_hint') ?? 'Choisir une classe'
             );
             for ($row = 2; $row <= 1000; $row++) {
-                foreach (range('D', 'M') as $col) {
+                foreach (range('F', 'O') as $col) {
                     $sheet->getCell($col . $row)->setDataValidation(clone $validationClasse);
                 }
             }
@@ -367,10 +393,30 @@ class ExcelTemplateService
             __('choose_group_hint') ?? 'Choisir un groupe'
         );
         for ($row = 2; $row <= 1000; $row++) {
-            $sheet->getCell('C' . $row)->setDataValidation(clone $validationGroupe);
+            $sheet->getCell('E' . $row)->setDataValidation(clone $validationGroupe);
         }
 
-        foreach (range('A', 'M') as $c) {
+        if (!empty($teachingTypes)) {
+            $validationTt = $this->createDropdown(
+                'SUBJECT_DATASOURCES!$C$1:$C$' . count($teachingTypes),
+                'Choisir un Type Enseignement'
+            );
+            for ($row = 2; $row <= 1000; $row++) {
+                $sheet->getCell('B' . $row)->setDataValidation(clone $validationTt);
+            }
+        }
+
+        if (!empty($departments)) {
+            $validationDept = $this->createDropdown(
+                'SUBJECT_DATASOURCES!$D$1:$D$' . count($departments),
+                'Choisir un Département'
+            );
+            for ($row = 2; $row <= 1000; $row++) {
+                $sheet->getCell('C' . $row)->setDataValidation(clone $validationDept);
+            }
+        }
+
+        foreach (range('A', 'O') as $c) {
             $sheet->getColumnDimension($c)->setAutoSize(true);
         }
 

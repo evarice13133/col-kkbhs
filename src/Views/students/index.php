@@ -46,6 +46,17 @@ ob_start(); ?>
                         <span class="text-nowrap"><?= __('show_withdrawn') ?></span>
                     </label>
                 </div>
+                
+                <div class="ms-2">
+                    <select name="teaching_type_id" class="form-select border-0 bg-white bg-opacity-10 text-main shadow-none py-2 rounded-pill" onchange="this.form.submit()" style="min-width: 160px; font-size: 0.85rem;">
+                        <option value="">Tous les Types</option>
+                        <?php foreach ($teachingTypes as $tt): ?>
+                            <option value="<?= $tt['id'] ?>" <?= ((int)($filters['teaching_type_id'] ?? 0) === $tt['id']) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($tt['nom']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
 
                 <!-- Filtres et Utilitaires -->
                 <div class="d-flex gap-2 align-items-center ps-2">
@@ -77,6 +88,7 @@ ob_start(); ?>
                     <th><?= __('student') ?></th>
                     <th><?= __('class') ?></th>
                     <th><?= __('section') ?></th>
+                    <th>Type Ensg.</th>
                     <th><?= __('department') ?></th>
                     <?php if (in_array(App\Core\Session::get('user_role'), ['superadmin', 'admin'])): ?>
                     <th class="text-end"><?= __('actions') ?></th>
@@ -114,6 +126,12 @@ ob_start(); ?>
                         <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2 py-1 rounded-pill fw-medium"
                             style="font-size: 0.7rem;">
                             <i class="bi bi-layers-half me-1"></i><?= htmlspecialchars((string) ($s['section_nom'] ?: '-')) ?>
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1 rounded-pill fw-medium"
+                            style="font-size: 0.7rem;">
+                            <i class="bi bi-diagram-3 me-1"></i><?= htmlspecialchars((string) ($s['teaching_type_nom'] ?: '-')) ?>
                         </span>
                     </td>
                     <td>

@@ -2,6 +2,7 @@
 $title = __('modify_student_profile');
 $selectedSexe = (string) ($student['sexe'] ?? '');
 $selectedDepartment = (string) ($student['department_id'] ?? '');
+$selectedTeachingType = (string) ($student['teaching_type_id'] ?? '');
 $isRedoublant = (string) ((int) ($student['is_redoublant'] ?? 0));
 ob_start();
 ?>
@@ -76,6 +77,16 @@ ob_start();
                         <input type="text" name="lieu_naissance" class="form-control premium-input"
                             placeholder="Lieu de naissance" value="<?= h($student['lieu_naissance'] ?? '') ?>">
                     </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('parent_contact') ?? 'Contact Père/Mère' ?></label>
+                        <input type="tel" name="parent_contact" class="form-control premium-input" 
+                            placeholder="+237 600000000" value="<?= h($student['parent_contact'] ?? '') ?>">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('guardian_contact') ?? 'Contact Tuteur' ?></label>
+                        <input type="tel" name="guardian_contact" class="form-control premium-input" 
+                            placeholder="+237 600000000" value="<?= h($student['guardian_contact'] ?? '') ?>">
+                    </div>
                 </div>
 
                 <!-- Photo Section -->
@@ -135,7 +146,16 @@ ob_start();
                             <?= __('academic_assignment') ?></h6>
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-2">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1 opacity-50">Type Enseignement</label>
+                        <select id="teaching_type_select" name="teaching_type_id" class="form-select premium-input">
+                            <option value="">Tous les types</option>
+                            <?php foreach ($teachingTypes as $tt): ?>
+                                <option value="<?= $tt['id'] ?>" <?= $selectedTeachingType === (string) $tt['id'] ? 'selected' : '' ?>><?= h($tt['nom']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
                         <label
                             class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1 opacity-50"><?= __('cycle_membership_label') ?></label>
                         <select id="cycle_select" name="cycle_id" class="form-select premium-input">
@@ -145,7 +165,7 @@ ob_start();
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label
                             class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1 opacity-50"><?= __('section_stream') ?></label>
                         <select id="section_select" name="section_id" class="form-select premium-input">
@@ -155,7 +175,7 @@ ob_start();
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label
                             class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1 opacity-50"><?= __('department') ?></label>
                         <select id="department_select" name="department_id" class="form-select premium-input">
@@ -165,7 +185,7 @@ ob_start();
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label
                             class="form-label text-primary fw-black extra-small text-uppercase mb-1"><?= __('student_class_label') ?>
                             *</label>
@@ -174,12 +194,12 @@ ob_start();
                             data-current="<?= h($student['class_id'] ?? '') ?>">
                             <option value=""><?= __('select_class') ?></option>
                             <?php foreach ($classes as $cla): ?>
-                                <option value="<?= $cla['id'] ?>" data-cycle="<?= $cla['cycle_id'] ?>"
+                                <option value="<?= $cla['id'] ?>" data-teaching-type="<?= $cla['teaching_type_id'] ?>" data-cycle="<?= $cla['cycle_id'] ?>"
                                     data-section="<?= $cla['section_id'] ?>" data-department="<?= $cla['department_id'] ?>"><?= h($cla['nom']) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label
                             class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('repeat_status') ?></label>
                         <div class="d-flex gap-2">
@@ -214,6 +234,7 @@ ob_start();
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        const teachingTypeSelect = document.getElementById('teaching_type_select');
         const cycleSelect = document.getElementById('cycle_select');
         const sectionSelect = document.getElementById('section_select');
         const departmentSelect = document.getElementById('department_select');
@@ -228,6 +249,7 @@ ob_start();
         const originalOptions = Array.from(classSelect.options).filter(opt => opt.value !== '');
 
         function filterClasses() {
+            const selectedTeachingType = teachingTypeSelect.value;
             const selectedCycle = cycleSelect.value;
             const selectedSection = sectionSelect.value;
             const selectedDept = departmentSelect.value;
@@ -235,11 +257,12 @@ ob_start();
 
             let addedCount = 0;
             originalOptions.forEach(opt => {
+                const matchTeachingType = !selectedTeachingType || opt.getAttribute('data-teaching-type') === selectedTeachingType;
                 const matchCycle = !selectedCycle || opt.getAttribute('data-cycle') === selectedCycle;
                 const matchSection = !selectedSection || opt.getAttribute('data-section') === selectedSection;
                 const matchDept = !selectedDept || opt.getAttribute('data-department') === selectedDept;
 
-                if (matchCycle && matchSection && matchDept) {
+                if (matchTeachingType && matchCycle && matchSection && matchDept) {
                     const clonedOption = opt.cloneNode(true);
                     if (clonedOption.value === currentClassId) clonedOption.selected = true;
                     classSelect.appendChild(clonedOption);
@@ -247,12 +270,13 @@ ob_start();
                 }
             });
 
-            if (addedCount === 0 && (selectedCycle || selectedSection || selectedDept)) {
+            if (addedCount === 0 && (selectedTeachingType || selectedCycle || selectedSection || selectedDept)) {
                 classSelect.innerHTML = '<option value="">' + labels.noClassForCriteria + '</option>';
             }
         }
 
-        cycleSelect.addEventListener('change', filterClasses);
+        if (teachingTypeSelect) teachingTypeSelect.addEventListener('change', filterClasses);
+        if (cycleSelect) cycleSelect.addEventListener('change', filterClasses);
         sectionSelect.addEventListener('change', filterClasses);
         departmentSelect.addEventListener('change', filterClasses);
         filterClasses();

@@ -34,6 +34,7 @@ $nav_items = [
 
     // SECTION: STRUCTURE
     ['section' => __('structure_et_classes'), 'roles' => ['superadmin']],
+    ['icon' => 'bi-diagram-3', 'label' => 'Types Enseignement', 'url' => '/teaching_types', 'roles' => ['superadmin']],
     ['icon' => 'bi-layers', 'label' => __('academic_cycles'), 'url' => '/cycles', 'roles' => ['superadmin']],
     ['icon' => 'bi-grid-3x3-gap', 'label' => __('academic_sections'), 'url' => '/sections', 'roles' => ['superadmin']],
     ['icon' => 'bi-building', 'label' => __('departments'), 'url' => '/departments', 'roles' => ['superadmin']],
