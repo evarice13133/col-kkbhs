@@ -1358,4 +1358,11 @@ return [
     'db_average_disciplines' => 'Disciplines by Evaluation',
     'db_no_evaluations' => 'No active evaluation available.',
     'db_no_subject_stats' => 'No subject statistics available.',
+    
+    // ── Teaching Types ─────────────────────────────────────────────────
+    'teaching_type' => 'Teaching Type',
+    'teaching_types' => 'Teaching Types',
+    'add_teaching_type' => 'Add Teaching Type',
+    'edit_teaching_type' => 'Edit Teaching Type',
+    'select_teaching_type' => 'Select Teaching Type',
 ];

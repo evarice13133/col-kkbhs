@@ -52,7 +52,189 @@ const UX = (function () {
             // 2. Initialise les confirmations d'actions
             this.initConfirmations();
 
+            // 3. Résout le problème des backdrops de modals Bootstrap (les déplacer dans le body)
+            this.fixNestedModals();
+
+            // 4. Initialise les filtres de recherche d'élèves dans les modals
+            this.initStudentFilters();
+
+            // 5. Initialise les filtres de structure (Enseignement, Section, Cycle) pour les classes
+            this.initClassFilters();
+
             console.log('✅ Expérience Utilisateur (UX) synchronisée avec AlertService');
+        },
+
+        /**
+         * Déplace tous les modals Bootstrap directement sous document.body 
+         * pour éviter les bugs d'empilement (stacking context) et de blocage d'écran (backdrop bug).
+         */
+        fixNestedModals() {
+            document.querySelectorAll('.modal').forEach(function (modal) {
+                if (modal.parentNode !== document.body) {
+                    document.body.appendChild(modal);
+                }
+            });
+        },
+
+        /**
+         * Initialise les filtres de recherche d'élèves en temps réel (insensible aux accents).
+         */
+        initStudentFilters() {
+            document.addEventListener('input', function(e) {
+                const filterInput = e.target.closest('.modal-student-filter');
+                if (!filterInput) return;
+
+                const parentModal = filterInput.closest('.modal');
+                if (!parentModal) return;
+
+                const select = parentModal.querySelector('select[name="student_id"]');
+                if (!select) return;
+
+                const query = filterInput.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+                const options = select.querySelectorAll('option:not([disabled])');
+                const optgroups = select.querySelectorAll('optgroup');
+
+                if (!query) {
+                    options.forEach(opt => opt.style.display = '');
+                    optgroups.forEach(og => og.style.display = '');
+                    return;
+                }
+
+                optgroups.forEach(og => {
+                    let hasVisibleOption = false;
+                    const ogOptions = og.querySelectorAll('option');
+                    ogOptions.forEach(opt => {
+                        const text = opt.textContent.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                        if (text.includes(query)) {
+                            opt.style.display = '';
+                            hasVisibleOption = true;
+                        } else {
+                            opt.style.display = 'none';
+                        }
+                    });
+
+                    if (hasVisibleOption) {
+                        og.style.display = '';
+                    } else {
+                        og.style.display = 'none';
+                    }
+                });
+            });
+
+            // Réinitialiser le filtre lorsque le modal est fermé
+            document.addEventListener('hidden.bs.modal', function(e) {
+                const modal = e.target;
+                const filterInput = modal.querySelector('.modal-student-filter');
+                if (filterInput) {
+                    filterInput.value = '';
+                    filterInput.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            });
+        },
+
+        /**
+         * Initialise les filtres structurels (Enseignement, Section, Cycle) 
+         * pour les listes de classes dans les modals collectifs.
+         */
+        initClassFilters() {
+            // Utiliser la délégation d'événements à l'écoute des changements sur les sélecteurs de filtres
+            document.addEventListener('change', function(e) {
+                const filter = e.target.closest('.filter-teaching-type, .filter-section, .filter-cycle');
+                if (!filter) return;
+
+                const modal = filter.closest('.modal');
+                if (!modal) return;
+
+                const classSelect = modal.querySelector('.class-select-element');
+                if (!classSelect) return;
+
+                const filterTeaching = modal.querySelector('.filter-teaching-type');
+                const filterSection = modal.querySelector('.filter-section');
+                const filterCycle = modal.querySelector('.filter-cycle');
+
+                // Si c'est le premier filtre, on sauvegarde les options initiales dans une propriété de l'élément select
+                if (!classSelect.dataset.optionsSaved) {
+                    const originalOptions = [];
+                    classSelect.querySelectorAll('option').forEach(opt => {
+                        originalOptions.push({
+                            value: opt.value,
+                            text: opt.textContent,
+                            disabled: opt.disabled,
+                            selected: opt.selected,
+                            teachingType: opt.getAttribute('data-teaching-type') || '',
+                            section: opt.getAttribute('data-section') || '',
+                            cycle: opt.getAttribute('data-cycle') || ''
+                        });
+                    });
+                    classSelect.originalOptionsArray = originalOptions;
+                    classSelect.dataset.optionsSaved = 'true';
+                }
+
+                const selectedTeaching = filterTeaching ? filterTeaching.value : '';
+                const selectedSection = filterSection ? filterSection.value : '';
+                const selectedCycle = filterCycle ? filterCycle.value : '';
+
+                // Vider les options actuelles
+                classSelect.innerHTML = '';
+
+                classSelect.originalOptionsArray.forEach(opt => {
+                    // Toujours conserver l'option par défaut
+                    if (opt.disabled) {
+                        const newOpt = document.createElement('option');
+                        newOpt.value = opt.value;
+                        newOpt.textContent = opt.text;
+                        newOpt.disabled = true;
+                        newOpt.selected = true;
+                        classSelect.appendChild(newOpt);
+                        return;
+                    }
+
+                    // Vérifier la correspondance des filtres
+                    const matchTeaching = !selectedTeaching || opt.teachingType === selectedTeaching;
+                    const matchSection = !selectedSection || opt.section === selectedSection;
+                    const matchCycle = !selectedCycle || opt.cycle === selectedCycle;
+
+                    if (matchTeaching && matchSection && matchCycle) {
+                        const newOpt = document.createElement('option');
+                        newOpt.value = opt.value;
+                        newOpt.textContent = opt.text;
+                        newOpt.setAttribute('data-teaching-type', opt.teachingType);
+                        newOpt.setAttribute('data-section', opt.section);
+                        newOpt.setAttribute('data-cycle', opt.cycle);
+                        classSelect.appendChild(newOpt);
+                    }
+                });
+            });
+
+            // Réinitialiser les filtres à la fermeture du modal
+            document.addEventListener('hidden.bs.modal', function(e) {
+                const modal = e.target;
+                const filterTeaching = modal.querySelector('.filter-teaching-type');
+                const filterSection = modal.querySelector('.filter-section');
+                const filterCycle = modal.querySelector('.filter-cycle');
+
+                if (filterTeaching) filterTeaching.value = '';
+                if (filterSection) filterSection.value = '';
+                if (filterCycle) filterCycle.value = '';
+
+                const classSelect = modal.querySelector('.class-select-element');
+                if (classSelect && classSelect.originalOptionsArray) {
+                    classSelect.innerHTML = '';
+                    classSelect.originalOptionsArray.forEach(opt => {
+                        const newOpt = document.createElement('option');
+                        newOpt.value = opt.value;
+                        newOpt.textContent = opt.text;
+                        newOpt.disabled = opt.disabled;
+                        newOpt.selected = opt.selected;
+                        if (!opt.disabled) {
+                            newOpt.setAttribute('data-teaching-type', opt.teachingType);
+                            newOpt.setAttribute('data-section', opt.section);
+                            newOpt.setAttribute('data-cycle', opt.cycle);
+                        }
+                        classSelect.appendChild(newOpt);
+                    });
+                }
+            });
         },
 
         /**

@@ -30,6 +30,12 @@ use App\Controllers\HonorRollController;
 use App\Controllers\DepartmentController;
 use App\Controllers\LandingController;
 use App\Controllers\TeachingTypeController;
+use App\Controllers\PaymentController;
+use App\Controllers\DiscountController;
+use App\Controllers\ScholarshipController;
+use App\Controllers\FinancialHistoryController;
+use App\Controllers\DiscountTypeController;
+use App\Controllers\SchoolFeeController;
 
 
 
@@ -63,7 +69,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 // BARRAGE DE SÉCURITÉ GLOBAL (Middleware)
 // Redirige ABSOLUMENT tout visiteur non-authentifié ou session expirée vers l'écran de connexion.
-if (!in_array($path, ['/', '/login', '/logout', '/register-teacher', '/sitemap.xml', '/contact/send']) && !Security::validateSession()) {
+if (!in_array($path, ['/', '/login', '/logout', '/register-teacher', '/sitemap.xml', '/contact/send', '/payments/verify']) && !Security::validateSession()) {
     header('Location: /login');
     exit;
 }
@@ -495,6 +501,117 @@ elseif (strpos($path, '/academic_years') === 0) {
         $c->unarchive($_GET['id'] ?? 0);
     elseif ($path === '/academic_years/do_unarchive' && $method === 'POST')
         $c->doUnarchive();
+}
+
+// ====== ROUTES: GESTION FINANCIÈRE ======
+elseif ($path === '/payments/verify') {
+    $c = new PaymentController();
+    $c->verify();
+}
+elseif (strpos($path, '/payments') === 0) {
+    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+        header('Location: /');
+        exit;
+    }
+    $c = new PaymentController();
+    if ($path === '/payments')
+        $c->index();
+    elseif ($path === '/payments/student')
+        $c->studentDetails($_GET['id'] ?? 0);
+    elseif ($path === '/payments/store' && $method === 'POST')
+        $c->store();
+    elseif ($path === '/payments/delete')
+        $c->delete($_GET['id'] ?? 0);
+    elseif ($path === '/payments/receipt')
+        $c->receipt($_GET['id'] ?? 0);
+}
+
+elseif (strpos($path, '/discounts') === 0) {
+    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+        header('Location: /');
+        exit;
+    }
+    $c = new DiscountController();
+    if ($path === '/discounts')
+        $c->index();
+    elseif ($path === '/discounts/store' && $method === 'POST')
+        $c->store();
+    elseif ($path === '/discounts/toggle')
+        $c->toggleStatus($_GET['id'] ?? 0);
+    elseif ($path === '/discounts/delete')
+        $c->delete($_GET['id'] ?? 0);
+}
+
+elseif (strpos($path, '/discount_types') === 0) {
+    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+        header('Location: /');
+        exit;
+    }
+    $c = new DiscountTypeController();
+    if ($path === '/discount_types')
+        $c->index();
+    elseif ($path === '/discount_types/store' && $method === 'POST')
+        $c->store();
+    elseif ($path === '/discount_types/toggle')
+        $c->toggleStatus($_GET['id'] ?? 0);
+    elseif ($path === '/discount_types/delete')
+        $c->delete($_GET['id'] ?? 0);
+}
+
+elseif (strpos($path, '/school_fees') === 0) {
+    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+        header('Location: /');
+        exit;
+    }
+    $c = new SchoolFeeController();
+    if ($path === '/school_fees/grille')
+        $c->grille();
+    elseif ($path === '/school_fees/grille/print')
+        $c->printGrille();
+    elseif ($path === '/school_fees/grille/template')
+        $c->templateGrille();
+    elseif ($path === '/school_fees/grille/import' && $method === 'POST')
+        $c->importGrille();
+    elseif ($path === '/school_fees/tranches')
+        $c->tranches();
+    elseif ($path === '/school_fees/versements')
+        $c->versements();
+    elseif ($path === '/school_fees/versements/store' && $method === 'POST')
+        $c->storeVersement();
+    elseif ($path === '/school_fees/versements/delete')
+        $c->deleteVersement();
+    elseif ($path === '/school_fees/insolvables')
+        $c->insolvables();
+    elseif ($path === '/school_fees/insolvables/print')
+        $c->printInsolvables();
+    elseif ($path === '/school_fees/receipt')
+        $c->receipt();
+}
+
+elseif (strpos($path, '/scholarships') === 0) {
+    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+        header('Location: /');
+        exit;
+    }
+    $c = new ScholarshipController();
+    if ($path === '/scholarships')
+        $c->index();
+    elseif ($path === '/scholarships/store' && $method === 'POST')
+        $c->store();
+    elseif ($path === '/scholarships/toggle')
+        $c->toggleStatus($_GET['id'] ?? 0);
+    elseif ($path === '/scholarships/delete')
+        $c->delete($_GET['id'] ?? 0);
+}
+
+elseif (strpos($path, '/financial-history') === 0) {
+    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+        header('Location: /');
+        exit;
+    }
+    $c = new FinancialHistoryController();
+    if ($path === '/financial-history')
+        $c->index();
 }
 
 // ====== ROUTES: CONFIGURATIONS GLOBALES ======

@@ -85,6 +85,38 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="col-md-12 border-top border-theme-light pt-4 mt-4 mb-2">
+                    <h6 class="fw-black text-primary m-0 text-uppercase letter-spacing-1">
+                        Politique des Frais d'Inscription & Modes de Paiement
+                    </h6>
+                </div>
+
+                <div class="col-md-6 mt-2">
+                    <div class="mb-4">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Règle des frais d'inscription</label>
+                        <select name="registration_fee_policy" class="form-select premium-input">
+                            <option value="all" <?= ($settings['registration_fee_policy'] ?? 'all') === 'all' ? 'selected' : '' ?>>Obligatoires pour tous les élèves</option>
+                            <option value="new_only" <?= ($settings['registration_fee_policy'] ?? 'all') === 'new_only' ? 'selected' : '' ?>>Obligatoires uniquement pour les nouveaux élèves</option>
+                            <option value="by_status" <?= ($settings['registration_fee_policy'] ?? 'all') === 'by_status' ? 'selected' : '' ?>>Différents selon le statut (Nouveau/Ancien)</option>
+                        </select>
+                        <small class="extra-small text-muted-theme opacity-75 mt-1 d-block">
+                            Définit si les frais d'inscription s'appliquent à tous, aux nouveaux seulement, ou s'ils sont différents selon le statut de réinscription.
+                        </small>
+                    </div>
+                </div>
+
+                <div class="col-md-6 mt-2">
+                    <div class="mb-4">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Modes de paiement disponibles</label>
+                        <input type="text" name="payment_methods" class="form-control premium-input" 
+                            value="<?= htmlspecialchars((string) ($settings['payment_methods'] ?? 'Espèces,Mobile Money,Orange Money,MTN Mobile Money,Carte bancaire,Virement bancaire,Chèque,Autre')) ?>"
+                            placeholder="Modes séparés par des virgules">
+                        <small class="extra-small text-muted-theme opacity-75 mt-1 d-block">
+                            Séparez les modes par des virgules (ex: Espèces, Orange Money, Carte bancaire).
+                        </small>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

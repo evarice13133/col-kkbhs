@@ -1458,4 +1458,11 @@ return [
     'db_average_disciplines' => 'Disciplines par Évaluation',
     'db_no_evaluations' => 'Aucune évaluation active disponible.',
     'db_no_subject_stats' => 'Aucune statistique de matière disponible.',
+    
+    // ── Types Enseignement ──────────────────────────────────────────────
+    'teaching_type' => 'Type Enseignement',
+    'teaching_types' => 'Types d\'Enseignement',
+    'add_teaching_type' => 'Ajouter un Type Enseignement',
+    'edit_teaching_type' => 'Modifier un Type Enseignement',
+    'select_teaching_type' => 'Sélectionner le type',
 ];
