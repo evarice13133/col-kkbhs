@@ -1886,7 +1886,7 @@ class GradeController
             $params[] = $subjectId;
         }
 
-        $sql .= " AND s.is_withdrawn = 0 AND sub.status = 1";
+        $sql .= " AND s.is_withdrawn = 0 AND s.actif = 1 AND sub.status = 1";
 
 
 
@@ -2195,7 +2195,7 @@ class GradeController
         $activeYear = $this->getActiveAcademicYear();
         $academicYearId = $activeYear['id'] ?? 0;
 
-        $stmt = $this->db->prepare("SELECT COUNT(*) FROM students WHERE class_id = ? AND academic_year_id = ?");
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM students WHERE class_id = ? AND academic_year_id = ? AND actif = 1");
         $stmt->execute([$classId, $academicYearId]);
         return (int) $stmt->fetchColumn();
     }
@@ -2235,7 +2235,7 @@ class GradeController
         $activeYear = $this->getActiveAcademicYear();
         $academicYearId = $activeYear['id'] ?? 0;
 
-        $stmt = $this->db->prepare("SELECT COUNT(*) FROM students WHERE class_id = ? AND academic_year_id = ? AND is_withdrawn = 0");
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM students WHERE class_id = ? AND academic_year_id = ? AND is_withdrawn = 0 AND actif = 1");
         $stmt->execute([$classId, $academicYearId]);
 
 
@@ -2257,7 +2257,7 @@ class GradeController
         $activeYear = $this->getActiveAcademicYear();
         $academicYearId = $activeYear['id'] ?? 0;
 
-        $stmt = $this->db->prepare("SELECT id, nom, prenom FROM students WHERE class_id = ? AND academic_year_id = ? AND is_withdrawn = 0 ORDER BY nom ASC, prenom ASC");
+        $stmt = $this->db->prepare("SELECT id, nom, prenom FROM students WHERE class_id = ? AND academic_year_id = ? AND is_withdrawn = 0 AND actif = 1 ORDER BY nom ASC, prenom ASC");
         $stmt->execute([$classId, $academicYearId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -2621,7 +2621,7 @@ class GradeController
 
 
 
-        $stmt = $this->db->query("SELECT class_id, COUNT(*) as count FROM students WHERE is_withdrawn = 0 GROUP BY class_id");
+        $stmt = $this->db->query("SELECT class_id, COUNT(*) as count FROM students WHERE is_withdrawn = 0 AND actif = 1 GROUP BY class_id");
 
 
 
@@ -2839,7 +2839,7 @@ class GradeController
 
         $academicYearId = $activeYear['id'];
 
-        $stmt = $this->db->query("SELECT class_id, COUNT(*) as count FROM students WHERE academic_year_id = {$academicYearId} AND is_withdrawn = 0 GROUP BY class_id");
+        $stmt = $this->db->query("SELECT class_id, COUNT(*) as count FROM students WHERE academic_year_id = {$academicYearId} AND is_withdrawn = 0 AND actif = 1 GROUP BY class_id");
 
         while ($row = $stmt->fetch()) {
 

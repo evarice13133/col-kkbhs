@@ -33,7 +33,7 @@ class StudentImportProcessor
                         $matricule = $this->matriculeService->generate($row['class_id']);
                     }
 
-                    $sql = "INSERT INTO students (nom, prenom, email, class_id, teaching_type_id, sexe, date_naissance, lieu_naissance, is_redoublant, academic_year_id, parent_contact, guardian_contact) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    $sql = "INSERT INTO students (nom, prenom, email, class_id, teaching_type_id, sexe, date_naissance, lieu_naissance, is_redoublant, academic_year_id, parent_contact, guardian_contact, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                     $stmt = $this->db->prepare($sql);
                     
                     $stmt->execute([
@@ -48,7 +48,8 @@ class StudentImportProcessor
                         $row['is_redoublant'],
                         $this->activeYearId,
                         $row['parent_contact'],
-                        $row['guardian_contact']
+                        $row['guardian_contact'],
+                        \App\Core\Session::get('user_id')
                     ]);
 
                     $studentId = (int)$this->db->lastInsertId();

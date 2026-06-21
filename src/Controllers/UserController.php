@@ -16,10 +16,15 @@ class UserController
     {
         //connexion a la base de donnee
         $this->db = Database::getInstance()->getConnection();
-        //verification de la session
-        if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
-            header("Location: /");
-            exit;
+        
+        $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        if ($path === '/users/create-caissier' || $path === '/users/store-caissier') {
+            if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
+                header("Location: /");
+                exit;
+            }
+        } else {
+            \App\Core\PermissionManager::requirePermission('manage_users');
         }
     }
 
@@ -240,5 +245,64 @@ class UserController
         $stmt->execute($params);
 
         return [$stmt->fetchAll(PDO::FETCH_ASSOC), ['q' => $search, 'role' => $roleFilter]];
+    }
+
+    public function createCaissier()
+    {
+        include __DIR__ . '/../Views/users/create_caissier.php';
+    }
+
+    public function storeCaissier()
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+                \App\Core\Security::log("Tentative de CSRF détectée sur l'action User::storeCaissier");
+                Session::setFlash('error', "Session expirée ou requête invalide.");
+                header("Location: /users/create-caissier");
+                exit;
+            }
+
+            $nom = trim($_POST['nom'] ?? '');
+            $prenom = trim($_POST['prenom'] ?? '');
+            $username = trim($_POST['username'] ?? '');
+            $email = trim($_POST['email'] ?? '');
+            $password = $_POST['password'] ?? '';
+            $role = 'caissier';
+
+            if (empty($nom) || empty($prenom) || empty($username) || empty($password)) {
+                $error = \__('user_required_fields') ?: "Veuillez remplir tous les champs obligatoires.";
+                include __DIR__ . '/../Views/users/create_caissier.php';
+                return;
+            }
+
+            $user = new User($nom, $prenom, $username, $email ?: null, $password, $role);
+            $user->setPassword($password);
+
+            try {
+                $stmt = $this->db->prepare("INSERT INTO users (nom, prenom, username, email, password, role) VALUES (?, ?, ?, ?, ?, ?)");
+                $stmt->execute([
+                    $user->getNom(),
+                    $user->getPrenom(),
+                    $user->getUsername(),
+                    $user->getEmail(),
+                    $user->getPassword(),
+                    $user->getRole(),
+                ]);
+
+                Session::setFlash('success', "Le compte caissier a été créé avec succès.");
+                
+                $userRole = Session::get('user_role');
+                if (in_array($userRole, ['superadmin', 'admin'])) {
+                    header("Location: /users");
+                } else {
+                    header("Location: /students");
+                }
+                exit;
+            } catch (\PDOException $e) {
+                $error = strpos($e->getMessage(), 'Duplicate') !== false ? \__('username_taken') : \__('internal_db_error');
+                include __DIR__ . '/../Views/users/create_caissier.php';
+                return;
+            }
+        }
     }
 }

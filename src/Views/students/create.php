@@ -109,9 +109,14 @@ ob_start();
     <!-- Compact Header -->
     <div class="d-flex align-items-center justify-content-between mb-3">
         <h2 class="fw-black text-main-theme mb-0 fs-4"><?= __('enroll_student') ?></h2>
-        <a href="/students" class="btn btn-sm btn-light-theme rounded-pill px-3 border-theme-light">
-            <i class="bi bi-arrow-left me-1"></i> <?= __('back_to_list') ?>
-        </a>
+        <div class="d-flex gap-2">
+            <a href="/students/import" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-bold text-nowrap">
+                <i class="bi bi-file-earmark-spreadsheet me-1"></i> <?= __('import_excel') ?>
+            </a>
+            <a href="/students" class="btn btn-sm btn-light-theme rounded-pill px-3 border-theme-light">
+                <i class="bi bi-arrow-left me-1"></i> <?= __('back_to_list') ?>
+            </a>
+        </div>
     </div>
 
     <form action="/students/store" method="POST" id="studentEnrollForm" enctype="multipart/form-data" class="no-loader">

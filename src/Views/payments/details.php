@@ -1,5 +1,5 @@
 <?php
-$title = "Fiche Financière - " . h($student['nom']);
+$title = __('student_ledger_title', ['name' => h($student['nom'])]);
 ob_start();
 ?>
 
@@ -9,14 +9,14 @@ ob_start();
         <div>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-1" style="font-size: 0.75rem; font-weight: 500;">
-                    <li class="breadcrumb-item"><a href="/payments" class="text-decoration-none text-muted">Registre Financier</a></li>
-                    <li class="breadcrumb-item active text-primary" aria-current="page">Fiche Élève</li>
+                    <li class="breadcrumb-item"><a href="/payments" class="text-decoration-none text-muted"><?= __('payments_ledger') ?></a></li>
+                    <li class="breadcrumb-item active text-primary" aria-current="page"><?= __('student_file') ?></li>
                 </ol>
             </nav>
-            <h2 class="fw-black text-main-theme mb-0 fs-4">Fiche Financière Individuelle</h2>
+            <h2 class="fw-black text-main-theme mb-0 fs-4"><?= __('individual_ledger') ?></h2>
         </div>
         <a href="/payments" class="btn btn-sm btn-light-theme rounded-pill px-3">
-            <i class="bi bi-arrow-left me-1"></i> Retour au registre
+            <i class="bi bi-arrow-left me-1"></i> <?= __('back_to_registry') ?>
         </a>
     </div>
 
@@ -31,16 +31,16 @@ ob_start();
                 <h3 class="fw-black text-main-theme mb-1 fs-5"><?= h($student['nom']) ?> <?= h($student['prenom']) ?></h3>
                 <div class="d-flex gap-2 align-items-center flex-wrap">
                     <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-3 py-1.5 fw-bold fs-8">
-                        <i class="bi bi-door-open-fill me-1"></i><?= h($student['classe_nom'] ?: 'Aucune classe') ?>
+                        <i class="bi bi-door-open-fill me-1"></i><?= h($student['classe_nom'] ?: __('no_class')) ?>
                     </span>
                     <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 rounded-pill px-3 py-1.5 fw-bold fs-8">
-                        Matricule: <?= h($student['matricule']) ?>
+                        <?= __('matricule') ?>: <?= h($student['matricule']) ?>
                     </span>
                 </div>
             </div>
             <div class="ms-md-auto">
                 <button type="button" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
-                    <i class="bi bi-plus-circle-fill me-2"></i> Enregistrer un versement
+                    <i class="bi bi-plus-circle-fill me-2"></i> <?= __('enter_payment') ?>
                 </button>
             </div>
         </div>
@@ -54,7 +54,7 @@ ob_start();
                     <i class="bi bi-wallet2"></i>
                 </div>
                 <div class="kpi-value text-secondary"><?= number_format($student['frais_scolarite_brut'], 0, '.', ' ') ?> <span class="fs-7 text-muted fw-normal">FCFA</span></div>
-                <div class="kpi-label">Scolarité Brut</div>
+                <div class="kpi-label"><?= __('col_tuition_gross') ?></div>
             </div>
         </div>
         <div class="col-md-3">
@@ -64,7 +64,7 @@ ob_start();
                 </div>
                 <?php $totDeductions = (float)$student['total_reductions'] + (float)$student['total_bourses']; ?>
                 <div class="kpi-value text-danger">-<?= number_format($totDeductions, 0, '.', ' ') ?> <span class="fs-7 text-muted fw-normal">FCFA</span></div>
-                <div class="kpi-label">Réductions & Bourses</div>
+                <div class="kpi-label"><?= __('discounts') ?> & <?= __('scholarships') ?></div>
             </div>
         </div>
         <div class="col-md-3">
@@ -73,7 +73,7 @@ ob_start();
                     <i class="bi bi-check-circle"></i>
                 </div>
                 <div class="kpi-value text-success"><?= number_format($student['total_paye'], 0, '.', ' ') ?> <span class="fs-7 text-muted fw-normal">FCFA</span></div>
-                <div class="kpi-label">Total Déjà Réglé</div>
+                <div class="kpi-label"><?= __('total_already_collected') ?></div>
             </div>
         </div>
         <div class="col-md-3">
@@ -82,7 +82,7 @@ ob_start();
                     <i class="bi bi-exclamation-triangle"></i>
                 </div>
                 <div class="kpi-value text-danger"><?= number_format($student['reste_a_payer'], 0, '.', ' ') ?> <span class="fs-7 text-muted fw-normal">FCFA</span></div>
-                <div class="kpi-label">Reste à payer</div>
+                <div class="kpi-label"><?= __('col_remaining_to_pay') ?></div>
             </div>
         </div>
     </div>
@@ -93,13 +93,13 @@ ob_start();
         <div class="col-lg-5">
             <div class="modern-card border-0 shadow-sm p-4 h-100">
                 <div class="d-flex align-items-center justify-content-between mb-4 border-bottom border-theme-dynamic pb-2">
-                    <h5 class="fw-black text-secondary m-0 text-uppercase letter-spacing-1 fs-6">Plan de Règlement</h5>
+                    <h5 class="fw-black text-secondary m-0 text-uppercase letter-spacing-1 fs-6"><?= __('plan_settlement') ?></h5>
                 </div>
                 
                 <?php if (empty($installments)): ?>
                     <div class="text-center py-5 text-muted small">
                         <i class="bi bi-info-circle fs-4 d-block mb-2 text-secondary"></i>
-                        Aucune tranche planifiée. La scolarité nette est due en une seule fois.
+                        <?= __('no_installments_help') ?>
                     </div>
                 <?php else: ?>
                     <div class="list-group list-group-flush">
@@ -111,26 +111,26 @@ ob_start();
                             
                             if ($amtPaid == 0) {
                                 $badgeClass = 'bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25';
-                                $statusTxt = 'Non payé';
+                                $statusTxt = __('status_unpaid');
                             } elseif ($amtRem > 0) {
                                 $badgeClass = 'bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25';
-                                $statusTxt = 'Partiel';
+                                $statusTxt = __('status_partial');
                             } else {
                                 $badgeClass = 'bg-success bg-opacity-10 text-success border border-success border-opacity-25';
-                                $statusTxt = 'Réglé';
+                                $statusTxt = __('settled_badge');
                             }
                             ?>
                             <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-3 border-bottom border-theme-dynamic">
                                 <div>
-                                    <div class="fw-bold text-main-theme">Tranche <?= $inst['installment_number'] ?></div>
+                                    <div class="fw-bold text-main-theme"><?= __('col_installment') ?> <?= $inst['installment_number'] ?></div>
                                     <div class="text-muted extra-small">
-                                        Montant planifié : <?= number_format($amtPlanned, 0, '.', ' ') ?> FCFA
+                                        <?= __('amount_planned_detail', ['amount' => number_format($amtPlanned, 0, '.', ' ')]) ?>
                                     </div>
                                 </div>
                                 <div class="text-end me-3">
-                                    <div class="fw-bold text-success" style="font-size: 0.85rem;"><?= number_format($amtPaid, 0, '.', ' ') ?> FCFA réglés</div>
+                                    <div class="fw-bold text-success" style="font-size: 0.85rem;"><?= __('amount_paid_detail', ['amount' => number_format($amtPaid, 0, '.', ' ')]) ?></div>
                                     <?php if ($amtRem > 0): ?>
-                                        <div class="text-danger extra-small">Solde dû : <?= number_format($amtRem, 0, '.', ' ') ?> FCFA</div>
+                                        <div class="text-danger extra-small"><?= __('balance_due_detail', ['amount' => number_format($amtRem, 0, '.', ' ')]) ?></div>
                                     <?php endif; ?>
                                 </div>
                                 <span class="badge rounded-pill px-3 py-1.5 fw-bold fs-8 <?= $badgeClass ?>"><?= $statusTxt ?></span>
@@ -145,25 +145,25 @@ ob_start();
         <div class="col-lg-7">
             <div class="modern-card border-0 shadow-sm overflow-hidden h-100">
                 <div class="pt-4 px-4 pb-2 border-bottom border-theme-dynamic">
-                    <h5 class="fw-black text-secondary m-0 text-uppercase letter-spacing-1 fs-6">Historique des Règlements</h5>
+                    <h5 class="fw-black text-secondary m-0 text-uppercase letter-spacing-1 fs-6"><?= __('recent_versements') ?></h5>
                 </div>
                 <div class="table-responsive">
                     <table class="table-modern">
                         <thead>
                             <tr>
-                                <th class="ps-4">Date</th>
-                                <th>Type</th>
-                                <th class="text-end">Montant</th>
-                                <th>Mode</th>
-                                <th>Référence / Notes</th>
-                                <th class="pe-4 text-center">Reçu</th>
+                                <th class="ps-4"><?= __('col_date') ?></th>
+                                <th><?= __('type_field') ?></th>
+                                <th class="text-end"><?= __('col_amount') ?></th>
+                                <th><?= __('col_method') ?></th>
+                                <th><?= __('col_reference') ?></th>
+                                <th class="pe-4 text-center"><?= __('print_receipt') ?></th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php if (empty($payments)): ?>
                                 <tr>
                                     <td colspan="6" class="text-center py-5 text-muted small">
-                                        Aucun versement enregistré pour cette année.
+                                        <?= __('payment_history_year') ?>
                                     </td>
                                 </tr>
                             <?php else: ?>
@@ -174,9 +174,9 @@ ob_start();
                                         </td>
                                         <td>
                                             <?php if ($p['type'] === 'inscription'): ?>
-                                                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-1 rounded-pill">Inscription</span>
+                                                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-1 rounded-pill"><?= __('registration') ?></span>
                                             <?php else: ?>
-                                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1 rounded-pill">Scolarité</span>
+                                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1 rounded-pill"><?= __('tuition') ?></span>
                                             <?php endif; ?>
                                         </td>
                                         <td class="text-end fw-black text-main-theme"><?= number_format($p['amount'], 0, '.', ' ') ?> FCFA</td>
@@ -184,15 +184,15 @@ ob_start();
                                             <?php 
                                             $method = strtoupper($p['payment_method']);
                                             if ($method === 'CASH') {
-                                                echo '<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2.5 py-1 rounded-pill"><i class="bi bi-cash me-1"></i> Espèces</span>';
+                                                echo '<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2.5 py-1 rounded-pill"><i class="bi bi-cash me-1"></i> ' . __('cash_payment') . '</span>';
                                             } elseif ($method === 'OM') {
-                                                echo '<span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2.5 py-1 rounded-pill"><i class="bi bi-phone me-1"></i> Orange Money</span>';
+                                                echo '<span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2.5 py-1 rounded-pill"><i class="bi bi-phone me-1"></i> ' . __('orange_money') . '</span>';
                                             } elseif ($method === 'MOMO') {
-                                                echo '<span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2.5 py-1 rounded-pill"><i class="bi bi-phone me-1"></i> MTN MoMo</span>';
+                                                echo '<span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2.5 py-1 rounded-pill"><i class="bi bi-phone me-1"></i> ' . __('mtn_momo') . '</span>';
                                             } elseif ($method === 'TRANSFER') {
-                                                echo '<span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2.5 py-1 rounded-pill"><i class="bi bi-bank me-1"></i> Virement</span>';
+                                                echo '<span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2.5 py-1 rounded-pill"><i class="bi bi-bank me-1"></i> ' . __('transfer_banking') . '</span>';
                                             } elseif ($method === 'CHEQUE') {
-                                                echo '<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2.5 py-1 rounded-pill"><i class="bi bi-card-text me-1"></i> Chèque</span>';
+                                                echo '<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2.5 py-1 rounded-pill"><i class="bi bi-card-text me-1"></i> ' . __('check_payment') . '</span>';
                                             } else {
                                                 echo '<span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill">' . h($method) . '</span>';
                                             }
@@ -205,12 +205,12 @@ ob_start();
                                         </td>
                                         <td class="pe-4 text-center">
                                             <div class="d-flex gap-1 justify-content-center">
-                                                <a href="/payments/receipt?id=<?= $p['id'] ?>" target="_blank" class="btn btn-sm btn-action-modern text-primary" title="Imprimer le reçu">
+                                                <a href="/payments/receipt?id=<?= $p['id'] ?>" target="_blank" class="btn btn-sm btn-action-modern text-primary" title="<?= __('print_receipt') ?>">
                                                     <i class="bi bi-printer-fill fs-5"></i>
                                                 </a>
                                                 <?php if (\App\Core\Session::get('user_role') === 'superadmin'): ?>
                                                     <a href="/payments/delete?id=<?= $p['id'] ?>" class="btn btn-sm btn-action-modern text-danger" 
-                                                       onclick="return confirm('Êtes-vous sûr de vouloir supprimer et annuler ce versement ?');" title="Annuler le versement">
+                                                       onclick="return confirm(<?= h(json_encode(__('confirm_delete_payment'))) ?>);" title="<?= __('cancel_delete') ?>">
                                                         <i class="bi bi-trash-fill fs-5"></i>
                                                     </a>
                                                 <?php endif; ?>
@@ -232,7 +232,7 @@ ob_start();
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-4 border-0 shadow-lg">
             <div class="modal-header border-bottom-0 pb-0 px-4 pt-4">
-                <h5 class="modal-title fw-black text-main-theme" id="addPaymentModalLabel">Saisir un Versement</h5>
+                <h5 class="modal-title fw-black text-main-theme" id="addPaymentModalLabel"><?= __('enter_payment') ?></h5>
                 <button type="button" class="btn-close" data-bs-shadow="none" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="/payments/store" method="POST" id="paymentForm">
@@ -242,47 +242,47 @@ ob_start();
                 <div class="modal-body p-4">
                     <div class="row g-3">
                         <div class="col-12">
-                            <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Type de Paiement *</label>
+                            <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('payment_type_label') ?></label>
                             <select name="type" class="form-select premium-input" required id="payment_type_select">
-                                <option value="scolarite">Frais de Scolarité</option>
-                                <option value="inscription">Frais d'Inscription</option>
+                                <option value="scolarite"><?= __('tuition_payment_option') ?></option>
+                                <option value="inscription"><?= __('registration_payment_option') ?></option>
                             </select>
                         </div>
                         <div class="col-12">
-                            <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Montant à Encaisser (FCFA) *</label>
+                            <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('amount_to_collect') ?></label>
                             <input type="number" name="amount" min="1" step="50" class="form-control premium-input fw-bold text-primary fs-5" required id="amount_input">
                             <div class="form-text extra-small opacity-75 animate-pulse" id="suggested_amount_help">
-                                Scolarité restante à payer : <strong><?= number_format($student['reste_a_payer'], 0, '.', ' ') ?></strong> FCFA
+                                <?= __('tuition_remaining_help', ['amount' => number_format($student['reste_a_payer'], 0, '.', ' ')]) ?>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Mode de règlement *</label>
+                            <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('payment_method_label') ?></label>
                             <select name="payment_method" id="payment_method_select" class="form-select premium-input" required>
-                                <option value="CASH">Espèces</option>
-                                <option value="OM">Orange Money</option>
-                                <option value="MOMO">MTN Mobile Money</option>
-                                <option value="TRANSFER">Virement Bancaire</option>
-                                <option value="CHEQUE">Chèque</option>
+                                <option value="CASH"><?= __('cash_payment') ?></option>
+                                <option value="OM"><?= __('orange_money') ?></option>
+                                <option value="MOMO"><?= __('mtn_momo') ?></option>
+                                <option value="TRANSFER"><?= __('transfer_banking') ?></option>
+                                <option value="CHEQUE"><?= __('check_payment') ?></option>
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Date de paiement *</label>
+                            <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('payment_date_label') ?></label>
                             <input type="date" name="payment_date" class="form-control premium-input" required value="<?= date('Y-m-d') ?>">
                         </div>
                         <div class="col-12">
-                            <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1" id="reference_label">Référence du paiement</label>
-                            <input type="text" name="reference" id="reference_input" class="form-control premium-input" placeholder="Ex: N° transaction, n° chèque...">
+                            <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1" id="reference_label"><?= __('payment_reference_label') ?></label>
+                            <input type="text" name="reference" id="reference_input" class="form-control premium-input" placeholder="<?= __('payment_reference_hint') ?>">
                         </div>
                         <div class="col-12">
-                            <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Commentaire / Observation</label>
-                            <textarea name="commentaire" class="form-control premium-input" rows="2" placeholder="Informations complémentaires..."></textarea>
+                            <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('comment') ?> / <?= __('observation') ?></label>
+                            <textarea name="commentaire" class="form-control premium-input" rows="2" placeholder="<?= __('additional_info') ?>"></textarea>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer border-top-0 pt-0 px-4 pb-4">
-                    <button type="button" class="btn btn-light-theme rounded-pill px-4" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-light-theme rounded-pill px-4" data-bs-dismiss="modal"><?= __('cancel_btn') ?></button>
                     <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold shadow-sm">
-                        <i class="bi bi-check-circle-fill me-2"></i>Valider l'Encaissement
+                        <i class="bi bi-check-circle-fill me-2"></i><?= __('validate_collect') ?>
                     </button>
                 </div>
             </form>
@@ -303,10 +303,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     typeSelect.addEventListener('change', function() {
         if (this.value === 'inscription') {
-            amountHelp.innerHTML = `Frais d'inscription restants : <strong class="text-danger">${formatNumber(restRegistration)}</strong> FCFA`;
+            const template = <?= json_encode(__('registration_remaining_help', ['amount' => 'REPLACE_ME'])) ?>;
+            amountHelp.innerHTML = template.replace('REPLACE_ME', `<strong class="text-danger">${formatNumber(restRegistration)}</strong>`);
             amountInput.value = restRegistration;
         } else {
-            amountHelp.innerHTML = `Scolarité restante à payer : <strong class="text-danger">${formatNumber(restTuition)}</strong> FCFA`;
+            const template = <?= json_encode(__('tuition_remaining_help', ['amount' => 'REPLACE_ME'])) ?>;
+            amountHelp.innerHTML = template.replace('REPLACE_ME', `<strong class="text-danger">${formatNumber(restTuition)}</strong>`);
             amountInput.value = restTuition > 0 ? restTuition : '';
         }
     });
@@ -325,23 +327,23 @@ document.addEventListener('DOMContentLoaded', function() {
         
         referenceInput.required = false;
         referenceInput.disabled = false;
-        referenceInput.placeholder = "Ex: N° transaction, n° chèque...";
-        referenceLabel.innerHTML = 'Référence du paiement';
+        referenceInput.placeholder = <?= json_encode(__('payment_reference_hint')) ?>;
+        referenceLabel.innerHTML = <?= json_encode(__('payment_reference_label')) ?>;
 
-        if (val.includes('cash') || val.includes('espece') || val.includes('espèces')) {
-            referenceLabel.innerHTML = 'Référence du paiement <span class="text-success">(Générée automatiquement)</span>';
-            referenceInput.placeholder = "Générée automatiquement par le système";
+        if (val.includes('cash') || val.includes('espece') || val.includes('especes') || val.includes('espèces')) {
+            referenceLabel.innerHTML = <?= json_encode(__('auto_generated_ref_label')) ?>;
+            referenceInput.placeholder = <?= json_encode(__('auto_generated_placeholder')) ?>;
             referenceInput.value = "";
             referenceInput.disabled = true;
         } else if (val.includes('om') || val.includes('momo') || val.includes('orange') || val.includes('mtn') || val.includes('mobile')) {
-            referenceLabel.innerHTML = 'Numéro de transaction <span class="text-muted">(optionnel)</span>';
-            referenceInput.placeholder = "Ex: TX-98471...";
+            referenceLabel.innerHTML = <?= json_encode(__('transaction_number_optional')) ?>;
+            referenceInput.placeholder = <?= json_encode(__('transaction_number_placeholder')) ?>;
         } else if (val.includes('cheque') || val.includes('chèque')) {
-            referenceLabel.innerHTML = 'Numéro de chèque <span class="text-muted">(optionnel)</span>';
-            referenceInput.placeholder = "Ex: CHQ-001234";
+            referenceLabel.innerHTML = <?= json_encode(__('check_number_optional')) ?>;
+            referenceInput.placeholder = <?= json_encode(__('check_number_placeholder')) ?>;
         } else if (val.includes('transfer') || val.includes('virement') || val.includes('bancaire')) {
-            referenceLabel.innerHTML = 'Référence bancaire <span class="text-muted">(optionnelle)</span>';
-            referenceInput.placeholder = "Ex: VIR-847294...";
+            referenceLabel.innerHTML = <?= json_encode(__('bank_reference_optional')) ?>;
+            referenceInput.placeholder = <?= json_encode(__('bank_reference_placeholder')) ?>;
         }
     }
 

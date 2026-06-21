@@ -1,5 +1,5 @@
 <?php
-$title = "Gestion des Tranches";
+$title = __('tranches_title');
 ob_start();
 ?>
 
@@ -200,8 +200,8 @@ ob_start();
     <!-- Header -->
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div>
-            <h2 class="fw-black text-main-theme mb-0 fs-4" style="letter-spacing: -0.5px;">Gestion des Tranches & Échéances</h2>
-            <p class="text-muted-theme small mb-0">Paramétrage global ou ciblé des modalités de règlement de la scolarité</p>
+            <h2 class="fw-black text-main-theme mb-0 fs-4" style="letter-spacing: -0.5px;"><?= __('tranches_title') ?></h2>
+            <p class="text-muted-theme small mb-0"><?= __('tranches_subtitle') ?></p>
         </div>
     </div>
 
@@ -211,27 +211,27 @@ ob_start();
         <div class="col-lg-6">
             <div class="glass-card p-4">
                 <h5 class="fw-bold text-main-theme mb-4">
-                    <i class="bi bi-sliders text-primary me-2"></i>Éditeur de Configuration
+                    <i class="bi bi-sliders text-primary me-2"></i><?= __('config_editor') ?>
                 </h5>
                 <form action="/school_fees/tranches" method="POST" id="tranche-config-form">
                     <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
 
                     <!-- Cible Type -->
                     <div class="mb-4">
-                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-2" style="letter-spacing: 0.5px;">Niveau d'application *</label>
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-2" style="letter-spacing: 0.5px;"><?= __('application_level') ?></label>
                         <select name="target_type" id="target_type" class="form-select premium-input" required>
-                            <option value="" disabled selected>Choisir un niveau...</option>
-                            <option value="class">Par Classe spécifique</option>
-                            <option value="cycle">Par Cycle complet</option>
-                            <option value="teaching_type">Par Type d'Enseignement</option>
+                            <option value="" disabled selected><?= __('choose_level') ?></option>
+                            <option value="class"><?= __('by_class') ?></option>
+                            <option value="cycle"><?= __('by_cycle') ?></option>
+                            <option value="teaching_type"><?= __('by_teaching_type') ?></option>
                         </select>
                     </div>
 
                     <!-- Target Element Selects -->
                     <div class="mb-4 d-none" id="div-class-select">
-                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-2" style="letter-spacing: 0.5px;">Sélectionner la Classe *</label>
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-2" style="letter-spacing: 0.5px;"><?= __('select_class_editor') ?></label>
                         <select name="target_id" id="select-class" class="form-select premium-input">
-                            <option value="" disabled selected>Choisir une classe...</option>
+                            <option value="" disabled selected><?= __('choose_class_placeholder') ?></option>
                             <?php foreach ($classes as $c): ?>
                                 <option value="<?= $c['id'] ?>"><?= h($c['nom']) ?></option>
                             <?php endforeach; ?>
@@ -239,9 +239,9 @@ ob_start();
                     </div>
 
                     <div class="mb-4 d-none" id="div-cycle-select">
-                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-2" style="letter-spacing: 0.5px;">Sélectionner le Cycle *</label>
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-2" style="letter-spacing: 0.5px;"><?= __('select_cycle_editor') ?></label>
                         <select name="target_id" id="select-cycle" class="form-select premium-input">
-                            <option value="" disabled selected>Choisir un cycle...</option>
+                            <option value="" disabled selected><?= __('choose_cycle_placeholder') ?></option>
                             <?php foreach ($cycles as $cy): ?>
                                 <option value="<?= $cy['id'] ?>"><?= h($cy['nom']) ?></option>
                             <?php endforeach; ?>
@@ -249,9 +249,9 @@ ob_start();
                     </div>
 
                     <div class="mb-4 d-none" id="div-teaching-type-select">
-                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-2" style="letter-spacing: 0.5px;">Sélectionner le Type d'Enseignement *</label>
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-2" style="letter-spacing: 0.5px;"><?= __('select_teaching_type_editor') ?></label>
                         <select name="target_id" id="select-teaching-type" class="form-select premium-input">
-                            <option value="" disabled selected>Choisir un type...</option>
+                            <option value="" disabled selected><?= __('choose_type_placeholder') ?></option>
                             <?php foreach ($teachingTypes as $tt): ?>
                                 <option value="<?= $tt['id'] ?>"><?= h($tt['nom']) ?></option>
                             <?php endforeach; ?>
@@ -261,16 +261,16 @@ ob_start();
                     <!-- Target Info & Balance Status Box -->
                     <div id="target-status-banner" class="d-none target-status-box p-3 mb-4 animate-slide-in">
                         <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2 border-primary border-opacity-10">
-                            <span class="small fw-bold text-uppercase text-muted-theme" style="letter-spacing: 0.5px;">État de la Répartition</span>
+                            <span class="small fw-bold text-uppercase text-muted-theme" style="letter-spacing: 0.5px;"><?= __('distribution_state') ?></span>
                             <span id="inheritance-badge" class="badge">Configuration</span>
                         </div>
                         <div class="row g-2 text-center mb-3">
                             <div class="col-6 border-end border-primary border-opacity-10">
-                                <div class="extra-small text-muted text-uppercase mb-1" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">Scolarité attendue</div>
+                                <div class="extra-small text-muted text-uppercase mb-1" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;"><?= __('expected_tuition') ?></div>
                                 <div class="fs-5 fw-bold text-primary" id="tuition-amount-display">0 FCFA</div>
                             </div>
                             <div class="col-6">
-                                <div class="extra-small text-muted text-uppercase mb-1" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;">Total affecté</div>
+                                <div class="extra-small text-muted text-uppercase mb-1" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;"><?= __('total_allocated') ?></div>
                                 <div class="fs-5 fw-bold text-dark" id="total-tranches-display">0 FCFA</div>
                             </div>
                         </div>
@@ -290,15 +290,15 @@ ob_start();
                     <!-- Tranche Definitions Container -->
                     <div class="border-top pt-4 mt-3">
                         <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
-                            <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-0" style="letter-spacing: 0.5px;">Définition des Tranches *</label>
+                            <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-0" style="letter-spacing: 0.5px;"><?= __('definition_tranches') ?></label>
                             
                             <!-- Quick tools bar -->
                             <div class="d-flex gap-1.5" id="quick-distribution-toolbar" style="display: none !important;">
-                                <button type="button" class="btn btn-xs btn-outline-primary" id="btn-quick-split" title="Répartir équitablement le montant total">
-                                    <i class="bi bi-distribute-horizontal me-1"></i>Équirépartir
+                                <button type="button" class="btn btn-xs btn-outline-primary" id="btn-quick-split" title="<?= __('equidistribute_tooltip') ?>">
+                                    <i class="bi bi-distribute-horizontal me-1"></i><?= __('equidistribute') ?>
                                 </button>
-                                <button type="button" class="btn btn-xs btn-outline-secondary" id="btn-quick-mono" title="Réduire à une tranche unique">
-                                    <i class="bi bi-file-earmark-fill me-1"></i>Tranche Unique
+                                <button type="button" class="btn btn-xs btn-outline-secondary" id="btn-quick-mono" title="<?= __('monotranche_tooltip') ?>">
+                                    <i class="bi bi-file-earmark-fill me-1"></i><?= __('monotranche') ?>
                                 </button>
                             </div>
                         </div>
@@ -306,16 +306,16 @@ ob_start();
                         <div id="tranches-rows-container" class="d-flex flex-column gap-2 mb-3">
                             <div class="text-center py-5 text-muted small bg-light bg-opacity-40 rounded-4 border border-dashed">
                                 <i class="bi bi-shield-lock fs-2 d-block mb-2 text-secondary opacity-50"></i>
-                                Veuillez sélectionner un niveau d'application et une cible ci-dessus pour activer l'éditeur.
+                                <?= __('editor_activation_help') ?>
                             </div>
                         </div>
 
                         <div class="d-flex justify-content-between align-items-center mt-3 border-top pt-3">
                             <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1.5 fw-bold" id="btn-add-row" style="font-size: 0.75rem; display: none;">
-                                <i class="bi bi-plus-circle-fill me-1"></i> Ajouter une tranche
+                                <i class="bi bi-plus-circle-fill me-1"></i> <?= __('add_tranche') ?>
                             </button>
                             <div class="text-end text-muted extra-small" style="font-weight: 700; font-size: 0.8rem;">
-                                Total scolarité : <span id="total-scolarite-sum" class="text-primary fw-extrabold">0</span> FCFA
+                                <?= __('total_tuition_label') ?> <span id="total-scolarite-sum" class="text-primary fw-extrabold">0</span> FCFA
                             </div>
                         </div>
                     </div>
@@ -323,7 +323,7 @@ ob_start();
                     <!-- Validation button -->
                     <div class="mt-4 pt-3 border-top text-end">
                         <button type="submit" class="btn btn-primary rounded-pill px-5 py-2.5 fw-bold shadow-sm" id="btn-submit-form" disabled>
-                            <i class="bi bi-check-circle-fill me-2"></i>Enregistrer la configuration
+                            <i class="bi bi-check-circle-fill me-2"></i><?= __('save_config') ?>
                         </button>
                     </div>
                 </form>
@@ -336,11 +336,11 @@ ob_start();
                 <!-- Card Header with Search -->
                 <div class="d-flex align-items-center justify-content-between mb-4 gap-3 flex-wrap">
                     <h5 class="fw-bold text-main-theme mb-0">
-                        <i class="bi bi-list-task text-primary me-2"></i>Configurations Actives
+                        <i class="bi bi-list-task text-primary me-2"></i><?= __('active_configs') ?>
                     </h5>
                     <div class="search-box position-relative" style="min-width: 250px;">
                         <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
-                        <input type="text" id="search-config" class="form-control form-control-sm ps-5 rounded-pill premium-input" placeholder="Rechercher une classe, cycle...">
+                        <input type="text" id="search-config" class="form-control form-control-sm ps-5 rounded-pill premium-input" placeholder="<?= __('search_class_cycle') ?>">
                     </div>
                 </div>
 
@@ -355,15 +355,15 @@ ob_start();
                         $type = '';
                         if ($inst['class_id']) {
                             $key = 'class_' . $inst['class_id'];
-                            $label = 'Classe : ' . $inst['class_name'];
+                            $label = __('class') . ' : ' . $inst['class_name'];
                             $type = 'primary';
                         } elseif ($inst['cycle_id']) {
                             $key = 'cycle_' . $inst['cycle_id'];
-                            $label = 'Cycle : ' . $inst['cycle_name'];
+                            $label = __('cycle') . ' : ' . $inst['cycle_name'];
                             $type = 'info';
                         } elseif ($inst['teaching_type_id']) {
                             $key = 'teaching_type_' . $inst['teaching_type_id'];
-                            $label = 'Ens. : ' . $inst['teaching_type_name'];
+                            $label = __('teaching_type') . ' : ' . $inst['teaching_type_name'];
                             $type = 'warning';
                         }
                         
@@ -386,8 +386,8 @@ ob_start();
                     <?php if (empty($groupedInstallments)): ?>
                         <div class="text-center py-5 text-muted glass-card border border-dashed rounded-4 bg-light bg-opacity-25">
                             <i class="bi bi-calendar-x fs-1 text-secondary opacity-50 mb-3 d-block"></i>
-                            <p class="mb-0 fw-medium">Aucune tranche n'a encore été configurée.</p>
-                            <small class="text-muted text-uppercase extra-small font-weight-bold">Utilisez l'éditeur pour commencer.</small>
+                            <p class="mb-0 fw-medium"><?= __('no_config_yet') ?></p>
+                            <small class="text-muted text-uppercase extra-small font-weight-bold"><?= __('use_editor_to_start') ?></small>
                         </div>
                     <?php else: ?>
                         <?php foreach ($groupedInstallments as $key => $group): ?>
@@ -523,7 +523,7 @@ document.addEventListener('DOMContentLoaded', function() {
         tranchesRowsContainer.innerHTML = `
             <div class="text-center py-5 text-muted w-100 animate-slide-in" id="loading-spinner">
                 <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
-                Chargement de la configuration existante...
+                <?= __('loading_config') ?>
             </div>
         `;
         statusBanner.classList.add('d-none');
@@ -568,7 +568,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error(err);
                 tranchesRowsContainer.innerHTML = `
                     <div class="alert alert-danger small m-2">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i> Erreur lors du chargement des données.
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> <?= __('error_loading_data') ?>
                     </div>
                 `;
             });
@@ -588,24 +588,24 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="row g-2 align-items-end">
                 <div class="col-md-5">
                     <label class="form-label text-muted-theme fw-bold extra-small mb-1 text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.3px;">
-                        <i class="bi bi-tag-fill me-1 text-primary"></i>Nom de la Tranche
+                        <i class="bi bi-tag-fill me-1 text-primary"></i><?= __('tranche_name') ?>
                     </label>
                     <input type="text" name="tranche_name[]" class="form-control form-control-sm premium-input" value="${name || 'Tranche ' + num}" required>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label text-muted-theme fw-bold extra-small mb-1 text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.3px;">
-                        <i class="bi bi-cash-stack me-1 text-success"></i>Montant (FCFA)
+                        <i class="bi bi-cash-stack me-1 text-success"></i><?= __('tranche_amount') ?>
                     </label>
                     <input type="number" name="tranche_amount[]" min="0" class="form-control form-control-sm premium-input text-end fw-bold input-amount" value="${amount}" required>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label text-muted-theme fw-bold extra-small mb-1 text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.3px;">
-                        <i class="bi bi-calendar-check-fill me-1 text-info"></i>Date d'échéance
+                        <i class="bi bi-calendar-check-fill me-1 text-info"></i><?= __('tranche_deadline') ?>
                     </label>
                     <input type="date" name="tranche_deadline[]" class="form-control form-control-sm premium-input input-deadline" value="${deadline}" required>
                 </div>
                 <div class="col-md-1 text-end">
-                    <button type="button" class="btn btn-sm btn-outline-danger border-0 p-2 btn-remove-row rounded-circle" title="Supprimer cette tranche">
+                    <button type="button" class="btn btn-sm btn-outline-danger border-0 p-2 btn-remove-row rounded-circle" title="<?= __('delete_tranche_tooltip') ?>">
                         <i class="bi bi-trash-fill"></i>
                     </button>
                 </div>
@@ -672,17 +672,17 @@ document.addEventListener('DOMContentLoaded', function() {
             balanceStatusAlert.className = 'small p-2.5 rounded-3 text-center fw-semibold';
             if (currentTargetTuition === 0) {
                 balanceStatusAlert.classList.add('status-alert-warning');
-                balanceStatusAlert.innerHTML = '<i class="bi bi-info-circle-fill me-1"></i> Aucun frais de scolarité configuré pour cette cible.';
+                balanceStatusAlert.innerHTML = '<i class="bi bi-info-circle-fill me-1"></i> <?= __('no_tuition_configured_target') ?>';
             } else if (sum === currentTargetTuition) {
                 balanceStatusAlert.classList.add('status-alert-success');
-                balanceStatusAlert.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Répartition équilibrée à 100% avec le montant de scolarité.';
+                balanceStatusAlert.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> <?= __('balanced_distribution_100') ?>';
             } else {
                 const diff = currentTargetTuition - sum;
                 balanceStatusAlert.classList.add('status-alert-danger');
                 if (diff > 0) {
-                    balanceStatusAlert.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-1"></i> Reste à répartir : <strong>+${diff.toLocaleString('fr-FR')} FCFA</strong>`;
+                    balanceStatusAlert.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-1"></i> <?= __('remaining_to_distribute') ?> <strong>+${diff.toLocaleString('fr-FR')} FCFA</strong>`;
                 } else {
-                    balanceStatusAlert.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-1"></i> Le total dépasse de <strong>${Math.abs(diff).toLocaleString('fr-FR')} FCFA</strong> la scolarité attendue.`;
+                    balanceStatusAlert.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-1"></i> <?= __('total_exceeds_tuition') ?> <strong>${Math.abs(diff).toLocaleString('fr-FR')} FCFA</strong>`;
                 }
             }
         }
@@ -711,7 +711,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 err.id = errorDivId;
                 err.className = 'text-danger extra-small mt-1 fw-bold';
                 err.style.fontSize = '0.7rem';
-                err.innerHTML = '<i class="bi bi-exclamation-circle"></i> L\'échéance doit être postérieure à la tranche précédente.';
+                err.innerHTML = '<i class="bi bi-exclamation-circle"></i> <?= __('deadline_chronology_error') ?>';
                 dateInput.parentNode.appendChild(err);
             }
             
@@ -754,13 +754,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!validateDates()) {
             e.preventDefault();
-            alert("Erreur : Les dates d'échéance doivent être dans un ordre chronologique logique.");
+            alert(<?= json_encode(__('error_chronology_alert')) ?>);
             return;
         }
 
         if (currentTargetTuition > 0 && sum !== currentTargetTuition) {
             const diff = currentTargetTuition - sum;
-            const msg = `Attention : La somme des tranches (${sum.toLocaleString('fr-FR')} FCFA) ne correspond pas au montant global de la scolarité (${currentTargetTuition.toLocaleString('fr-FR')} FCFA).\n\nVoulez-vous vraiment enregistrer cette configuration ?`;
+            const msg = <?= json_encode(__('warning_mismatch_alert')) ?>;
             if (!confirm(msg)) {
                 e.preventDefault();
             }

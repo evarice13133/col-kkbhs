@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Database;
 use App\Core\Session;
+use App\Core\PermissionManager;
 use App\Services\AcademicYearService;
 use App\Services\FinancialService;
 use PDO;
@@ -25,11 +26,8 @@ class PaymentController
         $this->academicYearService = new AcademicYearService($this->db);
         $this->financialService = new FinancialService($this->db);
 
-        // Sécurité : Accès restreint aux administrateurs
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
-            header("Location: /");
-            exit;
-        }
+        // Sécurité RBAC : Accès réservé aux rôles financiers
+        PermissionManager::requirePermission('manage_payments');
     }
 
     /**
@@ -53,7 +51,7 @@ class PaymentController
                 FROM students s
                 JOIN enrollments e ON s.id = e.student_id AND e.academic_year_id = ?
                 LEFT JOIN classes c ON e.class_id = c.id
-                WHERE s.is_withdrawn = 0";
+                WHERE s.is_withdrawn = 0 AND s.actif = 1";
         
         $params = [$activeYearId];
 
@@ -100,7 +98,7 @@ class PaymentController
                                     FROM students s
                                     LEFT JOIN enrollments e ON s.id = e.student_id AND e.academic_year_id = ?
                                     LEFT JOIN classes c ON s.class_id = c.id
-                                    WHERE s.id = ? AND s.is_withdrawn = 0");
+                                    WHERE s.id = ? AND s.is_withdrawn = 0 AND s.actif = 1");
         $stmt->execute([$activeYearId, $id]);
         $student = $stmt->fetch(PDO::FETCH_ASSOC);
 

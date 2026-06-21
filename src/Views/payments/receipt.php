@@ -42,22 +42,25 @@ try {
     // Garde le fallback en URL
 }
 
+// Active language for PDF and local translations
+$app_lang = \App\Core\Session::get('app_lang', 'fr');
+
 // Nature de paiement conviviaux
-$nature = "Paiement Divers";
+$nature = __('other_payment');
 if ($payment['type'] === 'inscription') {
-    $nature = "Frais d'inscription";
+    $nature = __('registration_payment_option');
 } elseif ($payment['type'] === 'scolarite') {
-    $nature = "Frais de scolarité";
+    $nature = __('tuition_payment_option');
 }
 
 // Déterminer le statut de duplicata
 $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
 ?>
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="<?= htmlspecialchars((string) __('lang')) ?>">
 <head>
     <meta charset="UTF-8">
-    <title>Reçu Officiel de Versement N°<?= h($payment['id']) ?></title>
+    <title><?= __('official_payment_receipt_no') ?><?= h($payment['id']) ?></title>
     <style>
         /* Optimisation stricte A4 Portrait pour faire tenir les 2 reçus sur une seule page */
         body {
@@ -483,19 +486,18 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
     </style>
 </head>
 <body>
-
-    <!-- Barre d'actions écran -->
+     <!-- Barre d'actions écran -->
     <div class="print-btn-container no-print receipt-container" style="display: flex; justify-content: space-between; align-items: center;">
         <div>
-            <h4 style="margin: 0; color: #1e3a8a;">Gestionnaire de Reçus Officiels</h4>
-            <small style="color: #64748b;">Visualisation, impression et historique d'impression</small>
+            <h4 style="margin: 0; color: #1e3a8a;"><?= __('official_receipt_manager') ?></h4>
+            <small style="color: #64748b;"><?= __('receipt_visualisation') ?></small>
         </div>
         <div style="display: flex; gap: 8px;">
             <a href="/payments/student?id=<?= $payment['student_id'] ?>" class="btn-premium-secondary">
-                ← Fiche Élève
+                ← <?= __('student_file') ?>
             </a>
             <button class="btn-premium" onclick="window.print();">
-                Imprimer le Reçu
+                <?= __('print_receipt') ?>
             </button>
         </div>
     </div>
@@ -505,8 +507,8 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
         <?php
         // On génère deux blocs identiques : Exemplaire Parent et Exemplaire Administration
         $copies = [
-            'Parent' => 'Exemplaire Parent',
-            'Admin' => 'Exemplaire Établissement'
+            'Parent' => __('exemplaire_eleve'),
+            'Admin' => __('exemplaire_etablissement')
         ];
 
         $i = 0;
@@ -534,7 +536,7 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
 
             <!-- Filigrane Texte diagonal si duplicata -->
             <?php if ($isDuplicate): ?>
-                <div class="watermark-text-diagonal">DUPLICATA</div>
+                <div class="watermark-text-diagonal"><?= __('duplicata') ?></div>
             <?php endif; ?>
 
             <div class="receipt-content">
@@ -559,15 +561,15 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                             
                             <!-- Tutelle républicaine simplifiée sans délégation -->
                             <div class="republic-hierarchy">
-                                <?= h($settings['school_republic'] ?? 'République du Cameroun') ?><br>
-                                <?= h($settings['school_ministry'] ?? 'Ministère des Enseignements Secondaires') ?>
+                                <?= h(($app_lang === 'en') ? ($settings['school_republic_en'] ?? 'Republic of Cameroon') : ($settings['school_republic'] ?? 'République du Cameroun')) ?><br>
+                                <?= h(($app_lang === 'en') ? ($settings['school_ministry_en'] ?? 'Ministry of Secondary Education') : ($settings['school_ministry'] ?? 'Ministère des Enseignements Secondaires')) ?>
                             </div>
                         </td>
 
                         <!-- Partie Droite : Titre Officiel et Métadonnées -->
                         <td class="meta-info-col">
                             <div class="receipt-title-container" style="margin-top: 0; margin-bottom: 4px;">
-                                REÇU DE VERSEMENT OFFICIEL
+                                <?= __('official_payment_receipt') ?>
                                 <div style="font-size: 7.5px; font-weight: normal; margin-top: 1px; color: #475569; text-transform: uppercase;">
                                     <?= $copyName ?>
                                 </div>
@@ -575,16 +577,16 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
 
                             <div class="meta-box" style="margin-top: 0; margin-bottom: 0;">
                                 <div>
-                                    <strong>Année Académique :</strong> <?= h($settings['display_school_year'] ?? $payment['academic_year_id'] ?? '') ?> &nbsp;|&nbsp; 
-                                    <strong>Date d'Émission :</strong> <?= date('d/m/Y H:i', strtotime($payment['created_at'])) ?>
+                                    <strong><?= __('school_year_label') ?></strong> <?= h($settings['display_school_year'] ?? $payment['academic_year_id'] ?? '') ?> &nbsp;|&nbsp; 
+                                    <strong><?= __('date_emission_label') ?></strong> <?= date('d/m/Y H:i', strtotime($payment['created_at'])) ?>
                                 </div>
                                 <div style="margin-top: 2px;">
-                                    <strong>Jeton Unique :</strong> <span style="font-family: monospace; font-weight: bold;"><?= h($payment['verification_code']) ?></span> &nbsp;|&nbsp; 
-                                    <strong>Impression :</strong> <span><?= (int)$payment['print_count'] ?></span>
+                                    <strong><?= __('jeton') ?></strong> <span style="font-family: monospace; font-weight: bold;"><?= h($payment['verification_code']) ?></span> &nbsp;|&nbsp; 
+                                    <strong><?= __('col_print_number') ?> :</strong> <span><?= (int)$payment['print_count'] ?></span>
                                     <?php if ($isDuplicate): ?>
-                                        <span class="duplicate-badge">DUPLICATA</span>
+                                        <span class="duplicate-badge"><?= __('duplicata') ?></span>
                                     <?php else: ?>
-                                        <span class="duplicate-badge" style="background-color: #16a34a;">ORIGINAL</span>
+                                        <span class="duplicate-badge" style="background-color: #16a34a;"><?= __('original') ?></span>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -595,29 +597,29 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                 <!-- Fiche d'identité de l'élève (mise à jour avec infos supplémentaires) -->
                 <table class="details-section-table">
                     <tr>
-                        <td style="width: 15%;"><strong>Élève :</strong></td>
+                        <td style="width: 15%;"><strong><?= __('student') ?> :</strong></td>
                         <td style="width: 45%;"><strong><?= h(mb_strtoupper($payment['student_nom'] ?? '')) ?></strong> <?= h($payment['student_prenom'] ?? '') ?></td>
-                        <td style="width: 15%;"><strong>Matricule :</strong></td>
+                        <td style="width: 15%;"><strong><?= __('matricule') ?> :</strong></td>
                         <td style="width: 25%; font-family: monospace; font-weight: bold;"><?= h($payment['matricule'] ?? '') ?></td>
                     </tr>
                     <tr>
-                        <td><strong>Classe :</strong></td>
-                        <td><?= h($payment['classe_nom'] ?: 'Non définie') ?></td>
-                        <td><strong>Sexe :</strong></td>
-                        <td><?= ($payment['sexe'] ?? '') === 'M' ? 'Masculin' : (($payment['sexe'] ?? '') === 'F' ? 'Féminin' : 'N/A') ?></td>
+                        <td><strong><?= __('class') ?> :</strong></td>
+                        <td><?= h($payment['classe_nom'] ?: __('not_specified')) ?></td>
+                        <td><strong><?= __('sex') ?> :</strong></td>
+                        <td><?= ($payment['sexe'] ?? '') === 'M' ? __('male') : (($payment['sexe'] ?? '') === 'F' ? __('female') : 'N/A') ?></td>
                     </tr>
                     <tr>
-                        <td><strong>Né(e) le :</strong></td>
+                        <td><strong><?= __('born_on') ?> :</strong></td>
                         <td>
                             <?= !empty($payment['date_naissance']) ? date('d/m/Y', strtotime($payment['date_naissance'])) : 'N/A' ?>
-                            <?= !empty($payment['lieu_naissance']) ? ' à ' . h($payment['lieu_naissance']) : '' ?>
+                            <?= !empty($payment['lieu_naissance']) ? ' ' . __('born_at') . ' ' . h($payment['lieu_naissance']) : '' ?>
                         </td>
-                        <td><strong>Année Scol. :</strong></td>
+                        <td><strong><?= __('year') ?> :</strong></td>
                         <td><?= h($settings['display_school_year'] ?? $payment['academic_year_id'] ?? '') ?></td>
                     </tr>
                     <?php if (!empty($payment['adresse'])): ?>
                     <tr>
-                        <td><strong>Adresse :</strong></td>
+                        <td><strong><?= __('address') ?> :</strong></td>
                         <td colspan="3"><?= h($payment['adresse']) ?></td>
                     </tr>
                     <?php endif; ?>
@@ -627,10 +629,10 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                 <table class="financial-table">
                     <thead>
                         <tr>
-                            <th style="width: 40%;">Nature du Règlement</th>
-                            <th style="width: 25%;">Mode de Paiement</th>
-                            <th style="width: 20%;">Référence</th>
-                            <th style="width: 15%; text-align: right;">Montant</th>
+                            <th style="width: 40%;"><?= __('nature_payment') ?></th>
+                            <th style="width: 25%;"><?= __('payment_method_label') ?></th>
+                            <th style="width: 20%;"><?= __('col_reference') ?></th>
+                            <th style="width: 15%; text-align: right;"><?= __('col_amount') ?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -645,7 +647,7 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
 
                 <!-- Somme en toutes lettres -->
                 <div class="amount-in-words-box">
-                    Arrêté le présent reçu à la somme de : <strong><?= h($amountInWords) ?></strong>
+                    <?= __('amount_words_prefix') ?> <strong><?= h($amountInWords) ?></strong>
                 </div>
 
                 <!-- Section de bas : QR Code et Ventilation financière -->
@@ -656,9 +658,9 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                             <div class="qr-wrapper">
                                 <img src="<?= $qrCodeSrc ?>" class="qr-img" alt="QR Code de Vérification">
                                 <div class="qr-text-info">
-                                    <strong>VERIFICATION :</strong><br>
-                                    Scannez le code QR pour valider l'authenticité de ce versement sur la plateforme de l'établissement.<br>
-                                    Jeton : <?= h($payment['verification_code']) ?>
+                                    <strong><?= __('verification_enrollment') ?> :</strong><br>
+                                    <?= __('scan_qr_help') ?><br>
+                                    <?= __('jeton') ?> <?= h($payment['verification_code']) ?>
                                 </div>
                             </div>
                         </td>
@@ -679,24 +681,24 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                                     }
                                 ?>
                                     <tr>
-                                        <td class="label-td">Frais d'inscription prévus :</td>
+                                        <td class="label-td"><?= __('registration_payment_option') ?> <?= __('expected_fee_suffix') ?></td>
                                         <td class="value-td"><?= number_format($expectedFee, 0, '.', ' ') ?> FCFA</td>
                                     </tr>
                                     <tr>
-                                        <td class="label-td" style="color: #16a34a; background-color: #f0fdf4;">Frais d'inscription versés :</td>
+                                        <td class="label-td" style="color: #16a34a; background-color: #f0fdf4;"><?= __('registration_payment_option') ?> <?= __('paid_fee_suffix') ?></td>
                                         <td class="value-td" style="color: #16a34a; background-color: #f0fdf4;"><?= number_format($payment['amount'], 0, '.', ' ') ?> FCFA</td>
                                     </tr>
                                 <?php else: ?>
                                     <tr>
-                                        <td class="label-td">Scolarité brute due :</td>
+                                        <td class="label-td"><?= __('gross_tuition_fee') ?></td>
                                         <td class="value-td"><?= number_format($enroll['scolarite_nette'] ?? 0, 0, '.', ' ') ?> FCFA</td>
                                     </tr>
                                     <tr>
-                                        <td class="label-td">Total cumulé déjà payé :</td>
+                                        <td class="label-td"><?= __('total_cumulated_paid') ?></td>
                                         <td class="value-td"><?= number_format($enroll['total_paye'] ?? 0, 0, '.', ' ') ?> FCFA</td>
                                     </tr>
                                     <tr>
-                                        <td class="label-td" style="color: #b91c1c; background-color: #fef2f2;">Reste net à payer :</td>
+                                        <td class="label-td" style="color: #b91c1c; background-color: #fef2f2;"><?= __('remaining_tuition_balance') ?></td>
                                         <td class="value-td" style="color: #b91c1c; background-color: #fef2f2; text-decoration: underline;"><?= number_format($enroll['reste_a_payer'] ?? 0, 0, '.', ' ') ?> FCFA</td>
                                     </tr>
                                 <?php endif; ?>
@@ -709,14 +711,14 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                 <table class="signatures-table">
                     <tr>
                         <td class="signature-box-left">
-                            <strong>Signature du Parent / Élève</strong><br>
+                            <strong><?= __('parent_signature_label') ?></strong><br>
                             <span class="signature-line-placeholder"></span>
                         </td>
                         <td class="signature-box-right">
-                            <strong>La Caisse / Le Comptable</strong><br>
+                            <strong><?= __('cashier_signature_label') ?></strong><br>
                             <span style="font-size: 8px; color: #475569; display: block; margin-top: 2px;">
-                                Édité par : <?= h($payment['user_nom'] ?? '') ?> <?= h($payment['user_prenom'] ?? '') ?><br>
-                                Imprimé le : <?= date('d/m/Y H:i') ?>
+                                <?= __('entered_by') ?> : <?= h($payment['user_nom'] ?? '') ?> <?= h($payment['user_prenom'] ?? '') ?><br>
+                                <?= __('printed_on') ?> <?= date('d/m/Y H:i') ?>
                             </span>
                             <span class="signature-line-placeholder" style="margin-top: 8px;"></span>
                         </td>
@@ -725,8 +727,7 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
 
                 <!-- Pied de page -->
                 <div class="receipt-footer-text">
-                    Document officiel généré et archivé électroniquement par la plateforme de l'établissement.<br>
-                    <strong><?= h($settings['school_name'] ?? 'NotesMaster') ?></strong> - 
+                    <?= __('official_receipt_doc') ?> <strong><?= h($settings['school_name'] ?? 'NotesMaster') ?></strong> - 
                     Tél : <?= h($settings['school_phone'] ?? 'N/A') ?>
                     <?php if (!empty($settings['school_email'])): ?> | Email : <?= h($settings['school_email']) ?><?php endif; ?>
                     <?php if (!empty($settings['school_website'])): ?> | Site : <?= h($settings['school_website']) ?><?php endif; ?>
@@ -742,15 +743,15 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
     <?php if (!$isPdf && !empty($printLogs)): ?>
     <div class="receipt-container no-print admin-logs-card">
         <h5 style="margin-top: 0; color: #1e293b; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px;">
-            <i class="bi bi-clock-history"></i> Historique d'Impression du Reçu (Audit de Sécurité)
+            <i class="bi bi-clock-history"></i> <?= __('print_history_title') ?>
         </h5>
         <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
             <thead>
                 <tr style="background-color: #f8fafc; border-bottom: 1px solid #cbd5e1; text-align: left;">
-                    <th style="padding: 6px;">Date & Heure</th>
-                    <th style="padding: 6px;">Opérateur</th>
-                    <th style="padding: 6px;">Action</th>
-                    <th style="padding: 6px;">Numéro d'Impression</th>
+                    <th style="padding: 6px;"><?= __('col_datetime') ?></th>
+                    <th style="padding: 6px;"><?= __('col_operator') ?></th>
+                    <th style="padding: 6px;"><?= __('col_action') ?></th>
+                    <th style="padding: 6px;"><?= __('col_print_number') ?></th>
                 </tr>
             </thead>
             <tbody>
@@ -758,13 +759,13 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                 <tr style="border-bottom: 1px solid #f1f5f9;">
                     <td style="padding: 6px; font-weight: bold;"><?= date('d/m/Y H:i:s', strtotime($log['event_date'])) ?></td>
                     <td style="padding: 6px;"><?= h($log['user_nom']) ?> <?= h($log['user_prenom']) ?></td>
-                    <td style="padding: 6px; text-transform: uppercase; color: #2563eb; font-weight: bold;">Affichage/Impression</td>
+                    <td style="padding: 6px; text-transform: uppercase; color: #2563eb; font-weight: bold;"><?= __('print_action_label') ?></td>
                     <td style="padding: 6px; font-weight: bold;">
                         #<?= (int)$log['new_value'] ?>
                         <?php if ((int)$log['new_value'] === 1): ?>
-                            <span style="color: #16a34a; font-size: 8px; margin-left: 4px;">[ ORIGINAL ]</span>
+                            <span style="color: #16a34a; font-size: 8px; margin-left: 4px;">[ <?= __('original') ?> ]</span>
                         <?php else: ?>
-                            <span style="color: #ef4444; font-size: 8px; margin-left: 4px;">[ DUPLICATA ]</span>
+                            <span style="color: #ef4444; font-size: 8px; margin-left: 4px;">[ <?= __('duplicata') ?> ]</span>
                         <?php endif; ?>
                     </td>
                 </tr>

@@ -1,5 +1,5 @@
 <?php
-$title = "Versements";
+$title = __('versements_title');
 ob_start();
 ?>
 
@@ -7,8 +7,8 @@ ob_start();
     <!-- Header -->
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div>
-            <h2 class="fw-black text-main-theme mb-0 fs-4">Versements des Frais de Scolarité</h2>
-            <p class="text-muted-theme small mb-0">Enregistrement et suivi des versements de scolarité des élèves</p>
+            <h2 class="fw-black text-main-theme mb-0 fs-4"><?= __('versements_header') ?></h2>
+            <p class="text-muted-theme small mb-0"><?= __('versements_subtitle') ?></p>
         </div>
     </div>
 
@@ -31,32 +31,32 @@ ob_start();
         <div class="col-lg-4">
             <div class="modern-card border-0 shadow-sm p-4">
                 <h5 class="fw-bold text-main-theme mb-3">
-                    <i class="bi bi-plus-circle-fill text-primary me-2"></i>Nouveau Versement
+                    <i class="bi bi-plus-circle-fill text-primary me-2"></i><?= __('new_versement') ?>
                 </h5>
                 <form action="/school_fees/versements/store" method="POST" id="versement-form">
                     <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
 
                     <!-- Search Input for Student -->
                     <div class="mb-2">
-                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Rechercher l'Élève</label>
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('search_student') ?></label>
                         <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-2 border-theme-light" style="border: 1px solid var(--border-color);">
                             <span class="input-group-text border-0 bg-transparent text-primary py-1">
                                 <i class="bi bi-search"></i>
                             </span>
-                            <input type="text" id="student-search-select" class="form-control border-0 bg-transparent shadow-none py-1 small text-main" placeholder="Taper le nom ou la classe..." style="font-size: 0.82rem;">
+                            <input type="text" id="student-search-select" class="form-control border-0 bg-transparent shadow-none py-1 small text-main" placeholder="<?= __('search_by_name_class') ?>" style="font-size: 0.82rem;">
                         </div>
                     </div>
 
                     <!-- Student Select Dropdown -->
                     <div class="mb-3">
-                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Sélectionner l'Élève *</label>
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('select_student_label') ?></label>
                         <select name="student_id" id="student_id" class="form-select premium-input" required>
-                            <option value="" disabled selected>Choisir un élève...</option>
+                            <option value="" disabled selected><?= __('choose_student_placeholder') ?></option>
                             <?php foreach ($groupedStudents as $cName => $studentsList): ?>
                                 <optgroup label="<?= h($cName) ?>">
                                     <?php foreach ($studentsList as $stud): ?>
                                         <option value="<?= $stud['id'] ?>" data-balance="<?= (float)$stud['reste_a_payer'] ?>">
-                                            <?= h($stud['nom'] . ' ' . $stud['prenom']) ?> (Solde: <?= number_format($stud['reste_a_payer'], 0, '.', ' ') ?> FCFA)
+                                            <?= h($stud['nom'] . ' ' . $stud['prenom']) ?> (<?= __('solde') ?> <?= number_format($stud['reste_a_payer'], 0, '.', ' ') ?> FCFA)
                                         </option>
                                     <?php endforeach; ?>
                                 </optgroup>
@@ -66,47 +66,47 @@ ob_start();
 
                     <!-- Montant -->
                     <div class="mb-3">
-                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Montant versé (FCFA) *</label>
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('amount_paid_fcfa') ?></label>
                         <input type="number" name="amount" id="amount" min="1" class="form-control premium-input fw-bold fs-5 text-primary text-end" required placeholder="0">
                         <div class="extra-small text-muted text-end mt-1 d-none" id="balance-warning-msg"></div>
                     </div>
 
                     <!-- Date -->
                     <div class="mb-3">
-                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Date du versement *</label>
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('payment_date_label') ?></label>
                         <input type="date" name="payment_date" class="form-control premium-input" required value="<?= date('Y-m-d') ?>">
                     </div>
 
                     <!-- Mode de paiement -->
                     <div class="mb-3">
-                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Mode de paiement *</label>
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('payment_method_label') ?></label>
                         <select name="payment_method" id="payment_method" class="form-select premium-input" required>
-                            <option value="ESPECES" selected>Espèces</option>
-                            <option value="ORANGE_MONEY">Orange Money</option>
-                            <option value="MTN_MOMO">MTN Mobile Money</option>
-                            <option value="CARTE_BANCAIRE">Carte bancaire</option>
-                            <option value="VIREMENT_BANCAIRE">Virement bancaire</option>
-                            <option value="CHEQUE">Chèque</option>
-                            <option value="AUTRE">Autre</option>
+                            <option value="ESPECES" selected><?= __('cash_payment') ?></option>
+                            <option value="ORANGE_MONEY"><?= __('orange_money') ?></option>
+                            <option value="MTN_MOMO"><?= __('mtn_momo') ?></option>
+                            <option value="CARTE_BANCAIRE"><?= __('card_banking') ?></option>
+                            <option value="VIREMENT_BANCAIRE"><?= __('transfer_banking') ?></option>
+                            <option value="CHEQUE"><?= __('check_payment') ?></option>
+                            <option value="AUTRE"><?= __('other_payment') ?></option>
                         </select>
                     </div>
 
                     <!-- Reference -->
                     <div class="mb-3">
-                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1" id="reference_label">Référence du paiement</label>
-                        <input type="text" name="reference" id="reference" class="form-control premium-input" placeholder="N° de reçu OM/Momo, n° chèque...">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1" id="reference_label"><?= __('payment_reference_label') ?></label>
+                        <input type="text" name="reference" id="reference" class="form-control premium-input" placeholder="<?= __('payment_reference_hint') ?>">
                     </div>
 
                     <!-- Observation -->
                     <div class="mb-3">
-                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Observation</label>
-                        <textarea name="observation" class="form-control premium-input" rows="2" placeholder="Commentaires additionnels..."></textarea>
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('observation') ?></label>
+                        <textarea name="observation" class="form-control premium-input" rows="2" placeholder="<?= __('observation_placeholder') ?>"></textarea>
                     </div>
 
                     <!-- Validation button -->
                     <div class="mt-4 pt-3 border-top text-end">
                         <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold shadow-sm">
-                            <i class="bi bi-check-circle-fill me-2"></i>Enregistrer
+                            <i class="bi bi-check-circle-fill me-2"></i><?= __('btn_save') ?>
                         </button>
                     </div>
                 </form>
@@ -118,27 +118,27 @@ ob_start();
             <div class="modern-card border-0 shadow-sm overflow-hidden h-100">
                 <div class="p-4 border-bottom d-flex align-items-center justify-content-between">
                     <h5 class="fw-bold text-main-theme mb-0">
-                        <i class="bi bi-journal-text text-primary me-2"></i>Versements Récents
+                        <i class="bi bi-journal-text text-primary me-2"></i><?= __('recent_versements') ?>
                     </h5>
                     <!-- Quick search for history -->
                     <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-2 border-theme-light" style="max-width: 200px; border: 1px solid var(--border-color);">
                         <span class="input-group-text border-0 bg-transparent text-primary py-1">
                             <i class="bi bi-search"></i>
                         </span>
-                        <input type="text" id="history-search-input" class="form-control border-0 bg-transparent shadow-none py-1 small text-main" placeholder="Recherche rapide..." style="font-size: 0.8rem;">
+                        <input type="text" id="history-search-input" class="form-control border-0 bg-transparent shadow-none py-1 small text-main" placeholder="<?= __('quick_search_placeholder') ?>" style="font-size: 0.8rem;">
                     </div>
                 </div>
                 <div class="table-responsive">
                     <table class="table-modern" id="history-table">
                         <thead>
                             <tr>
-                                <th class="ps-4">Élève</th>
-                                <th>Classe</th>
-                                <th>Date</th>
-                                <th class="text-end">Montant</th>
-                                <th>Méthode</th>
-                                <th>Référence</th>
-                                <th class="pe-4 text-center">Actions</th>
+                                <th class="ps-4"><?= __('grade_export_student') ?></th>
+                                <th><?= __('class') ?></th>
+                                <th><?= __('col_date') ?></th>
+                                <th class="text-end"><?= __('col_amount') ?></th>
+                                <th><?= __('col_method') ?></th>
+                                <th><?= __('col_reference') ?></th>
+                                <th class="pe-4 text-center"><?= __('actions') ?></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -146,7 +146,7 @@ ob_start();
                                 <tr>
                                     <td colspan="7" class="text-center py-5 text-muted">
                                         <i class="bi bi-info-circle fs-4 d-block mb-2 text-secondary"></i>
-                                        Aucun versement de scolarité enregistré pour le moment.
+                                        <?= __('no_versement_recorded') ?>
                                     </td>
                                 </tr>
                             <?php else: ?>
@@ -183,10 +183,10 @@ ob_start();
                                         <td><code class="small"><?= h($pay['reference'] ?: '-') ?></code></td>
                                         <td class="pe-4 text-center">
                                             <div class="d-flex gap-1 justify-content-center">
-                                                <a href="/school_fees/receipt?id=<?= $pay['id'] ?>" class="btn btn-sm btn-action-modern text-primary" title="Imprimer le reçu">
+                                                <a href="/school_fees/receipt?id=<?= $pay['id'] ?>" class="btn btn-sm btn-action-modern text-primary" title="<?= __('print_receipt') ?>">
                                                     <i class="bi bi-printer-fill fs-5"></i>
                                                 </a>
-                                                <a href="/school_fees/versements/delete?id=<?= $pay['id'] ?>" class="btn btn-sm btn-action-modern btn-confirm-delete text-danger" data-confirm="Voulez-vous vraiment annuler ce versement ? Le solde de l'élève sera recalculé." title="Annuler/Supprimer">
+                                                <a href="/school_fees/versements/delete?id=<?= $pay['id'] ?>" class="btn btn-sm btn-action-modern btn-confirm-delete text-danger" data-confirm="<?= __('confirm_delete_versement') ?>" title="<?= __('cancel_delete') ?>">
                                                     <i class="bi bi-trash-fill fs-5"></i>
                                                 </a>
                                             </div>
@@ -222,7 +222,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         searchSelect.addEventListener('input', function(e) {
             const query = e.target.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-            selectStudent.innerHTML = '<option value="" disabled selected>Choisir un élève...</option>';
+            selectStudent.innerHTML = '<option value="" disabled selected><?= __('choose_student_placeholder') ?></option>';
             
             originalOptions.forEach(group => {
                 const filteredOpts = group.options.filter(opt => {
@@ -252,7 +252,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const balance = parseFloat(selectedOpt.getAttribute('data-balance')) || 0;
         
         if (balance > 0) {
-            balanceWarning.textContent = `Reste à payer : ${balance.toLocaleString('fr-FR')} FCFA`;
+            balanceWarning.textContent = `<?= __('remaining_to_pay') ?> ${balance.toLocaleString('fr-FR')} FCFA`;
             balanceWarning.classList.remove('d-none');
             amountInput.max = balance;
             amountInput.value = balance;
@@ -294,22 +294,22 @@ document.addEventListener('DOMContentLoaded', function() {
         
         referenceInput.required = false;
         referenceInput.disabled = false;
-        referenceInput.placeholder = "Optionnel (Transaction, chèque, etc.)";
-        referenceLabel.innerHTML = 'Référence de paiement';
+        referenceInput.placeholder = "<?= __('optional_ref_placeholder') ?>";
+        referenceLabel.innerHTML = "<?= __('payment_reference_label') ?>";
 
         if (val.includes('espece') || val.includes('espèces') || val.includes('cash')) {
-            referenceLabel.innerHTML = 'Référence de paiement <span class="text-success">(Générée automatiquement)</span>';
-            referenceInput.placeholder = "Générée automatiquement par le système";
+            referenceLabel.innerHTML = '<?= __('payment_reference_label') ?> <span class="text-success">(<?= __('auto_generated') ?>)</span>';
+            referenceInput.placeholder = "<?= __('auto_generated_placeholder') ?>";
             referenceInput.value = "";
             referenceInput.disabled = true;
         } else if (val.includes('orange') || val.includes('mtn') || val.includes('mobile') || val.includes('momo') || val.includes('money')) {
-            referenceLabel.innerHTML = 'Numéro de transaction <span class="text-muted">(optionnel)</span>';
+            referenceLabel.innerHTML = '<?= __('transaction_number') ?> <span class="text-muted">(<?= __('optional_ref') ?>)</span>';
             referenceInput.placeholder = "Ex: TX-98471...";
         } else if (val.includes('chèque') || val.includes('cheque')) {
-            referenceLabel.innerHTML = 'Numéro de chèque <span class="text-muted">(optionnel)</span>';
+            referenceLabel.innerHTML = '<?= __('check_number') ?> <span class="text-muted">(<?= __('optional_ref') ?>)</span>';
             referenceInput.placeholder = "Ex: CHQ-001234";
         } else if (val.includes('virement') || val.includes('carte') || val.includes('bancaire') || val.includes('transfert')) {
-            referenceLabel.innerHTML = 'Référence bancaire <span class="text-muted">(optionnelle)</span>';
+            referenceLabel.innerHTML = '<?= __('bank_reference') ?> <span class="text-muted">(<?= __('optional_ref') ?>)</span>';
             referenceInput.placeholder = "Ex: VIR-847294...";
         }
     }

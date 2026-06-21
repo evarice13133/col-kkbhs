@@ -88,6 +88,43 @@ class StudentController
 
 
 
+        // Si requête AJAX, renvoyer la réponse en JSON pour fluidité UX
+        if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
+            header('Content-Type: application/json');
+
+            $academicYearId = $this->academicYearService->getActiveYearId();
+            if (Session::get('user_role') === 'enseignant') {
+                $stmt = $this->db->prepare("SELECT id, nom FROM classes WHERE id IN (SELECT DISTINCT class_id FROM teacher_assignments WHERE user_id = ? AND academic_year_id = ?) ORDER BY nom ASC");
+                $stmt->execute([Session::get('user_id'), $academicYearId]);
+                $classes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } else {
+                $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+            }
+            $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+            ob_start();
+            include __DIR__ . '/../Views/students/tbody.php';
+            $tbodyHtml = ob_get_clean();
+
+            ob_start();
+            include __DIR__ . '/../Views/students/badges.php';
+            $badgesHtml = ob_get_clean();
+
+            ob_start();
+            include __DIR__ . '/../Views/students/pagination.php';
+            $paginationHtml = ob_get_clean();
+
+            echo json_encode([
+                'success' => true,
+                'tbody' => $tbodyHtml,
+                'badges' => $badgesHtml,
+                'pagination' => $paginationHtml,
+                'count' => $totalCount,
+                'totalPages' => $totalPages
+            ]);
+            exit;
+        }
+
         // Progression Sécurité : Les enseignants ne voient que les classes où ils interviennent
         $academicYearId = $this->academicYearService->getActiveYearId();
 
@@ -440,7 +477,7 @@ class StudentController
 
     {
 
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+        if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
 
             header("Location: /students");
 
@@ -489,7 +526,7 @@ class StudentController
 
     public function import()
     {
-        if (!in_array(\App\Core\Session::get('user_role'), ['superadmin', 'admin'])) {
+        if (!in_array(\App\Core\Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
             header("Location: /students");
             exit;
         }
@@ -580,6 +617,11 @@ class StudentController
 
     public function upload()
     {
+        if (!in_array(\App\Core\Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
+            header("Location: /students");
+            exit;
+        }
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['import_file'])) {
             if (!\App\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
                 \App\Core\Security::log("Tentative de CSRF détectée sur l'action Student::upload");
@@ -637,7 +679,7 @@ class StudentController
 
     {
 
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+        if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
 
             header("Location: /students");
 
@@ -800,8 +842,8 @@ class StudentController
                 $this->db->beginTransaction();
 
                 // 1. Insérer l'étudiant
-                $stmt = $this->db->prepare("INSERT INTO students (nom, prenom, email, class_id, sexe, date_naissance, lieu_naissance, is_redoublant, academic_year_id, photo_eleve, parent_contact, guardian_contact, teaching_type_id, adresse) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$nom, $prenom, $email, $class_id, $sexe, $date_naissance, $lieu_naissance, $is_redoublant, $academicYearId, null, $parent_contact, $guardian_contact, $teaching_type_id, $adresse]);
+                $stmt = $this->db->prepare("INSERT INTO students (nom, prenom, email, class_id, sexe, date_naissance, lieu_naissance, is_redoublant, academic_year_id, photo_eleve, parent_contact, guardian_contact, teaching_type_id, adresse, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$nom, $prenom, $email, $class_id, $sexe, $date_naissance, $lieu_naissance, $is_redoublant, $academicYearId, null, $parent_contact, $guardian_contact, $teaching_type_id, $adresse, Session::get('user_id')]);
                 $studentId = (int) $this->db->lastInsertId();
 
                 // Gestion de la photo
@@ -906,7 +948,7 @@ class StudentController
 
     {
 
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+        if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
 
             header("Location: /students");
 
@@ -948,6 +990,11 @@ class StudentController
     public function update($id)
 
     {
+
+        if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
+            header("Location: /students");
+            exit;
+        }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
@@ -1011,7 +1058,7 @@ class StudentController
 
             $newEmail = trim($_POST['email'] ?? '');
 
-            $allowEmailChange = in_array(Session::get('user_role'), ['superadmin', 'admin']);
+            $allowEmailChange = in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable']);
 
 
 
@@ -1196,7 +1243,7 @@ class StudentController
 
     {
 
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+        if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
 
             header("Location: /students");
 
@@ -1232,7 +1279,7 @@ class StudentController
 
     {
 
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+        if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
 
             header("Location: /students");
 
@@ -1268,7 +1315,7 @@ class StudentController
 
     {
 
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+        if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
 
             header("Location: /students");
 
@@ -1288,7 +1335,7 @@ class StudentController
 
         }
 
-        $stmt = $this->db->prepare("DELETE FROM students WHERE id = ?");
+        $stmt = $this->db->prepare("UPDATE students SET actif = 0 WHERE id = ?");
 
         $stmt->execute([$id]);
 
@@ -1316,15 +1363,22 @@ class StudentController
 
         $showWithdrawn = (int) ($_GET['withdrawn'] ?? 0);
 
+        $onlyMine = (int) ($_GET['only_mine'] ?? 0);
+
         $academicYearId = $this->academicYearService->getActiveYearId();
 
 
 
         // --- 1. Construction des conditions ---
 
-        $where = " WHERE s.is_withdrawn = ?";
+        $where = " WHERE s.is_withdrawn = ? AND s.actif = 1";
 
         $params = [$showWithdrawn];
+
+        if ($onlyMine > 0) {
+            $where .= " AND s.created_by = ?";
+            $params[] = Session::get('user_id');
+        }
 
 
 
@@ -1451,7 +1505,7 @@ class StudentController
 
             $stmt->fetchAll(PDO::FETCH_ASSOC), 
 
-            ['q' => $search, 'class_id' => $classId, 'section_id' => $sectionId, 'teaching_type_id' => $teachingTypeId, 'withdrawn' => $showWithdrawn],
+            ['q' => $search, 'class_id' => $classId, 'section_id' => $sectionId, 'teaching_type_id' => $teachingTypeId, 'withdrawn' => $showWithdrawn, 'only_mine' => $onlyMine],
 
             $totalCount
 
@@ -1526,6 +1580,14 @@ class StudentController
             if (!$this->studentColumnExists('is_withdrawn')) {
 
                 $this->db->exec("ALTER TABLE students ADD COLUMN is_withdrawn TINYINT(1) NOT NULL DEFAULT 0 AFTER is_redoublant");
+
+            }
+
+
+
+            if (!$this->studentColumnExists('actif')) {
+
+                $this->db->exec("ALTER TABLE students ADD COLUMN actif TINYINT(1) NOT NULL DEFAULT 1 AFTER is_withdrawn");
 
             }
 

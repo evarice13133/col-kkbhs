@@ -141,6 +141,10 @@ elseif (strpos($path, '/users') === 0) {
         $c->create();
     elseif ($path === '/users/store' && $method === 'POST')
         $c->store();
+    elseif ($path === '/users/create-caissier')
+        $c->createCaissier();
+    elseif ($path === '/users/store-caissier' && $method === 'POST')
+        $c->storeCaissier();
     elseif ($path === '/users/edit')
         $c->edit($_GET['id'] ?? 0);
     elseif ($path === '/users/update' && $method === 'POST')
@@ -161,29 +165,29 @@ elseif (strpos($path, '/students') === 0) {
 
     if ($path === '/students') {
         $c->index();
-    } elseif ($path === '/students/create' && in_array($role, ['superadmin', 'admin'])) {
+    } elseif ($path === '/students/create' && in_array($role, ['superadmin', 'admin', 'caissier', 'comptable'])) {
         $c->create();
-    } elseif ($path === '/students/store' && $method === 'POST' && in_array($role, ['superadmin', 'admin'])) {
+    } elseif ($path === '/students/store' && $method === 'POST' && in_array($role, ['superadmin', 'admin', 'caissier', 'comptable'])) {
         $c->store();
-    } elseif ($path === '/students/import' && in_array($role, ['superadmin', 'admin'])) {
+    } elseif ($path === '/students/import' && in_array($role, ['superadmin', 'admin', 'caissier', 'comptable'])) {
         $c->import();
     } elseif ($path === '/students/download_template') {
         $c->downloadTemplate();
-    } elseif ($path === '/students/upload' && $method === 'POST' && in_array($role, ['superadmin', 'admin'])) {
+    } elseif ($path === '/students/upload' && $method === 'POST' && in_array($role, ['superadmin', 'admin', 'caissier', 'comptable'])) {
         $c->upload();
-    } elseif ($path === '/students/edit' && in_array($role, ['superadmin', 'admin'])) {
+    } elseif ($path === '/students/edit' && in_array($role, ['superadmin', 'admin', 'caissier', 'comptable'])) {
         $c->edit($_GET['id'] ?? 0);
-    } elseif ($path === '/students/update' && $method === 'POST' && in_array($role, ['superadmin', 'admin'])) {
+    } elseif ($path === '/students/update' && $method === 'POST' && in_array($role, ['superadmin', 'admin', 'caissier', 'comptable'])) {
         $c->update($_GET['id'] ?? 0);
     } elseif ($path === '/students/export') {
         $c->export();
     } elseif ($path === '/students/exportExcel') {
         $c->exportExcel();
-    } elseif ($path === '/students/delete' && in_array($role, ['superadmin', 'admin'])) {
+    } elseif ($path === '/students/delete' && in_array($role, ['superadmin', 'admin', 'caissier', 'comptable'])) {
         $c->delete($_GET['id'] ?? 0);
-    } elseif ($path === '/students/withdraw' && in_array($role, ['superadmin', 'admin'])) {
+    } elseif ($path === '/students/withdraw' && in_array($role, ['superadmin', 'admin', 'caissier', 'comptable'])) {
         $c->withdraw($_GET['id'] ?? 0);
-    } elseif ($path === '/students/restore' && in_array($role, ['superadmin', 'admin'])) {
+    } elseif ($path === '/students/restore' && in_array($role, ['superadmin', 'admin', 'caissier', 'comptable'])) {
         $c->restore($_GET['id'] ?? 0);
     } else {
         header('Location: /students');
@@ -509,7 +513,7 @@ elseif ($path === '/payments/verify') {
     $c->verify();
 }
 elseif (strpos($path, '/payments') === 0) {
-    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
         header('Location: /');
         exit;
     }
@@ -527,7 +531,7 @@ elseif (strpos($path, '/payments') === 0) {
 }
 
 elseif (strpos($path, '/discounts') === 0) {
-    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
         header('Location: /');
         exit;
     }
@@ -543,7 +547,7 @@ elseif (strpos($path, '/discounts') === 0) {
 }
 
 elseif (strpos($path, '/discount_types') === 0) {
-    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
         header('Location: /');
         exit;
     }
@@ -559,7 +563,7 @@ elseif (strpos($path, '/discount_types') === 0) {
 }
 
 elseif (strpos($path, '/school_fees') === 0) {
-    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
         header('Location: /');
         exit;
     }
@@ -589,7 +593,7 @@ elseif (strpos($path, '/school_fees') === 0) {
 }
 
 elseif (strpos($path, '/scholarships') === 0) {
-    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
         header('Location: /');
         exit;
     }
@@ -605,13 +609,15 @@ elseif (strpos($path, '/scholarships') === 0) {
 }
 
 elseif (strpos($path, '/financial-history') === 0) {
-    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
         header('Location: /');
         exit;
     }
     $c = new FinancialHistoryController();
     if ($path === '/financial-history')
         $c->index();
+    elseif ($path === '/financial-history/print')
+        $c->print();
 }
 
 // ====== ROUTES: CONFIGURATIONS GLOBALES ======
