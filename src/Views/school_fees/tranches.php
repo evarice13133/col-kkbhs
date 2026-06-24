@@ -531,7 +531,12 @@ document.addEventListener('DOMContentLoaded', function() {
         btnAdd.style.display = 'none';
         quickToolbar.setAttribute('style', 'display: none !important;');
 
-        fetch(`/school_fees/tranches?ajax=1&target_type=${targetType}&target_id=${targetId}`)
+        const fetchUrl = new URL(window.location.href);
+        fetchUrl.searchParams.set('ajax', '1');
+        fetchUrl.searchParams.set('target_type', targetType);
+        fetchUrl.searchParams.set('target_id', targetId);
+
+        fetch(fetchUrl.toString())
             .then(res => res.json())
             .then(data => {
                 tranchesRowsContainer.innerHTML = '';
@@ -771,27 +776,47 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('click', function(e) {
         const loadBtn = e.target.closest('.btn-load-target');
         if (loadBtn) {
+            e.preventDefault();
             const targetType = loadBtn.dataset.type;
             const targetId = loadBtn.dataset.id;
             
-            // Set values and trigger events
+            // Set values and update UI directly
             targetTypeSelect.value = targetType;
-            targetTypeSelect.dispatchEvent(new Event('change'));
             
-            setTimeout(() => {
-                let activeSelect = null;
-                if (targetType === 'class') activeSelect = selectClass;
-                else if (targetType === 'cycle') activeSelect = selectCycle;
-                else if (targetType === 'teaching_type') activeSelect = selectTeachingType;
-                
-                if (activeSelect) {
-                    activeSelect.value = targetId;
-                    activeSelect.dispatchEvent(new Event('change'));
-                }
-            }, 100);
+            divClass.classList.add('d-none');
+            divCycle.classList.add('d-none');
+            divTeachingType.classList.add('d-none');
+            selectClass.required = false;
+            selectCycle.required = false;
+            selectTeachingType.required = false;
+            selectClass.value = '';
+            selectCycle.value = '';
+            selectTeachingType.value = '';
+            
+            if (targetType === 'class') {
+                divClass.classList.remove('d-none');
+                selectClass.required = true;
+                selectClass.name = 'target_id';
+                selectClass.value = targetId;
+            } else if (targetType === 'cycle') {
+                divCycle.classList.remove('d-none');
+                selectCycle.required = true;
+                selectCycle.name = 'target_id';
+                selectCycle.value = targetId;
+            } else if (targetType === 'teaching_type') {
+                divTeachingType.classList.remove('d-none');
+                selectTeachingType.required = true;
+                selectTeachingType.name = 'target_id';
+                selectTeachingType.value = targetId;
+            }
+            
+            // Call the function directly
+            loadTargetConfig(targetType, targetId);
             
             // Smooth scroll to form editor
-            form.scrollIntoView({ behavior: 'smooth' });
+            setTimeout(() => {
+                form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 50);
         }
     });
 

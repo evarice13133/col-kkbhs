@@ -5,19 +5,19 @@ ob_start();
 
 <div class="animate-fade-in container-fluid py-3 px-md-4">
     <!-- Header -->
-    <div class="d-flex align-items-center justify-content-between mb-4">
+    <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between mb-4 gap-3">
         <div>
             <h2 class="fw-black text-main-theme mb-0 fs-4"><?= __('grille_header') ?></h2>
             <p class="text-muted-theme small mb-0"><?= __('grille_subtitle') ?></p>
         </div>
-        <div class="d-flex gap-2">
-            <button type="button" class="btn btn-outline-primary rounded-pill px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#importGrilleModal">
+        <div class="d-flex flex-column flex-md-row gap-2 ms-md-auto mt-3 mt-md-0 align-items-stretch align-items-md-center justify-content-md-end w-100 w-md-auto">
+            <button type="button" class="btn btn-outline-primary rounded-pill px-3 fw-bold text-center text-nowrap" data-bs-toggle="modal" data-bs-target="#importGrilleModal">
                 <i class="bi bi-file-earmark-arrow-up me-1"></i> <?= __('btn_import') ?>
             </button>
-            <a href="/school_fees/grille/print<?= !empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : '' ?>" target="_blank" class="btn btn-theme-soft rounded-pill px-3 fw-bold">
+            <a href="/school_fees/grille/print<?= !empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : '' ?>" target="_blank" class="btn btn-theme-soft rounded-pill px-3 fw-bold text-center text-nowrap">
                 <i class="bi bi-printer me-1"></i> <?= __('print_pdf') ?>
             </a>
-            <button id="btn-export-excel" class="btn btn-outline-success rounded-pill px-3 fw-bold">
+            <button id="btn-export-excel" class="btn btn-outline-success rounded-pill px-3 fw-bold text-center text-nowrap">
                 <i class="bi bi-file-earmark-spreadsheet me-1"></i> <?= __('btn_excel') ?>
             </button>
         </div>

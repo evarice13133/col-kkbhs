@@ -21,7 +21,7 @@ ob_start();
 <div class="animate-fade-in container-fluid py-4">
 
     <!-- Page Header -->
-    <div class="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">
+    <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between mb-4 gap-3">
         <div>
             <h1 class="fw-black text-main-theme mb-1 fs-4 d-flex align-items-center gap-2">
                 <span class="d-inline-flex align-items-center justify-content-center rounded-3 bg-success bg-opacity-10 text-success p-2" style="width:40px;height:40px;">
@@ -31,16 +31,35 @@ ob_start();
             </h1>
             <p class="text-muted-theme mb-0"><?= __('financial_dashboard_subtitle') ?></p>
         </div>
-        <div class="d-flex gap-2">
-            <a href="/payments" class="btn btn-success rounded-pill px-4 fw-semibold shadow-sm">
+        <div class="d-flex flex-column flex-md-row gap-2 ms-md-auto mt-3 mt-md-0 align-items-stretch align-items-md-center justify-content-md-end w-100 w-md-auto">
+            <!-- <a href="/school_fees/versements" class="btn btn-primary rounded-pill px-3 px-md-4 fw-semibold shadow-sm text-center text-nowrap">
+                <i class="bi bi-cash-coin me-2"></i><?= __('versements_menu') ?>
+            </a> -->
+            <a href="/payments" class="btn btn-success rounded-pill px-3 px-md-4 fw-semibold shadow-sm text-center text-nowrap">
                 <i class="bi bi-plus-circle me-2"></i><?= __('payments_menu') ?>
             </a>
-            <a href="/financial-history" class="btn btn-outline-secondary rounded-pill px-4 fw-semibold">
+            <!-- Nouveau raccourci -->
+            <button type="button" class="btn btn-info text-white rounded-pill px-3 px-md-4 fw-semibold shadow-sm text-center text-nowrap" data-bs-toggle="modal" data-bs-target="#newVersementModal">
+                <i class="bi bi-wallet-fill me-2"></i><?= __('new_versement') ?>
+            </button>
+            <a href="/financial-history" class="btn btn-outline-secondary rounded-pill px-3 px-md-4 fw-semibold text-center text-nowrap">
                 <i class="bi bi-journal-text me-2"></i><?= __('financial_history') ?>
             </a>
         </div>
     </div>
-
+    
+    <!-- Modal Nouveau Versement Raccourci (Redirect to page with hash or implement directly, but since we are in dashboard, let's just make it a link to the page that opens the modal) -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const newVersementBtn = document.querySelector('[data-bs-target="#newVersementModal"]');
+        if (newVersementBtn) {
+            newVersementBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = '/school_fees/versements#new';
+            });
+        }
+    });
+    </script>
     <!-- Section: Situation de la Caisse (Recettes) -->
     <div class="mb-4">
         <div class="kpi-section-title text-primary mb-3 d-flex align-items-center gap-2">

@@ -169,8 +169,8 @@ class FinancialService
                 $studentPlannedInstallments[1] = $netTuition;
             }
 
-            // 5. Récupérer les paiements de scolarité de l'élève
-            $stmt = $this->db->prepare("SELECT SUM(amount) FROM payments WHERE student_id = ? AND academic_year_id = ? AND type = 'scolarite'");
+            // 5. Récupérer les paiements de scolarité de l'élève (hors annulés)
+            $stmt = $this->db->prepare("SELECT SUM(amount) FROM payments WHERE student_id = ? AND academic_year_id = ? AND type = 'scolarite' AND status = 'valide'");
             $stmt->execute([$studentId, $academicYearId]);
             $totalPaid = (float)$stmt->fetchColumn();
 
@@ -242,6 +242,55 @@ class FinancialService
 
         foreach ($studentIds as $studentId) {
             $this->syncStudentFinancials((int)$studentId, $academicYearId);
+        }
+    }
+
+    /**
+     * Annule un paiement de manière sécurisée (soft delete) et ses paiements enfants.
+     */
+    public function cancelPayment(int $paymentId, int $userId, string $motive): array
+    {
+        try {
+            $this->db->beginTransaction();
+
+            $stmt = $this->db->prepare("SELECT * FROM payments WHERE id = ?");
+            $stmt->execute([$paymentId]);
+            $payment = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$payment) {
+                throw new \Exception("Paiement introuvable.");
+            }
+            if ($payment['status'] === 'annule') {
+                throw new \Exception("Ce paiement est déjà annulé.");
+            }
+
+            // Annuler le paiement principal
+            $upd = $this->db->prepare("UPDATE payments SET status = 'annule', cancelled_by = ?, cancelled_at = NOW(), cancellation_motive = ? WHERE id = ?");
+            $upd->execute([$userId, $motive, $paymentId]);
+
+            // Audit
+            $this->logHistory($userId, 'payment', $paymentId, 'cancel', $payment, ['motive' => $motive]);
+
+            // Annuler les paiements enfants (ex: surplus d'inscription transformé en scolarité)
+            $childStmt = $this->db->prepare("SELECT id FROM payments WHERE parent_payment_id = ? AND status = 'valide'");
+            $childStmt->execute([$paymentId]);
+            $children = $childStmt->fetchAll(PDO::FETCH_COLUMN);
+
+            foreach ($children as $childId) {
+                $upd->execute([$userId, "Annulation automatique suite à l'annulation du paiement parent #$paymentId", $childId]);
+                $this->logHistory($userId, 'payment', $childId, 'cancel', ['parent_id' => $paymentId], ['motive' => 'Annulation parente']);
+            }
+
+            // Resynchroniser l'élève
+            $this->syncStudentFinancials((int)$payment['student_id'], (int)$payment['academic_year_id']);
+
+            $this->db->commit();
+            return ['success' => true, 'message' => 'Le paiement a été annulé avec succès.', 'student_id' => $payment['student_id']];
+        } catch (\Exception $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            return ['success' => false, 'message' => $e->getMessage()];
         }
     }
 

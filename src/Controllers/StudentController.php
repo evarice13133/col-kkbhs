@@ -877,20 +877,59 @@ class StudentController
                             $ref = 'Frais d\'inscription payés à l\'inscription';
                         }
                     }
-                    $payStmt = $this->db->prepare("INSERT INTO payments (student_id, academic_year_id, amount, type, payment_date, payment_method, reference, created_by) VALUES (?, ?, ?, 'inscription', CURDATE(), ?, ?, ?)");
-                    $payStmt->execute([$studentId, $academicYearId, $frais_inscription_paid, $payment_method, $ref, Session::get('user_id')]);
-                    $paymentId = (int) $this->db->lastInsertId();
 
-                    // Historisation financière
-                    $fs = new \App\Services\FinancialService($this->db);
-                    $fs->logHistory(Session::get('user_id'), 'payment', $paymentId, 'create', null, [
-                        'student_id' => $studentId,
-                        'amount' => $frais_inscription_paid,
-                        'type' => 'inscription',
-                        'payment_method' => $payment_method,
-                        'reference' => $ref,
-                        'commentaire' => 'Frais d\'inscription réglés lors de la création de l\'élève'
-                    ]);
+                    // Calcul du frais attendu
+                    $classStmt = $this->db->prepare("SELECT frais_inscription, frais_inscription_reinscription FROM classes WHERE id = ?");
+                    $classStmt->execute([$class_id]);
+                    $classData = $classStmt->fetch(PDO::FETCH_ASSOC);
+                    
+                    $expectedFee = ($student_status === 'nouveau') ? (float)$classData['frais_inscription'] : (float)$classData['frais_inscription_reinscription'];
+                    $amountInscription = min($frais_inscription_paid, $expectedFee);
+                    $surplus = max(0.0, $frais_inscription_paid - $expectedFee);
+                    
+                    // Si le frais attendu est 0 (gratuit) ou si la saisie est inférieure au tarif
+                    if ($expectedFee <= 0) {
+                        $amountInscription = 0;
+                        $surplus = $frais_inscription_paid;
+                    }
+
+                    // On n'enregistre le paiement d'inscription que s'il y a un montant affecté à l'inscription ou si tout est 0
+                    if ($amountInscription > 0 || $frais_inscription_paid == 0) {
+                        $payStmt = $this->db->prepare("INSERT INTO payments (student_id, academic_year_id, amount, type, payment_date, payment_method, reference, created_by) VALUES (?, ?, ?, 'inscription', CURDATE(), ?, ?, ?)");
+                        $payStmt->execute([$studentId, $academicYearId, $amountInscription, $payment_method, $ref, Session::get('user_id')]);
+                        $paymentId = (int) $this->db->lastInsertId();
+
+                        // Historisation financière
+                        $fs = new \App\Services\FinancialService($this->db);
+                        $fs->logHistory(Session::get('user_id'), 'payment', $paymentId, 'create', null, [
+                            'student_id' => $studentId,
+                            'amount' => $amountInscription,
+                            'type' => 'inscription',
+                            'payment_method' => $payment_method,
+                            'reference' => $ref,
+                            'commentaire' => 'Frais d\'inscription réglés lors de la création de l\'élève'
+                        ]);
+                    }
+
+                    // Traitement du surplus (affectation à la scolarité)
+                    if ($surplus > 0) {
+                        $surplusRef = $ref . ' (Surplus Inscription)';
+                        $surplusStmt = $this->db->prepare("INSERT INTO payments (student_id, academic_year_id, amount, type, payment_date, payment_method, reference, created_by, parent_payment_id, commentaire) VALUES (?, ?, ?, 'scolarite', CURDATE(), ?, ?, ?, ?, ?)");
+                        $surplusStmt->execute([$studentId, $academicYearId, $surplus, $payment_method, $surplusRef, Session::get('user_id'), $paymentId, 'Versement automatique sur la scolarité (Trop-perçu inscription)']);
+                        $surplusId = (int) $this->db->lastInsertId();
+
+                        // Historisation
+                        $fs = new \App\Services\FinancialService($this->db);
+                        $fs->logHistory(Session::get('user_id'), 'payment', $surplusId, 'create', null, [
+                            'student_id' => $studentId,
+                            'amount' => $surplus,
+                            'type' => 'scolarite',
+                            'payment_method' => $payment_method,
+                            'reference' => $surplusRef,
+                            'parent_payment_id' => $paymentId,
+                            'commentaire' => 'Transfert automatique du surplus d\'inscription'
+                        ]);
+                    }
                 }
 
                 // 4. Réduction éventuelle
@@ -956,9 +995,11 @@ class StudentController
 
         }
 
-        $stmt = $this->db->prepare("SELECT s.*, c.cycle_id, c.section_id, c.department_id FROM students s LEFT JOIN classes c ON s.class_id = c.id WHERE s.id = ?");
+        $academicYearId = $this->academicYearService->getActiveYearId();
 
-        $stmt->execute([$id]);
+        $stmt = $this->db->prepare("SELECT s.*, c.cycle_id, c.section_id, c.department_id, e.student_status FROM students s LEFT JOIN classes c ON s.class_id = c.id LEFT JOIN enrollments e ON e.student_id = s.id AND e.academic_year_id = ? WHERE s.id = ?");
+
+        $stmt->execute([$academicYearId, $id]);
 
         $student = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -980,6 +1021,14 @@ class StudentController
         $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         $departments = $this->db->query("SELECT id, nom FROM departments WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+        $discountStmt = $this->db->prepare("SELECT amount, amount_type, motive FROM student_discounts WHERE student_id = ? AND status = 'active' ORDER BY id DESC LIMIT 1");
+        $discountStmt->execute([$id]);
+        $discount = $discountStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        $scholarshipStmt = $this->db->prepare("SELECT amount, amount_type, motive FROM student_scholarships WHERE student_id = ? AND status = 'active' ORDER BY id DESC LIMIT 1");
+        $scholarshipStmt->execute([$id]);
+        $scholarship = $scholarshipStmt->fetch(PDO::FETCH_ASSOC) ?: [];
 
         include __DIR__ . '/../Views/students/edit.php';
 
@@ -1210,17 +1259,49 @@ class StudentController
 
             $stmt->execute($params);
 
+            $student_status = $_POST['student_status'] ?? 'nouveau';
+
             // S'assurer de l'existence de l'inscription pour l'année active
             $academicYearId = $this->academicYearService->getActiveYearId();
             $enrollCheck = $this->db->prepare("SELECT COUNT(*) FROM enrollments WHERE student_id = ? AND academic_year_id = ?");
             $enrollCheck->execute([$id, $academicYearId]);
             if ((int)$enrollCheck->fetchColumn() === 0) {
-                $enrollIns = $this->db->prepare("INSERT INTO enrollments (student_id, class_id, academic_year_id, frais_scolarite_brut, total_reductions, total_bourses, total_paye, reste_a_payer) VALUES (?, ?, ?, 0.00, 0.00, 0.00, 0.00, 0.00)");
-                $enrollIns->execute([$id, $class_id, $academicYearId]);
+                $enrollIns = $this->db->prepare("INSERT INTO enrollments (student_id, class_id, academic_year_id, student_status, frais_scolarite_brut, total_reductions, total_bourses, total_paye, reste_a_payer) VALUES (?, ?, ?, ?, 0.00, 0.00, 0.00, 0.00, 0.00)");
+                $enrollIns->execute([$id, $class_id, $academicYearId, $student_status]);
             } else {
-                // Mettre à jour la classe dans enrollments
-                $enrollUpd = $this->db->prepare("UPDATE enrollments SET class_id = ? WHERE student_id = ? AND academic_year_id = ?");
-                $enrollUpd->execute([$class_id, $id, $academicYearId]);
+                // Mettre à jour la classe et le statut dans enrollments
+                $enrollUpd = $this->db->prepare("UPDATE enrollments SET class_id = ?, student_status = ? WHERE student_id = ? AND academic_year_id = ?");
+                $enrollUpd->execute([$class_id, $student_status, $id, $academicYearId]);
+            }
+
+            // Mise à jour de la réduction
+            if (isset($_POST['reduction_amount'])) {
+                $reduction_amount = (float)$_POST['reduction_amount'];
+                $reduction_amount_type = $_POST['reduction_amount_type'] ?? 'fixed';
+                $reduction_motive = trim($_POST['reduction_motive'] ?? '');
+                
+                // Désactiver l'ancienne
+                $this->db->prepare("UPDATE student_discounts SET status = 'inactive' WHERE student_id = ?")->execute([$id]);
+                
+                if ($reduction_amount > 0) {
+                    $discStmt = $this->db->prepare("INSERT INTO student_discounts (student_id, amount, amount_type, motive, date_effet, status, commentaire) VALUES (?, ?, ?, ?, CURDATE(), 'active', 'Réduction mise à jour depuis l\'édition')");
+                    $discStmt->execute([$id, $reduction_amount, $reduction_amount_type, $reduction_motive]);
+                }
+            }
+
+            // Mise à jour de la bourse
+            if (isset($_POST['scholarship_amount'])) {
+                $scholarship_amount = (float)$_POST['scholarship_amount'];
+                $scholarship_amount_type = $_POST['scholarship_amount_type'] ?? 'fixed';
+                $scholarship_motive = trim($_POST['scholarship_motive'] ?? '');
+                
+                // Désactiver l'ancienne
+                $this->db->prepare("UPDATE student_scholarships SET status = 'inactive' WHERE student_id = ?")->execute([$id]);
+                
+                if ($scholarship_amount > 0) {
+                    $scholStmt = $this->db->prepare("INSERT INTO student_scholarships (student_id, amount, amount_type, motive, date_effet, status, commentaire) VALUES (?, ?, ?, ?, CURDATE(), 'active', 'Bourse mise à jour depuis l\'édition')");
+                    $scholStmt->execute([$id, $scholarship_amount, $scholarship_amount_type, $scholarship_motive]);
+                }
             }
 
             // Lancer la synchronisation financière de l'élève

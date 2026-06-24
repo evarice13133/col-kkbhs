@@ -547,8 +547,10 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
                 </div>
             <?php endif; ?>
 
-            <!-- Filigrane Texte diagonal si duplicata -->
-            <?php if ($isDuplicate): ?>
+            <!-- Filigranes statutaires -->
+            <?php if (($payment['status'] ?? 'valide') === 'annule'): ?>
+                <div class="watermark-text-diagonal" style="color: #ef4444; opacity: 0.15;">ANNULÉ</div>
+            <?php elseif ($isDuplicate): ?>
                 <div class="watermark-text-diagonal"><?= __('duplicata') ?></div>
             <?php endif; ?>
 

@@ -110,10 +110,10 @@ $nav_items = [
     // SECTION: PÉDAGOGIE
     [
         'section' => __('pedagogie'),
-        'roles' => ['superadmin', 'admin', 'enseignant'],
+        'roles' => ['superadmin', 'admin', 'enseignant', 'caissier'],
         'icon' => 'bi-mortarboard',
         'items' => [
-            ['icon' => 'bi-door-open', 'label' => __('classes'), 'url' => '/classes', 'roles' => ['superadmin', 'admin']],
+            ['icon' => 'bi-door-open', 'label' => __('classes'), 'url' => '/classes', 'roles' => ['superadmin', 'admin', 'caissier']],
             ['icon' => 'bi-book', 'label' => __('subjects'), 'url' => '/subjects', 'roles' => ['superadmin', 'admin']],
             ['icon' => 'bi-pencil-square', 'label' => __('enter_marks'), 'url' => '/notes', 'roles' => ['superadmin', 'admin', 'enseignant']],
             ['icon' => 'bi-shield-check', 'label' => __('discipline_management'), 'url' => '/bulletins/discipline', 'roles' => ['superadmin', 'admin']],

@@ -250,9 +250,9 @@ class StudentPayment extends BaseModel
     }
 
     /**
-     * Supprimer un versement.
+     * Supprimer un versement (Soft delete).
      */
-    public function delete(int $id): bool
+    public function delete(int $id, int $userId, string $motive): bool
     {
         $useTransaction = !$this->db->inTransaction();
         try {
@@ -262,6 +262,11 @@ class StudentPayment extends BaseModel
 
             $payment = $this->find($id);
             if (!$payment) {
+                if ($useTransaction) $this->db->rollBack();
+                return false;
+            }
+
+            if (($payment['status'] ?? 'valide') === 'annule') {
                 if ($useTransaction) $this->db->rollBack();
                 return false;
             }
@@ -277,13 +282,13 @@ class StudentPayment extends BaseModel
                 $stmtUpdateInst->execute([(float)$alloc['amount_allocated'], (int)$alloc['student_installment_id']]);
             }
 
-            // Supprimer le versement de la table student_payments (ceci cascade la table allocations et receipts)
-            $stmt = $this->db->prepare("DELETE FROM student_payments WHERE id = ?");
-            $stmt->execute([$id]);
+            // Marquer le versement comme annulé (Soft delete)
+            $stmt = $this->db->prepare("UPDATE student_payments SET status = 'annule', cancelled_by = ?, cancelled_at = NOW(), cancellation_motive = ? WHERE id = ?");
+            $stmt->execute([$userId, $motive, $id]);
 
-            // Supprimer de la table legacy `payments`
-            $stmtLegacy = $this->db->prepare("DELETE FROM payments WHERE id = ?");
-            $stmtLegacy->execute([$id]);
+            // Aussi annuler dans la table legacy `payments` via FinancialService pour garder la consistance
+            $fs = new \App\Services\FinancialService($this->db);
+            $fs->cancelPayment($id, $userId, $motive);
 
             if ($useTransaction) {
                 $this->db->commit();

@@ -130,13 +130,14 @@ ob_start(); ?>
                                         </div>
                                     </div>
                                     <div class="d-flex gap-1 align-items-center">
-                                        <?php if (in_array(App\Core\Session::get('user_role'), ['superadmin', 'admin'])): ?>
+                                        <?php if (in_array(App\Core\Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])): ?>
                                             <a href="/classes/manage-team?id=<?= $c['id'] ?>"
                                                 class="btn-icon-action text-primary position-relative"
                                                 style="z-index: 10; width: 28px; height: 28px; font-size: 0.8rem;"
                                                 title="<?= __('manage_teaching_team') ?>">
                                                 <i class="bi bi-people-fill"></i>
                                             </a>
+                                            <?php if (in_array(App\Core\Session::get('user_role'), ['superadmin', 'admin'])): ?>
                                             <a href="/classes/delete?id=<?= $c['id'] ?>&csrf_token=<?= \App\Core\Session::generateCsrfToken() ?>"
                                                 class="btn-icon-action text-danger position-relative btn-confirm-delete"
                                                 data-student-count="<?= $c['student_count'] ?? 0 ?>"
@@ -144,12 +145,13 @@ ob_start(); ?>
                                                 title="<?= __('delete') ?>">
                                                 <i class="bi bi-trash-fill"></i>
                                             </a>
+                                            <?php endif; ?>
                                         <?php endif; ?>
                                     </div>
                                 </div>
 
                                 <!-- Stretched Link for Edit -->
-                                <?php if (in_array(App\Core\Session::get('user_role'), ['superadmin', 'admin'])): ?>
+                                <?php if (in_array(App\Core\Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])): ?>
                                     <a href="/classes/edit?id=<?= $c['id'] ?>" class="stretched-link"></a>
                                 <?php endif; ?>
 

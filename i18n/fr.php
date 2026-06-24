@@ -1639,7 +1639,7 @@ return [
     'versements_title' => 'Versements',
     'versements_header' => 'Versements des Frais de Scolarité',
     'versements_subtitle' => 'Enregistrement et suivi des versements de scolarité des élèves',
-    'new_versement' => 'Nouveau Versement',
+    'new_versement' => 'Nouveau Versement',  
     'search_student' => "Rechercher l'Élève",
     'search_by_name_class' => 'Taper le nom ou la classe...',
     'select_student_label' => "Sélectionner l'Élève *",
@@ -1875,14 +1875,14 @@ return [
     'security_warning_badge' => 'Alerte Sécurité',
 
     // Layout translation keys
-    'financial_management' => 'Gestion Financière',
+    'financial_management' => 'Gestion de la Scolarité',
     'scolarite_menu' => 'Scolarité',
-    'payments_menu' => 'Paiements',
+    'payments_menu' => 'Liste des Paiements',
     'tranches_menu' => 'Tranches',
     'versements_menu' => 'Versements',
     'discounts_granted' => 'Réductions Accordées',
     'access_space_instruction' => 'Accédez à votre espace pour gérer votre établissement.',
-    'register' => "S'enregistrer",
+    'register' => "S'enregistrer", 
 
     // Financial History filter and report keys
     'today' => "Aujourd'hui",
@@ -1937,8 +1937,8 @@ return [
 
     // Navigation Inscriptions/Ressources Humaines
     'register_student_menu'    => 'Inscrire un élève',
-    'my_registrations_menu'    => 'Mes inscriptions',
-    'my_registrations_only'    => 'Mes inscriptions uniquement',
+    'my_registrations_menu'    => 'Inscrits par moi',
+    'my_registrations_only'    => 'Inscrits par moi uniquement',
     'all_students_menu'        => 'Les élèves',
     'create_cashier_menu'      => 'Créer Compte',
 

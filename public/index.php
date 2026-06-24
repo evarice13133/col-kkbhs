@@ -259,7 +259,7 @@ elseif (strpos($path, '/cycles') === 0) {
     elseif ($path === '/departments/delete')
         $c->delete($_GET['id'] ?? 0);
 } elseif (strpos($path, '/classes') === 0) {
-    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier'])) {
         header('Location: /');
         exit;
     }

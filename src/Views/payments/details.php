@@ -168,9 +168,9 @@ ob_start();
                                 </tr>
                             <?php else: ?>
                                 <?php foreach ($payments as $p): ?>
-                                    <tr class="student-row">
+                                    <tr class="student-row <?= ($p['status'] === 'annule') ? 'opacity-50 bg-light' : '' ?>">
                                         <td class="ps-4">
-                                            <div class="fw-bold text-main-theme"><?= date('d/m/Y', strtotime($p['payment_date'])) ?></div>
+                                            <div class="fw-bold <?= ($p['status'] === 'annule') ? 'text-decoration-line-through text-muted' : 'text-main-theme' ?>"><?= date('d/m/Y', strtotime($p['payment_date'])) ?></div>
                                         </td>
                                         <td>
                                             <?php if ($p['type'] === 'inscription'): ?>
@@ -179,7 +179,7 @@ ob_start();
                                                 <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1 rounded-pill"><?= __('tuition') ?></span>
                                             <?php endif; ?>
                                         </td>
-                                        <td class="text-end fw-black text-main-theme"><?= number_format($p['amount'], 0, '.', ' ') ?> FCFA</td>
+                                        <td class="text-end fw-black <?= ($p['status'] === 'annule') ? 'text-decoration-line-through text-muted' : 'text-main-theme' ?>"><?= number_format($p['amount'], 0, '.', ' ') ?> FCFA</td>
                                         <td>
                                             <?php 
                                             $method = strtoupper($p['payment_method']);
@@ -202,17 +202,19 @@ ob_start();
                                             <div class="text-truncate" style="max-width: 150px;" title="<?= h($p['reference'] ?: '') ?>">
                                                 <?= h($p['reference'] ?: ($p['commentaire'] ?: '-')) ?>
                                             </div>
+                                            <?php if ($p['status'] === 'annule'): ?>
+                                                <div class="text-danger small mt-1" title="<?= h($p['cancellation_motive'] ?? '') ?>"><i class="bi bi-info-circle"></i> Annulé</div>
+                                            <?php endif; ?>
                                         </td>
                                         <td class="pe-4 text-center">
                                             <div class="d-flex gap-1 justify-content-center">
                                                 <a href="/payments/receipt?id=<?= $p['id'] ?>" target="_blank" class="btn btn-sm btn-action-modern text-primary" title="<?= __('print_receipt') ?>">
                                                     <i class="bi bi-printer-fill fs-5"></i>
                                                 </a>
-                                                <?php if (\App\Core\Session::get('user_role') === 'superadmin'): ?>
-                                                    <a href="/payments/delete?id=<?= $p['id'] ?>" class="btn btn-sm btn-action-modern text-danger" 
-                                                       onclick="return confirm(<?= h(json_encode(__('confirm_delete_payment'))) ?>);" title="<?= __('cancel_delete') ?>">
+                                                <?php if (\App\Core\Session::get('user_role') === 'superadmin' && $p['status'] !== 'annule'): ?>
+                                                    <button type="button" class="btn btn-sm btn-action-modern text-danger" onclick="openCancelModal(<?= $p['id'] ?>)" title="Annuler le paiement">
                                                         <i class="bi bi-trash-fill fs-5"></i>
-                                                    </a>
+                                                    </button>
                                                 <?php endif; ?>
                                             </div>
                                         </td>
@@ -226,6 +228,42 @@ ob_start();
         </div>
     </div>
 </div>
+
+<!-- Modal: Cancel Payment -->
+<div class="modal fade" id="cancelPaymentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header border-bottom-0 pb-0 px-4 pt-4">
+                <h5 class="modal-title fw-black text-danger">Annuler le paiement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="/payments/delete?id=" method="POST" id="cancelPaymentForm">
+                <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
+                <div class="modal-body p-4">
+                    <p class="text-muted">Veuillez indiquer le motif d'annulation (obligatoire). Cette action ne supprime pas physiquement le paiement, mais l'invalide dans les statistiques et le solde.</p>
+                    <div class="mb-3">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Motif d'annulation</label>
+                        <textarea name="motive" class="form-control premium-input" rows="3" required placeholder="Saisir le motif détaillé..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light-theme rounded-pill px-4" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-5 fw-bold shadow-sm">
+                        <i class="bi bi-trash-fill me-2"></i>Confirmer l'annulation
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+function openCancelModal(paymentId) {
+    const form = document.getElementById('cancelPaymentForm');
+    form.action = '/payments/delete?id=' + paymentId;
+    const modal = new bootstrap.Modal(document.getElementById('cancelPaymentModal'));
+    modal.show();
+}
+</script>
 
 <!-- Modal: Add Payment -->
 <div class="modal fade" id="addPaymentModal" tabindex="-1" aria-labelledby="addPaymentModalLabel" aria-hidden="true">

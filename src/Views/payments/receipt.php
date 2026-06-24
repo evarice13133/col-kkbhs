@@ -534,8 +534,10 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                 </div>
             <?php endif; ?>
 
-            <!-- Filigrane Texte diagonal si duplicata -->
-            <?php if ($isDuplicate): ?>
+            <!-- Filigranes statutaires -->
+            <?php if (($payment['status'] ?? 'valide') === 'annule'): ?>
+                <div class="watermark-text-diagonal" style="color: #ef4444; opacity: 0.15;">ANNULÉ</div>
+            <?php elseif ($isDuplicate): ?>
                 <div class="watermark-text-diagonal"><?= __('duplicata') ?></div>
             <?php endif; ?>
 
@@ -688,6 +690,12 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                                         <td class="label-td" style="color: #16a34a; background-color: #f0fdf4;"><?= __('registration_payment_option') ?> <?= __('paid_fee_suffix') ?></td>
                                         <td class="value-td" style="color: #16a34a; background-color: #f0fdf4;"><?= number_format($payment['amount'], 0, '.', ' ') ?> FCFA</td>
                                     </tr>
+                                    <?php if (!empty($childSurplus)): ?>
+                                    <tr>
+                                        <td class="label-td" style="color: #0284c7; background-color: #f0f9ff;">Surplus transféré vers scolarité</td>
+                                        <td class="value-td" style="color: #0284c7; background-color: #f0f9ff;"><?= number_format($childSurplus['amount'], 0, '.', ' ') ?> FCFA</td>
+                                    </tr>
+                                    <?php endif; ?>
                                 <?php else: ?>
                                     <tr>
                                         <td class="label-td"><?= __('gross_tuition_fee') ?></td>

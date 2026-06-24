@@ -388,7 +388,26 @@ class SchoolFeeController
      */
     public function deleteVersement()
     {
-        $id = (int)($_GET['id'] ?? 0);
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header("Location: /school_fees/versements");
+            exit;
+        }
+
+        if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+            Session::setFlash('error', "Session expirée ou requête invalide.");
+            header("Location: /school_fees/versements");
+            exit;
+        }
+
+        $id = (int)($_POST['id'] ?? 0);
+        $motive = trim($_POST['motive'] ?? '');
+        
+        if (empty($motive)) {
+            Session::setFlash('error', "Le motif d'annulation est obligatoire.");
+            header("Location: /school_fees/versements");
+            exit;
+        }
+
         $activeYearId = $this->academicYearService->getActiveYearId();
 
         try {
@@ -396,7 +415,7 @@ class SchoolFeeController
             if ($payment) {
                 $studentId = (int)$payment['student_id'];
                 
-                $this->studentPaymentModel->delete($id);
+                $this->studentPaymentModel->delete($id, Session::get('user_id'), $motive);
 
                 // Synchroniser le solde
                 $this->financialService->syncStudentFinancials($studentId, $activeYearId);
@@ -406,12 +425,12 @@ class SchoolFeeController
                     Session::get('user_id'),
                     'student_payment',
                     $id,
-                    'delete',
+                    'cancel',
                     $payment,
-                    null
+                    ['motive' => $motive]
                 );
 
-                Session::setFlash('success', "Versement supprimé avec succès.");
+                Session::setFlash('success', "Versement annulé avec succès.");
             } else {
                 Session::setFlash('error', "Versement introuvable.");
             }

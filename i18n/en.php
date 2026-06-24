@@ -1,14 +1,14 @@
 <?php
 
 return [
-    // â”€â”€ Student PDF Export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    //  Student PDF Export 
     'generated_on' => 'Generated on',
     'matricule' => 'Student ID',
     'last_name' => 'Last Name',
     'first_name' => 'First Name',
     'total' => 'Total',
     'subtotal' => 'Subtotal',
-    // â”€â”€ Subjects â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    //  Subjects 
     'activate_subject_confirm' => 'Are you sure you want to activate the subject :name? It will become visible on all documents again.',
     'deactivate_subject_confirm' => 'Are you sure you want to deactivate the subject :name? It will be hidden from bulletins and grade entry.',
     'inactive_subjects' => 'Inactive Subjects',
@@ -1204,7 +1204,7 @@ return [
     'excellence_award_label' => 'Award for exceptional commitment',
     'assignment_pending' => 'Assignment required immediately',
 
-    // â”€â”€ Documentation & Guide â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    //  Documentation & Guide 
     'user_documentation' => 'User Doc.',
     'support_center' => 'Support Center',
     'documentation_intro_text' => 'Everything you need to know to master NotesMaster and optimize your academic management.',
@@ -1228,7 +1228,7 @@ return [
     'contact_it_support' => 'Our technical team is at your service.',
     'contact_support_action' => 'Contact IT Support',
 
-    // â”€â”€ Evaluations (Sequences) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    //  Evaluations (Sequences) 
     'evaluations' => 'Evaluations',
     'evaluation_sequences_mgmt' => 'Sequence Management',
     'sequences_defined' => 'Defined sequences',
