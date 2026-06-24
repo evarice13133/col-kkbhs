@@ -120,6 +120,9 @@ class DashboardController
         $settingsStore = new \App\Services\SettingsStore($this->db);
         $policy = $settingsStore->get('registration_fee_policy', 'all');
 
+        $isNewOnly = ($policy === 'new_only') ? 1 : 0;
+        $isByStatus = ($policy === 'by_status') ? 1 : 0;
+
         // Récupérer les statistiques de rentrée/inscription par classe
         $stmtClassStats = $this->db->prepare("
             SELECT 
@@ -128,9 +131,9 @@ class DashboardController
                 COUNT(s.id) as total_students,
                 SUM(CASE WHEN COALESCE(p.paid_amount, 0) >= 
                     CASE 
-                        WHEN :policy1 = 'new_only' THEN 
+                        WHEN :isNewOnly1 = 1 THEN 
                             CASE WHEN e.student_status = 'nouveau' THEN c.frais_inscription ELSE 0 END
-                        WHEN :policy2 = 'by_status' THEN 
+                        WHEN :isByStatus1 = 1 THEN 
                             CASE WHEN e.student_status = 'nouveau' THEN c.frais_inscription ELSE c.frais_inscription_reinscription END
                         ELSE 
                             c.frais_inscription
@@ -138,9 +141,9 @@ class DashboardController
                 THEN 1 ELSE 0 END) as enrolled_count,
                 SUM(CASE WHEN COALESCE(p.paid_amount, 0) < 
                     CASE 
-                        WHEN :policy3 = 'new_only' THEN 
+                        WHEN :isNewOnly2 = 1 THEN 
                             CASE WHEN e.student_status = 'nouveau' THEN c.frais_inscription ELSE 0 END
-                        WHEN :policy4 = 'by_status' THEN 
+                        WHEN :isByStatus2 = 1 THEN 
                             CASE WHEN e.student_status = 'nouveau' THEN c.frais_inscription ELSE c.frais_inscription_reinscription END
                         ELSE 
                             c.frais_inscription
@@ -161,10 +164,10 @@ class DashboardController
             ORDER BY c.nom ASC
         ");
         $stmtClassStats->execute([
-            ':policy1' => $policy,
-            ':policy2' => $policy,
-            ':policy3' => $policy,
-            ':policy4' => $policy,
+            ':isNewOnly1' => $isNewOnly,
+            ':isByStatus1' => $isByStatus,
+            ':isNewOnly2' => $isNewOnly,
+            ':isByStatus2' => $isByStatus,
             ':academic_year_id1' => $activeYearId,
             ':academic_year_id2' => $activeYearId
         ]);
