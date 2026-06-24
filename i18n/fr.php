@@ -1941,5 +1941,20 @@ return [
     'my_registrations_only'    => 'Mes inscriptions uniquement',
     'all_students_menu'        => 'Les élèves',
     'create_cashier_menu'      => 'Créer Compte',
+
+    // Extra Cashier Dashboard keys
+    'total_registration_collected' => 'Frais d\'Inscription Encaissés',
+    'total_tuition_collected'      => 'Scolarités Encaissées',
+    'total_general_collected'      => 'Recettes Totales (Caisse)',
+    'enrolled_students'            => 'Élèves Inscrits (Payé)',
+    'non_enrolled_students'        => 'Élèves Non Inscrits (Impayé)',
+    'class_registration_stats'     => 'Statistiques d\'Inscription par Classe',
+    'registration_rate'            => 'Taux d\'Inscription',
+    'active_students'              => 'Élèves Actifs',
+    'class_name_header'            => 'Classe',
+    'total_students_header'        => 'Total Élèves',
+    'enrolled_count_header'        => 'Élèves Inscrits',
+    'non_enrolled_count_header'    => 'Élèves Non Inscrits',
+    'registration_revenue_header'  => 'Frais d\'Inscription Encaissés',
 ];
 

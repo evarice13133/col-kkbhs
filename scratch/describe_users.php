@@ -5,5 +5,14 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use App\Core\Database;
 $db = Database::getInstance()->getConnection();
 
-$q = $db->query("DESCRIBE student_payments");
-print_r($q->fetchAll(PDO::FETCH_ASSOC));
+$tables = $db->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
+print_r($tables);
+foreach ($tables as $t) {
+    if (in_array($t, ['payments', 'enrollments', 'students', 'classes', 'student_payments', 'settings', 'sequences'])) {
+        echo "=== $t columns ===\n";
+        $cols = $db->query("DESCRIBE `$t`")->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($cols as $c) {
+            echo "  " . $c['Field'] . " (" . $c['Type'] . ")\n";
+        }
+    }
+}

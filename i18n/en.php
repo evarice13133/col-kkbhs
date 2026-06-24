@@ -1846,5 +1846,20 @@ return [
     'my_registrations_only'    => 'My registrations only',
     'all_students_menu'        => 'Students',
     'create_cashier_menu'      => 'Create Account',
+
+    // Extra Cashier Dashboard keys
+    'total_registration_collected' => 'Registration Fees Collected',
+    'total_tuition_collected'      => 'School Fees Collected',
+    'total_general_collected'      => 'Total Revenue (Cash)',
+    'enrolled_students'            => 'Enrolled Students (Paid)',
+    'non_enrolled_students'        => 'Non-enrolled Students (Unpaid)',
+    'class_registration_stats'     => 'Class Enrollment Statistics',
+    'registration_rate'            => 'Registration Rate',
+    'active_students'              => 'Active Students',
+    'class_name_header'            => 'Class',
+    'total_students_header'        => 'Total Students',
+    'enrolled_count_header'        => 'Enrolled Students',
+    'non_enrolled_count_header'    => 'Non-enrolled Students',
+    'registration_revenue_header'  => 'Registration Fees Collected',
 ];
 
