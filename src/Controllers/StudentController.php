@@ -449,7 +449,7 @@ class StudentController
         }
 
         // Classes are now shared across years, no year filtering
-        $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id, teaching_type_id FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id, teaching_type_id, frais_inscription, frais_inscription_reinscription, frais_scolarite_brut FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         
@@ -488,25 +488,17 @@ class StudentController
      */
 
     public function import()
-
     {
-
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
-
+        if (!in_array(\App\Core\Session::get('user_role'), ['superadmin', 'admin'])) {
             header("Location: /students");
-
             exit;
-
         }
 
-        // On récupère les classes pour l'affichage éventuel, bien que le template 
-
-        // Excel contienne déjà ses propres menus déroulants dynamiques.
         // Classes are now shared across years, no year filtering
         $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         include __DIR__ . '/../Views/students/import.php';
-
     }
 
 
@@ -524,85 +516,46 @@ class StudentController
      */
 
     public function downloadTemplate()
-
     {
-
         // On s'assure d'avoir un environnement propre pour le binaire
-
         // (Vider tout tampon de sortie pré-existant)
-
         while (ob_get_level())
-
             ob_end_clean();
 
-
-
         // On augmente temporairement la limite mémoire car PHPSpreadsheet est gourmand
-
         ini_set('memory_limit', '512M');
 
-
-
-        $lang = Session::get('lang', 'fr');
-
-
+        $lang = \App\Core\Session::get('lang', 'fr');
+        $teachingTypeId = isset($_GET['teaching_type_id']) ? (int)$_GET['teaching_type_id'] : null;
 
         try {
-
-            // Initialisation du service indépendant
-
-            $templateService = new ExcelTemplateService($this->db);
-
-
+            // Utilisation du nouveau générateur
+            $templateService = new \App\Services\TemplateGenerator($this->db);
 
             // Génération du flux binaire
-
-            $content = $templateService->generateStudentTemplate($lang);
-
-
+            $content = $templateService->generateStudentTemplate($lang, $teachingTypeId);
 
             if (empty($content)) {
-
                 throw new \Exception("Le flux généré est vide.");
-
             }
-
-
 
             $filename = "Modele_Import_Eleves_" . strtoupper($lang) . ".xlsx";
 
-
-
             // Envoi des en-têtes officiels Microsoft Excel
-
             header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-
             header('Content-Disposition: attachment;filename="' . $filename . '"');
-
             header('Cache-Control: max-age=0');
-
             header('Pragma: public');
-
             header('Content-Length: ' . strlen($content));
 
-
-
             echo $content;
-
             exit;
-
         } catch (\Throwable $e) {
-
             // En cas d'erreur fatale (ex: extension PHP manquante), on informe l'utilisateur
-
-            Session::setFlash('error', __('error_generation') . " : " . $e->getMessage());
-
+            \App\Core\Session::setFlash('error', __('error_generation') . " : " . $e->getMessage());
             header("Location: /students/import");
-
             exit;
-
         }
-
     }
 
 
@@ -626,82 +579,56 @@ class StudentController
      */
 
     public function upload()
-
     {
-
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['import_file'])) {
-
-            if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
-
+            if (!\App\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
                 \App\Core\Security::log("Tentative de CSRF détectée sur l'action Student::upload");
-
-                Session::setFlash('error', __('session_expired_error'));
-
+                \App\Core\Session::setFlash('error', __('session_expired_error'));
                 header("Location: /students/import");
-
                 exit;
-
             }
 
             $file = $_FILES['import_file'];
-
             $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
 
-
-
-            // Format exclusif .xlsx requis pour bénéficier des validations Excel
-
             if ($ext !== 'xlsx') {
-
-                Session::setFlash('error', __('invalid_file_format_excel'));
-
+                \App\Core\Session::setFlash('error', __('invalid_file_format_excel'));
                 header("Location: /students/import");
-
                 exit;
-
             }
 
+            $lang = \App\Core\Session::get('lang', 'fr');
+            $teachingTypeId = isset($_POST['teaching_type_id']) ? (int)$_POST['teaching_type_id'] : 0;
 
-
-            // Utilisation du service de traitement indépendant
-
-            $processor = new StudentImportProcessor($this->db);
-
-            $lang = Session::get('lang', 'fr');
-
-
-
-            $result = $processor->process($file['tmp_name'], $lang);
-
-
-
-            if ($result['success']) {
-
-                Session::setFlash('success', __('import_success_count', ['count' => $result['count']]));
-
-                header("Location: /students");
-
+            if ($teachingTypeId <= 0) {
+                \App\Core\Session::setFlash('error', 'Le type d\'enseignement est obligatoire pour l\'importation.');
+                header("Location: /students/import");
                 exit;
+            }
 
+            $validator = new \App\Services\StudentImportValidator($this->db);
+            $validationResult = $validator->validate($file['tmp_name'], $lang, $teachingTypeId);
+
+            if ($validationResult['isValid']) {
+                $processor = new \App\Services\StudentImportProcessor($this->db);
+                $result = $processor->processValidRows($validationResult['validRows']);
+
+                if ($result['success']) {
+                    \App\Core\Session::setFlash('success', __('import_success_count', ['count' => $result['count']]));
+                    header("Location: /students");
+                    exit;
+                } else {
+                    \App\Core\Session::setFlash('popup_errors', json_encode($result['errors'], JSON_UNESCAPED_UNICODE));
+                }
             } else {
-
-                // En cas d'erreurs (validation de données ou relations), on affiche le rapport
-
-                $errors = $result['errors'];
-
-                // Définit une flash contenant la liste JSON des erreurs pour affichage en modal
-
-                \App\Core\Session::setFlash('popup_errors', json_encode($errors, JSON_UNESCAPED_UNICODE));
-
-                // Classes are now shared across years, no year filtering
-                $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-
-                include __DIR__ . '/../Views/students/import.php';
-
+                \App\Core\Session::setFlash('popup_errors', json_encode($validationResult['errors'], JSON_UNESCAPED_UNICODE));
             }
 
+            // On reload with errors
+            $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+            $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+            include __DIR__ . '/../Views/students/import.php';
         }
-
     }
 
 
@@ -762,160 +689,212 @@ class StudentController
 
             $guardian_contact = $this->normalizeOptionalText($_POST['guardian_contact'] ?? '');
 
+            $adresse = $this->normalizeOptionalText($_POST['adresse'] ?? '');
 
+            // Validations strictes d'inscription et de frais d'inscription
+            $hasError = false;
+            $error = '';
 
             if (empty($nom) || empty($prenom)) {
-
                 $error = \__('student_name_required');
+                $hasError = true;
+            } elseif (!$class_id) {
+                $error = "La classe d'inscription est obligatoire.";
+                $hasError = true;
+            } else {
+                // Charger la classe
+                $classStmt = $this->db->prepare("SELECT nom, frais_inscription, frais_inscription_reinscription, frais_scolarite_brut FROM classes WHERE id = ?");
+                $classStmt->execute([$class_id]);
+                $classInfo = $classStmt->fetch(PDO::FETCH_ASSOC);
 
-                // Classes are now shared across years, no year filtering
-                $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                if (!$classInfo) {
+                    $error = "La classe sélectionnée est invalide.";
+                    $hasError = true;
+                } else {
+                    // Charger la politique et calculer le montant requis
+                    $settingsStore = new \App\Services\SettingsStore($this->db);
+                    $policy = $settingsStore->get('registration_fee_policy', 'all');
+                    $student_status = $_POST['student_status'] ?? 'nouveau';
 
+                    $expectedFee = 0.00;
+                    if ($policy === 'new_only') {
+                        $expectedFee = ($student_status === 'nouveau') ? (float)$classInfo['frais_inscription'] : 0.00;
+                    } elseif ($policy === 'by_status') {
+                        $expectedFee = ($student_status === 'nouveau') ? (float)$classInfo['frais_inscription'] : (float)$classInfo['frais_inscription_reinscription'];
+                    } else { // all
+                        $expectedFee = (float)$classInfo['frais_inscription'];
+                    }
+
+                    $frais_inscription_paid = isset($_POST['frais_inscription_paid']) ? (float)$_POST['frais_inscription_paid'] : 0.00;
+                    $payment_method = $_POST['payment_method'] ?? '';
+
+                    if ($frais_inscription_paid !== $expectedFee) {
+                        $error = "Le montant des frais d'inscription versé (" . number_format($frais_inscription_paid, 0, '.', ' ') . " FCFA) doit être exactement égal au montant attendu (" . number_format($expectedFee, 0, '.', ' ') . " FCFA).";
+                        $hasError = true;
+                    } elseif ($expectedFee > 0 && empty($payment_method)) {
+                        $error = "Le mode de paiement est obligatoire pour régler les frais d'inscription.";
+                        $hasError = true;
+                    }
+                }
+            }
+
+            if ($hasError) {
+                // Rendre les variables nécessaires pour ré-afficher le formulaire create.php
+                $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id, teaching_type_id, frais_inscription, frais_inscription_reinscription, frais_scolarite_brut FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-                
                 $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-
                 $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-
                 $departments = $this->db->query("SELECT id, nom, teaching_type_id FROM departments WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
                 $formData = [
-
                     'nom' => $nom,
-
                     'prenom' => $prenom,
-
                     'email' => $email,
-
                     'class_id' => $class_id,
-
                     'cycle_id' => $cycle_id,
-                    
                     'teaching_type_id' => $teaching_type_id,
-
                     'section_id' => $section_id,
-
                     'department_id' => $department_id,
-
                     'sexe' => $sexe,
-
                     'date_naissance' => $date_naissance,
-
                     'lieu_naissance' => $lieu_naissance,
-
                     'is_redoublant' => (string) $is_redoublant,
-
                     'parent_contact' => $parent_contact,
-
                     'guardian_contact' => $guardian_contact,
-
+                    'adresse' => $adresse,
+                    'student_status' => $_POST['student_status'] ?? 'nouveau',
+                    'frais_inscription_paid' => $_POST['frais_inscription_paid'] ?? '0',
+                    'payment_method' => $_POST['payment_method'] ?? '',
+                    'reference' => $_POST['reference'] ?? '',
+                    'reduction_amount' => $_POST['reduction_amount'] ?? '0',
+                    'reduction_amount_type' => $_POST['reduction_amount_type'] ?? 'fixed',
+                    'reduction_motive' => $_POST['reduction_motive'] ?? '',
+                    'scholarship_amount' => $_POST['scholarship_amount'] ?? '0',
+                    'scholarship_amount_type' => $_POST['scholarship_amount_type'] ?? 'fixed',
+                    'scholarship_motive' => $_POST['scholarship_motive'] ?? '',
+                    'adresse' => $adresse,
                 ];
 
                 include __DIR__ . '/../Views/students/create.php';
-
                 return;
-
             }
 
-
-
-            // Si aucun matricule n'est fourni, on le genere via le service centralise.
-
+            // Génération de matricule automatique si vide
             if ($email === '') {
-
                 $email = $this->matriculeService->generate($class_id);
-
             }
 
-
-
-            // Vérifier l'unicité du matricule fourni ou généré
-
+            // Vérifier l'unicité du matricule
             $checkStmt = $this->db->prepare("SELECT COUNT(*) FROM students WHERE email = ?");
-
             $checkStmt->execute([$email]);
-
             if ((int) $checkStmt->fetchColumn() > 0) {
-
                 $error = __('matricule_already_exists') ?? 'Matricule déjà utilisé.';
-
-                \App\Core\Session::setFlash('popup_error', $error);
-
+                Session::setFlash('popup_error', $error);
                 header("Location: /students/create");
-
                 exit;
-
             }
 
-
-
-            // Enregistrement via le modèle normalisé (seul class_id est requis pour le lien)
             $academicYearId = $this->academicYearService->getActiveYearId();
 
-            // D'abord insérer l'étudiant sans photo pour obtenir l'ID
-            $stmt = $this->db->prepare("INSERT INTO students (nom, prenom, email, class_id, sexe, date_naissance, lieu_naissance, is_redoublant, academic_year_id, photo_eleve, parent_contact, guardian_contact, teaching_type_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$nom, $prenom, $email, $class_id, $sexe, $date_naissance, $lieu_naissance, $is_redoublant, $academicYearId, null, $parent_contact, $guardian_contact, $teaching_type_id]);
+            try {
+                $this->db->beginTransaction();
 
-            $studentId = (int) $this->db->lastInsertId();
+                // 1. Insérer l'étudiant
+                $stmt = $this->db->prepare("INSERT INTO students (nom, prenom, email, class_id, sexe, date_naissance, lieu_naissance, is_redoublant, academic_year_id, photo_eleve, parent_contact, guardian_contact, teaching_type_id, adresse) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$nom, $prenom, $email, $class_id, $sexe, $date_naissance, $lieu_naissance, $is_redoublant, $academicYearId, null, $parent_contact, $guardian_contact, $teaching_type_id, $adresse]);
+                $studentId = (int) $this->db->lastInsertId();
 
-            // Gestion de la photo (optionnelle) - maintenant avec le véritable ID de l'étudiant
-            $photoPath = null;
-            if (isset($_FILES['photo_eleve']) && $_FILES['photo_eleve']['error'] === UPLOAD_ERR_OK) {
-                $photoService = new \App\Services\PhotoUploadService();
-                $uploadResult = $photoService->uploadPhoto($_FILES['photo_eleve'], $studentId);
+                // Gestion de la photo
+                $photoPath = null;
+                if (isset($_FILES['photo_eleve']) && $_FILES['photo_eleve']['error'] === UPLOAD_ERR_OK) {
+                    $photoService = new \App\Services\PhotoUploadService();
+                    $uploadResult = $photoService->uploadPhoto($_FILES['photo_eleve'], $studentId);
 
-                if (!$uploadResult['success']) {
-                    $error = $uploadResult['error'];
+                    if (!$uploadResult['success']) {
+                        throw new \Exception($uploadResult['error']);
+                    }
 
-                    \App\Core\Security::log(
-                        "Student::store photo upload failed (studentId={$studentId}, error={$error}, fileName=" .
-                        ($_FILES['photo_eleve']['name'] ?? 'NA') . ", size=" .
-                        ($_FILES['photo_eleve']['size'] ?? 'NA') . ", phpUploadError=" .
-                        ($_FILES['photo_eleve']['error'] ?? 'NA') . ")"
-                    );
-
-                    Session::setFlash('error', $error);
-
-                    // Supprimer l'étudiant créé si l'upload échoue
-                    $deleteStmt = $this->db->prepare("DELETE FROM students WHERE id = ?");
-                    $deleteStmt->execute([$studentId]);
-
-                    // Classes are now shared across years, no year filtering
-                    $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-                    $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-                    $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-                    $departments = $this->db->query("SELECT id, nom FROM departments WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-
-                    $formData = [
-                        'nom' => $nom,
-                        'prenom' => $prenom,
-                        'email' => $email,
-                        'class_id' => $class_id,
-                        'cycle_id' => $cycle_id,
-                        'section_id' => $section_id,
-                        'department_id' => $department_id,
-                        'sexe' => $sexe,
-                        'date_naissance' => $date_naissance,
-                        'lieu_naissance' => $lieu_naissance,
-                        'is_redoublant' => (string) $is_redoublant,
-                    ];
-
-                    header("Location: /students/create");
-                    exit;
+                    $photoPath = $uploadResult['path'];
+                    $updateStmt = $this->db->prepare("UPDATE students SET photo_eleve = ? WHERE id = ?");
+                    $updateStmt->execute([$photoPath, $studentId]);
                 }
 
-                $photoPath = $uploadResult['path'];
+                // 2. Créer l'inscription (enrollments) avec son statut
+                $enrollmentStmt = $this->db->prepare("INSERT INTO enrollments (student_id, class_id, academic_year_id, student_status, frais_scolarite_brut, total_reductions, total_bourses, total_paye, reste_a_payer) VALUES (?, ?, ?, ?, 0.00, 0.00, 0.00, 0.00, 0.00)");
+                $enrollmentStmt->execute([$studentId, $class_id, $academicYearId, $student_status]);
 
-                // Mettre à jour le chemin de la photo dans la base de données
-                $updateStmt = $this->db->prepare("UPDATE students SET photo_eleve = ? WHERE id = ?");
-                $updateStmt->execute([$photoPath, $studentId]);
+                // 3. Enregistrer l'opération financière et générer le reçu
+                $paymentId = null;
+                if ($frais_inscription_paid > 0.0) {
+                    if (\App\Services\PaymentReferenceGenerator::isCashMethod($payment_method)) {
+                        $refGen = new \App\Services\PaymentReferenceGenerator($this->db);
+                        $ref = $refGen->generateUniqueReference();
+                    } else {
+                        $ref = trim($_POST['reference'] ?? '');
+                        if (empty($ref)) {
+                            $ref = 'Frais d\'inscription payés à l\'inscription';
+                        }
+                    }
+                    $payStmt = $this->db->prepare("INSERT INTO payments (student_id, academic_year_id, amount, type, payment_date, payment_method, reference, created_by) VALUES (?, ?, ?, 'inscription', CURDATE(), ?, ?, ?)");
+                    $payStmt->execute([$studentId, $academicYearId, $frais_inscription_paid, $payment_method, $ref, Session::get('user_id')]);
+                    $paymentId = (int) $this->db->lastInsertId();
+
+                    // Historisation financière
+                    $fs = new \App\Services\FinancialService($this->db);
+                    $fs->logHistory(Session::get('user_id'), 'payment', $paymentId, 'create', null, [
+                        'student_id' => $studentId,
+                        'amount' => $frais_inscription_paid,
+                        'type' => 'inscription',
+                        'payment_method' => $payment_method,
+                        'reference' => $ref,
+                        'commentaire' => 'Frais d\'inscription réglés lors de la création de l\'élève'
+                    ]);
+                }
+
+                // 4. Réduction éventuelle
+                $reduction_amount = !empty($_POST['reduction_amount']) ? (float)$_POST['reduction_amount'] : 0.0;
+                $reduction_amount_type = $_POST['reduction_amount_type'] ?? 'fixed';
+                $reduction_motive = trim($_POST['reduction_motive'] ?? '');
+                if ($reduction_amount > 0.0) {
+                    $discStmt = $this->db->prepare("INSERT INTO student_discounts (student_id, amount, amount_type, motive, date_effet, status, commentaire) VALUES (?, ?, ?, ?, CURDATE(), 'active', 'Réduction initiale saisie à l\'inscription')");
+                    $discStmt->execute([$studentId, $reduction_amount, $reduction_amount_type, $reduction_motive ?: 'Réduction à l\'inscription']);
+                }
+
+                // 5. Bourse éventuelle
+                $scholarship_amount = !empty($_POST['scholarship_amount']) ? (float)$_POST['scholarship_amount'] : 0.0;
+                $scholarship_amount_type = $_POST['scholarship_amount_type'] ?? 'fixed';
+                $scholarship_motive = trim($_POST['scholarship_motive'] ?? '');
+                if ($scholarship_amount > 0.0) {
+                    $scholStmt = $this->db->prepare("INSERT INTO student_scholarships (student_id, amount, amount_type, motive, date_effet, status, commentaire) VALUES (?, ?, ?, ?, CURDATE(), 'active', 'Bourse initiale saisie à l\'inscription')");
+                    $scholStmt->execute([$studentId, $scholarship_amount, $scholarship_amount_type, $scholarship_motive ?: 'Bourse à l\'inscription']);
+                }
+
+                // 6. Synchronisation financière globale
+                $financialService = new \App\Services\FinancialService($this->db);
+                $financialService->syncStudentFinancials($studentId, $academicYearId);
+
+                $this->db->commit();
+
+                Session::setFlash('success', __('student_created_success'));
+
+                // Rediriger vers le reçu si généré, sinon retour à la liste des élèves
+                if ($paymentId) {
+                    header("Location: /payments/receipt?id=" . $paymentId);
+                } else {
+                    header("Location: /students");
+                }
+                exit;
+
+            } catch (\Throwable $e) {
+                if ($this->db->inTransaction()) {
+                    $this->db->rollBack();
+                }
+
+                \App\Core\Security::log("Erreur lors de l'enregistrement de l'inscription : " . $e->getMessage());
+                Session::setFlash('error', "Une erreur est survenue lors de l'enregistrement de l'inscription : " . $e->getMessage());
+                header("Location: /students/create");
+                exit;
             }
-
-            Session::setFlash('success', __('student_created_success'));
-
-            header("Location: /students");
-
-            exit;
 
         }
 
@@ -950,7 +929,7 @@ class StudentController
         }
 
         // Classes are now shared across years, no year filtering
-        $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id, teaching_type_id FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id, teaching_type_id, frais_inscription, frais_inscription_reinscription, frais_scolarite_brut FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         
@@ -1013,6 +992,8 @@ class StudentController
             $parent_contact = $this->normalizeOptionalText($_POST['parent_contact'] ?? '');
 
             $guardian_contact = $this->normalizeOptionalText($_POST['guardian_contact'] ?? '');
+
+            $adresse = $this->normalizeOptionalText($_POST['adresse'] ?? '');
 
 
 
@@ -1133,6 +1114,8 @@ class StudentController
 
                     'guardian_contact' => $guardian_contact,
 
+                    'adresse' => $adresse,
+
                 ];
 
                 // Classes are now shared across years, no year filtering
@@ -1156,9 +1139,9 @@ class StudentController
 
             // Préparer la mise à jour. Autoriser la modification du matricule pour admin/superadmin
 
-            $updateParts = ['nom = ?', 'prenom = ?', 'class_id = ?', 'sexe = ?', 'date_naissance = ?', 'lieu_naissance = ?', 'is_redoublant = ?', 'photo_eleve = ?', 'parent_contact = ?', 'guardian_contact = ?', 'teaching_type_id = ?'];
+            $updateParts = ['nom = ?', 'prenom = ?', 'class_id = ?', 'sexe = ?', 'date_naissance = ?', 'lieu_naissance = ?', 'is_redoublant = ?', 'photo_eleve = ?', 'parent_contact = ?', 'guardian_contact = ?', 'teaching_type_id = ?', 'adresse = ?'];
 
-            $params = [$nom, $prenom, $class_id, $sexe, $date_naissance, $lieu_naissance, $is_redoublant, $newPhotoPath, $parent_contact, $guardian_contact, $teaching_type_id];
+            $params = [$nom, $prenom, $class_id, $sexe, $date_naissance, $lieu_naissance, $is_redoublant, $newPhotoPath, $parent_contact, $guardian_contact, $teaching_type_id, $adresse];
 
 
 
@@ -1180,7 +1163,22 @@ class StudentController
 
             $stmt->execute($params);
 
+            // S'assurer de l'existence de l'inscription pour l'année active
+            $academicYearId = $this->academicYearService->getActiveYearId();
+            $enrollCheck = $this->db->prepare("SELECT COUNT(*) FROM enrollments WHERE student_id = ? AND academic_year_id = ?");
+            $enrollCheck->execute([$id, $academicYearId]);
+            if ((int)$enrollCheck->fetchColumn() === 0) {
+                $enrollIns = $this->db->prepare("INSERT INTO enrollments (student_id, class_id, academic_year_id, frais_scolarite_brut, total_reductions, total_bourses, total_paye, reste_a_payer) VALUES (?, ?, ?, 0.00, 0.00, 0.00, 0.00, 0.00)");
+                $enrollIns->execute([$id, $class_id, $academicYearId]);
+            } else {
+                // Mettre à jour la classe dans enrollments
+                $enrollUpd = $this->db->prepare("UPDATE enrollments SET class_id = ? WHERE student_id = ? AND academic_year_id = ?");
+                $enrollUpd->execute([$class_id, $id, $academicYearId]);
+            }
 
+            // Lancer la synchronisation financière de l'élève
+            $financialService = new \App\Services\FinancialService($this->db);
+            $financialService->syncStudentFinancials((int)$id, $academicYearId);
 
             Session::setFlash('success', __('student_updated_success'));
 

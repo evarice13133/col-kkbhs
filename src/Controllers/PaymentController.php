@@ -1,0 +1,441 @@
+<?php
+
+namespace App\Controllers;
+
+use App\Core\Database;
+use App\Core\Session;
+use App\Services\AcademicYearService;
+use App\Services\FinancialService;
+use PDO;
+
+/**
+ * PaymentController
+ * 
+ * Gère les paiements d'inscription et de scolarité, ainsi que l'état financier des élèves.
+ */
+class PaymentController
+{
+    private PDO $db;
+    private AcademicYearService $academicYearService;
+    private FinancialService $financialService;
+
+    public function __construct()
+    {
+        $this->db = Database::getInstance()->getConnection();
+        $this->academicYearService = new AcademicYearService($this->db);
+        $this->financialService = new FinancialService($this->db);
+
+        // Sécurité : Accès restreint aux administrateurs
+        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+            header("Location: /");
+            exit;
+        }
+    }
+
+    /**
+     * Liste et filtre l'état financier des élèves.
+     */
+    public function index()
+    {
+        $activeYearId = $this->academicYearService->getActiveYearId();
+
+        $search = trim((string)($_GET['q'] ?? ''));
+        $classId = (int)($_GET['class_id'] ?? 0);
+        $status = trim((string)($_GET['status'] ?? '')); // 'paid', 'unpaid', 'debt' (reste à payer > 0)
+
+        // Récupérer les classes pour le sélecteur
+        $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+        // Requête principale
+        $sql = "SELECT s.id, s.nom, s.prenom, s.email as matricule, c.nom as classe_nom, 
+                       e.frais_scolarite_brut, e.total_reductions, e.total_bourses, e.total_paye, e.reste_a_payer,
+                       (e.frais_scolarite_brut - e.total_reductions - e.total_bourses) as scolarite_nette
+                FROM students s
+                JOIN enrollments e ON s.id = e.student_id AND e.academic_year_id = ?
+                LEFT JOIN classes c ON e.class_id = c.id
+                WHERE s.is_withdrawn = 0";
+        
+        $params = [$activeYearId];
+
+        if ($search !== '') {
+            $sql .= " AND (s.nom LIKE ? OR s.prenom LIKE ? OR s.email LIKE ?)";
+            $params[] = '%' . $search . '%';
+            $params[] = '%' . $search . '%';
+            $params[] = '%' . $search . '%';
+        }
+
+        if ($classId > 0) {
+            $sql .= " AND e.class_id = ?";
+            $params[] = $classId;
+        }
+
+        if ($status === 'paid') {
+            $sql .= " AND e.reste_a_payer <= 0 AND (e.frais_scolarite_brut - e.total_reductions - e.total_bourses) > 0";
+        } elseif ($status === 'unpaid') {
+            $sql .= " AND e.total_paye = 0 AND (e.frais_scolarite_brut - e.total_reductions - e.total_bourses) > 0";
+        } elseif ($status === 'debt') {
+            $sql .= " AND e.reste_a_payer > 0";
+        }
+
+        $sql .= " ORDER BY c.nom ASC, s.nom ASC, s.prenom ASC";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        include __DIR__ . '/../Views/payments/index.php';
+    }
+
+    /**
+     * Fiche financière détaillée d'un élève.
+     */
+    public function studentDetails($id)
+    {
+        $id = (int)$id;
+        $activeYearId = $this->academicYearService->getActiveYearId();
+
+        // 1. Récupérer l'élève, sa classe et son enrollment
+        $stmt = $this->db->prepare("SELECT s.id, s.nom, s.prenom, s.email as matricule, c.id as class_id, c.nom as classe_nom, c.frais_inscription as class_frais_inscription,
+                                           e.frais_scolarite_brut, e.total_reductions, e.total_bourses, e.total_paye, e.reste_a_payer
+                                    FROM students s
+                                    LEFT JOIN enrollments e ON s.id = e.student_id AND e.academic_year_id = ?
+                                    LEFT JOIN classes c ON s.class_id = c.id
+                                    WHERE s.id = ? AND s.is_withdrawn = 0");
+        $stmt->execute([$activeYearId, $id]);
+        $student = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$student) {
+            Session::setFlash('error', "Élève introuvable ou retiré.");
+            header("Location: /payments");
+            exit;
+        }
+
+        // Scolarité nette
+        $student['scolarite_nette'] = max(0.0, $student['frais_scolarite_brut'] - $student['total_reductions'] - $student['total_bourses']);
+
+        // 2. Récupérer les tranches planifiées (student_installments)
+        $stmt = $this->db->prepare("SELECT * FROM student_installments WHERE student_id = ? AND academic_year_id = ? ORDER BY installment_number ASC");
+        $stmt->execute([$id, $activeYearId]);
+        $installments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // 3. Récupérer l'historique des paiements de cet élève
+        $stmt = $this->db->prepare("SELECT p.*, u.nom as user_nom, u.prenom as user_prenom 
+                                    FROM payments p
+                                    LEFT JOIN users u ON p.created_by = u.id
+                                    WHERE p.student_id = ? AND p.academic_year_id = ?
+                                    ORDER BY p.payment_date DESC, p.id DESC");
+        $stmt->execute([$id, $activeYearId]);
+        $payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Calculer les totaux par type pour l'historique
+        $totalPaidRegistration = 0.0;
+        $totalPaidTuition = 0.0;
+        foreach ($payments as $p) {
+            if ($p['type'] === 'inscription') {
+                $totalPaidRegistration += (float)$p['amount'];
+            } else {
+                $totalPaidTuition += (float)$p['amount'];
+            }
+        }
+
+        include __DIR__ . '/../Views/payments/details.php';
+    }
+
+    /**
+     * Enregistre un paiement.
+     */
+    public function store()
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+                Session::setFlash('error', "Session expirée ou requête invalide.");
+                header("Location: /payments");
+                exit;
+            }
+
+            $studentId = (int)$_POST['student_id'];
+            $type = trim((string)($_POST['type'] ?? 'scolarite'));
+            $amount = (float)$_POST['amount'];
+            $payment_date = trim((string)($_POST['payment_date'] ?? date('Y-m-d')));
+            $payment_method = trim((string)($_POST['payment_method'] ?? 'CASH'));
+            if (\App\Services\PaymentReferenceGenerator::isCashMethod($payment_method)) {
+                $refGen = new \App\Services\PaymentReferenceGenerator($this->db);
+                $reference = $refGen->generateUniqueReference();
+            } else {
+                $reference = trim((string)($_POST['reference'] ?? ''));
+            }
+            $commentaire = trim((string)($_POST['commentaire'] ?? ''));
+
+            $activeYearId = $this->academicYearService->getActiveYearId();
+
+            if ($amount <= 0.0) {
+                Session::setFlash('error', "Le montant du paiement doit être supérieur à 0.");
+                header("Location: /payments/student?id=" . $studentId);
+                exit;
+            }
+
+            try {
+                $this->db->beginTransaction();
+
+                // Insérer le paiement
+                $stmt = $this->db->prepare("INSERT INTO payments (student_id, academic_year_id, amount, type, payment_date, payment_method, reference, commentaire, created_by) 
+                                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([
+                    $studentId,
+                    $activeYearId,
+                    $amount,
+                    $type,
+                    $payment_date,
+                    $payment_method,
+                    $reference ?: null,
+                    $commentaire ?: null,
+                    Session::get('user_id')
+                ]);
+                $paymentId = (int)$this->db->lastInsertId();
+
+                // Synchronisation des finances de l'élève
+                $this->financialService->syncStudentFinancials($studentId, $activeYearId);
+
+                // Audit Historique
+                $this->financialService->logHistory(
+                    Session::get('user_id'),
+                    'payment',
+                    $paymentId,
+                    'create',
+                    null,
+                    [
+                        'student_id' => $studentId,
+                        'type' => $type,
+                        'amount' => $amount,
+                        'payment_date' => $payment_date,
+                        'payment_method' => $payment_method,
+                        'reference' => $reference
+                    ]
+                );
+
+                $this->db->commit();
+                Session::setFlash('success', "Paiement de " . number_format($amount, 0, '.', ' ') . " FCFA enregistré avec succès.");
+            } catch (\Exception $e) {
+                if ($this->db->inTransaction()) {
+                    $this->db->rollBack();
+                }
+                Session::setFlash('error', "Erreur lors de l'enregistrement : " . $e->getMessage());
+            }
+
+            header("Location: /payments/student?id=" . $studentId);
+            exit;
+        }
+    }
+
+    /**
+     * Supprime un paiement.
+     */
+    public function delete($id)
+    {
+        $id = (int)$id;
+        $activeYearId = $this->academicYearService->getActiveYearId();
+
+        try {
+            $this->db->beginTransaction();
+
+            // Récupérer le paiement avant de le supprimer pour récupérer le student_id
+            $stmt = $this->db->prepare("SELECT * FROM payments WHERE id = ?");
+            $stmt->execute([$id]);
+            $payment = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$payment) {
+                throw new \Exception("Paiement introuvable.");
+            }
+
+            $studentId = (int)$payment['student_id'];
+
+            // Supprimer le paiement
+            $del = $this->db->prepare("DELETE FROM payments WHERE id = ?");
+            $del->execute([$id]);
+
+            // Synchroniser les finances de l'élève
+            $this->financialService->syncStudentFinancials($studentId, $activeYearId);
+
+            // Audit
+            $this->financialService->logHistory(
+                Session::get('user_id'),
+                'payment',
+                $id,
+                'delete',
+                $payment,
+                null
+            );
+
+            $this->db->commit();
+            Session::setFlash('success', "Le paiement a été annulé.");
+            header("Location: /payments/student?id=" . $studentId);
+        } catch (\Exception $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            Session::setFlash('error', "Erreur lors de l'annulation du paiement : " . $e->getMessage());
+            header("Location: /payments");
+        }
+        exit;
+    }
+
+    /**
+     * Génère un reçu de paiement imprimable.
+     */
+    public function receipt($id)
+    {
+        $id = (int)$id;
+        $activeYearId = $this->academicYearService->getActiveYearId();
+
+        // Récupérer le paiement et les détails de l'élève
+        $stmt = $this->db->prepare("SELECT p.*, s.nom as student_nom, s.prenom as student_prenom, s.email as matricule, s.sexe, s.date_naissance, s.lieu_naissance, s.adresse,
+                                           c.nom as classe_nom, c.frais_inscription, c.frais_inscription_reinscription, c.frais_scolarite_brut, 
+                                           u.nom as user_nom, u.prenom as user_prenom
+                                    FROM payments p
+                                    JOIN students s ON p.student_id = s.id
+                                    LEFT JOIN classes c ON s.class_id = c.id
+                                    LEFT JOIN users u ON p.created_by = u.id
+                                    WHERE p.id = ? AND p.academic_year_id = ?");
+        $stmt->execute([$id, $activeYearId]);
+        $payment = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$payment) {
+            Session::setFlash('error', "Reçu introuvable.");
+            header("Location: /payments");
+            exit;
+        }
+
+        // 1. Générer le code de vérification s'il n'existe pas encore
+        if (empty($payment['verification_code'])) {
+            $code = 'REC-' . strtoupper(implode('-', str_split(bin2hex(random_bytes(6)), 4)));
+            while (true) {
+                $chk = $this->db->prepare("SELECT COUNT(*) FROM payments WHERE verification_code = ?");
+                $chk->execute([$code]);
+                if ($chk->fetchColumn() == 0) {
+                    break;
+                }
+                $code = 'REC-' . strtoupper(implode('-', str_split(bin2hex(random_bytes(6)), 4)));
+            }
+            $upCode = $this->db->prepare("UPDATE payments SET verification_code = ? WHERE id = ?");
+            $upCode->execute([$code, $payment['id']]);
+            $payment['verification_code'] = $code;
+        }
+
+        // 2. Récupérer les totaux payés par l'élève pour cette année (scolarité ou inscription)
+        $stmt = $this->db->prepare("SELECT student_status, reste_a_payer, total_paye, total_reductions, total_bourses,
+                                           (frais_scolarite_brut - total_reductions - total_bourses) as scolarite_nette
+                                    FROM enrollments WHERE student_id = ? AND academic_year_id = ?");
+        $stmt->execute([$payment['student_id'], $activeYearId]);
+        $enroll = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // 3. Incrémenter le compteur d'impression si c'est la vue HTML standard (pas PDF ni Ajax)
+        $isPdf = isset($_GET['pdf']) && $_GET['pdf'] == 1;
+        if (!$isPdf && (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest')) {
+            $newPrintCount = (int)$payment['print_count'] + 1;
+            $up = $this->db->prepare("UPDATE payments SET print_count = ? WHERE id = ?");
+            $up->execute([$newPrintCount, $payment['id']]);
+            
+            // Log d'audit financier
+            $this->financialService->logHistory(
+                Session::get('user_id'),
+                'payment',
+                $id,
+                'print',
+                (string)$payment['print_count'],
+                (string)$newPrintCount
+            );
+            
+            $payment['print_count'] = $newPrintCount;
+        }
+
+        // 4. Charger l'historique d'impression pour la vue d'administration
+        $stmtLogs = $this->db->prepare("
+            SELECT fh.*, u.nom as user_nom, u.prenom as user_prenom 
+            FROM financial_history fh 
+            LEFT JOIN users u ON fh.user_id = u.id 
+            WHERE fh.entity_type = 'payment' AND fh.entity_id = ? AND fh.action = 'print' 
+            ORDER BY fh.event_date DESC
+        ");
+        $stmtLogs->execute([$id]);
+        $printLogs = $stmtLogs->fetchAll(PDO::FETCH_ASSOC);
+
+        // 5. Récupérer les informations de l'établissement (Settings)
+        $settingsStore = new \App\Services\SettingsStore($this->db);
+        $settings = $settingsStore->all();
+        $school_name = $settings['school_name'] ?? 'NotesMaster';
+
+        // 6. Traduction du montant en lettres
+        $amountInWords = \App\Core\NumberToWords::toWords($payment['amount']);
+
+        // 7. Rendu PDF si demandé
+        if ($isPdf) {
+            $options = new \Dompdf\Options();
+            $options->set('isHtml5ParserEnabled', true);
+            $options->set('isRemoteEnabled', true);
+            $options->set('defaultFont', 'Helvetica');
+
+            $dompdf = new \Dompdf\Dompdf($options);
+            
+            ob_start();
+            include __DIR__ . '/../Views/payments/receipt.php';
+            $html = ob_get_clean();
+
+            $dompdf->loadHtml($html);
+            $dompdf->setPaper('A4', 'portrait');
+
+            try {
+                $dompdf->render();
+                $dompdf->stream("Recu_" . $payment['id'] . ".pdf", ['Attachment' => false]);
+                exit;
+            } catch (\Throwable $e) {
+                echo "Erreur de génération PDF: " . $e->getMessage();
+                exit;
+            }
+        }
+
+        include __DIR__ . '/../Views/payments/receipt.php';
+    }
+
+    /**
+     * Page publique de vérification de reçu de versement (Scan QR Code).
+     */
+    public function verify()
+    {
+        $code = trim((string)($_GET['code'] ?? ''));
+        
+        $payment = null;
+        $enroll = null;
+        
+        if ($code !== '') {
+            // Rechercher le paiement par le code de vérification
+            $stmt = $this->db->prepare("
+                SELECT p.*, s.nom as student_nom, s.prenom as student_prenom, s.email as matricule, s.sexe, s.date_naissance, s.lieu_naissance, s.adresse,
+                       c.nom as classe_nom, u.nom as user_nom, u.prenom as user_prenom
+                FROM payments p
+                JOIN students s ON p.student_id = s.id
+                LEFT JOIN classes c ON s.class_id = c.id
+                LEFT JOIN users u ON p.created_by = u.id
+                WHERE p.verification_code = ?
+            ");
+            $stmt->execute([$code]);
+            $payment = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($payment) {
+                // Récupérer l'inscription correspondante
+                $stmt = $this->db->prepare("
+                    SELECT student_status, reste_a_payer, total_paye, 
+                           (frais_scolarite_brut - total_reductions - total_bourses) as scolarite_nette
+                    FROM enrollments WHERE student_id = ? AND academic_year_id = ?
+                ");
+                $stmt->execute([$payment['student_id'], $payment['academic_year_id']]);
+                $enroll = $stmt->fetch(PDO::FETCH_ASSOC);
+            }
+        }
+        
+        // Charger les settings de l'école
+        $settingsStore = new \App\Services\SettingsStore($this->db);
+        $settings = $settingsStore->all();
+        
+        include __DIR__ . '/../Views/payments/verify.php';
+    }
+}

@@ -99,6 +99,8 @@ class SettingController
                 'backup_git_user_name',
                 'backup_git_user_email',
                 'bulletin_printing_enabled',
+                'registration_fee_policy',
+                'payment_methods',
             ];
 
             $updates = [];

@@ -125,13 +125,60 @@ class ClassController
             $department_id = !empty($_POST['department_id']) ? (int) $_POST['department_id'] : null;
             $teaching_type_id = !empty($_POST['teaching_type_id']) ? (int) $_POST['teaching_type_id'] : null;
 
-            // Le nom de la classe est l'identifiant minimal requis
+            $frais_inscription = !empty($_POST['frais_inscription']) ? (float)$_POST['frais_inscription'] : 0.0;
+            $frais_inscription_reinscription = !empty($_POST['frais_inscription_reinscription']) ? (float)$_POST['frais_inscription_reinscription'] : 0.0;
+            $frais_scolarite_brut = !empty($_POST['frais_scolarite_brut']) ? (float)$_POST['frais_scolarite_brut'] : 0.0;
+            $nbr_tranches = !empty($_POST['nbr_tranches']) ? (int)$_POST['nbr_tranches'] : 0;
+            $tranches = $_POST['tranches'] ?? [];
+
+            $sumTranches = 0.0;
+            if ($nbr_tranches > 0) {
+                for ($i = 1; $i <= $nbr_tranches; $i++) {
+                    $sumTranches += isset($tranches[$i]['amount']) ? (float)$tranches[$i]['amount'] : 0.0;
+                }
+            }
+
+            $hasError = false;
             if ($nom === '') {
                 $error = __('required');
+                $hasError = true;
+            } elseif ($frais_scolarite_brut > 0) {
+                if ($nbr_tranches <= 0) {
+                    $error = "Le nombre de tranches est obligatoire si les frais de scolarité sont renseignés.";
+                    $hasError = true;
+                } elseif (abs($sumTranches - $frais_scolarite_brut) > 0.01) {
+                    $error = "La somme des tranches (" . number_format($sumTranches, 0, '.', ' ') . " FCFA) doit être égale aux frais de scolarité brut (" . number_format($frais_scolarite_brut, 0, '.', ' ') . " FCFA).";
+                    $hasError = true;
+                } else {
+                    // Vérifier si toutes les échéances (dates) sont saisies
+                    for ($i = 1; $i <= $nbr_tranches; $i++) {
+                        if (empty($tranches[$i]['deadline'])) {
+                            $error = "La date d'échéance de la tranche " . $i . " est requise.";
+                            $hasError = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if ($hasError) {
                 $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $departments = $this->db->query("SELECT id, nom FROM departments ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $classe = [
+                    'nom' => $nom,
+                    'cycle_id' => $cycle_id,
+                    'section_id' => $section_id,
+                    'department_id' => $department_id,
+                    'teaching_type_id' => $teaching_type_id,
+                    'frais_inscription' => $frais_inscription,
+                    'frais_inscription_reinscription' => $frais_inscription_reinscription,
+                    'frais_scolarite_brut' => $frais_scolarite_brut,
+                    'nbr_tranches' => $nbr_tranches,
+                    'tranches' => $tranches,
+                    'honor_roll_threshold' => $_POST['honor_roll_threshold'] ?? ''
+                ];
                 include __DIR__ . '/../Views/classes/create.php';
                 return;
             }
@@ -147,32 +194,97 @@ class ClassController
                     $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                     $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                     $departments = $this->db->query("SELECT id, nom FROM departments ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                    $classe = [
+                        'nom' => $nom,
+                        'cycle_id' => $cycle_id,
+                        'section_id' => $section_id,
+                        'department_id' => $department_id,
+                        'teaching_type_id' => $teaching_type_id,
+                        'frais_inscription' => $frais_inscription,
+                        'frais_inscription_reinscription' => $frais_inscription_reinscription,
+                        'frais_scolarite_brut' => $frais_scolarite_brut,
+                        'nbr_tranches' => $nbr_tranches,
+                        'tranches' => $tranches,
+                        'honor_roll_threshold' => $_POST['honor_roll_threshold'] ?? ''
+                    ];
                     include __DIR__ . '/../Views/classes/create.php';
                     return;
                 }
             }
 
             try {
-                // Insertion avec gestion des relations optionnelles
-                // Classes are now shared across years, no academic_year_id
-                $stmt = $this->db->prepare("INSERT INTO classes (nom, cycle_id, section_id, department_id, teaching_type_id) VALUES (?, ?, ?, ?, ?)");
-                $stmt->execute([$nom, $cycle_id, $section_id, $department_id, $teaching_type_id]);
+                $this->db->beginTransaction();
+
+                $stmt = $this->db->prepare("INSERT INTO classes (nom, cycle_id, section_id, department_id, teaching_type_id, frais_inscription, frais_inscription_reinscription, frais_scolarite_brut, nbr_tranches) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$nom, $cycle_id, $section_id, $department_id, $teaching_type_id, $frais_inscription, $frais_inscription_reinscription, $frais_scolarite_brut, $nbr_tranches]);
                 $newClassId = (int) $this->db->lastInsertId();
+
+                $activeYearId = $this->academicYearService->getActiveYearId();
+
+                if ($nbr_tranches > 0) {
+                    $ins = $this->db->prepare("INSERT INTO class_installments (class_id, installment_number, amount) VALUES (?, ?, ?)");
+                    $insFeeInst = $this->db->prepare("INSERT INTO fee_installments (academic_year_id, name, installment_order, amount, deadline_date, class_id) VALUES (?, ?, ?, ?, ?, ?)");
+                    $insDeadlines = $this->db->prepare("INSERT INTO installment_deadlines (academic_year_id, class_id, installment_number, deadline_date) VALUES (?, ?, ?, ?)");
+
+                    for ($i = 1; $i <= $nbr_tranches; $i++) {
+                        $amt = isset($tranches[$i]['amount']) ? (float)$tranches[$i]['amount'] : 0.0;
+                        $deadline = isset($tranches[$i]['deadline']) ? $tranches[$i]['deadline'] : null;
+
+                        $ins->execute([$newClassId, $i, $amt]);
+                        $insFeeInst->execute([$activeYearId, "Tranche " . $i, $i, $amt, $deadline, $newClassId]);
+                        if ($deadline) {
+                            $insDeadlines->execute([$activeYearId, $newClassId, $i, $deadline]);
+                        }
+                    }
+                }
+
                 $threshold = trim((string) ($_POST['honor_roll_threshold'] ?? ''));
                 if ($threshold !== '') {
                     $this->settingsStore->set('honor_roll_threshold_class_' . $newClassId, $threshold);
                 }
-                
+
+                // Enregistrement de l'historique
+                $financialService = new \App\Services\FinancialService($this->db);
+                $financialService->logHistory(
+                    Session::get('user_id'),
+                    'class_finance',
+                    $newClassId,
+                    'create',
+                    null,
+                    [
+                        'nom' => $nom,
+                        'frais_inscription' => $frais_inscription,
+                        'frais_scolarite_brut' => $frais_scolarite_brut,
+                        'nbr_tranches' => $nbr_tranches,
+                        'tranches' => $tranches
+                    ]
+                );
+
+                $this->db->commit();
                 Session::setFlash('success', __('created_success'));
                 header("Location: /classes");
                 exit;
             } catch (\PDOException $e) {
-                // Gestion des doublons de noms de classes
-                $error = __('error_generic');
+                if ($this->db->inTransaction()) {
+                    $this->db->rollBack();
+                }
+                $error = __('error_generic') . " : " . $e->getMessage();
                 $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $departments = $this->db->query("SELECT id, nom FROM departments ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $classe = [
+                    'nom' => $nom,
+                    'cycle_id' => $cycle_id,
+                    'section_id' => $section_id,
+                    'department_id' => $department_id,
+                    'teaching_type_id' => $teaching_type_id,
+                    'frais_inscription' => $frais_inscription,
+                    'frais_scolarite_brut' => $frais_scolarite_brut,
+                    'nbr_tranches' => $nbr_tranches,
+                    'tranches' => $tranches,
+                    'honor_roll_threshold' => $_POST['honor_roll_threshold'] ?? ''
+                ];
                 include __DIR__ . '/../Views/classes/create.php';
             }
         }
@@ -194,6 +306,24 @@ class ClassController
 
         $classe['honor_roll_threshold'] = $this->settingsStore->get('honor_roll_threshold_class_' . $classe['id'], '');
 
+        // Récupérer les tranches existantes et leurs échéances
+        $stmtTranches = $this->db->prepare("SELECT installment_number, amount FROM class_installments WHERE class_id = ? ORDER BY installment_number ASC");
+        $stmtTranches->execute([(int)$id]);
+        $rawTranches = $stmtTranches->fetchAll(PDO::FETCH_KEY_PAIR);
+
+        $activeYearId = $this->academicYearService->getActiveYearId();
+        $stmtDeadlines = $this->db->prepare("SELECT installment_number, deadline_date FROM installment_deadlines WHERE class_id = ? AND academic_year_id = ? ORDER BY installment_number ASC");
+        $stmtDeadlines->execute([(int)$id, $activeYearId]);
+        $deadlines = $stmtDeadlines->fetchAll(PDO::FETCH_KEY_PAIR);
+
+        $classe['tranches'] = [];
+        foreach ($rawTranches as $instNum => $amount) {
+            $classe['tranches'][$instNum] = [
+                'amount' => $amount,
+                'deadline' => $deadlines[$instNum] ?? ''
+            ];
+        }
+
         $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -204,7 +334,7 @@ class ClassController
     }
 
     /**
-     * Met à jour les affiliations d'une classe.
+     * Met à jour les affiliations et la configuration financière d'une classe.
      */
     public function update($id)
     {
@@ -215,9 +345,57 @@ class ClassController
             $department_id = !empty($_POST['department_id']) ? (int) $_POST['department_id'] : null;
             $teaching_type_id = !empty($_POST['teaching_type_id']) ? (int) $_POST['teaching_type_id'] : null;
 
+            $frais_inscription = !empty($_POST['frais_inscription']) ? (float)$_POST['frais_inscription'] : 0.0;
+            $frais_inscription_reinscription = !empty($_POST['frais_inscription_reinscription']) ? (float)$_POST['frais_inscription_reinscription'] : 0.0;
+            $frais_scolarite_brut = !empty($_POST['frais_scolarite_brut']) ? (float)$_POST['frais_scolarite_brut'] : 0.0;
+            $nbr_tranches = !empty($_POST['nbr_tranches']) ? (int)$_POST['nbr_tranches'] : 0;
+            $tranches = $_POST['tranches'] ?? [];
+
+            $sumTranches = 0.0;
+            if ($nbr_tranches > 0) {
+                for ($i = 1; $i <= $nbr_tranches; $i++) {
+                    $sumTranches += isset($tranches[$i]['amount']) ? (float)$tranches[$i]['amount'] : 0.0;
+                }
+            }
+
+            $hasError = false;
             if ($nom === '') {
                 $error = __('required');
-                $classe = ['id' => $id, 'nom' => $nom, 'cycle_id' => $cycle_id, 'section_id' => $section_id, 'department_id' => $department_id, 'teaching_type_id' => $teaching_type_id];
+                $hasError = true;
+            } elseif ($frais_scolarite_brut > 0) {
+                if ($nbr_tranches <= 0) {
+                    $error = "Le nombre de tranches est obligatoire si les frais de scolarité sont renseignés.";
+                    $hasError = true;
+                } elseif (abs($sumTranches - $frais_scolarite_brut) > 0.01) {
+                    $error = "La somme des tranches (" . number_format($sumTranches, 0, '.', ' ') . " FCFA) doit être égale aux frais de scolarité brut (" . number_format($frais_scolarite_brut, 0, '.', ' ') . " FCFA).";
+                    $hasError = true;
+                } else {
+                    // Vérifier si toutes les échéances (dates) sont saisies
+                    for ($i = 1; $i <= $nbr_tranches; $i++) {
+                        if (empty($tranches[$i]['deadline'])) {
+                            $error = "La date d'échéance de la tranche " . $i . " est requise.";
+                            $hasError = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if ($hasError) {
+                $classe = [
+                    'id' => $id,
+                    'nom' => $nom,
+                    'cycle_id' => $cycle_id,
+                    'section_id' => $section_id,
+                    'department_id' => $department_id,
+                    'teaching_type_id' => $teaching_type_id,
+                    'frais_inscription' => $frais_inscription,
+                    'frais_inscription_reinscription' => $frais_inscription_reinscription,
+                    'frais_scolarite_brut' => $frais_scolarite_brut,
+                    'nbr_tranches' => $nbr_tranches,
+                    'tranches' => $tranches,
+                    'honor_roll_threshold' => $_POST['honor_roll_threshold'] ?? ''
+                ];
                 $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -233,7 +411,20 @@ class ClassController
                 $deptTeachingTypeId = $deptStmt->fetchColumn();
                 if ($deptTeachingTypeId && $deptTeachingTypeId != $teaching_type_id) {
                     $error = __('department_teaching_type_mismatch') ?? 'Le type d\'enseignement de la classe doit correspondre à celui du département.';
-                    $classe = ['id' => $id, 'nom' => $nom, 'cycle_id' => $cycle_id, 'section_id' => $section_id, 'department_id' => $department_id, 'teaching_type_id' => $teaching_type_id];
+                    $classe = [
+                        'id' => $id,
+                        'nom' => $nom,
+                        'cycle_id' => $cycle_id,
+                        'section_id' => $section_id,
+                        'department_id' => $department_id,
+                        'teaching_type_id' => $teaching_type_id,
+                        'frais_inscription' => $frais_inscription,
+                        'frais_inscription_reinscription' => $frais_inscription_reinscription,
+                        'frais_scolarite_brut' => $frais_scolarite_brut,
+                        'nbr_tranches' => $nbr_tranches,
+                        'tranches' => $tranches,
+                        'honor_roll_threshold' => $_POST['honor_roll_threshold'] ?? ''
+                    ];
                     $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                     $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                     $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -244,18 +435,86 @@ class ClassController
             }
 
             try {
-                $stmt = $this->db->prepare("UPDATE classes SET nom = ?, cycle_id = ?, section_id = ?, department_id = ?, teaching_type_id = ? WHERE id = ?");
-                $stmt->execute([$nom, $cycle_id, $section_id, $department_id, $teaching_type_id, (int)$id]);
+                $this->db->beginTransaction();
+
+                // Récupérer les anciennes valeurs pour l'historique
+                $stmtOld = $this->db->prepare("SELECT nom, frais_inscription, frais_inscription_reinscription, frais_scolarite_brut, nbr_tranches FROM classes WHERE id = ?");
+                $stmtOld->execute([(int)$id]);
+                $oldClass = $stmtOld->fetch(PDO::FETCH_ASSOC);
+
+                $stmtOldTr = $this->db->prepare("SELECT installment_number, amount FROM class_installments WHERE class_id = ? ORDER BY installment_number ASC");
+                $stmtOldTr->execute([(int)$id]);
+                $oldClass['tranches'] = $stmtOldTr->fetchAll(PDO::FETCH_KEY_PAIR);
+
+                // Mettre à jour la classe
+                $stmt = $this->db->prepare("UPDATE classes SET nom = ?, cycle_id = ?, section_id = ?, department_id = ?, teaching_type_id = ?, frais_inscription = ?, frais_inscription_reinscription = ?, frais_scolarite_brut = ?, nbr_tranches = ? WHERE id = ?");
+                $stmt->execute([$nom, $cycle_id, $section_id, $department_id, $teaching_type_id, $frais_inscription, $frais_inscription_reinscription, $frais_scolarite_brut, $nbr_tranches, (int)$id]);
                 
+                // Mettre à jour les tranches et échéances
+                $del = $this->db->prepare("DELETE FROM class_installments WHERE class_id = ?");
+                $del->execute([(int)$id]);
+
+                $activeYearId = $this->academicYearService->getActiveYearId();
+                $this->db->prepare("DELETE FROM fee_installments WHERE class_id = ? AND academic_year_id = ?")->execute([(int)$id, $activeYearId]);
+                $this->db->prepare("DELETE FROM installment_deadlines WHERE class_id = ? AND academic_year_id = ?")->execute([(int)$id, $activeYearId]);
+
+                if ($nbr_tranches > 0) {
+                    $ins = $this->db->prepare("INSERT INTO class_installments (class_id, installment_number, amount) VALUES (?, ?, ?)");
+                    $insFeeInst = $this->db->prepare("INSERT INTO fee_installments (academic_year_id, name, installment_order, amount, deadline_date, class_id) VALUES (?, ?, ?, ?, ?, ?)");
+                    $insDeadlines = $this->db->prepare("INSERT INTO installment_deadlines (academic_year_id, class_id, installment_number, deadline_date) VALUES (?, ?, ?, ?)");
+
+                    for ($i = 1; $i <= $nbr_tranches; $i++) {
+                        $amt = isset($tranches[$i]['amount']) ? (float)$tranches[$i]['amount'] : 0.0;
+                        $deadline = isset($tranches[$i]['deadline']) ? $tranches[$i]['deadline'] : null;
+
+                        $ins->execute([(int)$id, $i, $amt]);
+                        $insFeeInst->execute([$activeYearId, "Tranche " . $i, $i, $amt, $deadline, (int)$id]);
+                        if ($deadline) {
+                            $insDeadlines->execute([$activeYearId, (int)$id, $i, $deadline]);
+                        }
+                    }
+                }
+
                 $threshold = trim((string) ($_POST['honor_roll_threshold'] ?? ''));
                 $this->settingsStore->set('honor_roll_threshold_class_' . $id, $threshold);
-                
+
+                // Log d'historique
+                $fs = new \App\Services\FinancialService($this->db);
+                $fs->logHistory(Session::get('user_id'), 'class_finance', (int)$id, 'update', $oldClass, [
+                    'nom' => $nom,
+                    'frais_inscription' => $frais_inscription,
+                    'frais_inscription_reinscription' => $frais_inscription_reinscription,
+                    'frais_scolarite_brut' => $frais_scolarite_brut,
+                    'nbr_tranches' => $nbr_tranches,
+                    'tranches' => $tranches
+                ]);
+
+                // Synchroniser tous les élèves inscrits dans cette classe
+                $fs->syncClassFinancials((int)$id, $activeYearId);
+
+                $this->db->commit();
                 Session::setFlash('success', __('updated_success'));
                 header("Location: /classes");
                 exit;
             } catch (\PDOException $e) {
-                $error = __('error_generic');
-                $classe = ['id' => $id, 'nom' => $nom, 'cycle_id' => $cycle_id, 'section_id' => $section_id, 'department_id' => $department_id, 'teaching_type_id' => $teaching_type_id];
+                if ($this->db->inTransaction()) {
+                    $this->db->rollBack();
+                }
+                $error = __('error_generic') . " : " . $e->getMessage();
+                $classe = [
+                    'id' => $id,
+                    'nom' => $nom,
+                    'cycle_id' => $cycle_id,
+                    'section_id' => $section_id,
+                    'department_id' => $department_id,
+                    'teaching_type_id' => $teaching_type_id,
+                    'frais_inscription' => $frais_inscription,
+                    'frais_inscription_reinscription' => $frais_inscription_reinscription,
+                    'frais_scolarite_brut' => $frais_scolarite_brut,
+                    'nbr_tranches' => $nbr_tranches,
+                    'tranches' => $tranches,
+                    'honor_roll_threshold' => $_POST['honor_roll_threshold'] ?? ''
+                ];
                 $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);

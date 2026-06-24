@@ -23,43 +23,105 @@ $logoData = [
     'fallback_letter' => $logoManager->getFallbackLetter()
 ];
 
-// Navigation Items based on role
+// Navigation Items based on role (nested hierarchical structure)
 $nav_items = [
-    ['icon' => 'bi-speedometer2', 'label' => __('dashboard'), 'url' => '/', 'roles' => ['superadmin', 'admin', 'enseignant']],
-
+    // Dashboard (Flat)
+    [
+        'icon' => 'bi-speedometer2',
+        'label' => __('dashboard'),
+        'url' => '/',
+        'roles' => ['superadmin', 'admin', 'enseignant']
+    ],
     // SECTION: PILOTAGE
-    ['section' => __('pilotage'), 'roles' => ['superadmin', 'admin']],
-    ['icon' => 'bi-calendar-event', 'label' => __('academic_years'), 'url' => '/academic_years', 'roles' => ['superadmin', 'admin']],
-    ['icon' => 'bi-check2-square', 'label' => __('evaluations'), 'url' => '/sequences', 'roles' => ['superadmin', 'admin']],
-
+    [
+        'section' => __('pilotage'),
+        'roles' => ['superadmin', 'admin', 'enseignant'],
+        'icon' => 'bi-sliders',
+        'items' => [
+            ['icon' => 'bi-calendar-event', 'label' => __('academic_years'), 'url' => '/academic_years', 'roles' => ['superadmin', 'admin']],
+            ['icon' => 'bi-check2-square', 'label' => __('evaluations'), 'url' => '/sequences', 'roles' => ['superadmin', 'admin']],
+            ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'roles' => ['superadmin', 'admin', 'enseignant']],
+        ]
+    ],
     // SECTION: STRUCTURE
-    ['section' => __('structure_et_classes'), 'roles' => ['superadmin']],
-    ['icon' => 'bi-diagram-3', 'label' => 'Types Enseignement', 'url' => '/teaching_types', 'roles' => ['superadmin']],
-    ['icon' => 'bi-layers', 'label' => __('academic_cycles'), 'url' => '/cycles', 'roles' => ['superadmin']],
-    ['icon' => 'bi-grid-3x3-gap', 'label' => __('academic_sections'), 'url' => '/sections', 'roles' => ['superadmin']],
-    ['icon' => 'bi-building', 'label' => __('departments'), 'url' => '/departments', 'roles' => ['superadmin']],
-    ['icon' => 'bi-door-open', 'label' => __('classes'), 'url' => '/classes', 'roles' => ['superadmin', 'admin']],
-
+    [
+        'section' => __('structure_et_classes'),
+        'roles' => ['superadmin'],
+        'icon' => 'bi-building-gear',
+        'items' => [
+            ['icon' => 'bi-diagram-3', 'label' => 'Types Enseignement', 'url' => '/teaching_types', 'roles' => ['superadmin']],
+            ['icon' => 'bi-layers', 'label' => __('academic_cycles'), 'url' => '/cycles', 'roles' => ['superadmin']],
+            ['icon' => 'bi-grid-3x3-gap', 'label' => __('academic_sections'), 'url' => '/sections', 'roles' => ['superadmin']],
+            ['icon' => 'bi-building', 'label' => __('departments'), 'url' => '/departments', 'roles' => ['superadmin']],
+        ]
+    ],
     // SECTION: RESSOURCES HUMAINES
-    ['section' => __('ressources_humaines'), 'roles' => ['superadmin', 'admin', 'enseignant']],
-    ['icon' => 'bi-people', 'label' => __('students'), 'url' => '/students', 'roles' => ['superadmin', 'admin']],
-    ['icon' => 'bi-people', 'label' => __('my_students'), 'url' => '/students', 'roles' => ['enseignant']],
-    ['icon' => 'bi-person-badge', 'label' => __('teachers'), 'url' => '/teachers', 'roles' => ['superadmin', 'admin']],
-
+    [
+        'section' => __('ressources_humaines'),
+        'roles' => ['superadmin', 'admin', 'enseignant'],
+        'icon' => 'bi-people',
+        'items' => [
+            ['icon' => 'bi-people', 'label' => __('students'), 'url' => '/students', 'roles' => ['superadmin', 'admin']],
+            ['icon' => 'bi-people', 'label' => __('my_students'), 'url' => '/students', 'roles' => ['enseignant']],
+            ['icon' => 'bi-person-badge', 'label' => __('teachers'), 'url' => '/teachers', 'roles' => ['superadmin', 'admin']],
+        ]
+    ],
+    // SECTION: GESTION FINANCIÈRE
+    [
+        'section' => 'Gestion Financière',
+        'roles' => ['superadmin', 'admin'],
+        'icon' => 'bi-wallet2',
+        'items' => [
+            [
+                'label' => 'Scolarité',
+                'roles' => ['superadmin', 'admin'],
+                'icon' => 'bi-book-half',
+                'submenu' => [
+                    ['label' => 'Paiements', 'url' => '/payments', 'roles' => ['superadmin', 'admin']],
+                    ['label' => 'Grille de Scolarité', 'url' => '/school_fees/grille', 'roles' => ['superadmin', 'admin']],
+                    ['label' => 'Tranches', 'url' => '/school_fees/tranches', 'roles' => ['superadmin', 'admin']],
+                    ['label' => 'Versements', 'url' => '/school_fees/versements', 'roles' => ['superadmin', 'admin']],
+                    ['label' => 'Insolvables', 'url' => '/school_fees/insolvables', 'roles' => ['superadmin', 'admin']],
+                ]
+            ],
+            [
+                'label' => 'Réductions',
+                'roles' => ['superadmin', 'admin'],
+                'icon' => 'bi-percent',
+                'submenu' => [
+                    ['label' => 'Réductions Accordées', 'url' => '/discounts', 'roles' => ['superadmin', 'admin']],
+                    ['label' => 'Types de Réductions', 'url' => '/discount_types', 'roles' => ['superadmin', 'admin']],
+                ]
+            ],
+            ['icon' => 'bi-award-fill', 'label' => 'Bourses', 'url' => '/scholarships', 'roles' => ['superadmin', 'admin']],
+            ['icon' => 'bi-journal-text', 'label' => 'Historique Financier', 'url' => '/financial-history', 'roles' => ['superadmin', 'admin']],
+        ]
+    ],
     // SECTION: PÉDAGOGIE
-    ['section' => __('pedagogie_et_resultats'), 'roles' => ['superadmin', 'admin', 'enseignant']],
-    ['icon' => 'bi-book', 'label' => __('subjects'), 'url' => '/subjects', 'roles' => ['superadmin', 'admin']],
-    ['icon' => 'bi-pencil-square', 'label' => __('enter_marks'), 'url' => '/notes', 'roles' => ['superadmin', 'admin', 'enseignant']],
-    ['icon' => 'bi-file-earmark-pdf', 'label' => __('bulletins'), 'url' => '/bulletins', 'roles' => ['superadmin', 'admin']],
-    ['icon' => 'bi-award', 'label' => __('honor_roll_title'), 'url' => '/honors', 'roles' => ['superadmin', 'admin']],
-    ['icon' => 'bi-shield-check', 'label' => __('discipline_management'), 'url' => '/bulletins/discipline', 'roles' => ['superadmin', 'admin']],
-    ['icon' => 'bi-file-earmark-text', 'label' => __('proces_verbaux'), 'url' => '/proces-verbal', 'roles' => ['superadmin', 'admin']],
-
+    [
+        'section' => __('pedagogie_et_resultats'),
+        'roles' => ['superadmin', 'admin', 'enseignant'],
+        'icon' => 'bi-mortarboard',
+        'items' => [
+            ['icon' => 'bi-door-open', 'label' => __('classes'), 'url' => '/classes', 'roles' => ['superadmin', 'admin']],
+            ['icon' => 'bi-book', 'label' => __('subjects'), 'url' => '/subjects', 'roles' => ['superadmin', 'admin']],
+            ['icon' => 'bi-pencil-square', 'label' => __('enter_marks'), 'url' => '/notes', 'roles' => ['superadmin', 'admin', 'enseignant']],
+            ['icon' => 'bi-file-earmark-pdf', 'label' => __('bulletins'), 'url' => '/bulletins', 'roles' => ['superadmin', 'admin']],
+            ['icon' => 'bi-award', 'label' => __('honor_roll_title'), 'url' => '/honors', 'roles' => ['superadmin', 'admin']],
+            ['icon' => 'bi-shield-check', 'label' => __('discipline_management'), 'url' => '/bulletins/discipline', 'roles' => ['superadmin', 'admin']],
+            ['icon' => 'bi-file-earmark-text', 'label' => __('proces_verbaux'), 'url' => '/proces-verbal', 'roles' => ['superadmin', 'admin']],
+        ]
+    ],
     // SECTION: ADMINISTRATION
-    ['section' => __('administration'), 'roles' => ['superadmin']],
-    ['icon' => 'bi-people-fill', 'label' => __('users'), 'url' => '/users', 'roles' => ['superadmin']],
-    ['icon' => 'bi-gear', 'label' => __('settings'), 'url' => '/settings', 'roles' => ['superadmin']],
-    ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'roles' => ['superadmin', 'admin', 'enseignant']],
+    [
+        'section' => __('administration'),
+        'roles' => ['superadmin'],
+        'icon' => 'bi-shield-lock',
+        'items' => [
+            ['icon' => 'bi-people-fill', 'label' => __('users'), 'url' => '/users', 'roles' => ['superadmin']],
+            ['icon' => 'bi-gear', 'label' => __('settings'), 'url' => '/settings', 'roles' => ['superadmin']],
+        ]
+    ]
 ];
 
 $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -426,13 +488,101 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                     <?php foreach ($nav_items as $item): ?>
                         <?php if (isset($item['section'])): ?>
                             <?php if (in_array($user_role, $item['roles'])): ?>
-                                <div class="nav-section">
-                                    <div class="nav-section-title"><?= $item['section'] ?></div>
-                                </div>
+                                <?php
+                                $visible_children = [];
+                                if (isset($item['items'])) {
+                                    foreach ($item['items'] as $child) {
+                                        if (in_array($user_role, $child['roles'])) {
+                                            $visible_children[] = $child;
+                                        }
+                                    }
+                                }
+                                ?>
+                                <?php if (count($visible_children) > 0): ?>
+                                    <?php
+                                    $hasActiveChild = false;
+                                    foreach ($visible_children as $child) {
+                                        if (isset($child['submenu'])) {
+                                            foreach ($child['submenu'] as $subchild) {
+                                                if (in_array($user_role, $subchild['roles'])) {
+                                                    $isSubActive = ($current_path === $subchild['url'] || ($subchild['url'] !== '/' && strpos($current_path, $subchild['url'] . '/') === 0));
+                                                    if ($isSubActive) {
+                                                        $hasActiveChild = true;
+                                                        break 2;
+                                                    }
+                                                }
+                                            }
+                                        } else {
+                                            $isChildActive = ($current_path === $child['url'] || ($child['url'] !== '/' && strpos($current_path, $child['url'] . '/') === 0));
+                                            if ($isChildActive) {
+                                                $hasActiveChild = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    $section_id = 'submenu-' . strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $item['section']));
+                                    ?>
+                                    <div class="nav-item-dropdown">
+                                        <a href="#" class="nav-link-custom dropdown-toggle-custom <?= $hasActiveChild ? 'active-parent' : '' ?>" data-target="<?= $section_id ?>" aria-expanded="<?= $hasActiveChild ? 'true' : 'false' ?>">
+                                            <i class="bi <?= $item['icon'] ?? 'bi-folder' ?>"></i>
+                                            <span><?= $item['section'] ?></span>
+                                            <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
+                                        </a>
+                                        <div class="submenu-collapse <?= $hasActiveChild ? 'show' : '' ?>" id="<?= $section_id ?>">
+                                            <?php foreach ($visible_children as $child): ?>
+                                                <?php if (isset($child['submenu'])): ?>
+                                                    <?php
+                                                    $visible_subchildren = [];
+                                                    foreach ($child['submenu'] as $subchild) {
+                                                        if (in_array($user_role, $subchild['roles'])) {
+                                                            $visible_subchildren[] = $subchild;
+                                                        }
+                                                    }
+                                                    ?>
+                                                    <?php if (count($visible_subchildren) > 0): ?>
+                                                        <?php
+                                                        $hasActiveSubChild = false;
+                                                        foreach ($visible_subchildren as $subchild) {
+                                                            if ($current_path === $subchild['url'] || ($subchild['url'] !== '/' && strpos($current_path, $subchild['url'] . '/') === 0)) {
+                                                                $hasActiveSubChild = true;
+                                                                break;
+                                                            }
+                                                        }
+                                                        $nested_id = 'nested-' . strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $child['label']));
+                                                        ?>
+                                                        <div class="nested-dropdown">
+                                                            <a href="#" class="submenu-link dropdown-toggle-nested <?= $hasActiveSubChild ? 'active-parent-nested' : '' ?>" data-target="<?= $nested_id ?>" aria-expanded="<?= $hasActiveSubChild ? 'true' : 'false' ?>" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                                                                <span class="d-flex align-items-center gap-2">
+                                                                    <i class="bi <?= $child['icon'] ?? 'bi-percent' ?>"></i>
+                                                                    <span><?= $child['label'] ?></span>
+                                                                </span>
+                                                                <i class="bi bi-chevron-down ms-auto arrow-icon-nested" style="font-size: 0.7rem; transition: transform 0.2s ease;"></i>
+                                                            </a>
+                                                            <div class="nested-submenu-collapse <?= $hasActiveSubChild ? 'show' : '' ?>" id="<?= $nested_id ?>" style="overflow: hidden; max-height: 0; transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1); margin-left: 1.2rem; padding-left: 0.5rem; border-left: 1px dashed var(--border-color); display: flex; flex-direction: column; gap: 0.2rem;">
+                                                                <?php foreach ($visible_subchildren as $subchild): ?>
+                                                                    <?php $isSubActive = ($current_path === $subchild['url'] || ($subchild['url'] !== '/' && strpos($current_path, $subchild['url'] . '/') === 0)); ?>
+                                                                    <a href="<?= $subchild['url'] ?>" class="submenu-link <?= $isSubActive ? 'active' : '' ?>" style="font-size: 0.78rem; padding: 0.4rem 0.6rem;">
+                                                                        <span><?= $subchild['label'] ?></span>
+                                                                    </a>
+                                                                <?php endforeach; ?>
+                                                            </div>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                <?php else: ?>
+                                                    <?php $isChildActive = ($current_path === $child['url'] || ($child['url'] !== '/' && strpos($current_path, $child['url'] . '/') === 0)); ?>
+                                                    <a href="<?= $child['url'] ?>" class="submenu-link <?= $isChildActive ? 'active' : '' ?>">
+                                                        <i class="bi <?= $child['icon'] ?> me-2"></i>
+                                                        <span><?= $child['label'] ?></span>
+                                                    </a>
+                                                <?php endif; ?>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
                             <?php endif; ?>
                         <?php else: ?>
                             <?php if (in_array($user_role, $item['roles'])): ?>
-                                <?php $isActive = ($current_path === $item['url']); ?>
+                                <?php $isActive = ($current_path === $item['url'] || ($item['url'] !== '/' && strpos($current_path, $item['url'] . '/') === 0)); ?>
                                 <a href="<?= $item['url'] ?>" class="nav-link-custom <?= $isActive ? 'active' : '' ?>">
                                     <i class="bi <?= $item['icon'] ?>"></i>
                                     <span><?= $item['label'] ?></span>
@@ -459,14 +609,14 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                 <?php endif; ?>
             </div>
 
-            <?php if (\App\Core\Session::isLogged()): ?>
+            <!-- <?php if (\App\Core\Session::isLogged()): ?>
                 <div class="sidebar-footer">
                     <a href="/logout" class="nav-link-custom text-danger">
                         <i class="bi bi-box-arrow-right"></i>
                         <span><?= __('logout') ?></span>
                     </a>
                 </div>
-            <?php endif; ?>
+            <?php endif; ?> -->
         </aside>
 
         <!-- Main Area -->
@@ -697,6 +847,45 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                     }
                 });
             <?php endif; ?>
+
+            // Sidebar Collapsible Submenus Toggle
+            const dropdownToggles = document.querySelectorAll('.dropdown-toggle-custom');
+            dropdownToggles.forEach(toggle => {
+                toggle.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('data-target');
+                    const submenu = document.getElementById(targetId);
+                    if (submenu) {
+                        const isExpanded = this.getAttribute('aria-expanded') === 'true';
+                        this.setAttribute('aria-expanded', isExpanded ? 'false' : 'true');
+                        if (isExpanded) {
+                            submenu.classList.remove('show');
+                        } else {
+                            submenu.classList.add('show');
+                        }
+                    }
+                });
+            });
+
+            // Sidebar Collapsible Nested Submenus Toggle
+            const nestedToggles = document.querySelectorAll('.dropdown-toggle-nested');
+            nestedToggles.forEach(toggle => {
+                toggle.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const targetId = this.getAttribute('data-target');
+                    const submenu = document.getElementById(targetId);
+                    if (submenu) {
+                        const isExpanded = this.getAttribute('aria-expanded') === 'true';
+                        this.setAttribute('aria-expanded', isExpanded ? 'false' : 'true');
+                        if (isExpanded) {
+                            submenu.classList.remove('show');
+                        } else {
+                            submenu.classList.add('show');
+                        }
+                    }
+                });
+            });
 
             // Initialisation des tooltips
             const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))

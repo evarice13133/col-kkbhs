@@ -596,31 +596,31 @@ body {
 
 /* KPI Widgets */
 .kpi-card {
-    padding: 1.75rem;
+    padding: 0.75rem 1rem;
 }
 
 .kpi-icon-wrapper {
-    width: 50px;
-    height: 50px;
-    border-radius: 14px;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.5rem;
-    margin-bottom: 1.25rem;
+    font-size: 1.1rem;
+    margin-bottom: 0.4rem;
 }
 
 .kpi-value {
-    font-size: 2rem;
+    font-size: 1.25rem;
     font-weight: 800;
     font-family: 'Outfit', sans-serif;
     color: var(--text-main);
     line-height: 1.1;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.1rem;
 }
 
 .kpi-label {
-    font-size: 0.875rem;
+    font-size: 0.75rem;
     color: var(--text-muted);
     font-weight: 600;
 }
@@ -1023,3 +1023,189 @@ body {
     color: var(--primary-color);
     transform: translateY(-2px);
 }
+
+/* --- Premium Row Hover Lift and Glow --- */
+.table-modern tbody tr {
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+.table-modern tbody tr:hover {
+    background-color: var(--primary-soft) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.05);
+}
+
+/* --- KPI Card Hover animations & Glow --- */
+.kpi-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.kpi-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-premium) !important;
+    border-color: rgba(var(--primary-rgb), 0.25) !important;
+}
+.kpi-card:hover:has(.text-primary) {
+    border-color: rgba(124, 58, 237, 0.4) !important;
+}
+.kpi-card:hover:has(.text-success) {
+    border-color: rgba(16, 185, 129, 0.4) !important;
+}
+.kpi-card:hover:has(.text-danger) {
+    border-color: rgba(239, 68, 68, 0.4) !important;
+}
+.kpi-card:hover:has(.text-info) {
+    border-color: rgba(59, 130, 246, 0.4) !important;
+}
+.kpi-card:hover:has(.text-warning) {
+    border-color: rgba(245, 158, 11, 0.4) !important;
+}
+
+/* --- Premium Glowing Badges --- */
+.badge-premium {
+    font-weight: 700;
+    padding: 0.35em 0.8em;
+    border-radius: 100px;
+    font-size: 0.72rem;
+    border: 1px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+.badge-premium-success {
+    background-color: rgba(16, 185, 129, 0.1) !important;
+    color: #10b981 !important;
+    border-color: rgba(16, 185, 129, 0.25) !important;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.05);
+}
+.badge-premium-danger {
+    background-color: rgba(239, 68, 68, 0.1) !important;
+    color: #ef4444 !important;
+    border-color: rgba(239, 68, 68, 0.25) !important;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.05);
+}
+.badge-premium-warning {
+    background-color: rgba(245, 158, 11, 0.1) !important;
+    color: #f59e0b !important;
+    border-color: rgba(245, 158, 11, 0.25) !important;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.05);
+}
+.badge-premium-info {
+    background-color: rgba(59, 130, 246, 0.1) !important;
+    color: #3b82f6 !important;
+    border-color: rgba(59, 130, 246, 0.25) !important;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.05);
+}
+.badge-premium-secondary {
+    background-color: rgba(100, 116, 139, 0.1) !important;
+    color: #64748b !important;
+    border-color: rgba(100, 116, 139, 0.25) !important;
+    box-shadow: 0 2px 8px rgba(100, 116, 139, 0.05);
+}
+
+/* --- Floating Island Polish --- */
+.filter-island {
+    background: rgba(var(--bg-card-rgb), 0.8) !important;
+    backdrop-filter: blur(16px) saturate(180%) !important;
+    border: 1.5px solid rgba(var(--primary-rgb), 0.18) !important;
+    border-radius: 100px;
+    padding: 0.5rem 1rem !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+[data-theme="dark"] .filter-island {
+    background: rgba(15, 23, 42, 0.75) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+.filter-island:focus-within {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 10px 30px -8px rgba(124, 58, 237, 0.25) !important;
+    transform: translateY(-2px);
+}
+.filter-island input, .filter-island select {
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+.filter-island select:hover {
+    background-color: rgba(var(--primary-rgb), 0.05) !important;
+    color: var(--primary-color) !important;
+}
+
+/* --- Collapsible Submenus --- */
+.submenu-collapse {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-left: 1.6rem;
+    padding-left: 0.5rem;
+    border-left: 1.5px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.submenu-collapse.show {
+    max-height: 500px;
+    margin-bottom: 0.5rem;
+}
+
+.submenu-link {
+    display: flex;
+    align-items: center;
+    padding: 0.55rem 0.8rem;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.submenu-link:hover {
+    background: var(--primary-soft);
+    color: var(--primary-color) !important;
+    transform: translateX(3px);
+}
+
+.submenu-link.active {
+    background: var(--primary-soft);
+    color: var(--primary-color) !important;
+    font-weight: 700;
+}
+
+/* Arrow rotation on toggle */
+.arrow-icon {
+    font-size: 0.8rem;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dropdown-toggle-custom[aria-expanded="true"] .arrow-icon {
+    transform: rotate(180deg);
+}
+
+.dropdown-toggle-custom.active-parent {
+    border-color: color-mix(in srgb, var(--primary-color) 25%, transparent) !important;
+    background: color-mix(in srgb, var(--primary-soft) 40%, transparent) !important;
+    color: var(--text-main) !important;
+}
+
+[data-theme="dark"] .submenu-collapse {
+    border-left-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Nested Submenus (Double nesting) */
+.nested-submenu-collapse.show {
+    max-height: 300px !important;
+    margin-top: 0.2rem;
+    margin-bottom: 0.2rem;
+}
+
+.dropdown-toggle-nested[aria-expanded="true"] .arrow-icon-nested {
+    transform: rotate(180deg);
+}
+
+.dropdown-toggle-nested.active-parent-nested {
+    color: var(--primary-color) !important;
+}
+
+.submenu-collapse.show {
+    max-height: 1000px; /* Increase parent height to allow nested menus */
+}
+

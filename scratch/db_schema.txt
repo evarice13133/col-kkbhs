@@ -1,0 +1,404 @@
+=== DATABASE SCHEMA DUMP ===
+
+Table: academic_years
+========================================
+CREATE TABLE `academic_years` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `nom` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `is_active` tinyint(1) DEFAULT '0',
+  `status` enum('active','archived') COLLATE utf8mb4_general_ci DEFAULT 'active',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `start_date` date DEFAULT NULL,
+  `end_date` date DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `nom` (`nom`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+
+Table: activity_logs
+========================================
+CREATE TABLE `activity_logs` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int DEFAULT NULL,
+  `user_role` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `event_type` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `event_category` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'system',
+  `route` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `http_method` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `entity_type` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `entity_id` int DEFAULT NULL,
+  `event_count` int NOT NULL DEFAULT '1',
+  `metadata` longtext COLLATE utf8mb4_unicode_ci,
+  `ip_address` varchar(45) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `user_agent` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `academic_year_id` bigint unsigned DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_activity_logs_created_at` (`created_at`),
+  KEY `idx_activity_logs_user_created` (`user_id`,`created_at`),
+  KEY `idx_activity_logs_type_created` (`event_type`,`created_at`),
+  KEY `idx_activity_logs_category_created` (`event_category`,`created_at`),
+  CONSTRAINT `fk_activity_logs_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=34837 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+Table: classes
+========================================
+CREATE TABLE `classes` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `nom` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `cycle_id` int DEFAULT NULL,
+  `section_id` int DEFAULT NULL,
+  `department_id` int DEFAULT NULL,
+  `main_teacher_id` int DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `teaching_type_id` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `nom` (`nom`),
+  KEY `cycle_id` (`cycle_id`),
+  KEY `section_id` (`section_id`),
+  KEY `fk_main_teacher` (`main_teacher_id`),
+  KEY `fk_classes_department` (`department_id`),
+  CONSTRAINT `classes_ibfk_1` FOREIGN KEY (`cycle_id`) REFERENCES `cycles` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `classes_ibfk_2` FOREIGN KEY (`section_id`) REFERENCES `sections` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_classes_department` FOREIGN KEY (`department_id`) REFERENCES `departments` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_main_teacher` FOREIGN KEY (`main_teacher_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=102 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+
+Table: conseils_classe
+========================================
+CREATE TABLE `conseils_classe` (
+  `id` int NOT NULL,
+  `class_id` int NOT NULL,
+  `academic_year_id` int NOT NULL,
+  `date_conseil` date DEFAULT NULL,
+  `is_validated` tinyint(1) NOT NULL DEFAULT '0',
+  `validated_by` int DEFAULT NULL,
+  `validated_at` datetime DEFAULT NULL,
+  `created_by` int DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+Table: cycles
+========================================
+CREATE TABLE `cycles` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `nom` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `nom` (`nom`)
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+
+Table: decisions_fin_annee
+========================================
+CREATE TABLE `decisions_fin_annee` (
+  `id` int NOT NULL,
+  `student_id` int NOT NULL,
+  `class_id` int NOT NULL,
+  `academic_year_id` int NOT NULL,
+  `conseil_id` int DEFAULT NULL,
+  `moyenne_annuelle` decimal(5,2) DEFAULT NULL,
+  `rang` int DEFAULT NULL,
+  `decision` enum('admis','admis_avec_reserve','redouble','renvoye','transfert','demissionnaire') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `classe_destination_id` int DEFAULT NULL,
+  `raison_renvoi` text COLLATE utf8mb4_unicode_ci,
+  `commentaire` text COLLATE utf8mb4_unicode_ci,
+  `created_by` int DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+Table: departments
+========================================
+CREATE TABLE `departments` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `nom` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `code` varchar(20) COLLATE utf8mb4_general_ci NOT NULL,
+  `status` tinyint(1) DEFAULT '1',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `teaching_type_id` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `nom` (`nom`),
+  KEY `fk_dept_teaching_type` (`teaching_type_id`),
+  CONSTRAINT `fk_dept_teaching_type` FOREIGN KEY (`teaching_type_id`) REFERENCES `teaching_types` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+
+Table: discipline
+========================================
+CREATE TABLE `discipline` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `student_id` int NOT NULL,
+  `academic_year_id` int NOT NULL,
+  `periode` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `absences_total` int DEFAULT '0',
+  `absences_justified` int DEFAULT '0',
+  `exclusion_days` int DEFAULT '0',
+  `consignes` int DEFAULT '0',
+  `conduct` varchar(120) COLLATE utf8mb4_unicode_ci DEFAULT '',
+  `warning_conduct` tinyint(1) DEFAULT '0',
+  `blame_conduct` tinyint(1) DEFAULT '0',
+  `warning_work` tinyint(1) DEFAULT '0',
+  `tableau_honneur` tinyint(1) DEFAULT '0',
+  `encouragements` tinyint(1) DEFAULT '0',
+  `felicitations` tinyint(1) DEFAULT '0',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `student_id` (`student_id`,`academic_year_id`,`periode`),
+  KEY `academic_year_id` (`academic_year_id`),
+  CONSTRAINT `discipline_ibfk_1` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `discipline_ibfk_2` FOREIGN KEY (`academic_year_id`) REFERENCES `academic_years` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+Table: grades
+========================================
+CREATE TABLE `grades` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `student_id` int NOT NULL,
+  `subject_id` int NOT NULL,
+  `teacher_id` int DEFAULT NULL,
+  `academic_year_id` int DEFAULT NULL,
+  `sequence_id` int DEFAULT NULL,
+  `periode` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `valeur` float DEFAULT NULL,
+  `appreciation` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `teacher_nom_snapshot` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT 'Nom de l''enseignant au moment de la saisie',
+  `teacher_prenom_snapshot` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT 'Prénom de l''enseignant au moment de la saisie',
+  `subject_nom_snapshot` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT 'Nom de la matière au moment de la saisie',
+  `created_by_type` enum('enseignant','admin') COLLATE utf8mb4_general_ci DEFAULT 'enseignant' COMMENT 'Type de créateur (enseignant ou admin)',
+  `teaching_type_id` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `student_subject_period` (`student_id`,`subject_id`,`periode`,`academic_year_id`),
+  KEY `subject_id` (`subject_id`),
+  KEY `academic_year_id` (`academic_year_id`),
+  KEY `idx_grades_stats` (`teacher_id`,`academic_year_id`,`subject_id`),
+  KEY `sequence_id` (`sequence_id`),
+  CONSTRAINT `grades_fk_teacher_safe` FOREIGN KEY (`teacher_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `grades_ibfk_1` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `grades_ibfk_2` FOREIGN KEY (`subject_id`) REFERENCES `subjects` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `grades_ibfk_4` FOREIGN KEY (`academic_year_id`) REFERENCES `academic_years` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `grades_ibfk_5` FOREIGN KEY (`sequence_id`) REFERENCES `sequences` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `grades_chk_1` CHECK (((`valeur` >= 0) and (`valeur` <= 20)))
+) ENGINE=InnoDB AUTO_INCREMENT=28781 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+
+Table: historique_modifications_conseil
+========================================
+CREATE TABLE `historique_modifications_conseil` (
+  `id` int NOT NULL,
+  `decision_id` int NOT NULL,
+  `field_name` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `old_value` text COLLATE utf8mb4_unicode_ci,
+  `new_value` text COLLATE utf8mb4_unicode_ci,
+  `modified_by` int NOT NULL,
+  `modified_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `motif` text COLLATE utf8mb4_unicode_ci
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+Table: historique_passages
+========================================
+CREATE TABLE `historique_passages` (
+  `id` int NOT NULL,
+  `student_id` int NOT NULL,
+  `from_class_id` int DEFAULT NULL,
+  `from_academic_year_id` int NOT NULL,
+  `to_class_id` int DEFAULT NULL,
+  `to_academic_year_id` int DEFAULT NULL,
+  `decision` enum('admis','admis_avec_reserve','redouble','renvoye','transfert','demissionnaire') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `moyenne_annuelle` decimal(5,2) DEFAULT NULL,
+  `processed_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `processed_by` int DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+Table: sections
+========================================
+CREATE TABLE `sections` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `nom` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `nom` (`nom`)
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+
+Table: sequences
+========================================
+CREATE TABLE `sequences` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `code` varchar(20) COLLATE utf8mb4_general_ci NOT NULL,
+  `label` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `short_label` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `trimestre` tinyint NOT NULL,
+  `position` tinyint NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `academic_year_id` bigint unsigned DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `code` (`code`),
+  UNIQUE KEY `label` (`label`)
+) ENGINE=InnoDB AUTO_INCREMENT=25127 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+
+Table: settings
+========================================
+CREATE TABLE `settings` (
+  `setting_key` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `setting_value` text COLLATE utf8mb4_general_ci,
+  PRIMARY KEY (`setting_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+
+Table: students
+========================================
+CREATE TABLE `students` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `nom` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `prenom` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `date_naissance` date DEFAULT NULL,
+  `lieu_naissance` varchar(150) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `is_redoublant` tinyint(1) NOT NULL DEFAULT '0',
+  `is_withdrawn` tinyint(1) NOT NULL DEFAULT '0',
+  `photo_eleve` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `parent_contact` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `guardian_contact` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `email` varchar(150) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `class_id` int DEFAULT NULL,
+  `sexe` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `academic_year_id` bigint unsigned DEFAULT NULL,
+  `teaching_type_id` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_students_email` (`email`),
+  KEY `idx_students_class` (`class_id`),
+  CONSTRAINT `students_ibfk_3` FOREIGN KEY (`class_id`) REFERENCES `classes` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=398 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+
+Table: subject_classes
+========================================
+CREATE TABLE `subject_classes` (
+  `subject_id` int NOT NULL,
+  `class_id` int NOT NULL,
+  `academic_year_id` bigint unsigned DEFAULT NULL,
+  PRIMARY KEY (`subject_id`,`class_id`),
+  KEY `class_id` (`class_id`),
+  CONSTRAINT `subject_classes_ibfk_1` FOREIGN KEY (`subject_id`) REFERENCES `subjects` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `subject_classes_ibfk_2` FOREIGN KEY (`class_id`) REFERENCES `classes` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+
+Table: subjects
+========================================
+CREATE TABLE `subjects` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `nom` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `coefficient` int DEFAULT '1',
+  `groupe` varchar(20) COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'Groupe 1',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `status` tinyint(1) DEFAULT '1',
+  `teaching_type_id` int DEFAULT NULL,
+  `department_id` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_subject_dept` (`department_id`),
+  CONSTRAINT `fk_subject_dept` FOREIGN KEY (`department_id`) REFERENCES `departments` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=498 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+
+Table: system_job_runs
+========================================
+CREATE TABLE `system_job_runs` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `job_name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'running',
+  `message` text COLLATE utf8mb4_unicode_ci,
+  `details` longtext COLLATE utf8mb4_unicode_ci,
+  `attempts` int unsigned NOT NULL DEFAULT '1',
+  `started_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `finished_at` datetime DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `academic_year_id` bigint unsigned DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_system_job_runs_name_started` (`job_name`,`started_at`),
+  KEY `idx_system_job_runs_status_started` (`status`,`started_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+Table: teacher_assignments
+========================================
+CREATE TABLE `teacher_assignments` (
+  `user_id` int NOT NULL,
+  `subject_id` int NOT NULL,
+  `class_id` int NOT NULL,
+  `academic_year_id` bigint unsigned DEFAULT NULL,
+  `teaching_type_id` int DEFAULT NULL,
+  PRIMARY KEY (`user_id`,`subject_id`,`class_id`),
+  UNIQUE KEY `idx_teacher_unique_assignment` (`class_id`,`subject_id`),
+  KEY `subject_id` (`subject_id`),
+  KEY `idx_ta_user` (`user_id`),
+  CONSTRAINT `teacher_assignments_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `teacher_assignments_ibfk_2` FOREIGN KEY (`subject_id`) REFERENCES `subjects` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `teacher_assignments_ibfk_3` FOREIGN KEY (`class_id`) REFERENCES `classes` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+
+Table: teacher_contracts
+========================================
+CREATE TABLE `teacher_contracts` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `teacher_id` int NOT NULL,
+  `academic_year_id` int NOT NULL,
+  `contract_type` enum('PERMANENT','VACATAIRE','CONTRACTUEL','STAGIAIRE','SUSPENDU','RETRAITE','INACTIF') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'VACATAIRE',
+  `start_date` date DEFAULT NULL,
+  `end_date` date DEFAULT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `notes` text COLLATE utf8mb4_general_ci,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_teacher_year_contract` (`teacher_id`,`academic_year_id`),
+  KEY `academic_year_id` (`academic_year_id`),
+  CONSTRAINT `fk_teacher_contracts_academic_year` FOREIGN KEY (`academic_year_id`) REFERENCES `academic_years` (`id`) ON UPDATE CASCADE,
+  CONSTRAINT `fk_teacher_contracts_teacher` FOREIGN KEY (`teacher_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+
+Table: teaching_types
+========================================
+CREATE TABLE `teaching_types` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `nom` varchar(100) NOT NULL,
+  `code` varchar(20) NOT NULL,
+  `position` int DEFAULT '0',
+  `actif` tinyint(1) DEFAULT '1',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `code` (`code`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+
+Table: user_departments
+========================================
+CREATE TABLE `user_departments` (
+  `user_id` int NOT NULL,
+  `department_id` int NOT NULL,
+  PRIMARY KEY (`user_id`,`department_id`),
+  KEY `department_id` (`department_id`),
+  CONSTRAINT `user_departments_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `user_departments_ibfk_2` FOREIGN KEY (`department_id`) REFERENCES `departments` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+
+Table: user_teaching_types
+========================================
+CREATE TABLE `user_teaching_types` (
+  `user_id` int NOT NULL,
+  `teaching_type_id` int NOT NULL,
+  PRIMARY KEY (`user_id`,`teaching_type_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+
+Table: users
+========================================
+CREATE TABLE `users` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `nom` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `prenom` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `username` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `email` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `password` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `role` enum('superadmin','admin','enseignant') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'enseignant',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `email` (`email`),
+  UNIQUE KEY `username` (`username`)
+) ENGINE=InnoDB AUTO_INCREMENT=72 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+

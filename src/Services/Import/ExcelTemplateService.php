@@ -631,4 +631,130 @@ class ExcelTemplateService
 
         return $content;
     }
+
+    /**
+     * Modèle Excel pour import des frais de scolarité et tranches (Grille de scolarité).
+     */
+    public function generateGrilleTemplate(
+        string $lang = 'fr',
+        int $teachingTypeId = 0,
+        int $cycleId = 0,
+        int $sectionId = 0,
+        int $classId = 0
+    ): string {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle($lang === 'fr' ? 'Import Grille Scolarité' : 'Fees grid import');
+
+        // En-têtes
+        $headers = [
+            'A1' => 'Classe',
+            'B1' => 'Inscription (Nouveau)',
+            'C1' => 'Inscription (Ancien)',
+            'D1' => 'Scolarité Brut',
+            'E1' => 'Nombre de Tranches',
+            'F1' => 'Tranche 1 - Nom',
+            'G1' => 'Tranche 1 - Montant',
+            'H1' => 'Tranche 1 - Échéance',
+            'I1' => 'Tranche 2 - Nom',
+            'J1' => 'Tranche 2 - Montant',
+            'K1' => 'Tranche 2 - Échéance',
+            'L1' => 'Tranche 3 - Nom',
+            'M1' => 'Tranche 3 - Montant',
+            'N1' => 'Tranche 3 - Échéance',
+            'O1' => 'Tranche 4 - Nom',
+            'P1' => 'Tranche 4 - Montant',
+            'Q1' => 'Tranche 4 - Échéance',
+            'R1' => 'Tranche 5 - Nom',
+            'S1' => 'Tranche 5 - Montant',
+            'T1' => 'Tranche 5 - Échéance',
+            'U1' => 'Tranche 6 - Nom',
+            'V1' => 'Tranche 6 - Montant',
+            'W1' => 'Tranche 6 - Échéance',
+        ];
+
+        foreach ($headers as $cell => $value) {
+            $sheet->setCellValue($cell, $value);
+        }
+
+        // Style des en-têtes (Bleu Premium)
+        $styleArray = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
+            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]],
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '2563EB']]
+        ];
+        $sheet->getStyle('A1:W1')->applyFromArray($styleArray);
+
+        // Récupérer toutes les classes correspondant aux filtres pour pré-remplir la colonne A
+        $query = "SELECT nom FROM classes WHERE 1=1";
+        $params = [];
+        if ($teachingTypeId) {
+            $query .= " AND teaching_type_id = ?";
+            $params[] = $teachingTypeId;
+        }
+        if ($cycleId) {
+            $query .= " AND cycle_id = ?";
+            $params[] = $cycleId;
+        }
+        if ($sectionId) {
+            $query .= " AND section_id = ?";
+            $params[] = $sectionId;
+        }
+        if ($classId) {
+            $query .= " AND id = ?";
+            $params[] = $classId;
+        }
+        $query .= " ORDER BY nom ASC";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->execute($params);
+        $classes = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        
+        $row = 2;
+        foreach ($classes as $className) {
+            $sheet->setCellValue('A' . $row, $className);
+            $sheet->setCellValue('E' . $row, 3); // Nombre de tranches par défaut
+            $sheet->setCellValue('F' . $row, 'Tranche 1');
+            $sheet->setCellValue('I' . $row, 'Tranche 2');
+            $sheet->setCellValue('L' . $row, 'Tranche 3');
+            $sheet->setCellValue('O' . $row, 'Tranche 4');
+            $sheet->setCellValue('R' . $row, 'Tranche 5');
+            $sheet->setCellValue('U' . $row, 'Tranche 6');
+            
+            // Format des cellules numériques et texte
+            $sheet->getStyle('B' . $row . ':D' . $row)->getNumberFormat()->setFormatCode('#,##0');
+            $sheet->getStyle('G' . $row)->getNumberFormat()->setFormatCode('#,##0');
+            $sheet->getStyle('J' . $row)->getNumberFormat()->setFormatCode('#,##0');
+            $sheet->getStyle('M' . $row)->getNumberFormat()->setFormatCode('#,##0');
+            $sheet->getStyle('P' . $row)->getNumberFormat()->setFormatCode('#,##0');
+            $sheet->getStyle('S' . $row)->getNumberFormat()->setFormatCode('#,##0');
+            $sheet->getStyle('V' . $row)->getNumberFormat()->setFormatCode('#,##0');
+            
+            // Format texte pour les dates d'échéances pour éviter les auto-conversions bizarres d'Excel
+            $sheet->getStyle('H' . $row)->getNumberFormat()->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT);
+            $sheet->getStyle('K' . $row)->getNumberFormat()->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT);
+            $sheet->getStyle('N' . $row)->getNumberFormat()->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT);
+            $sheet->getStyle('Q' . $row)->getNumberFormat()->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT);
+            $sheet->getStyle('T' . $row)->getNumberFormat()->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT);
+            $sheet->getStyle('W' . $row)->getNumberFormat()->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT);
+            
+            $row++;
+        }
+
+        // Auto-dimensionner les colonnes
+        foreach (range('A', 'W') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        ob_start();
+        $writer->save('php://output');
+        $content = ob_get_clean();
+
+        $spreadsheet->disconnectWorksheets();
+        unset($spreadsheet);
+
+        return $content;
+    }
 }
