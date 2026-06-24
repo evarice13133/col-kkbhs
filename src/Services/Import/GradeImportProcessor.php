@@ -22,9 +22,9 @@ class GradeImportProcessor
         $this->db = $db;
         $this->teacherId = $teacherId;
         $this->createdByType = in_array($userRole, ['admin', 'superadmin']) ? 'admin' : 'enseignant';
+        $this->setActiveYear();
         $this->warmupStudents();
         $this->warmupEvaluationTypes();
-        $this->setActiveYear();
     }
 
     /**
@@ -272,7 +272,7 @@ class GradeImportProcessor
 
     private function warmupStudents(): void
     {
-        $rows = $this->db->query("SELECT id, nom, prenom FROM students WHERE academic_year_id = {$this->activeYearId} AND is_withdrawn = 0")->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $this->db->query("SELECT id, nom, prenom FROM students WHERE academic_year_id = {$this->activeYearId} AND is_withdrawn = 0 AND actif = 1")->fetchAll(PDO::FETCH_ASSOC);
         foreach ($rows as $row) {
             $key = mb_strtolower($row['nom'] . '|' . $row['prenom']);
             $this->studentsByName[$key] = (int) $row['id'];

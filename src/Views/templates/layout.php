@@ -30,7 +30,7 @@ $nav_items = [
         'icon' => 'bi-speedometer2',
         'label' => __('dashboard'),
         'url' => '/',
-        'roles' => ['superadmin', 'admin', 'enseignant']
+        'roles' => ['superadmin', 'admin', 'enseignant', 'caissier', 'comptable', 'it_manager']
     ],
     // SECTION: PILOTAGE
     [
@@ -49,7 +49,7 @@ $nav_items = [
         'roles' => ['superadmin'],
         'icon' => 'bi-building-gear',
         'items' => [
-            ['icon' => 'bi-diagram-3', 'label' => 'Types Enseignement', 'url' => '/teaching_types', 'roles' => ['superadmin']],
+            ['icon' => 'bi-diagram-3', 'label' => __('teaching_types'), 'url' => '/teaching_types', 'roles' => ['superadmin']],
             ['icon' => 'bi-layers', 'label' => __('academic_cycles'), 'url' => '/cycles', 'roles' => ['superadmin']],
             ['icon' => 'bi-grid-3x3-gap', 'label' => __('academic_sections'), 'url' => '/sections', 'roles' => ['superadmin']],
             ['icon' => 'bi-building', 'label' => __('departments'), 'url' => '/departments', 'roles' => ['superadmin']],
@@ -58,61 +58,92 @@ $nav_items = [
     // SECTION: RESSOURCES HUMAINES
     [
         'section' => __('ressources_humaines'),
-        'roles' => ['superadmin', 'admin', 'enseignant'],
+        'roles' => ['superadmin', 'admin', 'enseignant', 'caissier', 'comptable'],
         'icon' => 'bi-people',
         'items' => [
-            ['icon' => 'bi-people', 'label' => __('students'), 'url' => '/students', 'roles' => ['superadmin', 'admin']],
+            [
+                'label' => __('students'),
+                'roles' => ['superadmin', 'admin', 'caissier', 'comptable'],
+                'icon' => 'bi-people',
+                'submenu' => [
+                    ['label' => __('register_student_menu'), 'url' => '/students/create', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                    ['label' => __('my_registrations_menu'), 'url' => '/students?only_mine=1', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                    ['label' => __('all_students_menu'), 'url' => '/students', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                ]
+            ],
+            ['icon' => 'bi-person-plus-fill', 'label' => __('create_cashier_menu'), 'url' => '/users/create-caissier', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
             ['icon' => 'bi-people', 'label' => __('my_students'), 'url' => '/students', 'roles' => ['enseignant']],
             ['icon' => 'bi-person-badge', 'label' => __('teachers'), 'url' => '/teachers', 'roles' => ['superadmin', 'admin']],
         ]
     ],
     // SECTION: GESTION FINANCIÈRE
     [
-        'section' => 'Gestion Financière',
-        'roles' => ['superadmin', 'admin'],
+        'section' => __('financial_management'),
+        'roles' => ['superadmin', 'admin', 'caissier', 'comptable'],
         'icon' => 'bi-wallet2',
         'items' => [
             [
-                'label' => 'Scolarité',
-                'roles' => ['superadmin', 'admin'],
+                'label' => __('scolarite_menu'),
+                'roles' => ['superadmin', 'admin', 'caissier', 'comptable'],
                 'icon' => 'bi-book-half',
                 'submenu' => [
-                    ['label' => 'Paiements', 'url' => '/payments', 'roles' => ['superadmin', 'admin']],
-                    ['label' => 'Grille de Scolarité', 'url' => '/school_fees/grille', 'roles' => ['superadmin', 'admin']],
-                    ['label' => 'Tranches', 'url' => '/school_fees/tranches', 'roles' => ['superadmin', 'admin']],
-                    ['label' => 'Versements', 'url' => '/school_fees/versements', 'roles' => ['superadmin', 'admin']],
-                    ['label' => 'Insolvables', 'url' => '/school_fees/insolvables', 'roles' => ['superadmin', 'admin']],
+                    ['label' => __('payments_menu'), 'url' => '/payments', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                    ['label' => __('grille_title'), 'url' => '/school_fees/grille', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                    ['label' => __('tranches_menu'), 'url' => '/school_fees/tranches', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                    ['label' => __('versements_menu'), 'url' => '/school_fees/versements', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                    ['label' => __('insolvent_title'), 'url' => '/school_fees/insolvables', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
                 ]
             ],
             [
-                'label' => 'Réductions',
-                'roles' => ['superadmin', 'admin'],
+                'label' => __('discounts'),
+                'roles' => ['superadmin', 'admin', 'caissier', 'comptable'],
                 'icon' => 'bi-percent',
                 'submenu' => [
-                    ['label' => 'Réductions Accordées', 'url' => '/discounts', 'roles' => ['superadmin', 'admin']],
-                    ['label' => 'Types de Réductions', 'url' => '/discount_types', 'roles' => ['superadmin', 'admin']],
+                    ['label' => __('discounts_granted'), 'url' => '/discounts', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                    ['label' => __('scholarships'), 'url' => '/scholarships', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                    ['label' => __('discount_types_title'), 'url' => '/discount_types', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
                 ]
             ],
-            ['icon' => 'bi-award-fill', 'label' => 'Bourses', 'url' => '/scholarships', 'roles' => ['superadmin', 'admin']],
-            ['icon' => 'bi-journal-text', 'label' => 'Historique Financier', 'url' => '/financial-history', 'roles' => ['superadmin', 'admin']],
+            ['icon' => 'bi-journal-text', 'label' => __('financial_history'), 'url' => '/financial-history', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
         ]
     ],
     // SECTION: PÉDAGOGIE
     [
-        'section' => __('pedagogie_et_resultats'),
-        'roles' => ['superadmin', 'admin', 'enseignant'],
+        'section' => __('pedagogie'),
+        'roles' => ['superadmin', 'admin', 'enseignant', 'caissier'],
         'icon' => 'bi-mortarboard',
         'items' => [
-            ['icon' => 'bi-door-open', 'label' => __('classes'), 'url' => '/classes', 'roles' => ['superadmin', 'admin']],
+            ['icon' => 'bi-door-open', 'label' => __('classes'), 'url' => '/classes', 'roles' => ['superadmin', 'admin', 'caissier']],
             ['icon' => 'bi-book', 'label' => __('subjects'), 'url' => '/subjects', 'roles' => ['superadmin', 'admin']],
             ['icon' => 'bi-pencil-square', 'label' => __('enter_marks'), 'url' => '/notes', 'roles' => ['superadmin', 'admin', 'enseignant']],
+            ['icon' => 'bi-shield-check', 'label' => __('discipline_management'), 'url' => '/bulletins/discipline', 'roles' => ['superadmin', 'admin']],
+        ]
+    ],
+    // SECTION: RÉSULTATS
+    [
+        'section' => __('results'),
+        'roles' => ['superadmin', 'admin'],
+        'icon' => 'bi-clipboard-data',
+        'items' => [
             ['icon' => 'bi-file-earmark-pdf', 'label' => __('bulletins'), 'url' => '/bulletins', 'roles' => ['superadmin', 'admin']],
             ['icon' => 'bi-award', 'label' => __('honor_roll_title'), 'url' => '/honors', 'roles' => ['superadmin', 'admin']],
-            ['icon' => 'bi-shield-check', 'label' => __('discipline_management'), 'url' => '/bulletins/discipline', 'roles' => ['superadmin', 'admin']],
             ['icon' => 'bi-file-earmark-text', 'label' => __('proces_verbaux'), 'url' => '/proces-verbal', 'roles' => ['superadmin', 'admin']],
         ]
     ],
-    // SECTION: ADMINISTRATION
+    // SECTION: ADMINISTRATION SYSTÈME (IT Manager)
+    [
+        'section' => __('system_administration'),
+        'roles' => ['it_manager'],
+        'icon' => 'bi-pc-display',
+        'items' => [
+            ['icon' => 'bi-people-fill', 'label' => __('users'), 'url' => '/users', 'roles' => ['it_manager']],
+            ['icon' => 'bi-people', 'label' => __('teachers'), 'url' => '/teachers', 'roles' => ['it_manager']],
+            ['icon' => 'bi-door-open', 'label' => __('classes'), 'url' => '/classes', 'roles' => ['it_manager']],
+            ['icon' => 'bi-calendar-event', 'label' => __('academic_years'), 'url' => '/academic_years', 'roles' => ['it_manager']],
+            ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'roles' => ['it_manager']],
+        ]
+    ],
+    // SECTION: ADMINISTRATION (SuperAdmin)
     [
         'section' => __('administration'),
         'roles' => ['superadmin'],
@@ -125,6 +156,38 @@ $nav_items = [
 ];
 
 $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$current_uri = $_SERVER['REQUEST_URI'];
+
+$isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
+    if ($itemUrl === '/') {
+        return $current_path === '/';
+    }
+    $itemPath = parse_url($itemUrl, PHP_URL_PATH);
+    $itemQuery = parse_url($itemUrl, PHP_URL_QUERY);
+    
+    $pathMatch = ($current_path === $itemPath || strpos($current_path, $itemPath . '/') === 0);
+    if (!$pathMatch) {
+        return false;
+    }
+    
+    if ($itemQuery) {
+        parse_str($itemQuery, $itemParams);
+        foreach ($itemParams as $k => $v) {
+            if (!isset($_GET[$k]) || $_GET[$k] != $v) {
+                return false;
+            }
+        }
+        return true;
+    } else {
+        if ($itemPath === '/students' && ($current_path === '/students/create' || (isset($_GET['only_mine']) && $_GET['only_mine'] == 1))) {
+            return false;
+        }
+        if ($itemPath === '/users' && $current_path === '/users/create-caissier') {
+            return false;
+        }
+    }
+    return true;
+};
 ?>
 <!DOCTYPE html>
 <html lang="<?= $app_lang ?>" data-theme="light">
@@ -255,10 +318,6 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         .btn-logout:hover {
             background: #fef2f2;
             color: #b91c1c;
-        }
-
-        background: #fef2f2;
-        color: #b91c1c;
         }
 
         .nav-link-custom.active {
@@ -505,7 +564,7 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                                         if (isset($child['submenu'])) {
                                             foreach ($child['submenu'] as $subchild) {
                                                 if (in_array($user_role, $subchild['roles'])) {
-                                                    $isSubActive = ($current_path === $subchild['url'] || ($subchild['url'] !== '/' && strpos($current_path, $subchild['url'] . '/') === 0));
+                                                    $isSubActive = $isUrlActive($subchild['url']);
                                                     if ($isSubActive) {
                                                         $hasActiveChild = true;
                                                         break 2;
@@ -513,7 +572,7 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                                                 }
                                             }
                                         } else {
-                                            $isChildActive = ($current_path === $child['url'] || ($child['url'] !== '/' && strpos($current_path, $child['url'] . '/') === 0));
+                                            $isChildActive = $isUrlActive($child['url']);
                                             if ($isChildActive) {
                                                 $hasActiveChild = true;
                                                 break;
@@ -543,7 +602,7 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                                                         <?php
                                                         $hasActiveSubChild = false;
                                                         foreach ($visible_subchildren as $subchild) {
-                                                            if ($current_path === $subchild['url'] || ($subchild['url'] !== '/' && strpos($current_path, $subchild['url'] . '/') === 0)) {
+                                                            if ($isUrlActive($subchild['url'])) {
                                                                 $hasActiveSubChild = true;
                                                                 break;
                                                             }
@@ -560,7 +619,7 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                                                             </a>
                                                             <div class="nested-submenu-collapse <?= $hasActiveSubChild ? 'show' : '' ?>" id="<?= $nested_id ?>" style="overflow: hidden; max-height: 0; transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1); margin-left: 1.2rem; padding-left: 0.5rem; border-left: 1px dashed var(--border-color); display: flex; flex-direction: column; gap: 0.2rem;">
                                                                 <?php foreach ($visible_subchildren as $subchild): ?>
-                                                                    <?php $isSubActive = ($current_path === $subchild['url'] || ($subchild['url'] !== '/' && strpos($current_path, $subchild['url'] . '/') === 0)); ?>
+                                                                    <?php $isSubActive = $isUrlActive($subchild['url']); ?>
                                                                     <a href="<?= $subchild['url'] ?>" class="submenu-link <?= $isSubActive ? 'active' : '' ?>" style="font-size: 0.78rem; padding: 0.4rem 0.6rem;">
                                                                         <span><?= $subchild['label'] ?></span>
                                                                     </a>
@@ -569,7 +628,7 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                                                         </div>
                                                     <?php endif; ?>
                                                 <?php else: ?>
-                                                    <?php $isChildActive = ($current_path === $child['url'] || ($child['url'] !== '/' && strpos($current_path, $child['url'] . '/') === 0)); ?>
+                                                    <?php $isChildActive = $isUrlActive($child['url']); ?>
                                                     <a href="<?= $child['url'] ?>" class="submenu-link <?= $isChildActive ? 'active' : '' ?>">
                                                         <i class="bi <?= $child['icon'] ?> me-2"></i>
                                                         <span><?= $child['label'] ?></span>
@@ -582,7 +641,7 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                             <?php endif; ?>
                         <?php else: ?>
                             <?php if (in_array($user_role, $item['roles'])): ?>
-                                <?php $isActive = ($current_path === $item['url'] || ($item['url'] !== '/' && strpos($current_path, $item['url'] . '/') === 0)); ?>
+                                <?php $isActive = $isUrlActive($item['url']); ?>
                                 <a href="<?= $item['url'] ?>" class="nav-link-custom <?= $isActive ? 'active' : '' ?>">
                                     <i class="bi <?= $item['icon'] ?>"></i>
                                     <span><?= $item['label'] ?></span>
@@ -595,7 +654,7 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                         <div class="alert alert-info border-0 rounded-4 small mb-4"
                             style="background: rgba(59, 130, 246, 0.05); color: #3b82f6;">
                             <i class="bi bi-info-circle me-2"></i>
-                            Accédez à votre espace pour gérer votre établissement.
+                            <?= __('access_space_instruction') ?>
                         </div>
                         <a href="/login" class="nav-link-custom mb-2">
                             <i class="bi bi-box-arrow-in-right"></i>
@@ -603,7 +662,7 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                         </a>
                         <a href="/register-teacher" class="nav-link-custom">
                             <i class="bi bi-person-plus"></i>
-                            <span>S'enregistrer</span>
+                            <span><?= __('register') ?></span>
                         </a>
                     </div>
                 <?php endif; ?>
@@ -740,7 +799,7 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                                     <li><a class="dropdown-item dropdown-item-modern" href="/login"><?= __('login') ?></a>
                                     </li>
                                     <li><a class="dropdown-item dropdown-item-modern"
-                                            href="/register-teacher">S'enregistrer</a></li>
+                                            href="/register-teacher"><?= __('register') ?></a></li>
                                 </ul>
                             </div>
                         </div>
@@ -828,7 +887,7 @@ $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
             <?php endif; ?>
 
             <?php if ($popup_error = \App\Core\Session::getFlash('popup_error')): ?>
-                AlertService.error("<?= addslashes((string) ('Erreur')) ?>", "<?= addslashes((string) $popup_error) ?>");
+                AlertService.error("<?= addslashes((string) __('error_title')) ?>", "<?= addslashes((string) $popup_error) ?>");
             <?php endif; ?>
 
             // --- MESSAGE DE BIENVENUE FLASH (Connexion uniquement) ---

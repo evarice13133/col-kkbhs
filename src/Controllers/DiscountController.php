@@ -25,8 +25,8 @@ class DiscountController
         $this->academicYearService = new AcademicYearService($this->db);
         $this->financialService = new FinancialService($this->db);
 
-        // Sécurité : Accès restreint aux administrateurs
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+        // Sécurité : Accès restreint aux administrateurs, caissiers et comptables
+        if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
             header("Location: /");
             exit;
         }

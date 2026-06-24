@@ -29,10 +29,7 @@ class TeacherController
     {
         $this->db = Database::getInstance()->getConnection();
         $this->academicYearService = new AcademicYearService($this->db);
-        if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
-            header("Location: /");
-            exit;
-        }
+        \App\Core\PermissionManager::requirePermission('manage_teachers');
     }
 
     /**

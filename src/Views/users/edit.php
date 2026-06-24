@@ -79,8 +79,13 @@
                                     <?php if (App\Core\Session::get('user_role') === 'superadmin'): ?>
                                         <option value="admin" <?= $user['role'] === 'admin' ? 'selected' : '' ?>><?= __('admin_restricted') ?></option>
                                         <option value="superadmin" <?= $user['role'] === 'superadmin' ? 'selected' : '' ?>><?= __('superadmin_max') ?></option>
+                                        <option value="caissier" <?= $user['role'] === 'caissier' ? 'selected' : '' ?>><?= __('role_caissier_option') ?></option>
+                                        <option value="comptable" <?= $user['role'] === 'comptable' ? 'selected' : '' ?>><?= __('role_comptable_option') ?></option>
+                                        <option value="it_manager" <?= $user['role'] === 'it_manager' ? 'selected' : '' ?>><?= __('role_it_manager_option') ?></option>
                                     <?php elseif (App\Core\Session::get('user_role') === 'admin'): ?>
                                         <option value="admin" <?= $user['role'] === 'admin' ? 'selected' : '' ?>><?= __('admin_restricted') ?></option>
+                                        <option value="caissier" <?= $user['role'] === 'caissier' ? 'selected' : '' ?>><?= __('role_caissier_option') ?></option>
+                                        <option value="comptable" <?= $user['role'] === 'comptable' ? 'selected' : '' ?>><?= __('role_comptable_option') ?></option>
                                     <?php endif; ?>
                                 </select>
                             </div>

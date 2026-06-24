@@ -3,11 +3,11 @@
 // Style Premium, responsive et autonome (sans sidebar d'administration)
 ?>
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="<?= htmlspecialchars((string) __('lang')) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vérification Officielle de Versement | NoteMaster</title>
+    <title><?= __('verification_title') ?></title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
@@ -142,65 +142,65 @@
                 <div>
                     <span class="status-icon"><i class="bi bi-patch-check-fill"></i></span>
                 </div>
-                <h3 class="fw-bold m-0">Reçu Vérifié & Authentique</h3>
-                <small class="opacity-75">Ce versement officiel est enregistré dans notre système.</small>
+                <h3 class="fw-bold m-0"><?= __('verified_authentic') ?></h3>
+                <small class="opacity-75"><?= __('verified_authentic_sub') ?></small>
             </div>
 
             <div class="details-list">
                 <div class="detail-row">
-                    <span class="detail-label">Jeton Unique (Code)</span>
+                    <span class="detail-label"><?= __('jeton') ?></span>
                     <span class="detail-value text-primary font-monospace"><?= h($payment['verification_code']) ?></span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">N° de Reçu</span>
+                    <span class="detail-label"><?= __('receipt_number') ?></span>
                     <span class="detail-value">#<?= h($payment['id']) ?></span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Élève</span>
+                    <span class="detail-label"><?= __('student') ?></span>
                     <span class="detail-value"><?= h($payment['student_nom']) ?> <?= h($payment['student_prenom']) ?></span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Matricule</span>
+                    <span class="detail-label"><?= __('matricule') ?></span>
                     <span class="detail-value font-monospace"><?= h($payment['matricule']) ?></span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Né(e) le</span>
+                    <span class="detail-label"><?= __('born_on') ?></span>
                     <span class="detail-value">
                         <?= !empty($payment['date_naissance']) ? date('d/m/Y', strtotime($payment['date_naissance'])) : 'N/A' ?>
-                        <?= !empty($payment['lieu_naissance']) ? ' à ' . h($payment['lieu_naissance']) : '' ?>
+                        <?= !empty($payment['lieu_naissance']) ? ' ' . __('born_at') . ' ' . h($payment['lieu_naissance']) : '' ?>
                     </span>
                 </div>
                 <?php if (!empty($payment['adresse'])): ?>
                     <div class="detail-row">
-                        <span class="detail-label">Adresse</span>
+                        <span class="detail-label"><?= __('address') ?></span>
                         <span class="detail-value"><?= h($payment['adresse']) ?></span>
                     </div>
                 <?php endif; ?>
                 <div class="detail-row">
-                    <span class="detail-label">Classe</span>
+                    <span class="detail-label"><?= __('class') ?></span>
                     <span class="detail-value"><?= h($payment['classe_nom'] ?: 'N/A') ?></span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Nature du Versement</span>
+                    <span class="detail-label"><?= __('nature_payment') ?></span>
                     <span class="detail-value">
-                        <?= $payment['type'] === 'inscription' ? "Frais d'inscription" : "Frais de scolarité" ?>
+                        <?= $payment['type'] === 'inscription' ? __('registration_payment_option') : __('tuition_payment_option') ?>
                     </span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Montant Payé</span>
+                    <span class="detail-label"><?= __('amount_paid') ?></span>
                     <span class="detail-value amount"><?= number_format($payment['amount'], 0, '.', ' ') ?> FCFA</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Date de Paiement</span>
+                    <span class="detail-label"><?= __('payment_date') ?></span>
                     <span class="detail-value"><?= date('d/m/Y', strtotime($payment['payment_date'])) ?></span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">Mode de Paiement</span>
+                    <span class="detail-label"><?= __('payment_method_label') ?></span>
                     <span class="detail-value"><?= h($payment['payment_method']) ?></span>
                 </div>
                 <?php if (!empty($payment['reference'])): ?>
                     <div class="detail-row">
-                        <span class="detail-label">Référence Transaction</span>
+                        <span class="detail-label"><?= __('col_reference') ?></span>
                         <span class="detail-value font-monospace"><?= h($payment['reference']) ?></span>
                     </div>
                 <?php endif; ?>
@@ -209,32 +209,31 @@
         <?php else: ?>
             <!-- CAS 2: REÇU INVALIDE OU CODE ERRONÉ -->
             <div class="status-header invalid">
-                <span class="school-badge">Alerte Sécurité</span>
+                <span class="school-badge"><?= __('security_warning_badge') ?></span>
                 <div>
                     <span class="status-icon"><i class="bi bi-shield-x"></i></span>
                 </div>
-                <h3 class="fw-bold m-0">Reçu Invalide ou Introuvable</h3>
-                <small class="opacity-75">Ce code ne correspond à aucun versement officiel archivé.</small>
+                <h3 class="fw-bold m-0"><?= __('receipt_invalid') ?></h3>
+                <small class="opacity-75"><?= __('receipt_invalid_sub') ?></small>
             </div>
 
             <div class="details-list text-center py-5">
                 <i class="bi bi-exclamation-triangle text-danger fs-1"></i>
-                <h5 class="fw-bold mt-3 text-dark">Attention Risque de Contrefaçon</h5>
+                <h5 class="fw-bold mt-3 text-dark"><?= __('counterfeit_risk') ?></h5>
                 <p class="text-muted small px-3">
-                    Le jeton saisi ou scanné n'existe pas dans la base de données de l'établissement scolaire. 
-                    Si vous possédez un reçu physique portant ce code, veuillez vous rapprocher de la caisse pour vérification manuelle.
+                    <?= __('counterfeit_help') ?>
                 </p>
                 <?php if (!empty($code)): ?>
                     <div class="mt-4 p-2 bg-light rounded font-monospace text-danger border border-danger border-opacity-10 small">
-                        Code recherché : <?= h($code) ?>
+                        <?= __('code_searched') ?> <?= h($code) ?>
                     </div>
                 <?php endif; ?>
             </div>
         <?php endif; ?>
 
         <div class="verify-footer">
-            Plateforme officielle de validation de scolarité • NoteMaster<br>
-            <span class="extra-small opacity-50">Généré le <?= date('d/m/Y H:i:s') ?></span>
+            <?= __('official_validation_platform') ?><br>
+            <span class="extra-small opacity-50"><?= __('generated_on') ?> <?= date('d/m/Y H:i:s') ?></span>
         </div>
 
     </div>

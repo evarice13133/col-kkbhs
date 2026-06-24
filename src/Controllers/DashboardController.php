@@ -53,17 +53,193 @@ class DashboardController
 
         if ($role === 'enseignant') {
             $data = $this->buildTeacherDashboardData($user_id);
-            // Extraction des variables pour la vue teacher
             extract($data);
             include __DIR__ . '/../Views/dashboard/teacher.php';
             return;
         }
 
-        // Pour l'administrateur
+        if (in_array($role, ['caissier', 'comptable'], true)) {
+            $data = $this->buildFinancialDashboardData();
+            extract($data);
+            include __DIR__ . '/../Views/dashboard/financial.php';
+            return;
+        }
+
+        if ($role === 'it_manager') {
+            $data = $this->buildItManagerDashboardData();
+            extract($data);
+            include __DIR__ . '/../Views/dashboard/it_manager.php';
+            return;
+        }
+
+        // Pour superadmin / admin
         $data = $this->buildAdminDashboardData();
-        // Extraction des variables pour la vue admin
         extract($data);
         include __DIR__ . '/../Views/dashboard/admin.php';
+    }
+
+    /**
+     * Construit les données pour le tableau de bord financier (caissier / comptable).
+     * NB : Ne contient AUCUNE donnée pédagogique. 
+     */
+    private function buildFinancialDashboardData(): array
+    {
+        $activeYearId = $this->getActiveAcademicYearId();
+
+        $totalStudents = (int) $this->db->query(
+            "SELECT COUNT(*) FROM students WHERE is_withdrawn = 0 AND actif = 1 AND academic_year_id = {$activeYearId}"
+        )->fetchColumn();
+
+        // Scolarité encaissée
+        $totalTuitionCollected = (float) $this->db->query(
+            "SELECT COALESCE(SUM(amount), 0) FROM payments WHERE type = 'scolarite' AND academic_year_id = {$activeYearId}"
+        )->fetchColumn();
+
+        // Frais d'inscription encaissés
+        $totalRegistrationCollected = (float) $this->db->query(
+            "SELECT COALESCE(SUM(amount), 0) FROM payments WHERE type = 'inscription' AND academic_year_id = {$activeYearId}"
+        )->fetchColumn();
+
+        // Recettes globales de la caisse (scolarité + inscription)
+        $totalGeneralCollected = $totalTuitionCollected + $totalRegistrationCollected;
+
+        // Total attendu scolarité
+        $totalExpected = (float) $this->db->query(
+            "SELECT COALESCE(SUM(c.frais_scolarite_brut), 0)
+             FROM students s JOIN classes c ON s.class_id = c.id
+             WHERE s.is_withdrawn = 0 AND s.actif = 1 AND s.academic_year_id = {$activeYearId}"
+        )->fetchColumn();
+
+        $totalInsolvent = (int) $this->db->query(
+            "SELECT COUNT(DISTINCT student_id) FROM insolvent_students WHERE academic_year_id = {$activeYearId}"
+        )->fetchColumn();
+
+        $collectionRate = $totalExpected > 0 ? round(($totalTuitionCollected / $totalExpected) * 100, 1) : 0;
+
+        // Récupérer la politique des frais d'inscription
+        $settingsStore = new \App\Services\SettingsStore($this->db);
+        $policy = $settingsStore->get('registration_fee_policy', 'all');
+
+        // Récupérer les statistiques de rentrée/inscription par classe
+        $stmtClassStats = $this->db->prepare("
+            SELECT 
+                c.id as class_id,
+                c.nom as class_name,
+                COUNT(s.id) as total_students,
+                SUM(CASE WHEN COALESCE(p.paid_amount, 0) >= 
+                    CASE 
+                        WHEN :policy1 = 'new_only' THEN 
+                            CASE WHEN e.student_status = 'nouveau' THEN c.frais_inscription ELSE 0 END
+                        WHEN :policy2 = 'by_status' THEN 
+                            CASE WHEN e.student_status = 'nouveau' THEN c.frais_inscription ELSE c.frais_inscription_reinscription END
+                        ELSE 
+                            c.frais_inscription
+                    END
+                THEN 1 ELSE 0 END) as enrolled_count,
+                SUM(CASE WHEN COALESCE(p.paid_amount, 0) < 
+                    CASE 
+                        WHEN :policy3 = 'new_only' THEN 
+                            CASE WHEN e.student_status = 'nouveau' THEN c.frais_inscription ELSE 0 END
+                        WHEN :policy4 = 'by_status' THEN 
+                            CASE WHEN e.student_status = 'nouveau' THEN c.frais_inscription ELSE c.frais_inscription_reinscription END
+                        ELSE 
+                            c.frais_inscription
+                    END
+                THEN 1 ELSE 0 END) as non_enrolled_count,
+                SUM(COALESCE(p.paid_amount, 0)) as total_registration_collected
+            FROM students s
+            JOIN enrollments e ON s.id = e.student_id AND e.academic_year_id = s.academic_year_id
+            JOIN classes c ON s.class_id = c.id
+            LEFT JOIN (
+                SELECT student_id, SUM(amount) as paid_amount 
+                FROM payments 
+                WHERE type = 'inscription' AND academic_year_id = :academic_year_id1
+                GROUP BY student_id
+            ) p ON s.id = p.student_id
+            WHERE s.is_withdrawn = 0 AND s.actif = 1 AND s.academic_year_id = :academic_year_id2
+            GROUP BY c.id, c.nom
+            ORDER BY c.nom ASC
+        ");
+        $stmtClassStats->execute([
+            ':policy1' => $policy,
+            ':policy2' => $policy,
+            ':policy3' => $policy,
+            ':policy4' => $policy,
+            ':academic_year_id1' => $activeYearId,
+            ':academic_year_id2' => $activeYearId
+        ]);
+        $classRegistrationStats = $stmtClassStats->fetchAll(\PDO::FETCH_ASSOC);
+
+        // Calculer les totaux d'inscription depuis les statistiques par classe
+        $totalEnrolled = 0;
+        $totalNonEnrolled = 0;
+        foreach ($classRegistrationStats as $row) {
+            $totalEnrolled += (int)$row['enrolled_count'];
+            $totalNonEnrolled += (int)$row['non_enrolled_count'];
+        }
+
+        // Évolution mensuelle des paiements (6 derniers mois) - comprend tous les paiements (frais scolarité et inscription)
+        $monthlyPayments = $this->db->query(
+            "SELECT DATE_FORMAT(payment_date, '%Y-%m') as month,
+                    SUM(amount) as total
+             FROM payments
+             WHERE academic_year_id = {$activeYearId}
+               AND payment_date >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+             GROUP BY month ORDER BY month ASC"
+        )->fetchAll(\PDO::FETCH_ASSOC);
+
+        // Derniers paiements reçus (tous types confondus : inscription et scolarité)
+        $recentPayments = $this->db->query(
+            "SELECT p.payment_date, p.amount, p.payment_method, p.type,
+                    CONCAT(s.nom, ' ', s.prenom) as student_name,
+                    c.nom as class_nom
+             FROM payments p
+             JOIN students s ON p.student_id = s.id
+             JOIN classes c ON s.class_id = c.id
+             WHERE p.academic_year_id = {$activeYearId}
+             ORDER BY p.payment_date DESC, p.id DESC LIMIT 10"
+        )->fetchAll(\PDO::FETCH_ASSOC);
+
+        // Assurer la rétrocompatibilité pour la vue existante
+        $totalCollected = $totalTuitionCollected;
+
+        return compact(
+            'totalStudents', 'totalCollected', 'totalExpected',
+            'totalInsolvent', 'collectionRate', 'monthlyPayments', 'recentPayments',
+            'totalRegistrationCollected', 'totalTuitionCollected', 'totalGeneralCollected',
+            'totalEnrolled', 'totalNonEnrolled', 'classRegistrationStats', 'policy'
+        );
+    }
+
+    /**
+     * Construit les données pour le tableau de bord IT Manager.
+     * NE CONTIENT AUCUN montant financier.
+     */
+    private function buildItManagerDashboardData(): array
+    {
+        $totalUsers = (int) $this->db->query("SELECT COUNT(*) FROM users")->fetchColumn();
+        $totalTeachers = (int) $this->db->query("SELECT COUNT(*) FROM users WHERE role = 'enseignant'")->fetchColumn();
+        $totalClasses = (int) $this->db->query("SELECT COUNT(*) FROM classes")->fetchColumn();
+        $totalStudents = (int) $this->db->query(
+            "SELECT COUNT(*) FROM students s JOIN academic_years ay ON s.academic_year_id = ay.id WHERE ay.is_active = 1 AND s.is_withdrawn = 0 AND s.actif = 1"
+        )->fetchColumn();
+
+        // Dernières activités
+        $recentActivity = [];
+        try {
+            $recentActivity = $this->db->query(
+                "SELECT action, details, created_at FROM activity_log ORDER BY created_at DESC LIMIT 15"
+            )->fetchAll(\PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            // Table may not exist
+        }
+
+        // Répartition des rôles
+        $roleDistribution = $this->db->query(
+            "SELECT role, COUNT(*) as count FROM users GROUP BY role ORDER BY count DESC"
+        )->fetchAll(\PDO::FETCH_ASSOC);
+
+        return compact('totalUsers', 'totalTeachers', 'totalClasses', 'totalStudents', 'recentActivity', 'roleDistribution');
     }
 
     /**
@@ -179,7 +355,7 @@ class DashboardController
 
         // 1. Stats de base
         $activeYearId = $this->getActiveAcademicYearId();
-        $stats_students = (int) $this->db->query("SELECT COUNT(*) FROM students WHERE is_withdrawn = 0 AND academic_year_id = {$activeYearId}")->fetchColumn();
+        $stats_students = (int) $this->db->query("SELECT COUNT(*) FROM students WHERE is_withdrawn = 0 AND actif = 1 AND academic_year_id = {$activeYearId}")->fetchColumn();
         // Classes are now shared across years, no year filtering
         $stats_classes = (int) $this->db->query("SELECT COUNT(*) FROM classes")->fetchColumn();
         $stats_subjects = (int) $this->db->query("SELECT COUNT(*) FROM subjects WHERE status = 1")->fetchColumn();
@@ -612,7 +788,7 @@ class DashboardController
     {
         $activeYearId = $this->getActiveAcademicYearId();
         $where = !empty($classIds) ? " AND class_id IN (" . implode(',', array_map('intval', $classIds)) . ")" : "";
-        $stmt = $this->db->query("SELECT class_id, COUNT(*) FROM students WHERE is_withdrawn = 0 AND academic_year_id = {$activeYearId} $where GROUP BY class_id");
+        $stmt = $this->db->query("SELECT class_id, COUNT(*) FROM students WHERE is_withdrawn = 0 AND actif = 1 AND academic_year_id = {$activeYearId} $where GROUP BY class_id");
         return $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
     }
 

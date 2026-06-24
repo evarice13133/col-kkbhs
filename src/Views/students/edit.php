@@ -129,6 +129,10 @@ ob_start();
                         <div class="stepper-circle">3</div>
                         <div class="stepper-title"><?= __('academic_assignment') ?></div>
                     </div>
+                    <div class="stepper-item" data-step="4">
+                        <div class="stepper-circle">4</div>
+                        <div class="stepper-title">Finance</div>
+                    </div>
                 </div>
 
                 <!-- Step 1: Identity Section -->
@@ -343,11 +347,77 @@ ob_start();
                                         </div>
                                     </div>
                                 </div>
+
+                                <div class="mt-4">
+                                    <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-2 d-flex align-items-center">
+                                        <i class="bi bi-person-badge-fill me-1"></i> Statut d'inscription *
+                                    </label>
+                                    <div class="d-flex gap-2">
+                                        <div class="flex-grow-1">
+                                            <input type="radio" class="btn-check" name="student_status" id="status_new" value="nouveau" <?= ($student['student_status'] ?? 'nouveau') !== 'ancien' ? 'checked' : '' ?> required>
+                                            <label class="btn btn-outline-secondary w-100 rounded-pill btn-sm py-2 fw-semibold" for="status_new">Nouveau</label>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <input type="radio" class="btn-check" name="student_status" id="status_returning" value="ancien" <?= ($student['student_status'] ?? '') === 'ancien' ? 'checked' : '' ?> required>
+                                            <label class="btn btn-outline-info w-100 rounded-pill btn-sm py-2 fw-semibold" for="status_returning">Ancien</label>
+                                        </div>
+                                    </div>
+                                    <div class="form-text extra-small text-muted mt-1">Affecte le calcul des frais de scolarité.</div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
+                <!-- Step 4: Finance Section -->
+                <div class="form-step" id="step4">
+                    <div class="row g-4 mb-3">
+                        <div class="col-12 border-bottom border-theme-light pb-2 mb-2">
+                            <h6 class="fw-black text-warning m-0 text-uppercase letter-spacing-1">Configuration Financière</h6>
+                        </div>
 
+                        <div class="col-md-12">
+                            <span class="fw-bold text-secondary text-uppercase fs-7 mb-2 d-block">Réduction Éventuelle</span>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Montant / Valeur de réduction</label>
+                                    <input type="number" name="reduction_amount" min="0" value="<?= h($discount['amount'] ?? '0') ?>" class="form-control premium-input" id="reduction_amount">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Type de réduction</label>
+                                    <select name="reduction_amount_type" class="form-select premium-input">
+                                        <option value="fixed" <?= ($discount['amount_type'] ?? '') === 'fixed' ? 'selected' : '' ?>>Montant fixe (FCFA)</option>
+                                        <option value="percentage" <?= ($discount['amount_type'] ?? '') === 'percentage' ? 'selected' : '' ?>>Pourcentage (%)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Motif de réduction</label>
+                                    <input type="text" name="reduction_motive" value="<?= h($discount['motive'] ?? '') ?>" class="form-control premium-input" placeholder="Ex: Famille nombreuse, social...">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12 mt-4 border-top border-theme-light pt-3">
+                            <span class="fw-bold text-secondary text-uppercase fs-7 mb-2 d-block">Bourse Éventuelle</span>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Montant / Valeur de bourse</label>
+                                    <input type="number" name="scholarship_amount" min="0" value="<?= h($scholarship['amount'] ?? '0') ?>" class="form-control premium-input" id="scholarship_amount">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Type de bourse</label>
+                                    <select name="scholarship_amount_type" class="form-select premium-input">
+                                        <option value="fixed" <?= ($scholarship['amount_type'] ?? '') === 'fixed' ? 'selected' : '' ?>>Montant fixe (FCFA)</option>
+                                        <option value="percentage" <?= ($scholarship['amount_type'] ?? '') === 'percentage' ? 'selected' : '' ?>>Pourcentage (%)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Motif de bourse</label>
+                                    <input type="text" name="scholarship_motive" value="<?= h($scholarship['motive'] ?? '') ?>" class="form-control premium-input" placeholder="Ex: Excellence académique, besoin...">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <!-- Navigation Footer -->
                 <div class="d-flex justify-content-between border-top border-theme-light pt-4 mt-2">
                     <button type="button" class="btn btn-light-theme rounded-pill px-4" id="prevBtn" style="display: none;">
@@ -371,7 +441,7 @@ ob_start();
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     let currentStep = 1;
-    const totalSteps = 3;
+    const totalSteps = 4;
     const form = document.getElementById('studentEditForm');
     
     const nextBtn = document.getElementById('nextBtn');

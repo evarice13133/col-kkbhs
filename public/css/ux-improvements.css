@@ -309,5 +309,81 @@
     background: rgba(255, 255, 255, 0.02);
 }
 
+/* Segmented Period Controls */
+.period-segmented-control {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.btn-segmented {
+    border-radius: 50px !important;
+    padding: 0.5rem 1.25rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border: 2px solid var(--border-theme, #e2e8f0);
+    background: color-mix(in srgb, var(--bg-card, #ffffff) 97%, #000);
+    color: var(--text-main, #64748b);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+[data-theme="dark"] .btn-segmented {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #94a3b8;
+}
+
+.btn-segmented:hover {
+    border-color: var(--primary-color);
+    background: rgba(var(--primary-rgb), 0.05);
+    color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.btn-segmented.active {
+    background: linear-gradient(135deg, var(--primary-color), #4f46e5);
+    border-color: var(--primary-color);
+    color: #ffffff !important;
+    box-shadow: 0 6px 20px -4px rgba(var(--primary-rgb), 0.4);
+    transform: translateY(-1px);
+}
+
+/* Loading effect for tables */
+.table-loading-active {
+    opacity: 0.4;
+    filter: blur(1px);
+    pointer-events: none;
+    transition: all 0.3s ease;
+}
+
+/* Advanced filters card styling */
+.advanced-filters-panel {
+    background: var(--bg-card, #ffffff);
+    border-radius: 12px;
+    border: 1.5px dashed var(--border-theme, #e2e8f0);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="dark"] .advanced-filters-panel {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.01);
+}
+
+/* Client search highlights */
+.highlight-match {
+    background-color: rgba(254, 240, 138, 0.6) !important;
+    border-radius: 2px;
+}
+[data-theme="dark"] .highlight-match {
+    background-color: rgba(234, 179, 8, 0.3) !important;
+    color: #ffffff;
+}
+
+
 
 

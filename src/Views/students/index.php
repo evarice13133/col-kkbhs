@@ -5,252 +5,324 @@ ob_start(); ?>
 
 
 
-    <!-- Boutons d'Action Principaux (Au-dessus du filtre) -->
-    <?php if (in_array(App\Core\Session::get('user_role'), ['superadmin', 'admin'])): ?>
-    <div class="d-flex justify-content-center mb-3">
-        <div class="d-flex gap-2">
-            <a href="/students/create" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm text-nowrap">
-                <i class="bi bi-person-plus me-1"></i> <?= __('add_student') ?>
-            </a>
-            <a href="/students/import" class="btn btn-outline-success rounded-pill px-4 fw-bold shadow-sm text-nowrap">
-                <i class="bi bi-file-earmark-spreadsheet me-1"></i> <?= __('import_excel') ?>
-            </a>
-        </div>
-    </div>
-    <?php endif; ?>
-
-    <!-- BARRE D'ACTIONS COMPLÈTE : Style Floating Island -->
-    <div class="d-flex justify-content-center mb-5">
-        <div class="filter-island px-3 py-2 shadow-lg animate-slide-down" style="min-width: 95%;">
-            <form method="GET" class="d-flex align-items-center gap-2 flex-wrap flex-md-nowrap filter-form w-100">
-
-                <!-- Barre de Recherche (Extensible) -->
+    <!-- Filter Island -->
+    <div class="modern-card border-0 shadow-sm p-4 mb-4">
+        <form id="filters-form" method="GET" action="/students">
+            <!-- Main Filter Controls Row -->
+            <div class="d-flex flex-column flex-lg-row align-items-stretch align-items-lg-center justify-content-between gap-3">
+                
+                <!-- Search Box -->
                 <div class="flex-grow-1">
-                    <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-2">
-                        <span class="input-group-text border-0 bg-transparent text-primary">
-                            <i class="bi bi-search"></i>
+                    <div class="search-box-container position-relative">
+                        <span class="position-absolute start-0 top-50 translate-middle-y ps-3 text-muted">
+                            <i class="bi bi-search text-primary"></i>
                         </span>
-                        <input type="text" name="q" class="form-control border-0 bg-transparent shadow-none py-2 text-main"
-                            value="<?= htmlspecialchars((string) $filters['q']) ?>"
-                            placeholder="<?= __('search_student_placeholder') ?>..." style="min-width: 150px;">
+                        <input type="text" name="q" id="search-input" class="form-control premium-input ps-5" value="<?= htmlspecialchars((string) $filters['q']) ?>" placeholder="<?= __('search_student_placeholder') ?>..." style="height: 42px;">
+                        <span id="search-clear" class="position-absolute end-0 top-50 translate-middle-y pe-3 text-muted cursor-pointer" style="display: <?= !empty($filters['q']) ? 'block' : 'none' ?>;">
+                            <i class="bi bi-x-circle-fill"></i>
+                        </span>
                     </div>
                 </div>
 
-                <!-- Filtre Démissionnaires : Style Badge Interactif -->
-                <div class="ms-2">
-                    <input type="checkbox" name="withdrawn" value="1" id="filterWithdrawn" class="btn-check" 
-                           <?= ($filters['withdrawn'] ?? 0) ? 'checked' : '' ?> onchange="this.form.submit()">
-                    <label class="btn <?= ($filters['withdrawn'] ?? 0) ? 'btn-danger shadow-sm active-status-pulse' : 'btn-outline-theme border-opacity-25' ?> rounded-pill px-3 py-2 fw-bold d-flex align-items-center gap-2" 
-                           for="filterWithdrawn" style="font-size: 0.7rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-width: 1.5px;">
-                        <i class="bi bi-person-x<?= ($filters['withdrawn'] ?? 0) ? '-fill' : '' ?> shadow-icon"></i>
-                        <span class="text-nowrap"><?= __('show_withdrawn') ?></span>
-                    </label>
-                </div>
-                
-                <div class="ms-2">
-                    <select name="teaching_type_id" class="form-select border-0 bg-white bg-opacity-10 text-main shadow-none py-2 rounded-pill" onchange="this.form.submit()" style="min-width: 160px; font-size: 0.85rem;">
-                        <option value="">Tous les Types</option>
-                        <?php foreach ($teachingTypes as $tt): ?>
-                            <option value="<?= $tt['id'] ?>" <?= ((int)($filters['teaching_type_id'] ?? 0) === $tt['id']) ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($tt['nom']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
+                <!-- Advanced & Action Buttons -->
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <?php
+                    $advActiveCount = 0;
+                    if ((int)($filters['teaching_type_id'] ?? 0) > 0) $advActiveCount++;
+                    if ((int)($filters['class_id'] ?? 0) > 0) $advActiveCount++;
+                    if (!empty($filters['withdrawn'])) $advActiveCount++;
+                    ?>
+                    
+                    <!-- Advanced Filters Toggle Button -->
+                    <button type="button" class="btn btn-theme-soft rounded-pill px-3 fw-bold d-flex align-items-center gap-2" 
+                            style="height: 42px;"
+                            data-bs-toggle="collapse" data-bs-target="#advanced-filters-collapse" aria-expanded="<?= $advActiveCount > 0 ? 'true' : 'false' ?>">
+                        <i class="bi bi-sliders"></i>
+                        <span><?= __('advanced_filters') ?? 'Filtres Avancés' ?></span>
+                        <span class="badge bg-primary text-white rounded-pill px-2" id="adv-filter-count" style="font-size: 0.75rem; <?= $advActiveCount === 0 ? 'display: none;' : '' ?>"><?= $advActiveCount ?></span>
+                    </button>
 
-                <!-- Filtres et Utilitaires -->
-                <div class="d-flex gap-2 align-items-center ps-2">
-                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm"><?= __('filter') ?></button>
-                    <a href="/students" class="btn btn-light rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" title="<?= __('reset') ?>">
-                        <i class="bi bi-arrow-counterclockwise"></i>
+                    <!-- Reset Form Button -->
+                    <a href="/students" class="btn btn-light rounded-circle p-0 d-flex align-items-center justify-content-center reset-btn" style="width: 42px; height: 42px; min-width: 42px;" title="<?= __('clear_filters') ?? 'Réinitialiser' ?>">
+                        <i class="bi bi-arrow-counterclockwise fs-5"></i>
                     </a>
-                    <div class="ms-2 d-flex gap-2">
-                        <a href="/students/exportExcel?<?= http_build_query($filters) ?>"
+
+                    <!-- Export Actions -->
+                    <div class="d-flex gap-2">
+                        <a id="btn-export-excel" href="/students/exportExcel?<?= http_build_query($filters) ?>"
                             class="btn-export-minimal shadow-sm" title="<?= __('export_excel') ?>">
                             <i class="bi bi-file-earmark-spreadsheet"></i>
                         </a>
-                        <a href="/students/export?<?= http_build_query($filters) ?>"
+
+                        <a id="btn-export-pdf" href="/students/export?<?= http_build_query($filters) ?>"
                             class="btn-export-minimal shadow-sm" title="<?= __('export_list') ?>">
                             <i class="bi bi-file-earmark-pdf"></i>
                         </a>
                     </div>
                 </div>
-            </form>
-        </div>
-    </div>
-    <!-- LISTE DES ÉLÈVES (Tableau structuré multi-colonnes) -->
- <div class="modern-card border-0 shadow-sm overflow-hidden animate-fade-in">
-    <div class="table-responsive">
-
-        <table class="table-modern">
-            <thead>
-                <tr>
-                    <th><?= __('student') ?></th>
-                    <th><?= __('class') ?></th>
-                    <th><?= __('section') ?></th>
-                    <th>Type Ensg.</th>
-                    <th><?= __('department') ?></th>
-                    <?php if (in_array(App\Core\Session::get('user_role'), ['superadmin', 'admin'])): ?>
-                    <th class="text-end"><?= __('actions') ?></th>
-                    <?php endif; ?>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($students as $s): ?>
-                <tr class="student-row">
-                    <td
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="avatar-init bg-primary bg-opacity-10 text-primary fw-bold rounded-circle d-flex align-items-center justify-content-center shadow-sm"
-                                style="width: 36px; height: 36px; font-size: 1rem; border: 1px solid rgba(var(--primary-rgb), 0.2);">
-                                <?= strtoupper(substr((string) $s['nom'], 0, 1)) ?>
-                            </div>
-                            <div>
-                                <div class="fw-bold text-main-theme name-gradient"
-                                    style="font-size: 0.9rem; name-gradient"
-                                    style="font-size: 0.9rem;">
-                                    <?= htmlspecialchars((string) $s['nom']) ?>
-                                </div>
-                                <div class="text-muted-t7eme opacity-75"
-                                    style="font-size: 0.75rem;"><?= htmlspecialchars((string) $s['prenom']) ?>
-                                </div>
-                            </div>
-                        </div>
-                    </td>
-                    <td>
-                        <span class="badge bg-primary text-white px-2 py-1 rounded-pill fw-bold shadow-sm"
-                            style="font-size: 0.7rem;">
-                            <i class="bi bi-door-open-fill me-1"></i><?= htmlspecialchars((string) ($s['classe_nom'] ?: __('no_class'))) ?>
-                        </span>
-                    </td>
-                    <td>
-                        <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2 py-1 rounded-pill fw-medium"
-                            style="font-size: 0.7rem;">
-                            <i class="bi bi-layers-half me-1"></i><?= htmlspecialchars((string) ($s['section_nom'] ?: '-')) ?>
-                        </span>
-                    </td>
-                    <td>
-                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1 rounded-pill fw-medium"
-                            style="font-size: 0.7rem;">
-                            <i class="bi bi-diagram-3 me-1"></i><?= htmlspecialchars((string) ($s['teaching_type_nom'] ?: '-')) ?>
-                        </span>
-                    </td>
-                    <td>
-                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-1 rounded-pill fw-medium"
-                            style="font-size: 0.7rem;">
-                            <i class="bi bi-building me-1"></i><?= htmlspecialchars((string) ($s['department_nom'] ?: '-')) ?>
-                        </span>
-                    </td>
-                    <?php if (in_array(App\Core\Session::get('user_role'), ['superadmin', 'admin'])): ?>
-                    <td class="text-end pe-4">
-                        <div class="d-flex justify-content-end gap-1">
-                            <a href="/students/edit?id=<?= $s['id'] ?>"
-                                class="btn btn-sm btn-action-modern text-primary" title="<?= __('edit') ?>">
-                                <i class="bi bi-pencil-square fs-5"></i>
-                            </a>
-                            <?php if ($filters['withdrawn'] ?? 0): ?>
-                                <a href="/students/restore?id=<?= $s['id'] ?>&csrf_token=<?= \App\Core\Session::generateCsrfToken() ?>"
-                                    class="btn btn-sm btn-action-modern text-success btn-confirm-restore"
-                                    data-confirm="<?= __('restore_student_confirm') ?>" title="<?= __('restore') ?>">
-                                    <i class="bi bi-arrow-counterclockwise fs-5"></i>
-                                </a>
-                            <?php else: ?>
-                                <a href="/students/withdraw?id=<?= $s['id'] ?>&csrf_token=<?= \App\Core\Session::generateCsrfToken() ?>"
-                                    class="btn btn-sm btn-action-modern text-warning btn-confirm-withdraw"
-                                    data-confirm="<?= __('withdraw_student_confirm') ?>" title="<?= __('withdraw') ?>">
-                                    <i class="bi bi-person-x fs-5"></i>
-                                </a>
-                            <?php endif; ?>
-                            <a href="/students/delete?id=<?= $s['id'] ?>&csrf_token=<?= \App\Core\Session::generateCsrfToken() ?>"
-                                class="btn btn-sm btn-action-modern text-danger btn-confirm-delete"
-                                data-confirm="<?= __('delete_student_confirm') ?>" title="<?= __('delete') ?>">
-                                <i class="bi bi-trash fs-5"></i>
-                            </a>
-                        </div>
-                    </td>
-                    <?php endif; ?>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-    </div>
-
-    <!-- PAGINATION -->
-    <?php if ($totalPages > 1): ?>
-        <div class="d-flex justify-content-between align-items-center mt-5 mb-4 flex-wrap gap-3">
-            <div class="text-muted small">
-
-                <?= __('showing_count', [
-                    'start' => $offset + 1,
-                    'end' => min($offset + $limit, $totalCount),
-                    'total' => $totalCount
-                ]) ?>
             </div>
-            <nav aria-label="Page navigation">
-                <ul class="pagination pagination-modern mb-0">
-                    <?php if ($page > 1): ?>
-                        <li class="page-item">
-                            <a class="page-link" href="?<?= http_build_query(array_merge($filters, ['page' => $page - 1])) ?>" aria-label="Previous">
-                                <i class="bi bi-chevron-left"></i>
-                            </a>
-                        </li>
-                    <?php endif; ?>
 
-                    <?php
-                    $start = max(1, $page - 2);
-                    $end = min($totalPages, $page + 2);
-                    
-                    if ($start > 1): ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query(array_merge($filters, ['page' => 1])) ?>">1</a></li>
-                        <?php if ($start > 2): ?><li class="page-item disabled"><span class="page-link">...</span></li><?php endif; ?>
-                    <?php endif; ?>
+            <!-- Collapsible Advanced Filters Section -->
+            <div class="collapse <?= $advActiveCount > 0 ? 'show' : '' ?>" id="advanced-filters-collapse">
+                <div class="advanced-filters-panel p-4 mt-3">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('class') ?? 'Classe' ?></label>
+                            <select name="class_id" id="class-select" class="form-select premium-select">
+                                <option value=""><?= __('all_classes') ?? 'Toutes les Classes' ?></option>
+                                <?php foreach ($classes as $c): ?>
+                                    <option value="<?= $c['id'] ?>" <?= ((int)($filters['class_id'] ?? 0) === (int)$c['id']) ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($c['nom']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('teaching_type') ?? 'Type d\'Enseignement' ?></label>
+                            <select name="teaching_type_id" id="teaching-type-select" class="form-select premium-select">
+                                <option value=""><?= 'Tous les Types' ?></option>
+                                <?php foreach ($teachingTypes as $tt): ?>
+                                    <option value="<?= $tt['id'] ?>" <?= ((int)($filters['teaching_type_id'] ?? 0) === $tt['id']) ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($tt['nom']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check form-switch mb-2">
+                                <input type="checkbox" name="withdrawn" value="1" id="withdrawn-checkbox" class="form-check-input" <?= ($filters['withdrawn'] ?? 0) ? 'checked' : '' ?>>
+                                <label class="form-check-label fw-bold text-muted-theme small text-uppercase" for="withdrawn-checkbox">
+                                    <?= __('show_withdrawn') ?? 'Afficher les démissionnaires' ?>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check form-switch mb-2">
+                                <input type="checkbox" name="only_mine" value="1" id="only-mine-checkbox" class="form-check-input" <?= ($filters['only_mine'] ?? 0) ? 'checked' : '' ?>>
+                                <label class="form-check-label fw-bold text-muted-theme small text-uppercase" for="only-mine-checkbox">
+                                    <?= __('my_registrations_only') ?? 'Mes inscriptions uniquement' ?>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
 
-                    <?php for ($i = $start; $i <= $end; $i++): ?>
-                        <li class="page-item <?= $i === $page ? 'active' : '' ?>">
-                            <a class="page-link" href="?<?= http_build_query(array_merge($filters, ['page' => $i])) ?>"><?= $i ?></a>
-                        </li>
-                    <?php endfor; ?>
+    <!-- Active Filters Badges Container -->
+    <div id="active-filters-container">
+        <?php include __DIR__ . '/badges.php'; ?>
+    </div>
 
-                    <?php if ($end < $totalPages): ?>
-                        <?php if ($end < $totalPages - 1): ?><li class="page-item disabled"><span class="page-link">...</span></li><?php endif; ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query(array_merge($filters, ['page' => $totalPages])) ?>"><?= $totalPages ?></a></li>
-                    <?php endif; ?>
-
-                    <?php if ($page < $totalPages): ?>
-                        <li class="page-item">
-                            <a class="page-link" href="?<?= http_build_query(array_merge($filters, ['page' => $page + 1])) ?>" aria-label="Next">
-                                <i class="bi bi-chevron-right"></i>
-                            </a>
-                        </li>
-                    <?php endif; ?>
-                </ul>
-            </nav>
+    <!-- Table Card -->
+    <div class="modern-card border-0 shadow-sm overflow-hidden animate-fade-in">
+        <div class="table-responsive">
+            <table class="table-modern">
+                <thead>
+                    <tr>
+                        <th><?= __('student') ?></th>
+                        <th><?= __('class') ?></th>
+                        <th><?= __('section') ?></th>
+                        <th>Type Ensg.</th>
+                        <th><?= __('department') ?></th>
+                        <?php if (in_array(App\Core\Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])): ?>
+                        <th class="text-end"><?= __('actions') ?></th>
+                        <?php endif; ?>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php include __DIR__ . '/tbody.php'; ?>
+                </tbody>
+            </table>
         </div>
-    <?php endif; ?>
+    </div>
+
+    <!-- Pagination Container -->
+    <div id="pagination-container">
+        <?php include __DIR__ . '/pagination.php'; ?>
+    </div>
 </div>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const filtersForm = document.getElementById('filters-form');
+    const searchInput = document.getElementById('search-input');
+    const searchClear = document.getElementById('search-clear');
+    const classSelect = document.getElementById('class-select');
+    const teachingTypeSelect = document.getElementById('teaching-type-select');
+    const withdrawnCheckbox = document.getElementById('withdrawn-checkbox');
+    const onlyMineCheckbox = document.getElementById('only-mine-checkbox');
+    
+    const btnExportExcel = document.getElementById('btn-export-excel');
+    const btnExportPdf = document.getElementById('btn-export-pdf');
+    const tableContainer = document.querySelector('.modern-card.overflow-hidden');
+    
+    let currentPage = <?= $page ?>;
+
+    function updateAdvancedBadge() {
+        let count = 0;
+        if (classSelect && classSelect.value !== '') count++;
+        if (teachingTypeSelect && teachingTypeSelect.value !== '') count++;
+        if (withdrawnCheckbox && withdrawnCheckbox.checked) count++;
+        if (onlyMineCheckbox && onlyMineCheckbox.checked) count++;
+        
+        const badge = document.getElementById('adv-filter-count');
+        if (badge) {
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'inline-block' : 'none';
+        }
+    }
+
+    function updateExportUrls() {
+        const params = new URLSearchParams({
+            q: searchInput.value,
+            class_id: classSelect ? classSelect.value : '',
+            teaching_type_id: teachingTypeSelect ? teachingTypeSelect.value : '',
+            withdrawn: withdrawnCheckbox && withdrawnCheckbox.checked ? '1' : '0',
+            only_mine: onlyMineCheckbox && onlyMineCheckbox.checked ? '1' : '0'
+        });
+        
+        if (btnExportExcel) btnExportExcel.setAttribute('href', `/students/exportExcel?${params.toString()}`);
+        if (btnExportPdf) btnExportPdf.setAttribute('href', `/students/export?${params.toString()}`);
+    }
+
+    function handleFilterChange(resetPage = true) {
+        if (resetPage) {
+            currentPage = 1;
+        }
+
+        updateExportUrls();
+        updateAdvancedBadge();
+        
+        // Show loading state
+        if (tableContainer) {
+            tableContainer.classList.add('table-loading-active');
+        }
+
+        const params = new URLSearchParams({
+            q: searchInput.value,
+            class_id: classSelect ? classSelect.value : '',
+            teaching_type_id: teachingTypeSelect ? teachingTypeSelect.value : '',
+            withdrawn: withdrawnCheckbox && withdrawnCheckbox.checked ? '1' : '0',
+            only_mine: onlyMineCheckbox && onlyMineCheckbox.checked ? '1' : '0',
+            page: currentPage,
+            ajax: 1
+        });
+
+        // Update browser URL query string without reloading page
+        const newUrl = `${window.location.pathname}?${params.toString().replace('&ajax=1', '')}`;
+        window.history.pushState({ path: newUrl }, '', newUrl);
+
+        fetch(`/students?${params.toString()}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const tbody = document.querySelector('.table-modern tbody');
+                    if (tbody) {
+                        tbody.innerHTML = data.tbody;
+                    }
+
+                    const badgesContainer = document.getElementById('active-filters-container');
+                    if (badgesContainer) {
+                        badgesContainer.innerHTML = data.badges;
+                    }
+
+                    const paginationContainer = document.getElementById('pagination-container');
+                    if (paginationContainer) {
+                        paginationContainer.innerHTML = data.pagination;
+                    }
+                }
+                
+                if (tableContainer) {
+                    tableContainer.classList.remove('table-loading-active');
+                }
+            })
+            .catch(err => {
+                console.error("Erreur de filtrage AJAX :", err);
+                if (tableContainer) {
+                    tableContainer.classList.remove('table-loading-active');
+                }
+            });
+    }
+
+    // Input listeners
+    let searchDebounceTimeout;
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            if (this.value) {
+                searchClear.style.display = 'block';
+            } else {
+                searchClear.style.display = 'none';
+            }
+            
+            clearTimeout(searchDebounceTimeout);
+            searchDebounceTimeout = setTimeout(() => {
+                handleFilterChange(true);
+            }, 300); // 300ms debounce
+        });
+
+        searchClear.addEventListener('click', function() {
+            searchInput.value = '';
+            searchClear.style.display = 'none';
+            handleFilterChange(true);
+            searchInput.focus();
+        });
+    }
+
+    if (classSelect) classSelect.addEventListener('change', () => handleFilterChange(true));
+    if (teachingTypeSelect) teachingTypeSelect.addEventListener('change', () => handleFilterChange(true));
+    if (withdrawnCheckbox) withdrawnCheckbox.addEventListener('change', () => handleFilterChange(true));
+    if (onlyMineCheckbox) onlyMineCheckbox.addEventListener('change', () => handleFilterChange(true));
+
+    filtersForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        handleFilterChange(true);
+    });
+
+    // Reset individual filters from badges
+    window.resetFilter = function(type) {
+        if (type === 'q') {
+            if (searchInput) {
+                searchInput.value = '';
+                searchClear.style.display = 'none';
+            }
+        } else if (type === 'class') {
+            if (classSelect) classSelect.value = '';
+        } else if (type === 'teaching_type') {
+            if (teachingTypeSelect) teachingTypeSelect.value = '';
+        } else if (type === 'withdrawn') {
+            if (withdrawnCheckbox) withdrawnCheckbox.checked = false;
+        } else if (type === 'only_mine') {
+            if (onlyMineCheckbox) onlyMineCheckbox.checked = false;
+        }
+        handleFilterChange(true);
+    };
+
+    // Intercept pagination clicks
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('.pagination-modern .page-link');
+        if (link) {
+            e.preventDefault();
+            const url = new URL(link.href, window.location.origin);
+            const page = url.searchParams.get('page') || 1;
+            currentPage = parseInt(page);
+            handleFilterChange(false); // Do not reset to page 1
+            
+            // Scroll to table top smoothly
+            if (tableContainer) {
+                tableContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+    });
+
+    // Initial setup
+    updateAdvancedBadge();
+    updateExportUrls();
+});
+</script>
+
 <style>
-    /* Floating Island Filters */
-    .filter-island {
-        background: rgba(var(--bg-card-rgb), 0.7);
-        backdrop-filter: blur(20px) saturate(180%);
-        border: 1px solid rgba(var(--primary-rgb), 0.15);
-        border-radius: 100px;
-        min-width: 60%;
-        transition: all 0.3s ease;
-    }
-
-    [data-theme="dark"] .filter-island {
-        background: rgba(30, 30, 45, 0.6);
-        border-color: rgba(255, 255, 255, 0.08);
-    }
-
-    .filter-island:focus-within {
-        border-color: var(--primary-color);
-        box-shadow: 0 15px 35px -10px rgba(var(--primary-rgb), 0.25);
-        transform: translateY(-2px);
-    }
-
     .btn-export-minimal {
         width: 40px;
         height: 40px;
@@ -270,16 +342,6 @@ ob_start(); ?>
         color: white !important;
         transform: scale(1.1) rotate(8deg);
         box-shadow: 0 8px 20px rgba(241, 196, 15, 0.3);
-    }
-
-    /* Animations */
-    .animate-slide-down {
-        animation: slideDown 0.6s cubic-bezier(0.23, 1, 0.32, 1);
-    }
-
-    @keyframes slideDown {
-        from { transform: translateY(-20px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
     }
 
     /* Pagination Modern Style */
@@ -314,61 +376,10 @@ ob_start(); ?>
         transform: translateY(-2px);
     }
 
-    .subject-card-compact {
-        background: var(--bg-card);
-        border-radius: 28px;
-        border: 1px solid rgba(var(--primary-rgb), 0.08) !important;
-        display: block;
-        text-decoration: none !important;
-        transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
-        position: relative;
-        overflow: hidden;
-    }
-
-    [data-theme="dark"] .subject-card-compact {
-        background: rgba(255, 255, 255, 0.03);
-        backdrop-filter: blur(15px);
-        border-color: rgba(255, 255, 255, 0.06) !important;
-    }
-
     .name-gradient {
         background: linear-gradient(135deg, var(--text-main), var(--primary-color));
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-    }
-
-    .subject-card-glow {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: radial-gradient(circle at top right, rgba(var(--primary-rgb), 0.2), transparent 70%);
-        opacity: 0;
-        transition: opacity 0.4s ease;
-    }
-
-    .subject-card-compact:hover {
-        transform: translateY(-12px) scale(1.03);
-        border-color: var(--primary-color) !important;
-        box-shadow: 0 30px 60px -12px rgba(var(--primary-rgb), 0.25);
-    }
-
-    .subject-card-compact:active {
-        transform: scale(0.96);
-    }
-
-    .subject-card-compact:hover .subject-card-glow {
-        opacity: 1;
-    }
-
-    @media (max-width: 767.98px) {
-        .filter-island {
-            border-radius: 24px;
-            min-width: 100%;
-            padding: 1rem !important;
-        }
     }
 
     /* Thème sombre pour le tableau des élèves */

@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Database;
 use App\Core\Session;
+use App\Core\PermissionManager;
 use App\Services\AcademicYearService;
 use App\Services\FinancialService;
 use PDO;
@@ -25,11 +26,8 @@ class PaymentController
         $this->academicYearService = new AcademicYearService($this->db);
         $this->financialService = new FinancialService($this->db);
 
-        // Sécurité : Accès restreint aux administrateurs
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
-            header("Location: /");
-            exit;
-        }
+        // Sécurité RBAC : Accès réservé aux rôles financiers
+        PermissionManager::requirePermission('manage_payments');
     }
 
     /**
@@ -53,7 +51,7 @@ class PaymentController
                 FROM students s
                 JOIN enrollments e ON s.id = e.student_id AND e.academic_year_id = ?
                 LEFT JOIN classes c ON e.class_id = c.id
-                WHERE s.is_withdrawn = 0";
+                WHERE s.is_withdrawn = 0 AND s.actif = 1";
         
         $params = [$activeYearId];
 
@@ -100,7 +98,7 @@ class PaymentController
                                     FROM students s
                                     LEFT JOIN enrollments e ON s.id = e.student_id AND e.academic_year_id = ?
                                     LEFT JOIN classes c ON s.class_id = c.id
-                                    WHERE s.id = ? AND s.is_withdrawn = 0");
+                                    WHERE s.id = ? AND s.is_withdrawn = 0 AND s.actif = 1");
         $stmt->execute([$activeYearId, $id]);
         $student = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -177,41 +175,58 @@ class PaymentController
             try {
                 $this->db->beginTransaction();
 
-                // Insérer le paiement
-                $stmt = $this->db->prepare("INSERT INTO payments (student_id, academic_year_id, amount, type, payment_date, payment_method, reference, commentaire, created_by) 
-                                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([
-                    $studentId,
-                    $activeYearId,
-                    $amount,
-                    $type,
-                    $payment_date,
-                    $payment_method,
-                    $reference ?: null,
-                    $commentaire ?: null,
-                    Session::get('user_id')
-                ]);
-                $paymentId = (int)$this->db->lastInsertId();
+                if ($type === 'inscription') {
+                    // Calcul du frais attendu
+                    $stmtEnroll = $this->db->prepare("SELECT e.student_status, c.frais_inscription, c.frais_inscription_reinscription FROM enrollments e JOIN classes c ON e.class_id = c.id WHERE e.student_id = ? AND e.academic_year_id = ?");
+                    $stmtEnroll->execute([$studentId, $activeYearId]);
+                    $enrollData = $stmtEnroll->fetch(PDO::FETCH_ASSOC);
+                    
+                    $expectedFee = 0;
+                    if ($enrollData) {
+                        $expectedFee = ($enrollData['student_status'] === 'nouveau') ? (float)$enrollData['frais_inscription'] : (float)$enrollData['frais_inscription_reinscription'];
+                    }
+                    
+                    $amountInscription = min($amount, $expectedFee);
+                    $surplus = max(0.0, $amount - $expectedFee);
+
+                    if ($expectedFee <= 0) {
+                        $amountInscription = 0;
+                        $surplus = $amount;
+                    }
+
+                    if ($amountInscription > 0 || $amount == 0) {
+                        $stmt = $this->db->prepare("INSERT INTO payments (student_id, academic_year_id, amount, type, payment_date, payment_method, reference, commentaire, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                        $stmt->execute([$studentId, $activeYearId, $amountInscription, 'inscription', $payment_date, $payment_method, $reference ?: null, $commentaire ?: null, Session::get('user_id')]);
+                        $paymentId = (int)$this->db->lastInsertId();
+
+                        $this->financialService->logHistory(Session::get('user_id'), 'payment', $paymentId, 'create', null, [
+                            'student_id' => $studentId, 'type' => 'inscription', 'amount' => $amountInscription, 'payment_date' => $payment_date, 'payment_method' => $payment_method, 'reference' => $reference
+                        ]);
+                    }
+
+                    if ($surplus > 0) {
+                        $surplusRef = $reference ? $reference . ' (Surplus)' : 'Surplus Inscription';
+                        $surplusStmt = $this->db->prepare("INSERT INTO payments (student_id, academic_year_id, amount, type, payment_date, payment_method, reference, commentaire, created_by, parent_payment_id) VALUES (?, ?, ?, 'scolarite', ?, ?, ?, ?, ?, ?)");
+                        $surplusStmt->execute([$studentId, $activeYearId, $surplus, $payment_date, $payment_method, $surplusRef, 'Transfert automatique du surplus', Session::get('user_id'), $paymentId ?? null]);
+                        $surplusId = (int)$this->db->lastInsertId();
+
+                        $this->financialService->logHistory(Session::get('user_id'), 'payment', $surplusId, 'create', null, [
+                            'student_id' => $studentId, 'type' => 'scolarite', 'amount' => $surplus, 'payment_date' => $payment_date, 'payment_method' => $payment_method, 'reference' => $surplusRef, 'parent_payment_id' => $paymentId ?? null
+                        ]);
+                    }
+                } else {
+                    // Paiement standard scolarite
+                    $stmt = $this->db->prepare("INSERT INTO payments (student_id, academic_year_id, amount, type, payment_date, payment_method, reference, commentaire, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    $stmt->execute([$studentId, $activeYearId, $amount, $type, $payment_date, $payment_method, $reference ?: null, $commentaire ?: null, Session::get('user_id')]);
+                    $paymentId = (int)$this->db->lastInsertId();
+
+                    $this->financialService->logHistory(Session::get('user_id'), 'payment', $paymentId, 'create', null, [
+                        'student_id' => $studentId, 'type' => $type, 'amount' => $amount, 'payment_date' => $payment_date, 'payment_method' => $payment_method, 'reference' => $reference
+                    ]);
+                }
 
                 // Synchronisation des finances de l'élève
                 $this->financialService->syncStudentFinancials($studentId, $activeYearId);
-
-                // Audit Historique
-                $this->financialService->logHistory(
-                    Session::get('user_id'),
-                    'payment',
-                    $paymentId,
-                    'create',
-                    null,
-                    [
-                        'student_id' => $studentId,
-                        'type' => $type,
-                        'amount' => $amount,
-                        'payment_date' => $payment_date,
-                        'payment_method' => $payment_method,
-                        'reference' => $reference
-                    ]
-                );
 
                 $this->db->commit();
                 Session::setFlash('success', "Paiement de " . number_format($amount, 0, '.', ' ') . " FCFA enregistré avec succès.");
@@ -228,55 +243,40 @@ class PaymentController
     }
 
     /**
-     * Supprime un paiement.
+     * Annule un paiement.
      */
     public function delete($id)
     {
-        $id = (int)$id;
-        $activeYearId = $this->academicYearService->getActiveYearId();
-
-        try {
-            $this->db->beginTransaction();
-
-            // Récupérer le paiement avant de le supprimer pour récupérer le student_id
-            $stmt = $this->db->prepare("SELECT * FROM payments WHERE id = ?");
-            $stmt->execute([$id]);
-            $payment = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if (!$payment) {
-                throw new \Exception("Paiement introuvable.");
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+                Session::setFlash('error', "Session expirée ou requête invalide.");
+                header("Location: /payments");
+                exit;
             }
 
-            $studentId = (int)$payment['student_id'];
-
-            // Supprimer le paiement
-            $del = $this->db->prepare("DELETE FROM payments WHERE id = ?");
-            $del->execute([$id]);
-
-            // Synchroniser les finances de l'élève
-            $this->financialService->syncStudentFinancials($studentId, $activeYearId);
-
-            // Audit
-            $this->financialService->logHistory(
-                Session::get('user_id'),
-                'payment',
-                $id,
-                'delete',
-                $payment,
-                null
-            );
-
-            $this->db->commit();
-            Session::setFlash('success', "Le paiement a été annulé.");
-            header("Location: /payments/student?id=" . $studentId);
-        } catch (\Exception $e) {
-            if ($this->db->inTransaction()) {
-                $this->db->rollBack();
+            $motive = trim($_POST['motive'] ?? '');
+            if (empty($motive)) {
+                Session::setFlash('error', "Le motif d'annulation est obligatoire.");
+                header("Location: /payments");
+                exit;
             }
-            Session::setFlash('error', "Erreur lors de l'annulation du paiement : " . $e->getMessage());
+
+            $id = (int)$id;
+            $result = $this->financialService->cancelPayment($id, Session::get('user_id'), $motive);
+
+            if ($result['success']) {
+                Session::setFlash('success', $result['message']);
+                header("Location: /payments/student?id=" . $result['student_id']);
+            } else {
+                Session::setFlash('error', $result['message']);
+                header("Location: /payments");
+            }
+            exit;
+        } else {
+            // Si c'est un GET, rediriger
             header("Location: /payments");
+            exit;
         }
-        exit;
     }
 
     /**
@@ -319,6 +319,14 @@ class PaymentController
             $upCode = $this->db->prepare("UPDATE payments SET verification_code = ? WHERE id = ?");
             $upCode->execute([$code, $payment['id']]);
             $payment['verification_code'] = $code;
+        }
+
+        // 1.5. Récupérer l'éventuel surplus généré (enfant)
+        $childSurplus = null;
+        if ($payment['type'] === 'inscription') {
+            $stmtSurplus = $this->db->prepare("SELECT * FROM student_payments WHERE parent_payment_id = ? AND status != 'annule'");
+            $stmtSurplus->execute([$payment['id']]);
+            $childSurplus = $stmtSurplus->fetch(PDO::FETCH_ASSOC);
         }
 
         // 2. Récupérer les totaux payés par l'élève pour cette année (scolarité ou inscription)

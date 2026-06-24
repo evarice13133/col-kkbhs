@@ -429,7 +429,7 @@ class StudentImportProcessor
 
 
 
-            $sql = "INSERT INTO students (nom, prenom, email, class_id, teaching_type_id, sexe, date_naissance, lieu_naissance, is_redoublant, academic_year_id, parent_contact, guardian_contact) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $sql = "INSERT INTO students (nom, prenom, email, class_id, teaching_type_id, sexe, date_naissance, lieu_naissance, is_redoublant, academic_year_id, parent_contact, guardian_contact, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             $stmt = $this->db->prepare($sql);
 
@@ -456,7 +456,9 @@ class StudentImportProcessor
 
                 $parentContact,
 
-                $guardianContact
+                $guardianContact,
+
+                \App\Core\Session::get('user_id')
 
             ]);
 

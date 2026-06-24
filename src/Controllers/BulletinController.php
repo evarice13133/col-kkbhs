@@ -156,7 +156,7 @@ class BulletinController
 
             // 1. Récupérer tous les élèves de la classe pour s'assurer de tout enregistrer (même les 0)
             $academicYearId = $this->getActiveAcademicYear()['id'] ?? 0;
-            $studentIdsStmt = $this->db->prepare("SELECT id FROM students WHERE class_id = ? AND academic_year_id = ?");
+            $studentIdsStmt = $this->db->prepare("SELECT id FROM students WHERE class_id = ? AND academic_year_id = ? AND actif = 1");
             $studentIdsStmt->execute([$classId, $academicYearId]);
             $allStudentIds = $studentIdsStmt->fetchAll(PDO::FETCH_COLUMN);
 
@@ -1248,7 +1248,7 @@ class BulletinController
         }
 
         $academicYearId = $this->getActiveAcademicYear()['id'] ?? 0;
-        $stmt = $this->db->prepare("SELECT st.*, c.nom AS class_nom FROM students st JOIN classes c ON c.id = st.class_id WHERE st.class_id = ? AND st.academic_year_id = ? AND st.is_withdrawn = 0 ORDER BY st.nom ASC, st.prenom ASC");
+        $stmt = $this->db->prepare("SELECT st.*, c.nom AS class_nom FROM students st JOIN classes c ON c.id = st.class_id WHERE st.class_id = ? AND st.academic_year_id = ? AND st.is_withdrawn = 0 AND st.actif = 1 ORDER BY st.nom ASC, st.prenom ASC");
         $stmt->execute([$classId, $academicYearId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -1256,7 +1256,7 @@ class BulletinController
     protected function getAccessibleStudent(int $studentId)
     {
         $academicYearId = $this->getActiveAcademicYear()['id'] ?? 0;
-        $stmt = $this->db->prepare("SELECT st.*, c.nom AS class_nom FROM students st JOIN classes c ON c.id = st.class_id WHERE st.id = ? AND st.academic_year_id = ? AND st.is_withdrawn = 0");
+        $stmt = $this->db->prepare("SELECT st.*, c.nom AS class_nom FROM students st JOIN classes c ON c.id = st.class_id WHERE st.id = ? AND st.academic_year_id = ? AND st.is_withdrawn = 0 AND st.actif = 1");
         $stmt->execute([$studentId, $academicYearId]);
         $student = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -1513,7 +1513,7 @@ class BulletinController
                     MAX(felicitations) as felicitations
                 FROM discipline
                 WHERE academic_year_id = ? AND periode IN ($placeholders)
-                AND student_id IN (SELECT id FROM students WHERE class_id = ? AND academic_year_id = ?)
+                 AND student_id IN (SELECT id FROM students WHERE class_id = ? AND academic_year_id = ? AND actif = 1)
                 GROUP BY student_id";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(array_merge([$academicYearId], $periods, [$classId, $academicYearId]));
@@ -2184,7 +2184,7 @@ class BulletinController
                 tableau_honneur, encouragements, felicitations
             FROM discipline 
             WHERE academic_year_id = ? AND periode = ? 
-            AND student_id IN (SELECT id FROM students WHERE class_id = ? AND academic_year_id = ?)
+            AND student_id IN (SELECT id FROM students WHERE class_id = ? AND academic_year_id = ? AND actif = 1)
         ");
         $stmt->execute([$academicYearId, $period, $classId, $academicYearId]);
 

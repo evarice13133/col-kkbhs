@@ -88,6 +88,43 @@ class StudentController
 
 
 
+        // Si requête AJAX, renvoyer la réponse en JSON pour fluidité UX
+        if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
+            header('Content-Type: application/json');
+
+            $academicYearId = $this->academicYearService->getActiveYearId();
+            if (Session::get('user_role') === 'enseignant') {
+                $stmt = $this->db->prepare("SELECT id, nom FROM classes WHERE id IN (SELECT DISTINCT class_id FROM teacher_assignments WHERE user_id = ? AND academic_year_id = ?) ORDER BY nom ASC");
+                $stmt->execute([Session::get('user_id'), $academicYearId]);
+                $classes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } else {
+                $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+            }
+            $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+            ob_start();
+            include __DIR__ . '/../Views/students/tbody.php';
+            $tbodyHtml = ob_get_clean();
+
+            ob_start();
+            include __DIR__ . '/../Views/students/badges.php';
+            $badgesHtml = ob_get_clean();
+
+            ob_start();
+            include __DIR__ . '/../Views/students/pagination.php';
+            $paginationHtml = ob_get_clean();
+
+            echo json_encode([
+                'success' => true,
+                'tbody' => $tbodyHtml,
+                'badges' => $badgesHtml,
+                'pagination' => $paginationHtml,
+                'count' => $totalCount,
+                'totalPages' => $totalPages
+            ]);
+            exit;
+        }
+
         // Progression Sécurité : Les enseignants ne voient que les classes où ils interviennent
         $academicYearId = $this->academicYearService->getActiveYearId();
 
@@ -440,7 +477,7 @@ class StudentController
 
     {
 
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+        if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
 
             header("Location: /students");
 
@@ -489,7 +526,7 @@ class StudentController
 
     public function import()
     {
-        if (!in_array(\App\Core\Session::get('user_role'), ['superadmin', 'admin'])) {
+        if (!in_array(\App\Core\Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
             header("Location: /students");
             exit;
         }
@@ -580,6 +617,11 @@ class StudentController
 
     public function upload()
     {
+        if (!in_array(\App\Core\Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
+            header("Location: /students");
+            exit;
+        }
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['import_file'])) {
             if (!\App\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
                 \App\Core\Security::log("Tentative de CSRF détectée sur l'action Student::upload");
@@ -637,7 +679,7 @@ class StudentController
 
     {
 
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+        if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
 
             header("Location: /students");
 
@@ -800,8 +842,8 @@ class StudentController
                 $this->db->beginTransaction();
 
                 // 1. Insérer l'étudiant
-                $stmt = $this->db->prepare("INSERT INTO students (nom, prenom, email, class_id, sexe, date_naissance, lieu_naissance, is_redoublant, academic_year_id, photo_eleve, parent_contact, guardian_contact, teaching_type_id, adresse) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$nom, $prenom, $email, $class_id, $sexe, $date_naissance, $lieu_naissance, $is_redoublant, $academicYearId, null, $parent_contact, $guardian_contact, $teaching_type_id, $adresse]);
+                $stmt = $this->db->prepare("INSERT INTO students (nom, prenom, email, class_id, sexe, date_naissance, lieu_naissance, is_redoublant, academic_year_id, photo_eleve, parent_contact, guardian_contact, teaching_type_id, adresse, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$nom, $prenom, $email, $class_id, $sexe, $date_naissance, $lieu_naissance, $is_redoublant, $academicYearId, null, $parent_contact, $guardian_contact, $teaching_type_id, $adresse, Session::get('user_id')]);
                 $studentId = (int) $this->db->lastInsertId();
 
                 // Gestion de la photo
@@ -835,20 +877,59 @@ class StudentController
                             $ref = 'Frais d\'inscription payés à l\'inscription';
                         }
                     }
-                    $payStmt = $this->db->prepare("INSERT INTO payments (student_id, academic_year_id, amount, type, payment_date, payment_method, reference, created_by) VALUES (?, ?, ?, 'inscription', CURDATE(), ?, ?, ?)");
-                    $payStmt->execute([$studentId, $academicYearId, $frais_inscription_paid, $payment_method, $ref, Session::get('user_id')]);
-                    $paymentId = (int) $this->db->lastInsertId();
 
-                    // Historisation financière
-                    $fs = new \App\Services\FinancialService($this->db);
-                    $fs->logHistory(Session::get('user_id'), 'payment', $paymentId, 'create', null, [
-                        'student_id' => $studentId,
-                        'amount' => $frais_inscription_paid,
-                        'type' => 'inscription',
-                        'payment_method' => $payment_method,
-                        'reference' => $ref,
-                        'commentaire' => 'Frais d\'inscription réglés lors de la création de l\'élève'
-                    ]);
+                    // Calcul du frais attendu
+                    $classStmt = $this->db->prepare("SELECT frais_inscription, frais_inscription_reinscription FROM classes WHERE id = ?");
+                    $classStmt->execute([$class_id]);
+                    $classData = $classStmt->fetch(PDO::FETCH_ASSOC);
+                    
+                    $expectedFee = ($student_status === 'nouveau') ? (float)$classData['frais_inscription'] : (float)$classData['frais_inscription_reinscription'];
+                    $amountInscription = min($frais_inscription_paid, $expectedFee);
+                    $surplus = max(0.0, $frais_inscription_paid - $expectedFee);
+                    
+                    // Si le frais attendu est 0 (gratuit) ou si la saisie est inférieure au tarif
+                    if ($expectedFee <= 0) {
+                        $amountInscription = 0;
+                        $surplus = $frais_inscription_paid;
+                    }
+
+                    // On n'enregistre le paiement d'inscription que s'il y a un montant affecté à l'inscription ou si tout est 0
+                    if ($amountInscription > 0 || $frais_inscription_paid == 0) {
+                        $payStmt = $this->db->prepare("INSERT INTO payments (student_id, academic_year_id, amount, type, payment_date, payment_method, reference, created_by) VALUES (?, ?, ?, 'inscription', CURDATE(), ?, ?, ?)");
+                        $payStmt->execute([$studentId, $academicYearId, $amountInscription, $payment_method, $ref, Session::get('user_id')]);
+                        $paymentId = (int) $this->db->lastInsertId();
+
+                        // Historisation financière
+                        $fs = new \App\Services\FinancialService($this->db);
+                        $fs->logHistory(Session::get('user_id'), 'payment', $paymentId, 'create', null, [
+                            'student_id' => $studentId,
+                            'amount' => $amountInscription,
+                            'type' => 'inscription',
+                            'payment_method' => $payment_method,
+                            'reference' => $ref,
+                            'commentaire' => 'Frais d\'inscription réglés lors de la création de l\'élève'
+                        ]);
+                    }
+
+                    // Traitement du surplus (affectation à la scolarité)
+                    if ($surplus > 0) {
+                        $surplusRef = $ref . ' (Surplus Inscription)';
+                        $surplusStmt = $this->db->prepare("INSERT INTO payments (student_id, academic_year_id, amount, type, payment_date, payment_method, reference, created_by, parent_payment_id, commentaire) VALUES (?, ?, ?, 'scolarite', CURDATE(), ?, ?, ?, ?, ?)");
+                        $surplusStmt->execute([$studentId, $academicYearId, $surplus, $payment_method, $surplusRef, Session::get('user_id'), $paymentId, 'Versement automatique sur la scolarité (Trop-perçu inscription)']);
+                        $surplusId = (int) $this->db->lastInsertId();
+
+                        // Historisation
+                        $fs = new \App\Services\FinancialService($this->db);
+                        $fs->logHistory(Session::get('user_id'), 'payment', $surplusId, 'create', null, [
+                            'student_id' => $studentId,
+                            'amount' => $surplus,
+                            'type' => 'scolarite',
+                            'payment_method' => $payment_method,
+                            'reference' => $surplusRef,
+                            'parent_payment_id' => $paymentId,
+                            'commentaire' => 'Transfert automatique du surplus d\'inscription'
+                        ]);
+                    }
                 }
 
                 // 4. Réduction éventuelle
@@ -906,7 +987,7 @@ class StudentController
 
     {
 
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+        if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
 
             header("Location: /students");
 
@@ -914,9 +995,11 @@ class StudentController
 
         }
 
-        $stmt = $this->db->prepare("SELECT s.*, c.cycle_id, c.section_id, c.department_id FROM students s LEFT JOIN classes c ON s.class_id = c.id WHERE s.id = ?");
+        $academicYearId = $this->academicYearService->getActiveYearId();
 
-        $stmt->execute([$id]);
+        $stmt = $this->db->prepare("SELECT s.*, c.cycle_id, c.section_id, c.department_id, e.student_status FROM students s LEFT JOIN classes c ON s.class_id = c.id LEFT JOIN enrollments e ON e.student_id = s.id AND e.academic_year_id = ? WHERE s.id = ?");
+
+        $stmt->execute([$academicYearId, $id]);
 
         $student = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -939,6 +1022,14 @@ class StudentController
 
         $departments = $this->db->query("SELECT id, nom FROM departments WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
+        $discountStmt = $this->db->prepare("SELECT amount, amount_type, motive FROM student_discounts WHERE student_id = ? AND status = 'active' ORDER BY id DESC LIMIT 1");
+        $discountStmt->execute([$id]);
+        $discount = $discountStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        $scholarshipStmt = $this->db->prepare("SELECT amount, amount_type, motive FROM student_scholarships WHERE student_id = ? AND status = 'active' ORDER BY id DESC LIMIT 1");
+        $scholarshipStmt->execute([$id]);
+        $scholarship = $scholarshipStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
         include __DIR__ . '/../Views/students/edit.php';
 
     }
@@ -948,6 +1039,11 @@ class StudentController
     public function update($id)
 
     {
+
+        if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
+            header("Location: /students");
+            exit;
+        }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
@@ -1011,7 +1107,7 @@ class StudentController
 
             $newEmail = trim($_POST['email'] ?? '');
 
-            $allowEmailChange = in_array(Session::get('user_role'), ['superadmin', 'admin']);
+            $allowEmailChange = in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable']);
 
 
 
@@ -1163,17 +1259,49 @@ class StudentController
 
             $stmt->execute($params);
 
+            $student_status = $_POST['student_status'] ?? 'nouveau';
+
             // S'assurer de l'existence de l'inscription pour l'année active
             $academicYearId = $this->academicYearService->getActiveYearId();
             $enrollCheck = $this->db->prepare("SELECT COUNT(*) FROM enrollments WHERE student_id = ? AND academic_year_id = ?");
             $enrollCheck->execute([$id, $academicYearId]);
             if ((int)$enrollCheck->fetchColumn() === 0) {
-                $enrollIns = $this->db->prepare("INSERT INTO enrollments (student_id, class_id, academic_year_id, frais_scolarite_brut, total_reductions, total_bourses, total_paye, reste_a_payer) VALUES (?, ?, ?, 0.00, 0.00, 0.00, 0.00, 0.00)");
-                $enrollIns->execute([$id, $class_id, $academicYearId]);
+                $enrollIns = $this->db->prepare("INSERT INTO enrollments (student_id, class_id, academic_year_id, student_status, frais_scolarite_brut, total_reductions, total_bourses, total_paye, reste_a_payer) VALUES (?, ?, ?, ?, 0.00, 0.00, 0.00, 0.00, 0.00)");
+                $enrollIns->execute([$id, $class_id, $academicYearId, $student_status]);
             } else {
-                // Mettre à jour la classe dans enrollments
-                $enrollUpd = $this->db->prepare("UPDATE enrollments SET class_id = ? WHERE student_id = ? AND academic_year_id = ?");
-                $enrollUpd->execute([$class_id, $id, $academicYearId]);
+                // Mettre à jour la classe et le statut dans enrollments
+                $enrollUpd = $this->db->prepare("UPDATE enrollments SET class_id = ?, student_status = ? WHERE student_id = ? AND academic_year_id = ?");
+                $enrollUpd->execute([$class_id, $student_status, $id, $academicYearId]);
+            }
+
+            // Mise à jour de la réduction
+            if (isset($_POST['reduction_amount'])) {
+                $reduction_amount = (float)$_POST['reduction_amount'];
+                $reduction_amount_type = $_POST['reduction_amount_type'] ?? 'fixed';
+                $reduction_motive = trim($_POST['reduction_motive'] ?? '');
+                
+                // Désactiver l'ancienne
+                $this->db->prepare("UPDATE student_discounts SET status = 'inactive' WHERE student_id = ?")->execute([$id]);
+                
+                if ($reduction_amount > 0) {
+                    $discStmt = $this->db->prepare("INSERT INTO student_discounts (student_id, amount, amount_type, motive, date_effet, status, commentaire) VALUES (?, ?, ?, ?, CURDATE(), 'active', 'Réduction mise à jour depuis l\'édition')");
+                    $discStmt->execute([$id, $reduction_amount, $reduction_amount_type, $reduction_motive]);
+                }
+            }
+
+            // Mise à jour de la bourse
+            if (isset($_POST['scholarship_amount'])) {
+                $scholarship_amount = (float)$_POST['scholarship_amount'];
+                $scholarship_amount_type = $_POST['scholarship_amount_type'] ?? 'fixed';
+                $scholarship_motive = trim($_POST['scholarship_motive'] ?? '');
+                
+                // Désactiver l'ancienne
+                $this->db->prepare("UPDATE student_scholarships SET status = 'inactive' WHERE student_id = ?")->execute([$id]);
+                
+                if ($scholarship_amount > 0) {
+                    $scholStmt = $this->db->prepare("INSERT INTO student_scholarships (student_id, amount, amount_type, motive, date_effet, status, commentaire) VALUES (?, ?, ?, ?, CURDATE(), 'active', 'Bourse mise à jour depuis l\'édition')");
+                    $scholStmt->execute([$id, $scholarship_amount, $scholarship_amount_type, $scholarship_motive]);
+                }
             }
 
             // Lancer la synchronisation financière de l'élève
@@ -1196,7 +1324,7 @@ class StudentController
 
     {
 
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+        if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
 
             header("Location: /students");
 
@@ -1232,7 +1360,7 @@ class StudentController
 
     {
 
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+        if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
 
             header("Location: /students");
 
@@ -1268,7 +1396,7 @@ class StudentController
 
     {
 
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+        if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
 
             header("Location: /students");
 
@@ -1288,7 +1416,7 @@ class StudentController
 
         }
 
-        $stmt = $this->db->prepare("DELETE FROM students WHERE id = ?");
+        $stmt = $this->db->prepare("UPDATE students SET actif = 0 WHERE id = ?");
 
         $stmt->execute([$id]);
 
@@ -1316,15 +1444,22 @@ class StudentController
 
         $showWithdrawn = (int) ($_GET['withdrawn'] ?? 0);
 
+        $onlyMine = (int) ($_GET['only_mine'] ?? 0);
+
         $academicYearId = $this->academicYearService->getActiveYearId();
 
 
 
         // --- 1. Construction des conditions ---
 
-        $where = " WHERE s.is_withdrawn = ?";
+        $where = " WHERE s.is_withdrawn = ? AND s.actif = 1";
 
         $params = [$showWithdrawn];
+
+        if ($onlyMine > 0) {
+            $where .= " AND s.created_by = ?";
+            $params[] = Session::get('user_id');
+        }
 
 
 
@@ -1451,7 +1586,7 @@ class StudentController
 
             $stmt->fetchAll(PDO::FETCH_ASSOC), 
 
-            ['q' => $search, 'class_id' => $classId, 'section_id' => $sectionId, 'teaching_type_id' => $teachingTypeId, 'withdrawn' => $showWithdrawn],
+            ['q' => $search, 'class_id' => $classId, 'section_id' => $sectionId, 'teaching_type_id' => $teachingTypeId, 'withdrawn' => $showWithdrawn, 'only_mine' => $onlyMine],
 
             $totalCount
 
@@ -1526,6 +1661,14 @@ class StudentController
             if (!$this->studentColumnExists('is_withdrawn')) {
 
                 $this->db->exec("ALTER TABLE students ADD COLUMN is_withdrawn TINYINT(1) NOT NULL DEFAULT 0 AFTER is_redoublant");
+
+            }
+
+
+
+            if (!$this->studentColumnExists('actif')) {
+
+                $this->db->exec("ALTER TABLE students ADD COLUMN actif TINYINT(1) NOT NULL DEFAULT 1 AFTER is_withdrawn");
 
             }
 

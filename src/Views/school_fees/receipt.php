@@ -44,12 +44,13 @@ try {
 
 // Déterminer le statut de duplicata
 $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
+$app_lang = \App\Core\Session::get('app_lang', 'fr');
 ?>
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="<?= $app_lang ?>">
 <head>
     <meta charset="UTF-8">
-    <title>Reçu Scolarité N°<?= h($payment['receipt_number'] ?? $payment['id']) ?></title>
+    <title><?= __('receipt_officiel_title') ?><?= h($payment['receipt_number'] ?? $payment['id']) ?></title>
     <style>
         /* Optimisation stricte A4 Portrait pour faire tenir les 2 reçus sur une seule page */
         body {
@@ -501,15 +502,15 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
     <!-- Barre d'actions écran -->
     <div class="print-btn-container no-print receipt-container" style="display: flex; justify-content: space-between; align-items: center;">
         <div>
-            <h4 style="margin: 0; color: #1e3a8a; font-family: Arial, sans-serif;">Reçu des Frais de Scolarité</h4>
-            <small style="color: #64748b;">Visualisation, impression et audit d'impression</small>
+            <h4 style="margin: 0; color: #1e3a8a; font-family: Arial, sans-serif;"><?= __('receipt_title') ?></h4>
+            <small style="color: #64748b;"><?= __('receipt_visualisation') ?></small>
         </div>
         <div style="display: flex; gap: 8px;">
             <a href="/school_fees/versements" class="btn-premium-secondary">
-                ← Retour aux Versements
+                <?= __('back_to_payments') ?>
             </a>
             <button class="btn-premium" onclick="window.print();">
-                Imprimer le Reçu
+                <?= __('print_receipt') ?>
             </button>
         </div>
     </div>
@@ -519,8 +520,8 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
         <?php
         // On génère deux blocs identiques : Exemplaire Elève et Exemplaire Etablissement
         $copies = [
-            'Parent' => 'Exemplaire Elève',
-            'Admin' => 'Exemplaire Etablissement'
+            'Parent' => __('exemplaire_eleve'),
+            'Admin' => __('exemplaire_etablissement')
         ];
 
         $i = 0;
@@ -546,9 +547,11 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                 </div>
             <?php endif; ?>
 
-            <!-- Filigrane Texte diagonal si duplicata -->
-            <?php if ($isDuplicate): ?>
-                <div class="watermark-text-diagonal">DUPLICATA</div>
+            <!-- Filigranes statutaires -->
+            <?php if (($payment['status'] ?? 'valide') === 'annule'): ?>
+                <div class="watermark-text-diagonal" style="color: #ef4444; opacity: 0.15;">ANNULÉ</div>
+            <?php elseif ($isDuplicate): ?>
+                <div class="watermark-text-diagonal"><?= __('duplicata') ?></div>
             <?php endif; ?>
 
             <div class="receipt-content">
@@ -588,7 +591,7 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                         <!-- Partie Droite : Titre Officiel et Métadonnées -->
                         <td class="receipt-meta-col" style="width: 35%; padding-left: 10px; vertical-align: top;">
                             <div class="receipt-title-container">
-                                REÇU DE VERSEMENT SCOLAIRE
+                                <?= __('receipt_title') ?>
                                 <div style="font-size: 8px; font-weight: normal; margin-top: 0.5px; color: #475569; text-transform: uppercase;">
                                     <?= $copyName ?>
                                 </div>
@@ -596,17 +599,17 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
 
                             <div class="meta-box">
                                 <div>
-                                    <strong>Année Académique :</strong> <?= h($settings['display_school_year'] ?? $payment['academic_year_id'] ?? '') ?>
+                                    <strong><?= __('school_year_label') ?></strong> <?= h($settings['display_school_year'] ?? $payment['academic_year_id'] ?? '') ?>
                                 </div>
                                 <div style="margin-top: 1px;">
-                                    <strong>Date :</strong> <?= date('d/m/Y H:i', strtotime($payment['created_at'])) ?>
+                                    <strong><?= __('date_label') ?></strong> <?= date('d/m/Y H:i', strtotime($payment['created_at'])) ?>
                                 </div>
                                 <div style="margin-top: 1px;">
-                                    <strong>Reçu N° :</strong> <span style="font-family: monospace; font-weight: bold;"><?= h($payment['receipt_number']) ?></span>
+                                    <strong><?= __('receipt_no_label') ?></strong> <span style="font-family: monospace; font-weight: bold;"><?= h($payment['receipt_number']) ?></span>
                                     <?php if ($isDuplicate): ?>
-                                        <span class="duplicate-badge">DUPLICATA</span>
+                                        <span class="duplicate-badge"><?= __('duplicata') ?></span>
                                     <?php else: ?>
-                                        <span class="duplicate-badge" style="background-color: #16a34a;">ORIGINAL</span>
+                                        <span class="duplicate-badge" style="background-color: #16a34a;"><?= __('original') ?></span>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -620,12 +623,12 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                         <!-- Gauche: Infos Élève -->
                         <td style="width: 49%; vertical-align: top; padding-right: 4px;">
                             <div style="font-weight: bold; font-size: 9.2px; color: #1e3a8a; margin-bottom: 1px; text-transform: uppercase;">
-                                <i class="bi bi-person-fill"></i> INFORMATIONS ÉLÈVE
+                                <i class="bi bi-person-fill"></i> <?= __('student_info_section') ?>
                             </div>
                             <div class="details-section-card">
                                 <table>
                                     <tr>
-                                        <td class="label-td">Élève :</td>
+                                        <td class="label-td"><?= __('student') ?> :</td>
                                         <td class="value-td">
                                             <strong style="color: #1e3a8a; font-size: 9.5px; text-transform: uppercase;">
                                                 <?= h($payment['student_nom'] ?? '') ?>
@@ -634,27 +637,27 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                                                 <?= h($payment['student_prenom'] ?? '') ?>
                                             </span>
                                             <span style="color: #cbd5e1; margin: 0 6px;">|</span>
-                                            <strong style="color: #475569; font-size: 8.5px;">MATRICULE :</strong> 
+                                            <strong style="color: #475569; font-size: 8.5px;"><?= __('matricule') ?> :</strong> 
                                             <span style="font-family: monospace; font-weight: bold; background-color: #e0f2fe; color: #0369a1; padding: 0.5px 3.5px; border-radius: 3px;">
                                                 <?= h($payment['matricule'] ?? 'MAT-' . sprintf('%04d', $payment['student_id'])) ?>
                                             </span>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td class="label-td">Classe :</td>
+                                        <td class="label-td"><?= __('class') ?> :</td>
                                         <td class="value-td">
-                                            <strong style="color: #0f172a;"><?= h($payment['class_name'] ?: 'Non définie') ?></strong>
+                                            <strong style="color: #0f172a;"><?= h($payment['class_name'] ?: '-') ?></strong>
                                             <span style="color: #cbd5e1; margin: 0 6px;">|</span>
-                                            <strong style="color: #475569; font-size: 8.5px;">NAISSANCE :</strong> 
+                                            <strong style="color: #475569; font-size: 8.5px;"><?= __('born_on') ?> :</strong> 
                                             <span style="color: #334155;">
                                                 <?= !empty($payment['date_naissance']) ? date('d/m/Y', strtotime($payment['date_naissance'])) : 'N/A' ?>
-                                                <?= !empty($payment['lieu_naissance']) ? ' à ' . h($payment['lieu_naissance']) : '' ?>
+                                                <?= !empty($payment['lieu_naissance']) ? __('born_at') . h($payment['lieu_naissance']) : '' ?>
                                             </span>
                                         </td>
                                     </tr>
                                     <?php if (!empty($payment['adresse'])): ?>
                                     <tr>
-                                        <td class="label-td">Adresse :</td>
+                                        <td class="label-td"><?= __('address') ?> :</td>
                                         <td class="value-td"><?= h($payment['adresse']) ?></td>
                                     </tr>
                                     <?php endif; ?>
@@ -665,15 +668,15 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                         <!-- Droite: Détail de cette opération -->
                         <td style="width: 49%; vertical-align: top; padding-left: 4px;">
                             <div style="font-weight: bold; font-size: 9.2px; color: #1e3a8a; margin-bottom: 1px; text-transform: uppercase;">
-                                <i class="bi bi-wallet2"></i> DÉTAIL DE CETTE OPÉRATION
+                                <i class="bi bi-wallet2"></i> <?= __('operation_detail_section') ?>
                             </div>
                             <table class="financial-table">
                                 <thead>
                                     <tr>
-                                        <th style="width: 35%;">Tranche concernée</th>
-                                        <th style="width: 20%; text-align: right;">Montant tranche</th>
-                                        <th style="width: 25%; text-align: right;">Montant versé</th>
-                                        <th style="width: 20%; text-align: right;">Reste à verser</th>
+                                        <th style="width: 35%;"><?= __('col_installment_concerned') ?></th>
+                                        <th style="width: 20%; text-align: right;"><?= __('col_installment_amount') ?></th>
+                                        <th style="width: 25%; text-align: right;"><?= __('col_amount_allocated') ?></th>
+                                        <th style="width: 20%; text-align: right;"><?= __('col_amount_remaining') ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -698,7 +701,7 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                                         </tr>
                                     <?php endforeach; ?>
                                     <tr style="background-color: #f8fafc; font-weight: bold;">
-                                        <td>TOTAL :</td>
+                                        <td><?= __('cumul') ?></td>
                                         <td></td>
                                         <td style="text-align: right; font-weight: black; color: #16a34a;"><?= number_format($totalOperationAmount, 0, '.', ' ') ?></td>
                                         <td style="text-align: right; font-weight: black; color: <?= $totalOperationRemaining > 0 ? '#b91c1c' : '#1e293b' ?>;"><?= number_format($totalOperationRemaining, 0, '.', ' ') ?></td>
@@ -711,7 +714,7 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
 
                 <!-- Somme en toutes lettres (Intercalé) -->
                 <div class="amount-in-words-box" style="margin-bottom: 2px;">
-                    Arrêté le présent reçu à la somme de : <strong><?= h($amountInWords) ?></strong>
+                    <?= __('amount_words_prefix') ?> <strong><?= h($amountInWords) ?></strong>
                 </div>
 
                 <!-- SECTION COTE-A-COTE 2: SITUATION GLOBALE & HISTORIQUE + VENTILATION & QR CODE (Wrapper Table) -->
@@ -721,17 +724,17 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                         <td style="width: 59%; vertical-align: top; padding-right: 4px;">
                             <!-- ÉTAT COMPLET DE LA SCOLARITÉ -->
                             <div style="font-weight: bold; font-size: 9.2px; color: #1e3a8a; margin-bottom: 1px; text-transform: uppercase;">
-                                <i class="bi bi-calendar-check"></i> ÉTAT COMPLET DE LA SCOLARITÉ
+                                <i class="bi bi-calendar-check"></i> <?= __('tuition_status_section') ?>
                             </div>
                             <table class="financial-table" style="margin-bottom: 6px;">
                                 <thead>
                                     <tr>
-                                        <th style="width: 25%;">Tranche</th>
-                                        <th style="width: 18%;">Date d'échéance</th>
-                                        <th style="width: 16%; text-align: right;">Prévu</th>
-                                        <th style="width: 16%; text-align: right;">Versé</th>
-                                        <th style="width: 13%; text-align: right;">Reste</th>
-                                        <th style="width: 12%; text-align: center;">Statut</th>
+                                        <th style="width: 25%;"><?= __('col_installment') ?></th>
+                                        <th style="width: 18%;"><?= __('col_deadline') ?></th>
+                                        <th style="width: 16%; text-align: right;"><?= __('col_planned') ?></th>
+                                        <th style="width: 16%; text-align: right;"><?= __('col_paid') ?></th>
+                                        <th style="width: 13%; text-align: right;"><?= __('col_remaining') ?></th>
+                                        <th style="width: 12%; text-align: center;"><?= __('col_status') ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -748,20 +751,20 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                                         $reste = max(0.0, $amountPlanned - $amountPaid);
                                         
                                         // Determine status
-                                        $status = 'Non payé';
+                                        $status = __('status_unpaid');
                                         $statusColor = '#64748b';
                                         $statusBg = '#f1f5f9';
                                         
                                         if ($amountPaid >= $amountPlanned) {
-                                            $status = 'Payé';
+                                            $status = __('status_paid');
                                             $statusColor = '#16a34a';
                                             $statusBg = '#d1fae5';
                                         } elseif ($deadlineRaw && $currentDate > $deadlineRaw) {
-                                            $status = 'Dépassée';
+                                            $status = __('status_overdue');
                                             $statusColor = '#ef4444';
                                             $statusBg = '#fee2e2';
                                         } elseif ($amountPaid > 0) {
-                                            $status = 'Partiel';
+                                            $status = __('status_partial');
                                             $statusColor = '#d97706';
                                             $statusBg = '#fef3c7';
                                         }
@@ -784,15 +787,15 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
 
                             <!-- HISTORIQUE COMPLET DES VERSEMENTS -->
                             <div style="font-weight: bold; font-size: 9.2px; color: #1e3a8a; margin-bottom: 1px; text-transform: uppercase;">
-                                <i class="bi bi-clock-history"></i> HISTORIQUE COMPLET DES VERSEMENTS
+                                <i class="bi bi-clock-history"></i> <?= __('payments_history_section') ?>
                             </div>
                             <table class="financial-table">
                                 <thead>
                                     <tr>
-                                        <th style="font-size: 9.2px; padding: 1.5px 2px;">Référence</th>
-                                        <th style="font-size: 9.2px; padding: 1.5px 2px;">Mode</th>
-                                        <th style="font-size: 9.2px; padding: 1.5px 2px;">Date</th>
-                                        <th style="font-size: 9.2px; padding: 1.5px 2px; text-align: right;">Montant</th>
+                                        <th style="font-size: 9.2px; padding: 1.5px 2px;"><?= __('col_reference') ?></th>
+                                        <th style="font-size: 9.2px; padding: 1.5px 2px;"><?= __('col_method') ?></th>
+                                        <th style="font-size: 9.2px; padding: 1.5px 2px;"><?= __('col_date') ?></th>
+                                        <th style="font-size: 9.2px; padding: 1.5px 2px; text-align: right;"><?= __('col_amount') ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -809,7 +812,7 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                                         </tr>
                                     <?php endforeach; ?>
                                     <tr style="background-color: #f8fafc; font-weight: bold;">
-                                        <td colspan="3" style="font-size: 9.2px; padding: 1.5px 2px; text-align: right;">CUMUL :</td>
+                                        <td colspan="3" style="font-size: 9.2px; padding: 1.5px 2px; text-align: right;"><?= __('cumul') ?></td>
                                         <td style="font-size: 9.2px; padding: 1.5px 2px; text-align: right; color: #16a34a;"><?= number_format($histTotal, 0, '.', ' ') ?></td>
                                     </tr>
                                 </tbody>
@@ -820,31 +823,31 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                         <td style="width: 39%; vertical-align: top; padding-left: 4px;">
                             <!-- SITUATION FINANCIÈRE GLOBALE -->
                             <div style="font-weight: bold; font-size: 9.2px; color: #1e3a8a; margin-bottom: 1px; text-transform: uppercase;">
-                                <i class="bi bi-calculator"></i> SITUATION FINANCIÈRE GLOBALE
+                                <i class="bi bi-calculator"></i> <?= __('global_financial_status') ?>
                             </div>
                             <table class="breakdown-table" style="border: 1px solid #cbd5e1; width: 100%; margin-left: 0; margin-bottom: 3px;">
                                 <tr>
-                                    <td class="label-td">Frais de scolarité brut :</td>
+                                    <td class="label-td"><?= __('gross_tuition_fee') ?></td>
                                     <td class="value-td"><?= number_format($enroll['frais_scolarite_brut'] ?? 0, 0, '.', ' ') ?> FCFA</td>
                                 </tr>
                                 <tr>
-                                    <td class="label-td">Réductions appliquées :</td>
+                                    <td class="label-td"><?= __('discounts_applied') ?></td>
                                     <td class="value-td" style="color: #ef4444;">-<?= number_format($enroll['total_reductions'] ?? 0, 0, '.', ' ') ?> FCFA</td>
                                 </tr>
                                 <tr>
-                                    <td class="label-td">Bourses appliquées :</td>
+                                    <td class="label-td"><?= __('scholarships_applied') ?></td>
                                     <td class="value-td" style="color: #ef4444;">-<?= number_format($enroll['total_bourses'] ?? 0, 0, '.', ' ') ?> FCFA</td>
                                 </tr>
                                 <tr style="background-color: #f1f5f9; border-top: 1.5px solid #475569;">
-                                    <td class="label-td">Total Net Dû :</td>
+                                    <td class="label-td"><?= __('net_amount_due') ?></td>
                                     <td class="value-td" style="color: #1e3a8a;"><?= number_format($enroll['scolarite_nette'] ?? 0, 0, '.', ' ') ?> FCFA</td>
                                 </tr>
                                 <tr>
-                                    <td class="label-td" style="color: #16a34a;">Total cumulé versé :</td>
+                                    <td class="label-td" style="color: #16a34a;"><?= __('total_cumulated_paid') ?></td>
                                     <td class="value-td" style="color: #16a34a;"><?= number_format($enroll['total_paye'] ?? 0, 0, '.', ' ') ?> FCFA</td>
                                 </tr>
                                 <tr style="background-color: #fef2f2; border-top: 1px double #ef4444;">
-                                    <td class="label-td" style="color: #b91c1c;">Solde scolaire restant :</td>
+                                    <td class="label-td" style="color: #b91c1c;"><?= __('remaining_tuition_balance') ?></td>
                                     <td class="value-td" style="color: #b91c1c; text-decoration: underline;"><?= number_format($enroll['reste_a_payer'] ?? 0, 0, '.', ' ') ?> FCFA</td>
                                 </tr>
                             </table>
@@ -856,16 +859,16 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                                         <img src="<?= $qrCodeSrc ?>" style="border: 1px solid #cbd5e1; padding: 1px; background: #fff; max-width: 32px; max-height: 32px;" alt="QR Code">
                                     </td>
                                     <td style="padding-left: 4px; vertical-align: top; font-size: 8px; color: #64748b; line-height: 1.1;">
-                                        <strong>VÉRIFICATION & ENREGISTREMENT</strong><br>
-                                        Jeton : <span style="font-family: monospace; font-size: 7.5px;"><?= h($payment['verification_code']) ?></span><br>
-                                        Scannez le QR code pour validation.
+                                        <strong><?= __('verification_enrollment') ?></strong><br>
+                                        <?= __('jeton') ?> <span style="font-family: monospace; font-size: 7.5px;"><?= h($payment['verification_code']) ?></span><br>
+                                        <?= __('scan_qr_help') ?>
                                     </td>
                                 </tr>
                             </table>
                             
                             <!-- MENTION OBLIGATOIRE EN GRAS, VISIBLE -->
                             <div style="font-weight: bold; font-size: 9.5px; color: #ef4444; margin-top: 2px; text-align: left; letter-spacing: 0.1px;">
-                                NB : AUCUN VERSEMENT N'EST REMBOURSABLE.
+                                <?= __('non_refundable_notice') ?>
                             </div>
                         </td>
                     </tr>
@@ -875,14 +878,14 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                 <table class="signatures-table">
                     <tr>
                         <td class="signature-box-left">
-                            <strong>Signature du Parent / Élève</strong><br>
+                            <strong><?= __('parent_signature_label') ?></strong><br>
                             <span class="signature-line-placeholder"></span>
                         </td>
                         <td class="signature-box-right">
-                            <strong>La Caisse / Le Comptable</strong><br>
+                            <strong><?= __('cashier_signature_label') ?></strong><br>
                             <span style="font-size: 8.5px; color: #475569; display: block; margin-top: 0px;">
-                                Caissier(e) : <?= h($payment['creator_nom'] ?? '') ?> <?= h($payment['creator_prenom'] ?? '') ?> | 
-                                Imprimé le : <?= date('d/m/Y H:i') ?>
+                                <?= __('cashier_label') ?> <?= h($payment['creator_nom'] ?? '') ?> <?= h($payment['creator_prenom'] ?? '') ?> | 
+                                <?= __('printed_on') ?> <?= date('d/m/Y H:i') ?>
                             </span>
                             <span class="signature-line-placeholder" style="margin-top: 2px;"></span>
                         </td>
@@ -891,7 +894,7 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
 
                 <!-- Pied de page -->
                 <div class="receipt-footer-text">
-                    Document officiel de versement généré électroniquement par <?= h($settings['school_name'] ?? 'NotesMaster') ?>.<br>
+                    <?= __('official_receipt_doc') ?> <?= h($settings['school_name'] ?? 'NotesMaster') ?>.<br>
                     Web: <?= h($settings['school_website'] ?? 'https://copobimat.camertech.com') ?>
                 </div>
 
@@ -905,15 +908,15 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
     <?php if (!$isPdf && !empty($printLogs)): ?>
     <div class="receipt-container no-print admin-logs-card">
         <h5 style="margin-top: 0; color: #1e293b; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px;">
-            <i class="bi bi-clock-history"></i> Historique d'Impression du Reçu (Audit de Sécurité)
+            <i class="bi bi-clock-history"></i> <?= __('print_history_title') ?>
         </h5>
         <table style="width: 100%; border-collapse: collapse; font-size: 9px;">
             <thead>
                 <tr style="background-color: #f8fafc; border-bottom: 1px solid #cbd5e1; text-align: left;">
-                    <th style="padding: 5px;">Date & Heure</th>
-                    <th style="padding: 5px;">Opérateur</th>
-                    <th style="padding: 5px;">Action</th>
-                    <th style="padding: 5px;">Numéro d'Impression</th>
+                    <th style="padding: 5px;"><?= __('col_datetime') ?></th>
+                    <th style="padding: 5px;"><?= __('col_operator') ?></th>
+                    <th style="padding: 5px;"><?= __('col_action') ?></th>
+                    <th style="padding: 5px;"><?= __('col_print_number') ?></th>
                 </tr>
             </thead>
             <tbody>
@@ -921,13 +924,13 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                 <tr style="border-bottom: 1px solid #f1f5f9;">
                     <td style="padding: 5px; font-weight: bold;"><?= date('d/m/Y H:i:s', strtotime($log['event_date'])) ?></td>
                     <td style="padding: 5px;"><?= h($log['user_nom']) ?> <?= h($log['user_prenom']) ?></td>
-                    <td style="padding: 5px; text-transform: uppercase; color: #2563eb; font-weight: bold;">Affichage/Impression</td>
+                    <td style="padding: 5px; text-transform: uppercase; color: #2563eb; font-weight: bold;"><?= __('print_action_label') ?></td>
                     <td style="padding: 5px; font-weight: bold;">
                         #<?= (int)$log['new_value'] ?>
                         <?php if ((int)$log['new_value'] === 1): ?>
-                            <span style="color: #16a34a; font-size: 7.5px; margin-left: 4px;">[ ORIGINAL ]</span>
+                            <span style="color: #16a34a; font-size: 7.5px; margin-left: 4px;">[ <?= __('original') ?> ]</span>
                         <?php else: ?>
-                            <span style="color: #ef4444; font-size: 7.5px; margin-left: 4px;">[ DUPLICATA ]</span>
+                            <span style="color: #ef4444; font-size: 7.5px; margin-left: 4px;">[ <?= __('duplicata') ?> ]</span>
                         <?php endif; ?>
                     </td>
                 </tr>

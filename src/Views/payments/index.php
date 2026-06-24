@@ -1,5 +1,5 @@
 <?php
-$title = "Registre Financier";
+$title = __('payments_ledger');
 
 // Calcul des statistiques cumulées
 $totalExpected = 0.0;
@@ -20,8 +20,8 @@ ob_start();
     <!-- Header -->
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div>
-            <h2 class="fw-black text-main-theme mb-0 fs-4">Registre Financier des Élèves</h2>
-            <p class="text-muted-theme small mb-0">Suivi des scolarités, réductions, bourses et règlements</p>
+            <h2 class="fw-black text-main-theme mb-0 fs-4"><?= __('payments_ledger_students') ?></h2>
+            <p class="text-muted-theme small mb-0"><?= __('payments_ledger_subtitle') ?></p>
         </div>
     </div>
 
@@ -33,7 +33,7 @@ ob_start();
                     <i class="bi bi-wallet2"></i>
                 </div>
                 <div class="kpi-value text-primary"><?= number_format($totalExpected, 0, '.', ' ') ?> <span class="fs-7 text-muted fw-normal">FCFA</span></div>
-                <div class="kpi-label">Scolarité Nette Attendue</div>
+                <div class="kpi-label"><?= __('net_tuition_expected') ?></div>
             </div>
         </div>
         <div class="col-6 col-md-3">
@@ -42,7 +42,7 @@ ob_start();
                     <i class="bi bi-cash-coin"></i>
                 </div>
                 <div class="kpi-value text-success"><?= number_format($totalCollected, 0, '.', ' ') ?> <span class="fs-7 text-muted fw-normal">FCFA</span></div>
-                <div class="kpi-label">Total Déjà Encaissé</div>
+                <div class="kpi-label"><?= __('total_already_collected') ?></div>
             </div>
         </div>
         <div class="col-6 col-md-3">
@@ -51,7 +51,7 @@ ob_start();
                     <i class="bi bi-exclamation-octagon"></i>
                 </div>
                 <div class="kpi-value text-danger"><?= number_format($totalDebt, 0, '.', ' ') ?> <span class="fs-7 text-muted fw-normal">FCFA</span></div>
-                <div class="kpi-label">Reste Global à Recouvrer</div>
+                <div class="kpi-label"><?= __('remaining_global_to_recover') ?></div>
             </div>
         </div>
         <div class="col-6 col-md-3">
@@ -60,7 +60,7 @@ ob_start();
                     <i class="bi bi-graph-up-arrow"></i>
                 </div>
                 <div class="kpi-value text-info"><?= number_format($collectionRate, 1) ?> %</div>
-                <div class="kpi-label">Taux de Recouvrement</div>
+                <div class="kpi-label"><?= __('recovery_rate') ?></div>
             </div>
         </div>
     </div>
@@ -76,14 +76,14 @@ ob_start();
                             <i class="bi bi-search"></i>
                         </span>
                         <input type="text" name="q" class="form-control border-0 bg-transparent shadow-none py-2 text-main"
-                               value="<?= h($search) ?>" placeholder="Rechercher un élève..." style="min-width: 150px;">
+                               value="<?= h($search) ?>" placeholder="<?= __('search_student_dots') ?>" style="min-width: 150px;">
                     </div>
                 </div>
 
                 <!-- Filtre Classe -->
                 <div class="ms-md-2">
                     <select name="class_id" class="form-select border-0 bg-white bg-opacity-10 text-main shadow-none py-2 rounded-pill" onchange="this.form.submit()" style="min-width: 160px; font-size: 0.85rem; border: 1px solid var(--border-color) !important;">
-                        <option value="">Toutes les Classes</option>
+                        <option value=""><?= __('all_classes') ?></option>
                         <?php foreach ($classes as $c): ?>
                             <option value="<?= $c['id'] ?>" <?= $classId === (int)$c['id'] ? 'selected' : '' ?>><?= h($c['nom']) ?></option>
                         <?php endforeach; ?>
@@ -93,17 +93,17 @@ ob_start();
                 <!-- Filtre Statut -->
                 <div class="ms-md-2">
                     <select name="status" class="form-select border-0 bg-white bg-opacity-10 text-main shadow-none py-2 rounded-pill" onchange="this.form.submit()" style="min-width: 160px; font-size: 0.85rem; border: 1px solid var(--border-color) !important;">
-                        <option value="">Tous les Statuts</option>
-                        <option value="paid" <?= $status === 'paid' ? 'selected' : '' ?>>Totalement Réglé</option>
-                        <option value="debt" <?= $status === 'debt' ? 'selected' : '' ?>>Scolarité due (Reste à payer)</option>
-                        <option value="unpaid" <?= $status === 'unpaid' ? 'selected' : '' ?>>Aucun versement</option>
+                        <option value=""><?= __('all_status') ?></option>
+                        <option value="paid" <?= $status === 'paid' ? 'selected' : '' ?>><?= __('fully_paid') ?></option>
+                        <option value="debt" <?= $status === 'debt' ? 'selected' : '' ?>><?= __('tuition_due') ?></option>
+                        <option value="unpaid" <?= $status === 'unpaid' ? 'selected' : '' ?>><?= __('no_payment') ?></option>
                     </select>
                 </div>
 
                 <!-- Action bouton de soumission et réinitialisation -->
                 <div class="d-flex gap-2 align-items-center ps-md-2">
-                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">Filtrer</button>
-                    <a href="/payments" class="btn btn-light rounded-circle p-2 d-flex align-items-center justify-content-center border-theme-light" style="width: 40px; height: 40px; border: 1px solid var(--border-color);" title="Réinitialiser">
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm"><?= __('filter') ?></button>
+                    <a href="/payments" class="btn btn-light rounded-circle p-2 d-flex align-items-center justify-content-center border-theme-light" style="width: 40px; height: 40px; border: 1px solid var(--border-color);" title="<?= __('reset') ?>">
                         <i class="bi bi-arrow-counterclockwise"></i>
                     </a>
                 </div>
@@ -117,16 +117,16 @@ ob_start();
             <table class="table-modern">
                 <thead>
                     <tr>
-                        <th class="ps-4">Élève</th>
-                        <th>Matricule</th>
-                        <th>Classe</th>
-                        <th class="text-end">Scolarité Brut</th>
-                        <th class="text-end">Réductions</th>
-                        <th class="text-end">Bourses</th>
-                        <th class="text-end text-primary">Net à Payer</th>
-                        <th class="text-end text-success">Total Payé</th>
-                        <th class="text-end">Reste à Payer</th>
-                        <th class="pe-4 text-center">Action</th>
+                        <th class="ps-4"><?= __('grade_export_student') ?></th>
+                        <th><?= __('matricule') ?></th>
+                        <th><?= __('class') ?></th>
+                        <th class="text-end"><?= __('col_tuition_gross') ?></th>
+                        <th class="text-end"><?= __('discounts') ?></th>
+                        <th class="text-end"><?= __('scholarships') ?></th>
+                        <th class="text-end text-primary"><?= __('col_net_to_pay') ?></th>
+                        <th class="text-end text-success"><?= __('col_total_paid') ?></th>
+                        <th class="text-end"><?= __('col_remaining_to_pay') ?></th>
+                        <th class="pe-4 text-center"><?= __('action_label') ?></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -134,7 +134,7 @@ ob_start();
                         <tr>
                             <td colspan="10" class="text-center py-5 text-muted">
                                 <i class="bi bi-info-circle fs-3 d-block mb-2 text-secondary"></i>
-                                Aucun élève trouvé correspondant aux critères.
+                                <?= __('no_student_found') ?>
                             </td>
                         </tr>
                     <?php else: ?>
@@ -164,7 +164,7 @@ ob_start();
                                 <td><code class="small text-secondary"><?= h($s['matricule']) ?></code></td>
                                 <td>
                                     <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2.5 py-1 rounded-pill fw-medium" style="font-size: 0.7rem;">
-                                        <i class="bi bi-door-open-fill me-1"></i><?= h($s['classe_nom'] ?: 'Sans classe') ?>
+                                        <i class="bi bi-door-open-fill me-1"></i><?= h($s['classe_nom'] ?: __('no_class')) ?>
                                     </span>
                                 </td>
                                 <td class="text-end text-muted"><?= number_format($s['frais_scolarite_brut'], 0, '.', ' ') ?> <span style="font-size: 0.7rem;">FCFA</span></td>
@@ -195,12 +195,12 @@ ob_start();
                                         </span>
                                     <?php else: ?>
                                         <span class="badge-premium badge-premium-success">
-                                            <i class="bi bi-check-all"></i> Réglé
+                                            <i class="bi bi-check-all"></i> <?= __('settled_badge') ?>
                                         </span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="pe-4 text-center">
-                                    <a href="/payments/student?id=<?= $s['id'] ?>" class="btn btn-sm btn-action-modern text-primary" title="Fiche financière">
+                                    <a href="/payments/student?id=<?= $s['id'] ?>" class="btn btn-sm btn-action-modern text-primary" title="<?= __('financial_sheet') ?>">
                                         <i class="bi bi-credit-card-2-back-fill fs-5"></i>
                                     </a>
                                 </td>

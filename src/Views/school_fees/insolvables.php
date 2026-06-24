@@ -1,5 +1,5 @@
 <?php
-$title = "Insolvables";
+$title = __('insolvent_title');
 ob_start();
 ?>
 
@@ -7,15 +7,15 @@ ob_start();
     <!-- Header -->
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div>
-            <h2 class="fw-black text-main-theme mb-0 fs-4">Suivi des Élèves Insolvables</h2>
-            <p class="text-muted-theme small mb-0">Rapport des élèves en retard de paiement sur une ou plusieurs tranches de scolarité</p>
+            <h2 class="fw-black text-main-theme mb-0 fs-4"><?= __('insolvent_header') ?></h2>
+            <p class="text-muted-theme small mb-0"><?= __('insolvent_subtitle') ?></p>
         </div>
         <div class="d-flex gap-2">
             <a id="btn-print-pdf" href="#" target="_blank" class="btn btn-theme-soft rounded-pill px-3 fw-bold disabled" style="pointer-events: none; opacity: 0.6;">
-                <i class="bi bi-printer me-1"></i> Imprimer PDF
+                <i class="bi bi-printer me-1"></i> <?= __('print_pdf') ?>
             </a>
             <button id="btn-export-excel" class="btn btn-outline-success rounded-pill px-3 fw-bold">
-                <i class="bi bi-file-earmark-spreadsheet me-1"></i> Excel
+                <i class="bi bi-file-earmark-spreadsheet me-1"></i> <?= __('btn_excel') ?>
             </button>
         </div>
     </div>
@@ -28,7 +28,7 @@ ob_start();
                     <i class="bi bi-people-fill fs-3"></i>
                 </div>
                 <div>
-                    <div class="text-muted-theme small text-uppercase fw-bold letter-spacing-1">Élèves Insolvables</div>
+                    <div class="text-muted-theme small text-uppercase fw-bold letter-spacing-1"><?= __('insolvent_students') ?></div>
                     <div class="fs-3 fw-black text-danger mt-1" id="stats-count"><?= count($insolventStudents) ?></div>
                 </div>
             </div>
@@ -39,7 +39,7 @@ ob_start();
                     <i class="bi bi-currency-exchange fs-3"></i>
                 </div>
                 <div>
-                    <div class="text-muted-theme small text-uppercase fw-bold letter-spacing-1">Montant Global Dû / Restant</div>
+                    <div class="text-muted-theme small text-uppercase fw-bold letter-spacing-1"><?= __('global_amount_due') ?></div>
                     <div class="fs-3 fw-black text-warning mt-1" id="stats-total-due">
                         <?php
                         $total = 0.0;
@@ -58,45 +58,45 @@ ob_start();
     <div class="modern-card border-0 shadow-sm p-4 mb-4">
         <form id="filters-form" method="GET" class="row g-3 align-items-end" onsubmit="event.preventDefault();">
             <div class="col-md-2">
-                <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Enseignement</label>
+                <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('teaching_type') ?></label>
                 <select name="teaching_type_id" id="teaching-type-select" class="form-select premium-select">
-                    <option value="">Tous</option>
+                    <option value=""><?= __('all_m') ?></option>
                     <?php foreach ($teachingTypes as $tt): ?>
                         <option value="<?= $tt['id'] ?>" <?= $filters['teaching_type_id'] === (int)$tt['id'] ? 'selected' : '' ?>><?= h($tt['nom']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
             <div class="col-md-2">
-                <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Cycle</label>
+                <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('cycle') ?></label>
                 <select name="cycle_id" id="cycle-select" class="form-select premium-select">
-                    <option value="">Tous les cycles</option>
+                    <option value=""><?= __('all_cycles') ?></option>
                     <?php foreach ($cycles as $cy): ?>
                         <option value="<?= $cy['id'] ?>" <?= $filters['cycle_id'] === (int)$cy['id'] ? 'selected' : '' ?>><?= h($cy['nom']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
             <div class="col-md-2">
-                <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Section</label>
+                <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('class_section') ?></label>
                 <select name="section_id" id="section-select" class="form-select premium-select">
-                    <option value="">Toutes les sections</option>
+                    <option value=""><?= __('all_sections') ?></option>
                     <?php foreach ($sections as $sec): ?>
                         <option value="<?= $sec['id'] ?>" <?= $filters['section_id'] === (int)$sec['id'] ? 'selected' : '' ?>><?= h($sec['nom']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
             <div class="col-md-2">
-                <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Classe</label>
+                <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('class') ?></label>
                 <select name="class_id" id="class-select" class="form-select premium-select">
-                    <option value="">Toutes les classes</option>
+                    <option value=""><?= __('all_classes') ?></option>
                     <?php foreach ($classes as $cla): ?>
                         <option value="<?= $cla['id'] ?>" <?= $filters['class_id'] === (int)$cla['id'] ? 'selected' : '' ?>><?= h($cla['nom']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
             <div class="col-md-2">
-                <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Tranche</label>
+                <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('col_installment') ?></label>
                 <select name="installment_number" id="tranche-select" class="form-select premium-select">
-                    <option value="">Toutes les tranches</option>
+                    <option value=""><?= __('all_installments') ?></option>
                     <?php foreach ($tranches as $tr): ?>
                         <option value="<?= $tr['installment_order'] ?>" <?= $filters['installment_number'] === (int)$tr['installment_order'] ? 'selected' : '' ?>>
                             <?= h($tr['name']) ?> (<?= number_format($tr['amount'], 0, '.', ' ') ?> F)
@@ -106,15 +106,15 @@ ob_start();
             </div>
             <div class="col-md-2 d-flex gap-2">
                 <div class="w-100">
-                    <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Recherche</label>
+                    <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('recherche') ?></label>
                     <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-2 border-theme-light" style="border: 1px solid var(--border-color); height: 38px;">
                         <span class="input-group-text border-0 bg-transparent text-primary py-1">
                             <i class="bi bi-search"></i>
                         </span>
-                        <input type="text" id="search-input" name="q" class="form-control border-0 bg-transparent shadow-none py-1 small text-main" value="<?= h($filters['q']) ?>" placeholder="Nom de l'élève..." style="font-size: 0.85rem;">
+                        <input type="text" id="search-input" name="q" class="form-control border-0 bg-transparent shadow-none py-1 small text-main" value="<?= h($filters['q']) ?>" placeholder="<?= __('search_placeholder_student') ?>" style="font-size: 0.85rem;">
                     </div>
                 </div>
-                <a href="/school_fees/insolvables" class="btn btn-light rounded-circle p-2 d-flex align-items-center justify-content-center reset-btn" style="width: 40px; height: 40px; margin-bottom: 2px;" title="Réinitialiser">
+                <a href="/school_fees/insolvables" class="btn btn-light rounded-circle p-2 d-flex align-items-center justify-content-center reset-btn" style="width: 40px; height: 40px; margin-bottom: 2px;" title="<?= __('reset') ?>">
                     <i class="bi bi-arrow-counterclockwise"></i>
                 </a>
             </div>
@@ -127,14 +127,14 @@ ob_start();
             <table class="table-modern" id="insolvables-table">
                 <thead>
                     <tr>
-                        <th class="ps-4">Élève</th>
-                        <th>Classe</th>
-                        <th>Section</th>
-                        <th>Enseignement</th>
-                        <th class="text-end text-danger">Montant Dû (En retard)</th>
-                        <th class="text-center">Tranches Impayées</th>
-                        <th>Dernière Échéance Dépassée</th>
-                        <th class="text-end pe-4">Reste Total Scolarité</th>
+                        <th class="ps-4"><?= __('student') ?></th>
+                        <th><?= __('class') ?></th>
+                        <th><?= __('class_section') ?></th>
+                        <th><?= __('teaching_type') ?></th>
+                        <th class="text-end text-danger"><?= __('col_amount_due') ?></th>
+                        <th class="text-center"><?= __('col_unpaid_tranches') ?></th>
+                        <th><?= __('col_last_overdue') ?></th>
+                        <th class="text-end pe-4"><?= __('col_remaining_total') ?></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -142,7 +142,7 @@ ob_start();
                         <tr>
                             <td colspan="8" class="text-center py-5 text-success">
                                 <i class="bi bi-check-circle-fill fs-3 d-block mb-2 text-success"></i>
-                                Félicitations ! Aucun élève insolvable ne correspond à ces critères.
+                                <?= __('congrats_no_insolvent') ?>
                             </td>
                         </tr>
                     <?php else: ?>
@@ -176,7 +176,7 @@ ob_start();
                                 </td>
                                 <td class="text-center fw-bold">
                                     <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-15 px-2.5 py-0.5 rounded-pill">
-                                        <?= $row['unpaid_installments_count'] ?> tr.
+                                        <?= $row['unpaid_installments_count'] ?> <?= __('unpaid_tranches_suffix') ?>
                                     </span>
                                 </td>
                                 <td>
@@ -244,7 +244,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <tr>
                 <td colspan="8" class="text-center py-5 text-muted">
                     <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    Chargement des données...
+                    <?= __('loading_data') ?>
                 </td>
             </tr>`;
 
@@ -270,13 +270,13 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch(`/school_fees/insolvables?ajax=1&action=get_cycles&teaching_type_id=${typeId}`)
             .then(res => res.json())
             .then(cycles => {
-                cycleSelect.innerHTML = '<option value="">Tous les cycles</option>';
+                cycleSelect.innerHTML = `<option value=""><?= __('all_cycles') ?></option>`;
                 cycles.forEach(cy => {
                     cycleSelect.innerHTML += `<option value="${cy.id}">${cy.nom}</option>`;
                 });
-                sectionSelect.innerHTML = '<option value="">Toutes les sections</option>';
-                classSelect.innerHTML = '<option value="">Toutes les classes</option>';
-                trancheSelect.innerHTML = '<option value="">Toutes les tranches</option>';
+                sectionSelect.innerHTML = `<option value=""><?= __('all_sections') ?></option>`;
+                classSelect.innerHTML = `<option value=""><?= __('all_classes') ?></option>`;
+                trancheSelect.innerHTML = `<option value=""><?= __('all_installments') ?></option>`;
                 reloadTable();
             });
     });
@@ -287,12 +287,12 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch(`/school_fees/insolvables?ajax=1&action=get_sections&teaching_type_id=${typeId}&cycle_id=${cycleId}`)
             .then(res => res.json())
             .then(sections => {
-                sectionSelect.innerHTML = '<option value="">Toutes les sections</option>';
+                sectionSelect.innerHTML = `<option value=""><?= __('all_sections') ?></option>`;
                 sections.forEach(sec => {
                     sectionSelect.innerHTML += `<option value="${sec.id}">${sec.nom}</option>`;
                 });
-                classSelect.innerHTML = '<option value="">Toutes les classes</option>';
-                trancheSelect.innerHTML = '<option value="">Toutes les tranches</option>';
+                classSelect.innerHTML = `<option value=""><?= __('all_classes') ?></option>`;
+                trancheSelect.innerHTML = `<option value=""><?= __('all_installments') ?></option>`;
                 reloadTable();
             });
     });
@@ -304,11 +304,11 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch(`/school_fees/insolvables?ajax=1&action=get_classes&teaching_type_id=${typeId}&cycle_id=${cycleId}&section_id=${sectionId}`)
             .then(res => res.json())
             .then(classes => {
-                classSelect.innerHTML = '<option value="">Toutes les classes</option>';
+                classSelect.innerHTML = `<option value=""><?= __('all_classes') ?></option>`;
                 classes.forEach(cla => {
                     classSelect.innerHTML += `<option value="${cla.id}">${cla.nom}</option>`;
                 });
-                trancheSelect.innerHTML = '<option value="">Toutes les tranches</option>';
+                trancheSelect.innerHTML = `<option value=""><?= __('all_installments') ?></option>`;
                 reloadTable();
             });
     });
@@ -318,7 +318,7 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch(`/school_fees/insolvables?ajax=1&action=get_tranches&class_id=${classId}`)
             .then(res => res.json())
             .then(tranches => {
-                trancheSelect.innerHTML = '<option value="">Toutes les tranches</option>';
+                trancheSelect.innerHTML = `<option value=""><?= __('all_installments') ?></option>`;
                 tranches.forEach(tr => {
                     trancheSelect.innerHTML += `<option value="${tr.installment_order}">${tr.name} (${new Intl.NumberFormat().format(tr.amount)} F)</option>`;
                 });

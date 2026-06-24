@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Database;
 use App\Core\Session;
+use App\Core\PermissionManager;
 use App\Services\AcademicYearService;
 use App\Services\FinancialService;
 use App\Models\SchoolFee;
@@ -32,11 +33,8 @@ class SchoolFeeController
         $this->studentPaymentModel = new StudentPayment();
         $this->insolventStudentModel = new InsolventStudent();
 
-        // Sécurité : Accès restreint aux administrateurs
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
-            header("Location: /");
-            exit;
-        }
+        // Sécurité RBAC : Accès réservé aux rôles financiers
+        PermissionManager::requirePermission('manage_fees');
     }
 
     /**
@@ -123,7 +121,7 @@ class SchoolFeeController
             $tuitionAmount = 0.0;
             $installments = [];
             $inherited = false;
-            $inheritedFrom = 'Aucune configuration';
+            $inheritedFrom = __('no_config');
 
             if ($targetId > 0) {
                 // 1. Get tuition amount
@@ -148,7 +146,7 @@ class SchoolFeeController
 
                 if (!empty($installments)) {
                     $inherited = false;
-                    $inheritedFrom = 'Configuration spécifique';
+                    $inheritedFrom = __('specific_config');
                 } else {
                     // Try to resolve (if class)
                     if ($targetType === 'class') {
@@ -158,19 +156,19 @@ class SchoolFeeController
                             $source = $resolved[0]['source_type'] ?? 'default';
                             if ($source === 'cycle') {
                                 $inherited = true;
-                                $inheritedFrom = 'Hérité du Cycle';
+                                $inheritedFrom = __('inherited_cycle');
                                 $installments = $resolved;
                             } elseif ($source === 'teaching_type') {
                                 $inherited = true;
-                                $inheritedFrom = "Hérité du Type d'Enseignement";
+                                $inheritedFrom = __('inherited_teaching_type');
                                 $installments = $resolved;
                             } elseif ($source === 'legacy') {
                                 $inherited = true;
-                                $inheritedFrom = 'Hérité de l\'ancienne configuration';
+                                $inheritedFrom = __('inherited_legacy');
                                 $installments = $resolved;
                             } elseif ($source === 'default') {
                                 $inherited = true;
-                                $inheritedFrom = 'Tranche unique par défaut';
+                                $inheritedFrom = __('default_single_installment');
                                 $installments = $resolved;
                             }
                         }
@@ -305,7 +303,7 @@ class SchoolFeeController
             FROM students s
             JOIN enrollments e ON (s.id = e.student_id AND e.academic_year_id = $activeYearId)
             LEFT JOIN classes c ON s.class_id = c.id
-            WHERE s.is_withdrawn = 0
+            WHERE s.is_withdrawn = 0 AND s.actif = 1
             ORDER BY c.nom ASC, s.nom ASC
         ")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -390,7 +388,26 @@ class SchoolFeeController
      */
     public function deleteVersement()
     {
-        $id = (int)($_GET['id'] ?? 0);
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header("Location: /school_fees/versements");
+            exit;
+        }
+
+        if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+            Session::setFlash('error', "Session expirée ou requête invalide.");
+            header("Location: /school_fees/versements");
+            exit;
+        }
+
+        $id = (int)($_POST['id'] ?? 0);
+        $motive = trim($_POST['motive'] ?? '');
+        
+        if (empty($motive)) {
+            Session::setFlash('error', "Le motif d'annulation est obligatoire.");
+            header("Location: /school_fees/versements");
+            exit;
+        }
+
         $activeYearId = $this->academicYearService->getActiveYearId();
 
         try {
@@ -398,7 +415,7 @@ class SchoolFeeController
             if ($payment) {
                 $studentId = (int)$payment['student_id'];
                 
-                $this->studentPaymentModel->delete($id);
+                $this->studentPaymentModel->delete($id, Session::get('user_id'), $motive);
 
                 // Synchroniser le solde
                 $this->financialService->syncStudentFinancials($studentId, $activeYearId);
@@ -408,12 +425,12 @@ class SchoolFeeController
                     Session::get('user_id'),
                     'student_payment',
                     $id,
-                    'delete',
+                    'cancel',
                     $payment,
-                    null
+                    ['motive' => $motive]
                 );
 
-                Session::setFlash('success', "Versement supprimé avec succès.");
+                Session::setFlash('success', "Versement annulé avec succès.");
             } else {
                 Session::setFlash('error', "Versement introuvable.");
             }
@@ -545,12 +562,12 @@ class SchoolFeeController
                     $thead = '
                     <tr>
                         <th class="ps-4" style="width: 5%;">N°</th>
-                        <th>Matricule</th>
-                        <th>Élève</th>
-                        <th class="text-end">Montant Tranche</th>
-                        <th class="text-end">Montant Versé</th>
-                        <th class="text-end text-danger">Reste à Payer</th>
-                        <th class="text-center pe-4">Statut</th>
+                        <th>' . __('matricule') . '</th>
+                        <th>' . __('student') . '</th>
+                        <th class="text-end">' . __('col_installment_amount') . '</th>
+                        <th class="text-end">' . __('col_amount_allocated') . '</th>
+                        <th class="text-end text-danger">' . __('col_remaining_to_pay') . '</th>
+                        <th class="text-center pe-4">' . __('status') . '</th>
                     </tr>';
 
                     $tbody = '';
@@ -562,7 +579,7 @@ class SchoolFeeController
                         <tr>
                             <td colspan="7" class="text-center py-5 text-success">
                                 <i class="bi bi-check-circle-fill fs-3 d-block mb-2 text-success"></i>
-                                Félicitations ! Aucun élève insolvable ne correspond à ces critères.
+                                ' . __('congrats_no_insolvent') . '
                             </td>
                         </tr>';
                     } else {
@@ -572,9 +589,9 @@ class SchoolFeeController
                             $paid = (float)$row['amount_paid'];
                             $statusBadge = '';
                             if ($paid <= 0) {
-                                $statusBadge = '<span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-15 px-2 py-0.5 rounded-pill small">Non payé</span>';
+                                $statusBadge = '<span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-15 px-2 py-0.5 rounded-pill small">' . __('status_unpaid') . '</span>';
                             } else {
-                                $statusBadge = '<span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-15 px-2 py-0.5 rounded-pill small">Partiellement payé</span>';
+                                $statusBadge = '<span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-15 px-2 py-0.5 rounded-pill small">' . __('partially_paid') . '</span>';
                             }
 
                             $tbody .= '
@@ -619,14 +636,14 @@ class SchoolFeeController
 
                     $thead = '
                     <tr>
-                        <th class="ps-4">Élève</th>
-                        <th>Classe</th>
-                        <th>Section</th>
-                        <th>Enseignement</th>
-                        <th class="text-end text-danger">Montant Dû (En retard)</th>
-                        <th class="text-center">Tranches Impayées</th>
-                        <th>Dernière Échéance Dépassée</th>
-                        <th class="text-end pe-4">Reste Total Scolarité</th>
+                        <th class="ps-4">' . __('student') . '</th>
+                        <th>' . __('class') . '</th>
+                        <th>' . __('class_section') . '</th>
+                        <th>' . __('teaching_type') . '</th>
+                        <th class="text-end text-danger">' . __('col_amount_due') . '</th>
+                        <th class="text-center">' . __('col_unpaid_tranches') . '</th>
+                        <th>' . __('col_last_overdue') . '</th>
+                        <th class="text-end pe-4">' . __('col_remaining_total') . '</th>
                     </tr>';
 
                     $tbody = '';
@@ -635,7 +652,7 @@ class SchoolFeeController
                         <tr>
                             <td colspan="8" class="text-center py-5 text-success">
                                 <i class="bi bi-check-circle-fill fs-3 d-block mb-2 text-success"></i>
-                                Félicitations ! Aucun élève insolvable ne correspond à ces critères.
+                                ' . __('congrats_no_insolvent') . '
                             </td>
                         </tr>';
                     } else {
@@ -669,7 +686,7 @@ class SchoolFeeController
                                 <td class="text-end fw-black text-danger">' . number_format($row['amount_due'], 0, '.', ' ') . ' <span class="extra-small">FCFA</span></td>
                                 <td class="text-center fw-bold">
                                     <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-15 px-2.5 py-0.5 rounded-pill">
-                                        ' . $row['unpaid_installments_count'] . ' tr.
+                                        ' . $row['unpaid_installments_count'] . ' ' . __('unpaid_tranches_suffix') . '
                                     </span>
                                 </td>
                                 <td>
