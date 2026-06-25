@@ -8,11 +8,11 @@
 /* paramettres de configuration du serveur de données en ligne*/
 
    define('DB_HOST', 'localhost');
-   define('DB_NAME', 'u290233073_copobimat_db_2');
-   define('DB_USER', 'u290233073_copobimat_db_2');
-   define('DB_PASS', 'Tezempa12133!!');
+   define('DB_NAME', 'u290233073_col_futura_db');
+   define('DB_USER', 'u290233073_root_futura');
+   define('DB_PASS', 'Tezempa13133!!');
    define('DB_CHARSET', 'utf8mb4');
-   define('APP_URL', 'https://copobimat.camertech.com');
+   define('APP_URL', 'https://futura.camertech.com');
 
    define('APP_ENV', 'production');
    define('DEBUG_MODE', false); //evite l'affichage des erreures PHP au utilisateurs en production
