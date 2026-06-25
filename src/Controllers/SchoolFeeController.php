@@ -176,19 +176,56 @@ class SchoolFeeController
                 }
             }
 
+            // Impact stats
+            $classesCount = 0;
+            $studentsCount = 0;
+            if ($targetId > 0) {
+                if ($targetType === 'class') {
+                    $classesCount = 1;
+                    $stmtCount = $this->db->prepare("SELECT COUNT(*) FROM students WHERE class_id = ?");
+                    $stmtCount->execute([$targetId]);
+                    $studentsCount = (int)$stmtCount->fetchColumn();
+                } elseif ($targetType === 'cycle') {
+                    $stmtCountClasses = $this->db->prepare("SELECT COUNT(*) FROM classes WHERE cycle_id = ?");
+                    $stmtCountClasses->execute([$targetId]);
+                    $classesCount = (int)$stmtCountClasses->fetchColumn();
+
+                    $stmtCountStudents = $this->db->prepare("SELECT COUNT(*) FROM students s JOIN classes c ON s.class_id = c.id WHERE c.cycle_id = ?");
+                    $stmtCountStudents->execute([$targetId]);
+                    $studentsCount = (int)$stmtCountStudents->fetchColumn();
+                } elseif ($targetType === 'teaching_type') {
+                    $stmtCountClasses = $this->db->prepare("SELECT COUNT(*) FROM classes WHERE teaching_type_id = ?");
+                    $stmtCountClasses->execute([$targetId]);
+                    $classesCount = (int)$stmtCountClasses->fetchColumn();
+
+                    $stmtCountStudents = $this->db->prepare("SELECT COUNT(*) FROM students s JOIN classes c ON s.class_id = c.id WHERE c.teaching_type_id = ?");
+                    $stmtCountStudents->execute([$targetId]);
+                    $studentsCount = (int)$stmtCountStudents->fetchColumn();
+                }
+            }
+
             header('Content-Type: application/json');
             echo json_encode([
                 'tuition_amount' => $tuitionAmount,
                 'installments' => $installments,
                 'inherited' => $inherited,
-                'inherited_from' => $inheritedFrom
+                'inherited_from' => $inheritedFrom,
+                'classes_count' => $classesCount,
+                'students_count' => $studentsCount
             ]);
             exit;
         }
 
         // Si soumission du formulaire
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') || isset($_POST['ajax']) || isset($_GET['ajax']);
+
             if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => "Jeton CSRF invalide."]);
+                    exit;
+                }
                 Session::setFlash('error', "Jeton CSRF invalide.");
                 header("Location: /school_fees/tranches");
                 exit;
@@ -202,6 +239,11 @@ class SchoolFeeController
             $trancheDeadlines = $_POST['tranche_deadline'] ?? [];
 
             if ($targetId <= 0 || empty($trancheNames)) {
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => "Veuillez remplir les informations requises."]);
+                    exit;
+                }
                 Session::setFlash('error', "Veuillez remplir les informations requises.");
                 header("Location: /school_fees/tranches");
                 exit;
@@ -233,40 +275,100 @@ class SchoolFeeController
                     ]);
                 }
 
-                // Si c'est configuré pour une classe spécifique, on synchronise avec la table legacy class_installments
+                // 1. Calculer le montant total de la scolarité configuré
+                $totalScolarite = 0.0;
+                for ($i = 0; $i < count($trancheNames); $i++) {
+                    if (empty($trancheNames[$i]) || $trancheAmounts[$i] <= 0) continue;
+                    $totalScolarite += (float)$trancheAmounts[$i];
+                }
+
+                // 2. Mettre à jour ou insérer le montant des frais dans la table school_fees
+                $checkSql = "SELECT id FROM school_fees WHERE academic_year_id = ? AND class_id " . ($classId ? "= ?" : "IS NULL") . " AND cycle_id " . ($cycleId ? "= ?" : "IS NULL") . " AND teaching_type_id " . ($teachingTypeId ? "= ?" : "IS NULL");
+                $checkParams = [$activeYearId];
+                if ($classId) $checkParams[] = $classId;
+                if ($cycleId) $checkParams[] = $cycleId;
+                if ($teachingTypeId) $checkParams[] = $teachingTypeId;
+
+                $stmtCheck = $this->db->prepare($checkSql);
+                $stmtCheck->execute($checkParams);
+                $feeId = $stmtCheck->fetchColumn();
+
+                if ($feeId) {
+                    $this->db->prepare("UPDATE school_fees SET amount = ? WHERE id = ?")->execute([$totalScolarite, $feeId]);
+                } else {
+                    $this->db->prepare("INSERT INTO school_fees (academic_year_id, class_id, cycle_id, teaching_type_id, amount) VALUES (?, ?, ?, ?, ?)")->execute([
+                        $activeYearId,
+                        $classId,
+                        $cycleId,
+                        $teachingTypeId,
+                        $totalScolarite
+                    ]);
+                }
+
+                // 3. Identifier toutes les classes concernées/affectées par ce paramétrage
+                $affectedClasses = [];
                 if ($classId) {
-                    $delLegacy = $this->db->prepare("DELETE FROM class_installments WHERE class_id = ?");
-                    $delLegacy->execute([$classId]);
+                    $affectedClasses = [$classId];
+                } elseif ($cycleId) {
+                    $stmt = $this->db->prepare("SELECT id FROM classes WHERE cycle_id = ?");
+                    $stmt->execute([$cycleId]);
+                    $affectedClasses = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                } elseif ($teachingTypeId) {
+                    $stmt = $this->db->prepare("SELECT id FROM classes WHERE teaching_type_id = ?");
+                    $stmt->execute([$teachingTypeId]);
+                    $affectedClasses = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                }
 
-                    $insLegacy = $this->db->prepare("INSERT INTO class_installments (class_id, installment_number, amount) VALUES (?, ?, ?)");
-                    $updClass = $this->db->prepare("UPDATE classes SET nbr_tranches = ?, frais_scolarite_brut = ? WHERE id = ?");
+                // 4. Pour chaque classe affectée, mettre à jour la table des classes et les tables legacy
+                foreach ($affectedClasses as $cId) {
+                    $cId = (int)$cId;
                     
-                    $totalScolarite = 0.0;
-                    $nbrTr = 0;
-                    for ($i = 0; $i < count($trancheNames); $i++) {
-                        if (empty($trancheNames[$i]) || $trancheAmounts[$i] <= 0) continue;
-                        $amt = (float)$trancheAmounts[$i];
-                        $insLegacy->execute([$classId, $i + 1, $amt]);
-                        
-                        // Enregistrer dans installment_deadlines pour que le cache puisse les récupérer
-                        $this->db->prepare("DELETE FROM installment_deadlines WHERE class_id = ? AND academic_year_id = ? AND installment_number = ?")->execute([$classId, $activeYearId, $i + 1]);
-                        $this->db->prepare("INSERT INTO installment_deadlines (academic_year_id, class_id, installment_number, deadline_date) VALUES (?, ?, ?, ?)")->execute([$activeYearId, $classId, $i + 1, $trancheDeadlines[$i]]);
+                    // Résoudre le montant de scolarité et les tranches configurées (en prenant en compte la priorité)
+                    $resolvedTuition = $this->schoolFeeModel->resolveAmount($activeYearId, $cId);
+                    $resolvedInsts = $this->feeInstallmentModel->resolveInstallments($activeYearId, $cId);
+                    $nbrTr = count($resolvedInsts);
 
-                        $totalScolarite += $amt;
-                        $nbrTr++;
+                    // Mettre à jour les colonnes de la classe
+                    $updClass = $this->db->prepare("UPDATE classes SET nbr_tranches = ?, frais_scolarite_brut = ? WHERE id = ?");
+                    $updClass->execute([$nbrTr, $resolvedTuition, $cId]);
+
+                    // Mettre à jour les tables legacy class_installments
+                    $this->db->prepare("DELETE FROM class_installments WHERE class_id = ?")->execute([$cId]);
+                    $insLegacy = $this->db->prepare("INSERT INTO class_installments (class_id, installment_number, amount) VALUES (?, ?, ?)");
+                    
+                    // Mettre à jour la table legacy installment_deadlines
+                    $this->db->prepare("DELETE FROM installment_deadlines WHERE class_id = ? AND academic_year_id = ?")->execute([$cId, $activeYearId]);
+                    $insDeadline = $this->db->prepare("INSERT INTO installment_deadlines (academic_year_id, class_id, installment_number, deadline_date) VALUES (?, ?, ?, ?)");
+
+                    foreach ($resolvedInsts as $inst) {
+                        $ord = (int)$inst['installment_order'];
+                        $amt = (float)$inst['amount'];
+                        $deadline = $inst['deadline_date'];
+                        
+                        $insLegacy->execute([$cId, $ord, $amt]);
+                        $insDeadline->execute([$activeYearId, $cId, $ord, $deadline]);
                     }
 
-                    $updClass->execute([$nbrTr, $totalScolarite, $classId]);
-                    
-                    // Lancer la resynchronisation de tous les élèves de la classe
-                    $this->financialService->syncClassFinancials($classId, $activeYearId);
+                    // 5. Relancer le recalcul et la resynchronisation de tous les élèves de la classe
+                    $this->financialService->syncClassFinancials($cId, $activeYearId);
                 }
 
                 $this->db->commit();
+                
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => true, 'message' => "Tranches configurées avec succès."]);
+                    exit;
+                }
                 Session::setFlash('success', "Tranches configurées avec succès.");
             } catch (\Exception $e) {
                 if ($this->db->inTransaction()) {
                     $this->db->rollBack();
+                }
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => "Erreur lors de la configuration : " . $e->getMessage()]);
+                    exit;
                 }
                 Session::setFlash('error', "Erreur lors de la configuration : " . $e->getMessage());
             }

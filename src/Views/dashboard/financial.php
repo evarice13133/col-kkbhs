@@ -4,17 +4,120 @@ ob_start();
 ?>
 <style>
 .hover-card {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease, background-color 0.3s ease;
+    border: 1px solid var(--border-color) !important;
 }
 .hover-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 10px 18px rgba(0,0,0,0.08) !important;
 }
+.hover-card .kpi-icon {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+}
+.hover-card:hover .kpi-icon {
+    transform: scale(1.1);
+}
+.hover-card .card-indicator {
+    transition: height 0.3s ease;
+}
+.hover-card:hover .card-indicator {
+    height: 5px !important;
+}
+
+/* Card Primary (Purple/Indigo) */
+.kpi-card-primary:hover {
+    border-color: rgba(139, 92, 246, 0.4) !important;
+    box-shadow: 0 12px 20px -5px rgba(139, 92, 246, 0.3) !important;
+    background-color: rgba(139, 92, 246, 0.02) !important;
+}
+.kpi-card-primary:hover .kpi-icon {
+    background-color: rgba(139, 92, 246, 0.2) !important;
+}
+
+/* Card Success (Green) */
+.kpi-card-success:hover {
+    border-color: rgba(34, 197, 94, 0.4) !important;
+    box-shadow: 0 12px 20px -5px rgba(34, 197, 94, 0.3) !important;
+    background-color: rgba(34, 197, 94, 0.02) !important;
+}
+.kpi-card-success:hover .kpi-icon {
+    background-color: rgba(34, 197, 94, 0.2) !important;
+}
+
+/* Card Info (Cyan/Blue) */
+.kpi-card-info:hover {
+    border-color: rgba(6, 182, 212, 0.4) !important;
+    box-shadow: 0 12px 20px -5px rgba(6, 182, 212, 0.3) !important;
+    background-color: rgba(6, 182, 212, 0.02) !important;
+}
+.kpi-card-info:hover .kpi-icon {
+    background-color: rgba(6, 182, 212, 0.2) !important;
+}
+
+/* Card Warning (Amber/Orange) */
+.kpi-card-warning:hover {
+    border-color: rgba(245, 158, 11, 0.4) !important;
+    box-shadow: 0 12px 20px -5px rgba(245, 158, 11, 0.3) !important;
+    background-color: rgba(245, 158, 11, 0.02) !important;
+}
+.kpi-card-warning:hover .kpi-icon {
+    background-color: rgba(245, 158, 11, 0.2) !important;
+}
+
+/* Card Danger (Red) */
+.kpi-card-danger:hover {
+    border-color: rgba(239, 68, 68, 0.4) !important;
+    box-shadow: 0 12px 20px -5px rgba(239, 68, 68, 0.3) !important;
+    background-color: rgba(239, 68, 68, 0.02) !important;
+}
+.kpi-card-danger:hover .kpi-icon {
+    background-color: rgba(239, 68, 68, 0.2) !important;
+}
+
+/* Card Secondary (Slate) */
+.kpi-card-secondary:hover {
+    border-color: rgba(100, 116, 139, 0.4) !important;
+    box-shadow: 0 12px 20px -5px rgba(100, 116, 139, 0.3) !important;
+    background-color: rgba(100, 116, 139, 0.02) !important;
+}
+.kpi-card-secondary:hover .kpi-icon {
+    background-color: rgba(100, 116, 139, 0.2) !important;
+}
+
 .kpi-section-title {
     font-size: 0.75rem;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     font-weight: 800;
+}
+
+@media (max-width: 576px) {
+    .hover-card {
+        padding: 0.5rem 0.65rem !important;
+    }
+    .hover-card .kpi-icon {
+        width: 38px !important;
+        height: 38px !important;
+    }
+    .hover-card .kpi-icon i {
+        font-size: 1.1rem !important;
+    }
+    .hover-card .d-flex {
+        gap: 0.5rem !important;
+    }
+    .hover-card .fs-5 {
+        font-size: 0.85rem !important;
+    }
+    .hover-card .fs-5 span {
+        font-size: 0.6rem !important;
+    }
+    .hover-card .text-muted-theme.small {
+        font-size: 0.62rem !important;
+        line-height: 1.1;
+    }
+    .hover-card .badge {
+        font-size: 0.58rem !important;
+        padding: 0.1rem 0.25rem !important;
+    }
 }
 </style>
 
@@ -68,56 +171,66 @@ ob_start();
         </div>
         <div class="row g-4">
             <!-- Recettes Totales de la Caisse -->
-            <div class="col-sm-6 col-xl-3">
-                <div class="modern-card hover-card border-0 shadow-sm p-4 h-100 position-relative overflow-hidden">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <div class="kpi-icon bg-primary bg-opacity-10 text-primary rounded-3 d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+            <div class="col-6 col-xl-3">
+                <div class="modern-card hover-card kpi-card-primary shadow-sm p-3 h-100 position-relative overflow-hidden">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="kpi-icon bg-primary bg-opacity-10 text-primary rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0;">
                             <i class="bi bi-piggy-bank fs-4"></i>
                         </div>
+                        <div>
+                            <div class="fw-black text-main-theme fs-5 mb-0"><?= number_format($totalGeneralCollected, 0, ',', ' ') ?> <span style="font-size: 0.75rem;" class="fw-normal text-muted">FCFA</span></div>
+                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;"><?= __('total_general_collected') ?></div>
+                        </div>
                     </div>
-                    <div class="fw-black text-main-theme fs-4 mb-1"><?= number_format($totalGeneralCollected, 0, ',', ' ') ?> <small class="fs-6 fw-normal text-muted">FCFA</small></div>
-                    <div class="text-muted-theme small fw-semibold"><?= __('total_general_collected') ?></div>
-                    <div class="position-absolute bottom-0 start-0 w-100" style="height:4px; background: linear-gradient(90deg,#8b5cf6,#6366f1); border-radius:0 0 12px 12px;"></div>
+                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#8b5cf6,#6366f1); border-radius:0 0 12px 12px;"></div>
                 </div>
             </div>
             <!-- Frais de Scolarité Encaissés -->
-            <div class="col-sm-6 col-xl-3">
-                <div class="modern-card hover-card border-0 shadow-sm p-4 h-100 position-relative overflow-hidden">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <div class="kpi-icon bg-success bg-opacity-10 text-success rounded-3 d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
-                            <i class="bi bi-cash-stack fs-4"></i>
+            <div class="col-6 col-xl-3">
+                <div class="modern-card hover-card kpi-card-success shadow-sm p-3 h-100 position-relative overflow-hidden">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="kpi-icon bg-success bg-opacity-10 text-success rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0;">
+                                <i class="bi bi-cash-stack fs-4"></i>
+                            </div>
+                            <div>
+                                <div class="fw-black text-main-theme fs-5 mb-0"><?= number_format($totalTuitionCollected, 0, ',', ' ') ?> <span style="font-size: 0.75rem;" class="fw-normal text-muted">FCFA</span></div>
+                                <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;"><?= __('total_tuition_collected') ?></div>
+                            </div>
                         </div>
-                        <span class="badge bg-success-subtle text-success rounded-pill fw-bold px-3 py-2"><?= number_format($collectionRate, 1) ?>%</span>
+                        <span class="badge bg-success-subtle text-success rounded-pill fw-bold px-2 py-1" style="font-size: 0.7rem;"><?= number_format($collectionRate, 1) ?>%</span>
                     </div>
-                    <div class="fw-black text-main-theme fs-4 mb-1"><?= number_format($totalTuitionCollected, 0, ',', ' ') ?> <small class="fs-6 fw-normal text-muted">FCFA</small></div>
-                    <div class="text-muted-theme small fw-semibold"><?= __('total_tuition_collected') ?></div>
-                    <div class="position-absolute bottom-0 start-0 w-100" style="height:4px; background: linear-gradient(90deg,#22c55e,#10b981); border-radius:0 0 12px 12px;"></div>
+                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#22c55e,#10b981); border-radius:0 0 12px 12px;"></div>
                 </div>
             </div>
             <!-- Frais d'Inscription Encaissés -->
-            <div class="col-sm-6 col-xl-3">
-                <div class="modern-card hover-card border-0 shadow-sm p-4 h-100 position-relative overflow-hidden">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <div class="kpi-icon bg-info bg-opacity-10 text-info rounded-3 d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+            <div class="col-6 col-xl-3">
+                <div class="modern-card hover-card kpi-card-info shadow-sm p-3 h-100 position-relative overflow-hidden">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="kpi-icon bg-info bg-opacity-10 text-info rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0;">
                             <i class="bi bi-journal-check fs-4"></i>
                         </div>
+                        <div>
+                            <div class="fw-black text-main-theme fs-5 mb-0"><?= number_format($totalRegistrationCollected, 0, ',', ' ') ?> <span style="font-size: 0.75rem;" class="fw-normal text-muted">FCFA</span></div>
+                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;"><?= __('total_registration_collected') ?></div>
+                        </div>
                     </div>
-                    <div class="fw-black text-main-theme fs-4 mb-1"><?= number_format($totalRegistrationCollected, 0, ',', ' ') ?> <small class="fs-6 fw-normal text-muted">FCFA</small></div>
-                    <div class="text-muted-theme small fw-semibold"><?= __('total_registration_collected') ?></div>
-                    <div class="position-absolute bottom-0 start-0 w-100" style="height:4px; background: linear-gradient(90deg,#06b6d4,#0ea5e9); border-radius:0 0 12px 12px;"></div>
+                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#06b6d4,#0ea5e9); border-radius:0 0 12px 12px;"></div>
                 </div>
             </div>
             <!-- Scolarité Attendue -->
-            <div class="col-sm-6 col-xl-3">
-                <div class="modern-card hover-card border-0 shadow-sm p-4 h-100 position-relative overflow-hidden">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <div class="kpi-icon bg-secondary bg-opacity-10 text-secondary rounded-3 d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+            <div class="col-6 col-xl-3">
+                <div class="modern-card hover-card kpi-card-secondary shadow-sm p-3 h-100 position-relative overflow-hidden">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="kpi-icon bg-secondary bg-opacity-10 text-secondary rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0;">
                             <i class="bi bi-graph-up-arrow fs-4"></i>
                         </div>
+                        <div>
+                            <div class="fw-black text-main-theme fs-5 mb-0"><?= number_format($totalExpected, 0, ',', ' ') ?> <span style="font-size: 0.75rem;" class="fw-normal text-muted">FCFA</span></div>
+                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;"><?= __('total_expected') ?></div>
+                        </div>
                     </div>
-                    <div class="fw-black text-main-theme fs-4 mb-1"><?= number_format($totalExpected, 0, ',', ' ') ?> <small class="fs-6 fw-normal text-muted">FCFA</small></div>
-                    <div class="text-muted-theme small fw-semibold"><?= __('total_expected') ?></div>
-                    <div class="position-absolute bottom-0 start-0 w-100" style="height:4px; background: linear-gradient(90deg,#64748b,#475569); border-radius:0 0 12px 12px;"></div>
+                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#64748b,#475569); border-radius:0 0 12px 12px;"></div>
                 </div>
             </div>
         </div>
@@ -131,58 +244,66 @@ ob_start();
         </div>
         <div class="row g-4">
             <!-- Élèves Déjà Inscrits -->
-            <div class="col-sm-6 col-xl-3">
-                <div class="modern-card hover-card border-0 shadow-sm p-4 h-100 position-relative overflow-hidden">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <div class="kpi-icon bg-success bg-opacity-10 text-success rounded-3 d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+            <div class="col-6 col-xl-3">
+                <div class="modern-card hover-card kpi-card-success shadow-sm p-3 h-100 position-relative overflow-hidden">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="kpi-icon bg-success bg-opacity-10 text-success rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0;">
                             <i class="bi bi-person-check fs-4"></i>
                         </div>
+                        <div>
+                            <div class="fw-black text-main-theme fs-5 mb-0"><?= number_format($totalEnrolled) ?></div>
+                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;"><?= __('enrolled_students') ?></div>
+                        </div>
                     </div>
-                    <div class="fw-black text-main-theme fs-4 mb-1"><?= number_format($totalEnrolled) ?></div>
-                    <div class="text-muted-theme small fw-semibold"><?= __('enrolled_students') ?></div>
-                    <div class="position-absolute bottom-0 start-0 w-100" style="height:4px; background: linear-gradient(90deg,#10b981,#059669); border-radius:0 0 12px 12px;"></div>
+                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#10b981,#059669); border-radius:0 0 12px 12px;"></div>
                 </div>
             </div>
             <!-- Élèves Non Inscrits -->
-            <div class="col-sm-6 col-xl-3">
-                <div class="modern-card hover-card border-0 shadow-sm p-4 h-100 position-relative overflow-hidden">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <div class="kpi-icon bg-danger bg-opacity-10 text-danger rounded-3 d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+            <div class="col-6 col-xl-3">
+                <div class="modern-card hover-card kpi-card-danger shadow-sm p-3 h-100 position-relative overflow-hidden">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="kpi-icon bg-danger bg-opacity-10 text-danger rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0;">
                             <i class="bi bi-person-x fs-4"></i>
                         </div>
+                        <div>
+                            <div class="fw-black text-main-theme fs-5 mb-0"><?= number_format($totalNonEnrolled) ?></div>
+                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;"><?= __('non_enrolled_students') ?></div>
+                        </div>
                     </div>
-                    <div class="fw-black text-main-theme fs-4 mb-1"><?= number_format($totalNonEnrolled) ?></div>
-                    <div class="text-muted-theme small fw-semibold"><?= __('non_enrolled_students') ?></div>
-                    <div class="position-absolute bottom-0 start-0 w-100" style="height:4px; background: linear-gradient(90deg,#ef4444,#dc2626); border-radius:0 0 12px 12px;"></div>
+                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#ef4444,#dc2626); border-radius:0 0 12px 12px;"></div>
                 </div>
             </div>
             <!-- Taux d'inscription global -->
-            <div class="col-sm-6 col-xl-3">
-                <div class="modern-card hover-card border-0 shadow-sm p-4 h-100 position-relative overflow-hidden">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <div class="kpi-icon bg-warning bg-opacity-10 text-warning rounded-3 d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+            <div class="col-6 col-xl-3">
+                <div class="modern-card hover-card kpi-card-warning shadow-sm p-3 h-100 position-relative overflow-hidden">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="kpi-icon bg-warning bg-opacity-10 text-warning rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0;">
                             <i class="bi bi-percent fs-4"></i>
                         </div>
+                        <div>
+                            <?php 
+                            $registrationRate = $totalStudents > 0 ? round(($totalEnrolled / $totalStudents) * 100, 1) : 0;
+                            ?>
+                            <div class="fw-black text-main-theme fs-5 mb-0"><?= $registrationRate ?>%</div>
+                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;"><?= __('registration_rate') ?></div>
+                        </div>
                     </div>
-                    <?php 
-                    $registrationRate = $totalStudents > 0 ? round(($totalEnrolled / $totalStudents) * 100, 1) : 0;
-                    ?>
-                    <div class="fw-black text-main-theme fs-4 mb-1"><?= $registrationRate ?>%</div>
-                    <div class="text-muted-theme small fw-semibold"><?= __('registration_rate') ?></div>
-                    <div class="position-absolute bottom-0 start-0 w-100" style="height:4px; background: linear-gradient(90deg,#f59e0b,#d97706); border-radius:0 0 12px 12px;"></div>
+                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#f59e0b,#d97706); border-radius:0 0 12px 12px;"></div>
                 </div>
             </div>
             <!-- Effectif Total Actif -->
-            <div class="col-sm-6 col-xl-3">
-                <div class="modern-card hover-card border-0 shadow-sm p-4 h-100 position-relative overflow-hidden">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <div class="kpi-icon bg-info bg-opacity-10 text-info rounded-3 d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+            <div class="col-6 col-xl-3">
+                <div class="modern-card hover-card kpi-card-info shadow-sm p-3 h-100 position-relative overflow-hidden">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="kpi-icon bg-info bg-opacity-10 text-info rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0;">
                             <i class="bi bi-people fs-4"></i>
                         </div>
+                        <div>
+                            <div class="fw-black text-main-theme fs-5 mb-0"><?= number_format($totalStudents) ?></div>
+                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;"><?= __('active_students') ?></div>
+                        </div>
                     </div>
-                    <div class="fw-black text-main-theme fs-4 mb-1"><?= number_format($totalStudents) ?></div>
-                    <div class="text-muted-theme small fw-semibold"><?= __('active_students') ?></div>
-                    <div class="position-absolute bottom-0 start-0 w-100" style="height:4px; background: linear-gradient(90deg,#0ea5e9,#0284c7); border-radius:0 0 12px 12px;"></div>
+                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#0ea5e9,#0284c7); border-radius:0 0 12px 12px;"></div>
                 </div>
             </div>
         </div>

@@ -40,8 +40,18 @@ class FinancialService
             }
 
             $classId = $student['class_id'];
-            $grossTuition = $student['frais_scolarite_brut'] ? (float)$student['frais_scolarite_brut'] : 0.0;
-            $nbrTranches = $student['nbr_tranches'] ? (int)$student['nbr_tranches'] : 0;
+            $grossTuition = 0.0;
+            $nbrTranches = 0;
+            $resolvedInstallments = [];
+
+            if ($classId) {
+                $schoolFeeModel = new \App\Models\SchoolFee();
+                $feeInstModel = new \App\Models\FeeInstallment();
+
+                $grossTuition = $schoolFeeModel->resolveAmount($academicYearId, $classId);
+                $resolvedInstallments = $feeInstModel->resolveInstallments($academicYearId, $classId);
+                $nbrTranches = count($resolvedInstallments);
+            }
 
             // Si l'élève n'a pas de classe, ses soldes sont mis à zéro
             if (!$classId) {
@@ -114,10 +124,7 @@ class FinancialService
             }
 
             // 4. Générer ou mettre à jour les tranches prévues (student_installments)
-            // Récupérer la configuration des tranches de la classe via le nouveau modèle FeeInstallment
-            $feeInstModel = new \App\Models\FeeInstallment();
-            $resolvedInstallments = $feeInstModel->resolveInstallments($academicYearId, $classId);
-            
+            // Récupérer la configuration des tranches résolues précédemment
             $classInstallments = [];
             foreach ($resolvedInstallments as $ri) {
                 $classInstallments[] = [

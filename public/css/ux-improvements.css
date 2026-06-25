@@ -170,14 +170,14 @@
 
 /* 6. Premium Input Highlighting */
 .premium-input, .premium-select {
-    height: 48px;
-    border-radius: 10px !important;
+    height: 34px;
+    border-radius: 6px !important;
     border: 2px solid var(--border-theme, #e2e8f0);
     background: color-mix(in srgb, var(--bg-card, #ffffff) 97%, #000);
     font-weight: 600;
-    font-size: 0.95rem;
-    padding-left: 1.25rem;
-    padding-right: 1.25rem;
+    font-size: 0.85rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     color: var(--text-main, #1e293b);
 }
@@ -190,7 +190,7 @@
 .premium-input::placeholder {
     color: #94a3b8;
     font-weight: 400;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
 }
 
 .premium-input:hover, .premium-select:hover {
@@ -217,8 +217,9 @@
     border: 2px solid var(--border-theme, #e2e8f0);
     background: #f8fafc;
     border-right: none;
-    border-radius: 10px 0 0 10px !important;
-    padding-left: 1.25rem;
+    border-radius: 6px 0 0 6px !important;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
     color: var(--primary-color);
     transition: all 0.25s ease;
 }
@@ -230,7 +231,7 @@
 }
 
 .input-group:has(.premium-input) .premium-input {
-    border-radius: 0 10px 10px 0 !important;
+    border-radius: 0 6px 6px 0 !important;
 }
 
 /* Labels highlighting */
@@ -240,7 +241,7 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--primary-color);
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
     display: block;
     opacity: 0.85;
 }

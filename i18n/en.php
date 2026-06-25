@@ -1323,9 +1323,11 @@ return [
     'structure_et_classes' => 'Structure & Classes',
     'ressources_humaines' => 'Human Resources',
     'pedagogie_et_resultats' => 'Pedagogy & Results',
+    'gestion_des_notes' => 'Grade Management',
     'administration' => 'Administration',
     'pedagogie' => 'Pedagogy',
     'results' => 'Results',
+    'print' => 'Print',
 
     // -- Intelligent Dashboard --
     'db_predictive_dashboard' => 'Predictive Dashboard & Students',
@@ -1861,5 +1863,17 @@ return [
     'enrolled_count_header'        => 'Enrolled Students',
     'non_enrolled_count_header'    => 'Non-enrolled Students',
     'registration_revenue_header'  => 'Registration Fees Collected',
+    // Control Center Keys
+    'centre_de_pilotage'           => 'Control Center',
+    'dashboard_executif'           => 'Executive Dashboard',
+    'centre_financier'             => 'Financial Center',
+    'vue_globale'                  => 'Global View',
+    'vue_academique'               => 'Academic View',
+    'vue_financiere'               => 'Financial View',
+    'vue_rh'                       => 'HR View',
+    'total_expected_tuition'       => 'Expected Total',
+    'total_remaining_tuition'      => 'Remaining Total',
+    'male_short'                   => 'M',
+    'female_short'                 => 'F',
 ];
 

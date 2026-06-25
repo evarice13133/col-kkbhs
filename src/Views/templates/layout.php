@@ -32,12 +32,21 @@ $nav_items = [
         'url' => '/',
         'roles' => ['superadmin', 'admin', 'enseignant', 'caissier', 'comptable', 'it_manager']
     ],
-    // SECTION: PILOTAGE
+    // Flat Classes menu for Cashier/Accountant
     [
-        'section' => __('pilotage'),
-        'roles' => ['superadmin', 'admin', 'enseignant'],
-        'icon' => 'bi-sliders',
+        'icon' => 'bi-door-open',
+        'label' => __('classes'),
+        'url' => '/classes',
+        'roles' => ['caissier', 'comptable']
+    ],
+    // SECTION: CENTRE DE PILOTAGE
+    [
+        'section' => __('centre_de_pilotage'),
+        'roles' => ['superadmin', 'admin', 'caissier', 'comptable', 'enseignant'],
+        'icon' => 'bi-sliders2',
         'items' => [
+            ['icon' => 'bi-pie-chart-fill', 'label' => __('dashboard_executif'), 'url' => '/pilotage/dashboard', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+            ['icon' => 'bi-cash-coin', 'label' => __('centre_financier'), 'url' => '/pilotage/financial', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
             ['icon' => 'bi-calendar-event', 'label' => __('academic_years'), 'url' => '/academic_years', 'roles' => ['superadmin', 'admin']],
             ['icon' => 'bi-check2-square', 'label' => __('evaluations'), 'url' => '/sequences', 'roles' => ['superadmin', 'admin']],
             ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'roles' => ['superadmin', 'admin', 'enseignant']],
@@ -107,27 +116,33 @@ $nav_items = [
             ['icon' => 'bi-journal-text', 'label' => __('financial_history'), 'url' => '/financial-history', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
         ]
     ],
-    // SECTION: PÉDAGOGIE
+    // SECTION: GESTION DES NOTES
     [
-        'section' => __('pedagogie'),
-        'roles' => ['superadmin', 'admin', 'enseignant', 'caissier'],
-        'icon' => 'bi-mortarboard',
+        'section' => __('gestion_des_notes'),
+        'roles' => ['superadmin', 'admin', 'enseignant'],
+        'icon' => 'bi-journal-check',
         'items' => [
-            ['icon' => 'bi-door-open', 'label' => __('classes'), 'url' => '/classes', 'roles' => ['superadmin', 'admin', 'caissier']],
-            ['icon' => 'bi-book', 'label' => __('subjects'), 'url' => '/subjects', 'roles' => ['superadmin', 'admin']],
             ['icon' => 'bi-pencil-square', 'label' => __('enter_marks'), 'url' => '/notes', 'roles' => ['superadmin', 'admin', 'enseignant']],
-            ['icon' => 'bi-shield-check', 'label' => __('discipline_management'), 'url' => '/bulletins/discipline', 'roles' => ['superadmin', 'admin']],
-        ]
-    ],
-    // SECTION: RÉSULTATS
-    [
-        'section' => __('results'),
-        'roles' => ['superadmin', 'admin'],
-        'icon' => 'bi-clipboard-data',
-        'items' => [
-            ['icon' => 'bi-file-earmark-pdf', 'label' => __('bulletins'), 'url' => '/bulletins', 'roles' => ['superadmin', 'admin']],
-            ['icon' => 'bi-award', 'label' => __('honor_roll_title'), 'url' => '/honors', 'roles' => ['superadmin', 'admin']],
-            ['icon' => 'bi-file-earmark-text', 'label' => __('proces_verbaux'), 'url' => '/proces-verbal', 'roles' => ['superadmin', 'admin']],
+            [
+                'label' => __('pedagogie'),
+                'roles' => ['superadmin', 'admin', 'enseignant'],
+                'icon' => 'bi-mortarboard',
+                'submenu' => [
+                    ['icon' => 'bi-door-open', 'label' => __('classes'), 'url' => '/classes', 'roles' => ['superadmin', 'admin']],
+                    ['icon' => 'bi-book', 'label' => __('subjects'), 'url' => '/subjects', 'roles' => ['superadmin', 'admin']],
+                    ['icon' => 'bi-shield-check', 'label' => __('discipline_management'), 'url' => '/bulletins/discipline', 'roles' => ['superadmin', 'admin']],
+                ]
+            ],
+            [
+                'label' => __('print'),
+                'roles' => ['superadmin', 'admin'],
+                'icon' => 'bi-printer',
+                'submenu' => [
+                    ['icon' => 'bi-file-earmark-pdf', 'label' => __('bulletins'), 'url' => '/bulletins', 'roles' => ['superadmin', 'admin']],
+                    ['icon' => 'bi-award', 'label' => __('honor_roll_title'), 'url' => '/honors', 'roles' => ['superadmin', 'admin']],
+                    ['icon' => 'bi-file-earmark-text', 'label' => __('proces_verbaux'), 'url' => '/proces-verbal', 'roles' => ['superadmin', 'admin']],
+                ]
+            ]
         ]
     ],
     // SECTION: ADMINISTRATION SYSTÈME (IT Manager)
@@ -514,7 +529,7 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <!-- start logo head -->
-            <div class="sidebar-header d-flex justify-content-center py-4 position-relative">
+            <div class="sidebar-header d-flex justify-content-center position-relative">
                 <!-- Bouton de fermeture mobile -->
                 <button id="sidebarClose" class="sidebar-close-btn d-xl-none">
                     <i class="bi bi-x-lg"></i>
@@ -581,8 +596,8 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
                                     }
                                     $section_id = 'submenu-' . strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $item['section']));
                                     ?>
-                                    <div class="nav-item-dropdown">
-                                        <a href="#" class="nav-link-custom dropdown-toggle-custom <?= $hasActiveChild ? 'active-parent' : '' ?>" data-target="<?= $section_id ?>" aria-expanded="<?= $hasActiveChild ? 'true' : 'false' ?>">
+                                    <div class="nav-item-dropdown sidebar-card <?= $hasActiveChild ? 'active-card' : '' ?>">
+                                        <a href="#" class="nav-link-custom dropdown-toggle-custom <?= $hasActiveChild ? 'active-parent' : '' ?>" data-target="<?= $section_id ?>" aria-expanded="<?= $hasActiveChild ? 'true' : 'false' ?>" data-title="<?= htmlspecialchars((string) $item['section']) ?>">
                                             <i class="bi <?= $item['icon'] ?? 'bi-folder' ?>"></i>
                                             <span><?= $item['section'] ?></span>
                                             <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
@@ -620,7 +635,10 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
                                                             <div class="nested-submenu-collapse <?= $hasActiveSubChild ? 'show' : '' ?>" id="<?= $nested_id ?>" style="overflow: hidden; max-height: 0; transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1); margin-left: 1.2rem; padding-left: 0.5rem; border-left: 1px dashed var(--border-color); display: flex; flex-direction: column; gap: 0.2rem;">
                                                                 <?php foreach ($visible_subchildren as $subchild): ?>
                                                                     <?php $isSubActive = $isUrlActive($subchild['url']); ?>
-                                                                    <a href="<?= $subchild['url'] ?>" class="submenu-link <?= $isSubActive ? 'active' : '' ?>" style="font-size: 0.78rem; padding: 0.4rem 0.6rem;">
+                                                                    <a href="<?= $subchild['url'] ?>" class="submenu-link <?= $isSubActive ? 'active' : '' ?>" style="font-size: 0.78rem; padding: 0.4rem 0.6rem; display: flex; align-items: center;">
+                                                                        <?php if (isset($subchild['icon'])): ?>
+                                                                            <i class="bi <?= $subchild['icon'] ?> me-2"></i>
+                                                                        <?php endif; ?>
                                                                         <span><?= $subchild['label'] ?></span>
                                                                     </a>
                                                                 <?php endforeach; ?>
@@ -642,10 +660,12 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
                         <?php else: ?>
                             <?php if (in_array($user_role, $item['roles'])): ?>
                                 <?php $isActive = $isUrlActive($item['url']); ?>
-                                <a href="<?= $item['url'] ?>" class="nav-link-custom <?= $isActive ? 'active' : '' ?>">
-                                    <i class="bi <?= $item['icon'] ?>"></i>
-                                    <span><?= $item['label'] ?></span>
-                                </a>
+                                <div class="sidebar-card <?= $isActive ? 'active-card' : '' ?>">
+                                    <a href="<?= $item['url'] ?>" class="nav-link-custom <?= $isActive ? 'active' : '' ?>" data-title="<?= htmlspecialchars((string) $item['label']) ?>">
+                                        <i class="bi <?= $item['icon'] ?>"></i>
+                                        <span><?= $item['label'] ?></span>
+                                    </a>
+                                </div>
                             <?php endif; ?>
                         <?php endif; ?>
                     <?php endforeach; ?>
@@ -656,11 +676,11 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
                             <i class="bi bi-info-circle me-2"></i>
                             <?= __('access_space_instruction') ?>
                         </div>
-                        <a href="/login" class="nav-link-custom mb-2">
+                        <a href="/login" class="nav-link-custom mb-2" data-title="<?= htmlspecialchars((string) __('login')) ?>">
                             <i class="bi bi-box-arrow-in-right"></i>
                             <span><?= __('login') ?></span>
                         </a>
-                        <a href="/register-teacher" class="nav-link-custom">
+                        <a href="/register-teacher" class="nav-link-custom" data-title="<?= htmlspecialchars((string) __('register')) ?>">
                             <i class="bi bi-person-plus"></i>
                             <span><?= __('register') ?></span>
                         </a>
@@ -685,9 +705,9 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
                 class="topbar topbar-glass d-flex align-items-center justify-content-between px-3 px-md-4 py-2 py-md-3 shadow-sm border-bottom"
                 style="position: sticky; top: 0; z-index: 1000; backdrop-filter: blur(10px);">
                 <div class="d-flex align-items-center gap-2 gap-md-3" style="min-width: 0;">
-                    <!-- Menu Toggle (Mobile) -->
+                    <!-- Menu Toggle (Mobile & Desktop) -->
                     <button
-                        class="btn btn-theme-soft rounded-circle d-xl-none d-flex align-items-center justify-content-center p-0 border-0 shadow-sm hover-elevate transition-all"
+                        class="btn btn-theme-soft rounded-circle d-flex align-items-center justify-content-center p-0 border-0 shadow-sm hover-elevate transition-all"
                         id="sidebarToggle" style="width: 40px; height: 40px; flex-shrink: 0;">
                         <i class="bi bi-list fs-4 text-main-theme"></i>
                     </button>
@@ -837,16 +857,31 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Gestion du side-bar mobile avec overlay
+            // Gestion du side-bar (mobile drawer et desktop collapse)
             const sidebar = document.getElementById('sidebar');
             const toggle = document.getElementById('sidebarToggle');
             const closeBtn = document.getElementById('sidebarClose');
             const overlay = document.getElementById('sidebarOverlay');
 
+            // Apply saved sidebar state on desktop
+            if (window.innerWidth >= 1200) {
+                const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+                if (isCollapsed) {
+                    document.body.classList.add('sidebar-collapsed');
+                }
+            }
+
             function toggleSidebar() {
-                const isOpen = sidebar.classList.toggle('mobile-open');
-                if (overlay) {
-                    overlay.classList.toggle('active', isOpen);
+                if (window.innerWidth >= 1200) {
+                    // Desktop: collapse / expand
+                    const isCollapsed = document.body.classList.toggle('sidebar-collapsed');
+                    localStorage.setItem('sidebar-collapsed', isCollapsed ? 'true' : 'false');
+                } else {
+                    // Mobile: drawer open / close
+                    const isOpen = sidebar.classList.toggle('mobile-open');
+                    if (overlay) {
+                        overlay.classList.toggle('active', isOpen);
+                    }
                 }
             }
 

@@ -324,7 +324,7 @@ class PaymentController
         // 1.5. Récupérer l'éventuel surplus généré (enfant)
         $childSurplus = null;
         if ($payment['type'] === 'inscription') {
-            $stmtSurplus = $this->db->prepare("SELECT * FROM student_payments WHERE parent_payment_id = ? AND status != 'annule'");
+            $stmtSurplus = $this->db->prepare("SELECT * FROM payments WHERE parent_payment_id = ? AND status != 'annule'");
             $stmtSurplus->execute([$payment['id']]);
             $childSurplus = $stmtSurplus->fetch(PDO::FETCH_ASSOC);
         }

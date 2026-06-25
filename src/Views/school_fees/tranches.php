@@ -1,842 +1,525 @@
-<?php
+﻿<?php
 $title = __('tranches_title');
 ob_start();
 ?>
-
-<!-- Load Google Font for premium feel -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-
 <style>
-    .premium-container {
-        font-family: 'Plus Jakarta Sans', sans-serif;
-    }
-    
-    .glass-card {
-        background: rgba(255, 255, 255, 0.75);
-        backdrop-filter: blur(14px) saturate(190%);
-        -webkit-backdrop-filter: blur(14px) saturate(190%);
-        border: 1px solid rgba(255, 255, 255, 0.45);
-        border-radius: 18px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
-        transition: all 0.3s ease;
-    }
-    
-    .glass-card:hover {
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05);
-    }
-    
-    .tranche-row {
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 1px solid rgba(0, 0, 0, 0.06);
-        border-radius: 14px;
-        background: rgba(255, 255, 255, 0.9);
-        margin-bottom: 15px;
-    }
-    
-    .tranche-row:hover {
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05) !important;
-        border-color: var(--bs-primary);
-        transform: translateY(-2px);
-    }
-    
-    .premium-input {
-        border-radius: 10px;
-        border: 1px solid rgba(0, 0, 0, 0.12);
-        padding: 0.6rem 0.9rem;
-        transition: all 0.2s ease-in-out;
-        background-color: #ffffff;
-    }
-    
-    .premium-input:focus {
-        border-color: var(--bs-primary);
-        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
-        background-color: #ffffff;
-    }
-    
-    /* Allocation alert styles */
-    .status-alert-success {
-        background: rgba(25, 135, 84, 0.07);
-        color: #198754;
-        border: 1px solid rgba(25, 135, 84, 0.15);
-    }
-    .status-alert-warning {
-        background: rgba(255, 193, 7, 0.07);
-        color: #664d03;
-        border: 1px solid rgba(255, 193, 7, 0.15);
-    }
-    .status-alert-danger {
-        background: rgba(220, 53, 69, 0.07);
-        color: #dc3545;
-        border: 1px solid rgba(220, 53, 69, 0.15);
-    }
-    
-    @keyframes slideIn {
-        from { opacity: 0; transform: translateY(12px) scale(0.98); }
-        to { opacity: 1; transform: translateY(0) scale(1); }
-    }
-    
-    .animate-slide-in {
-        animation: slideIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-    }
-    
-    .target-status-box {
-        background: linear-gradient(135deg, rgba(79, 70, 229, 0.02) 0%, rgba(79, 70, 229, 0.05) 100%);
-        border-radius: 16px;
-        border: 1px solid rgba(79, 70, 229, 0.12);
-    }
-    
-    .active-config-card {
-        border-radius: 16px;
-        transition: all 0.3s ease;
-        background: #ffffff;
-        border: 1px solid rgba(0, 0, 0, 0.05);
-    }
-    
-    .active-config-card:hover {
-        border-color: rgba(79, 70, 229, 0.25);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
-        transform: translateY(-2px);
-    }
-    
-    .timeline-dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background-color: var(--bs-primary);
-        border: 2px solid #fff;
-        box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
-    }
-    
-    .configs-scroll-container {
-        max-height: 680px;
-        overflow-y: auto;
-        padding-right: 8px;
-    }
-    
-    .configs-scroll-container::-webkit-scrollbar {
-        width: 6px;
-    }
-    
-    .configs-scroll-container::-webkit-scrollbar-track {
-        background: transparent;
-    }
-    
-    .configs-scroll-container::-webkit-scrollbar-thumb {
-        background: rgba(0, 0, 0, 0.08);
-        border-radius: 10px;
-    }
-    
-    .configs-scroll-container::-webkit-scrollbar-thumb:hover {
-        background: rgba(0, 0, 0, 0.18);
-    }
-
-    .btn-xs {
-        padding: 0.25rem 0.6rem;
-        font-size: 0.7rem;
-        font-weight: 700;
-        border-radius: 50px;
-    }
-    
-    .badge-target {
-        font-size: 0.72rem;
-        font-weight: 700;
-        letter-spacing: 0.3px;
-    }
-    
-    /* Dark Theme Support */
-    [data-theme="dark"] .glass-card {
-        background: rgba(30, 41, 59, 0.45);
-        border-color: rgba(255, 255, 255, 0.08);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-    }
-    
-    [data-theme="dark"] .tranche-row {
-        background: rgba(30, 41, 59, 0.25);
-        border-color: rgba(255, 255, 255, 0.08);
-    }
-    
-    [data-theme="dark"] .premium-input {
-        background-color: rgba(15, 23, 42, 0.6) !important;
-        border-color: rgba(255, 255, 255, 0.1) !important;
-        color: #f8fafc !important;
-    }
-    
-    [data-theme="dark"] .premium-input:focus {
-        background-color: rgba(15, 23, 42, 0.8) !important;
-        border-color: var(--bs-primary) !important;
-        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.25) !important;
-    }
-    
-    [data-theme="dark"] .active-config-card {
-        background: rgba(30, 41, 59, 0.2) !important;
-        border-color: rgba(255, 255, 255, 0.05) !important;
-    }
-
-    [data-theme="dark"] .active-config-card:hover {
-        border-color: rgba(79, 70, 229, 0.4) !important;
-    }
-    
-    [data-theme="dark"] .timeline-dot {
-        border-color: #020617; /* Matches --bg-body dark background */
-        box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.4);
-    }
-    
-    [data-theme="dark"] .configs-scroll-container::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.12);
-    }
-    
-    [data-theme="dark"] .configs-scroll-container::-webkit-scrollbar-thumb:hover {
-        background: rgba(255, 255, 255, 0.22);
-    }
-
-    [data-theme="dark"] .configs-scroll-container::-webkit-scrollbar-track {
-        background: transparent;
-    }
+.page-wrap{font-family:'Plus Jakarta Sans',sans-serif;}
+.config-card{background:var(--bg-card,#fff);border:1px solid rgba(0,0,0,0.06);border-radius:20px;transition:all .3s cubic-bezier(.16,1,.3,1);box-shadow:0 4px 16px rgba(0,0,0,.03);}
+.config-card:hover{box-shadow:0 12px 40px rgba(0,0,0,.07);transform:translateY(-3px);}
+.config-card.type-class{border-left:5px solid var(--bs-primary);}
+.config-card.type-cycle{border-left:5px solid var(--bs-info);}
+.config-card.type-teaching_type{border-left:5px solid var(--bs-warning);}
+.timeline-line{border-left:2px solid rgba(79,70,229,.1);padding-left:1.5rem;position:relative;}
+.timeline-dot{width:9px;height:9px;border-radius:50%;background:var(--bs-primary);border:2px solid #fff;box-shadow:0 0 0 2px rgba(79,70,229,.25);position:absolute;left:-6px;top:5px;}
+.badge-type{font-size:.72rem;font-weight:700;letter-spacing:.3px;padding:.4rem .9rem;border-radius:50px;}
+.btn-edit-config{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(79,70,229,.07);border:1px solid rgba(79,70,229,.12);color:var(--bs-primary);transition:all .25s cubic-bezier(.34,1.56,.64,1);cursor:pointer;}
+.btn-edit-config:hover{background:var(--bs-primary);color:#fff;transform:scale(1.1) rotate(-5deg);box-shadow:0 6px 18px rgba(79,70,229,.25);}
+.btn-add-new{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:var(--bs-primary);color:#fff;transition:all .25s cubic-bezier(.34,1.56,.64,1);cursor:pointer;border:none;box-shadow:0 4px 12px rgba(79,70,229,.25);}
+.btn-add-new:hover{transform:scale(1.1) rotate(8deg);box-shadow:0 8px 24px rgba(79,70,229,.35);}
+.search-pill{border-radius:50px;border:1.5px solid rgba(0,0,0,.09);background:#fff;padding:.45rem 1.1rem .45rem .5rem;display:flex;align-items:center;gap:.5rem;transition:all .2s;}
+.search-pill:focus-within{border-color:var(--bs-primary);box-shadow:0 0 0 4px rgba(79,70,229,.1);}
+.search-pill input{border:none;outline:none;background:transparent;font-size:.88rem;width:220px;}
+.page-header-bar{background:var(--bg-card,#fff);border-radius:18px;border:1px solid rgba(0,0,0,.05);box-shadow:0 2px 12px rgba(0,0,0,.03);}
+.modal-tranche-row{border:1px solid rgba(0,0,0,.07);border-radius:14px;background:#fafbff;padding:1rem;margin-bottom:.75rem;position:relative;border-left:4px solid var(--bs-primary);transition:box-shadow .2s;}
+.modal-tranche-row:hover{box-shadow:0 4px 16px rgba(0,0,0,.06);}
+.mi{border-radius:10px;border:1.5px solid rgba(0,0,0,.1);padding:.55rem .85rem;transition:all .2s;font-size:.87rem;}
+.mi:focus{border-color:var(--bs-primary);box-shadow:0 0 0 3px rgba(79,70,229,.12);}
+.preset-chip{font-size:.7rem;font-weight:700;padding:.3rem .7rem;border-radius:50px;border:1px solid rgba(79,70,229,.2);background:rgba(79,70,229,.04);color:var(--bs-primary);cursor:pointer;transition:all .2s;}
+.preset-chip:hover{background:var(--bs-primary);color:#fff;}
+.budget-bar-wrap{height:8px;border-radius:50px;background:rgba(0,0,0,.06);overflow:hidden;}
+.budget-bar-fill{height:100%;border-radius:50px;transition:width .35s ease,background .2s;}
+[data-theme="dark"] .config-card{background:rgba(30,41,59,.35);border-color:rgba(255,255,255,.06);}
+[data-theme="dark"] .search-pill{background:rgba(30,41,59,.5);border-color:rgba(255,255,255,.08);}
+[data-theme="dark"] .search-pill input{color:#e2e8f0;}
+[data-theme="dark"] .modal-tranche-row{background:rgba(15,23,42,.4);border-color:rgba(255,255,255,.07);}
+[data-theme="dark"] .mi{background:rgba(15,23,42,.5)!important;border-color:rgba(255,255,255,.09)!important;color:#f1f5f9!important;}
+[data-theme="dark"] .page-header-bar{background:rgba(30,41,59,.4);border-color:rgba(255,255,255,.06);}
+@keyframes cfadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.cfg-animate{animation:cfadeIn .35s cubic-bezier(.16,1,.3,1) forwards;}
+@keyframes rowSlide{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+.row-anim{animation:rowSlide .25s cubic-bezier(.16,1,.3,1) forwards;}
+@keyframes rowFade{from{opacity:1}to{opacity:0;transform:scale(.9)}}
+.row-remove-anim{animation:rowFade .2s forwards;}
 </style>
-
-<div class="premium-container animate-fade-in container-fluid py-3 px-md-4">
-    <!-- Header -->
-    <div class="d-flex align-items-center justify-content-between mb-4">
-        <div>
-            <h2 class="fw-black text-main-theme mb-0 fs-4" style="letter-spacing: -0.5px;"><?= __('tranches_title') ?></h2>
-            <p class="text-muted-theme small mb-0"><?= __('tranches_subtitle') ?></p>
+<div class="page-wrap animate-fade-in container-fluid py-3 px-md-4">
+    <div class="page-header-bar d-flex align-items-center justify-content-between p-3 p-md-4 mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center justify-content-center rounded-3 bg-primary bg-opacity-10 text-primary flex-shrink-0" style="width:44px;height:44px;">
+                <i class="bi bi-layers-half fs-5"></i>
+            </div>
+            <div>
+                <h1 class="fw-black text-main-theme mb-0 fs-5" style="letter-spacing:-.4px;"><?= __('tranches_title') ?></h1>
+                <p class="text-muted-theme small mb-0"><?= __('tranches_subtitle') ?></p>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <div class="search-pill d-none d-sm-flex">
+                <i class="bi bi-search text-muted ms-1" style="font-size:.85rem;"></i>
+                <input type="text" id="search-cfg" placeholder="Rechercher...">
+            </div>
+            <button type="button" class="btn-add-new" id="btn-open-new" title="Nouvelle configuration"
+                data-bs-toggle="modal" data-bs-target="#modal-edit-config">
+                <i class="bi bi-plus-lg fs-5"></i>
+            </button>
         </div>
     </div>
 
-    <!-- Main Content Row -->
-    <div class="row g-4">
-        <!-- Configuration Form Column (Left) -->
-        <div class="col-lg-6">
-            <div class="glass-card p-4">
-                <h5 class="fw-bold text-main-theme mb-4">
-                    <i class="bi bi-sliders text-primary me-2"></i><?= __('config_editor') ?>
-                </h5>
-                <form action="/school_fees/tranches" method="POST" id="tranche-config-form">
-                    <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
-
-                    <!-- Cible Type -->
-                    <div class="mb-4">
-                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-2" style="letter-spacing: 0.5px;"><?= __('application_level') ?></label>
-                        <select name="target_type" id="target_type" class="form-select premium-input" required>
-                            <option value="" disabled selected><?= __('choose_level') ?></option>
-                            <option value="class"><?= __('by_class') ?></option>
-                            <option value="cycle"><?= __('by_cycle') ?></option>
-                            <option value="teaching_type"><?= __('by_teaching_type') ?></option>
-                        </select>
-                    </div>
-
-                    <!-- Target Element Selects -->
-                    <div class="mb-4 d-none" id="div-class-select">
-                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-2" style="letter-spacing: 0.5px;"><?= __('select_class_editor') ?></label>
-                        <select name="target_id" id="select-class" class="form-select premium-input">
-                            <option value="" disabled selected><?= __('choose_class_placeholder') ?></option>
-                            <?php foreach ($classes as $c): ?>
-                                <option value="<?= $c['id'] ?>"><?= h($c['nom']) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="mb-4 d-none" id="div-cycle-select">
-                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-2" style="letter-spacing: 0.5px;"><?= __('select_cycle_editor') ?></label>
-                        <select name="target_id" id="select-cycle" class="form-select premium-input">
-                            <option value="" disabled selected><?= __('choose_cycle_placeholder') ?></option>
-                            <?php foreach ($cycles as $cy): ?>
-                                <option value="<?= $cy['id'] ?>"><?= h($cy['nom']) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="mb-4 d-none" id="div-teaching-type-select">
-                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-2" style="letter-spacing: 0.5px;"><?= __('select_teaching_type_editor') ?></label>
-                        <select name="target_id" id="select-teaching-type" class="form-select premium-input">
-                            <option value="" disabled selected><?= __('choose_type_placeholder') ?></option>
-                            <?php foreach ($teachingTypes as $tt): ?>
-                                <option value="<?= $tt['id'] ?>"><?= h($tt['nom']) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <!-- Target Info & Balance Status Box -->
-                    <div id="target-status-banner" class="d-none target-status-box p-3 mb-4 animate-slide-in">
-                        <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2 border-primary border-opacity-10">
-                            <span class="small fw-bold text-uppercase text-muted-theme" style="letter-spacing: 0.5px;"><?= __('distribution_state') ?></span>
-                            <span id="inheritance-badge" class="badge">Configuration</span>
-                        </div>
-                        <div class="row g-2 text-center mb-3">
-                            <div class="col-6 border-end border-primary border-opacity-10">
-                                <div class="extra-small text-muted text-uppercase mb-1" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;"><?= __('expected_tuition') ?></div>
-                                <div class="fs-5 fw-bold text-primary" id="tuition-amount-display">0 FCFA</div>
-                            </div>
-                            <div class="col-6">
-                                <div class="extra-small text-muted text-uppercase mb-1" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;"><?= __('total_allocated') ?></div>
-                                <div class="fs-5 fw-bold text-dark" id="total-tranches-display">0 FCFA</div>
-                            </div>
-                        </div>
-
-                        <!-- Sleek progress bar -->
-                        <div class="px-1 mb-2">
-                            <div class="progress" style="height: 8px; border-radius: 50px; background-color: rgba(0,0,0,0.06);">
-                                <div id="allocation-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 0%; border-radius: 50px;"></div>
-                            </div>
-                        </div>
-
-                        <div id="balance-status-alert" class="small p-2.5 rounded-3 text-center fw-semibold mt-3">
-                            <!-- Injected Message -->
-                        </div>
-                    </div>
-
-                    <!-- Tranche Definitions Container -->
-                    <div class="border-top pt-4 mt-3">
-                        <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
-                            <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-0" style="letter-spacing: 0.5px;"><?= __('definition_tranches') ?></label>
-                            
-                            <!-- Quick tools bar -->
-                            <div class="d-flex gap-1.5" id="quick-distribution-toolbar" style="display: none !important;">
-                                <button type="button" class="btn btn-xs btn-outline-primary" id="btn-quick-split" title="<?= __('equidistribute_tooltip') ?>">
-                                    <i class="bi bi-distribute-horizontal me-1"></i><?= __('equidistribute') ?>
-                                </button>
-                                <button type="button" class="btn btn-xs btn-outline-secondary" id="btn-quick-mono" title="<?= __('monotranche_tooltip') ?>">
-                                    <i class="bi bi-file-earmark-fill me-1"></i><?= __('monotranche') ?>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div id="tranches-rows-container" class="d-flex flex-column gap-2 mb-3">
-                            <div class="text-center py-5 text-muted small bg-light bg-opacity-40 rounded-4 border border-dashed">
-                                <i class="bi bi-shield-lock fs-2 d-block mb-2 text-secondary opacity-50"></i>
-                                <?= __('editor_activation_help') ?>
-                            </div>
-                        </div>
-
-                        <div class="d-flex justify-content-between align-items-center mt-3 border-top pt-3">
-                            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1.5 fw-bold" id="btn-add-row" style="font-size: 0.75rem; display: none;">
-                                <i class="bi bi-plus-circle-fill me-1"></i> <?= __('add_tranche') ?>
-                            </button>
-                            <div class="text-end text-muted extra-small" style="font-weight: 700; font-size: 0.8rem;">
-                                <?= __('total_tuition_label') ?> <span id="total-scolarite-sum" class="text-primary fw-extrabold">0</span> FCFA
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Validation button -->
-                    <div class="mt-4 pt-3 border-top text-end">
-                        <button type="submit" class="btn btn-primary rounded-pill px-5 py-2.5 fw-bold shadow-sm" id="btn-submit-form" disabled>
-                            <i class="bi bi-check-circle-fill me-2"></i><?= __('save_config') ?>
-                        </button>
-                    </div>
-                </form>
-            </div>
+    <?php if ($flash = \App\Core\Session::getFlash('success')): ?>
+        <div class="alert alert-success alert-dismissible fade show rounded-3 mb-4" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i><?= h($flash) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
+    <?php endif; ?>
+    <?php if ($flash = \App\Core\Session::getFlash('error')): ?>
+        <div class="alert alert-danger alert-dismissible fade show rounded-3 mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i><?= h($flash) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <?php endif; ?>
 
-        <!-- Configurations List Column (Right) -->
-        <div class="col-lg-6">
-            <div class="glass-card p-4 h-100 d-flex flex-column">
-                <!-- Card Header with Search -->
-                <div class="d-flex align-items-center justify-content-between mb-4 gap-3 flex-wrap">
-                    <h5 class="fw-bold text-main-theme mb-0">
-                        <i class="bi bi-list-task text-primary me-2"></i><?= __('active_configs') ?>
-                    </h5>
-                    <div class="search-box position-relative" style="min-width: 250px;">
-                        <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
-                        <input type="text" id="search-config" class="form-control form-control-sm ps-5 rounded-pill premium-input" placeholder="<?= __('search_class_cycle') ?>">
-                    </div>
+    <div id="configs-grid" class="row g-3">
+        <?php
+        $groupedInstallments = [];
+        foreach ($installments as $inst) {
+            $key = ''; $label = ''; $type = ''; $tClass = ''; $rawType = '';
+            if ($inst['class_id']) {
+                $key = 'class_' . $inst['class_id'];
+                $label = __('class') . ' : ' . $inst['class_name'];
+                $type = 'primary'; $tClass = 'type-class'; $rawType = 'class';
+            } elseif ($inst['cycle_id']) {
+                $key = 'cycle_' . $inst['cycle_id'];
+                $label = __('cycle') . ' : ' . $inst['cycle_name'];
+                $type = 'info'; $tClass = 'type-cycle'; $rawType = 'cycle';
+            } elseif ($inst['teaching_type_id']) {
+                $key = 'teaching_type_' . $inst['teaching_type_id'];
+                $label = __('teaching_type') . ' : ' . $inst['teaching_type_name'];
+                $type = 'warning'; $tClass = 'type-teaching_type'; $rawType = 'teaching_type';
+            }
+            if ($key === '') continue;
+            if (!isset($groupedInstallments[$key])) {
+                $groupedInstallments[$key] = [
+                    'label' => $label, 'type' => $type, 'target_type_class' => $tClass,
+                    'raw_type' => $rawType,
+                    'target_type' => $inst['class_id'] ? 'class' : ($inst['cycle_id'] ? 'cycle' : 'teaching_type'),
+                    'target_id' => $inst['class_id'] ?: ($inst['cycle_id'] ?: $inst['teaching_type_id']),
+                    'total_amount' => 0.0, 'items' => []
+                ];
+            }
+            $groupedInstallments[$key]['total_amount'] += (float)$inst['amount'];
+            $groupedInstallments[$key]['items'][] = $inst;
+        }
+        ?>
+
+        <?php if (empty($groupedInstallments)): ?>
+            <div class="col-12">
+                <div class="text-center py-5 config-card p-5">
+                    <i class="bi bi-layers fs-1 text-muted opacity-25 d-block mb-3"></i>
+                    <h5 class="text-muted fw-semibold"><?= __('no_config_yet') ?></h5>
+                    <p class="text-muted small mb-4"><?= __('use_editor_to_start') ?></p>
+                    <button type="button" class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#modal-edit-config" id="btn-empty-new">
+                        <i class="bi bi-plus-circle-fill me-2"></i>Creer une configuration
+                    </button>
                 </div>
-
-                <!-- Accordion Timeline list -->
-                <div class="configs-scroll-container flex-grow-1" id="active-configs-list">
-                    <?php
-                    // Group installments
-                    $groupedInstallments = [];
-                    foreach ($installments as $inst) {
-                        $key = '';
-                        $label = '';
-                        $type = '';
-                        if ($inst['class_id']) {
-                            $key = 'class_' . $inst['class_id'];
-                            $label = __('class') . ' : ' . $inst['class_name'];
-                            $type = 'primary';
-                        } elseif ($inst['cycle_id']) {
-                            $key = 'cycle_' . $inst['cycle_id'];
-                            $label = __('cycle') . ' : ' . $inst['cycle_name'];
-                            $type = 'info';
-                        } elseif ($inst['teaching_type_id']) {
-                            $key = 'teaching_type_' . $inst['teaching_type_id'];
-                            $label = __('teaching_type') . ' : ' . $inst['teaching_type_name'];
-                            $type = 'warning';
-                        }
-                        
-                        if (!isset($groupedInstallments[$key])) {
-                            $groupedInstallments[$key] = [
-                                'label' => $label,
-                                'type' => $type,
-                                'target_type' => $inst['class_id'] ? 'class' : ($inst['cycle_id'] ? 'cycle' : 'teaching_type'),
-                                'target_id' => $inst['class_id'] ?: ($inst['cycle_id'] ?: $inst['teaching_type_id']),
-                                'total_amount' => 0.0,
-                                'items' => []
-                            ];
-                        }
-                        
-                        $groupedInstallments[$key]['total_amount'] += (float)$inst['amount'];
-                        $groupedInstallments[$key]['items'][] = $inst;
-                    }
-                    ?>
-
-                    <?php if (empty($groupedInstallments)): ?>
-                        <div class="text-center py-5 text-muted glass-card border border-dashed rounded-4 bg-light bg-opacity-25">
-                            <i class="bi bi-calendar-x fs-1 text-secondary opacity-50 mb-3 d-block"></i>
-                            <p class="mb-0 fw-medium"><?= __('no_config_yet') ?></p>
-                            <small class="text-muted text-uppercase extra-small font-weight-bold"><?= __('use_editor_to_start') ?></small>
+            </div>
+        <?php else: ?>
+            <?php foreach ($groupedInstallments as $group): ?>
+                <div class="col-md-6 col-xl-4 cfg-animate config-grid-item">
+                    <div class="config-card <?= $group['target_type_class'] ?> p-4 h-100">
+                        <div class="d-flex align-items-start justify-content-between mb-3">
+                            <div class="flex-grow-1 me-2">
+                                <span class="badge badge-type bg-<?= $group['type'] ?> bg-opacity-10 text-<?= $group['type'] ?> border border-<?= $group['type'] ?> border-opacity-20 mb-2">
+                                    <?= h($group['label']) ?>
+                                </span>
+                                <div class="fw-black fs-5 text-main-theme">
+                                    <?= number_format($group['total_amount'], 0, '.', ' ') ?>
+                                    <span class="text-muted fw-normal" style="font-size:.75rem;">FCFA</span>
+                                </div>
+                            </div>
+                            <button type="button"
+                                class="btn-edit-config flex-shrink-0"
+                                data-type="<?= $group['raw_type'] ?>"
+                                data-id="<?= $group['target_id'] ?>"
+                                data-label="<?= h($group['label']) ?>"
+                                title="Modifier cette configuration"
+                                onclick="openEditModal(this)">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>
                         </div>
-                    <?php else: ?>
-                        <?php foreach ($groupedInstallments as $key => $group): ?>
-                            <div class="active-config-card mb-3 p-3 animate-slide-in border border-opacity-50">
-                                <div class="d-flex align-items-center justify-content-between mb-3">
-                                    <span class="badge badge-target bg-<?= $group['type'] ?> bg-opacity-10 text-<?= $group['type'] ?> border border-<?= $group['type'] ?> border-opacity-20 px-3 py-1.5 rounded-pill">
-                                        <?= h($group['label']) ?>
-                                    </span>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="fw-bold text-dark fs-6"><?= number_format($group['total_amount'], 0, '.', ' ') ?> <span class="small text-muted" style="font-size:0.7rem;">FCFA</span></span>
-                                        <button type="button" class="btn btn-sm btn-outline-primary border-0 rounded-circle btn-load-target" data-type="<?= $group['target_type'] ?>" data-id="<?= $group['target_id'] ?>" title="Charger dans l'éditeur pour modifier">
-                                            <i class="bi bi-pencil-square fs-5"></i>
-                                        </button>
+                        <div class="timeline-line mt-3">
+                            <?php foreach ($group['items'] as $item): ?>
+                                <div class="mb-2 position-relative">
+                                    <div class="timeline-dot"></div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="fw-semibold text-main-theme small"><?= h($item['name']) ?></span>
+                                        <div class="text-end">
+                                            <span class="fw-bold text-primary small me-2"><?= number_format($item['amount'], 0, '.', ' ') ?> FCFA</span>
+                                            <span class="text-muted" style="font-size:.7rem;"><i class="bi bi-calendar2 me-1"></i><?= date('d/m/Y', strtotime($item['deadline_date'])) ?></span>
+                                        </div>
                                     </div>
                                 </div>
-                                <!-- Timeline Detail -->
-                                <div class="timeline-container ps-3 ms-2 position-relative" style="border-left: 2px solid rgba(79, 70, 229, 0.08);">
-                                    <?php foreach ($group['items'] as $item): ?>
-                                        <div class="timeline-item mb-2 position-relative">
-                                            <div class="timeline-dot position-absolute" style="left: -21px; top: 6px;"></div>
-                                            <div class="d-flex justify-content-between align-items-center small">
-                                                <span class="fw-semibold text-dark"><?= h($item['name']) ?></span>
-                                                <div class="text-end">
-                                                    <span class="fw-bold text-primary me-2"><?= number_format($item['amount'], 0, '.', ' ') ?> FCFA</span>
-                                                    <span class="text-muted" style="font-size: 0.72rem;"><i class="bi bi-calendar-event me-1"></i><?= date('d/m/Y', strtotime($item['deadline_date'])) ?></span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+                            <?php endforeach; ?>
+                        </div>
+                        <div class="mt-3 pt-2 border-top d-flex align-items-center justify-content-between" style="border-color:rgba(0,0,0,.05)!important;">
+                            <span class="text-muted extra-small fw-semibold">
+                                <i class="bi bi-stack me-1"></i><?= count($group['items']) ?> tranche<?= count($group['items']) > 1 ? 's' : '' ?>
+                            </span>
+                            <span class="extra-small text-muted fw-medium"><?= $group['raw_type'] === 'class' ? 'Classe' : ($group['raw_type'] === 'cycle' ? 'Cycle' : 'Type enseign.') ?></span>
+                        </div>
+                    </div>
                 </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
+    </div>
+</div>
+<!-- MODAL EDITION -->
+<div class="modal fade" id="modal-edit-config" tabindex="-1" aria-labelledby="modal-edit-label" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:20px;overflow:hidden;">
+            <div class="modal-header border-0 pb-0 pt-4 px-4" style="background:linear-gradient(135deg,rgba(79,70,229,.06),rgba(79,70,229,.02));">
+                <div>
+                    <h5 class="modal-title fw-black text-main-theme mb-1 fs-5" id="modal-edit-label">
+                        <i class="bi bi-sliders2 text-primary me-2"></i>Configuration des tranches
+                    </h5>
+                    <p class="text-muted small mb-0" id="modal-edit-subtitle">Definissez les tranches de paiement</p>
+                </div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Fermer"></button>
             </div>
+            <form id="modal-config-form" action="/school_fees/tranches" method="POST" novalidate>
+                <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
+                <input type="hidden" name="target_type" id="modal-target-type" value="">
+                <input type="hidden" name="target_id"   id="modal-target-id"   value="">
+                <div class="modal-body px-4 py-3">
+                    <!-- Target selector (visible for new config) -->
+                    <div id="modal-target-selector" class="mb-4 p-3 rounded-3" style="background:rgba(79,70,229,.04);border:1px solid rgba(79,70,229,.1);">
+                        <label class="form-label fw-bold text-muted-theme extra-small text-uppercase mb-2" style="letter-spacing:.5px;">Niveau d'application</label>
+                        <select id="modal-level-select" class="form-select mi mb-3" onchange="handleModalLevelChange(this.value)">
+                            <option value="" disabled selected>Choisir un niveau...</option>
+                            <option value="class">Par Classe</option>
+                            <option value="cycle">Par Cycle</option>
+                            <option value="teaching_type">Par Type d'Enseignement</option>
+                        </select>
+                        <div id="modal-sub-class" class="d-none">
+                            <label class="form-label fw-bold text-muted-theme extra-small text-uppercase mb-2" style="letter-spacing:.5px;">Classe</label>
+                            <select id="modal-sel-class" class="form-select mi" onchange="handleModalTargetChange(this.value)">
+                                <option value="" disabled selected>Choisir une classe...</option>
+                                <?php foreach ($classes as $c): ?>
+                                    <option value="<?= $c['id'] ?>"><?= h($c['nom']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div id="modal-sub-cycle" class="d-none">
+                            <label class="form-label fw-bold text-muted-theme extra-small text-uppercase mb-2" style="letter-spacing:.5px;">Cycle</label>
+                            <select id="modal-sel-cycle" class="form-select mi" onchange="handleModalTargetChange(this.value)">
+                                <option value="" disabled selected>Choisir un cycle...</option>
+                                <?php foreach ($cycles as $cy): ?>
+                                    <option value="<?= $cy['id'] ?>"><?= h($cy['nom']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div id="modal-sub-type" class="d-none">
+                            <label class="form-label fw-bold text-muted-theme extra-small text-uppercase mb-2" style="letter-spacing:.5px;">Type d'Enseignement</label>
+                            <select id="modal-sel-type" class="form-select mi" onchange="handleModalTargetChange(this.value)">
+                                <option value="" disabled selected>Choisir un type...</option>
+                                <?php foreach ($teachingTypes as $tt): ?>
+                                    <option value="<?= $tt['id'] ?>"><?= h($tt['nom']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+                    <!-- Budget bar -->
+                    <div id="modal-budget-bar" class="mb-4 d-none">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <span class="small fw-semibold text-muted">Scolarite attendue : <strong id="modal-tuition-lbl" class="text-primary">-</strong></span>
+                            <span class="small fw-semibold" id="modal-sum-lbl">Affecte : <strong class="text-dark">0 FCFA</strong></span>
+                        </div>
+                        <div class="budget-bar-wrap">
+                            <div id="modal-budget-fill" class="budget-bar-fill bg-primary" style="width:0%"></div>
+                        </div>
+                        <div id="modal-budget-msg" class="mt-1 text-center extra-small fw-bold"></div>
+                    </div>
+                    <!-- Loader -->
+                    <div id="modal-loader" class="text-center py-4 d-none">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2 text-muted small">Chargement des tranches...</p>
+                    </div>
+                    <!-- Presets -->
+                    <div id="modal-presets" class="mb-3 d-none">
+                        <div class="d-flex flex-wrap gap-2 align-items-center">
+                            <span class="extra-small text-muted fw-bold me-1">Repartition rapide :</span>
+                            <button type="button" class="preset-chip" onclick="applyPreset([100])">100%</button>
+                            <button type="button" class="preset-chip" onclick="applyPreset([50,50])">50 / 50</button>
+                            <button type="button" class="preset-chip" onclick="applyPreset([60,40])">60 / 40</button>
+                            <button type="button" class="preset-chip" onclick="applyPreset([50,25,25])">50 / 25 / 25</button>
+                            <button type="button" class="preset-chip" onclick="applyPreset([40,30,30])">40 / 30 / 30</button>
+                            <button type="button" class="preset-chip" onclick="splitEqual()"><i class="bi bi-distribute-horizontal me-1"></i>Equi</button>
+                        </div>
+                    </div>
+                    <!-- Tranche rows -->
+                    <div id="modal-rows-container" class="mb-3"></div>
+                    <!-- Add row -->
+                    <button type="button" id="modal-btn-add" class="btn btn-sm btn-outline-primary rounded-pill px-3 d-none" onclick="modalAddRow('', 0, '', null)">
+                        <i class="bi bi-plus-circle-fill me-1"></i>Ajouter une tranche
+                    </button>
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" id="modal-btn-submit" class="btn btn-primary rounded-pill px-5 fw-bold shadow-sm" disabled>
+                        <i class="bi bi-check-circle-fill me-2"></i>Enregistrer
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
+<div id="toast-container" class="toast-container position-fixed top-0 end-0 p-4" style="z-index:9999;"></div>
 <script>
+(function() {
+'use strict';
+var modalTuition = 0;
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function showToast(msg, type) {
+    var tc = document.getElementById('toast-container');
+    var el = document.createElement('div');
+    el.className = 'toast align-items-center text-white bg-' + type + ' border-0 shadow-lg';
+    el.setAttribute('role','alert'); el.setAttribute('aria-atomic','true');
+    var icon = type === 'success' ? 'check-circle-fill' : (type === 'warning' ? 'exclamation-circle-fill' : 'exclamation-triangle-fill');
+    el.innerHTML = '<div class="d-flex"><div class="toast-body fw-semibold"><i class="bi bi-'+icon+' me-2"></i>' + esc(msg) + '</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>';
+    tc.appendChild(el);
+    if (typeof bootstrap !== 'undefined') { var t = new bootstrap.Toast(el,{delay:4500}); t.show(); }
+    else { setTimeout(function(){ el.remove(); }, 4500); }
+    el.addEventListener('hidden.bs.toast', function(){ el.remove(); });
+}
+
+window.openEditModal = function(btn) {
+    var type = btn.dataset.type, id = btn.dataset.id, label = btn.dataset.label;
+    resetModalRows();
+    document.getElementById('modal-target-selector').classList.add('d-none');
+    document.getElementById('modal-edit-subtitle').textContent = label;
+    document.getElementById('modal-target-type').value = type;
+    document.getElementById('modal-target-id').value   = id;
+    document.getElementById('modal-btn-submit').disabled = true;
+    var modal = new bootstrap.Modal(document.getElementById('modal-edit-config'));
+    modal.show();
+    loadTargetConfig(type, id);
+};
+
 document.addEventListener('DOMContentLoaded', function() {
-    const targetTypeSelect = document.getElementById('target_type');
-    const divClass = document.getElementById('div-class-select');
-    const divCycle = document.getElementById('div-cycle-select');
-    const divTeachingType = document.getElementById('div-teaching-type-select');
-
-    const selectClass = document.getElementById('select-class');
-    const selectCycle = document.getElementById('select-cycle');
-    const selectTeachingType = document.getElementById('select-teaching-type');
-    
-    const statusBanner = document.getElementById('target-status-banner');
-    const tuitionAmountDisplay = document.getElementById('tuition-amount-display');
-    const totalTranchesDisplay = document.getElementById('total-tranches-display');
-    const progressBar = document.getElementById('allocation-progress-bar');
-    const balanceStatusAlert = document.getElementById('balance-status-alert');
-    const inheritanceBadge = document.getElementById('inheritance-badge');
-    const tranchesRowsContainer = document.getElementById('tranches-rows-container');
-    const btnAdd = document.getElementById('btn-add-row');
-    const btnSubmit = document.getElementById('btn-submit-form');
-    const form = document.getElementById('tranche-config-form');
-    const quickToolbar = document.getElementById('quick-distribution-toolbar');
-    
-    const btnQuickSplit = document.getElementById('btn-quick-split');
-    const btnQuickMono = document.getElementById('btn-quick-mono');
-
-    let currentTargetTuition = 0;
-
-    // Toggle target inputs
-    targetTypeSelect.addEventListener('change', function() {
-        divClass.classList.add('d-none');
-        divCycle.classList.add('d-none');
-        divTeachingType.classList.add('d-none');
-        selectClass.required = false;
-        selectCycle.required = false;
-        selectTeachingType.required = false;
-        
-        selectClass.value = '';
-        selectCycle.value = '';
-        selectTeachingType.value = '';
-
-        resetFormState();
-
-        if (this.value === 'class') {
-            divClass.classList.remove('d-none');
-            selectClass.required = true;
-            selectClass.name = 'target_id';
-            selectCycle.name = '';
-            selectTeachingType.name = '';
-        } else if (this.value === 'cycle') {
-            divCycle.classList.remove('d-none');
-            selectCycle.required = true;
-            selectCycle.name = 'target_id';
-            selectClass.name = '';
-            selectTeachingType.name = '';
-        } else if (this.value === 'teaching_type') {
-            divTeachingType.classList.remove('d-none');
-            selectTeachingType.required = true;
-            selectTeachingType.name = 'target_id';
-            selectClass.name = '';
-            selectCycle.name = '';
-        }
-    });
-
-    // Handle change of specific targets to load existing tranches
-    [selectClass, selectCycle, selectTeachingType].forEach(select => {
-        select.addEventListener('change', function() {
-            const targetType = targetTypeSelect.value;
-            const targetId = this.value;
-            if (targetType && targetId) {
-                loadTargetConfig(targetType, targetId);
-            } else {
-                resetFormState();
-            }
-        });
-    });
-
-    function resetFormState() {
-        statusBanner.classList.add('d-none');
-        tranchesRowsContainer.innerHTML = `
-            <div class="text-center py-5 text-muted small bg-light bg-opacity-40 rounded-4 border border-dashed">
-                <i class="bi bi-shield-lock fs-2 d-block mb-2 text-secondary opacity-50"></i>
-                Veuillez sélectionner un niveau d'application et une cible ci-dessus pour activer l'éditeur.
-            </div>
-        `;
-        currentTargetTuition = 0;
-        btnSubmit.disabled = true;
-        btnAdd.style.display = 'none';
-        quickToolbar.setAttribute('style', 'display: none !important;');
-        calculateSum();
+    var btnNew = document.getElementById('btn-open-new');
+    var btnEmptyNew = document.getElementById('btn-empty-new');
+    function openNewModal() {
+        resetModalFull();
+        document.getElementById('modal-target-selector').classList.remove('d-none');
+        document.getElementById('modal-edit-subtitle').textContent = 'Definissez un niveau et une cible';
+        document.getElementById('modal-target-type').value = '';
+        document.getElementById('modal-target-id').value   = '';
+        document.getElementById('modal-btn-submit').disabled = true;
+        modalTuition = 0;
     }
+    if (btnNew) btnNew.addEventListener('click', openNewModal);
+    if (btnEmptyNew) btnEmptyNew.addEventListener('click', openNewModal);
 
-    function loadTargetConfig(targetType, targetId) {
-        tranchesRowsContainer.innerHTML = `
-            <div class="text-center py-5 text-muted w-100 animate-slide-in" id="loading-spinner">
-                <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
-                <?= __('loading_config') ?>
-            </div>
-        `;
-        statusBanner.classList.add('d-none');
-        btnSubmit.disabled = true;
-        btnAdd.style.display = 'none';
-        quickToolbar.setAttribute('style', 'display: none !important;');
-
-        const fetchUrl = new URL(window.location.href);
-        fetchUrl.searchParams.set('ajax', '1');
-        fetchUrl.searchParams.set('target_type', targetType);
-        fetchUrl.searchParams.set('target_id', targetId);
-
-        fetch(fetchUrl.toString())
-            .then(res => res.json())
-            .then(data => {
-                tranchesRowsContainer.innerHTML = '';
-                
-                currentTargetTuition = parseFloat(data.tuition_amount) || 0;
-                btnSubmit.disabled = false;
-                btnAdd.style.display = 'inline-block';
-                quickToolbar.setAttribute('style', 'display: flex !important;');
-                
-                inheritanceBadge.textContent = data.inherited_from;
-                if (data.inherited) {
-                    inheritanceBadge.className = 'badge bg-warning text-dark px-2.5 py-1.5 rounded-pill fw-bold';
-                } else {
-                    inheritanceBadge.className = 'badge bg-success px-2.5 py-1.5 rounded-pill fw-bold';
-                }
-
-                statusBanner.classList.remove('d-none');
-                tuitionAmountDisplay.textContent = currentTargetTuition.toLocaleString('fr-FR') + ' FCFA';
-
-                if (data.installments && data.installments.length > 0) {
-                    data.installments.forEach((inst, index) => {
-                        createTrancheRow(inst.name, parseFloat(inst.amount), inst.deadline_date, index + 1);
-                    });
-                } else {
-                    const part = currentTargetTuition > 0 ? Math.round(currentTargetTuition / 3) : 0;
-                    createTrancheRow('Tranche 1', part, '', 1);
-                    createTrancheRow('Tranche 2', part, '', 2);
-                    createTrancheRow('Tranche 3', currentTargetTuition - (part * 2) > 0 ? currentTargetTuition - (part * 2) : 0, '', 3);
-                }
-                
-                calculateSum();
-            })
-            .catch(err => {
-                console.error(err);
-                tranchesRowsContainer.innerHTML = `
-                    <div class="alert alert-danger small m-2">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i> <?= __('error_loading_data') ?>
-                    </div>
-                `;
-            });
-    }
-
-    function createTrancheRow(name = '', amount = 0, deadline = '', orderNum = null) {
-        const num = orderNum || (tranchesRowsContainer.querySelectorAll('.tranche-row').length + 1);
-        const row = document.createElement('div');
-        row.className = 'tranche-row p-3 shadow-sm bg-light bg-opacity-50 animate-slide-in';
-        row.style.borderLeft = '4px solid var(--bs-primary)';
-        
-        if (!deadline) {
-            deadline = new Date().toISOString().slice(0, 10);
-        }
-
-        row.innerHTML = `
-            <div class="row g-2 align-items-end">
-                <div class="col-md-5">
-                    <label class="form-label text-muted-theme fw-bold extra-small mb-1 text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.3px;">
-                        <i class="bi bi-tag-fill me-1 text-primary"></i><?= __('tranche_name') ?>
-                    </label>
-                    <input type="text" name="tranche_name[]" class="form-control form-control-sm premium-input" value="${name || 'Tranche ' + num}" required>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label text-muted-theme fw-bold extra-small mb-1 text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.3px;">
-                        <i class="bi bi-cash-stack me-1 text-success"></i><?= __('tranche_amount') ?>
-                    </label>
-                    <input type="number" name="tranche_amount[]" min="0" class="form-control form-control-sm premium-input text-end fw-bold input-amount" value="${amount}" required>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label text-muted-theme fw-bold extra-small mb-1 text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.3px;">
-                        <i class="bi bi-calendar-check-fill me-1 text-info"></i><?= __('tranche_deadline') ?>
-                    </label>
-                    <input type="date" name="tranche_deadline[]" class="form-control form-control-sm premium-input input-deadline" value="${deadline}" required>
-                </div>
-                <div class="col-md-1 text-end">
-                    <button type="button" class="btn btn-sm btn-outline-danger border-0 p-2 btn-remove-row rounded-circle" title="<?= __('delete_tranche_tooltip') ?>">
-                        <i class="bi bi-trash-fill"></i>
-                    </button>
-                </div>
-            </div>
-        `;
-
-        row.querySelector('.btn-remove-row').addEventListener('click', function() {
-            row.style.transform = 'scale(0.95)';
-            row.style.opacity = '0';
-            setTimeout(() => {
-                row.remove();
-                reindexRows();
-                calculateSum();
-            }, 200);
-        });
-
-        row.querySelector('.input-amount').addEventListener('input', calculateSum);
-        row.querySelector('.input-deadline').addEventListener('change', validateDates);
-
-        tranchesRowsContainer.appendChild(row);
-        calculateSum();
-    }
-
-    btnAdd.addEventListener('click', function() {
-        createTrancheRow('', 0, '', null);
-    });
-
-    function reindexRows() {
-        tranchesRowsContainer.querySelectorAll('.tranche-row').forEach((row, idx) => {
-            const num = idx + 1;
-            const nameInput = row.querySelector('input[name="tranche_name[]"]');
-            if (nameInput && nameInput.value.startsWith('Tranche ')) {
-                nameInput.value = 'Tranche ' + num;
-            }
-        });
-    }
-
-    function calculateSum() {
-        let sum = 0;
-        tranchesRowsContainer.querySelectorAll('.input-amount').forEach(inp => {
-            sum += parseFloat(inp.value) || 0;
-        });
-        
-        totalTranchesDisplay.textContent = sum.toLocaleString('fr-FR') + ' FCFA';
-        document.getElementById('total-scolarite-sum').textContent = sum.toLocaleString('fr-FR');
-
-        // Progress bar logic
-        if (currentTargetTuition > 0) {
-            const pct = Math.min((sum / currentTargetTuition) * 100, 100);
-            progressBar.style.width = pct + '%';
-            if (sum === currentTargetTuition) {
-                progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-success';
-            } else if (sum > currentTargetTuition) {
-                progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-danger';
-            } else {
-                progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-primary';
-            }
-        } else {
-            progressBar.style.width = '0%';
-        }
-
-        // Check balance
-        if (targetTypeSelect.value && !statusBanner.classList.contains('d-none')) {
-            balanceStatusAlert.className = 'small p-2.5 rounded-3 text-center fw-semibold';
-            if (currentTargetTuition === 0) {
-                balanceStatusAlert.classList.add('status-alert-warning');
-                balanceStatusAlert.innerHTML = '<i class="bi bi-info-circle-fill me-1"></i> <?= __('no_tuition_configured_target') ?>';
-            } else if (sum === currentTargetTuition) {
-                balanceStatusAlert.classList.add('status-alert-success');
-                balanceStatusAlert.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> <?= __('balanced_distribution_100') ?>';
-            } else {
-                const diff = currentTargetTuition - sum;
-                balanceStatusAlert.classList.add('status-alert-danger');
-                if (diff > 0) {
-                    balanceStatusAlert.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-1"></i> <?= __('remaining_to_distribute') ?> <strong>+${diff.toLocaleString('fr-FR')} FCFA</strong>`;
-                } else {
-                    balanceStatusAlert.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-1"></i> <?= __('total_exceeds_tuition') ?> <strong>${Math.abs(diff).toLocaleString('fr-FR')} FCFA</strong>`;
-                }
-            }
-        }
-        
-        validateDates();
-    }
-
-    function validateDates() {
-        let hasError = false;
-        let lastDateVal = null;
-        
-        tranchesRowsContainer.querySelectorAll('.tranche-row').forEach((row, idx) => {
-            const dateInput = row.querySelector('.input-deadline');
-            const errorDivId = 'date-error-' + idx;
-            let errorDiv = row.querySelector('#' + errorDivId);
-            
-            if (errorDiv) errorDiv.remove();
-            
-            if (!dateInput || !dateInput.value) return;
-            
-            const currentDateVal = new Date(dateInput.value);
-            
-            if (lastDateVal && currentDateVal < lastDateVal) {
-                hasError = true;
-                const err = document.createElement('div');
-                err.id = errorDivId;
-                err.className = 'text-danger extra-small mt-1 fw-bold';
-                err.style.fontSize = '0.7rem';
-                err.innerHTML = '<i class="bi bi-exclamation-circle"></i> <?= __('deadline_chronology_error') ?>';
-                dateInput.parentNode.appendChild(err);
-            }
-            
-            lastDateVal = currentDateVal;
-        });
-        
-        return !hasError;
-    }
-
-    // Quick Split & Mono Actions
-    btnQuickSplit.addEventListener('click', function() {
-        const rows = tranchesRowsContainer.querySelectorAll('.tranche-row');
-        if (rows.length === 0 || currentTargetTuition <= 0) return;
-        
-        const count = rows.length;
-        const part = Math.floor(currentTargetTuition / count);
-        const remainder = currentTargetTuition - (part * count);
-        
-        rows.forEach((row, idx) => {
-            const amtInput = row.querySelector('.input-amount');
-            if (amtInput) {
-                amtInput.value = idx === count - 1 ? (part + remainder) : part;
-            }
-        });
-        calculateSum();
-    });
-
-    btnQuickMono.addEventListener('click', function() {
-        tranchesRowsContainer.innerHTML = '';
-        createTrancheRow('Tranche Unique', currentTargetTuition, '', 1);
-        calculateSum();
-    });
-
-    // Form submission validation
-    form.addEventListener('submit', function(e) {
-        let sum = 0;
-        tranchesRowsContainer.querySelectorAll('.input-amount').forEach(inp => {
-            sum += parseFloat(inp.value) || 0;
-        });
-
-        if (!validateDates()) {
-            e.preventDefault();
-            alert(<?= json_encode(__('error_chronology_alert')) ?>);
-            return;
-        }
-
-        if (currentTargetTuition > 0 && sum !== currentTargetTuition) {
-            const diff = currentTargetTuition - sum;
-            const msg = <?= json_encode(__('warning_mismatch_alert')) ?>;
-            if (!confirm(msg)) {
-                e.preventDefault();
-            }
-        }
-    });
-
-    // Click on load target button in active list (Right side)
-    document.addEventListener('click', function(e) {
-        const loadBtn = e.target.closest('.btn-load-target');
-        if (loadBtn) {
-            e.preventDefault();
-            const targetType = loadBtn.dataset.type;
-            const targetId = loadBtn.dataset.id;
-            
-            // Set values and update UI directly
-            targetTypeSelect.value = targetType;
-            
-            divClass.classList.add('d-none');
-            divCycle.classList.add('d-none');
-            divTeachingType.classList.add('d-none');
-            selectClass.required = false;
-            selectCycle.required = false;
-            selectTeachingType.required = false;
-            selectClass.value = '';
-            selectCycle.value = '';
-            selectTeachingType.value = '';
-            
-            if (targetType === 'class') {
-                divClass.classList.remove('d-none');
-                selectClass.required = true;
-                selectClass.name = 'target_id';
-                selectClass.value = targetId;
-            } else if (targetType === 'cycle') {
-                divCycle.classList.remove('d-none');
-                selectCycle.required = true;
-                selectCycle.name = 'target_id';
-                selectCycle.value = targetId;
-            } else if (targetType === 'teaching_type') {
-                divTeachingType.classList.remove('d-none');
-                selectTeachingType.required = true;
-                selectTeachingType.name = 'target_id';
-                selectTeachingType.value = targetId;
-            }
-            
-            // Call the function directly
-            loadTargetConfig(targetType, targetId);
-            
-            // Smooth scroll to form editor
-            setTimeout(() => {
-                form.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 50);
-        }
-    });
-
-    // Client-side table filter
-    const searchInput = document.getElementById('search-config');
-    if (searchInput) {
-        searchInput.addEventListener('input', function() {
-            const query = this.value.toLowerCase().trim();
-            const cards = document.querySelectorAll('#active-configs-list .active-config-card');
-            cards.forEach(card => {
-                const text = card.textContent.toLowerCase();
-                if (text.includes(query)) {
-                    card.style.display = 'block';
-                } else {
-                    card.style.display = 'none';
-                }
+    var si = document.getElementById('search-cfg');
+    if (si) {
+        si.addEventListener('input', function() {
+            var q = this.value.toLowerCase().trim();
+            document.querySelectorAll('.config-grid-item').forEach(function(c) {
+                c.style.display = c.textContent.toLowerCase().includes(q) ? '' : 'none';
             });
         });
     }
+
+    document.getElementById('modal-config-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var tid  = document.getElementById('modal-target-id').value;
+        var ttyp = document.getElementById('modal-target-type').value;
+        if (!tid || !ttyp) { showToast('Veuillez selectionner une cible.', 'warning'); return; }
+        var rows = document.querySelectorAll('#modal-rows-container .modal-tranche-row');
+        if (!rows.length) { showToast('Ajoutez au moins une tranche.', 'warning'); return; }
+        var btnSub = document.getElementById('modal-btn-submit');
+        var oldHtml = btnSub.innerHTML;
+        btnSub.disabled = true;
+        btnSub.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Enregistrement...';
+        var fd = new FormData(document.getElementById('modal-config-form'));
+        fd.append('ajax', '1');
+        fetch('/school_fees/tranches', { method:'POST', body:fd, headers:{'X-Requested-With':'XMLHttpRequest'} })
+        .then(function(r){ return r.json(); })
+        .then(function(res) {
+            if (res.success) {
+                showToast(res.message || 'Configuration enregistree !', 'success');
+                var bsModal = bootstrap.Modal.getInstance(document.getElementById('modal-edit-config'));
+                if (bsModal) bsModal.hide();
+                reloadGrid();
+            } else { showToast(res.message || 'Une erreur est survenue.', 'danger'); }
+        })
+        .catch(function(err){ showToast('Erreur reseau : ' + err.message, 'danger'); })
+        .finally(function(){ btnSub.disabled=false; btnSub.innerHTML=oldHtml; });
+    });
 });
+
+window.handleModalLevelChange = function(level) {
+    ['modal-sub-class','modal-sub-cycle','modal-sub-type'].forEach(function(id){ document.getElementById(id).classList.add('d-none'); });
+    document.getElementById('modal-target-type').value = level;
+    document.getElementById('modal-target-id').value = '';
+    resetModalRows();
+    if (level==='class') document.getElementById('modal-sub-class').classList.remove('d-none');
+    else if (level==='cycle') document.getElementById('modal-sub-cycle').classList.remove('d-none');
+    else if (level==='teaching_type') document.getElementById('modal-sub-type').classList.remove('d-none');
+};
+
+window.handleModalTargetChange = function(id) {
+    if (!id) return;
+    document.getElementById('modal-target-id').value = id;
+    var level = document.getElementById('modal-target-type').value;
+    loadTargetConfig(level, id);
+};
+
+function loadTargetConfig(type, id) {
+    showModalLoader(true);
+    document.getElementById('modal-budget-bar').classList.add('d-none');
+    document.getElementById('modal-presets').classList.add('d-none');
+    document.getElementById('modal-btn-add').classList.add('d-none');
+    document.getElementById('modal-btn-submit').disabled = true;
+    resetModalRows();
+    var url = window.location.pathname + '?ajax=1&target_type=' + encodeURIComponent(type) + '&target_id=' + encodeURIComponent(id);
+    fetch(url, {headers:{'X-Requested-With':'XMLHttpRequest'}})
+    .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+    .then(function(d) {
+        showModalLoader(false);
+        modalTuition = parseFloat(d.tuition_amount) || 0;
+        document.getElementById('modal-budget-bar').classList.remove('d-none');
+        document.getElementById('modal-tuition-lbl').textContent = modalTuition > 0 ? modalTuition.toLocaleString('fr-FR') + ' FCFA' : '(non defini)';
+        document.getElementById('modal-presets').classList.remove('d-none');
+        document.getElementById('modal-btn-add').classList.remove('d-none');
+        document.getElementById('modal-btn-submit').disabled = false;
+        if (d.installments && d.installments.length > 0) {
+            d.installments.forEach(function(inst, i){ modalAddRow(inst.name, parseFloat(inst.amount), inst.deadline_date, i+1); });
+        } else {
+            if (modalTuition > 0) applyPreset([50,25,25]);
+            else modalAddRow('Tranche 1', 0, '', 1);
+        }
+        calcModalSum();
+    })
+    .catch(function(err){
+        showModalLoader(false);
+        document.getElementById('modal-rows-container').innerHTML = '<div class="alert alert-danger small"><i class="bi bi-exclamation-triangle-fill me-2"></i>Erreur : ' + esc(err.message) + '</div>';
+    });
+}
+
+window.modalAddRow = function(name, amount, deadline, num) {
+    num = num || (document.querySelectorAll('#modal-rows-container .modal-tranche-row').length + 1);
+    if (!deadline) { var dd = new Date(); dd.setDate(dd.getDate()+num*30); deadline = dd.toISOString().slice(0,10); }
+    var row = document.createElement('div');
+    row.className = 'modal-tranche-row row-anim';
+    row.innerHTML =
+        '<div class="d-flex align-items-center gap-2 mb-2">' +
+        '<span class="badge bg-primary bg-opacity-10 text-primary fw-bold rounded-pill" style="font-size:.68rem;min-width:24px;">#'+num+'</span>' +
+        '<input type="text" name="tranche_name[]" class="form-control form-control-sm mi flex-grow-1" placeholder="Nom de la tranche" value="'+esc(name||'Tranche '+num)+'" required>' +
+        '<button type="button" class="btn btn-sm btn-link text-danger p-1 btn-rm-row" title="Supprimer"><i class="bi bi-trash3-fill"></i></button>' +
+        '</div>' +
+        '<div class="row g-2">' +
+        '<div class="col-6"><label class="form-label extra-small fw-bold text-muted mb-1"><i class="bi bi-cash-stack text-success me-1"></i>Montant (FCFA)</label>' +
+        '<input type="number" name="tranche_amount[]" min="0" step="1" class="form-control form-control-sm mi input-amount" value="'+(amount||0)+'" required></div>' +
+        '<div class="col-6"><label class="form-label extra-small fw-bold text-muted mb-1"><i class="bi bi-calendar-check text-info me-1"></i>Echeance</label>' +
+        '<input type="date" name="tranche_deadline[]" class="form-control form-control-sm mi input-deadline" value="'+deadline+'" required></div>' +
+        '</div>';
+    row.querySelector('.btn-rm-row').addEventListener('click', function(){
+        row.classList.add('row-remove-anim');
+        setTimeout(function(){ row.remove(); reindexRows(); calcModalSum(); }, 200);
+    });
+    row.querySelector('.input-amount').addEventListener('input', calcModalSum);
+    document.getElementById('modal-rows-container').appendChild(row);
+    calcModalSum();
+};
+
+function reindexRows() {
+    document.querySelectorAll('#modal-rows-container .modal-tranche-row').forEach(function(r,i){
+        var badge=r.querySelector('.badge'); if(badge) badge.textContent='#'+(i+1);
+        var ni=r.querySelector('input[name="tranche_name[]"]');
+        if(ni && /^Tranche \d+$/.test(ni.value.trim())) ni.value='Tranche '+(i+1);
+    });
+}
+
+function calcModalSum() {
+    var sum=0;
+    document.querySelectorAll('#modal-rows-container .input-amount').forEach(function(inp){ sum+=parseFloat(inp.value)||0; });
+    var cls=(modalTuition>0&&sum===modalTuition)?'text-success':(sum>modalTuition&&modalTuition>0?'text-danger':'text-dark');
+    document.getElementById('modal-sum-lbl').innerHTML='Affecte : <strong class="'+cls+'">'+sum.toLocaleString('fr-FR')+' FCFA</strong>';
+    var fill=document.getElementById('modal-budget-fill'), msg=document.getElementById('modal-budget-msg');
+    if(modalTuition>0){
+        var pct=Math.min((sum/modalTuition)*100,100);
+        fill.style.width=pct+'%';
+        fill.className='budget-bar-fill '+(sum===modalTuition?'bg-success':sum>modalTuition?'bg-danger':'bg-primary');
+        if(sum===modalTuition){msg.className='mt-1 text-center extra-small fw-bold text-success';msg.innerHTML='<i class="bi bi-check-circle-fill me-1"></i>100% - Repartition equilibree';}
+        else if(sum>modalTuition){msg.className='mt-1 text-center extra-small fw-bold text-danger';msg.innerHTML='<i class="bi bi-exclamation-triangle-fill me-1"></i>Exces de '+(sum-modalTuition).toLocaleString('fr-FR')+' FCFA';}
+        else{msg.className='mt-1 text-center extra-small fw-bold text-warning';msg.innerHTML='<i class="bi bi-info-circle-fill me-1"></i>Reste : '+(modalTuition-sum).toLocaleString('fr-FR')+' FCFA';}
+    } else { fill.style.width='0%'; msg.textContent=''; }
+}
+
+window.applyPreset = function(parts) {
+    document.getElementById('modal-rows-container').innerHTML='';
+    var sf=0;
+    parts.forEach(function(pct,i){
+        var amt=0;
+        if(modalTuition>0){ amt=(i===parts.length-1)?Math.max(0,modalTuition-sf):Math.round((pct/100)*modalTuition); sf+=amt; }
+        var d=new Date(); d.setDate(d.getDate()+(i+1)*30);
+        modalAddRow('Tranche '+(i+1), amt, d.toISOString().slice(0,10), i+1);
+    });
+    calcModalSum();
+};
+
+window.splitEqual = function() {
+    var rows=document.querySelectorAll('#modal-rows-container .modal-tranche-row');
+    if(!rows.length||modalTuition<=0) return;
+    var n=rows.length, p=Math.floor(modalTuition/n), rem=modalTuition-p*n;
+    rows.forEach(function(row,i){ var inp=row.querySelector('.input-amount'); if(inp) inp.value=(i===n-1)?p+rem:p; });
+    calcModalSum();
+};
+
+function showModalLoader(show) {
+    var el=document.getElementById('modal-loader');
+    if(show) el.classList.remove('d-none'); else el.classList.add('d-none');
+}
+
+function resetModalRows() {
+    document.getElementById('modal-rows-container').innerHTML='';
+    document.getElementById('modal-loader').classList.add('d-none');
+    document.getElementById('modal-budget-bar').classList.add('d-none');
+    document.getElementById('modal-presets').classList.add('d-none');
+    document.getElementById('modal-btn-add').classList.add('d-none');
+    document.getElementById('modal-btn-submit').disabled=true;
+}
+
+function resetModalFull() {
+    resetModalRows();
+    document.getElementById('modal-level-select').value='';
+    document.getElementById('modal-sel-class').value='';
+    document.getElementById('modal-sel-cycle').value='';
+    document.getElementById('modal-sel-type').value='';
+    ['modal-sub-class','modal-sub-cycle','modal-sub-type'].forEach(function(id){ document.getElementById(id).classList.add('d-none'); });
+    modalTuition=0;
+}
+
+function reloadGrid() {
+    var grid=document.getElementById('configs-grid');
+    grid.style.opacity='0.4';
+    fetch(window.location.pathname)
+    .then(function(r){ return r.text(); })
+    .then(function(html){
+        var doc=new DOMParser().parseFromString(html,'text/html');
+        var ng=doc.getElementById('configs-grid');
+        if(ng) grid.innerHTML=ng.innerHTML;
+        grid.style.opacity='1';
+    })
+    .catch(function(e){ console.error(e); grid.style.opacity='1'; window.location.reload(); });
+}
+
+})();
 </script>
 
 <?php
