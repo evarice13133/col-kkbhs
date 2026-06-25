@@ -160,6 +160,7 @@ return [
 
     'generate' => 'Générer',
     'results' => 'Résultats',
+    'print' => 'Imprimer',
     'showing_count' => 'Affichage de :start à :end sur :total élèves',
     'pagination' => 'Pagination',
     'open' => 'Ouvrir',
@@ -1413,8 +1414,9 @@ return [
     'no_class_for_criteria' => 'Aucune classe trouvée pour ces critères',
     'pilotage' => 'Pilotage',
     'structure_et_classes' => 'Structure & Classes',
-    'ressources_humaines' => 'Inscriptions',
+    'ressources_humaines' => 'Gestion des Inscriptions',
     'pedagogie_et_resultats' => 'Pédagogie & Résultats',
+    'gestion_des_notes' => 'Gestion des Notes',
     'pedagogie' => 'Pédagogie',
     'results' => 'Résultats', 
     'administration' => 'Administration',
@@ -1956,5 +1958,17 @@ return [
     'enrolled_count_header'        => 'Élèves Inscrits',
     'non_enrolled_count_header'    => 'Élèves Non Inscrits',
     'registration_revenue_header'  => 'Frais d\'Inscription Encaissés',
+    // Centre de Pilotage Keys
+    'centre_de_pilotage'           => 'Centre de Pilotage',
+    'dashboard_executif'           => 'Dashboard Exécutif',
+    'centre_financier'             => 'Centre Financier',
+    'vue_globale'                  => 'Vue Globale',
+    'vue_academique'               => 'Vue Académique',
+    'vue_financiere'               => 'Vue Financière',
+    'vue_rh'                       => 'Vue RH',
+    'total_expected_tuition'       => 'Total attendu',
+    'total_remaining_tuition'      => 'Total restant',
+    'male_short'                   => 'H',
+    'female_short'                 => 'F',
 ];
 

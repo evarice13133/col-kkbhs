@@ -620,6 +620,23 @@ elseif (strpos($path, '/financial-history') === 0) {
         $c->print();
 }
 
+// ====== ROUTES: CENTRE DE PILOTAGE ======
+elseif (strpos($path, '/pilotage') === 0) {
+    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
+        header('Location: /');
+        exit;
+    }
+    $c = new DashboardController();
+    if ($path === '/pilotage/dashboard') {
+        $c->executiveDashboard();
+    } elseif ($path === '/pilotage/financial') {
+        $c->financialCenter();
+    } else {
+        header('Location: /');
+        exit;
+    }
+}
+
 // ====== ROUTES: CONFIGURATIONS GLOBALES ======
 elseif (strpos($path, '/settings') === 0) {
     if (!Session::isLogged() || Session::get('user_role') !== 'superadmin') {

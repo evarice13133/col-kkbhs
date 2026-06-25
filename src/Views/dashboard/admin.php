@@ -89,11 +89,20 @@ ob_start();
 
 <div class="animate-fade-in admin-analytics">
 
+    <!-- Selector of views for pilotage -->
+    <div class="d-flex justify-content-center justify-content-md-end mb-4 animate-fade-in">
+        <div class="btn-group rounded-pill p-1 bg-light border shadow-sm" role="group" id="dashboard-view-selector" style="max-width: fit-content;">
+            <button type="button" class="btn rounded-pill px-3 py-1.5 fw-semibold text-uppercase btn-primary btn-sm active" data-view="academic" style="font-size: 11px; transition: all 0.2s;"><?= __('vue_academique') ?></button>
+            <button type="button" class="btn rounded-pill px-3 py-1.5 fw-semibold text-uppercase btn-outline-secondary border-0 btn-sm" data-view="financial" style="font-size: 11px; transition: all 0.2s;"><?= __('vue_financiere') ?></button>
+            <button type="button" class="btn rounded-pill px-3 py-1.5 fw-semibold text-uppercase btn-outline-secondary border-0 btn-sm" data-view="rh" style="font-size: 11px; transition: all 0.2s;"><?= __('vue_rh') ?></button>
+        </div>
+    </div>
+
 
     <?php if (\App\Core\Session::get('user_role') === 'superadmin'): ?>
         <!-- Notifications Vitrine -->
         <?php if (!empty($landing_notifications)): ?>
-            <div class="row g-3 mb-5 animate-fade-in">
+            <div class="row g-3 mb-5 animate-fade-in" data-views="global,academic">
                 <div class="col-12">
                     <div class="d-flex align-items-center justify-content-between mb-3">
                         <div class="d-flex align-items-center gap-2">
@@ -168,7 +177,7 @@ ob_start();
             </script>
         <?php endif; ?>
 
-        <div class="row g-3 mb-5">
+        <div class="row g-3 mb-5" data-views="global,rh">
             <div class="col-12">
                 <div class="d-flex align-items-center gap-2 mb-3">
                     <i class="bi bi-graph-up-arrow text-primary"></i>
@@ -198,7 +207,7 @@ ob_start();
         </div>
     <?php endif; ?>
 
-    <div class="row g-3 mb-4 kpi-row">
+    <div class="row g-3 mb-4 kpi-row" data-views="global,academic">
         <!-- Étudiants -->
         <div class="col-sm-6 col-xl-3 stats-col">
             <div class="modern-card kpi-card border-0 shadow-sm stats-card kpi-stat-card" style="--stats-index: 0;">
@@ -277,7 +286,7 @@ ob_start();
     </div>
 
     <!-- Accès rapide - Scroll horizontal -->
-    <div class="modern-card mb-4 border-0 shadow-sm border-top border-primary border-4 animate-fade-in" style="border-radius: 24px !important;">
+    <div class="modern-card mb-4 border-0 shadow-sm border-top border-primary border-4 animate-fade-in" style="border-radius: 24px !important;" data-views="global,academic">
         <div class="modern-card-header border-bottom bg-transparent py-3">
             <div class="d-flex align-items-center gap-2">
                 <i class="bi bi-lightning-fill text-primary fs-5"></i>
@@ -307,7 +316,7 @@ ob_start();
     <!-- ========================================== -->
     <!-- SECTION : TABLEAU DE BORD INTELLIGENT AVANCÉ -->
     <!-- ========================================== -->
-    <div class="row g-4 mb-5">
+    <div class="row g-4 mb-5" data-views="global,academic">
         <!-- 1. Classement des Élèves & Répartition des Niveaux -->
         <div class="col-xl-6">
             <div class="modern-card border-0 shadow-lg border-top border-accent border-4 h-100 animate-fade-in" style="border-radius: 24px !important;">
@@ -589,7 +598,7 @@ ob_start();
     <!-- ========================================== -->
     <!-- SECTION : DYNAMIQUE DE PERFORMANCE & ÉVOLUTION -->
     <!-- ========================================== -->
-    <div class="row g-4 mb-5">
+    <div class="row g-4 mb-5" data-views="global,academic">
         <!-- 1. Performances Générales des Classes -->
         <div class="col-xl-6">
             <div class="modern-card border-0 shadow-lg border-top border-success border-4 h-100 animate-fade-in" style="border-radius: 24px !important;">
@@ -772,9 +781,427 @@ ob_start();
     </div>
 
 
+    <!-- ========================================== -->
+    <!-- SECTION : CENTRE FINANCIER (VUE PILOTAGE)  -->
+    <!-- ========================================== -->
+    
+    <!-- Section: Situation de la Caisse (Recettes) -->
+    <div class="mb-4" data-views="financial">
+        <div class="kpi-section-title text-primary mb-3 d-flex align-items-center gap-2">
+            <span class="d-inline-block rounded-circle bg-primary bg-opacity-10 p-1"></span>
+            <?= __('total_general_collected') ?> & Recettes
+        </div>
+        <div class="row g-4">
+            <!-- Recettes Totales de la Caisse -->
+            <div class="col-6 col-xl-3">
+                <div class="modern-card hover-card kpi-card-primary shadow-sm p-3 h-100 position-relative overflow-hidden" style="border-radius: 16px !important;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="kpi-icon bg-primary bg-opacity-10 text-primary rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0; border-radius: 12px !important;">
+                            <i class="bi bi-piggy-bank fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="fw-black text-main-theme fs-5 mb-0" data-count-up="<?= (int)$totalGeneralCollected ?>"><?= number_format($totalGeneralCollected, 0, ',', ' ') ?> <span style="font-size: 0.75rem;" class="fw-normal text-muted">FCFA</span></div>
+                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;"><?= __('total_general_collected') ?></div>
+                        </div>
+                    </div>
+                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#8b5cf6,#6366f1); border-radius:0 0 16px 16px;"></div>
+                </div>
+            </div>
+            <!-- Frais de Scolarité Encaissés -->
+            <div class="col-6 col-xl-3">
+                <div class="modern-card hover-card kpi-card-success shadow-sm p-3 h-100 position-relative overflow-hidden" style="border-radius: 16px !important;">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="kpi-icon bg-success bg-opacity-10 text-success rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0; border-radius: 12px !important;">
+                                <i class="bi bi-cash-stack fs-4"></i>
+                            </div>
+                            <div>
+                                <div class="fw-black text-main-theme fs-5 mb-0" data-count-up="<?= (int)$totalTuitionCollected ?>"><?= number_format($totalTuitionCollected, 0, ',', ' ') ?> <span style="font-size: 0.75rem;" class="fw-normal text-muted">FCFA</span></div>
+                                <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;"><?= __('total_tuition_collected') ?></div>
+                            </div>
+                        </div>
+                        <span class="badge bg-success-subtle text-success rounded-pill fw-bold px-2 py-1" style="font-size: 0.7rem;"><?= number_format($collectionRate, 1) ?>%</span>
+                    </div>
+                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#22c55e,#10b981); border-radius:0 0 16px 16px;"></div>
+                </div>
+            </div>
+            <!-- Frais d'Inscription Encaissés -->
+            <div class="col-6 col-xl-3">
+                <div class="modern-card hover-card kpi-card-info shadow-sm p-3 h-100 position-relative overflow-hidden" style="border-radius: 16px !important;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="kpi-icon bg-info bg-opacity-10 text-info rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0; border-radius: 12px !important;">
+                            <i class="bi bi-journal-check fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="fw-black text-main-theme fs-5 mb-0" data-count-up="<?= (int)$totalRegistrationCollected ?>"><?= number_format($totalRegistrationCollected, 0, ',', ' ') ?> <span style="font-size: 0.75rem;" class="fw-normal text-muted">FCFA</span></div>
+                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;"><?= __('total_registration_collected') ?></div>
+                        </div>
+                    </div>
+                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#06b6d4,#0ea5e9); border-radius:0 0 16px 16px;"></div>
+                </div>
+            </div>
+            <!-- Scolarité Attendue -->
+            <div class="col-6 col-xl-3">
+                <div class="modern-card hover-card kpi-card-secondary shadow-sm p-3 h-100 position-relative overflow-hidden" style="border-radius: 16px !important;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="kpi-icon bg-secondary bg-opacity-10 text-secondary rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0; border-radius: 12px !important;">
+                            <i class="bi bi-graph-up-arrow fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="fw-black text-main-theme fs-5 mb-0" data-count-up="<?= (int)$totalExpected ?>"><?= number_format($totalExpected, 0, ',', ' ') ?> <span style="font-size: 0.75rem;" class="fw-normal text-muted">FCFA</span></div>
+                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;"><?= __('total_expected') ?></div>
+                        </div>
+                    </div>
+                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#64748b,#475569); border-radius:0 0 16px 16px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section: Situation des Inscriptions -->
+    <div class="mb-4" data-views="financial">
+        <div class="kpi-section-title text-success mb-3 d-flex align-items-center gap-2">
+            <span class="d-inline-block rounded-circle bg-success bg-opacity-10 p-1"></span>
+            Situation des Inscriptions & Rentrée Scolaire
+        </div>
+        <div class="row g-4">
+            <!-- Élèves Déjà Inscrits -->
+            <div class="col-6 col-xl-3">
+                <div class="modern-card hover-card kpi-card-success shadow-sm p-3 h-100 position-relative overflow-hidden" style="border-radius: 16px !important;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="kpi-icon bg-success bg-opacity-10 text-success rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0; border-radius: 12px !important;">
+                            <i class="bi bi-person-check fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="fw-black text-main-theme fs-5 mb-0" data-count-up="<?= (int)$totalEnrolled ?>"><?= number_format($totalEnrolled) ?></div>
+                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;"><?= __('enrolled_students') ?></div>
+                        </div>
+                    </div>
+                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#10b981,#059669); border-radius:0 0 16px 16px;"></div>
+                </div>
+            </div>
+            <!-- Élèves Non Inscrits -->
+            <div class="col-6 col-xl-3">
+                <div class="modern-card hover-card kpi-card-danger shadow-sm p-3 h-100 position-relative overflow-hidden" style="border-radius: 16px !important;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="kpi-icon bg-danger bg-opacity-10 text-danger rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0; border-radius: 12px !important;">
+                            <i class="bi bi-person-x fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="fw-black text-main-theme fs-5 mb-0" data-count-up="<?= (int)$totalNonEnrolled ?>"><?= number_format($totalNonEnrolled) ?></div>
+                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;"><?= __('non_enrolled_students') ?></div>
+                        </div>
+                    </div>
+                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#ef4444,#dc2626); border-radius:0 0 16px 16px;"></div>
+                </div>
+            </div>
+            <!-- Taux d'inscription global -->
+            <div class="col-6 col-xl-3">
+                <div class="modern-card hover-card kpi-card-warning shadow-sm p-3 h-100 position-relative overflow-hidden" style="border-radius: 16px !important;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="kpi-icon bg-warning bg-opacity-10 text-warning rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0; border-radius: 12px !important;">
+                            <i class="bi bi-percent fs-4"></i>
+                        </div>
+                        <div>
+                            <?php 
+                            $registrationRate = $totalStudents > 0 ? round(($totalEnrolled / $totalStudents) * 100, 1) : 0;
+                            ?>
+                            <div class="fw-black text-main-theme fs-5 mb-0" data-count-up="<?= (int)$registrationRate ?>" data-suffix="%"><?= $registrationRate ?>%</div>
+                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;"><?= __('registration_rate') ?></div>
+                        </div>
+                    </div>
+                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#f59e0b,#d97706); border-radius:0 0 16px 16px;"></div>
+                </div>
+            </div>
+            <!-- Effectif Total Actif -->
+            <div class="col-6 col-xl-3">
+                <div class="modern-card hover-card kpi-card-info shadow-sm p-3 h-100 position-relative overflow-hidden" style="border-radius: 16px !important;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="kpi-icon bg-info bg-opacity-10 text-info rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0; border-radius: 12px !important;">
+                            <i class="bi bi-people fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="fw-black text-main-theme fs-5 mb-0" data-count-up="<?= (int)$totalStudents ?>"><?= number_format($totalStudents) ?></div>
+                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;"><?= __('active_students') ?></div>
+                        </div>
+                    </div>
+                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#0ea5e9,#0284c7); border-radius:0 0 16px 16px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row for Financial View -->
+    <div class="row g-4 mb-4" data-views="financial">
+        <!-- Collection Rate Donut -->
+        <div class="col-lg-4">
+            <div class="modern-card border-0 shadow-sm p-4 h-100" style="border-radius: 20px !important;">
+                <h6 class="fw-black text-main-theme mb-4"><?= __('collection_rate') ?></h6>
+                <div class="d-flex align-items-center justify-content-center" style="height:220px; position:relative;">
+                    <canvas id="adminCollectionRateChart"></canvas>
+                    <div class="position-absolute text-center">
+                        <div class="fw-black fs-3 text-success"><?= number_format($collectionRate, 1) ?>%</div>
+                        <div class="small text-muted-theme"><?= __('collection_rate') ?></div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-center gap-4 mt-3">
+                    <div class="text-center">
+                        <div class="small text-muted-theme"><?= __('total_collected') ?></div>
+                        <div class="fw-bold text-success small"><?= number_format($totalTuitionCollected, 0, ',', ' ') ?></div>
+                    </div>
+                    <div class="text-center">
+                        <div class="small text-muted-theme"><?= __('total_expected') ?></div>
+                        <div class="fw-bold text-primary small"><?= number_format($totalExpected, 0, ',', ' ') ?></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Evolution Chart -->
+        <div class="col-lg-8">
+            <div class="modern-card border-0 shadow-sm p-4 h-100" style="border-radius: 20px !important;">
+                <h6 class="fw-black text-main-theme mb-4"><?= __('monthly_evolution') ?></h6>
+                <div style="height:220px;">
+                    <canvas id="adminMonthlyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Class enrollment stats breakdown -->
+    <div class="row g-4 mb-4" data-views="financial">
+        <div class="col-12">
+            <div class="modern-card border-0 shadow-sm" style="border-radius: 20px !important;">
+                <div class="card-header bg-transparent border-0 px-4 pt-4 pb-0 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div>
+                        <h6 class="fw-black text-main-theme mb-1"><?= __('class_registration_stats') ?></h6>
+                        <p class="text-muted-theme small mb-0">Statut des inscriptions par classe (Politique : <?= htmlspecialchars(ucfirst($policy)) ?>)</p>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr class="border-bottom border-theme-light">
+                                    <th class="ps-4 py-3 fw-semibold text-muted-theme small text-uppercase"><?= __('class_name_header') ?? 'Classe' ?></th>
+                                    <th class="py-3 fw-semibold text-muted-theme text-center small text-uppercase"><?= __('total_students_header') ?? 'Total Élèves' ?></th>
+                                    <th class="py-3 fw-semibold text-muted-theme text-center small text-uppercase"><?= __('enrolled_count_header') ?? 'Élèves Inscrits' ?></th>
+                                    <th class="py-3 fw-semibold text-muted-theme text-center small text-uppercase"><?= __('non_enrolled_count_header') ?? 'Élèves Non Inscrits' ?></th>
+                                    <th class="py-3 fw-semibold text-muted-theme small text-uppercase"><?= __('registration_rate') ?? 'Taux d\'Inscription' ?></th>
+                                    <th class="pe-4 py-3 fw-semibold text-muted-theme text-end small text-uppercase"><?= __('registration_revenue_header') ?? 'Frais Inscription Encaissés' ?></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($classRegistrationStats as $classStat): 
+                                    $classRate = $classStat['total_students'] > 0 ? round(($classStat['enrolled_count'] / $classStat['total_students']) * 100) : 0;
+                                    $progressColor = 'bg-danger';
+                                    if ($classRate >= 80) {
+                                        $progressColor = 'bg-success';
+                                    } elseif ($classRate >= 50) {
+                                        $progressColor = 'bg-warning';
+                                    }
+                                ?>
+                                    <tr class="border-bottom border-theme-light">
+                                        <td class="ps-4 py-3 fw-bold text-main-theme">
+                                            <?= htmlspecialchars($classStat['class_name']) ?>
+                                        </td>
+                                        <td class="py-3 text-center text-main-theme fw-semibold">
+                                            <?= number_format($classStat['total_students']) ?>
+                                        </td>
+                                        <td class="py-3 text-center">
+                                            <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1.5 fw-semibold">
+                                                <?= number_format($classStat['enrolled_count']) ?>
+                                            </span>
+                                        </td>
+                                        <td class="py-3 text-center">
+                                            <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-1.5 fw-semibold">
+                                                <?= number_format($classStat['non_enrolled_count']) ?>
+                                            </span>
+                                        </td>
+                                        <td class="py-3" style="min-width: 150px;">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="progress flex-grow-1" style="height: 6px; background-color: var(--border-color);">
+                                                    <div class="progress-bar <?= $progressColor ?>" role="progressbar" style="width: <?= $classRate ?>%" aria-valuenow="<?= $classRate ?>" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+                                                <span class="small fw-bold text-main-theme"><?= $classRate ?>%</span>
+                                            </div>
+                                        </td>
+                                        <td class="pe-4 py-3 text-end fw-bold text-success">
+                                            <?= number_format((float)$classStat['total_registration_collected'], 0, ',', ' ') ?> <small class="fw-normal text-muted">FCFA</small>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Payments -->
+    <div class="row g-4 mb-4" data-views="financial">
+        <div class="col-12">
+            <div class="modern-card border-0 shadow-sm" style="border-radius: 20px !important;">
+                <div class="card-header bg-transparent border-0 px-4 pt-4 pb-0 d-flex align-items-center justify-content-between">
+                    <h6 class="fw-black text-main-theme mb-0"><?= __('recent_payments_title') ?></h6>
+                    <a href="/payments" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold"><?= __('view_all') ?></a>
+                </div>
+                <div class="card-body p-0">
+                    <?php if (empty($recentPayments)): ?>
+                        <div class="text-center py-5 text-muted-theme">
+                            <i class="bi bi-inbox fs-1 opacity-25 d-block mb-2"></i>
+                            <p class="mb-0"><?= __('no_recent_payments') ?></p>
+                        </div>
+                    <?php else: ?>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead>
+                                    <tr class="border-bottom border-theme-light">
+                                        <th class="ps-4 py-3 fw-semibold text-muted-theme small text-uppercase"><?= __('student') ?></th>
+                                        <th class="py-3 fw-semibold text-muted-theme small text-uppercase"><?= __('class') ?></th>
+                                        <th class="py-3 fw-semibold text-muted-theme small text-uppercase"><?= __('amount') ?></th>
+                                        <th class="py-3 fw-semibold text-muted-theme small text-uppercase"><?= __('payment_mode') ?></th>
+                                        <th class="pe-4 py-3 fw-semibold text-muted-theme small text-uppercase"><?= __('date') ?></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($recentPayments as $payment): ?>
+                                        <tr class="border-bottom border-theme-light">
+                                            <td class="ps-4 py-3">
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <div class="avatar-circle-sm bg-success bg-opacity-10 text-success fw-bold rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:36px;height:36px;">
+                                                        <?= strtoupper(substr($payment['student_name'], 0, 1)) ?>
+                                                    </div>
+                                                    <span class="fw-semibold text-main-theme small"><?= htmlspecialchars($payment['student_name']) ?></span>
+                                                </div>
+                                            </td>
+                                            <td><span class="badge bg-primary-subtle text-primary rounded-pill px-3"><?= htmlspecialchars($payment['class_nom']) ?></span></td>
+                                            <td class="fw-bold text-success">
+                                                <div><?= number_format((float)$payment['amount'], 0, ',', ' ') ?> <small class="fw-normal text-muted">FCFA</small></div>
+                                                <div class="mt-1">
+                                                    <?php if (($payment['type'] ?? '') === 'inscription'): ?>
+                                                        <span class="badge rounded-pill text-uppercase px-2 py-1" style="font-size: 0.65rem; background-color: rgba(59, 130, 246, 0.1); color: #2563eb;">
+                                                            <i class="bi bi-journal-check me-1"></i>Inscription
+                                                        </span>
+                                                    <?php else: ?>
+                                                        <span class="badge rounded-pill text-uppercase px-2 py-1" style="font-size: 0.65rem; background-color: rgba(16, 185, 129, 0.1); color: #059669;">
+                                                            <i class="bi bi-cash-coin me-1"></i>Scolarité
+                                                        </span>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <?php
+                                                $methodIcons = ['especes' => 'bi-cash', 'mobile_money' => 'bi-phone', 'virement' => 'bi-bank', 'cheque' => 'bi-credit-card-2-front'];
+                                                $methodLabels = ['especes' => 'Espèces', 'mobile_money' => 'Mobile Money', 'virement' => 'Virement', 'cheque' => 'Chèque'];
+                                                $m = $payment['payment_method'] ?? '';
+                                                ?>
+                                                <span class="d-flex align-items-center gap-2 text-muted-theme small">
+                                                    <i class="bi <?= $methodIcons[$m] ?? 'bi-question-circle' ?>"></i>
+                                                    <?= $methodLabels[$m] ?? ucfirst($m) ?>
+                                                </span>
+                                            </td>
+                                            <td class="pe-4 text-muted-theme small"><?= date('d/m/Y', strtotime($payment['payment_date'])) ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SECTION : RESSOURCES HUMAINES (VUE PILOTAGE)-->
+    <!-- ========================================== -->
+    <!-- KPI Row for HR View -->
+    <div class="row g-3 mb-4 kpi-row" data-views="rh">
+        <!-- Total Users -->
+        <div class="col-sm-6 col-xl-3 stats-col">
+            <div class="modern-card kpi-card border-0 shadow-sm stats-card kpi-stat-card border-start border-4 border-primary" style="min-height: 140px;">
+                <div class="kpi-icon-wrapper bg-primary bg-opacity-10 text-primary">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+                <div class="kpi-value" data-count-up="<?= (int) $stats_users ?>"><?= $stats_users ?></div>
+                <div class="kpi-label">Total Utilisateurs</div>
+            </div>
+        </div>
+        <!-- Active Teachers -->
+        <div class="col-sm-6 col-xl-3 stats-col">
+            <div class="modern-card kpi-card border-0 shadow-sm stats-card kpi-stat-card border-start border-4 border-success" style="min-height: 140px;">
+                <div class="kpi-icon-wrapper bg-success bg-opacity-10 text-success">
+                    <i class="bi bi-person-badge-fill"></i>
+                </div>
+                <div class="kpi-value" data-count-up="<?= (int) $stats_teachers ?>"><?= $stats_teachers ?></div>
+                <div class="kpi-label">Enseignants Actifs</div>
+            </div>
+        </div>
+        <!-- Administrative Personnel -->
+        <div class="col-sm-6 col-xl-3 stats-col">
+            <div class="modern-card kpi-card border-0 shadow-sm stats-card kpi-stat-card border-start border-4 border-warning" style="min-height: 140px;">
+                <div class="kpi-icon-wrapper bg-warning bg-opacity-10 text-warning">
+                    <i class="bi bi-shield-lock-fill"></i>
+                </div>
+                <div class="kpi-value" data-count-up="<?= (int) $adminsCount ?>"><?= $adminsCount ?></div>
+                <div class="kpi-label">Personnels Administratifs</div>
+            </div>
+        </div>
+        <!-- Teachers without assignments -->
+        <div class="col-sm-6 col-xl-3 stats-col">
+            <div class="modern-card kpi-card border-0 shadow-sm stats-card kpi-stat-card border-start border-4 border-danger" style="min-height: 140px;">
+                <div class="kpi-icon-wrapper bg-danger bg-opacity-10 text-danger">
+                    <i class="bi bi-person-x-fill"></i>
+                </div>
+                <div class="kpi-value text-danger" data-count-up="<?= (int) $teachers_without_assignment ?>"><?= $teachers_without_assignment ?></div>
+                <div class="kpi-label">Enseignants Non Assignés</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts & Tables for HR View -->
+    <div class="row g-4 mb-5" data-views="rh">
+        <div class="col-xl-6">
+            <div class="modern-card border-0 shadow-lg border-top border-warning border-4 h-100">
+                <div class="modern-card-header bg-transparent p-4 border-bottom">
+                    <h5 class="fw-bold m-0 text-main-theme"><i class="bi bi-pie-chart-fill text-warning me-2"></i>Répartition des Rôles</h5>
+                </div>
+                <div class="p-4" style="height: 320px; position: relative;">
+                    <canvas id="adminRoleDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-6">
+            <div class="modern-card border-0 shadow-lg border-top border-info border-4 h-100">
+                <div class="modern-card-header bg-transparent p-4 border-bottom">
+                    <h5 class="fw-bold m-0 text-main-theme"><i class="bi bi-list-stars text-info me-2"></i>Détails des Effectifs par Rôle</h5>
+                </div>
+                <div class="p-4" style="max-height: 320px; overflow-y: auto;">
+                    <table class="table-modern">
+                        <thead>
+                            <tr>
+                                <th class="ps-4 py-3 text-main-theme">Rôle</th>
+                                <th class="text-end pe-4 py-3 text-main-theme">Nombre d'utilisateurs</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($roleDistribution as $roleRow): ?>
+                                <tr>
+                                    <td class="ps-4 py-3 fw-bold text-capitalize text-main-theme"><?= htmlspecialchars($roleRow['role']) ?></td>
+                                    <td class="text-end pe-4 py-3 fw-black text-primary"><?= (int)$roleRow['count'] ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <?php if (\App\Core\Session::get('user_role') === 'superadmin'): ?>
-        <div class="row g-4 mb-5">
+        <div class="row g-4 mb-5" data-views="global,rh">
             <div class="col-xl-12">
                 <div class="modern-card border-0 shadow-sm">
                     <div class="modern-card-header bg-white p-4 border-bottom">
@@ -833,7 +1260,7 @@ ob_start();
         </div>
     <?php endif; ?>
 
-    <div class="row g-4">
+    <div class="row g-4" data-views="global,academic">
         <div class="col-xl-8">
             <!-- Matières sans prof (Priorité Anomalies) -->
             <div class="modern-card mb-4 border-0 shadow-sm border-top border-warning border-4">
@@ -1089,7 +1516,184 @@ ob_start();
 
             setTimeout(() => requestAnimationFrame(tick), 200 + (index * 50));
         });
+
+        // View Selector Logic
+        const viewSelector = document.getElementById('dashboard-view-selector');
+        if (viewSelector) {
+            const buttons = viewSelector.querySelectorAll('[data-view]');
+            const viewableElements = document.querySelectorAll('[data-views]');
+
+            const applyView = (selectedView) => {
+                // Update button active states
+                buttons.forEach(btn => {
+                    if (btn.dataset.view === selectedView) {
+                        btn.classList.remove('btn-outline-secondary', 'border-0');
+                        btn.classList.add('btn-primary', 'active');
+                    } else {
+                        btn.classList.remove('btn-primary', 'active');
+                        btn.classList.add('btn-outline-secondary', 'border-0');
+                    }
+                });
+
+                // Show/hide sections based on data-views attribute
+                viewableElements.forEach(el => {
+                    const views = el.dataset.views.split(',');
+                    if (views.includes(selectedView)) {
+                        el.style.display = '';
+                    } else {
+                        el.style.display = 'none';
+                    }
+                });
+
+                // Initialize charts dynamically when the view is changed (to avoid animation issues with display:none)
+                if (selectedView === 'financial') {
+                    initFinancialCharts();
+                } else if (selectedView === 'rh') {
+                    initHRCharts();
+                }
+            };
+
+            buttons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const view = btn.dataset.view;
+                    applyView(view);
+                    // Save to local storage for persistence across reloads
+                    localStorage.setItem('admin_dashboard_active_view', view);
+                });
+            });
+
+            // Restore last active view or default to academic
+            let activeView = localStorage.getItem('admin_dashboard_active_view') || 'academic';
+            if (activeView === 'global') {
+                activeView = 'academic';
+            }
+            applyView(activeView);
+        }
     });
+
+    let financialChartsInitialized = false;
+    let hrChartsInitialized = false;
+
+    const initFinancialCharts = () => {
+        if (financialChartsInitialized) return;
+        financialChartsInitialized = true;
+
+        // Load Chart.js dynamically if not already loaded
+        if (typeof Chart === 'undefined') {
+            const script = document.createElement('script');
+            script.src = "https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js";
+            script.onload = () => buildFinancialCharts();
+            document.head.appendChild(script);
+        } else {
+            buildFinancialCharts();
+        }
+    };
+
+    const buildFinancialCharts = () => {
+        const pmCtx = document.getElementById('adminPaymentMethodChart');
+        if (pmCtx) {
+            const dataPay = <?= json_encode($paymentMethodRepartition) ?>;
+            new Chart(pmCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: dataPay.map(x => x.payment_method || 'Autre'),
+                    datasets: [{
+                        data: dataPay.map(x => parseFloat(x.total)),
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#64748b', '#06b6d4'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                font: { size: 10 }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        const monthlyCtx = document.getElementById('adminMonthlyChart');
+        if (monthlyCtx) {
+            const monthlyData = <?= json_encode($monthlyPayments) ?>;
+            new Chart(monthlyCtx, {
+                type: 'bar',
+                data: {
+                    labels: monthlyData.map(x => x.month),
+                    datasets: [{
+                        label: 'Encaissements',
+                        data: monthlyData.map(x => parseFloat(x.total)),
+                        backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+    };
+
+    const initHRCharts = () => {
+        if (hrChartsInitialized) return;
+        hrChartsInitialized = true;
+
+        if (typeof Chart === 'undefined') {
+            const script = document.createElement('script');
+            script.src = "https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js";
+            script.onload = () => buildHRCharts();
+            document.head.appendChild(script);
+        } else {
+            buildHRCharts();
+        }
+    };
+
+    const buildHRCharts = () => {
+        const roleCtx = document.getElementById('adminRoleDistributionChart');
+        if (roleCtx) {
+            const roleData = <?= json_encode($roleDistribution) ?>;
+            new Chart(roleCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: roleData.map(x => x.role.charAt(0).toUpperCase() + x.role.slice(1)),
+                    datasets: [{
+                        data: roleData.map(x => parseInt(x.count)),
+                        backgroundColor: ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#64748b'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                font: { size: 10 }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    };
 </script>
 
 <style>
@@ -1395,6 +1999,94 @@ ob_start();
         background: var(--primary-soft);
         border-color: color-mix(in srgb, var(--primary-color) 45%, transparent);
         transform: translateY(-1px);
+    }
+
+    /* Financial Dashboard Card Styles */
+    .hover-card {
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease, background-color 0.3s ease;
+        border: 1px solid var(--border-color) !important;
+    }
+    .hover-card:hover {
+        transform: translateY(-4px);
+    }
+    .hover-card .kpi-icon {
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+    }
+    .hover-card:hover .kpi-icon {
+        transform: scale(1.1);
+    }
+    .hover-card .card-indicator {
+        transition: height 0.3s ease;
+    }
+    .hover-card:hover .card-indicator {
+        height: 5px !important;
+    }
+
+    /* Card Primary (Purple/Indigo) */
+    .kpi-card-primary:hover {
+        border-color: rgba(139, 92, 246, 0.4) !important;
+        box-shadow: 0 12px 20px -5px rgba(139, 92, 246, 0.3) !important;
+        background-color: rgba(139, 92, 246, 0.02) !important;
+    }
+    .kpi-card-primary:hover .kpi-icon {
+        background-color: rgba(139, 92, 246, 0.2) !important;
+    }
+
+    /* Card Success (Green) */
+    .kpi-card-success:hover {
+        border-color: rgba(34, 197, 94, 0.4) !important;
+        box-shadow: 0 12px 20px -5px rgba(34, 197, 94, 0.3) !important;
+        background-color: rgba(34, 197, 94, 0.02) !important;
+    }
+    .kpi-card-success:hover .kpi-icon {
+        background-color: rgba(34, 197, 94, 0.2) !important;
+    }
+
+    /* Card Info (Cyan/Blue) */
+    .kpi-card-info:hover {
+        border-color: rgba(6, 182, 212, 0.4) !important;
+        box-shadow: 0 12px 20px -5px rgba(6, 182, 212, 0.3) !important;
+        background-color: rgba(6, 182, 212, 0.02) !important;
+    }
+    .kpi-card-info:hover .kpi-icon {
+        background-color: rgba(6, 182, 212, 0.2) !important;
+    }
+
+    /* Card Warning (Amber/Orange) */
+    .kpi-card-warning:hover {
+        border-color: rgba(245, 158, 11, 0.4) !important;
+        box-shadow: 0 12px 20px -5px rgba(245, 158, 11, 0.3) !important;
+        background-color: rgba(245, 158, 11, 0.02) !important;
+    }
+    .kpi-card-warning:hover .kpi-icon {
+        background-color: rgba(245, 158, 11, 0.2) !important;
+    }
+
+    /* Card Danger (Red) */
+    .kpi-card-danger:hover {
+        border-color: rgba(239, 68, 68, 0.4) !important;
+        box-shadow: 0 12px 20px -5px rgba(239, 68, 68, 0.3) !important;
+        background-color: rgba(239, 68, 68, 0.02) !important;
+    }
+    .kpi-card-danger:hover .kpi-icon {
+        background-color: rgba(239, 68, 68, 0.2) !important;
+    }
+
+    /* Card Secondary (Slate) */
+    .kpi-card-secondary:hover {
+        border-color: rgba(100, 116, 139, 0.4) !important;
+        box-shadow: 0 12px 20px -5px rgba(100, 116, 139, 0.3) !important;
+        background-color: rgba(100, 116, 139, 0.02) !important;
+    }
+    .kpi-card-secondary:hover .kpi-icon {
+        background-color: rgba(100, 116, 139, 0.2) !important;
+    }
+
+    .kpi-section-title {
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        font-weight: 800;
     }
 </style>
 
