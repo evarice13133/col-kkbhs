@@ -4,7 +4,7 @@
  */
 
 require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . '/confi/config.php';
+require_once __DIR__ . '/config/config.php';
 
 \App\Core\Session::start();
 
