@@ -32,6 +32,11 @@ class PermissionManager
             return true;
         }
 
+        // Les administrateurs doivent pouvoir gérer les enseignants et les classes sans restrictions comme les superadmin
+        if ($role === 'admin' && in_array($permissionCode, ['manage_teachers', 'view_classes', 'manage_classes_structure'], true)) {
+            return true;
+        }
+
         if (self::$permissionsCache === null) {
             self::loadPermissionsForRole((string) $role);
         }
