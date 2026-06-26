@@ -87,6 +87,8 @@ return [
     'session_expired_error' => 'Session expired or invalid request.',
     'invalid_file_format_excel' => 'Only Excel files (.xlsx) are supported.',
     'unauthorized_action' => 'Unauthorized action.',
+    'unauthorized_access_description' => 'You do not have the necessary permissions to access this section or perform this action. Please contact your administrator if you believe this is an error.',
+    'back_to_dashboard' => 'Back to Dashboard',
     'incomplete_assignment_data' => 'Incomplete assignment data.',
     'teacher_assigned_success' => 'Teacher assigned successfully.',
     'teacher_deleted_success' => 'Teacher account deleted successfully.',
@@ -1875,5 +1877,18 @@ return [
     'total_remaining_tuition'      => 'Remaining Total',
     'male_short'                   => 'M',
     'female_short'                 => 'F',
+
+    // -- Connection frequency --
+    'frequency_high'   => 'High Frequency',
+    'frequency_medium' => 'Medium Frequency',
+    'frequency_low'    => 'Low Frequency',
+    'frequency_idle'   => 'Inactive',
+
+    // -- Task statuses --
+    'status_success'   => 'Success',
+    'status_warning'   => 'Warning',
+    'status_failed'    => 'Failed',
+    'status_running'   => 'Running',
+    'status_unknown'   => 'Unknown',
 ];
 

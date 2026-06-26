@@ -90,6 +90,8 @@ return [
     'session_expired_error' => 'Session expirée ou requête invalide.',
     'invalid_file_format_excel' => 'Seuls les fichiers Excel (.xlsx) sont supportés.',
     'unauthorized_action' => 'Action non autorisée.',
+    'unauthorized_access_description' => 'Vous ne disposez pas des permissions nécessaires pour accéder à cette section ou effectuer cette action. Veuillez contacter votre administrateur si vous pensez qu\'il s\'agit d\'une erreur.',
+    'back_to_dashboard' => 'Retour au Tableau de Bord',
     'incomplete_assignment_data' => 'Données d\'affectation incomplètes.',
     'teacher_assigned_success' => 'L\'enseignant a été affecté avec succès.',
     'teacher_deleted_success' => 'L\'enseignant a été supprimé avec succès.',
@@ -1970,5 +1972,18 @@ return [
     'total_remaining_tuition'      => 'Total restant',
     'male_short'                   => 'H',
     'female_short'                 => 'F',
+
+    // -- Fréquence de connexion --
+    'frequency_high'   => 'Fréquence élevée',
+    'frequency_medium' => 'Fréquence moyenne',
+    'frequency_low'    => 'Fréquence faible',
+    'frequency_idle'   => 'Inactif',
+
+    // -- Statuts de tâche --
+    'status_success'   => 'Succès',
+    'status_warning'   => 'Avertissement',
+    'status_failed'    => 'Échec',
+    'status_running'   => 'En cours',
+    'status_unknown'   => 'Inconnu',
 ];
 
