@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Database;
 use App\Core\Session;
+use App\Core\PermissionManager;
 use App\Services\AcademicYearService;
 use App\Services\FinancialService;
 use PDO;
@@ -25,11 +26,8 @@ class ScholarshipController
         $this->academicYearService = new AcademicYearService($this->db);
         $this->financialService = new FinancialService($this->db);
 
-        // Sécurité : Accès restreint aux administrateurs, caissiers et comptables
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
-            header("Location: /");
-            exit;
-        }
+        // Sécurité RBAC : Accès réservé aux rôles financiers
+        PermissionManager::requirePermission('manage_scholarships');
     }
 
     /**

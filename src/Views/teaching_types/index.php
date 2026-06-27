@@ -43,7 +43,7 @@
                                         </div>
                                     </div>
                                     <div class="d-flex gap-1 align-items-center">
-                                        <?php if (in_array(App\Core\Session::get('user_role'), ['superadmin', 'admin'])): ?>
+                                        <?php if (\App\Core\PermissionManager::hasRole(['superadmin', 'admin'])): ?>
                                             <a href="/teaching_types/delete?id=<?= $type['id'] ?>&csrf_token=<?= \App\Core\Session::generateCsrfToken() ?>"
                                                 class="btn-icon-action text-danger position-relative btn-confirm-delete"
                                                 style="z-index: 10; width: 28px; height: 28px; font-size: 0.8rem;"
@@ -55,7 +55,7 @@
                                 </div>
 
                                 <!-- Stretched Link for Edit -->
-                                <?php if (in_array(App\Core\Session::get('user_role'), ['superadmin', 'admin'])): ?>
+                                <?php if (\App\Core\PermissionManager::hasRole(['superadmin', 'admin'])): ?>
                                     <a href="/teaching_types/edit?id=<?= $type['id'] ?>" class="stretched-link"></a>
                                 <?php endif; ?>
 

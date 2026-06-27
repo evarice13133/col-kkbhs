@@ -76,13 +76,13 @@
                                 <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('user_role_label') ?></label>
                                 <select name="role" class="form-select premium-select">
                                     <option value="enseignant"><?= __('teacher_classic') ?></option>
-                                    <?php if (App\Core\Session::get('user_role') === 'superadmin'): ?>
+                                    <?php if (\App\Core\PermissionManager::hasRole('superadmin')): ?>
                                         <option value="admin"><?= __('admin_restricted') ?></option>
                                         <option value="superadmin"><?= __('superadmin_max') ?></option>
                                         <option value="caissier"><?= __('role_caissier_option') ?></option>
                                         <option value="comptable"><?= __('role_comptable_option') ?></option>
                                         <option value="it_manager"><?= __('role_it_manager_option') ?></option>
-                                    <?php elseif (App\Core\Session::get('user_role') === 'admin'): ?>
+                                    <?php elseif (\App\Core\PermissionManager::hasRole('admin')): ?>
                                         <option value="admin"><?= __('admin_restricted') ?></option>
                                         <option value="caissier"><?= __('role_caissier_option') ?></option>
                                         <option value="comptable"><?= __('role_comptable_option') ?></option>

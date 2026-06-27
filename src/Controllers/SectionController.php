@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Database;
 use App\Core\Session;
+use App\Core\PermissionManager;
 use App\Services\SettingsStore;
 use PDO;
 
@@ -28,11 +29,8 @@ class SectionController
         $this->db = Database::getInstance()->getConnection();
         $this->settingsStore = new SettingsStore($this->db);
         
-        // RÈGLE MÉTIER : L'Admin et le SuperAdmin peuvent modifier la structure de l'établissement
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
-            header("Location: /");
-            exit;
-        }
+        // Sécurité RBAC : Accès réservé aux administrateurs
+        PermissionManager::requirePermission('manage_sections');
     }
 
     /**

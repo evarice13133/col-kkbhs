@@ -10,6 +10,8 @@ use App\Core\Database;
 
 use App\Core\Session;
 
+use App\Core\PermissionManager;
+
 use App\Services\BackupService;
 
 use PDO;
@@ -34,15 +36,8 @@ class AcademicYearController
 
         $this->backupService = new BackupService($this->db);
 
-        // Seuls superadmin et admin gèrent les années
-
-        if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
-
-            header("Location: /");
-
-            exit;
-
-        }
+        // Sécurité RBAC : Accès réservé aux administrateurs
+        PermissionManager::requirePermission('manage_academic_years');
 
     }
 
