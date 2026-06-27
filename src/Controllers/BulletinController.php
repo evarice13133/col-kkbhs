@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Database;
 use App\Core\Session;
+use App\Core\PermissionManager;
 use App\Services\SettingsStore;
 use PDO;
 
@@ -31,7 +32,7 @@ class BulletinController
         $settingsStore = new SettingsStore($this->db);
         $bulletinPrintingEnabled = $settingsStore->getBool('bulletin_printing_enabled', true);
 
-        if (!$bulletinPrintingEnabled && Session::get('user_role') !== 'superadmin') {
+        if (!$bulletinPrintingEnabled && !PermissionManager::hasRole('superadmin')) {
             header("Location: /");
             exit;
         }
@@ -56,7 +57,7 @@ class BulletinController
             $classesQuery .= " AND c.section_id = ?";
             $classesParams[] = $sectionId;
         }
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'], true)) {
+        if (!PermissionManager::hasRole(['superadmin', 'admin'])) {
             $academicYearId = $this->getActiveAcademicYear()['id'] ?? 0;
             $classesQuery .= " AND EXISTS (SELECT 1 FROM teacher_assignments ta WHERE ta.class_id = c.id AND ta.user_id = ? AND ta.academic_year_id = {$academicYearId})";
             $classesParams[] = (int) Session::get('user_id');
@@ -77,10 +78,8 @@ class BulletinController
 
     public function discipline()
     {
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'], true)) {
-            header("Location: /bulletins");
-            exit;
-        }
+        // Sécurité RBAC : Accès réservé aux administrateurs
+        PermissionManager::requirePermission('manage_bulletins');
 
         $academicYears = $this->db->query("SELECT id, nom, is_active FROM academic_years ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
         $academicYearId = (int) ($_GET['academic_year_id'] ?? 0);
@@ -108,10 +107,8 @@ class BulletinController
 
     public function saveDiscipline()
     {
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'], true)) {
-            header("Location: /bulletins");
-            exit;
-        }
+        // Sécurité RBAC : Accès réservé aux administrateurs
+        PermissionManager::requirePermission('manage_bulletins');
 
         $classId = (int) ($_POST['class_id'] ?? 0);
         $term = (int) ($_POST['term'] ?? 0);

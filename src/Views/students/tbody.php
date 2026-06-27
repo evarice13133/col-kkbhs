@@ -1,6 +1,6 @@
 <?php if (empty($students)): ?>
     <tr>
-        <td colspan="<?= in_array(App\Core\Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable']) ? 6 : 5 ?>" class="text-center py-5 text-muted">
+        <td colspan="<?= \App\Core\PermissionManager::hasPermission('manage_students') ? 6 : 5 ?>" class="text-center py-5 text-muted">
             <i class="bi bi-info-circle fs-4 d-block mb-2 text-secondary"></i>
             <?= __('no_students_found') ?: 'Aucun élève trouvé' ?>
         </td>
@@ -49,7 +49,7 @@
                     <i class="bi bi-building me-1"></i><?= htmlspecialchars((string) ($s['department_nom'] ?: '-')) ?>
                 </span>
             </td>
-            <?php if (in_array(App\Core\Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])): ?>
+            <?php if (\App\Core\PermissionManager::hasPermission('manage_students')): ?>
             <td class="text-end pe-4">
                 <div class="d-flex justify-content-end gap-1">
                     <a href="/students/edit?id=<?= $s['id'] ?>"

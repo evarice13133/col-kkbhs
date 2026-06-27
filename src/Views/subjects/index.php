@@ -4,7 +4,7 @@ ob_start(); ?>
 <div class="animate-fade-in container-fluid py-3 px-2 px-md-4">
 
     <!-- Boutons d'Action Principaux (Au-dessus du filtre) -->
-    <?php if (in_array(App\Core\Session::get('user_role'), ['admin', 'superadmin'])): ?>
+    <?php if (\App\Core\PermissionManager::hasPermission('manage_subjects')): ?>
     <div class="d-flex justify-content-center mb-3">
         <div class="d-flex gap-2">
             <a href="/subjects/create" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm text-nowrap">
@@ -75,11 +75,11 @@ ob_start(); ?>
                         <th class="ps-4"><?= __('subject') ?></th>
                         <th><?= __('classes') ?></th>
                         <th><?= __('coefficient') ?></th>
-                        <?php if (App\Core\Session::get('user_role') === 'superadmin'): ?>
+                        <?php if (\App\Core\PermissionManager::hasRole('superadmin')): ?>
                         <th><?= __('status') ?></th>
                         <?php endif; ?>
                         <th><?= __('group') ?></th>
-                        <?php if (in_array(App\Core\Session::get('user_role'), ['admin', 'superadmin'])): ?>
+                        <?php if (\App\Core\PermissionManager::hasPermission('manage_subjects')): ?>
                         <th class="text-end pe-4"><?= __('actions') ?></th>
                         <?php endif; ?>
                     </tr>
@@ -123,7 +123,7 @@ ob_start(); ?>
                                         </div>
                                     <?php endif; ?>
                                 </td>
-                                <?php if (App\Core\Session::get('user_role') === 'superadmin'): ?>
+                                <?php if (\App\Core\PermissionManager::hasRole('superadmin')): ?>
                                 <td>
                                     <?php if ($isActive): ?>
                                         <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-2 py-1" style="font-size: 0.7rem;">
@@ -141,12 +141,12 @@ ob_start(); ?>
                                         <?= htmlspecialchars($s['groupe'] ?? 'Groupe 1') ?>
                                     </span>
                                 </td>
-                                <?php if (in_array(App\Core\Session::get('user_role'), ['admin', 'superadmin'])): ?>
+                                <?php if (\App\Core\PermissionManager::hasPermission('manage_subjects')): ?>
                                 <td class="text-end pe-4">
                                     <div class="d-flex justify-content-end gap-1">
-                                        <?php if (App\Core\Session::get('user_role') === 'superadmin'): ?>
-                                        <a href="/subjects/toggleStatus?id=<?= $s['id'] ?>" 
-                                           class="btn btn-sm btn-action-modern btn-confirm-toggle <?= $isActive ? 'text-warning' : 'text-success' ?>" 
+                                        <?php if (\App\Core\PermissionManager::hasRole('superadmin')): ?>
+                                        <a href="/subjects/toggleStatus?id=<?= $s['id'] ?>"
+                                           class="btn btn-sm btn-action-modern btn-confirm-toggle <?= $isActive ? 'text-warning' : 'text-success' ?>"
                                            data-confirm="<?= $isActive ? __('deactivate_subject_confirm', ['name' => $s['nom']]) : __('activate_subject_confirm', ['name' => $s['nom']]) ?>"
                                            title="<?= $isActive ? __('deactivate') : __('activate') ?>">
                                             <i class="bi bi-power fs-5"></i>

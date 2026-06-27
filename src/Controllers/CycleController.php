@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Database;
 use App\Core\Session;
+use App\Core\PermissionManager;
 use App\Services\SettingsStore;
 use PDO;
 
@@ -27,11 +28,8 @@ class CycleController
         $this->db = Database::getInstance()->getConnection();
         $this->settingsStore = new SettingsStore($this->db);
         
-        // SÉCURITÉ : L'Admin et le SuperAdmin peuvent accéder à la gestion des cycles
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
-            header("Location: /");
-            exit;
-        }
+        // Sécurité RBAC : Accès réservé aux administrateurs
+        PermissionManager::requirePermission('manage_cycles');
     }
 
     /**

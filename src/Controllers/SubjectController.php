@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Database;
 use App\Core\Session;
+use App\Core\PermissionManager;
 use App\Services\Import\ExcelTemplateService;
 use App\Services\Import\SubjectImportProcessor;
 use App\Services\AcademicYearService;
@@ -105,10 +106,9 @@ class SubjectController
 
     public function create()
     {
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
-            header("Location: /subjects");
-            exit;
-        }
+        // Sécurité RBAC : Accès réservé aux administrateurs
+        PermissionManager::requirePermission('manage_subjects');
+        
         $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $deptQuery = Session::get('user_role') === 'superadmin' ? "SELECT id, nom, teaching_type_id FROM departments ORDER BY nom ASC" : "SELECT id, nom, teaching_type_id FROM departments WHERE status = 1 ORDER BY nom ASC";
@@ -118,10 +118,9 @@ class SubjectController
 
     public function store()
     {
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
-            header("Location: /subjects");
-            exit;
-        }
+        // Sécurité RBAC : Accès réservé aux administrateurs
+        PermissionManager::requirePermission('manage_subjects');
+        
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $nom = trim($_POST['nom'] ?? '');
             $coeff = (int) ($_POST['coefficient'] ?? 1);

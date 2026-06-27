@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\Database;
 use App\Core\Session;
 use App\Core\LogoManager;
+use App\Core\PermissionManager;
 use App\Services\ActivityTracker;
 use App\Services\BackupService;
 use App\Services\SettingsStore;
@@ -18,10 +19,9 @@ class SettingController
     public function __construct()
     {
         $this->db = Database::getInstance()->getConnection();
-        if (Session::get('user_role') !== 'superadmin') {
-            header("Location: /");
-            exit;
-        }
+        
+        // Sécurité RBAC : Accès réservé aux superadmins
+        PermissionManager::requirePermission('manage_settings');
 
         $this->settingsStore = new SettingsStore($this->db);
     }
