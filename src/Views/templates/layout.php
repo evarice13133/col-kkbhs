@@ -123,16 +123,9 @@ $nav_items = [
         'icon' => 'bi-journal-check',
         'items' => [
             ['icon' => 'bi-pencil-square', 'label' => __('enter_marks'), 'url' => '/notes', 'roles' => ['superadmin', 'admin', 'enseignant']],
-            [
-                'label' => __('pedagogie'),
-                'roles' => ['superadmin', 'admin', 'enseignant'],
-                'icon' => 'bi-mortarboard',
-                'submenu' => [
-                    ['icon' => 'bi-door-open', 'label' => __('classes'), 'url' => '/classes', 'roles' => ['superadmin', 'admin']],
-                    ['icon' => 'bi-book', 'label' => __('subjects'), 'url' => '/subjects', 'roles' => ['superadmin', 'admin']],
-                    ['icon' => 'bi-shield-check', 'label' => __('discipline_management'), 'url' => '/bulletins/discipline', 'roles' => ['superadmin', 'admin']],
-                ]
-            ],
+            ['icon' => 'bi-door-open', 'label' => __('classes'), 'url' => '/classes', 'roles' => ['superadmin', 'admin']],
+            ['icon' => 'bi-book', 'label' => __('subjects'), 'url' => '/subjects', 'roles' => ['superadmin', 'admin']],
+            ['icon' => 'bi-shield-check', 'label' => __('discipline_management'), 'url' => '/bulletins/discipline', 'roles' => ['superadmin', 'admin']],
             [
                 'label' => __('print'),
                 'roles' => ['superadmin', 'admin'],
@@ -198,6 +191,18 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
             return false;
         }
         if ($itemPath === '/users' && $current_path === '/users/create-caissier') {
+            return false;
+        }
+        if ($itemPath === '/bulletins' && strpos($current_path, '/bulletins/') === 0) {
+            return false;
+        }
+        if ($itemPath === '/bulletins/discipline' && !in_array($current_path, ['/bulletins/discipline', '/bulletins/discipline/save'])) {
+            return false;
+        }
+        if ($itemPath === '/honors' && strpos($current_path, '/honors/') === 0) {
+            return false;
+        }
+        if ($itemPath === '/proces-verbal' && strpos($current_path, '/proces-verbal/') === 0) {
             return false;
         }
     }

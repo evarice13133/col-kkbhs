@@ -1944,7 +1944,7 @@ return [
     'my_registrations_menu'    => 'Inscrits par moi',
     'my_registrations_only'    => 'Inscrits par moi uniquement',
     'all_students_menu'        => 'Les élèves',
-    'create_cashier_menu'      => 'Créer Compte',
+    'create_cashier_menu'      => 'Ajouter un Caissier',
 
     // Extra Cashier Dashboard keys
     'total_registration_collected' => 'Frais d\'Inscription Encaissés',

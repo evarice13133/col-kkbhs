@@ -57,10 +57,10 @@ $quickAccessLinks = [
     // ── Structure ────────────────────────────────────────────
     ['url' => '/classes',  'icon' => 'bi-door-open-fill',        'label' => __('classes'),             'meta' => (string) ((int) $stats_classes)],
     ['url' => '/subjects', 'icon' => 'bi-book-fill',             'label' => __('subjects'),            'meta' => (string) ((int) $stats_subjects)],
-    // ── Pédagogie ────────────────────────────────────────────
+// ── Gestion des notes ───────────────────────────────────────
     ['url' => '/notes',    'icon' => 'bi-pencil-square',         'label' => __('enter_marks'),         'meta' => (string) ((int) $globalPending)],
-    ['url' => '/honors',   'icon' => 'bi-award-fill',            'label' => __('honor_roll_title'),    'meta' => null],
     ['url' => '/bulletins/discipline', 'icon' => 'bi-shield-check', 'label' => __('discipline_management'), 'meta' => null],
+    ['url' => '/honors',   'icon' => 'bi-award-fill',            'label' => __('honor_roll_title'),    'meta' => null],
     ['url' => '/proces-verbal', 'icon' => 'bi-file-earmark-text','label' => __('proces_verbaux'),      'meta' => null],
     // ── Pilotage ─────────────────────────────────────────────
     ['url' => '/sequences',       'icon' => 'bi-check2-square',  'label' => __('evaluations'),         'meta' => null],
