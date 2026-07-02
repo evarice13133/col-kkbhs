@@ -1415,7 +1415,7 @@ return [
     'choose_department_hint' => 'Choisir Département',
     'no_class_for_criteria' => 'Aucune classe trouvée pour ces critères',
     'pilotage' => 'Pilotage',
-    'structure_et_classes' => 'Structure & Classes',
+    'structure_et_classes' => 'Structure Générale',
     'ressources_humaines' => 'Gestion des Inscriptions',
     'pedagogie_et_resultats' => 'Pédagogie & Résultats',
     'gestion_des_notes' => 'Gestion des Notes',
