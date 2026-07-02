@@ -36,10 +36,10 @@ use App\Controllers\ScholarshipController;
 use App\Controllers\FinancialHistoryController;
 use App\Controllers\DiscountTypeController;
 use App\Controllers\SchoolFeeController;
+use App\Controllers\AIAssistantController;
 
 
 
-// 0. Applique les mesures de sécurité globales
 Security::applyHeaders();
 
 // 1. Initialise la session via le module Core
@@ -112,6 +112,13 @@ if ($path === '/notifications/toggle-archive') {
 if ($path === '/notifications/delete') {
     $c = new LandingController();
     $c->deleteNotification();
+    exit;
+}
+
+// Route API Assistant IA
+if ($path === '/api/ai-assistant' && $method === 'POST') {
+    $c = new AIAssistantController();
+    $c->handleRequest();
     exit;
 }
 

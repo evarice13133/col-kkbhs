@@ -859,6 +859,14 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
     <!-- Services Applicatifs -->
     <script src="/public/js/AlertService.js?v=1.1"></script>
     <script src="/public/js/ux-improvements.js?v=1.1"></script>
+    
+    <!-- Assistant IA -->
+    <?php if (\App\Core\Session::isLogged()): ?>
+    <script>
+        window.userLoggedIn = true;
+    </script>
+    <script src="/public/js/ai-assistant.js?v=1.1"></script>
+    <?php endif; ?>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
