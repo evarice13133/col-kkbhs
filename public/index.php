@@ -115,13 +115,6 @@ if ($path === '/notifications/delete') {
     exit;
 }
 
-// Route API Assistant IA
-if ($path === '/api/ai-assistant' && $method === 'POST') {
-    $c = new AIAssistantController();
-    $c->handleRequest();
-    exit;
-}
-
 // Route principale (Tableau de Bord ou Landing Page)
 if ($path === '/' || $path === '/index.php') {
     if (Session::isLogged()) {

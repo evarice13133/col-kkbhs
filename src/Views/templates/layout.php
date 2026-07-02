@@ -860,13 +860,30 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
     <script src="/public/js/AlertService.js?v=1.1"></script>
     <script src="/public/js/ux-improvements.js?v=1.1"></script>
     
-    <!-- Assistant IA -->
-    <?php if (\App\Core\Session::isLogged()): ?>
+    <!-- Assistant IA (Convocore) -->
+    <div id="VG_OVERLAY_CONTAINER"></div>
     <script>
-        window.userLoggedIn = true;
+        (function() {
+            window.VG_CONFIG = {
+                ID: "uv55GM6Qo516C3uA0ymZ",
+                region: 'eu',
+                render: 'popup',
+                stylesheets: [
+                    "https://cdn.convocore.ai/vg_live_build/styles.css"
+                ]
+                <?php if (\App\Core\Session::isLogged()): ?>
+                ,
+                user: {
+                    name: '<?= addslashes(\App\Core\Session::get("user_prenom") . " " . \App\Core\Session::get("user_nom")) ?>'
+                },
+                userID: '<?= \App\Core\Session::get("user_id") ?>'
+                <?php endif; ?>
+            };
+            var VG_SCRIPT = document.createElement("script");
+            VG_SCRIPT.src = "https://cdn.convocore.ai/vg_live_build/vg_bundle.js";
+            document.body.appendChild(VG_SCRIPT);
+        })();
     </script>
-    <script src="/public/js/ai-assistant.js?v=1.1"></script>
-    <?php endif; ?>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
