@@ -7,36 +7,86 @@ ob_start();
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 .page-wrap{font-family:'Plus Jakarta Sans',sans-serif;}
-.config-card{background:var(--bg-card,#fff);border:1px solid rgba(0,0,0,0.06);border-radius:20px;transition:all .3s cubic-bezier(.16,1,.3,1);box-shadow:0 4px 16px rgba(0,0,0,.03);}
-.config-card:hover{box-shadow:0 12px 40px rgba(0,0,0,.07);transform:translateY(-3px);}
+.page-header-bar{background:var(--bg-card,#fff);border-radius:18px;border:1px solid rgba(0,0,0,.05);box-shadow:0 2px 12px rgba(0,0,0,.03);}
+.page-header-icon{width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,rgba(79,70,229,.14),rgba(79,70,229,.06));color:var(--bs-primary);box-shadow:inset 0 1px 0 rgba(255,255,255,.6);}
+.search-pill{border-radius:50px;border:1.5px solid rgba(0,0,0,.09);background:#fff;padding:.5rem 1.15rem .5rem .65rem;display:flex;align-items:center;gap:.55rem;transition:all .22s ease;min-width:0;}
+.search-pill:focus-within{border-color:var(--bs-primary);box-shadow:0 0 0 4px rgba(79,70,229,.1);}
+.search-pill input{border:none;outline:none;background:transparent;font-size:.88rem;width:220px;min-width:0;}
+.search-pill input::placeholder{color:rgba(100,116,139,.75);}
+.btn-add-new{width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--bs-primary),#6366f1);color:#fff;transition:all .25s cubic-bezier(.34,1.56,.64,1);cursor:pointer;border:none;box-shadow:0 4px 14px rgba(79,70,229,.28);}
+.btn-add-new:hover{transform:translateY(-2px) scale(1.04);box-shadow:0 10px 28px rgba(79,70,229,.35);}
+.tranches-alert{border:none;border-left:4px solid transparent;box-shadow:0 4px 18px rgba(0,0,0,.04);}
+.tranches-alert.alert-success{border-left-color:var(--bs-success);}
+.tranches-alert.alert-danger{border-left-color:var(--bs-danger);}
+.config-card{background:var(--bg-card,#fff);border:1px solid rgba(0,0,0,0.06);border-radius:20px;transition:all .3s cubic-bezier(.16,1,.3,1);box-shadow:0 4px 16px rgba(0,0,0,.03);display:flex;flex-direction:column;}
+.config-card:hover{box-shadow:0 14px 42px rgba(0,0,0,.08);transform:translateY(-3px);}
 .config-card.type-class{border-left:5px solid var(--bs-primary);}
 .config-card.type-cycle{border-left:5px solid var(--bs-info);}
 .config-card.type-teaching_type{border-left:5px solid var(--bs-warning);}
-.timeline-line{border-left:2px solid rgba(79,70,229,.1);padding-left:1.5rem;position:relative;}
-.timeline-dot{width:9px;height:9px;border-radius:50%;background:var(--bs-primary);border:2px solid #fff;box-shadow:0 0 0 2px rgba(79,70,229,.25);position:absolute;left:-6px;top:5px;}
-.badge-type{font-size:.72rem;font-weight:700;letter-spacing:.3px;padding:.4rem .9rem;border-radius:50px;}
-.btn-edit-config{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(79,70,229,.07);border:1px solid rgba(79,70,229,.12);color:var(--bs-primary);transition:all .25s cubic-bezier(.34,1.56,.64,1);cursor:pointer;}
-.btn-edit-config:hover{background:var(--bs-primary);color:#fff;transform:scale(1.1) rotate(-5deg);box-shadow:0 6px 18px rgba(79,70,229,.25);}
-.btn-add-new{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:var(--bs-primary);color:#fff;transition:all .25s cubic-bezier(.34,1.56,.64,1);cursor:pointer;border:none;box-shadow:0 4px 12px rgba(79,70,229,.25);}
-.btn-add-new:hover{transform:scale(1.1) rotate(8deg);box-shadow:0 8px 24px rgba(79,70,229,.35);}
-.search-pill{border-radius:50px;border:1.5px solid rgba(0,0,0,.09);background:#fff;padding:.45rem 1.1rem .45rem .5rem;display:flex;align-items:center;gap:.5rem;transition:all .2s;}
-.search-pill:focus-within{border-color:var(--bs-primary);box-shadow:0 0 0 4px rgba(79,70,229,.1);}
-.search-pill input{border:none;outline:none;background:transparent;font-size:.88rem;width:220px;}
-.page-header-bar{background:var(--bg-card,#fff);border-radius:18px;border:1px solid rgba(0,0,0,.05);box-shadow:0 2px 12px rgba(0,0,0,.03);}
-.modal-tranche-row{border:1px solid rgba(0,0,0,.07);border-radius:14px;background:#fafbff;padding:1rem;margin-bottom:.75rem;position:relative;border-left:4px solid var(--bs-primary);transition:box-shadow .2s;}
-.modal-tranche-row:hover{box-shadow:0 4px 16px rgba(0,0,0,.06);}
-.mi{border-radius:10px;border:1.5px solid rgba(0,0,0,.1);padding:.55rem .85rem;transition:all .2s;font-size:.87rem;}
+.config-card-amount{letter-spacing:-.02em;line-height:1.1;}
+.badge-type{font-size:.72rem;font-weight:700;letter-spacing:.35px;padding:.42rem .95rem;border-radius:50px;}
+.btn-edit-config{width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:rgba(79,70,229,.07);border:1px solid rgba(79,70,229,.12);color:var(--bs-primary);transition:all .25s cubic-bezier(.34,1.56,.64,1);cursor:pointer;}
+.btn-edit-config:hover{background:var(--bs-primary);color:#fff;transform:scale(1.08);box-shadow:0 6px 18px rgba(79,70,229,.25);}
+.timeline-line{border-left:2px solid rgba(79,70,229,.12);padding-left:1.55rem;position:relative;}
+.timeline-dot{width:10px;height:10px;border-radius:50%;background:var(--bs-primary);border:2px solid #fff;box-shadow:0 0 0 2px rgba(79,70,229,.22);position:absolute;left:-6px;top:6px;}
+.timeline-item{padding:.45rem .65rem;margin-left:-.65rem;border-radius:10px;transition:background .18s ease;}
+.timeline-item:hover{background:rgba(79,70,229,.04);}
+.config-card-footer{border-color:rgba(0,0,0,.06)!important;}
+.empty-state-icon{width:72px;height:72px;border-radius:20px;background:rgba(79,70,229,.08);color:var(--bs-primary);display:inline-flex;align-items:center;justify-content:center;margin-bottom:1rem;}
+.empty-state-card{max-width:520px;margin:0 auto;}
+/* Modal scroll & layout */
+#modal-edit-config .modal-dialog{max-height:calc(100vh - 1.5rem);margin:.75rem auto;}
+#modal-edit-config .modal-content{border-radius:20px;max-height:calc(100vh - 1.5rem);display:flex;flex-direction:column;overflow:hidden;}
+#modal-edit-config .modal-config-form{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;overflow:hidden;}
+#modal-edit-config .modal-header{flex-shrink:0;}
+#modal-edit-config .modal-body{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+#modal-edit-config .modal-body::-webkit-scrollbar{width:6px;}
+#modal-edit-config .modal-body::-webkit-scrollbar-thumb{background:rgba(79,70,229,.25);border-radius:50px;}
+#modal-edit-config .modal-footer{flex-shrink:0;background:var(--bg-card,#fff);border-top:1px solid rgba(0,0,0,.05)!important;padding-top:.85rem!important;}
+.modal-header-gradient{background:linear-gradient(135deg,rgba(79,70,229,.08),rgba(99,102,241,.03));}
+.modal-target-panel{background:rgba(79,70,229,.04);border:1px solid rgba(79,70,229,.1);border-radius:16px;padding:1.1rem;}
+.modal-budget-panel{background:rgba(248,250,252,.95);border:1px solid rgba(0,0,0,.06);border-radius:14px;padding:.85rem 1rem;}
+.modal-presets-panel{padding:.75rem 1rem;background:rgba(79,70,229,.03);border:1px dashed rgba(79,70,229,.18);border-radius:14px;}
+.modal-tranche-row{border:1px solid rgba(0,0,0,.07);border-radius:14px;background:#fafbff;padding:1rem 1.05rem;margin-bottom:.75rem;position:relative;border-left:4px solid var(--bs-primary);transition:box-shadow .2s,transform .2s;}
+.modal-tranche-row:hover{box-shadow:0 6px 20px rgba(0,0,0,.06);transform:translateY(-1px);}
+.mi{border-radius:10px;border:1.5px solid rgba(0,0,0,.1);padding:.58rem .9rem;transition:all .2s;font-size:.87rem;background:#fff;}
 .mi:focus{border-color:var(--bs-primary);box-shadow:0 0 0 3px rgba(79,70,229,.12);}
-.preset-chip{font-size:.7rem;font-weight:700;padding:.3rem .7rem;border-radius:50px;border:1px solid rgba(79,70,229,.2);background:rgba(79,70,229,.04);color:var(--bs-primary);cursor:pointer;transition:all .2s;}
-.preset-chip:hover{background:var(--bs-primary);color:#fff;}
-.budget-bar-wrap{height:8px;border-radius:50px;background:rgba(0,0,0,.06);overflow:hidden;}
+.preset-chip{font-size:.7rem;font-weight:700;padding:.35rem .75rem;border-radius:50px;border:1px solid rgba(79,70,229,.2);background:#fff;color:var(--bs-primary);cursor:pointer;transition:all .2s;}
+.preset-chip:hover,.preset-chip:active{background:var(--bs-primary);color:#fff;border-color:var(--bs-primary);transform:translateY(-1px);}
+.budget-bar-wrap{height:9px;border-radius:50px;background:rgba(0,0,0,.06);overflow:hidden;}
 .budget-bar-fill{height:100%;border-radius:50px;transition:width .35s ease,background .2s;}
+.btn-modal-cancel{border:1px solid rgba(0,0,0,.08);}
+.btn-modal-save{min-width:148px;}
+.modal-loader-panel{padding:2rem 1rem;}
+@media (max-width:575.98px){
+    .page-header-bar{flex-direction:column;align-items:stretch!important;gap:1rem;}
+    .page-header-actions{width:100%;justify-content:space-between;}
+    .search-pill{flex:1;}
+    .search-pill input{width:100%;}
+    #modal-edit-config .modal-dialog{margin:.5rem;max-height:calc(100vh - 1rem);}
+    #modal-edit-config .modal-content,#modal-edit-config .modal-dialog{max-height:calc(100vh - 1rem);}
+    #modal-edit-config .modal-footer{flex-direction:column-reverse;gap:.5rem;}
+    #modal-edit-config .modal-footer .btn{width:100%;}
+    .modal-tranche-row .row.g-2>.col-6{flex:0 0 100%;max-width:100%;}
+}
+@media (min-width:576px){
+    #modal-edit-config.modal .modal-dialog.modal-dialog-centered{align-items:center;min-height:calc(100% - 1.5rem);}
+}
 [data-theme="dark"] .config-card{background:rgba(30,41,59,.35);border-color:rgba(255,255,255,.06);}
+[data-theme="dark"] .page-header-bar{background:rgba(30,41,59,.4);border-color:rgba(255,255,255,.06);}
+[data-theme="dark"] .page-header-icon{box-shadow:inset 0 1px 0 rgba(255,255,255,.05);}
 [data-theme="dark"] .search-pill{background:rgba(30,41,59,.5);border-color:rgba(255,255,255,.08);}
 [data-theme="dark"] .search-pill input{color:#e2e8f0;}
+[data-theme="dark"] .timeline-item:hover{background:rgba(79,70,229,.1);}
+[data-theme="dark"] .config-card-footer{border-color:rgba(255,255,255,.06)!important;}
 [data-theme="dark"] .modal-tranche-row{background:rgba(15,23,42,.4);border-color:rgba(255,255,255,.07);}
 [data-theme="dark"] .mi{background:rgba(15,23,42,.5)!important;border-color:rgba(255,255,255,.09)!important;color:#f1f5f9!important;}
-[data-theme="dark"] .page-header-bar{background:rgba(30,41,59,.4);border-color:rgba(255,255,255,.06);}
+[data-theme="dark"] .modal-budget-panel{background:rgba(15,23,42,.45);border-color:rgba(255,255,255,.07);}
+[data-theme="dark"] .modal-header-gradient{background:linear-gradient(135deg,rgba(79,70,229,.14),rgba(15,23,42,.2));}
+[data-theme="dark"] .modal-target-panel{background:rgba(79,70,229,.08);border-color:rgba(79,70,229,.18);}
+[data-theme="dark"] .modal-presets-panel{background:rgba(79,70,229,.08);border-color:rgba(79,70,229,.22);}
+[data-theme="dark"] .preset-chip{background:rgba(15,23,42,.55);border-color:rgba(79,70,229,.25);}
+[data-theme="dark"] #modal-edit-config .modal-footer{background:rgba(30,41,59,.55);border-color:rgba(255,255,255,.06)!important;}
 @keyframes cfadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .cfg-animate{animation:cfadeIn .35s cubic-bezier(.16,1,.3,1) forwards;}
 @keyframes rowSlide{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
@@ -47,7 +97,7 @@ ob_start();
 <div class="page-wrap animate-fade-in container-fluid py-3 px-md-4">
     <div class="page-header-bar d-flex align-items-center justify-content-between p-3 p-md-4 mb-4">
         <div class="d-flex align-items-center gap-3">
-            <div class="d-flex align-items-center justify-content-center rounded-3 bg-primary bg-opacity-10 text-primary flex-shrink-0" style="width:44px;height:44px;">
+            <div class="page-header-icon d-flex align-items-center justify-content-center flex-shrink-0">
                 <i class="bi bi-layers-half fs-5"></i>
             </div>
             <div>
@@ -55,12 +105,12 @@ ob_start();
                 <p class="text-muted-theme small mb-0"><?= __('tranches_subtitle') ?></p>
             </div>
         </div>
-        <div class="d-flex align-items-center gap-3">
-            <div class="search-pill d-none d-sm-flex">
+        <div class="page-header-actions d-flex align-items-center gap-2 gap-sm-3">
+            <div class="search-pill d-flex">
                 <i class="bi bi-search text-muted ms-1" style="font-size:.85rem;"></i>
-                <input type="text" id="search-cfg" placeholder="Rechercher...">
+                <input type="text" id="search-cfg" placeholder="Rechercher une configuration...">
             </div>
-            <button type="button" class="btn-add-new" id="btn-open-new" title="Nouvelle configuration"
+            <button type="button" class="btn-add-new flex-shrink-0" id="btn-open-new" title="Nouvelle configuration"
                 data-bs-toggle="modal" data-bs-target="#modal-edit-config">
                 <i class="bi bi-plus-lg fs-5"></i>
             </button>
@@ -68,13 +118,13 @@ ob_start();
     </div>
 
     <?php if ($flash = \App\Core\Session::getFlash('success')): ?>
-        <div class="alert alert-success alert-dismissible fade show rounded-3 mb-4" role="alert">
+        <div class="alert alert-success tranches-alert alert-dismissible fade show rounded-3 mb-4" role="alert">
             <i class="bi bi-check-circle-fill me-2"></i><?= h($flash) ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     <?php endif; ?>
     <?php if ($flash = \App\Core\Session::getFlash('error')): ?>
-        <div class="alert alert-danger alert-dismissible fade show rounded-3 mb-4" role="alert">
+        <div class="alert alert-danger tranches-alert alert-dismissible fade show rounded-3 mb-4" role="alert">
             <i class="bi bi-exclamation-triangle-fill me-2"></i><?= h($flash) ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
@@ -115,11 +165,13 @@ ob_start();
 
         <?php if (empty($groupedInstallments)): ?>
             <div class="col-12">
-                <div class="text-center py-5 config-card p-5">
-                    <i class="bi bi-layers fs-1 text-muted opacity-25 d-block mb-3"></i>
-                    <h5 class="text-muted fw-semibold"><?= __('no_config_yet') ?></h5>
-                    <p class="text-muted small mb-4"><?= __('use_editor_to_start') ?></p>
-                    <button type="button" class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#modal-edit-config" id="btn-empty-new">
+                <div class="text-center py-5 config-card p-5 empty-state-card">
+                    <div class="empty-state-icon">
+                        <i class="bi bi-layers fs-3"></i>
+                    </div>
+                    <h5 class="text-main-theme fw-bold mb-2"><?= __('no_config_yet') ?></h5>
+                    <p class="text-muted small mb-4 px-2"><?= __('use_editor_to_start') ?></p>
+                    <button type="button" class="btn btn-primary rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#modal-edit-config" id="btn-empty-new">
                         <i class="bi bi-plus-circle-fill me-2"></i>Creer une configuration
                     </button>
                 </div>
@@ -133,7 +185,7 @@ ob_start();
                                 <span class="badge badge-type bg-<?= $group['type'] ?> bg-opacity-10 text-<?= $group['type'] ?> border border-<?= $group['type'] ?> border-opacity-20 mb-2">
                                     <?= h($group['label']) ?>
                                 </span>
-                                <div class="fw-black fs-5 text-main-theme">
+                                <div class="fw-black fs-5 text-main-theme config-card-amount">
                                     <?= number_format($group['total_amount'], 0, '.', ' ') ?>
                                     <span class="text-muted fw-normal" style="font-size:.75rem;">FCFA</span>
                                 </div>
@@ -148,11 +200,11 @@ ob_start();
                                 <i class="bi bi-pencil-square"></i>
                             </button>
                         </div>
-                        <div class="timeline-line mt-3">
+                        <div class="timeline-line mt-3 flex-grow-1">
                             <?php foreach ($group['items'] as $item): ?>
-                                <div class="mb-2 position-relative">
+                                <div class="mb-2 position-relative timeline-item">
                                     <div class="timeline-dot"></div>
-                                    <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
                                         <span class="fw-semibold text-main-theme small"><?= h($item['name']) ?></span>
                                         <div class="text-end">
                                             <span class="fw-bold text-primary small me-2"><?= number_format($item['amount'], 0, '.', ' ') ?> FCFA</span>
@@ -162,7 +214,7 @@ ob_start();
                                 </div>
                             <?php endforeach; ?>
                         </div>
-                        <div class="mt-3 pt-2 border-top d-flex align-items-center justify-content-between" style="border-color:rgba(0,0,0,.05)!important;">
+                        <div class="mt-3 pt-2 border-top config-card-footer d-flex align-items-center justify-content-between">
                             <span class="text-muted extra-small fw-semibold">
                                 <i class="bi bi-stack me-1"></i><?= count($group['items']) ?> tranche<?= count($group['items']) > 1 ? 's' : '' ?>
                             </span>
@@ -177,23 +229,23 @@ ob_start();
 <!-- MODAL EDITION -->
 <div class="modal fade" id="modal-edit-config" tabindex="-1" aria-labelledby="modal-edit-label" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content border-0 shadow-lg" style="border-radius:20px;overflow:hidden;">
-            <div class="modal-header border-0 pb-0 pt-4 px-4" style="background:linear-gradient(135deg,rgba(79,70,229,.06),rgba(79,70,229,.02));">
-                <div>
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-0 pb-0 pt-4 px-4 modal-header-gradient">
+                <div class="pe-3">
                     <h5 class="modal-title fw-black text-main-theme mb-1 fs-5" id="modal-edit-label">
                         <i class="bi bi-sliders2 text-primary me-2"></i>Configuration des tranches
                     </h5>
                     <p class="text-muted small mb-0" id="modal-edit-subtitle">Definissez les tranches de paiement</p>
                 </div>
-                <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                <button type="button" class="btn-close ms-auto flex-shrink-0" data-bs-dismiss="modal" aria-label="Fermer"></button>
             </div>
-            <form id="modal-config-form" action="/school_fees/tranches" method="POST" novalidate>
+            <form id="modal-config-form" class="modal-config-form" action="/school_fees/tranches" method="POST" novalidate>
                 <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
                 <input type="hidden" name="target_type" id="modal-target-type" value="">
                 <input type="hidden" name="target_id"   id="modal-target-id"   value="">
                 <div class="modal-body px-4 py-3">
                     <!-- Target selector (visible for new config) -->
-                    <div id="modal-target-selector" class="mb-4 p-3 rounded-3" style="background:rgba(79,70,229,.04);border:1px solid rgba(79,70,229,.1);">
+                    <div id="modal-target-selector" class="mb-4 modal-target-panel">
                         <label class="form-label fw-bold text-muted-theme extra-small text-uppercase mb-2" style="letter-spacing:.5px;">Niveau d'application</label>
                         <select id="modal-level-select" class="form-select mi mb-3" onchange="handleModalLevelChange(this.value)">
                             <option value="" disabled selected>Choisir un niveau...</option>
@@ -230,23 +282,23 @@ ob_start();
                         </div>
                     </div>
                     <!-- Budget bar -->
-                    <div id="modal-budget-bar" class="mb-4 d-none">
-                        <div class="d-flex align-items-center justify-content-between mb-1">
+                    <div id="modal-budget-bar" class="mb-4 d-none modal-budget-panel">
+                        <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
                             <span class="small fw-semibold text-muted">Scolarite attendue : <strong id="modal-tuition-lbl" class="text-primary">-</strong></span>
                             <span class="small fw-semibold" id="modal-sum-lbl">Affecte : <strong class="text-dark">0 FCFA</strong></span>
                         </div>
                         <div class="budget-bar-wrap">
                             <div id="modal-budget-fill" class="budget-bar-fill bg-primary" style="width:0%"></div>
                         </div>
-                        <div id="modal-budget-msg" class="mt-1 text-center extra-small fw-bold"></div>
+                        <div id="modal-budget-msg" class="mt-2 text-center extra-small fw-bold"></div>
                     </div>
                     <!-- Loader -->
-                    <div id="modal-loader" class="text-center py-4 d-none">
+                    <div id="modal-loader" class="text-center modal-loader-panel d-none">
                         <div class="spinner-border text-primary" role="status"></div>
-                        <p class="mt-2 text-muted small">Chargement des tranches...</p>
+                        <p class="mt-2 text-muted small mb-0">Chargement des tranches...</p>
                     </div>
                     <!-- Presets -->
-                    <div id="modal-presets" class="mb-3 d-none">
+                    <div id="modal-presets" class="mb-3 d-none modal-presets-panel">
                         <div class="d-flex flex-wrap gap-2 align-items-center">
                             <span class="extra-small text-muted fw-bold me-1">Repartition rapide :</span>
                             <button type="button" class="preset-chip" onclick="applyPreset([100])">100%</button>
@@ -265,8 +317,8 @@ ob_start();
                     </button>
                 </div>
                 <div class="modal-footer border-0 px-4 pb-4 pt-0">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" id="modal-btn-submit" class="btn btn-primary rounded-pill px-5 fw-bold shadow-sm" disabled>
+                    <button type="button" class="btn btn-light btn-modal-cancel rounded-pill px-4" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" id="modal-btn-submit" class="btn btn-primary btn-modal-save rounded-pill px-5 fw-bold shadow-sm" disabled>
                         <i class="bi bi-check-circle-fill me-2"></i>Enregistrer
                     </button>
                 </div>

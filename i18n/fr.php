@@ -263,6 +263,7 @@ return [
     'sequences_periods' => 'Séquences & Périodes',
     'students_list' => 'Liste élèves',
     'classes_cohorts' => 'Classes & Cohortes',
+    'classes' => 'Gérer les classes',
     'teachers_list' => 'Liste profs',
     'user_access' => 'Accès Utilisateurs',
     'academic_years' => 'Années scolaires',
@@ -326,10 +327,10 @@ return [
     'new_password_help' => 'Ce champ est optionnel. Si vous le renseignez, le mot de passe sera remplacé.',
 
     // ── Catégories d'entités ───────────────────────────────────────────
-    'students' => 'Élèves',
+    'students' => 'Élèves', 
     'my_students' => 'Mes Éleves',
-    'teachers' => 'Enseignants',
-    'subjects' => 'Matières',
+    'teachers' => 'Gérer les Enseignants',
+    'subjects' => 'Gérer les Matières',
     'grades' => 'Notes',
     'departments' => 'Départements',
     'add_department' => 'Ajouter un Département',
@@ -739,7 +740,7 @@ return [
     // ── Dashboard ─────────────────────────────────────────────────────
     'command_center' => 'Tableau de Bord!',
     'new_student' => 'Nouvel Élève',
-    'enter_marks' => 'Saisir Notes', 
+    'enter_marks' => 'Saisir les Notes', 
     'realtime_monitoring' => 'Surveillance en temps réel',
     'total_effectif' => 'Total Effectif',
     'active_rooms' => 'Salles actives',
@@ -1322,10 +1323,10 @@ return [
     'contact_support_action' => 'Contacter le Support IT',
 
     // ── Évaluations (Séquences) ───────────────────────────────────────
-    'evaluations' => 'Évaluations',
+    'evaluations' => 'Gérer les Évaluations',
     'evaluation_sequences_mgmt' => 'Gestion des Séquences',
     'sequences_defined' => 'Séquences définies',
-    'add_sequence' => 'Nouvelle Séquence',
+    'add_sequence' => 'Nouvelle Évaluation',
     'code' => 'Code',
     'label' => 'Libellé',
     'trimester' => 'Trimestre',
@@ -1380,7 +1381,7 @@ return [
 
     // ── Discipline ─────────────────────────────────────────────────────
     'save_discipline_hint' => 'Les modifications sont enregistrées pour toute la classe en une seule fois.',
-    'discipline_management' => 'Gestion de la Discipline',
+    'discipline_management' => 'Gérer la Discipline',
     'discipline' => 'Discipline',
     'period' => 'Période',
     'select_class_to_manage_discipline' => 'Sélectionnez une classe pour gérer la discipline.',
@@ -1625,7 +1626,7 @@ return [
     'import_in_progress' => 'Importation en cours...',
 
     // Insolvables
-    'insolvent_title' => 'Insolvables',
+    'insolvent_title' => 'Liste des Insolvables',
     'insolvent_header' => 'Suivi des Élèves Insolvables',
     'insolvent_subtitle' => 'Rapport des élèves en retard de paiement sur une ou plusieurs tranches de scolarité',
     'insolvent_students' => 'Élèves Insolvables',
@@ -1639,8 +1640,8 @@ return [
     'unpaid_tranches_suffix' => 'tr.',
     'loading_data' => 'Chargement des données...',
 
-    // Versements
-    'versements_title' => 'Versements',
+    // Versements 
+    'versements_title' => 'Versements de Scolarité',
     'versements_header' => 'Versements des Frais de Scolarité',
     'versements_subtitle' => 'Enregistrement et suivi des versements de scolarité des élèves',
     'new_versement' => 'Nouveau Versement',  
@@ -1858,7 +1859,7 @@ return [
     'payments_ledger_students' => 'Registre Financier des Élèves',
     'payments_ledger_subtitle' => 'Suivi des scolarités, réductions, bourses et règlements',
     'discounts' => 'Réductions',
-    'scholarships' => 'Bourses',
+    'scholarships' => 'Bourses accordées',
     'tuition' => 'Scolarité',
     'registration' => 'Inscription',
     'confirm_delete_payment' => 'Êtes-vous sûr de vouloir supprimer et annuler ce versement ?',
@@ -1882,8 +1883,8 @@ return [
     'financial_management' => 'Gestion de la Scolarité',
     'scolarite_menu' => 'Scolarité',
     'payments_menu' => 'Liste des Paiements',
-    'tranches_menu' => 'Tranches',
-    'versements_menu' => 'Versements',
+    'tranches_menu' => 'Tranches de Scolarité par classe',
+    'versements_menu' => 'Versements de la Scolarité',
     'discounts_granted' => 'Réductions Accordées',
     'access_space_instruction' => 'Accédez à votre espace pour gérer votre établissement.',
     'register' => "S'enregistrer", 
@@ -1943,7 +1944,7 @@ return [
     'register_student_menu'    => 'Inscrire un élève',
     'my_registrations_menu'    => 'Inscrits par moi',
     'my_registrations_only'    => 'Inscrits par moi uniquement',
-    'all_students_menu'        => 'Les élèves',
+    'all_students_menu'        => 'Liste des élèves',
     'create_cashier_menu'      => 'Ajouter un Caissier',
 
     // Extra Cashier Dashboard keys

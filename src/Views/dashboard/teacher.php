@@ -45,10 +45,18 @@ ob_start();
     <!-- BARRE D'ACTIONS RAPIDES : Style Floating Island -->
     <div class="d-flex justify-content-center mb-5">
         <div class="filter-island px-3 py-2 shadow-lg animate-slide-down" style="min-width: 40%;">
-            <div class="d-flex align-items-center justify-content-center gap-2 w-100">
+            <div class="d-flex flex-wrap align-items-center justify-content-center gap-2 w-100">
                 <a href="/notes"
                     class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm scale-on-hover d-flex align-items-center gap-2">
                     <i class="bi bi-pencil-square"></i> <?= __('enter_marks') ?>
+                </a>
+                <a href="/students"
+                    class="btn btn-outline-primary rounded-pill px-4 py-2 fw-bold shadow-sm scale-on-hover d-flex align-items-center gap-2">
+                    <i class="bi bi-people"></i> <?= __('my_students') ?>
+                </a>
+                <a href="/documentation"
+                    class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-bold shadow-sm scale-on-hover d-flex align-items-center gap-2">
+                    <i class="bi bi-question-circle"></i> <?= __('help') ?>
                 </a>
             </div>
         </div>
