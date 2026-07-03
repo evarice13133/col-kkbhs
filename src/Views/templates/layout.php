@@ -32,6 +32,25 @@ $nav_items = [
         'url' => '/',
         'roles' => ['superadmin', 'admin', 'enseignant', 'caissier', 'comptable', 'it_manager']
     ],
+    // Flat teacher shortcuts (no nested sections)
+    [
+        'icon' => 'bi-pencil-square',
+        'label' => __('enter_marks'),
+        'url' => '/notes',
+        'roles' => ['enseignant']
+    ],
+    [
+        'icon' => 'bi-people',
+        'label' => __('my_students'),
+        'url' => '/students',
+        'roles' => ['enseignant']
+    ],
+    [
+        'icon' => 'bi-question-circle',
+        'label' => __('help'),
+        'url' => '/documentation',
+        'roles' => ['enseignant']
+    ],
     // Flat Classes menu for Cashier/Accountant
     [
         'icon' => 'bi-door-open',
@@ -42,14 +61,13 @@ $nav_items = [
     // SECTION: CENTRE DE PILOTAGE
     [
         'section' => __('centre_de_pilotage'),
-        'roles' => ['superadmin', 'admin', 'caissier', 'comptable', 'enseignant'],
+        'roles' => ['superadmin', 'admin', 'caissier', 'comptable'],
         'icon' => 'bi-sliders2',
         'items' => [
+            ['icon' => 'bi-calendar-event', 'label' => __('academic_years'), 'url' => '/academic_years', 'roles' => ['superadmin', 'admin']],
             ['icon' => 'bi-pie-chart-fill', 'label' => __('dashboard_executif'), 'url' => '/pilotage/dashboard', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
             ['icon' => 'bi-cash-coin', 'label' => __('centre_financier'), 'url' => '/pilotage/financial', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-            ['icon' => 'bi-calendar-event', 'label' => __('academic_years'), 'url' => '/academic_years', 'roles' => ['superadmin', 'admin']],
-            ['icon' => 'bi-check2-square', 'label' => __('evaluations'), 'url' => '/sequences', 'roles' => ['superadmin', 'admin']],
-            ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'roles' => ['superadmin', 'admin', 'enseignant']],
+            ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'roles' => ['superadmin', 'admin']],
         ]
     ],
     // SECTION: STRUCTURE
@@ -67,7 +85,7 @@ $nav_items = [
     // SECTION: RESSOURCES HUMAINES
     [
         'section' => __('ressources_humaines'),
-        'roles' => ['superadmin', 'admin', 'enseignant', 'caissier', 'comptable'],
+        'roles' => ['superadmin', 'admin', 'caissier', 'comptable'],
         'icon' => 'bi-people',
         'items' => [
             [
@@ -81,7 +99,6 @@ $nav_items = [
                 ]
             ],
             ['icon' => 'bi-person-plus-fill', 'label' => __('create_cashier_menu'), 'url' => '/users/create-caissier', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-            ['icon' => 'bi-people', 'label' => __('my_students'), 'url' => '/students', 'roles' => ['enseignant']],
             ['icon' => 'bi-person-badge', 'label' => __('teachers'), 'url' => '/teachers', 'roles' => ['superadmin', 'admin']],
         ]
     ],
@@ -119,10 +136,12 @@ $nav_items = [
     // SECTION: GESTION DES NOTES
     [
         'section' => __('gestion_des_notes'),
-        'roles' => ['superadmin', 'admin', 'enseignant'],
+        'roles' => ['superadmin', 'admin'],
         'icon' => 'bi-journal-check',
         'items' => [
-            ['icon' => 'bi-pencil-square', 'label' => __('enter_marks'), 'url' => '/notes', 'roles' => ['superadmin', 'admin', 'enseignant']],
+            
+            ['icon' => 'bi-check2-square', 'label' => __('evaluations'), 'url' => '/sequences', 'roles' => ['superadmin', 'admin']],
+            ['icon' => 'bi-pencil-square', 'label' => __('enter_marks'), 'url' => '/notes', 'roles' => ['superadmin', 'admin']],
             ['icon' => 'bi-door-open', 'label' => __('classes'), 'url' => '/classes', 'roles' => ['superadmin', 'admin']],
             ['icon' => 'bi-book', 'label' => __('subjects'), 'url' => '/subjects', 'roles' => ['superadmin', 'admin']],
             ['icon' => 'bi-shield-check', 'label' => __('discipline_management'), 'url' => '/bulletins/discipline', 'roles' => ['superadmin', 'admin']],
