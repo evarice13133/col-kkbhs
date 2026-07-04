@@ -366,7 +366,7 @@ ob_start();
                         </div>
                         <div class="col-md-4">
                             <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1" id="reference_label">Référence de paiement</label>
-                            <input type="text" name="reference" id="reference" class="form-control premium-input" placeholder="Optionnel (Transaction, chèque, etc.)">
+                            <input type="text" name="reference" id="reference" class="form-control premium-input" placeholder="Numéro de transaction, chèque ou référence bancaire" required>
                         </div>
 
                         <div class="col-md-12 mt-4 border-top border-theme-light pt-3">
@@ -385,7 +385,16 @@ ob_start();
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Motif de réduction</label>
-                                    <input type="text" name="reduction_motive" class="form-control premium-input" placeholder="Ex: Famille nombreuse, social...">
+                                    <select name="reduction_motive" id="reduction_motive" class="form-select premium-input">
+                                        <option value="">-- Sélectionner un motif --</option>
+                                        <?php if (!empty($discountTypes)): ?>
+                                            <?php foreach ($discountTypes as $dt): ?>
+                                                <option value="<?= (int)$dt['id'] ?>"><?= h($dt['name'] ?? $dt['nom'] ?? '') ?></option>
+                                            <?php endforeach; ?>
+                                        <?php else: ?>
+                                            <option value="">Aucun motif disponible</option>
+                                        <?php endif; ?>
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -588,25 +597,34 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!paymentMethodSelect || !referenceInput) return;
         const val = paymentMethodSelect.value.toLowerCase();
         
-        referenceInput.required = false;
+        // Par défaut, le champ référence est requis et activé
+        referenceInput.required = true;
         referenceInput.disabled = false;
-        referenceInput.placeholder = "Optionnel (Transaction, chèque, etc.)";
         referenceLabel.innerHTML = 'Référence de paiement';
+        referenceInput.placeholder = "Numéro de transaction, chèque ou référence bancaire";
 
+        // Si paiement en espèces, la référence est générée automatiquement côté serveur
         if (val.includes('cash') || val.includes('espèces') || val.includes('espece')) {
-            referenceLabel.innerHTML = 'Référence de paiement <span class="text-success">(Générée automatiquement)</span>';
+            referenceLabel.innerHTML = 'Référence de paiement <span class="text-success">(générée automatiquement)</span>';
             referenceInput.placeholder = "Générée automatiquement par le système";
             referenceInput.value = "";
+            referenceInput.required = false;
             referenceInput.disabled = true;
         } else if (val.includes('orange') || val.includes('mtn') || val.includes('mobile') || val.includes('momo') || val.includes('money')) {
-            referenceLabel.innerHTML = 'Numéro de transaction <span class="text-muted">(optionnel)</span>';
+            referenceLabel.innerHTML = 'Numéro de transaction <span class="text-muted">(obligatoire)</span>';
             referenceInput.placeholder = "Ex: TX-98471...";
+            referenceInput.required = true;
+            referenceInput.disabled = false;
         } else if (val.includes('chèque') || val.includes('cheque')) {
-            referenceLabel.innerHTML = 'Numéro de chèque <span class="text-muted">(optionnel)</span>';
+            referenceLabel.innerHTML = 'Numéro de chèque <span class="text-muted">(obligatoire)</span>';
             referenceInput.placeholder = "Ex: CHQ-001234";
+            referenceInput.required = true;
+            referenceInput.disabled = false;
         } else if (val.includes('virement') || val.includes('carte') || val.includes('bancaire') || val.includes('transfert')) {
-            referenceLabel.innerHTML = 'Référence bancaire <span class="text-muted">(optionnelle)</span>';
+            referenceLabel.innerHTML = 'Référence bancaire <span class="text-muted">(obligatoire)</span>';
             referenceInput.placeholder = "Ex: VIR-847294...";
+            referenceInput.required = true;
+            referenceInput.disabled = false;
         }
     }
 

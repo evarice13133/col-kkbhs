@@ -5,13 +5,20 @@ ob_start();
 <style>
 .hover-card {
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease, background-color 0.3s ease;
-    border: 1px solid var(--border-color) !important;
+    border: 1px solid rgba(148, 163, 184, 0.18) !important;
+    background: var(--bg-card);
+    box-shadow: 0 20px 45px -28px rgba(15, 23, 42, 0.12);
+    border-radius: 20px;
 }
 .hover-card:hover {
     transform: translateY(-4px);
+    box-shadow: 0 24px 52px -30px rgba(15, 23, 42, 0.18);
 }
 .hover-card .kpi-icon {
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
 }
 .hover-card:hover .kpi-icon {
     transform: scale(1.1);
@@ -228,6 +235,9 @@ ob_start();
                         <div>
                             <div class="fw-black text-main-theme fs-5 mb-0"><?= number_format($totalExpected, 0, ',', ' ') ?> <span style="font-size: 0.75rem;" class="fw-normal text-muted">FCFA</span></div>
                             <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;"><?= __('total_expected') ?></div>
+                            <?php if (!empty($totalReductions) && $totalReductions > 0): ?>
+                                <div class="text-muted-theme small fw-semibold mt-1" style="font-size: 0.65rem;">Après réductions : -<?= number_format($totalReductions, 0, ',', ' ') ?> FCFA</div>
+                            <?php endif; ?>
                         </div>
                     </div>
                     <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#64748b,#475569); border-radius:0 0 12px 12px;"></div>
