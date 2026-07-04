@@ -1,5 +1,13 @@
 <?php
 $title = __('it_dashboard_title');
+
+$totalUsers = $totalUsers ?? 0;
+$totalTeachers = $totalTeachers ?? 0;
+$totalClasses = $totalClasses ?? 0;
+$totalStudents = $totalStudents ?? 0;
+$recentActivity = $recentActivity ?? [];
+$roleDistribution = $roleDistribution ?? [];
+
 ob_start();
 ?>
 

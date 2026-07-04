@@ -132,9 +132,9 @@ class GrilleImportProcessor
         ?array $activeYear
     ): void {
         $className = trim((string) ($row['A'] ?? ''));
-        $fraisInscriptionNouveau = !empty($row['B']) ? (float)str_replace([' ', ','], ['', '.'], $row['B']) : 0.0;
-        $fraisInscriptionAncien = !empty($row['C']) ? (float)str_replace([' ', ','], ['', '.'], $row['C']) : 0.0;
-        $fraisScolariteBrut = !empty($row['D']) ? (float)str_replace([' ', ','], ['', '.'], $row['D']) : 0.0;
+        $fraisInscriptionNouveau = $this->parseAmount($row['B'] ?? null);
+        $fraisInscriptionAncien = $this->parseAmount($row['C'] ?? null);
+        $fraisScolariteBrut = $this->parseAmount($row['D'] ?? null);
         $nbrTranches = !empty($row['E']) ? (int)$row['E'] : 0;
 
         $key = mb_strtolower($className);
@@ -176,7 +176,7 @@ class GrilleImportProcessor
             for ($i = 1; $i <= $nbrTranches; $i++) {
                 $cols = $trancheColumns[$i];
                 $tName = trim((string)($row[$cols['name']] ?? "Tranche {$i}"));
-                $tAmt = !empty($row[$cols['amount']]) ? (float)str_replace([' ', ','], ['', '.'], $row[$cols['amount']]) : 0.0;
+                $tAmt = $this->parseAmount($row[$cols['amount']] ?? null);
                 $tDeadlineRaw = $row[$cols['deadline']] ?? '';
                 $tDeadline = $this->parseDate($tDeadlineRaw);
 
@@ -303,6 +303,54 @@ class GrilleImportProcessor
         }
 
         return null;
+    }
+
+    private function parseAmount($value): float
+    {
+        if ($value === null || $value === '') {
+            return 0.0;
+        }
+
+        $raw = trim((string) $value);
+        if ($raw === '') {
+            return 0.0;
+        }
+
+        if (is_numeric($raw)) {
+            return (float) $raw;
+        }
+
+        // Normalize whitespace and remove currency suffixes
+        $raw = preg_replace('/[\s\x{00A0}\x{202F}\x{2009}]+/u', '', $raw);
+        $raw = preg_replace('/[^\d\-\+\.,]/u', '', $raw);
+
+        if ($raw === '' || $raw === '-' || $raw === '+') {
+            return 0.0;
+        }
+
+        $hasDot = strpos($raw, '.') !== false;
+        $hasComma = strpos($raw, ',') !== false;
+
+        if ($hasDot && $hasComma) {
+            if (strrpos($raw, ',') > strrpos($raw, '.')) {
+                $raw = str_replace('.', '', $raw);
+                $raw = str_replace(',', '.', $raw);
+            } else {
+                $raw = str_replace(',', '', $raw);
+            }
+        } elseif ($hasComma) {
+            if (preg_match('/^\d{1,3}(?:,\d{3})+$/', $raw)) {
+                $raw = str_replace(',', '', $raw);
+            } else {
+                $raw = str_replace(',', '.', $raw);
+            }
+        } elseif ($hasDot) {
+            if (preg_match('/^\d{1,3}(?:\.\d{3})+$/', $raw)) {
+                $raw = str_replace('.', '', $raw);
+            }
+        }
+
+        return (float) $raw;
     }
 
     private function warmupLookups(): void

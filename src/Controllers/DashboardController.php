@@ -103,12 +103,22 @@ class DashboardController
         // Recettes globales de la caisse (scolarité + inscription)
         $totalGeneralCollected = $totalTuitionCollected + $totalRegistrationCollected;
 
-        // Total attendu scolarité
-        $totalExpected = (float) $this->db->query(
+        // Total attendu scolarité brut
+        $totalExpectedGross = (float) $this->db->query(
             "SELECT COALESCE(SUM(c.frais_scolarite_brut), 0)
              FROM students s JOIN classes c ON s.class_id = c.id
              WHERE s.is_withdrawn = 0 AND s.actif = 1 AND s.academic_year_id = {$activeYearId}"
         )->fetchColumn();
+
+        // Réductions accordées sur la scolarité
+        $totalReductions = (float) $this->db->query(
+            "SELECT COALESCE(SUM(e.total_reductions), 0)
+             FROM enrollments e
+             JOIN students s ON e.student_id = s.id
+             WHERE s.is_withdrawn = 0 AND s.actif = 1 AND e.academic_year_id = {$activeYearId}"
+        )->fetchColumn();
+
+        $totalExpected = max(0.0, $totalExpectedGross - $totalReductions);
 
         $totalInsolvent = (int) $this->db->query(
             "SELECT COUNT(DISTINCT student_id) FROM insolvent_students WHERE academic_year_id = {$activeYearId}"
@@ -207,7 +217,7 @@ class DashboardController
         $totalCollected = $totalTuitionCollected;
 
         return compact(
-            'totalStudents', 'totalCollected', 'totalExpected',
+            'totalStudents', 'totalCollected', 'totalExpected', 'totalExpectedGross', 'totalReductions',
             'totalInsolvent', 'collectionRate', 'monthlyPayments', 'recentPayments',
             'totalRegistrationCollected', 'totalTuitionCollected', 'totalGeneralCollected',
             'totalEnrolled', 'totalNonEnrolled', 'classRegistrationStats', 'policy'

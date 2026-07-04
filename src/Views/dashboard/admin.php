@@ -850,6 +850,9 @@ ob_start();
                         <div>
                             <div class="fw-black text-main-theme fs-5 mb-0" data-count-up="<?= (int)$totalExpected ?>"><?= number_format($totalExpected, 0, ',', ' ') ?> <span style="font-size: 0.75rem;" class="fw-normal text-muted">FCFA</span></div>
                             <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;"><?= __('total_expected') ?></div>
+                            <?php if (!empty($totalReductions) && $totalReductions > 0): ?>
+                                <div class="text-muted-theme small fw-semibold mt-1" style="font-size: 0.65rem;">Après réductions : -<?= number_format($totalReductions, 0, ',', ' ') ?> FCFA</div>
+                            <?php endif; ?>
                         </div>
                     </div>
                     <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#64748b,#475569); border-radius:0 0 16px 16px;"></div>
@@ -1619,6 +1622,43 @@ ob_start();
             });
         }
 
+        const collectionCtx = document.getElementById('adminCollectionRateChart');
+        if (collectionCtx) {
+            const collected = <?= json_encode($totalTuitionCollected) ?>;
+            const expected = <?= json_encode($totalExpected) ?>;
+            const remaining = Math.max(0, expected - collected);
+
+            new Chart(collectionCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Perçu', 'Restant'],
+                    datasets: [{
+                        data: [collected, remaining],
+                        backgroundColor: ['#22c55e', 'rgba(15, 23, 42, 0.08)'],
+                        borderColor: ['#ffffff', '#ffffff'],
+                        borderWidth: 2,
+                        cutout: '78%',
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => {
+                                    const value = ctx.parsed;
+                                    return `${ctx.label}: ${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', maximumFractionDigits: 0 }).format(value)}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
         const monthlyCtx = document.getElementById('adminMonthlyChart');
         if (monthlyCtx) {
             const monthlyData = <?= json_encode($monthlyPayments) ?>;
@@ -2004,22 +2044,35 @@ ob_start();
     /* Financial Dashboard Card Styles */
     .hover-card {
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease, background-color 0.3s ease;
-        border: 1px solid var(--border-color) !important;
+        border: 1px solid rgba(148, 163, 184, 0.18) !important;
+        background: var(--bg-card);
+        box-shadow: 0 20px 45px -28px rgba(15, 23, 42, 0.12);
+        border-radius: 20px;
     }
     .hover-card:hover {
         transform: translateY(-4px);
+        box-shadow: 0 24px 52px -30px rgba(15, 23, 42, 0.18);
     }
     .hover-card .kpi-icon {
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
     }
     .hover-card:hover .kpi-icon {
-        transform: scale(1.1);
+        transform: scale(1.08);
     }
     .hover-card .card-indicator {
         transition: height 0.3s ease;
     }
     .hover-card:hover .card-indicator {
         height: 5px !important;
+    }
+    .hover-card .text-muted-theme.small {
+        opacity: 0.85;
+    }
+    .hover-card .fw-black {
+        line-height: 1.1;
     }
 
     /* Card Primary (Purple/Indigo) */

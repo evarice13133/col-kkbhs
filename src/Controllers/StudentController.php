@@ -496,6 +496,9 @@ class StudentController
 
         $departments = $this->db->query("SELECT id, nom, teaching_type_id FROM departments WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
+        // Types de réduction disponibles (utilisés dans le formulaire d'inscription)
+        $discountTypes = (new \App\Models\DiscountType())->getAllActive();
+
         $formData = ['is_redoublant' => '0', 'sexe' => ''];
 
         include __DIR__ . '/../Views/students/create.php';
@@ -817,6 +820,7 @@ class StudentController
                     'adresse' => $adresse,
                 ];
 
+                $discountTypes = (new \App\Models\DiscountType())->getAllActive();
                 include __DIR__ . '/../Views/students/create.php';
                 return;
             }
