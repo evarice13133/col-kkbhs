@@ -165,6 +165,8 @@ elseif (strpos($path, '/students') === 0) {
 
     if ($path === '/students') {
         $c->index();
+    } elseif ($path === '/students/non-inscrits') {
+        $c->nonInscrits();
     } elseif ($path === '/students/create' && in_array($role, ['superadmin', 'admin', 'caissier', 'comptable'])) {
         $c->create();
     } elseif ($path === '/students/store' && $method === 'POST' && in_array($role, ['superadmin', 'admin', 'caissier', 'comptable'])) {
@@ -618,6 +620,35 @@ elseif (strpos($path, '/financial-history') === 0) {
         $c->index();
     elseif ($path === '/financial-history/print')
         $c->print();
+}
+
+// ====== ROUTES: GESTION DES DÉPENSES ======
+elseif (strpos($path, '/expenses') === 0) {
+    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
+        header('Location: /');
+        exit;
+    }
+    $c = new \App\Controllers\ExpenseController();
+    if ($path === '/expenses')
+        $c->index();
+    elseif ($path === '/expenses/store' && $method === 'POST')
+        $c->store();
+    elseif ($path === '/expenses/update' && $method === 'POST')
+        $c->update();
+    elseif ($path === '/expenses/cancel' && $method === 'POST')
+        $c->cancel();
+    elseif ($path === '/expenses/print')
+        $c->printReport();
+    elseif ($path === '/expenses/categories')
+        $c->categories();
+    elseif ($path === '/expenses/categories/store' && $method === 'POST')
+        $c->storeCategory();
+    elseif ($path === '/expenses/categories/update' && $method === 'POST')
+        $c->updateCategory();
+    elseif ($path === '/expenses/categories/toggle')
+        $c->toggleCategoryStatus();
+    elseif ($path === '/expenses/audit')
+        $c->auditLogs();
 }
 
 // ====== ROUTES: CENTRE DE PILOTAGE ======

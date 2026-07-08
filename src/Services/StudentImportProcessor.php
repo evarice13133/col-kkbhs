@@ -33,7 +33,7 @@ class StudentImportProcessor
                         $matricule = $this->matriculeService->generate($row['class_id']);
                     }
 
-                    $sql = "INSERT INTO students (nom, prenom, email, class_id, teaching_type_id, sexe, date_naissance, lieu_naissance, is_redoublant, academic_year_id, parent_contact, guardian_contact, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    $sql = "INSERT INTO students (nom, prenom, email, class_id, teaching_type_id, sexe, date_naissance, lieu_naissance, is_redoublant, academic_year_id, parent_contact, guardian_contact, created_by, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Non inscrit')";
                     $stmt = $this->db->prepare($sql);
                     
                     $stmt->execute([
@@ -54,7 +54,19 @@ class StudentImportProcessor
 
                     $studentId = (int)$this->db->lastInsertId();
 
-                    // Initialiser l'inscription financière
+                    // Journalisation d'audit de l'importation
+                    (new \App\Services\ActivityTracker($this->db))->recordEvent('student_import', 'student_activity', [
+                        'entity_type' => 'student',
+                        'entity_id' => $studentId,
+                        'metadata' => [
+                            'nom' => $row['nom'],
+                            'prenom' => $row['prenom'],
+                            'matricule' => $matricule,
+                            'class_id' => $row['class_id']
+                        ]
+                    ]);
+
+                    // Initialiser l'inscription financière (vide pour l'instant)
                     $enrollmentStmt = $this->db->prepare("INSERT INTO enrollments (student_id, class_id, academic_year_id, frais_scolarite_brut, total_reductions, total_bourses, total_paye, reste_a_payer) VALUES (?, ?, ?, 0.00, 0.00, 0.00, 0.00, 0.00)");
                     $enrollmentStmt->execute([$studentId, $row['class_id'], $this->activeYearId]);
 

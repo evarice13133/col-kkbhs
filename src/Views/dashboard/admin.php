@@ -285,6 +285,56 @@ ob_start();
         </div>
     </div>
 
+    <!-- Section: Workflow d'Inscription -->
+    <div class="row g-3 mb-4 animate-fade-in" data-views="global,academic">
+        <div class="col-12">
+            <div class="d-flex align-items-center gap-2 mt-2 mb-1">
+                <i class="bi bi-person-check text-primary fs-5"></i>
+                <h6 class="fw-bold m-0 text-uppercase small letter-spacing-1" style="color: var(--text-main);">Suivi du Workflow d'Inscription</h6>
+            </div>
+        </div>
+        <!-- Élèves Inscrits -->
+        <div class="col-6 col-xl-3 stats-col">
+            <div class="modern-card kpi-card border-0 shadow-sm stats-card kpi-stat-card" style="border-left: 4px solid #2ecc71 !important;">
+                <div class="kpi-icon-wrapper bg-success bg-opacity-10 text-success">
+                    <i class="bi bi-person-check-fill"></i>
+                </div>
+                <div class="kpi-value text-success" data-count-up="<?= (int) $stats_students_inscrits ?>"><?= $stats_students_inscrits ?></div>
+                <div class="kpi-label">Élèves Inscrits</div>
+            </div>
+        </div>
+        <!-- Élèves Non Inscrits -->
+        <div class="col-6 col-xl-3 stats-col">
+            <div class="modern-card kpi-card border-0 shadow-sm stats-card kpi-stat-card" style="border-left: 4px solid #f1c40f !important;">
+                <div class="kpi-icon-wrapper bg-warning bg-opacity-10 text-warning">
+                    <i class="bi bi-person-dash-fill"></i>
+                </div>
+                <div class="kpi-value text-warning" data-count-up="<?= (int) $stats_students_non_inscrits ?>"><?= $stats_students_non_inscrits ?></div>
+                <div class="kpi-label">Élèves Non Inscrits</div>
+            </div>
+        </div>
+        <!-- Démissionnaires -->
+        <div class="col-6 col-xl-3 stats-col">
+            <div class="modern-card kpi-card border-0 shadow-sm stats-card kpi-stat-card" style="border-left: 4px solid #e74c3c !important;">
+                <div class="kpi-icon-wrapper bg-danger bg-opacity-10 text-danger">
+                    <i class="bi bi-person-x-fill"></i>
+                </div>
+                <div class="kpi-value text-danger" data-count-up="<?= (int) $stats_students_demissionnaires ?>"><?= $stats_students_demissionnaires ?></div>
+                <div class="kpi-label">Démissionnaires</div>
+            </div>
+        </div>
+        <!-- Taux de Conversion -->
+        <div class="col-6 col-xl-3 stats-col">
+            <div class="modern-card kpi-card border-0 shadow-sm stats-card kpi-stat-card" style="border-left: 4px solid #3498db !important;">
+                <div class="kpi-icon-wrapper bg-info bg-opacity-10 text-info">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+                <div class="kpi-value text-info" data-count-up="<?= (int) $conversion_rate ?>" data-suffix="%"><?= $conversion_rate ?>%</div>
+                <div class="kpi-label">Taux de Conversion (Importés → Inscrits)</div>
+            </div>
+        </div>
+    </div>
+
     <!-- Accès rapide - Scroll horizontal -->
     <div class="modern-card mb-4 border-0 shadow-sm border-top border-primary border-4 animate-fade-in" style="border-radius: 24px !important;" data-views="global,academic">
         <div class="modern-card-header border-bottom bg-transparent py-3">
@@ -861,6 +911,79 @@ ob_start();
         </div>
     </div>
 
+        </div>
+    </div>
+
+    <!-- Section: Situation des Dépenses & Solde Réel -->
+    <div class="mb-4 animate-fade-in" data-views="financial">
+        <div class="kpi-section-title text-danger mb-3 d-flex align-items-center gap-2">
+            <span class="d-inline-block rounded-circle bg-danger bg-opacity-10 p-1"></span>
+            Suivi des Dépenses & Solde Réel
+        </div>
+        <div class="row g-4">
+            <!-- Solde Réel -->
+            <div class="col-6 col-xl-3">
+                <div class="modern-card hover-card <?= $netBalance >= 0 ? 'kpi-card-success' : 'kpi-card-danger' ?> shadow-sm p-3 h-100 position-relative overflow-hidden" style="border-radius: 16px !important;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="kpi-icon <?= $netBalance >= 0 ? 'bg-success bg-opacity-10 text-success' : 'bg-danger bg-opacity-10 text-danger' ?> rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0; border-radius: 12px !important;">
+                            <i class="bi bi-wallet-fill fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="fw-black text-main-theme fs-5 mb-0" data-count-up="<?= (int)$netBalance ?>"><?= number_format($netBalance, 0, ',', ' ') ?> <span style="font-size: 0.75rem;" class="fw-normal text-muted">FCFA</span></div>
+                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;">Solde Réel (Recettes - Dépenses)</div>
+                        </div>
+                    </div>
+                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: <?= $netBalance >= 0 ? 'linear-gradient(90deg,#22c55e,#10b981)' : 'linear-gradient(90deg,#ef4444,#dc2626)' ?>; border-radius:0 0 16px 16px;"></div>
+                </div>
+            </div>
+            <!-- Dépenses du Jour -->
+            <div class="col-6 col-xl-3">
+                <div class="modern-card hover-card kpi-card-warning shadow-sm p-3 h-100 position-relative overflow-hidden" style="border-radius: 16px !important;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="kpi-icon bg-warning bg-opacity-10 text-warning rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0; border-radius: 12px !important;">
+                            <i class="bi bi-calendar-day fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="fw-black text-main-theme fs-5 mb-0" data-count-up="<?= (int)$dailyExpenses ?>"><?= number_format($dailyExpenses, 0, ',', ' ') ?> <span style="font-size: 0.75rem;" class="fw-normal text-muted">FCFA</span></div>
+                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;">Dépenses du Jour</div>
+                        </div>
+                    </div>
+                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#f59e0b,#d97706); border-radius:0 0 16px 16px;"></div>
+                </div>
+            </div>
+            <!-- Dépenses du Mois -->
+            <div class="col-6 col-xl-3">
+                <div class="modern-card hover-card kpi-card-info shadow-sm p-3 h-100 position-relative overflow-hidden" style="border-radius: 16px !important;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="kpi-icon bg-info bg-opacity-10 text-info rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0; border-radius: 12px !important;">
+                            <i class="bi bi-calendar-month fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="fw-black text-main-theme fs-5 mb-0" data-count-up="<?= (int)$monthlyExpenses ?>"><?= number_format($monthlyExpenses, 0, ',', ' ') ?> <span style="font-size: 0.75rem;" class="fw-normal text-muted">FCFA</span></div>
+                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;">Dépenses du Mois</div>
+                        </div>
+                    </div>
+                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#0ea5e9,#0284c7); border-radius:0 0 16px 16px;"></div>
+                </div>
+            </div>
+            <!-- Total Dépenses de l'Année -->
+            <div class="col-6 col-xl-3">
+                <div class="modern-card hover-card kpi-card-danger shadow-sm p-3 h-100 position-relative overflow-hidden" style="border-radius: 16px !important;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="kpi-icon bg-danger bg-opacity-10 text-danger rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0; border-radius: 12px !important;">
+                            <i class="bi bi-cash-stack fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="fw-black text-main-theme fs-5 mb-0" data-count-up="<?= (int)$totalExpenses ?>"><?= number_format($totalExpenses, 0, ',', ' ') ?> <span style="font-size: 0.75rem;" class="fw-normal text-muted">FCFA</span></div>
+                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;">Dépenses de l'Année</div>
+                        </div>
+                    </div>
+                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#ef4444,#dc2626); border-radius:0 0 16px 16px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Section: Situation des Inscriptions -->
     <div class="mb-4" data-views="financial">
         <div class="kpi-section-title text-success mb-3 d-flex align-items-center gap-2">
@@ -937,7 +1060,7 @@ ob_start();
     <!-- Charts Row for Financial View -->
     <div class="row g-4 mb-4" data-views="financial">
         <!-- Collection Rate Donut -->
-        <div class="col-lg-4">
+        <div class="col-lg-3">
             <div class="modern-card border-0 shadow-sm p-4 h-100" style="border-radius: 20px !important;">
                 <h6 class="fw-black text-main-theme mb-4"><?= __('collection_rate') ?></h6>
                 <div class="d-flex align-items-center justify-content-center" style="height:220px; position:relative;">
@@ -960,10 +1083,27 @@ ob_start();
             </div>
         </div>
 
-        <!-- Monthly Evolution Chart -->
-        <div class="col-lg-8">
+        <!-- Expenses by Category Doughnut -->
+        <div class="col-lg-3">
             <div class="modern-card border-0 shadow-sm p-4 h-100" style="border-radius: 20px !important;">
-                <h6 class="fw-black text-main-theme mb-4"><?= __('monthly_evolution') ?></h6>
+                <h6 class="fw-black text-main-theme mb-4">Répartition des Dépenses</h6>
+                <div class="d-flex align-items-center justify-content-center" style="height:220px; position:relative;">
+                    <canvas id="adminExpensesCategoryChart"></canvas>
+                    <?php if (empty($expensesByCategory)): ?>
+                        <div class="position-absolute text-center text-muted small">Aucune dépense active</div>
+                    <?php endif; ?>
+                </div>
+                <div class="text-center mt-3">
+                    <span class="small text-muted-theme">Total des dépenses :</span>
+                    <span class="fw-bold text-danger small"><?= number_format($totalExpenses, 0, ',', ' ') ?> FCFA</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Evolution Chart -->
+        <div class="col-lg-6">
+            <div class="modern-card border-0 shadow-sm p-4 h-100" style="border-radius: 20px !important;">
+                <h6 class="fw-black text-main-theme mb-4">Comparatif Mensuel (Recettes vs Dépenses)</h6>
                 <div style="height:220px;">
                     <canvas id="adminMonthlyChart"></canvas>
                 </div>
@@ -1662,16 +1802,47 @@ ob_start();
         const monthlyCtx = document.getElementById('adminMonthlyChart');
         if (monthlyCtx) {
             const monthlyData = <?= json_encode($monthlyPayments) ?>;
+            const monthlyExpData = <?= json_encode($monthlyExpensesHist) ?>;
+            
+            // Union des mois
+            const allMonths = Array.from(new Set([
+                ...monthlyData.map(r => r.month),
+                ...monthlyExpData.map(e => e.month)
+            ])).sort();
+            
+            const monthLabels = allMonths.map(m => {
+                const [y, mm] = m.split('-');
+                return new Date(y, mm - 1).toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' });
+            });
+            
+            const monthTotals = allMonths.map(m => {
+                const found = monthlyData.find(r => r.month === m);
+                return found ? parseFloat(found.total) : 0;
+            });
+            
+            const monthExpTotals = allMonths.map(m => {
+                const found = monthlyExpData.find(r => r.month === m);
+                return found ? parseFloat(found.total) : 0;
+            });
+
             new Chart(monthlyCtx, {
                 type: 'bar',
                 data: {
-                    labels: monthlyData.map(x => x.month),
-                    datasets: [{
-                        label: 'Encaissements',
-                        data: monthlyData.map(x => parseFloat(x.total)),
-                        backgroundColor: 'rgba(16, 185, 129, 0.85)',
-                        borderRadius: 6
-                    }]
+                    labels: monthLabels,
+                    datasets: [
+                        {
+                            label: 'Recettes',
+                            data: monthTotals,
+                            backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'Dépenses',
+                            data: monthExpTotals,
+                            backgroundColor: 'rgba(239, 68, 68, 0.85)',
+                            borderRadius: 6
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
@@ -1684,6 +1855,35 @@ ob_start();
                         x: {
                             grid: { display: false }
                         }
+                    }
+                }
+            });
+        }
+
+        // --- Doughnut: Expenses by Category ---
+        const expCatCtx = document.getElementById('adminExpensesCategoryChart');
+        const expCatData = <?= json_encode($expensesByCategory) ?>;
+        if (expCatCtx && expCatData.length > 0) {
+            new Chart(expCatCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: expCatData.map(c => c.category_name),
+                    datasets: [{
+                        data: expCatData.map(c => parseFloat(c.total)),
+                        backgroundColor: [
+                            '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', 
+                            '#ec4899', '#6366f1', '#14b8a6', '#f43f5e', '#06b6d4'
+                        ],
+                        borderWidth: 0,
+                        cutout: '70%'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: true }
                     }
                 }
             });

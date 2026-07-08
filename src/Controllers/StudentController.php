@@ -151,10 +151,67 @@ class StudentController
         
         $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
-
-
         include __DIR__ . '/../Views/students/index.php';
+    }
 
+    public function nonInscrits()
+    {
+        if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
+            header("Location: /students");
+            exit;
+        }
+
+        $page = max(1, (int) ($_GET['page'] ?? 1));
+        $limit = self::PER_PAGE;
+        $offset = ($page - 1) * $limit;
+
+        if (!isset($_GET['status'])) {
+            $_GET['status'] = 'Non inscrit';
+        }
+
+        [$students, $filters, $totalCount] = $this->fetchStudentsFromFilters($limit, $offset);
+        
+        $totalPages = (int) ceil($totalCount / $limit);
+
+        if ($page > $totalPages && $totalCount > 0) {
+            header("Location: /students/non-inscrits?page=1");
+            exit;
+        }
+
+        if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
+            header('Content-Type: application/json');
+
+            $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+            $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+            ob_start();
+            include __DIR__ . '/../Views/students/tbody_non_inscrits.php';
+            $tbodyHtml = ob_get_clean();
+
+            ob_start();
+            include __DIR__ . '/../Views/students/badges_non_inscrits.php';
+            $badgesHtml = ob_get_clean();
+
+            ob_start();
+            include __DIR__ . '/../Views/students/pagination.php';
+            $paginationHtml = ob_get_clean();
+
+            echo json_encode([
+                'success' => true,
+                'tbody' => $tbodyHtml,
+                'badges' => $badgesHtml,
+                'pagination' => $paginationHtml,
+                'count' => $totalCount,
+                'totalPages' => $totalPages
+            ]);
+            exit;
+        }
+
+        $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+        include __DIR__ . '/../Views/students/non_inscrits.php';
     }
 
 
@@ -501,6 +558,33 @@ class StudentController
 
         $formData = ['is_redoublant' => '0', 'sexe' => ''];
 
+        $studentId = isset($_GET['student_id']) ? (int)$_GET['student_id'] : null;
+        if ($studentId) {
+            $stmt = $this->db->prepare("SELECT s.*, c.cycle_id, c.section_id, c.department_id FROM students s LEFT JOIN classes c ON s.class_id = c.id WHERE s.id = ?");
+            $stmt->execute([$studentId]);
+            $student = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($student) {
+                $formData = [
+                    'student_id' => $student['id'],
+                    'nom' => $student['nom'],
+                    'prenom' => $student['prenom'],
+                    'email' => $student['email'], // matricule
+                    'sexe' => $student['sexe'],
+                    'date_naissance' => $student['date_naissance'],
+                    'lieu_naissance' => $student['lieu_naissance'],
+                    'parent_contact' => $student['parent_contact'],
+                    'guardian_contact' => $student['guardian_contact'],
+                    'adresse' => $student['adresse'],
+                    'class_id' => $student['class_id'],
+                    'cycle_id' => $student['cycle_id'],
+                    'section_id' => $student['section_id'],
+                    'department_id' => $student['department_id'],
+                    'teaching_type_id' => $student['teaching_type_id'],
+                    'is_redoublant' => (string)$student['is_redoublant'],
+                ];
+            }
+        }
+
         include __DIR__ . '/../Views/students/create.php';
 
     }
@@ -825,18 +909,24 @@ class StudentController
                 return;
             }
 
+            $studentId = !empty($_POST['student_id']) ? (int)$_POST['student_id'] : null;
+
             // Génération de matricule automatique si vide
             if ($email === '') {
                 $email = $this->matriculeService->generate($class_id);
             }
 
-            // Vérifier l'unicité du matricule
-            $checkStmt = $this->db->prepare("SELECT COUNT(*) FROM students WHERE email = ?");
-            $checkStmt->execute([$email]);
+            // Vérifier l'unicité du matricule (en excluant l'élève lui-même en cas de mise à jour)
+            $checkStmt = $this->db->prepare($studentId ? "SELECT COUNT(*) FROM students WHERE email = ? AND id != ?" : "SELECT COUNT(*) FROM students WHERE email = ?");
+            if ($studentId) {
+                $checkStmt->execute([$email, $studentId]);
+            } else {
+                $checkStmt->execute([$email]);
+            }
             if ((int) $checkStmt->fetchColumn() > 0) {
                 $error = __('matricule_already_exists') ?? 'Matricule déjà utilisé.';
                 Session::setFlash('popup_error', $error);
-                header("Location: /students/create");
+                header($studentId ? "Location: /students/create?student_id=" . $studentId : "Location: /students/create");
                 exit;
             }
 
@@ -845,10 +935,27 @@ class StudentController
             try {
                 $this->db->beginTransaction();
 
-                // 1. Insérer l'étudiant
-                $stmt = $this->db->prepare("INSERT INTO students (nom, prenom, email, class_id, sexe, date_naissance, lieu_naissance, is_redoublant, academic_year_id, photo_eleve, parent_contact, guardian_contact, teaching_type_id, adresse, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$nom, $prenom, $email, $class_id, $sexe, $date_naissance, $lieu_naissance, $is_redoublant, $academicYearId, null, $parent_contact, $guardian_contact, $teaching_type_id, $adresse, Session::get('user_id')]);
-                $studentId = (int) $this->db->lastInsertId();
+                // 1. Insérer ou mettre à jour l'étudiant
+                if ($studentId) {
+                    $stmt = $this->db->prepare("UPDATE students SET nom = ?, prenom = ?, email = ?, class_id = ?, sexe = ?, date_naissance = ?, lieu_naissance = ?, is_redoublant = ?, academic_year_id = ?, parent_contact = ?, guardian_contact = ?, teaching_type_id = ?, adresse = ?, status = 'Inscrit' WHERE id = ?");
+                    $stmt->execute([$nom, $prenom, $email, $class_id, $sexe, $date_naissance, $lieu_naissance, $is_redoublant, $academicYearId, $parent_contact, $guardian_contact, $teaching_type_id, $adresse, $studentId]);
+                } else {
+                    $stmt = $this->db->prepare("INSERT INTO students (nom, prenom, email, class_id, sexe, date_naissance, lieu_naissance, is_redoublant, academic_year_id, photo_eleve, parent_contact, guardian_contact, teaching_type_id, adresse, created_by, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Inscrit')");
+                    $stmt->execute([$nom, $prenom, $email, $class_id, $sexe, $date_naissance, $lieu_naissance, $is_redoublant, $academicYearId, null, $parent_contact, $guardian_contact, $teaching_type_id, $adresse, Session::get('user_id')]);
+                    $studentId = (int) $this->db->lastInsertId();
+                }
+
+                // Journalisation d'audit de l'inscription
+                (new \App\Services\ActivityTracker($this->db))->recordEvent('student_enroll', 'student_activity', [
+                    'entity_type' => 'student',
+                    'entity_id' => $studentId,
+                    'metadata' => [
+                        'nom' => $nom,
+                        'prenom' => $prenom,
+                        'matricule' => $email,
+                        'class_id' => $class_id
+                    ]
+                ]);
 
                 // Gestion de la photo
                 $photoPath = null;
@@ -865,9 +972,16 @@ class StudentController
                     $updateStmt->execute([$photoPath, $studentId]);
                 }
 
-                // 2. Créer l'inscription (enrollments) avec son statut
-                $enrollmentStmt = $this->db->prepare("INSERT INTO enrollments (student_id, class_id, academic_year_id, student_status, frais_scolarite_brut, total_reductions, total_bourses, total_paye, reste_a_payer) VALUES (?, ?, ?, ?, 0.00, 0.00, 0.00, 0.00, 0.00)");
-                $enrollmentStmt->execute([$studentId, $class_id, $academicYearId, $student_status]);
+                // 2. Créer ou mettre à jour l'inscription (enrollments) avec son statut
+                $checkEnroll = $this->db->prepare("SELECT COUNT(*) FROM enrollments WHERE student_id = ? AND academic_year_id = ?");
+                $checkEnroll->execute([$studentId, $academicYearId]);
+                if ((int)$checkEnroll->fetchColumn() > 0) {
+                    $enrollmentStmt = $this->db->prepare("UPDATE enrollments SET class_id = ?, student_status = ? WHERE student_id = ? AND academic_year_id = ?");
+                    $enrollmentStmt->execute([$class_id, $student_status, $studentId, $academicYearId]);
+                } else {
+                    $enrollmentStmt = $this->db->prepare("INSERT INTO enrollments (student_id, class_id, academic_year_id, student_status, frais_scolarite_brut, total_reductions, total_bourses, total_paye, reste_a_payer) VALUES (?, ?, ?, ?, 0.00, 0.00, 0.00, 0.00, 0.00)");
+                    $enrollmentStmt->execute([$studentId, $class_id, $academicYearId, $student_status]);
+                }
 
                 // 3. Enregistrer l'opération financière et générer le reçu
                 $paymentId = null;
@@ -1325,73 +1439,91 @@ class StudentController
 
 
     public function withdraw($id)
-
     {
-
         if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
-
             header("Location: /students");
-
             exit;
-
         }
 
         if (!Session::verifyCsrfToken($_GET['csrf_token'] ?? '')) {
-
             Session::setFlash('error', __('unauthorized_action'));
-
             header("Location: /students");
-
             exit;
-
         }
 
-        $stmt = $this->db->prepare("UPDATE students SET is_withdrawn = 1 WHERE id = ?");
+        $stmtStatus = $this->db->prepare("SELECT status, nom, prenom FROM students WHERE id = ?");
+        $stmtStatus->execute([$id]);
+        $student = $stmtStatus->fetch(PDO::FETCH_ASSOC);
+        
+        $prevStatus = $student ? $student['status'] : 'Inscrit';
 
+        $stmt = $this->db->prepare("UPDATE students SET is_withdrawn = 1, status = 'Démissionnaire' WHERE id = ?");
         $stmt->execute([$id]);
+
+        // Journalisation d'audit
+        (new \App\Services\ActivityTracker($this->db))->recordEvent('student_withdrawn', 'student_activity', [
+            'entity_type' => 'student',
+            'entity_id' => $id,
+            'metadata' => [
+                'nom' => $student['nom'] ?? '',
+                'prenom' => $student['prenom'] ?? '',
+                'previous_status' => $prevStatus
+            ]
+        ]);
 
         Session::setFlash('success', __('student_withdrawn_success'));
 
-        header("Location: /students");
-
+        if ($prevStatus === 'Non inscrit') {
+            header("Location: /students/non-inscrits");
+        } else {
+            header("Location: /students");
+        }
         exit;
-
     }
 
-
-
     public function restore($id)
-
     {
-
         if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
-
             header("Location: /students");
-
             exit;
-
         }
 
         if (!Session::verifyCsrfToken($_GET['csrf_token'] ?? '')) {
-
             Session::setFlash('error', __('unauthorized_action'));
-
             header("Location: /students");
-
             exit;
-
         }
 
-        $stmt = $this->db->prepare("UPDATE students SET is_withdrawn = 0 WHERE id = ?");
-
+        $stmt = $this->db->prepare("SELECT nom, prenom FROM students WHERE id = ?");
         $stmt->execute([$id]);
+        $student = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Déterminer intelligemment le statut restauré
+        $payCount = (int) $this->db->query("SELECT COUNT(*) FROM payments WHERE student_id = " . (int)$id . " AND status = 'Valide'")->fetchColumn();
+        $restoredStatus = ($payCount > 0) ? 'Inscrit' : 'Non inscrit';
+
+        $stmt = $this->db->prepare("UPDATE students SET is_withdrawn = 0, status = ? WHERE id = ?");
+        $stmt->execute([$restoredStatus, $id]);
+
+        // Journalisation d'audit
+        (new \App\Services\ActivityTracker($this->db))->recordEvent('student_restored', 'student_activity', [
+            'entity_type' => 'student',
+            'entity_id' => $id,
+            'metadata' => [
+                'nom' => $student['nom'] ?? '',
+                'prenom' => $student['prenom'] ?? '',
+                'restored_status' => $restoredStatus
+            ]
+        ]);
 
         Session::setFlash('success', __('student_restored_success'));
 
-        header("Location: /students?withdrawn=1");
-
+        if ($restoredStatus === 'Non inscrit') {
+            header("Location: /students/non-inscrits");
+        } else {
+            header("Location: /students?withdrawn=1");
+        }
         exit;
-
     }
 
 
@@ -1435,37 +1567,32 @@ class StudentController
 
 
     private function fetchStudentsFromFilters(?int $limit = null, ?int $offset = null)
-
     {
-
         $search = trim($_GET['q'] ?? '');
-
         $classId = (int) ($_GET['class_id'] ?? 0);
-
         $sectionId = (int) ($_GET['section_id'] ?? 0);
-        
         $teachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
-
         $showWithdrawn = (int) ($_GET['withdrawn'] ?? 0);
-
         $onlyMine = (int) ($_GET['only_mine'] ?? 0);
-
+        $statusFilter = $_GET['status'] ?? null;
         $academicYearId = $this->academicYearService->getActiveYearId();
 
-
-
         // --- 1. Construction des conditions ---
-
         $where = " WHERE s.is_withdrawn = ? AND s.actif = 1";
-
         $params = [$showWithdrawn];
+
+        if ($statusFilter !== null && $statusFilter !== '') {
+            $where .= " AND s.status = ?";
+            $params[] = $statusFilter;
+        } elseif ($showWithdrawn == 0) {
+            // Par défaut, masquer les élèves non inscrits de la liste générale
+            $where .= " AND s.status = 'Inscrit'";
+        }
 
         if ($onlyMine > 0) {
             $where .= " AND s.created_by = ?";
             $params[] = Session::get('user_id');
         }
-
-
 
         // Filter by academic year
         if ($academicYearId > 0) {
@@ -1473,127 +1600,76 @@ class StudentController
             $params[] = $academicYearId;
         }
 
-
-
         if (Session::get('user_role') === 'enseignant') {
-
             $where .= " AND s.class_id IN (SELECT DISTINCT class_id FROM teacher_assignments WHERE user_id = ? AND academic_year_id = ?)";
-
             $params[] = Session::get('user_id');
             $params[] = $academicYearId;
-
         }
-
-
 
         if ($search !== '') {
-
             $like = '%' . $search . '%';
-
             $where .= " AND (s.nom LIKE ? OR s.prenom LIKE ? OR s.email LIKE ? OR d.nom LIKE ? OR d.code LIKE ?)";
-
             $params[] = $like;
-
             $params[] = $like;
-
             $params[] = $like;
-
             $params[] = $like;
-
             $params[] = $like;
-
         }
-
-
 
         if ($classId > 0) {
-
             $where .= " AND s.class_id = ?";
-
             $params[] = $classId;
-
         }
 
-
-
         if ($sectionId > 0) {
-
             $where .= " AND c.section_id = ?";
-
             $params[] = $sectionId;
-
         }
 
         if ($teachingTypeId > 0) {
-
             $where .= " AND s.teaching_type_id = ?";
-
             $params[] = $teachingTypeId;
-
         }
 
-
-
         // --- 2. Calcul du total (sans pagination) ---
-
         $countSql = "SELECT COUNT(*) FROM students s 
-
                      LEFT JOIN classes c ON s.class_id = c.id 
-
                      LEFT JOIN departments d ON c.department_id = d.id" . $where;
 
         $countStmt = $this->db->prepare($countSql);
-
         $countStmt->execute($params);
-
         $totalCount = (int) $countStmt->fetchColumn();
 
-
-
         // --- 3. Récupération des données avec pagination si demandée ---
-
         $sql = "SELECT s.*, c.nom as classe_nom, cy.nom as cycle_nom, sec.nom as section_nom, d.nom as department_nom, tt.nom as teaching_type_nom
-
                 FROM students s
-
                 LEFT JOIN classes c ON s.class_id = c.id
-
                 LEFT JOIN cycles cy ON c.cycle_id = cy.id
-
                 LEFT JOIN sections sec ON c.section_id = sec.id
-
                 LEFT JOIN departments d ON c.department_id = d.id
-                
                 LEFT JOIN teaching_types tt ON s.teaching_type_id = tt.id" . $where;
-
-
 
         $sql .= " ORDER BY s.nom ASC, s.prenom ASC";
 
-
-
         if ($limit !== null) {
-
             $sql .= " LIMIT " . (int) $limit . " OFFSET " . (int) $offset;
-
         }
 
-
-
         $stmt = $this->db->prepare($sql);
-
         $stmt->execute($params);
 
-
-
         return [
-
             $stmt->fetchAll(PDO::FETCH_ASSOC), 
-
-            ['q' => $search, 'class_id' => $classId, 'section_id' => $sectionId, 'teaching_type_id' => $teachingTypeId, 'withdrawn' => $showWithdrawn, 'only_mine' => $onlyMine],
-
+            [
+                'q' => $search, 
+                'class_id' => $classId, 
+                'section_id' => $sectionId, 
+                'teaching_type_id' => $teachingTypeId, 
+                'withdrawn' => $showWithdrawn, 
+                'only_mine' => $onlyMine,
+                'status' => $statusFilter
+            ],
             $totalCount
-
         ];
 
     }

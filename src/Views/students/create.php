@@ -121,6 +121,9 @@ ob_start();
 
     <form action="/students/store" method="POST" id="studentEnrollForm" enctype="multipart/form-data" class="no-loader">
         <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
+        <?php if (!empty($formData['student_id'])): ?>
+            <input type="hidden" name="student_id" value="<?= h($formData['student_id']) ?>">
+        <?php endif; ?>
 
         <div class="subject-card-compact border-0 shadow-sm overflow-hidden mb-4">
             <div class="card-body p-4">

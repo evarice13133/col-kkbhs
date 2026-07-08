@@ -92,7 +92,7 @@ try {
         echo "Running: $migration\n";
         
         // Include and execute migration (they already have their own DB setup)
-        $output = shell_exec("php {$path} 2>&1");
+        $output = shell_exec("php " . escapeshellarg($path) . " 2>&1");
         if ($output) {
             echo $output;
         }

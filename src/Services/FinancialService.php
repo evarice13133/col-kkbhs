@@ -25,7 +25,7 @@ class FinancialService
             }
 
             // 1. Récupérer l'élève et sa classe
-            $stmt = $this->db->prepare("SELECT s.id, s.class_id, c.frais_scolarite_brut, c.frais_inscription, c.nbr_tranches 
+            $stmt = $this->db->prepare("SELECT s.id, s.class_id, s.status, c.frais_scolarite_brut, c.frais_inscription, c.nbr_tranches 
                                         FROM students s
                                         LEFT JOIN classes c ON s.class_id = c.id
                                         WHERE s.id = ?");
@@ -37,6 +37,18 @@ class FinancialService
                     $this->db->rollBack();
                 }
                 return ['success' => false, 'message' => 'Élève introuvable.'];
+            }
+
+            // Pour un élève non inscrit, aucun frais de scolarité ni de tranches
+            if (($student['status'] ?? 'Inscrit') === 'Non inscrit') {
+                $del = $this->db->prepare("DELETE FROM student_installments WHERE student_id = ? AND academic_year_id = ?");
+                $del->execute([$studentId, $academicYearId]);
+
+                $this->updateEnrollment($studentId, (int)($student['class_id'] ?? 0), $academicYearId, 0.0, 0.0, 0.0, 0.0, 0.0);
+                if ($useTransaction) {
+                    $this->db->commit();
+                }
+                return ['success' => true, 'message' => 'Élève non inscrit synchronisé sans frais (0.00).'];
             }
 
             $classId = $student['class_id'];

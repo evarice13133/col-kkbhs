@@ -94,8 +94,9 @@ $nav_items = [
                 'icon' => 'bi-people',
                 'submenu' => [
                     ['label' => __('register_student_menu'), 'url' => '/students/create', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                    ['label' => __('registered_students_menu'), 'url' => '/students', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                    ['label' => __('unregistered_students_menu'), 'url' => '/students/non-inscrits', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
                     ['label' => __('my_registrations_menu'), 'url' => '/students?only_mine=1', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-                    ['label' => __('all_students_menu'), 'url' => '/students', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
                 ]
             ],
             ['icon' => 'bi-person-plus-fill', 'label' => __('create_cashier_menu'), 'url' => '/users/create-caissier', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
@@ -128,6 +129,16 @@ $nav_items = [
                     ['label' => __('discounts_granted'), 'url' => '/discounts', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
                     ['label' => __('scholarships'), 'url' => '/scholarships', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
                     ['label' => __('discount_types_title'), 'url' => '/discount_types', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                ]
+            ],
+            [
+                'label' => __('expenses_menu'),
+                'roles' => ['superadmin', 'admin', 'caissier', 'comptable'],
+                'icon' => 'bi-wallet2',
+                'submenu' => [
+                    ['label' => __('expenses_list'), 'url' => '/expenses', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                    ['label' => __('expense_categories'), 'url' => '/expenses/categories', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                    ['label' => __('expense_audit'), 'url' => '/expenses/audit', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
                 ]
             ],
             ['icon' => 'bi-journal-text', 'label' => __('financial_history'), 'url' => '/financial-history', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
@@ -206,7 +217,7 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
         }
         return true;
     } else {
-        if ($itemPath === '/students' && ($current_path === '/students/create' || (isset($_GET['only_mine']) && $_GET['only_mine'] == 1))) {
+        if ($itemPath === '/students' && ($current_path === '/students/create' || $current_path === '/students/non-inscrits' || (isset($_GET['only_mine']) && $_GET['only_mine'] == 1))) {
             return false;
         }
         if ($itemPath === '/users' && $current_path === '/users/create-caissier') {
@@ -219,6 +230,9 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
             return false;
         }
         if ($itemPath === '/honors' && strpos($current_path, '/honors/') === 0) {
+            return false;
+        }
+        if ($itemPath === '/expenses' && in_array($current_path, ['/expenses/categories', '/expenses/audit'])) {
             return false;
         }
         if ($itemPath === '/proces-verbal' && strpos($current_path, '/proces-verbal/') === 0) {

@@ -213,6 +213,39 @@ class DashboardController
              ORDER BY p.payment_date DESC, p.id DESC LIMIT 10"
         )->fetchAll(\PDO::FETCH_ASSOC);
 
+        // Dépenses
+        $totalExpenses = (float) $this->db->query(
+            "SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE status = 'active' AND academic_year_id = {$activeYearId}"
+        )->fetchColumn();
+
+        $dailyExpenses = (float) $this->db->query(
+            "SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE status = 'active' AND expense_date = CURDATE() AND academic_year_id = {$activeYearId}"
+        )->fetchColumn();
+
+        $monthlyExpenses = (float) $this->db->query(
+            "SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE status = 'active' AND MONTH(expense_date) = MONTH(CURDATE()) AND YEAR(expense_date) = YEAR(CURDATE()) AND academic_year_id = {$activeYearId}"
+        )->fetchColumn();
+
+        $annualExpenses = $totalExpenses;
+        $netBalance = $totalGeneralCollected - $totalExpenses;
+
+        $expensesByCategory = $this->db->query("
+            SELECT ec.name as category_name, COALESCE(SUM(e.amount), 0) as total 
+            FROM expenses e 
+            JOIN expense_categories ec ON e.category_id = ec.id 
+            WHERE e.status = 'active' AND e.academic_year_id = {$activeYearId} 
+            GROUP BY ec.id, ec.name
+        ")->fetchAll(\PDO::FETCH_ASSOC);
+
+        $monthlyExpensesHist = $this->db->query("
+            SELECT DATE_FORMAT(expense_date, '%Y-%m') as month,
+                   SUM(amount) as total
+            FROM expenses
+            WHERE status = 'active' AND academic_year_id = {$activeYearId}
+              AND expense_date >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+            GROUP BY month ORDER BY month ASC
+        ")->fetchAll(\PDO::FETCH_ASSOC);
+
         // Assurer la rétrocompatibilité pour la vue existante
         $totalCollected = $totalTuitionCollected;
 
@@ -220,7 +253,9 @@ class DashboardController
             'totalStudents', 'totalCollected', 'totalExpected', 'totalExpectedGross', 'totalReductions',
             'totalInsolvent', 'collectionRate', 'monthlyPayments', 'recentPayments',
             'totalRegistrationCollected', 'totalTuitionCollected', 'totalGeneralCollected',
-            'totalEnrolled', 'totalNonEnrolled', 'classRegistrationStats', 'policy'
+            'totalEnrolled', 'totalNonEnrolled', 'classRegistrationStats', 'policy',
+            'totalExpenses', 'dailyExpenses', 'monthlyExpenses', 'annualExpenses', 'netBalance', 
+            'expensesByCategory', 'monthlyExpensesHist'
         );
     }
 
@@ -368,7 +403,12 @@ class DashboardController
 
         // 1. Stats de base
         $activeYearId = $this->getActiveAcademicYearId();
-        $stats_students = (int) $this->db->query("SELECT COUNT(*) FROM students WHERE is_withdrawn = 0 AND actif = 1 AND academic_year_id = {$activeYearId}")->fetchColumn();
+        $stats_students = (int) $this->db->query("SELECT COUNT(*) FROM students WHERE status = 'Inscrit' AND actif = 1 AND academic_year_id = {$activeYearId}")->fetchColumn();
+        $stats_students_inscrits = $stats_students;
+        $stats_students_non_inscrits = (int) $this->db->query("SELECT COUNT(*) FROM students WHERE status = 'Non inscrit' AND actif = 1 AND academic_year_id = {$activeYearId}")->fetchColumn();
+        $stats_students_demissionnaires = (int) $this->db->query("SELECT COUNT(*) FROM students WHERE status = 'Démissionnaire' AND actif = 1 AND academic_year_id = {$activeYearId}")->fetchColumn();
+        $stats_total_importes = $stats_students_inscrits + $stats_students_non_inscrits + $stats_students_demissionnaires;
+        $conversion_rate = $stats_total_importes > 0 ? round(($stats_students_inscrits / $stats_total_importes) * 100, 1) : 0;
         // Classes are now shared across years, no year filtering
         $stats_classes = (int) $this->db->query("SELECT COUNT(*) FROM classes")->fetchColumn();
         $stats_subjects = (int) $this->db->query("SELECT COUNT(*) FROM subjects WHERE status = 1")->fetchColumn();
@@ -708,6 +748,11 @@ class DashboardController
 
         return array_merge([
             'stats_students' => $stats_students,
+            'stats_students_inscrits' => $stats_students_inscrits,
+            'stats_students_non_inscrits' => $stats_students_non_inscrits,
+            'stats_students_demissionnaires' => $stats_students_demissionnaires,
+            'stats_total_importes' => $stats_total_importes,
+            'conversion_rate' => $conversion_rate,
             'stats_classes' => $stats_classes,
             'stats_subjects' => $stats_subjects,
             'stats_subjects_inactive' => $stats_subjects_inactive,
@@ -1119,6 +1164,29 @@ class DashboardController
             WHERE status = 'valide' AND academic_year_id = {$activeYearId}
         ")->fetchColumn();
 
+        // 2. Dépenses du jour, semaine, mois, année
+        $dailyExpenses = (float)$this->db->query("
+            SELECT COALESCE(SUM(amount), 0) FROM expenses
+            WHERE DATE(expense_date) = CURDATE() AND status = 'active' AND academic_year_id = {$activeYearId}
+        ")->fetchColumn();
+
+        $weeklyExpenses = (float)$this->db->query("
+            SELECT COALESCE(SUM(amount), 0) FROM expenses
+            WHERE YEARWEEK(expense_date, 1) = YEARWEEK(CURDATE(), 1) AND status = 'active' AND academic_year_id = {$activeYearId}
+        ")->fetchColumn();
+
+        $monthlyExpenses = (float)$this->db->query("
+            SELECT COALESCE(SUM(amount), 0) FROM expenses
+            WHERE MONTH(expense_date) = MONTH(CURDATE()) AND YEAR(expense_date) = YEAR(CURDATE()) AND status = 'active' AND academic_year_id = {$activeYearId}
+        ")->fetchColumn();
+
+        $annualExpenses = (float)$this->db->query("
+            SELECT COALESCE(SUM(amount), 0) FROM expenses
+            WHERE status = 'active' AND academic_year_id = {$activeYearId}
+        ")->fetchColumn();
+
+        $netBalance = $annualCollections - $annualExpenses;
+
         // 2. Répartition des paiements (méthode de paiement)
         $stmtPayMethod = $this->db->prepare("
             SELECT payment_method, SUM(amount) as total
@@ -1214,7 +1282,32 @@ class DashboardController
             ORDER BY total_due DESC
         ")->fetchAll(PDO::FETCH_ASSOC);
 
-        $topInsolvents = array_slice($insolventList, 0, 10);
+        // 7. Dépenses par catégorie & historique mensuel pour le pilotage financier
+        $expensesByCategory = $this->db->query("
+            SELECT ec.name as category_name, COALESCE(SUM(e.amount), 0) as total 
+            FROM expenses e 
+            JOIN expense_categories ec ON e.category_id = ec.id 
+            WHERE e.status = 'active' AND e.academic_year_id = {$activeYearId} 
+            GROUP BY ec.id, ec.name
+        ")->fetchAll(\PDO::FETCH_ASSOC);
+
+        $monthlyExpensesHist = $this->db->query("
+            SELECT DATE_FORMAT(expense_date, '%Y-%m') as month,
+                   SUM(amount) as total
+            FROM expenses
+            WHERE status = 'active' AND academic_year_id = {$activeYearId}
+              AND expense_date >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+            GROUP BY month ORDER BY month ASC
+        ")->fetchAll(\PDO::FETCH_ASSOC);
+
+        $monthlyPayments = $this->db->query("
+            SELECT DATE_FORMAT(payment_date, '%Y-%m') as month,
+                   SUM(amount) as total
+            FROM payments
+            WHERE status = 'valide' AND academic_year_id = {$activeYearId}
+              AND payment_date >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+            GROUP BY month ORDER BY month ASC
+        ")->fetchAll(\PDO::FETCH_ASSOC);
 
         include __DIR__ . '/../Views/pilotage/financial.php';
     }

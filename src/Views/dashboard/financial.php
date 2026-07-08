@@ -246,6 +246,76 @@ ob_start();
         </div>
     </div>
 
+    <!-- Section: Situation des Dépenses & Solde Réel -->
+    <div class="mb-4 animate-fade-in">
+        <div class="kpi-section-title text-danger mb-3 d-flex align-items-center gap-2">
+            <span class="d-inline-block rounded-circle bg-danger bg-opacity-10 p-1"></span>
+            Suivi des Dépenses & Solde Réel
+        </div>
+        <div class="row g-4">
+            <!-- Solde Réel -->
+            <div class="col-6 col-xl-3">
+                <div class="modern-card hover-card <?= $netBalance >= 0 ? 'kpi-card-success' : 'kpi-card-danger' ?> shadow-sm p-3 h-100 position-relative overflow-hidden">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="kpi-icon <?= $netBalance >= 0 ? 'bg-success bg-opacity-10 text-success' : 'bg-danger bg-opacity-10 text-danger' ?> rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0;">
+                            <i class="bi bi-wallet-fill fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="fw-black text-main-theme fs-5 mb-0"><?= number_format($netBalance, 0, ',', ' ') ?> <span style="font-size: 0.75rem;" class="fw-normal text-muted">FCFA</span></div>
+                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;">Solde Réel (Recettes - Dépenses)</div>
+                        </div>
+                    </div>
+                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: <?= $netBalance >= 0 ? 'linear-gradient(90deg,#22c55e,#10b981)' : 'linear-gradient(90deg,#ef4444,#dc2626)' ?>; border-radius:0 0 12px 12px;"></div>
+                </div>
+            </div>
+            <!-- Dépenses du Jour -->
+            <div class="col-6 col-xl-3">
+                <div class="modern-card hover-card kpi-card-warning shadow-sm p-3 h-100 position-relative overflow-hidden">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="kpi-icon bg-warning bg-opacity-10 text-warning rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0;">
+                            <i class="bi bi-calendar-day fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="fw-black text-main-theme fs-5 mb-0"><?= number_format($dailyExpenses, 0, ',', ' ') ?> <span style="font-size: 0.75rem;" class="fw-normal text-muted">FCFA</span></div>
+                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;">Dépenses du Jour</div>
+                        </div>
+                    </div>
+                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#f59e0b,#d97706); border-radius:0 0 12px 12px;"></div>
+                </div>
+            </div>
+            <!-- Dépenses du Mois -->
+            <div class="col-6 col-xl-3">
+                <div class="modern-card hover-card kpi-card-info shadow-sm p-3 h-100 position-relative overflow-hidden">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="kpi-icon bg-info bg-opacity-10 text-info rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0;">
+                            <i class="bi bi-calendar-month fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="fw-black text-main-theme fs-5 mb-0"><?= number_format($monthlyExpenses, 0, ',', ' ') ?> <span style="font-size: 0.75rem;" class="fw-normal text-muted">FCFA</span></div>
+                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;">Dépenses du Mois</div>
+                        </div>
+                    </div>
+                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#0ea5e9,#0284c7); border-radius:0 0 12px 12px;"></div>
+                </div>
+            </div>
+            <!-- Total Dépenses de l'Année -->
+            <div class="col-6 col-xl-3">
+                <div class="modern-card hover-card kpi-card-danger shadow-sm p-3 h-100 position-relative overflow-hidden">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="kpi-icon bg-danger bg-opacity-10 text-danger rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0;">
+                            <i class="bi bi-cash-stack fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="fw-black text-main-theme fs-5 mb-0"><?= number_format($totalExpenses, 0, ',', ' ') ?> <span style="font-size: 0.75rem;" class="fw-normal text-muted">FCFA</span></div>
+                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;">Dépenses de l'Année</div>
+                        </div>
+                    </div>
+                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#ef4444,#dc2626); border-radius:0 0 12px 12px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Section: Situation des Inscriptions -->
     <div class="mb-4">
         <div class="kpi-section-title text-success mb-3 d-flex align-items-center gap-2">
@@ -322,7 +392,7 @@ ob_start();
     <!-- Charts Row -->
     <div class="row g-4 mb-4">
         <!-- Collection Rate Donut -->
-        <div class="col-lg-4">
+        <div class="col-lg-4 col-xl-3">
             <div class="modern-card border-0 shadow-sm p-4 h-100">
                 <h6 class="fw-black text-main-theme mb-4"><?= __('collection_rate') ?></h6>
                 <div class="d-flex align-items-center justify-content-center" style="height:220px; position:relative;">
@@ -345,10 +415,27 @@ ob_start();
             </div>
         </div>
 
-        <!-- Monthly Evolution Chart -->
-        <div class="col-lg-8">
+        <!-- Expenses by Category Doughnut -->
+        <div class="col-lg-4 col-xl-3">
             <div class="modern-card border-0 shadow-sm p-4 h-100">
-                <h6 class="fw-black text-main-theme mb-4"><?= __('monthly_evolution') ?></h6>
+                <h6 class="fw-black text-main-theme mb-4">Répartition des Dépenses</h6>
+                <div class="d-flex align-items-center justify-content-center" style="height:220px; position:relative;">
+                    <canvas id="expensesCategoryChart"></canvas>
+                    <?php if (empty($expensesByCategory)): ?>
+                        <div class="position-absolute text-center text-muted small">Aucune dépense active</div>
+                    <?php endif; ?>
+                </div>
+                <div class="text-center mt-3">
+                    <span class="small text-muted-theme">Total des dépenses :</span>
+                    <span class="fw-bold text-danger small"><?= number_format($totalExpenses, 0, ',', ' ') ?> FCFA</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Evolution (Revenue vs Expenses) -->
+        <div class="col-lg-4 col-xl-6">
+            <div class="modern-card border-0 shadow-sm p-4 h-100">
+                <h6 class="fw-black text-main-theme mb-4">Comparatif Mensuel (Recettes vs Dépenses)</h6>
                 <div style="height:220px;">
                     <canvas id="monthlyChart"></canvas>
                 </div>
@@ -531,33 +618,89 @@ ob_start();
         });
     }
 
-    // --- Bar: Monthly Evolution ---
+    // --- Bar: Monthly Evolution (Revenue vs Expenses) ---
     const monthlyData = <?= json_encode($monthlyPayments) ?>;
-    const monthLabels = monthlyData.map(r => {
-        const [y, m] = r.month.split('-');
-        return new Date(y, m - 1).toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' });
+    const monthlyExpData = <?= json_encode($monthlyExpensesHist) ?>;
+    
+    // Union des mois
+    const allMonths = Array.from(new Set([
+        ...monthlyData.map(r => r.month),
+        ...monthlyExpData.map(e => e.month)
+    ])).sort();
+    
+    const monthLabels = allMonths.map(m => {
+        const [y, mm] = m.split('-');
+        return new Date(y, mm - 1).toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' });
     });
-    const monthTotals = monthlyData.map(r => parseFloat(r.total));
+    
+    const monthTotals = allMonths.map(m => {
+        const found = monthlyData.find(r => r.month === m);
+        return found ? parseFloat(found.total) : 0;
+    });
+    
+    const monthExpTotals = allMonths.map(m => {
+        const found = monthlyExpData.find(r => r.month === m);
+        return found ? parseFloat(found.total) : 0;
+    });
+
     const barCtx = document.getElementById('monthlyChart');
     if (barCtx) {
         new Chart(barCtx, {
             type: 'bar',
             data: {
                 labels: monthLabels,
-                datasets: [{
-                    label: '<?= __('total_collected') ?>',
-                    data: monthTotals,
-                    backgroundColor: 'rgba(59,130,246,0.75)',
-                    borderRadius: 8,
-                    borderSkipped: false
-                }]
+                datasets: [
+                    {
+                        label: 'Recettes',
+                        data: monthTotals,
+                        backgroundColor: 'rgba(59,130,246,0.75)',
+                        borderRadius: 6,
+                        borderSkipped: false
+                    },
+                    {
+                        label: 'Dépenses',
+                        data: monthExpTotals,
+                        backgroundColor: 'rgba(239,68,68,0.75)',
+                        borderRadius: 6,
+                        borderSkipped: false
+                    }
+                ]
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                plugins: { legend: { display: true, labels: { color: textColor } } },
                 scales: {
                     x: { grid: { display: false }, ticks: { color: textColor } },
                     y: { grid: { color: gridColor }, ticks: { color: textColor, callback: v => (v/1000).toFixed(0) + 'k' } }
+                }
+            }
+        });
+    }
+
+    // --- Doughnut: Expenses by Category ---
+    const expCatData = <?= json_encode($expensesByCategory) ?>;
+    const expCatCtx = document.getElementById('expensesCategoryChart');
+    if (expCatCtx && expCatData.length > 0) {
+        new Chart(expCatCtx, {
+            type: 'doughnut',
+            data: {
+                labels: expCatData.map(c => c.category_name),
+                datasets: [{
+                    data: expCatData.map(c => parseFloat(c.total)),
+                    backgroundColor: [
+                        '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', 
+                        '#ec4899', '#6366f1', '#14b8a6', '#f43f5e', '#06b6d4'
+                    ],
+                    borderWidth: 0,
+                    cutout: '70%'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { enabled: true }
                 }
             }
         });

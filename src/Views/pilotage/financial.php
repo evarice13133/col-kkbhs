@@ -71,10 +71,47 @@ ob_start();
         </div>
     </div>
 
+    <!-- Section 1b: Dépenses par période & Solde Réel -->
+    <div class="mb-4 animate-fade-in">
+        <div class="kpi-section-title text-danger mb-3">
+            <i class="bi bi-wallet2 me-2"></i>Dépenses par période & Solde Réel
+        </div>
+        <div class="row g-4">
+            <!-- Jour -->
+            <div class="col-6 col-md-3">
+                <div class="modern-card hover-card p-3 shadow-sm h-100 border-start border-4 border-warning">
+                    <span class="text-muted-theme small fw-bold d-block mb-1">Dépenses Aujourd'hui</span>
+                    <span class="h4 fw-black text-main-theme"><?= number_format($dailyExpenses, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 11px;">FCFA</span></span>
+                </div>
+            </div>
+            <!-- Semaine -->
+            <div class="col-6 col-md-3">
+                <div class="modern-card hover-card p-3 shadow-sm h-100 border-start border-4 border-primary">
+                    <span class="text-muted-theme small fw-bold d-block mb-1">Dépenses Cette semaine</span>
+                    <span class="h4 fw-black text-main-theme"><?= number_format($weeklyExpenses, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 11px;">FCFA</span></span>
+                </div>
+            </div>
+            <!-- Mois -->
+            <div class="col-6 col-md-3">
+                <div class="modern-card hover-card p-3 shadow-sm h-100 border-start border-4 border-danger">
+                    <span class="text-muted-theme small fw-bold d-block mb-1">Dépenses Ce mois</span>
+                    <span class="h4 fw-black text-main-theme"><?= number_format($monthlyExpenses, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 11px;">FCFA</span></span>
+                </div>
+            </div>
+            <!-- Solde Réel -->
+            <div class="col-6 col-md-3">
+                <div class="modern-card hover-card p-3 shadow-sm h-100 border-start border-4 <?= $netBalance >= 0 ? 'border-success' : 'border-danger' ?>">
+                    <span class="text-muted-theme small fw-bold d-block mb-1">Solde Réel (Recettes - Dépenses)</span>
+                    <span class="h4 fw-black text-main-theme"><?= number_format($netBalance, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 11px;">FCFA</span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Section 2: Répartitions & Graphiques -->
     <div class="row g-4 mb-4">
         <!-- Répartition des paiements -->
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-md-6 col-xl-3">
             <div class="modern-card border-0 shadow-sm p-4 h-100">
                 <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-pie-chart me-2"></i>Modes de Règlement</h6>
                 <div style="height: 200px; position: relative;" class="d-flex align-items-center justify-content-center">
@@ -83,7 +120,7 @@ ob_start();
             </div>
         </div>
         <!-- Répartition des réductions -->
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-md-6 col-xl-3">
             <div class="modern-card border-0 shadow-sm p-4 h-100">
                 <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-percent me-2"></i>Motifs des Réductions</h6>
                 <div style="height: 200px; position: relative;" class="d-flex align-items-center justify-content-center">
@@ -96,7 +133,7 @@ ob_start();
             </div>
         </div>
         <!-- Répartition des bourses -->
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-md-6 col-xl-3">
             <div class="modern-card border-0 shadow-sm p-4 h-100">
                 <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-award-fill me-2"></i>Motifs des Bourses</h6>
                 <div style="height: 200px; position: relative;" class="d-flex align-items-center justify-content-center">
@@ -104,6 +141,19 @@ ob_start();
                         <div class="text-center text-muted small py-5">Aucune bourse active</div>
                     <?php else: ?>
                         <canvas id="scholarshipsChart"></canvas>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+        <!-- Répartition des dépenses -->
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="modern-card border-0 shadow-sm p-4 h-100">
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-wallet2 me-2"></i>Répartition des Dépenses</h6>
+                <div style="height: 200px; position: relative;" class="d-flex align-items-center justify-content-center">
+                    <?php if (empty($expensesByCategory)): ?>
+                        <div class="text-center text-muted small py-5">Aucune dépense active</div>
+                    <?php else: ?>
+                        <canvas id="expensesPilotageChart"></canvas>
                     <?php endif; ?>
                 </div>
             </div>
@@ -311,6 +361,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 datasets: [{
                     data: dataSch,
                     backgroundColor: ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 12,
+                            font: { size: 10 }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 4. Chart: Expenses by Category
+    const expCtx = document.getElementById('expensesPilotageChart');
+    if (expCtx) {
+        const dataExp = <?= json_encode($expensesByCategory) ?>;
+        new Chart(expCtx, {
+            type: 'doughnut',
+            data: {
+                labels: dataExp.map(x => x.category_name),
+                datasets: [{
+                    data: dataExp.map(x => parseFloat(x.total)),
+                    backgroundColor: ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#64748b', '#06b6d4'],
                     borderWidth: 0
                 }]
             },
