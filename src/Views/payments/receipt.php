@@ -14,11 +14,8 @@ $logoBase64 = $logoManager->hasLogo() ? $logoManager->getLogoBase64() : '';
 $settingsStore = new \App\Services\SettingsStore($db);
 $settings = $settingsStore->all();
 
-// URL de vérification publique pour le QR Code avec métadonnées complètes intégrées
-$verifyUrl = APP_URL . '/payments/verify?code=' . urlencode($payment['verification_code'] ?? '')
-    . '&id=' . urlencode($payment['id'] ?? '')
-    . '&matricule=' . urlencode($payment['matricule'] ?? '')
-    . '&annee=' . urlencode($settings['display_school_year'] ?? $payment['academic_year_id'] ?? '');
+// URL de vérification publique pour le QR Code
+$verifyUrl = APP_URL . '/verify-receipt/' . urlencode($payment['verification_code'] ?? '');
 
 $qrCodeApiUrl = "https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=" . urlencode($verifyUrl);
 
