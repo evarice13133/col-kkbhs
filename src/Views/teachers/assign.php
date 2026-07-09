@@ -3,56 +3,61 @@
 <div class="animate-fade-in container-fluid py-4">
     
     <!-- HEADER : Titre & Actions -->
-    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3 px-2">
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3 px-2 animate-fade-in">
         <div>
-            <h2 class="fw-bold mb-0 text-main-theme"><?= __('pedagogical_assignments') ?></h2>
+            <h2 class="fw-black text-main-theme mb-0 fs-4"><?= __('pedagogical_assignments') ?></h2>
             <div class="d-flex align-items-center gap-2 mt-1">
-                <div class="avatar-sm bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                    <i class="bi bi-person-fill"></i>
+                <div class="avatar-sm bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.85rem;">
+                    <?= strtoupper(substr((string) ($teacher['nom']), 0, 1)) ?>
                 </div>
-                <span class="text-secondary small fw-bold">
+                <span class="text-secondary small fw-bold text-main-theme">
                     <?= htmlspecialchars($teacher['nom'] . ' ' . $teacher['prenom']) ?> 
                     <span class="mx-2 opacity-25">|</span>
-                    <span class="text-primary"><?= count($assignedSubjectsMap) ?></span> <?= __('subjects') ?>
+                    <span class="text-primary fw-extrabold"><?= count($assignedSubjectsMap) ?></span> <?= __('subjects') ?>
                 </span>
             </div>
         </div>
         <div class="d-flex gap-2">
-            <button type="submit" form="mainAssignmentForm" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm scale-on-hover" 
+            <button type="submit" form="mainAssignmentForm" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm transition-base scale-on-hover" 
                     <?= $isHistoricalView ? 'disabled' : '' ?>>
-                <i class="bi bi-check2-circle me-1"></i> <?= __('save') ?>
+                <i class="bi bi-check2-circle me-1 fs-6"></i> <?= __('save') ?>
             </button>
-            <a href="/teachers" class="btn btn-light rounded-pill px-3 border shadow-none small fw-bold text-main-theme">
+            <a href="/teachers" class="btn btn-light-theme rounded-pill px-4 border border-theme-light shadow-sm transition-base text-main-theme fw-bold">
                 <i class="bi bi-arrow-left me-1"></i> <?= __('back') ?>
             </a>
         </div>
     </div>
 
-    <!-- SÉLECTEUR D'ANNÉE SCOLAIRE -->
-    <div class="d-flex justify-content-center mb-4 px-2">
-        <div class="filter-island px-3 py-2 shadow-lg animate-slide-down w-100" style="max-width: 400px;">
-            <div class="d-flex align-items-center gap-3">
-                <i class="bi bi-calendar3 text-primary fs-5"></i>
-                <select id="academic_year_selector" class="form-select border-0 shadow-none bg-transparent text-main-theme fw-bold" 
-                        onchange="changeAcademicYear(this.value)" style="font-weight: 500;">
-                    <?php foreach ($academicYears as $year): ?>
-                        <option value="<?= $year['id'] ?>" <?= $selectedYearId == $year['id'] ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($year['nom']) ?>
-                            <?= $year['is_active'] ? ' (' . __('active') . ')' : '' ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-        </div>
-    </div>
-
-    <!-- RECHERCHE GLOBALE : Style Floating Island -->
+    <!-- ACTIONS & FILTERS PANEL (Unified Horizontal Action Bar) -->
     <div class="d-flex justify-content-center mb-5 px-2">
-        <div class="filter-island px-3 py-2 shadow-lg animate-slide-down w-100" style="max-width: 600px;">
-            <div class="d-flex align-items-center gap-3">
-                <i class="bi bi-search text-primary fs-5"></i>
-                <input type="text" id="assignment-search" class="form-control border-0 shadow-none bg-transparent text-main-theme" 
-                       placeholder="<?= __('search_placeholder_global') ?>..." style="font-weight: 500;">
+        <div class="filter-island px-4 py-3 shadow-lg animate-slide-down w-100" style="max-width: 800px;">
+            <div class="d-flex align-items-center gap-3 flex-wrap flex-md-nowrap w-100">
+                
+                <!-- Academic Year Selector -->
+                <div class="input-group year-pill bg-white bg-opacity-10 rounded-pill px-2 flex-grow-1" style="max-width: 320px;">
+                    <span class="input-group-text border-0 bg-transparent text-primary">
+                        <i class="bi bi-calendar3"></i>
+                    </span>
+                    <select id="academic_year_selector" class="form-select border-0 bg-transparent shadow-none py-2 text-main-theme fw-bold" 
+                            onchange="changeAcademicYear(this.value)">
+                        <?php foreach ($academicYears as $year): ?>
+                            <option value="<?= $year['id'] ?>" <?= $selectedYearId == $year['id'] ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($year['nom']) ?>
+                                <?= $year['is_active'] ? ' (' . __('active') . ')' : '' ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
+                <!-- Search Box -->
+                <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-2 flex-grow-1">
+                    <span class="input-group-text border-0 bg-transparent text-primary">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" id="assignment-search" class="form-control border-0 bg-transparent shadow-none py-2 text-main-theme" 
+                           placeholder="<?= __('search_placeholder_global') ?>..." style="font-weight: 500;">
+                </div>
+                
             </div>
         </div>
     </div>
@@ -191,22 +196,42 @@
 </div>
 
 <style>
-    /* Floating Island Filters */
+    /* Unified Action Bar Glassmorphism */
     .filter-island {
-        background: rgba(var(--bg-card-rgb), 0.7);
-        backdrop-filter: blur(20px) saturate(180%);
-        border: 1px solid rgba(var(--primary-rgb), 0.15);
-        border-radius: 100px;
+        background: rgba(255, 255, 255, 0.65);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-radius: 30px;
+        border: 1px solid rgba(var(--primary-rgb), 0.08);
+        transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    }
+    [data-theme="dark"] .filter-island {
+        background: rgba(26, 26, 39, 0.6);
+        border-color: rgba(255, 255, 255, 0.05);
+    }
+    .filter-island:hover {
+        border-color: rgba(var(--primary-rgb), 0.15);
+        box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.05);
+    }
+    .filter-island:focus-within {
+        border-color: var(--primary-color);
+        box-shadow: 0 20px 40px -10px rgba(var(--primary-rgb), 0.15);
+        transform: translateY(-2px);
+    }
+    
+    .search-pill, .year-pill {
+        border: 1px solid rgba(var(--primary-rgb), 0.08) !important;
+        background: rgba(var(--primary-rgb), 0.02) !important;
         transition: all 0.3s ease;
     }
-
-    [data-theme="dark"] .filter-island {
-        background: rgba(30, 30, 45, 0.6);
-        border-color: rgba(255, 255, 255, 0.08);
+    .search-pill:focus-within, .year-pill:focus-within {
+        border-color: var(--primary-color) !important;
+        background: rgba(var(--primary-rgb), 0.05) !important;
+        box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.12);
     }
 
     .scale-on-hover { transition: transform 0.2s ease; }
-    .scale-on-hover:hover { transform: scale(1.05); }
+    .scale-on-hover:hover { transform: scale(1.03); }
 
     .custom-pills-modern {
         gap: 0.75rem;
@@ -229,27 +254,40 @@
         border-color: transparent;
     }
 
+    .modern-card {
+        background: var(--bg-card);
+        border: 1px solid rgba(var(--primary-rgb), 0.08) !important;
+        border-radius: 20px;
+        transition: all 0.3s ease;
+    }
+    .modern-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.05);
+        border-color: rgba(var(--primary-rgb), 0.15) !important;
+    }
+
     .class-item {
         display: flex;
         align-items: center;
         padding: 0.75rem 1rem;
-        background: rgba(var(--primary-rgb), 0.03);
+        background: rgba(var(--primary-rgb), 0.02);
         border-radius: 12px;
-        border: 2px solid transparent;
-        transition: all 0.2s;
+        border: 1.5px solid rgba(var(--primary-rgb), 0.05);
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         cursor: pointer;
     }
 
     [data-theme="dark"] .class-item { background: rgba(255,255,255, 0.03); }
 
     .class-item:hover:not(.is-taken) {
-        background: rgba(var(--primary-rgb), 0.08);
-        border-color: rgba(var(--primary-rgb), 0.1);
+        background: rgba(var(--primary-rgb), 0.05);
+        border-color: rgba(var(--primary-rgb), 0.15);
     }
 
     .class-item.selected {
-        background: rgba(var(--primary-rgb), 0.1) !important;
+        background: rgba(var(--primary-rgb), 0.08) !important;
         border-color: var(--primary-color) !important;
+        box-shadow: 0 4px 12px -3px rgba(var(--primary-rgb), 0.15);
     }
 
     .class-item.is-taken {
@@ -260,27 +298,29 @@
     }
 
     .checkbox-custom {
-        width: 1.1rem;
-        height: 1.1rem;
-        border: 2px solid rgba(var(--primary-rgb), 0.2);
+        width: 1.2rem;
+        height: 1.2rem;
+        border: 2px solid rgba(var(--primary-rgb), 0.25);
         border-radius: 6px;
         margin-right: 1rem;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: all 0.2s;
+        transition: all 0.2s ease;
     }
 
     input:checked + .checkbox-custom {
         background: var(--primary-color);
         border-color: var(--primary-color);
+        box-shadow: 0 2px 6px rgba(var(--primary-rgb), 0.3);
     }
 
     input:checked + .checkbox-custom::after {
         content: '\F26E';
         font-family: 'bootstrap-icons';
         color: white;
-        font-size: 0.7rem;
+        font-size: 0.75rem;
+        font-weight: 900;
     }
 
     .cursor-pointer { cursor: pointer; }

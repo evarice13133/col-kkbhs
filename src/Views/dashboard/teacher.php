@@ -42,8 +42,34 @@ ob_start();
 ?>
 
 <div class="animate-fade-in teacher-analytics container-fluid py-4">
+
+    <!-- Tabs header for modern SaaS/ERP -->
+    <div class="dashboard-tabs-container mb-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+            <div>
+                <h5 class="fw-black text-main-theme m-0" style="font-family: 'Outfit', sans-serif; letter-spacing: -0.02em; font-size: 1.4rem;">Espace Enseignant</h5>
+                <p class="text-muted-theme small mb-0">Suivi des notes, des classes et des disciplines</p>
+            </div>
+            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 fw-bold small">
+                <i class="bi bi-person-badge me-1"></i> Portail Enseignant
+            </span>
+        </div>
+        <ul class="nav nav-pills dashboard-nav-pills gap-2 flex-nowrap overflow-auto pb-2" id="dashboard-view-selector" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button type="button" class="nav-link active" data-view="general" role="tab">
+                    <i class="bi bi-grid-fill"></i> Vue Générale
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button type="button" class="nav-link" data-view="pedagogie" role="tab">
+                    <i class="bi bi-mortarboard-fill"></i> Pédagogie
+                </button>
+            </li>
+        </ul>
+    </div>
+
     <!-- BARRE D'ACTIONS RAPIDES : Style Floating Island -->
-    <div class="d-flex justify-content-center mb-5">
+    <div class="d-flex justify-content-center mb-4" data-views="general">
         <div class="filter-island px-3 py-2 shadow-lg animate-slide-down" style="min-width: 40%;">
             <div class="d-flex flex-wrap align-items-center justify-content-center gap-2 w-100">
                 <a href="/notes"
@@ -62,74 +88,109 @@ ob_start();
         </div>
     </div>
 
-    <!-- Section KPI Enseignant : Standardisé Registry -->
-    <div class="row g-3 g-md-4 mb-5">
-        <div class="col-6 col-xl-3">
-            <div class="registry-card p-3 p-md-4 border-0 shadow-sm h-100">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <div class="registry-icon text-primary"
-                        style="background: rgba(var(--primary-rgb), 0.1); width: 40px; height: 40px; font-size: 1.2rem;">
+    <!-- Section KPI Enseignant : SaaS/ERP Modern style -->
+    <div class="row g-3 g-md-4 mb-4" data-views="general">
+        <!-- Classes Affectées -->
+        <div class="col-6 col-md-3">
+            <div class="erp-stat-card card-primary">
+                <div>
+                    <div class="erp-icon-box">
                         <i class="bi bi-door-open-fill"></i>
                     </div>
-                    <span
-                        class="badge bg-primary bg-opacity-10 text-primary rounded-pill extra-small fw-bold d-none d-sm-inline-block">LIVE</span>
+                    <div class="kpi-value" data-count-up="<?= (int) $stats_classes ?>"><?= $stats_classes ?></div>
+                    <div class="kpi-label"><?= __('assigned_classes_count') ?></div>
                 </div>
-                <div class="h2 fw-black registry-text-main mb-1" data-count-up="<?= (int) $stats_classes ?>">
-                    <?= $stats_classes ?></div>
-                <div class="registry-text-muted small fw-medium text-truncate"><?= __('assigned_classes_count') ?></div>
             </div>
         </div>
-        <div class="col-6 col-xl-3">
-            <div class="registry-card p-3 p-md-4 border-0 shadow-sm h-100">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <div class="registry-icon text-info"
-                        style="background: rgba(13, 202, 240, 0.1); width: 40px; height: 40px; font-size: 1.2rem;">
+        <!-- Disciplines Enseignées -->
+        <div class="col-6 col-md-3">
+            <div class="erp-stat-card card-info">
+                <div>
+                    <div class="erp-icon-box">
                         <i class="bi bi-journal-check"></i>
                     </div>
-                    <span
-                        class="badge bg-info bg-opacity-10 text-info rounded-pill extra-small fw-bold d-none d-sm-inline-block">ACTIVE</span>
+                    <div class="kpi-value" data-count-up="<?= (int) $stats_subjects ?>"><?= $stats_subjects ?></div>
+                    <div class="kpi-label"><?= __('disciplines_taught') ?></div>
                 </div>
-                <div class="h2 fw-black registry-text-main mb-1" data-count-up="<?= (int) $stats_subjects ?>">
-                    <?= $stats_subjects ?></div>
-                <div class="registry-text-muted small fw-medium text-truncate"><?= __('disciplines_taught') ?></div>
             </div>
         </div>
-        <div class="col-6 col-xl-3">
-            <div class="registry-card p-3 p-md-4 border-0 shadow-sm h-100">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <div class="registry-icon text-success"
-                        style="background: rgba(25, 135, 84, 0.1); width: 40px; height: 40px; font-size: 1.2rem;">
+        <!-- Saisies Confirmées -->
+        <div class="col-6 col-md-3">
+            <div class="erp-stat-card card-success">
+                <div>
+                    <div class="erp-icon-box">
                         <i class="bi bi-check-all"></i>
                     </div>
-                    <span
-                        class="badge bg-success bg-opacity-10 text-success rounded-pill extra-small fw-bold d-none d-sm-inline-block">COMPLETED</span>
+                    <div class="kpi-value" data-count-up="<?= (int) $stats_filled ?>"><?= $stats_filled ?></div>
+                    <div class="kpi-label"><?= __('confirmed_entries') ?></div>
                 </div>
-                <div class="h2 fw-black registry-text-main mb-1" data-count-up="<?= (int) $stats_filled ?>">
-                    <?= $stats_filled ?></div>
-                <div class="registry-text-muted small fw-medium text-truncate"><?= __('confirmed_entries') ?></div>
             </div>
         </div>
-        <div class="col-6 col-xl-3">
-            <div class="registry-card p-3 p-md-4 border-0 shadow-sm h-100 overflow-hidden position-relative">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <div class="registry-icon text-warning"
-                        style="background: rgba(255, 193, 7, 0.1); width: 40px; height: 40px; font-size: 1.2rem;">
+        <!-- Progression Globale -->
+        <div class="col-6 col-md-3">
+            <div class="erp-stat-card card-warning">
+                <div>
+                    <div class="erp-icon-box">
                         <i class="bi bi-lightning-charge-fill"></i>
                     </div>
-                    <div class="fw-bold text-warning small"><?= $stats_progress ?>%</div>
+                    <div class="kpi-value" data-count-up="<?= (int) $stats_progress ?>" data-suffix="%"><?= $stats_progress ?>%</div>
+                    <div class="kpi-label"><?= __('global_progress') ?></div>
                 </div>
-                <div class="h2 fw-black registry-text-main mb-1" data-count-up="<?= (int) $stats_progress ?>"
-                    data-suffix="%"><?= $stats_progress ?>%</div>
-                <div class="registry-text-muted small fw-medium mb-3 text-truncate"><?= __('global_progress') ?></div>
-                <div class="progress" style="height: 4px; border-radius: 10px; background: var(--border-color);">
+                <div class="progress mt-2" style="height: 4px; border-radius: 10px; background: rgba(var(--primary-rgb), 0.08);">
                     <div class="progress-bar bg-warning shadow-sm" style="width: <?= $stats_progress ?>%"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row g-4 mb-5">
-        <!-- État des Séquences : Utilisation de registry-card -->
+    <!-- Vue Générale : Séquences en pleine largeur -->
+    <div class="row g-4 mb-5" data-views="general">
+        <div class="col-12">
+            <div class="registry-card border-0 shadow-sm">
+                <div class="p-4 border-bottom border-light border-opacity-10">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="fw-bold m-0 text-main"><?= __('active_sequences_state') ?></h5>
+                        <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 fw-bold small">
+                            <?= count($evaluationStats) ?> <?= __('sequences') ?>
+                        </span>
+                    </div>
+                </div>
+                <div class="p-4">
+                    <div class="row g-4">
+                        <?php if (empty($evaluationStats)): ?>
+                            <div class="col-12 text-center py-5 text-muted border border-dashed rounded-4 opacity-50">
+                                <i class="bi bi-calendar-x fs-1 d-block mb-2 opacity-25"></i>
+                                <?= __('no_active_sequence') ?>
+                            </div>
+                        <?php else: ?>
+                            <?php foreach ($evaluationStats as $ev): ?>
+                                <div class="col-12 col-md-6 col-lg-4">
+                                    <div class="p-3 border border-light border-opacity-10 rounded-4 bg-transparent transition-base h-100 scale-on-hover shadow-sm">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="fw-bold text-main small text-truncate"><?= h($ev['label']) ?></span>
+                                            <span class="level-badge <?= nm_level_class($ev['level_label'] ?? '') ?>"><?= __($ev['level_label'] ?? 'A demarrer') ?></span>
+                                        </div>
+                                        <div class="d-flex align-items-end justify-content-between mb-2">
+                                            <div class="fs-4 fw-black text-primary lh-1" data-count-up="<?= (int) $ev['progress_percent'] ?>" data-suffix="%">
+                                                <?= $ev['progress_percent'] ?>%</div>
+                                            <div class="extra-small registry-text-muted fw-semibold text-muted">
+                                                <?= $ev['filled_count'] ?> / <?= $ev['expected_count'] ?></div>
+                                        </div>
+                                        <div class="progress" style="height: 6px; border-radius: 10px; background: var(--border-color);">
+                                            <div class="progress-bar bg-primary shadow-sm" style="width: <?= $ev['progress_percent'] ?>%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pédagogie : Séquences (7/12) + Progression par Classe (5/12) -->
+    <div class="row g-4 mb-5" data-views="pedagogie">
         <div class="col-xl-7">
             <div class="registry-card h-100 border-0 shadow-sm">
                 <div class="p-4 border-bottom border-light border-opacity-10">
@@ -150,25 +211,19 @@ ob_start();
                         <?php else: ?>
                             <?php foreach ($evaluationStats as $ev): ?>
                                 <div class="col-12 col-sm-6">
-                                    <div
-                                        class="p-2 p-md-4 border border-light border-opacity-10 rounded-4 bg-transparent transition-base h-100 scale-on-hover shadow-sm">
+                                    <div class="p-2 p-md-4 border border-light border-opacity-10 rounded-4 bg-transparent transition-base h-100 scale-on-hover shadow-sm">
                                         <div class="d-flex justify-content-between align-items-center mb-2 mb-md-3">
                                             <span class="fw-bold text-main small text-truncate"><?= h($ev['label']) ?></span>
-                                            <span
-                                                class="level-badge <?= nm_level_class($ev['level_label'] ?? '') ?> d-none d-md-inline-block"><?= __($ev['level_label'] ?? 'A demarrer') ?></span>
+                                            <span class="level-badge <?= nm_level_class($ev['level_label'] ?? '') ?> d-none d-md-inline-block"><?= __($ev['level_label'] ?? 'A demarrer') ?></span>
                                         </div>
                                         <div class="d-flex align-items-end justify-content-between mb-2">
-                                            <div class="fs-4 fs-md-2 fw-black text-primary lh-1"
-                                                data-count-up="<?= (int) $ev['progress_percent'] ?>" data-suffix="%">
+                                            <div class="fs-4 fs-md-2 fw-black text-primary lh-1" data-count-up="<?= (int) $ev['progress_percent'] ?>" data-suffix="%">
                                                 <?= $ev['progress_percent'] ?>%</div>
-                                            <div
-                                                class="extra-small registry-text-muted fw-semibold text-muted d-none d-md-block">
+                                            <div class="extra-small registry-text-muted fw-semibold text-muted d-none d-md-block">
                                                 <?= $ev['filled_count'] ?> / <?= $ev['expected_count'] ?></div>
                                         </div>
-                                        <div class="progress"
-                                            style="height: 6px; border-radius: 10px; background: var(--border-color);">
-                                            <div class="progress-bar bg-primary shadow-sm"
-                                                style="width: <?= $ev['progress_percent'] ?>%"></div>
+                                        <div class="progress" style="height: 6px; border-radius: 10px; background: var(--border-color);">
+                                            <div class="progress-bar bg-primary shadow-sm" style="width: <?= $ev['progress_percent'] ?>%"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -198,21 +253,17 @@ ob_start();
                                 <tr class="bg-transparent border-bottom border-light border-opacity-10">
                                     <td class="ps-4 py-3 bg-transparent">
                                         <div class="fw-bold text-main text-muted"><?= h($cp['class_nom']) ?></div>
-                                        <div class="small registry-text-muted text-muted"><?= $cp['student_count'] ?>
-                                            <?= __('students_short') ?></div>
+                                        <div class="small registry-text-muted text-muted"><?= $cp['student_count'] ?> <?= __('students_short') ?></div>
                                     </td>
                                     <td class="text-end pe-4 bg-transparent">
                                         <div class="d-flex align-items-center justify-content-end gap-3">
                                             <div class="text-end" style="min-width: 100px;">
                                                 <div class="fw-bold text-primary mb-1"><?= $cp['progress_percent'] ?>%</div>
-                                                <div class="progress ms-auto"
-                                                    style="height: 4px; width: 80px; border-radius: 10px; background: var(--border-color);">
-                                                    <div class="progress-bar bg-primary shadow-sm"
-                                                        style="width: <?= $cp['progress_percent'] ?>%"></div>
+                                                <div class="progress ms-auto" style="height: 4px; width: 80px; border-radius: 10px; background: var(--border-color);">
+                                                    <div class="progress-bar bg-primary shadow-sm" style="width: <?= $cp['progress_percent'] ?>%"></div>
                                                 </div>
                                             </div>
-                                            <span
-                                                class="level-badge <?= nm_level_class($cp['level_label']) ?>"><?= __($cp['level_label']) ?></span>
+                                            <span class="level-badge <?= nm_level_class($cp['level_label']) ?>"><?= __($cp['level_label']) ?></span>
                                         </div>
                                     </td>
                                 </tr>
@@ -253,6 +304,47 @@ ob_start();
         // Restaurer l'état
         if (localStorage.getItem('nm_wa_support_dismissed') === 'true') {
             document.getElementById('whatsapp-support')?.remove();
+        }
+
+        // View Selector Logic
+        const viewSelector = document.getElementById('dashboard-view-selector');
+        if (viewSelector) {
+            const buttons = viewSelector.querySelectorAll('[data-view]');
+            const viewableElements = document.querySelectorAll('[data-views]');
+
+            const applyView = (selectedView) => {
+                buttons.forEach(btn => {
+                    if (btn.dataset.view === selectedView) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+
+                viewableElements.forEach(el => {
+                    const views = el.dataset.views.split(',');
+                    if (views.includes(selectedView)) {
+                        el.style.display = '';
+                    } else {
+                        el.style.display = 'none';
+                    }
+                });
+            };
+
+            buttons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const view = btn.dataset.view;
+                    applyView(view);
+                    localStorage.setItem('teacher_dashboard_active_view', view);
+                });
+            });
+
+            // Restore active view or default to general
+            let activeView = localStorage.getItem('teacher_dashboard_active_view') || 'general';
+            if (activeView === 'academic' || activeView === 'global') {
+                activeView = 'general';
+            }
+            applyView(activeView);
         }
 
         document.querySelectorAll('[data-count-up]').forEach((element, index) => {

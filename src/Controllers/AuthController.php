@@ -91,6 +91,14 @@ class AuthController
             $userData = $userModel->findByUsername($username);
 
             if ($userData) {
+                // 2.1. Vérification du statut actif du compte
+                if (isset($userData['status']) && (int)$userData['status'] === 0) {
+                    \App\Core\Security::log("Tentative de connexion à un compte désactivé : $username");
+                    $error = __('deactivated_login_error');
+                    $this->renderLoginView($error);
+                    return;
+                }
+
                 // Remplit le modèle avec les données de la BD
                 $user = new User(
                     $userData['nom'],

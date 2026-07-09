@@ -129,6 +129,9 @@ class PaymentController
         $totalPaidRegistration = 0.0;
         $totalPaidTuition = 0.0;
         foreach ($payments as $p) {
+            if ($p['status'] === 'annule') {
+                continue;
+            }
             if ($p['type'] === 'inscription') {
                 $totalPaidRegistration += (float)$p['amount'];
             } else {
@@ -168,6 +171,35 @@ class PaymentController
 
             if ($amount <= 0.0) {
                 Session::setFlash('error', "Le montant du paiement doit être supérieur à 0.");
+                header("Location: /payments/student?id=" . $studentId);
+                exit;
+            }
+
+            // Validation du montant par rapport au solde restant
+            $balance = 0.0;
+            if ($type === 'inscription') {
+                $stmtEnroll = $this->db->prepare("SELECT e.student_status, c.frais_inscription, c.frais_inscription_reinscription FROM enrollments e JOIN classes c ON e.class_id = c.id WHERE e.student_id = ? AND e.academic_year_id = ?");
+                $stmtEnroll->execute([$studentId, $activeYearId]);
+                $enrollData = $stmtEnroll->fetch(PDO::FETCH_ASSOC);
+                
+                $expectedFee = 0.0;
+                if ($enrollData) {
+                    $expectedFee = ($enrollData['student_status'] === 'nouveau') ? (float)$enrollData['frais_inscription'] : (float)$enrollData['frais_inscription_reinscription'];
+                }
+                
+                $stmtPaid = $this->db->prepare("SELECT SUM(amount) FROM payments WHERE student_id = ? AND academic_year_id = ? AND type = 'inscription' AND status = 'valide'");
+                $stmtPaid->execute([$studentId, $activeYearId]);
+                $paidRegistration = (float)$stmtPaid->fetchColumn();
+                
+                $balance = max(0.0, $expectedFee - $paidRegistration);
+            } else {
+                $stmtEnroll = $this->db->prepare("SELECT reste_a_payer FROM enrollments WHERE student_id = ? AND academic_year_id = ?");
+                $stmtEnroll->execute([$studentId, $activeYearId]);
+                $balance = (float)$stmtEnroll->fetchColumn();
+            }
+
+            if ($amount > $balance) {
+                Session::setFlash('error', "Montant supérieur au solde restant de l'élève.");
                 header("Location: /payments/student?id=" . $studentId);
                 exit;
             }

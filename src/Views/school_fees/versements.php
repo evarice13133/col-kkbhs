@@ -213,7 +213,7 @@ function openCancelModal(paymentId) {
                     <!-- Montant -->
                     <div class="mb-3">
                         <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('amount_paid_fcfa') ?></label>
-                        <input type="number" name="amount" id="amount" min="1" class="form-control premium-input fw-bold fs-5 text-primary text-end" required placeholder="0">
+                        <input type="number" name="amount" id="amount" step="any" class="form-control premium-input fw-bold fs-5 text-primary text-end" required placeholder="0">
                         <div class="extra-small text-muted text-end mt-1 d-none" id="balance-warning-msg"></div>
                     </div>
 
@@ -313,12 +313,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (balance > 0) {
             balanceWarning.textContent = `<?= __('remaining_to_pay') ?> ${balance.toLocaleString('fr-FR')} FCFA`;
             balanceWarning.classList.remove('d-none');
-            amountInput.max = balance;
             amountInput.value = balance;
         } else {
             balanceWarning.textContent = '';
             balanceWarning.classList.add('d-none');
-            amountInput.removeAttribute('max');
             amountInput.value = '';
         }
     });
@@ -376,6 +374,39 @@ document.addEventListener('DOMContentLoaded', function() {
     if (paymentMethodSelect) {
         paymentMethodSelect.addEventListener('change', updateReferenceField);
         updateReferenceField(); // Run once on load to set initial state
+    }
+
+    // Validation du formulaire de versement
+    const versementForm = document.getElementById('versement-form');
+    if (versementForm) {
+        versementForm.addEventListener('submit', function(e) {
+            const selectedOpt = selectStudent.options[selectStudent.selectedIndex];
+            if (!selectedOpt || selectedOpt.value === "") {
+                return;
+            }
+            const balance = parseFloat(selectedOpt.getAttribute('data-balance')) || 0;
+            const amount = parseFloat(amountInput.value);
+
+            if (isNaN(amount) || amount <= 0) {
+                e.preventDefault();
+                if (typeof AlertService !== 'undefined') {
+                    AlertService.toast('error', "Le montant doit être supérieur à 0.");
+                } else {
+                    alert("Le montant doit être supérieur à 0.");
+                }
+                return;
+            }
+
+            if (amount > balance) {
+                e.preventDefault();
+                if (typeof AlertService !== 'undefined') {
+                    AlertService.toast('error', "Montant supérieur au solde restant de l'élève.");
+                } else {
+                    alert("Montant supérieur au solde restant de l'élève.");
+                }
+                return;
+            }
+        });
     }
 });
 </script>

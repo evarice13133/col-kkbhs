@@ -288,7 +288,7 @@ function openCancelModal(paymentId) {
                         </div>
                         <div class="col-12">
                             <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('amount_to_collect') ?></label>
-                            <input type="number" name="amount" min="1" step="50" class="form-control premium-input fw-bold text-primary fs-5" required id="amount_input">
+                            <input type="number" name="amount" step="any" class="form-control premium-input fw-bold text-primary fs-5" required id="amount_input">
                             <div class="form-text extra-small opacity-75 animate-pulse" id="suggested_amount_help">
                                 <?= __('tuition_remaining_help', ['amount' => number_format($student['reste_a_payer'], 0, '.', ' ')]) ?>
                             </div>
@@ -388,6 +388,36 @@ document.addEventListener('DOMContentLoaded', function() {
     if (paymentMethodSelect) {
         paymentMethodSelect.addEventListener('change', updateReferenceField);
         updateReferenceField(); // Run once on load to set initial state
+    }
+
+    // Validation du formulaire de paiement
+    const paymentForm = document.getElementById('paymentForm');
+    if (paymentForm) {
+        paymentForm.addEventListener('submit', function(e) {
+            const amount = parseFloat(amountInput.value);
+            const selectedType = typeSelect.value;
+            const balance = (selectedType === 'inscription') ? restRegistration : restTuition;
+
+            if (isNaN(amount) || amount <= 0) {
+                e.preventDefault();
+                if (typeof AlertService !== 'undefined') {
+                    AlertService.toast('error', "Le montant doit être supérieur à 0.");
+                } else {
+                    alert("Le montant doit être supérieur à 0.");
+                }
+                return;
+            }
+
+            if (amount > balance) {
+                e.preventDefault();
+                if (typeof AlertService !== 'undefined') {
+                    AlertService.toast('error', "Montant supérieur au solde restant de l'élève.");
+                } else {
+                    alert("Montant supérieur au solde restant de l'élève.");
+                }
+                return;
+            }
+        });
     }
 
     function formatNumber(val) {

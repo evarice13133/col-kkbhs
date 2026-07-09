@@ -1618,4 +1618,290 @@ p, .text-muted {
         box-shadow: 0 0 10px rgba(var(--primary-rgb), 0.8);
     }
 }
+
+/* --- UNIFIED ERP/SAAS DASHBOARD STAT CARDS & TABS --- */
+
+/* Horizontal Scrolling Tab Bar for mobile/tablet */
+.dashboard-tabs-container {
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.dashboard-nav-pills {
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 8px;
+    margin-bottom: 0;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--primary-rgb), 0.2) transparent;
+}
+
+.dashboard-nav-pills::-webkit-scrollbar {
+    height: 4px;
+}
+.dashboard-nav-pills::-webkit-scrollbar-thumb {
+    background-color: rgba(var(--primary-rgb), 0.2);
+    border-radius: 4px;
+}
+
+.dashboard-nav-pills .nav-link {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 30px;
+    padding: 0.6rem 1.25rem;
+    margin-right: 0.5rem;
+    white-space: nowrap;
+    transition: all var(--transition-base);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: var(--card-shadow);
+}
+
+.dashboard-nav-pills .nav-link i {
+    font-size: 1rem;
+    transition: transform var(--transition-base);
+}
+
+.dashboard-nav-pills .nav-link:hover {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+}
+
+.dashboard-nav-pills .nav-link:hover i {
+    transform: scale(1.15);
+}
+
+.dashboard-nav-pills .nav-link.active {
+    color: #ffffff !important;
+    background: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 4px 14px rgba(var(--primary-rgb), 0.3) !important;
+}
+
+/* Modern ERP/SaaS Stat Card */
+.erp-stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 1.5rem;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 0.3s ease,
+                background-color 0.3s ease;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 150px;
+}
+
+/* Accent top/left line indicator */
+.erp-stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: transparent;
+    transition: height 0.3s ease;
+}
+
+.erp-stat-card:hover::before {
+    height: 6px;
+}
+
+/* Icon Box inside Card */
+.erp-stat-card .erp-icon-box {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+    flex-shrink: 0;
+}
+
+.erp-stat-card:hover .erp-icon-box {
+    transform: scale(1.1) rotate(5deg);
+}
+
+.erp-stat-card .kpi-value {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    font-size: 1.85rem;
+    line-height: 1.1;
+    color: var(--text-main);
+    margin-top: 0.75rem;
+    margin-bottom: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.erp-stat-card .kpi-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    line-height: 1.2;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 2.4em;
+}
+
+.erp-stat-card .kpi-trend {
+    font-size: 0.72rem;
+    font-weight: 700;
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* Hover & Shadow Elevate */
+.erp-stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-premium);
+}
+
+/* Themes/Colors for ERP Cards */
+
+/* Primary / Academic / Violet */
+.erp-stat-card.card-primary::before {
+    background: linear-gradient(90deg, #7c3aed, #a78bfa);
+}
+.erp-stat-card.card-primary .erp-icon-box {
+    background-color: rgba(124, 58, 237, 0.1);
+    color: #7c3aed;
+}
+.erp-stat-card.card-primary:hover {
+    border-color: rgba(124, 58, 237, 0.3) !important;
+}
+.erp-stat-card.card-primary:hover .erp-icon-box {
+    background-color: rgba(124, 58, 237, 0.2);
+}
+
+/* Success / Cash / Green */
+.erp-stat-card.card-success::before {
+    background: linear-gradient(90deg, #10b981, #34d399);
+}
+.erp-stat-card.card-success .erp-icon-box {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+.erp-stat-card.card-success:hover {
+    border-color: rgba(16, 185, 129, 0.3) !important;
+}
+.erp-stat-card.card-success:hover .erp-icon-box {
+    background-color: rgba(16, 185, 129, 0.2);
+}
+
+/* Danger / Expenses / Insolvables / Red */
+.erp-stat-card.card-danger::before {
+    background: linear-gradient(90deg, #ef4444, #f87171);
+}
+.erp-stat-card.card-danger .erp-icon-box {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+.erp-stat-card.card-danger:hover {
+    border-color: rgba(239, 68, 68, 0.3) !important;
+}
+.erp-stat-card.card-danger:hover .erp-icon-box {
+    background-color: rgba(239, 68, 68, 0.2);
+}
+
+/* Warning / Pending / Progress / Amber */
+.erp-stat-card.card-warning::before {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+.erp-stat-card.card-warning .erp-icon-box {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+}
+.erp-stat-card.card-warning:hover {
+    border-color: rgba(245, 158, 11, 0.3) !important;
+}
+.erp-stat-card.card-warning:hover .erp-icon-box {
+    background-color: rgba(245, 158, 11, 0.2);
+}
+
+/* Info / Blue/Cyan */
+.erp-stat-card.card-info::before {
+    background: linear-gradient(90deg, #0ea5e9, #38bdf8);
+}
+.erp-stat-card.card-info .erp-icon-box {
+    background-color: rgba(14, 165, 233, 0.1);
+    color: #0ea5e9;
+}
+.erp-stat-card.card-info:hover {
+    border-color: rgba(14, 165, 233, 0.3) !important;
+}
+.erp-stat-card.card-info:hover .erp-icon-box {
+    background-color: rgba(14, 165, 233, 0.2);
+}
+
+/* Secondary / Slate/Grey */
+.erp-stat-card.card-secondary::before {
+    background: linear-gradient(90deg, #64748b, #94a3b8);
+}
+.erp-stat-card.card-secondary .erp-icon-box {
+    background-color: rgba(100, 116, 139, 0.1);
+    color: #64748b;
+}
+.erp-stat-card.card-secondary:hover {
+    border-color: rgba(100, 116, 139, 0.3) !important;
+}
+.erp-stat-card.card-secondary:hover .erp-icon-box {
+    background-color: rgba(100, 116, 139, 0.2);
+}
+
+/* Responsive Overrides for Mobile Phones */
+@media (max-width: 576px) {
+    .erp-stat-card {
+        padding: 1rem 0.8rem;
+        min-height: 120px;
+        border-radius: 16px;
+    }
+    
+    .erp-stat-card .erp-icon-box {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        font-size: 1rem;
+    }
+    
+    .erp-stat-card .kpi-value {
+        font-size: 1.35rem;
+        margin-top: 0.5rem;
+    }
+    
+    .erp-stat-card .kpi-label {
+        font-size: 0.72rem;
+        min-height: 2.2em;
+    }
+
+    .dashboard-nav-pills .nav-link {
+        font-size: 0.75rem;
+        padding: 0.5rem 0.95rem;
+    }
+}
 
