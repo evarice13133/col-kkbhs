@@ -61,12 +61,10 @@ $nav_items = [
     // SECTION: CENTRE DE PILOTAGE
     [
         'section' => __('centre_de_pilotage'),
-        'roles' => ['superadmin', 'admin', 'caissier', 'comptable'],
+        'roles' => ['superadmin', 'admin'],
         'icon' => 'bi-sliders2',
         'items' => [
             ['icon' => 'bi-calendar-event', 'label' => __('academic_years'), 'url' => '/academic_years', 'roles' => ['superadmin', 'admin']],
-            ['icon' => 'bi-pie-chart-fill', 'label' => __('dashboard_executif'), 'url' => '/pilotage/dashboard', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-            ['icon' => 'bi-cash-coin', 'label' => __('centre_financier'), 'url' => '/pilotage/financial', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
             ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'roles' => ['superadmin', 'admin']],
         ]
     ],

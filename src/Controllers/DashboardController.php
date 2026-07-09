@@ -249,14 +249,16 @@ class DashboardController
         // Assurer la rétrocompatibilité pour la vue existante
         $totalCollected = $totalTuitionCollected;
 
-        return compact(
+        $extraFinData = $this->getExtraFinancialCenterData($activeYearId);
+
+        return array_merge(compact(
             'totalStudents', 'totalCollected', 'totalExpected', 'totalExpectedGross', 'totalReductions',
             'totalInsolvent', 'collectionRate', 'monthlyPayments', 'recentPayments',
             'totalRegistrationCollected', 'totalTuitionCollected', 'totalGeneralCollected',
             'totalEnrolled', 'totalNonEnrolled', 'classRegistrationStats', 'policy',
             'totalExpenses', 'dailyExpenses', 'monthlyExpenses', 'annualExpenses', 'netBalance', 
             'expensesByCategory', 'monthlyExpensesHist'
-        );
+        ), $extraFinData);
     }
 
     /**
@@ -746,6 +748,9 @@ class DashboardController
 
         $financialData = $this->buildFinancialDashboardData();
 
+        $extraFinData = $this->getExtraFinancialCenterData($activeYearId);
+        $extraAcadData = $this->getExtraExecutiveAcademicData($activeYearId);
+
         return array_merge([
             'stats_students' => $stats_students,
             'stats_students_inscrits' => $stats_students_inscrits,
@@ -789,7 +794,7 @@ class DashboardController
             'paymentMethodRepartition' => $paymentMethodRepartition,
             'roleDistribution' => $roleDistribution,
             'adminsCount' => $adminsCount,
-        ], $financialData);
+        ], $financialData, $extraFinData, $extraAcadData);
     }
 
     private function getUsageMetrics(): array
@@ -1040,6 +1045,190 @@ class DashboardController
         $decoded = json_decode($value, true);
 
         return is_array($decoded) ? $decoded : [];
+    }
+
+    private function getExtraFinancialCenterData($activeYearId): array
+    {
+        // 1. Encaissements par période
+        $dailyCollections = (float)$this->db->query("
+            SELECT COALESCE(SUM(amount), 0) FROM payments
+            WHERE DATE(payment_date) = CURDATE() AND status = 'valide' AND academic_year_id = {$activeYearId}
+        ")->fetchColumn();
+
+        $weeklyCollections = (float)$this->db->query("
+            SELECT COALESCE(SUM(amount), 0) FROM payments
+            WHERE YEARWEEK(payment_date, 1) = YEARWEEK(CURDATE(), 1) AND status = 'valide' AND academic_year_id = {$activeYearId}
+        ")->fetchColumn();
+
+        $monthlyCollections = (float)$this->db->query("
+            SELECT COALESCE(SUM(amount), 0) FROM payments
+            WHERE MONTH(payment_date) = MONTH(CURDATE()) AND YEAR(payment_date) = YEAR(CURDATE()) AND status = 'valide' AND academic_year_id = {$activeYearId}
+        ")->fetchColumn();
+
+        // 2. Dépenses par période
+        $dailyExpenses = (float)$this->db->query("
+            SELECT COALESCE(SUM(amount), 0) FROM expenses
+            WHERE DATE(expense_date) = CURDATE() AND status = 'active' AND academic_year_id = {$activeYearId}
+        ")->fetchColumn();
+
+        $weeklyExpenses = (float)$this->db->query("
+            SELECT COALESCE(SUM(amount), 0) FROM expenses
+            WHERE YEARWEEK(expense_date, 1) = YEARWEEK(CURDATE(), 1) AND status = 'active' AND academic_year_id = {$activeYearId}
+        ")->fetchColumn();
+
+        $monthlyExpenses = (float)$this->db->query("
+            SELECT COALESCE(SUM(amount), 0) FROM expenses
+            WHERE MONTH(expense_date) = MONTH(CURDATE()) AND YEAR(expense_date) = YEAR(CURDATE()) AND status = 'active' AND academic_year_id = {$activeYearId}
+        ")->fetchColumn();
+
+        // 3. Répartition des réductions
+        $studentDiscs = $this->db->query("
+            SELECT COALESCE(dt.name, sd.motive) as name,
+                   SUM(CASE WHEN sd.amount_type = 'percentage' THEN (c.frais_scolarite_brut * sd.amount / 100) ELSE sd.amount END) as total
+            FROM student_discounts sd
+            JOIN students s ON sd.student_id = s.id
+            JOIN classes c ON s.class_id = c.id
+            LEFT JOIN discount_types dt ON sd.discount_type_id = dt.id
+            WHERE sd.status = 'active' AND s.is_withdrawn = 0 AND s.actif = 1 AND s.academic_year_id = {$activeYearId}
+            GROUP BY name
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
+        $classDiscs = $this->db->query("
+            SELECT COALESCE(dt.name, cd.motive) as name,
+                   SUM(CASE WHEN cd.amount_type = 'percentage' THEN (c.frais_scolarite_brut * cd.amount / 100) ELSE cd.amount END) as total
+            FROM class_discounts cd
+            JOIN classes c ON cd.class_id = c.id
+            LEFT JOIN discount_types dt ON cd.discount_type_id = dt.id
+            JOIN students s ON s.class_id = c.id
+            WHERE cd.status = 'active' AND s.is_withdrawn = 0 AND s.actif = 1 AND s.academic_year_id = {$activeYearId}
+            GROUP BY name
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
+        $reductionsRepartition = [];
+        foreach (array_merge($studentDiscs, $classDiscs) as $d) {
+            $name = $d['name'] ?: 'Autre';
+            $reductionsRepartition[$name] = ($reductionsRepartition[$name] ?? 0.0) + (float)$d['total'];
+        }
+
+        // 4. Répartition des bourses
+        $studentSchols = $this->db->query("
+            SELECT COALESCE(dt.name, ss.motive) as name,
+                   SUM(CASE WHEN ss.amount_type = 'percentage' THEN (c.frais_scolarite_brut * ss.amount / 100) ELSE ss.amount END) as total
+            FROM student_scholarships ss
+            JOIN students s ON ss.student_id = s.id
+            JOIN classes c ON s.class_id = c.id
+            LEFT JOIN discount_types dt ON ss.discount_type_id = dt.id
+            WHERE ss.status = 'active' AND s.is_withdrawn = 0 AND s.actif = 1 AND s.academic_year_id = {$activeYearId}
+            GROUP BY name
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
+        $classSchols = $this->db->query("
+            SELECT COALESCE(dt.name, cs.motive) as name,
+                   SUM(CASE WHEN cs.amount_type = 'percentage' THEN (c.frais_scolarite_brut * cs.amount / 100) ELSE cs.amount END) as total
+            FROM class_scholarships cs
+            JOIN classes c ON cs.class_id = c.id
+            LEFT JOIN discount_types dt ON cs.discount_type_id = dt.id
+            JOIN students s ON s.class_id = c.id
+            WHERE cs.status = 'active' AND s.is_withdrawn = 0 AND s.actif = 1 AND s.academic_year_id = {$activeYearId}
+            GROUP BY name
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
+        $scholarshipsRepartition = [];
+        foreach (array_merge($studentSchols, $classSchols) as $s) {
+            $name = $s['name'] ?: 'Autre';
+            $scholarshipsRepartition[$name] = ($scholarshipsRepartition[$name] ?? 0.0) + (float)$s['total'];
+        }
+
+        // 5. Situation des tranches
+        $tranchesSituation = $this->db->query("
+            SELECT installment_number, SUM(amount_planned) as total_planned, SUM(amount_paid) as total_paid
+            FROM student_installments
+            WHERE academic_year_id = {$activeYearId}
+            GROUP BY installment_number
+            ORDER BY installment_number ASC
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
+        // 6. Analyse des insolvables
+        $insolventModel = new \App\Models\InsolventStudent();
+        $insolventList = $insolventModel->getAll($activeYearId);
+        $totalInsolventAmount = array_sum(array_column($insolventList, 'amount_due'));
+        $totalInsolventCount = count($insolventList);
+
+        $insolventsByClass = $this->db->query("
+            SELECT c.nom as class_name, COUNT(ins.student_id) as count, SUM(ins.amount_due) as total_due
+            FROM insolvent_students ins
+            JOIN students s ON ins.student_id = s.id
+            JOIN classes c ON s.class_id = c.id
+            WHERE ins.academic_year_id = {$activeYearId}
+            GROUP BY c.id, c.nom
+            ORDER BY total_due DESC
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
+        $topInsolvents = array_slice($insolventList, 0, 10);
+
+        return [
+            'dailyCollections' => $dailyCollections,
+            'weeklyCollections' => $weeklyCollections,
+            'monthlyCollections' => $monthlyCollections,
+            'dailyExpenses' => $dailyExpenses,
+            'weeklyExpenses' => $weeklyExpenses,
+            'monthlyExpenses' => $monthlyExpenses,
+            'reductionsRepartition' => $reductionsRepartition,
+            'scholarshipsRepartition' => $scholarshipsRepartition,
+            'tranchesSituation' => $tranchesSituation,
+            'totalInsolventAmount' => $totalInsolventAmount,
+            'totalInsolventCount' => $totalInsolventCount,
+            'insolventsByClass' => $insolventsByClass,
+            'topInsolvents' => $topInsolvents
+        ];
+    }
+
+    private function getExtraExecutiveAcademicData($activeYearId): array
+    {
+        $stmtGender = $this->db->prepare("SELECT sexe, COUNT(*) as count FROM students WHERE is_withdrawn = 0 AND actif = 1 AND academic_year_id = ? GROUP BY sexe");
+        $stmtGender->execute([$activeYearId]);
+        $genders = $stmtGender->fetchAll(PDO::FETCH_KEY_PAIR);
+        $maleCount = (int)($genders['M'] ?? 0);
+        $femaleCount = (int)($genders['F'] ?? 0);
+
+        $stmtCycles = $this->db->prepare("
+            SELECT cy.nom as cycle_nom, COUNT(s.id) as count
+            FROM students s
+            JOIN classes c ON s.class_id = c.id
+            JOIN cycles cy ON c.cycle_id = cy.id
+            WHERE s.is_withdrawn = 0 AND s.actif = 1 AND s.academic_year_id = ?
+            GROUP BY cy.id, cy.nom
+        ");
+        $stmtCycles->execute([$activeYearId]);
+        $cycleRepartition = $stmtCycles->fetchAll(PDO::FETCH_ASSOC);
+
+        // overall success rate
+        $stmtClassAvgs = $this->db->prepare("
+            SELECT st.id as student_id,
+                   SUM(g.valeur * s.coefficient) / SUM(s.coefficient) as moyenne
+            FROM grades g
+            JOIN students st ON st.id = g.student_id
+            JOIN subjects s ON s.id = g.subject_id
+            WHERE g.academic_year_id = ? AND st.is_withdrawn = 0 AND st.actif = 1
+            GROUP BY st.id
+        ");
+        $stmtClassAvgs->execute([$activeYearId]);
+        $avgs = $stmtClassAvgs->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $totalWithAverage = count($avgs);
+        $passingCount = 0;
+        foreach ($avgs as $row) {
+            if ((float)$row['moyenne'] >= 10.0) {
+                $passingCount++;
+            }
+        }
+        $successRate = $totalWithAverage > 0 ? round(($passingCount / $totalWithAverage) * 100, 1) : 0;
+
+        return [
+            'maleCount' => $maleCount,
+            'femaleCount' => $femaleCount,
+            'cycleRepartition' => $cycleRepartition,
+            'successRate' => $successRate
+        ];
     }
 
     public function executiveDashboard()
