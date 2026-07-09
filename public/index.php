@@ -524,6 +524,23 @@ elseif (strpos($path, '/verify-receipt') === 0) {
     $c = new \App\Controllers\PublicVerificationController();
     $c->verifyPublic();
 }
+elseif ($path === '/admin/run-migrations') {
+    // Exécuter les migrations depuis le navigateur (alternative au SSH)
+    if (!Security::validateSession() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+        header('Location: /');
+        exit;
+    }
+    echo "<pre style='background:#1e293b; color:#10b981; padding:20px; font-family:monospace;'>";
+    echo "=== DÉMARRAGE DU RUNNER DE MIGRATION ===\n\n";
+    try {
+        require __DIR__ . '/../scratch/MigrationRunner.php';
+        echo "\n\n=== MIGRATIONS TERMINÉES AVEC SUCCÈS ===\n";
+    } catch (\Exception $e) {
+        echo "\n\nERREUR: " . $e->getMessage() . "\n";
+    }
+    echo "\n<a href='/' style='color:#3b82f6;'>Retour à l'accueil</a></pre>";
+    exit;
+}
 elseif (strpos($path, '/admin/verifications') === 0) {
     if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin', 'comptable'])) {
         header('Location: /');
