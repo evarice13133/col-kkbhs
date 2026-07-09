@@ -76,14 +76,6 @@ ob_start();
                     class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm scale-on-hover d-flex align-items-center gap-2">
                     <i class="bi bi-pencil-square"></i> <?= __('enter_marks') ?>
                 </a>
-                <a href="/students"
-                    class="btn btn-outline-primary rounded-pill px-4 py-2 fw-bold shadow-sm scale-on-hover d-flex align-items-center gap-2">
-                    <i class="bi bi-people"></i> <?= __('my_students') ?>
-                </a>
-                <a href="/documentation"
-                    class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-bold shadow-sm scale-on-hover d-flex align-items-center gap-2">
-                    <i class="bi bi-question-circle"></i> <?= __('help') ?>
-                </a>
             </div>
         </div>
     </div>
