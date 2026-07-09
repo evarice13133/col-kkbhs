@@ -13,15 +13,13 @@ use App\Core\Session;
 use App\Services\Import\ExcelTemplateService;
 
 use App\Services\Import\StudentImportProcessor;
-
 use App\Services\AcademicYearService;
-
+use App\Models\StudentPayment;
 use PDO;
 
 
 
 class StudentController
-
 {
 
     private $db;
@@ -35,7 +33,6 @@ class StudentController
 
 
     public function __construct()
-
     {
 
         $this->db = Database::getInstance()->getConnection();
@@ -59,7 +56,6 @@ class StudentController
 
 
     public function index()
-
     {
 
         $page = max(1, (int) ($_GET['page'] ?? 1));
@@ -72,7 +68,7 @@ class StudentController
 
         [$students, $filters, $totalCount] = $this->fetchStudentsFromFilters($limit, $offset);
 
-        
+
 
         $totalPages = (int) ceil($totalCount / $limit);
 
@@ -148,7 +144,7 @@ class StudentController
 
 
         $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        
+
         $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         include __DIR__ . '/../Views/students/index.php';
@@ -170,7 +166,7 @@ class StudentController
         }
 
         [$students, $filters, $totalCount] = $this->fetchStudentsFromFilters($limit, $offset);
-        
+
         $totalPages = (int) ceil($totalCount / $limit);
 
         if ($page > $totalPages && $totalCount > 0) {
@@ -217,7 +213,6 @@ class StudentController
 
 
     public function export()
-
     {
 
         // Pas de pagination pour l'export
@@ -228,7 +223,7 @@ class StudentController
 
         $settingsStore = new \App\Services\SettingsStore($this->db);
 
-        $logoManager   = \App\Core\LogoManager::getInstance($this->db);
+        $logoManager = \App\Core\LogoManager::getInstance($this->db);
 
 
 
@@ -248,7 +243,7 @@ class StudentController
 
         // Contexte des filtres actifs pour le sous-titre
 
-        $filter_class   = '';
+        $filter_class = '';
 
         $filter_section = '';
 
@@ -297,7 +292,6 @@ class StudentController
 
 
     public function exportExcel()
-
     {
 
         // Pas de pagination pour l'export
@@ -428,7 +422,7 @@ class StudentController
 
             // Ajuster la largeur des colonnes
 
-            foreach(range('A','J') as $col) {
+            foreach (range('A', 'J') as $col) {
 
                 $sheet->getColumnDimension($col)->setAutoSize(true);
 
@@ -483,7 +477,6 @@ class StudentController
 
 
     protected function streamPdf(string $html, string $filename): void
-
     {
 
         while (ob_get_level()) {
@@ -531,7 +524,6 @@ class StudentController
 
 
     public function create()
-
     {
 
         if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
@@ -546,7 +538,7 @@ class StudentController
         $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id, teaching_type_id, frais_inscription, frais_inscription_reinscription, frais_scolarite_brut FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        
+
         $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -558,7 +550,7 @@ class StudentController
 
         $formData = ['is_redoublant' => '0', 'sexe' => ''];
 
-        $studentId = isset($_GET['student_id']) ? (int)$_GET['student_id'] : null;
+        $studentId = isset($_GET['student_id']) ? (int) $_GET['student_id'] : null;
         if ($studentId) {
             $stmt = $this->db->prepare("SELECT s.*, c.cycle_id, c.section_id, c.department_id FROM students s LEFT JOIN classes c ON s.class_id = c.id WHERE s.id = ?");
             $stmt->execute([$studentId]);
@@ -580,7 +572,7 @@ class StudentController
                     'section_id' => $student['section_id'],
                     'department_id' => $student['department_id'],
                     'teaching_type_id' => $student['teaching_type_id'],
-                    'is_redoublant' => (string)$student['is_redoublant'],
+                    'is_redoublant' => (string) $student['is_redoublant'],
                 ];
             }
         }
@@ -650,7 +642,7 @@ class StudentController
         ini_set('memory_limit', '512M');
 
         $lang = \App\Core\Session::get('lang', 'fr');
-        $teachingTypeId = isset($_GET['teaching_type_id']) ? (int)$_GET['teaching_type_id'] : null;
+        $teachingTypeId = isset($_GET['teaching_type_id']) ? (int) $_GET['teaching_type_id'] : null;
 
         try {
             // Utilisation du nouveau générateur
@@ -727,7 +719,7 @@ class StudentController
             }
 
             $lang = \App\Core\Session::get('lang', 'fr');
-            $teachingTypeId = isset($_POST['teaching_type_id']) ? (int)$_POST['teaching_type_id'] : 0;
+            $teachingTypeId = isset($_POST['teaching_type_id']) ? (int) $_POST['teaching_type_id'] : 0;
 
             if ($teachingTypeId <= 0) {
                 \App\Core\Session::setFlash('error', 'Le type d\'enseignement est obligatoire pour l\'importation.');
@@ -763,7 +755,6 @@ class StudentController
 
 
     public function store()
-
     {
 
         if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
@@ -799,7 +790,7 @@ class StudentController
             $class_id = !empty($_POST['class_id']) ? (int) $_POST['class_id'] : null;
 
             $cycle_id = !empty($_POST['cycle_id']) ? (int) $_POST['cycle_id'] : null;
-            
+
             $teaching_type_id = !empty($_POST['teaching_type_id']) ? (int) $_POST['teaching_type_id'] : null;
 
             $section_id = !empty($_POST['section_id']) ? (int) $_POST['section_id'] : null;
@@ -847,14 +838,14 @@ class StudentController
 
                     $expectedFee = 0.00;
                     if ($policy === 'new_only') {
-                        $expectedFee = ($student_status === 'nouveau') ? (float)$classInfo['frais_inscription'] : 0.00;
+                        $expectedFee = ($student_status === 'nouveau') ? (float) $classInfo['frais_inscription'] : 0.00;
                     } elseif ($policy === 'by_status') {
-                        $expectedFee = ($student_status === 'nouveau') ? (float)$classInfo['frais_inscription'] : (float)$classInfo['frais_inscription_reinscription'];
+                        $expectedFee = ($student_status === 'nouveau') ? (float) $classInfo['frais_inscription'] : (float) $classInfo['frais_inscription_reinscription'];
                     } else { // all
-                        $expectedFee = (float)$classInfo['frais_inscription'];
+                        $expectedFee = (float) $classInfo['frais_inscription'];
                     }
 
-                    $frais_inscription_paid = isset($_POST['frais_inscription_paid']) ? (float)$_POST['frais_inscription_paid'] : 0.00;
+                    $frais_inscription_paid = isset($_POST['frais_inscription_paid']) ? (float) $_POST['frais_inscription_paid'] : 0.00;
                     $payment_method = $_POST['payment_method'] ?? '';
 
                     if ($frais_inscription_paid !== $expectedFee) {
@@ -909,7 +900,7 @@ class StudentController
                 return;
             }
 
-            $studentId = !empty($_POST['student_id']) ? (int)$_POST['student_id'] : null;
+            $studentId = !empty($_POST['student_id']) ? (int) $_POST['student_id'] : null;
 
             // Génération de matricule automatique si vide
             if ($email === '') {
@@ -975,7 +966,7 @@ class StudentController
                 // 2. Créer ou mettre à jour l'inscription (enrollments) avec son statut
                 $checkEnroll = $this->db->prepare("SELECT COUNT(*) FROM enrollments WHERE student_id = ? AND academic_year_id = ?");
                 $checkEnroll->execute([$studentId, $academicYearId]);
-                if ((int)$checkEnroll->fetchColumn() > 0) {
+                if ((int) $checkEnroll->fetchColumn() > 0) {
                     $enrollmentStmt = $this->db->prepare("UPDATE enrollments SET class_id = ?, student_status = ? WHERE student_id = ? AND academic_year_id = ?");
                     $enrollmentStmt->execute([$class_id, $student_status, $studentId, $academicYearId]);
                 } else {
@@ -1000,11 +991,11 @@ class StudentController
                     $classStmt = $this->db->prepare("SELECT frais_inscription, frais_inscription_reinscription FROM classes WHERE id = ?");
                     $classStmt->execute([$class_id]);
                     $classData = $classStmt->fetch(PDO::FETCH_ASSOC);
-                    
-                    $expectedFee = ($student_status === 'nouveau') ? (float)$classData['frais_inscription'] : (float)$classData['frais_inscription_reinscription'];
+
+                    $expectedFee = ($student_status === 'nouveau') ? (float) $classData['frais_inscription'] : (float) $classData['frais_inscription_reinscription'];
                     $amountInscription = min($frais_inscription_paid, $expectedFee);
                     $surplus = max(0.0, $frais_inscription_paid - $expectedFee);
-                    
+
                     // Si le frais attendu est 0 (gratuit) ou si la saisie est inférieure au tarif
                     if ($expectedFee <= 0) {
                         $amountInscription = 0;
@@ -1032,13 +1023,23 @@ class StudentController
                     // Traitement du surplus (affectation à la scolarité)
                     if ($surplus > 0) {
                         $surplusRef = $ref . ' (Surplus Inscription)';
-                        $surplusStmt = $this->db->prepare("INSERT INTO payments (student_id, academic_year_id, amount, type, payment_date, payment_method, reference, created_by, parent_payment_id, commentaire) VALUES (?, ?, ?, 'scolarite', CURDATE(), ?, ?, ?, ?, ?)");
-                        $surplusStmt->execute([$studentId, $academicYearId, $surplus, $payment_method, $surplusRef, Session::get('user_id'), $paymentId, 'Versement automatique sur la scolarité (Trop-perçu inscription)']);
-                        $surplusId = (int) $this->db->lastInsertId();
+                        
+                        $studentPaymentModel = new StudentPayment();
+                        $surplusId = $studentPaymentModel->create([
+                            'student_id' => $studentId,
+                            'academic_year_id' => $academicYearId,
+                            'amount' => $surplus,
+                            'payment_date' => date('Y-m-d'),
+                            'payment_method' => $payment_method,
+                            'reference' => $surplusRef,
+                            'observation' => 'Versement automatique sur la scolarité (Trop-perçu inscription)',
+                            'created_by' => Session::get('user_id'),
+                            'parent_payment_id' => $paymentId ?? null
+                        ]);
 
                         // Historisation
                         $fs = new \App\Services\FinancialService($this->db);
-                        $fs->logHistory(Session::get('user_id'), 'payment', $surplusId, 'create', null, [
+                        $fs->logHistory(Session::get('user_id'), 'student_payment', $surplusId, 'create', null, [
                             'student_id' => $studentId,
                             'amount' => $surplus,
                             'type' => 'scolarite',
@@ -1051,7 +1052,7 @@ class StudentController
                 }
 
                 // 4. Réduction éventuelle
-                $reduction_amount = !empty($_POST['reduction_amount']) ? (float)$_POST['reduction_amount'] : 0.0;
+                $reduction_amount = !empty($_POST['reduction_amount']) ? (float) $_POST['reduction_amount'] : 0.0;
                 $reduction_amount_type = $_POST['reduction_amount_type'] ?? 'fixed';
                 $reduction_motive = trim($_POST['reduction_motive'] ?? '');
                 if ($reduction_amount > 0.0) {
@@ -1060,7 +1061,7 @@ class StudentController
                 }
 
                 // 5. Bourse éventuelle
-                $scholarship_amount = !empty($_POST['scholarship_amount']) ? (float)$_POST['scholarship_amount'] : 0.0;
+                $scholarship_amount = !empty($_POST['scholarship_amount']) ? (float) $_POST['scholarship_amount'] : 0.0;
                 $scholarship_amount_type = $_POST['scholarship_amount_type'] ?? 'fixed';
                 $scholarship_motive = trim($_POST['scholarship_motive'] ?? '');
                 if ($scholarship_amount > 0.0) {
@@ -1102,7 +1103,6 @@ class StudentController
 
 
     public function edit($id)
-
     {
 
         if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
@@ -1133,7 +1133,7 @@ class StudentController
         $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id, teaching_type_id, frais_inscription, frais_inscription_reinscription, frais_scolarite_brut FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        
+
         $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -1155,7 +1155,6 @@ class StudentController
 
 
     public function update($id)
-
     {
 
         if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
@@ -1188,7 +1187,7 @@ class StudentController
             $class_id = !empty($_POST['class_id']) ? (int) $_POST['class_id'] : null;
 
             $cycle_id = !empty($_POST['cycle_id']) ? (int) $_POST['cycle_id'] : null;
-            
+
             $teaching_type_id = !empty($_POST['teaching_type_id']) ? (int) $_POST['teaching_type_id'] : null;
 
             $section_id = !empty($_POST['section_id']) ? (int) $_POST['section_id'] : null;
@@ -1309,7 +1308,7 @@ class StudentController
                     'class_id' => $class_id,
 
                     'cycle_id' => $cycle_id,
-                    
+
                     'teaching_type_id' => $teaching_type_id,
 
                     'section_id' => $section_id,
@@ -1336,7 +1335,7 @@ class StudentController
                 $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id, teaching_type_id FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
                 $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-                
+
                 $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
                 $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -1383,7 +1382,7 @@ class StudentController
             $academicYearId = $this->academicYearService->getActiveYearId();
             $enrollCheck = $this->db->prepare("SELECT COUNT(*) FROM enrollments WHERE student_id = ? AND academic_year_id = ?");
             $enrollCheck->execute([$id, $academicYearId]);
-            if ((int)$enrollCheck->fetchColumn() === 0) {
+            if ((int) $enrollCheck->fetchColumn() === 0) {
                 $enrollIns = $this->db->prepare("INSERT INTO enrollments (student_id, class_id, academic_year_id, student_status, frais_scolarite_brut, total_reductions, total_bourses, total_paye, reste_a_payer) VALUES (?, ?, ?, ?, 0.00, 0.00, 0.00, 0.00, 0.00)");
                 $enrollIns->execute([$id, $class_id, $academicYearId, $student_status]);
             } else {
@@ -1394,13 +1393,13 @@ class StudentController
 
             // Mise à jour de la réduction
             if (isset($_POST['reduction_amount'])) {
-                $reduction_amount = (float)$_POST['reduction_amount'];
+                $reduction_amount = (float) $_POST['reduction_amount'];
                 $reduction_amount_type = $_POST['reduction_amount_type'] ?? 'fixed';
                 $reduction_motive = trim($_POST['reduction_motive'] ?? '');
-                
+
                 // Désactiver l'ancienne
                 $this->db->prepare("UPDATE student_discounts SET status = 'inactive' WHERE student_id = ?")->execute([$id]);
-                
+
                 if ($reduction_amount > 0) {
                     $discStmt = $this->db->prepare("INSERT INTO student_discounts (student_id, amount, amount_type, motive, date_effet, status, commentaire) VALUES (?, ?, ?, ?, CURDATE(), 'active', 'Réduction mise à jour depuis l\'édition')");
                     $discStmt->execute([$id, $reduction_amount, $reduction_amount_type, $reduction_motive]);
@@ -1409,13 +1408,13 @@ class StudentController
 
             // Mise à jour de la bourse
             if (isset($_POST['scholarship_amount'])) {
-                $scholarship_amount = (float)$_POST['scholarship_amount'];
+                $scholarship_amount = (float) $_POST['scholarship_amount'];
                 $scholarship_amount_type = $_POST['scholarship_amount_type'] ?? 'fixed';
                 $scholarship_motive = trim($_POST['scholarship_motive'] ?? '');
-                
+
                 // Désactiver l'ancienne
                 $this->db->prepare("UPDATE student_scholarships SET status = 'inactive' WHERE student_id = ?")->execute([$id]);
-                
+
                 if ($scholarship_amount > 0) {
                     $scholStmt = $this->db->prepare("INSERT INTO student_scholarships (student_id, amount, amount_type, motive, date_effet, status, commentaire) VALUES (?, ?, ?, ?, CURDATE(), 'active', 'Bourse mise à jour depuis l\'édition')");
                     $scholStmt->execute([$id, $scholarship_amount, $scholarship_amount_type, $scholarship_motive]);
@@ -1424,7 +1423,7 @@ class StudentController
 
             // Lancer la synchronisation financière de l'élève
             $financialService = new \App\Services\FinancialService($this->db);
-            $financialService->syncStudentFinancials((int)$id, $academicYearId);
+            $financialService->syncStudentFinancials((int) $id, $academicYearId);
 
             Session::setFlash('success', __('student_updated_success'));
 
@@ -1454,7 +1453,7 @@ class StudentController
         $stmtStatus = $this->db->prepare("SELECT status, nom, prenom FROM students WHERE id = ?");
         $stmtStatus->execute([$id]);
         $student = $stmtStatus->fetch(PDO::FETCH_ASSOC);
-        
+
         $prevStatus = $student ? $student['status'] : 'Inscrit';
 
         $stmt = $this->db->prepare("UPDATE students SET is_withdrawn = 1, status = 'Démissionnaire' WHERE id = ?");
@@ -1499,7 +1498,7 @@ class StudentController
         $student = $stmt->fetch(PDO::FETCH_ASSOC);
 
         // Déterminer intelligemment le statut restauré
-        $payCount = (int) $this->db->query("SELECT COUNT(*) FROM payments WHERE student_id = " . (int)$id . " AND status = 'Valide'")->fetchColumn();
+        $payCount = (int) $this->db->query("SELECT COUNT(*) FROM payments WHERE student_id = " . (int) $id . " AND status = 'Valide'")->fetchColumn();
         $restoredStatus = ($payCount > 0) ? 'Inscrit' : 'Non inscrit';
 
         $stmt = $this->db->prepare("UPDATE students SET is_withdrawn = 0, status = ? WHERE id = ?");
@@ -1529,7 +1528,6 @@ class StudentController
 
 
     public function delete($id)
-
     {
 
         if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
@@ -1659,13 +1657,13 @@ class StudentController
         $stmt->execute($params);
 
         return [
-            $stmt->fetchAll(PDO::FETCH_ASSOC), 
+            $stmt->fetchAll(PDO::FETCH_ASSOC),
             [
-                'q' => $search, 
-                'class_id' => $classId, 
-                'section_id' => $sectionId, 
-                'teaching_type_id' => $teachingTypeId, 
-                'withdrawn' => $showWithdrawn, 
+                'q' => $search,
+                'class_id' => $classId,
+                'section_id' => $sectionId,
+                'teaching_type_id' => $teachingTypeId,
+                'withdrawn' => $showWithdrawn,
                 'only_mine' => $onlyMine,
                 'status' => $statusFilter
             ],
@@ -1679,7 +1677,6 @@ class StudentController
 
 
     private function normalizeStudentLastName(string $value): string
-
     {
 
         // Le nom de famille est toujours stocke en majuscules pour homogeniser l'affichage.
@@ -1693,7 +1690,6 @@ class StudentController
 
 
     private function ensureStudentProfileSchema(): void
-
     {
 
         try {
@@ -1817,7 +1813,6 @@ class StudentController
 
 
     private function tableExists(string $tableName): bool
-
     {
 
         $stmt = $this->db->prepare("SELECT COUNT(*)
@@ -1837,7 +1832,6 @@ class StudentController
 
 
     private function studentColumnExists(string $columnName): bool
-
     {
 
         $stmt = $this->db->prepare("SELECT COUNT(*)
@@ -1859,7 +1853,6 @@ class StudentController
 
 
     private function normalizeOptionalDate(?string $value): ?string
-
     {
 
         $value = trim((string) $value);
@@ -1889,7 +1882,6 @@ class StudentController
 
 
     private function normalizeOptionalText(string $value): ?string
-
     {
 
         $value = trim($value);
@@ -1901,7 +1893,6 @@ class StudentController
 
 
     private function normalizeRedoublantFlag($value): int
-
     {
 
         return (int) ((string) $value === '1');
@@ -1911,7 +1902,6 @@ class StudentController
 
 
     private function normalizeSexe(string $value): ?string
-
     {
 
         $value = strtoupper(trim($value));

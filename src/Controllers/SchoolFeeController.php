@@ -45,16 +45,16 @@ class SchoolFeeController
         $activeYearId = $this->academicYearService->getActiveYearId();
 
         // Filtres
-        $teachingTypeId = (int)($_GET['teaching_type_id'] ?? 0);
-        $cycleId = (int)($_GET['cycle_id'] ?? 0);
-        $sectionId = (int)($_GET['section_id'] ?? 0);
-        $classId = (int)($_GET['class_id'] ?? 0);
+        $teachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
+        $cycleId = (int) ($_GET['cycle_id'] ?? 0);
+        $sectionId = (int) ($_GET['section_id'] ?? 0);
+        $classId = (int) ($_GET['class_id'] ?? 0);
 
         // Données des sélecteurs
         $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        
+
         $classesQuery = "SELECT id, nom, cycle_id, section_id, teaching_type_id FROM classes WHERE 1=1";
         $classesParams = [];
         if ($teachingTypeId) {
@@ -70,7 +70,7 @@ class SchoolFeeController
             $classesParams[] = $sectionId;
         }
         $classesQuery .= " ORDER BY nom ASC";
-        
+
         $stmtClasses = $this->db->prepare($classesQuery);
         $stmtClasses->execute($classesParams);
         $allClasses = $stmtClasses->fetchAll(PDO::FETCH_ASSOC);
@@ -78,16 +78,16 @@ class SchoolFeeController
         // Traiter chaque classe pour récupérer les frais et tranches
         $grilleData = [];
         foreach ($allClasses as $class) {
-            if ($classId && (int)$class['id'] !== $classId) {
+            if ($classId && (int) $class['id'] !== $classId) {
                 continue;
             }
 
             // Résoudre les frais
-            $resolvedAmount = $this->schoolFeeModel->resolveAmount($activeYearId, (int)$class['id']);
-            
+            $resolvedAmount = $this->schoolFeeModel->resolveAmount($activeYearId, (int) $class['id']);
+
             // Résoudre les tranches
-            $tranches = $this->feeInstallmentModel->resolveInstallments($activeYearId, (int)$class['id']);
-            
+            $tranches = $this->feeInstallmentModel->resolveInstallments($activeYearId, (int) $class['id']);
+
             // Récupérer les frais d'inscription depuis la classe
             $stmtC = $this->db->prepare("SELECT frais_inscription, frais_inscription_reinscription FROM classes WHERE id = ?");
             $stmtC->execute([$class['id']]);
@@ -95,8 +95,8 @@ class SchoolFeeController
 
             $grilleData[] = [
                 'class_name' => $class['nom'],
-                'frais_inscription_nouveau' => (float)$cDetails['frais_inscription'],
-                'frais_inscription_ancien' => (float)$cDetails['frais_inscription_reinscription'],
+                'frais_inscription_nouveau' => (float) $cDetails['frais_inscription'],
+                'frais_inscription_ancien' => (float) $cDetails['frais_inscription_reinscription'],
                 'frais_scolarite_brut' => $resolvedAmount,
                 'nbr_tranches' => count($tranches),
                 'tranches' => $tranches
@@ -116,8 +116,8 @@ class SchoolFeeController
         // AJAX endpoint to get tranches and tuition amount for a target
         if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
             $targetType = $_GET['target_type'] ?? '';
-            $targetId = (int)($_GET['target_id'] ?? 0);
-            
+            $targetId = (int) ($_GET['target_id'] ?? 0);
+
             $tuitionAmount = 0.0;
             $installments = [];
             $inherited = false;
@@ -130,7 +130,7 @@ class SchoolFeeController
                 } else {
                     $stmt = $this->db->prepare("SELECT amount FROM school_fees WHERE academic_year_id = ? AND " . $targetType . "_id = ?");
                     $stmt->execute([$activeYearId, $targetId]);
-                    $tuitionAmount = (float)($stmt->fetchColumn() ?: 0.0);
+                    $tuitionAmount = (float) ($stmt->fetchColumn() ?: 0.0);
                 }
 
                 // 2. Get installments
@@ -184,23 +184,23 @@ class SchoolFeeController
                     $classesCount = 1;
                     $stmtCount = $this->db->prepare("SELECT COUNT(*) FROM students WHERE class_id = ?");
                     $stmtCount->execute([$targetId]);
-                    $studentsCount = (int)$stmtCount->fetchColumn();
+                    $studentsCount = (int) $stmtCount->fetchColumn();
                 } elseif ($targetType === 'cycle') {
                     $stmtCountClasses = $this->db->prepare("SELECT COUNT(*) FROM classes WHERE cycle_id = ?");
                     $stmtCountClasses->execute([$targetId]);
-                    $classesCount = (int)$stmtCountClasses->fetchColumn();
+                    $classesCount = (int) $stmtCountClasses->fetchColumn();
 
                     $stmtCountStudents = $this->db->prepare("SELECT COUNT(*) FROM students s JOIN classes c ON s.class_id = c.id WHERE c.cycle_id = ?");
                     $stmtCountStudents->execute([$targetId]);
-                    $studentsCount = (int)$stmtCountStudents->fetchColumn();
+                    $studentsCount = (int) $stmtCountStudents->fetchColumn();
                 } elseif ($targetType === 'teaching_type') {
                     $stmtCountClasses = $this->db->prepare("SELECT COUNT(*) FROM classes WHERE teaching_type_id = ?");
                     $stmtCountClasses->execute([$targetId]);
-                    $classesCount = (int)$stmtCountClasses->fetchColumn();
+                    $classesCount = (int) $stmtCountClasses->fetchColumn();
 
                     $stmtCountStudents = $this->db->prepare("SELECT COUNT(*) FROM students s JOIN classes c ON s.class_id = c.id WHERE c.teaching_type_id = ?");
                     $stmtCountStudents->execute([$targetId]);
-                    $studentsCount = (int)$stmtCountStudents->fetchColumn();
+                    $studentsCount = (int) $stmtCountStudents->fetchColumn();
                 }
             }
 
@@ -232,8 +232,8 @@ class SchoolFeeController
             }
 
             $targetType = $_POST['target_type'] ?? ''; // 'class', 'cycle', 'teaching_type'
-            $targetId = (int)($_POST['target_id'] ?? 0);
-            
+            $targetId = (int) ($_POST['target_id'] ?? 0);
+
             $trancheNames = $_POST['tranche_name'] ?? [];
             $trancheAmounts = $_POST['tranche_amount'] ?? [];
             $trancheDeadlines = $_POST['tranche_deadline'] ?? [];
@@ -261,13 +261,14 @@ class SchoolFeeController
 
                 // Insérer les nouvelles tranches
                 for ($i = 0; $i < count($trancheNames); $i++) {
-                    if (empty($trancheNames[$i]) || $trancheAmounts[$i] <= 0) continue;
+                    if (empty($trancheNames[$i]) || $trancheAmounts[$i] <= 0)
+                        continue;
 
                     $this->feeInstallmentModel->create([
                         'academic_year_id' => $activeYearId,
                         'name' => $trancheNames[$i],
                         'installment_order' => $i + 1,
-                        'amount' => (float)$trancheAmounts[$i],
+                        'amount' => (float) $trancheAmounts[$i],
                         'deadline_date' => $trancheDeadlines[$i],
                         'class_id' => $classId,
                         'cycle_id' => $cycleId,
@@ -278,16 +279,20 @@ class SchoolFeeController
                 // 1. Calculer le montant total de la scolarité configuré
                 $totalScolarite = 0.0;
                 for ($i = 0; $i < count($trancheNames); $i++) {
-                    if (empty($trancheNames[$i]) || $trancheAmounts[$i] <= 0) continue;
-                    $totalScolarite += (float)$trancheAmounts[$i];
+                    if (empty($trancheNames[$i]) || $trancheAmounts[$i] <= 0)
+                        continue;
+                    $totalScolarite += (float) $trancheAmounts[$i];
                 }
 
                 // 2. Mettre à jour ou insérer le montant des frais dans la table school_fees
                 $checkSql = "SELECT id FROM school_fees WHERE academic_year_id = ? AND class_id " . ($classId ? "= ?" : "IS NULL") . " AND cycle_id " . ($cycleId ? "= ?" : "IS NULL") . " AND teaching_type_id " . ($teachingTypeId ? "= ?" : "IS NULL");
                 $checkParams = [$activeYearId];
-                if ($classId) $checkParams[] = $classId;
-                if ($cycleId) $checkParams[] = $cycleId;
-                if ($teachingTypeId) $checkParams[] = $teachingTypeId;
+                if ($classId)
+                    $checkParams[] = $classId;
+                if ($cycleId)
+                    $checkParams[] = $cycleId;
+                if ($teachingTypeId)
+                    $checkParams[] = $teachingTypeId;
 
                 $stmtCheck = $this->db->prepare($checkSql);
                 $stmtCheck->execute($checkParams);
@@ -321,8 +326,8 @@ class SchoolFeeController
 
                 // 4. Pour chaque classe affectée, mettre à jour la table des classes et les tables legacy
                 foreach ($affectedClasses as $cId) {
-                    $cId = (int)$cId;
-                    
+                    $cId = (int) $cId;
+
                     // Résoudre le montant de scolarité et les tranches configurées (en prenant en compte la priorité)
                     $resolvedTuition = $this->schoolFeeModel->resolveAmount($activeYearId, $cId);
                     $resolvedInsts = $this->feeInstallmentModel->resolveInstallments($activeYearId, $cId);
@@ -335,16 +340,16 @@ class SchoolFeeController
                     // Mettre à jour les tables legacy class_installments
                     $this->db->prepare("DELETE FROM class_installments WHERE class_id = ?")->execute([$cId]);
                     $insLegacy = $this->db->prepare("INSERT INTO class_installments (class_id, installment_number, amount) VALUES (?, ?, ?)");
-                    
+
                     // Mettre à jour la table legacy installment_deadlines
                     $this->db->prepare("DELETE FROM installment_deadlines WHERE class_id = ? AND academic_year_id = ?")->execute([$cId, $activeYearId]);
                     $insDeadline = $this->db->prepare("INSERT INTO installment_deadlines (academic_year_id, class_id, installment_number, deadline_date) VALUES (?, ?, ?, ?)");
 
                     foreach ($resolvedInsts as $inst) {
-                        $ord = (int)$inst['installment_order'];
-                        $amt = (float)$inst['amount'];
+                        $ord = (int) $inst['installment_order'];
+                        $amt = (float) $inst['amount'];
                         $deadline = $inst['deadline_date'];
-                        
+
                         $insLegacy->execute([$cId, $ord, $amt]);
                         $insDeadline->execute([$activeYearId, $cId, $ord, $deadline]);
                     }
@@ -354,7 +359,7 @@ class SchoolFeeController
                 }
 
                 $this->db->commit();
-                
+
                 if ($isAjax) {
                     header('Content-Type: application/json');
                     echo json_encode(['success' => true, 'message' => "Tranches configurées avec succès."]);
@@ -394,7 +399,7 @@ class SchoolFeeController
     public function versements()
     {
         $activeYearId = $this->academicYearService->getActiveYearId();
-        $search = trim((string)($_GET['q'] ?? ''));
+        $search = trim((string) ($_GET['q'] ?? ''));
 
         // Liste des versements récents
         $payments = $this->studentPaymentModel->getAll($activeYearId, $search);
@@ -434,12 +439,12 @@ class SchoolFeeController
             exit;
         }
 
-        $studentId = (int)$_POST['student_id'];
-        $amount = (float)$_POST['amount'];
-        $paymentDate = trim((string)($_POST['payment_date'] ?? date('Y-m-d')));
-        $paymentMethod = trim((string)($_POST['payment_method'] ?? 'ESPECES'));
-        $reference = trim((string)($_POST['reference'] ?? ''));
-        $observation = trim((string)($_POST['observation'] ?? ''));
+        $studentId = (int) $_POST['student_id'];
+        $amount = (float) $_POST['amount'];
+        $paymentDate = trim((string) ($_POST['payment_date'] ?? date('Y-m-d')));
+        $paymentMethod = trim((string) ($_POST['payment_method'] ?? 'ESPECES'));
+        $reference = trim((string) ($_POST['reference'] ?? ''));
+        $observation = trim((string) ($_POST['observation'] ?? ''));
 
         $activeYearId = $this->academicYearService->getActiveYearId();
 
@@ -452,7 +457,7 @@ class SchoolFeeController
         // Validation du montant par rapport au solde restant (scolarité)
         $stmtEnroll = $this->db->prepare("SELECT reste_a_payer FROM enrollments WHERE student_id = ? AND academic_year_id = ?");
         $stmtEnroll->execute([$studentId, $activeYearId]);
-        $balance = (float)$stmtEnroll->fetchColumn();
+        $balance = (float) $stmtEnroll->fetchColumn();
 
         if ($amount > $balance) {
             Session::setFlash('error', "Montant supérieur au solde restant de l'élève.");
@@ -512,9 +517,9 @@ class SchoolFeeController
             exit;
         }
 
-        $id = (int)($_POST['id'] ?? 0);
+        $id = (int) ($_POST['id'] ?? 0);
         $motive = trim($_POST['motive'] ?? '');
-        
+
         if (empty($motive)) {
             Session::setFlash('error', "Le motif d'annulation est obligatoire.");
             header("Location: /school_fees/versements");
@@ -526,8 +531,8 @@ class SchoolFeeController
         try {
             $payment = $this->studentPaymentModel->find($id);
             if ($payment) {
-                $studentId = (int)$payment['student_id'];
-                
+                $studentId = (int) $payment['student_id'];
+
                 $this->studentPaymentModel->delete($id, Session::get('user_id'), $motive);
 
                 // Synchroniser le solde
@@ -567,12 +572,12 @@ class SchoolFeeController
 
         // Filtres
         $filters = [
-            'teaching_type_id' => (int)($_GET['teaching_type_id'] ?? 0),
-            'cycle_id' => (int)($_GET['cycle_id'] ?? 0),
-            'section_id' => (int)($_GET['section_id'] ?? 0),
-            'class_id' => (int)($_GET['class_id'] ?? 0),
-            'installment_number' => (int)($_GET['installment_number'] ?? 0),
-            'q' => trim((string)($_GET['q'] ?? ''))
+            'teaching_type_id' => (int) ($_GET['teaching_type_id'] ?? 0),
+            'cycle_id' => (int) ($_GET['cycle_id'] ?? 0),
+            'section_id' => (int) ($_GET['section_id'] ?? 0),
+            'class_id' => (int) ($_GET['class_id'] ?? 0),
+            'installment_number' => (int) ($_GET['installment_number'] ?? 0),
+            'q' => trim((string) ($_GET['q'] ?? ''))
         ];
 
         // AJAX endpoint
@@ -581,7 +586,7 @@ class SchoolFeeController
             header('Content-Type: application/json');
 
             if ($action === 'get_cycles') {
-                $teachingTypeId = (int)($_GET['teaching_type_id'] ?? 0);
+                $teachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
                 if ($teachingTypeId > 0) {
                     $sql = "SELECT DISTINCT cy.id, cy.nom FROM cycles cy JOIN classes c ON c.cycle_id = cy.id WHERE c.teaching_type_id = ? ORDER BY cy.nom ASC";
                     $stmt = $this->db->prepare($sql);
@@ -595,8 +600,8 @@ class SchoolFeeController
             }
 
             if ($action === 'get_sections') {
-                $teachingTypeId = (int)($_GET['teaching_type_id'] ?? 0);
-                $cycleId = (int)($_GET['cycle_id'] ?? 0);
+                $teachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
+                $cycleId = (int) ($_GET['cycle_id'] ?? 0);
                 $sql = "SELECT DISTINCT s.id, s.nom FROM sections s JOIN classes c ON c.section_id = s.id WHERE 1=1";
                 $params = [];
                 if ($teachingTypeId > 0) {
@@ -616,9 +621,9 @@ class SchoolFeeController
             }
 
             if ($action === 'get_classes') {
-                $teachingTypeId = (int)($_GET['teaching_type_id'] ?? 0);
-                $cycleId = (int)($_GET['cycle_id'] ?? 0);
-                $sectionId = (int)($_GET['section_id'] ?? 0);
+                $teachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
+                $cycleId = (int) ($_GET['cycle_id'] ?? 0);
+                $sectionId = (int) ($_GET['section_id'] ?? 0);
                 $sql = "SELECT id, nom FROM classes WHERE 1=1";
                 $params = [];
                 if ($teachingTypeId > 0) {
@@ -642,7 +647,7 @@ class SchoolFeeController
             }
 
             if ($action === 'get_tranches') {
-                $classId = (int)($_GET['class_id'] ?? 0);
+                $classId = (int) ($_GET['class_id'] ?? 0);
                 $tranches = [];
                 if ($classId > 0) {
                     $tranches = $this->feeInstallmentModel->resolveInstallments($activeYearId, $classId);
@@ -652,23 +657,23 @@ class SchoolFeeController
             }
 
             if ($action === 'get_insolvables') {
-                $teachingTypeId = (int)($_GET['teaching_type_id'] ?? 0);
-                $cycleId = (int)($_GET['cycle_id'] ?? 0);
-                $sectionId = (int)($_GET['section_id'] ?? 0);
-                $classId = (int)($_GET['class_id'] ?? 0);
-                $installmentNumber = (int)($_GET['installment_number'] ?? 0);
-                $q = trim((string)($_GET['q'] ?? ''));
+                $teachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
+                $cycleId = (int) ($_GET['cycle_id'] ?? 0);
+                $sectionId = (int) ($_GET['section_id'] ?? 0);
+                $classId = (int) ($_GET['class_id'] ?? 0);
+                $installmentNumber = (int) ($_GET['installment_number'] ?? 0);
+                $q = trim((string) ($_GET['q'] ?? ''));
 
                 if ($classId > 0 && $installmentNumber > 0) {
                     // Tranche-specific view
                     $insolvents = $this->insolventStudentModel->getInsolventsForTranche($activeYearId, $classId, $installmentNumber);
-                    
+
                     if ($q !== '') {
                         $qLower = strtolower($q);
-                        $insolvents = array_filter($insolvents, function($stud) use ($qLower) {
+                        $insolvents = array_filter($insolvents, function ($stud) use ($qLower) {
                             return strpos(strtolower($stud['student_nom']), $qLower) !== false ||
-                                   strpos(strtolower($stud['student_prenom']), $qLower) !== false ||
-                                   strpos(strtolower($stud['student_matricule'] ?? ''), $qLower) !== false;
+                                strpos(strtolower($stud['student_prenom']), $qLower) !== false ||
+                                strpos(strtolower($stud['student_matricule'] ?? ''), $qLower) !== false;
                         });
                     }
 
@@ -698,8 +703,8 @@ class SchoolFeeController
                     } else {
                         $idx = 1;
                         foreach ($insolvents as $row) {
-                            $totalRemaining += (float)$row['reste_a_payer'];
-                            $paid = (float)$row['amount_paid'];
+                            $totalRemaining += (float) $row['reste_a_payer'];
+                            $paid = (float) $row['amount_paid'];
                             $statusBadge = '';
                             if ($paid <= 0) {
                                 $statusBadge = '<span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-15 px-2 py-0.5 rounded-pill small">' . __('status_unpaid') . '</span>';
@@ -770,9 +775,9 @@ class SchoolFeeController
                         </tr>';
                     } else {
                         foreach ($insolventStudents as $row) {
-                            $totalRemaining += (float)$row['amount_due'];
+                            $totalRemaining += (float) $row['amount_due'];
                             $avatarChar = strtoupper(substr((string) $row['student_nom'], 0, 1));
-                            
+
                             $deadlineFormatted = $row['last_overdue_deadline'] ? date('d/m/Y', strtotime($row['last_overdue_deadline'])) : '-';
 
                             $tbody .= '
@@ -892,34 +897,80 @@ class SchoolFeeController
      */
     public function receipt()
     {
-        $id = (int)($_GET['id'] ?? 0);
-        $activeYearId = $this->academicYearService->getActiveYearId();
+        $id = (int) ($_GET['id'] ?? 0);
 
         $payment = $this->studentPaymentModel->find($id);
+        if (!$payment) {
+            // Tentative de migration à la volée du versement hérité (legacy)
+            $stmtLegacy = $this->db->prepare("SELECT * FROM payments WHERE id = ? AND type = 'scolarite'");
+            $stmtLegacy->execute([$id]);
+            $legacyPay = $stmtLegacy->fetch(PDO::FETCH_ASSOC);
+            if ($legacyPay) {
+                // Insérer dans student_payments
+                $stmtSP = $this->db->prepare("
+                    INSERT INTO student_payments (id, student_id, academic_year_id, amount, payment_date, payment_method, reference, observation, created_by, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ");
+                $stmtSP->execute([
+                    $legacyPay['id'],
+                    $legacyPay['student_id'],
+                    $legacyPay['academic_year_id'],
+                    $legacyPay['amount'],
+                    $legacyPay['payment_date'],
+                    $legacyPay['payment_method'],
+                    $legacyPay['reference'],
+                    $legacyPay['commentaire'],
+                    $legacyPay['created_by'],
+                    $legacyPay['created_at']
+                ]);
+
+                // Insérer dans payment_receipts
+                $stmtPR = $this->db->prepare("
+                    INSERT INTO payment_receipts (student_payment_id, receipt_number, verification_code, print_count, created_at)
+                    VALUES (?, ?, ?, ?, ?)
+                ");
+                $receiptNum = 'REC-' . date('Ymd', strtotime($legacyPay['payment_date'])) . '-' . sprintf('%04d', $legacyPay['id']);
+                $vCode = $legacyPay['verification_code'] ?: bin2hex(random_bytes(16));
+                $stmtPR->execute([
+                    $legacyPay['id'],
+                    $receiptNum,
+                    $vCode,
+                    $legacyPay['print_count'],
+                    $legacyPay['created_at']
+                ]);
+
+                // Essayer à nouveau de charger le versement
+                $payment = $this->studentPaymentModel->find($id);
+            }
+        }
+
         if (!$payment) {
             Session::setFlash('error', "Reçu introuvable.");
             header("Location: /school_fees/versements");
             exit;
         }
 
+        // Utiliser l'année académique du paiement lui-même
+        $paymentYearId = (int) $payment['academic_year_id'];
+
         // 1. Incrémenter le compteur d'impression si c'est la vue HTML standard (pas PDF ni Ajax)
         $isPdf = isset($_GET['pdf']) && $_GET['pdf'] == 1;
         if (!$isPdf && (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest')) {
-            $newPrintCount = (int)$payment['print_count'] + 1;
-            
+            $newPrintCount = (int) $payment['print_count'] + 1;
+
             // Increment
             $this->studentPaymentModel->incrementPrintCount($id);
-            
+
             // Log d'audit financier
             $this->financialService->logHistory(
                 Session::get('user_id'),
                 'student_payment',
                 $id,
                 'print',
-                (string)$payment['print_count'],
-                (string)$newPrintCount
+                (string) $payment['print_count'],
+                (string) $newPrintCount
             );
-            
+
             $payment['print_count'] = $newPrintCount;
         }
 
@@ -941,15 +992,15 @@ class SchoolFeeController
             WHERE student_id = ? AND academic_year_id = ?
             ORDER BY installment_number ASC
         ");
-        $stmtPlanned->execute([$payment['student_id'], $activeYearId]);
+        $stmtPlanned->execute([$payment['student_id'], $paymentYearId]);
         $plannedInstallments = $stmtPlanned->fetchAll(PDO::FETCH_ASSOC);
-        
+
         if (empty($plannedInstallments) && !empty($payment['class_id'])) {
-            $resolved = $this->feeInstallmentModel->resolveInstallments($activeYearId, (int)$payment['class_id']);
+            $resolved = $this->feeInstallmentModel->resolveInstallments($paymentYearId, (int) $payment['class_id']);
             foreach ($resolved as $r) {
                 $plannedInstallments[] = [
-                    'installment_number' => (int)$r['installment_order'],
-                    'amount_planned' => (float)$r['amount']
+                    'installment_number' => (int) $r['installment_order'],
+                    'amount_planned' => (float) $r['amount']
                 ];
             }
         }
@@ -961,7 +1012,7 @@ class SchoolFeeController
             WHERE student_id = ? AND academic_year_id = ?
             ORDER BY payment_date ASC, id ASC
         ");
-        $stmtPays->execute([$payment['student_id'], $activeYearId]);
+        $stmtPays->execute([$payment['student_id'], $paymentYearId]);
         $chronologicalPayments = $stmtPays->fetchAll(PDO::FETCH_ASSOC);
 
         // 5. Simuler la répartition chronologique pour déterminer :
@@ -969,27 +1020,28 @@ class SchoolFeeController
         //    - Le montant total versé cumulé par tranche ($globalPaidAmounts)
         $globalPaidAmounts = [];
         foreach ($plannedInstallments as $pi) {
-            $globalPaidAmounts[(int)$pi['installment_number']] = 0.0;
+            $globalPaidAmounts[(int) $pi['installment_number']] = 0.0;
         }
 
         $allocations = [];
-        $currentPaymentId = (int)$payment['id'];
+        $currentPaymentId = (int) $payment['id'];
 
         foreach ($chronologicalPayments as $p) {
-            $pAmount = (float)$p['amount'];
-            $pId = (int)$p['id'];
-            
+            $pAmount = (float) $p['amount'];
+            $pId = (int) $p['id'];
+
             foreach ($plannedInstallments as $pi) {
-                if ($pAmount <= 0) break;
-                
-                $instNum = (int)$pi['installment_number'];
-                $amountPlanned = (float)$pi['amount_planned'];
+                if ($pAmount <= 0)
+                    break;
+
+                $instNum = (int) $pi['installment_number'];
+                $amountPlanned = (float) $pi['amount_planned'];
                 $alreadyPaid = $globalPaidAmounts[$instNum];
-                
+
                 $due = $amountPlanned - $alreadyPaid;
                 if ($due > 0) {
                     $allocated = min($pAmount, $due);
-                    
+
                     if ($pId === $currentPaymentId) {
                         $allocations[] = [
                             'installment_number' => $instNum,
@@ -998,17 +1050,17 @@ class SchoolFeeController
                             'total_installment_paid' => $alreadyPaid + $allocated
                         ];
                     }
-                    
+
                     $globalPaidAmounts[$instNum] += $allocated;
                     $pAmount -= $allocated;
                 }
             }
-            
+
             // Reliquat sur la dernière tranche en cas de sur-paiement
             if ($pAmount > 0 && !empty($plannedInstallments)) {
                 $lastInst = end($plannedInstallments);
-                $lastNum = (int)$lastInst['installment_number'];
-                
+                $lastNum = (int) $lastInst['installment_number'];
+
                 if ($pId === $currentPaymentId) {
                     $found = false;
                     foreach ($allocations as &$ca) {
@@ -1022,13 +1074,13 @@ class SchoolFeeController
                     if (!$found) {
                         $allocations[] = [
                             'installment_number' => $lastNum,
-                            'amount_planned' => (float)$lastInst['amount_planned'],
+                            'amount_planned' => (float) $lastInst['amount_planned'],
                             'amount_allocated' => $pAmount,
                             'total_installment_paid' => $globalPaidAmounts[$lastNum] + $pAmount
                         ];
                     }
                 }
-                
+
                 $globalPaidAmounts[$lastNum] += $pAmount;
             }
         }
@@ -1036,16 +1088,16 @@ class SchoolFeeController
         // Construire $studentInstallments dynamiquement d'après la simulation pour Tableau 2
         $studentInstallments = [];
         foreach ($plannedInstallments as $pi) {
-            $instNum = (int)$pi['installment_number'];
+            $instNum = (int) $pi['installment_number'];
             $studentInstallments[] = [
                 'installment_number' => $instNum,
-                'amount_planned' => (float)$pi['amount_planned'],
+                'amount_planned' => (float) $pi['amount_planned'],
                 'amount_paid' => isset($globalPaidAmounts[$instNum]) ? $globalPaidAmounts[$instNum] : 0.0
             ];
         }
 
         // 6. Récupérer l'historique complet des versements pour cet élève
-        $paymentsHistory = $this->studentPaymentModel->getByStudent((int)$payment['student_id'], $activeYearId);
+        $paymentsHistory = $this->studentPaymentModel->getByStudent((int) $payment['student_id'], $paymentYearId);
 
         // 7. Traduction du montant en lettres
         $amountInWords = \App\Core\NumberToWords::toWords($payment['amount']);
@@ -1054,15 +1106,15 @@ class SchoolFeeController
         $stmt = $this->db->prepare("SELECT student_status, reste_a_payer, total_paye, total_reductions, total_bourses,
                                            frais_scolarite_brut, (frais_scolarite_brut - total_reductions - total_bourses) as scolarite_nette
                                     FROM enrollments WHERE student_id = ? AND academic_year_id = ?");
-        $stmt->execute([$payment['student_id'], $activeYearId]);
+        $stmt->execute([$payment['student_id'], $paymentYearId]);
         $enroll = $stmt->fetch(PDO::FETCH_ASSOC);
 
         // 9. Résoudre les noms et échéances des tranches pour la classe de l'élève
         $installmentsMap = [];
         if (!empty($payment['class_id'])) {
-            $resolvedInstallments = $this->feeInstallmentModel->resolveInstallments($activeYearId, (int)$payment['class_id']);
+            $resolvedInstallments = $this->feeInstallmentModel->resolveInstallments($paymentYearId, (int) $payment['class_id']);
             foreach ($resolvedInstallments as $inst) {
-                $installmentsMap[(int)$inst['installment_order']] = [
+                $installmentsMap[(int) $inst['installment_order']] = [
                     'name' => $inst['name'],
                     'deadline' => $inst['deadline_date']
                 ];
@@ -1077,7 +1129,7 @@ class SchoolFeeController
             $options->set('defaultFont', 'Helvetica');
 
             $dompdf = new \Dompdf\Dompdf($options);
-            
+
             ob_start();
             include __DIR__ . '/../Views/school_fees/receipt.php';
             $html = ob_get_clean();
@@ -1098,10 +1150,10 @@ class SchoolFeeController
     public function printInsolvables()
     {
         $activeYear = $this->academicYearService->getActiveYear();
-        $activeYearId = (int)($activeYear['id'] ?? 0);
+        $activeYearId = (int) ($activeYear['id'] ?? 0);
 
-        $classId = (int)($_GET['class_id'] ?? 0);
-        $installmentNumber = (int)($_GET['installment_number'] ?? 0);
+        $classId = (int) ($_GET['class_id'] ?? 0);
+        $installmentNumber = (int) ($_GET['installment_number'] ?? 0);
 
         if (!$classId || !$installmentNumber) {
             echo "Paramètres invalides ou manquants.";
@@ -1129,7 +1181,7 @@ class SchoolFeeController
         $resolved = $feeInstModel->resolveInstallments($activeYearId, $classId);
         $trancheName = "Tranche " . $installmentNumber;
         foreach ($resolved as $r) {
-            if ((int)$r['installment_order'] === $installmentNumber) {
+            if ((int) $r['installment_order'] === $installmentNumber) {
                 $trancheName = $r['name'];
                 break;
             }
@@ -1141,9 +1193,9 @@ class SchoolFeeController
         $totalPlanned = 0.0;
         $totalPaid = 0.0;
         foreach ($insolvents as $row) {
-            $totalRemaining += (float)$row['reste_a_payer'];
-            $totalPlanned += (float)$row['amount_planned'];
-            $totalPaid += (float)$row['amount_paid'];
+            $totalRemaining += (float) $row['reste_a_payer'];
+            $totalPlanned += (float) $row['amount_planned'];
+            $totalPaid += (float) $row['amount_paid'];
         }
 
         // Construction du document HTML
@@ -1157,7 +1209,7 @@ class SchoolFeeController
         $phone = htmlspecialchars($settings['school_phone'] ?? '');
         $city = htmlspecialchars($settings['school_city'] ?? '');
         $poBox = htmlspecialchars($settings['school_po_box'] ?? '');
-        
+
         $contact = "TEL: " . $phone;
         if ($poBox) {
             $contact .= " | B.P.: " . $poBox;
@@ -1385,7 +1437,7 @@ class SchoolFeeController
         $dompdf->loadHtml($html);
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
-        
+
         $filename = "eleves_insolvables_" . str_replace(' ', '_', $className) . "_tranche_" . $installmentNumber . ".pdf";
         $dompdf->stream($filename, ["Attachment" => false]);
         exit;
@@ -1394,13 +1446,13 @@ class SchoolFeeController
     public function printGrille()
     {
         $activeYear = $this->academicYearService->getActiveYear();
-        $activeYearId = (int)($activeYear['id'] ?? 0);
+        $activeYearId = (int) ($activeYear['id'] ?? 0);
 
         // Filtres
-        $teachingTypeId = (int)($_GET['teaching_type_id'] ?? 0);
-        $cycleId = (int)($_GET['cycle_id'] ?? 0);
-        $sectionId = (int)($_GET['section_id'] ?? 0);
-        $classId = (int)($_GET['class_id'] ?? 0);
+        $teachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
+        $cycleId = (int) ($_GET['cycle_id'] ?? 0);
+        $sectionId = (int) ($_GET['section_id'] ?? 0);
+        $classId = (int) ($_GET['class_id'] ?? 0);
 
         // Données des sélecteurs pour les libellés de filtres dans l'en-tête du PDF
         $filterTexts = [];
@@ -1442,28 +1494,28 @@ class SchoolFeeController
             $classesParams[] = $sectionId;
         }
         $classesQuery .= " ORDER BY nom ASC";
-        
+
         $stmtClasses = $this->db->prepare($classesQuery);
         $stmtClasses->execute($classesParams);
         $allClasses = $stmtClasses->fetchAll(PDO::FETCH_ASSOC);
 
         $grilleData = [];
         foreach ($allClasses as $class) {
-            if ($classId && (int)$class['id'] !== $classId) {
+            if ($classId && (int) $class['id'] !== $classId) {
                 continue;
             }
 
-            $resolvedAmount = $this->schoolFeeModel->resolveAmount($activeYearId, (int)$class['id']);
-            $tranches = $this->feeInstallmentModel->resolveInstallments($activeYearId, (int)$class['id']);
-            
+            $resolvedAmount = $this->schoolFeeModel->resolveAmount($activeYearId, (int) $class['id']);
+            $tranches = $this->feeInstallmentModel->resolveInstallments($activeYearId, (int) $class['id']);
+
             $stmtC = $this->db->prepare("SELECT frais_inscription, frais_inscription_reinscription FROM classes WHERE id = ?");
             $stmtC->execute([$class['id']]);
             $cDetails = $stmtC->fetch(PDO::FETCH_ASSOC);
 
             $grilleData[] = [
                 'class_name' => $class['nom'],
-                'frais_inscription_nouveau' => (float)$cDetails['frais_inscription'],
-                'frais_inscription_ancien' => (float)$cDetails['frais_inscription_reinscription'],
+                'frais_inscription_nouveau' => (float) $cDetails['frais_inscription'],
+                'frais_inscription_ancien' => (float) $cDetails['frais_inscription_reinscription'],
                 'frais_scolarite_brut' => $resolvedAmount,
                 'nbr_tranches' => count($tranches),
                 'tranches' => $tranches
@@ -1487,7 +1539,7 @@ class SchoolFeeController
         $phone = htmlspecialchars($settings['school_phone'] ?? '');
         $city = htmlspecialchars($settings['school_city'] ?? '');
         $poBox = htmlspecialchars($settings['school_po_box'] ?? '');
-        
+
         $contact = "TEL: " . $phone;
         if ($poBox) {
             $contact .= " | B.P.: " . $poBox;
@@ -1680,7 +1732,7 @@ class SchoolFeeController
                     </tr>
                 </thead>
                 <tbody>';
-        
+
         if (empty($grilleData)) {
             $html .= '<tr><td colspan="6" class="text-center py-4">Aucune donnée de scolarité disponible.</td></tr>';
         } else {
@@ -1717,7 +1769,7 @@ class SchoolFeeController
         $options->set('isHtml5ParserEnabled', true);
         $options->set('isRemoteEnabled', true);
         $options->set('defaultFont', 'Helvetica');
-        
+
         $dompdf = new \Dompdf\Dompdf($options);
         $dompdf->loadHtml($html);
         $dompdf->setPaper('A4', 'portrait');
@@ -1734,11 +1786,11 @@ class SchoolFeeController
         }
         ini_set('memory_limit', '512M');
         $lang = Session::get('app_lang', 'fr') === 'en' ? 'en' : 'fr';
-        
-        $teachingTypeId = (int)($_GET['teaching_type_id'] ?? 0);
-        $cycleId = (int)($_GET['cycle_id'] ?? 0);
-        $sectionId = (int)($_GET['section_id'] ?? 0);
-        $classId = (int)($_GET['class_id'] ?? 0);
+
+        $teachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
+        $cycleId = (int) ($_GET['cycle_id'] ?? 0);
+        $sectionId = (int) ($_GET['section_id'] ?? 0);
+        $classId = (int) ($_GET['class_id'] ?? 0);
 
         try {
             $svc = new \App\Services\Import\ExcelTemplateService($this->db);
@@ -1778,11 +1830,11 @@ class SchoolFeeController
         }
 
         $activeYearId = $this->academicYearService->getActiveYearId();
-        
-        $teachingTypeId = (int)($_GET['teaching_type_id'] ?? 0);
-        $cycleId = (int)($_GET['cycle_id'] ?? 0);
-        $sectionId = (int)($_GET['section_id'] ?? 0);
-        $classId = (int)($_GET['class_id'] ?? 0);
+
+        $teachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
+        $cycleId = (int) ($_GET['cycle_id'] ?? 0);
+        $sectionId = (int) ($_GET['section_id'] ?? 0);
+        $classId = (int) ($_GET['class_id'] ?? 0);
 
         try {
             $processor = new \App\Services\Import\GrilleImportProcessor($this->db);

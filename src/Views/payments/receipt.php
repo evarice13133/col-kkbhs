@@ -212,18 +212,19 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
 
         /* Titre Reçu */
         .receipt-title-container {
-            border: 1.5px solid #1e3a8a;
-            border-radius: 4px;
-            background-color: #e0f2fe;
+            border: none;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
             text-align: center;
-            padding: 3px;
+            padding: 6px 3px;
             margin-top: 4px;
             font-weight: bold;
-            color: #1e3a8a;
+            color: #ffffff;
             font-size: 11px;
             display: inline-block;
             width: 95%;
             box-sizing: border-box;
+            box-shadow: 0 2px 4px rgba(30, 58, 138, 0.15);
         }
 
         /* Badge Duplicata */
@@ -278,11 +279,13 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
         .amount-in-words-box {
             font-style: italic;
             font-weight: bold;
-            background: #f1f5f9;
-            border-left: 3px solid #2563eb;
-            padding: 4px 6px;
+            background: #f8fafc;
+            border-left: 4px solid #3b82f6;
+            color: #1e293b;
+            padding: 6px 10px;
             margin-bottom: 6px;
             font-size: 9.5px;
+            border-radius: 0 6px 6px 0;
         }
 
         /* Section de bas avec QR Code et Totaux */
@@ -481,6 +484,35 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                 margin-left: 0 !important;
                 margin-right: 0 !important;
                 padding: 10px !important;
+                height: 460px !important;
+            }
+        }
+
+        /* Amélioration de l'UX à l'écran (non-print) */
+        @media screen {
+            body {
+                background-color: #f8fafc;
+                padding: 20px 10px;
+            }
+            .receipt-container {
+                background: transparent;
+            }
+            .receipt-block {
+                background: #ffffff;
+                border: 1px solid #e2e8f0;
+                border-radius: 12px;
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+                margin-bottom: 30px;
+                padding: 20px;
+                height: auto;
+            }
+            .print-btn-container {
+                background-color: #ffffff;
+                border: 1px solid #e2e8f0;
+                border-radius: 12px;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+                padding: 15px 20px;
+                margin-bottom: 20px;
             }
         }
     </style>
@@ -572,7 +604,7 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                         <td class="meta-info-col">
                             <div class="receipt-title-container" style="margin-top: 0; margin-bottom: 4px;">
                                 <?= __('official_payment_receipt') ?>
-                                <div style="font-size: 7.5px; font-weight: normal; margin-top: 1px; color: #475569; text-transform: uppercase;">
+                                <div style="font-size: 7.5px; font-weight: normal; margin-top: 1px; color: #e0f2fe; text-transform: uppercase;">
                                     <?= $copyName ?>
                                 </div>
                             </div>
@@ -596,35 +628,42 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                     </tr>
                 </table>
 
-                <!-- Fiche d'identité de l'élève (mise à jour avec infos supplémentaires) -->
-                <table class="details-section-table">
+                <!-- Fiche d'identité de l'élève (Format compact en ligne sans bordure gauche colorée) -->
+                <table style="width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 6px; background-color: #f8fafc; margin: 6px 0;">
                     <tr>
-                        <td style="width: 15%;"><strong><?= __('student') ?> :</strong></td>
-                        <td style="width: 45%;"><strong><?= h(mb_strtoupper($payment['student_nom'] ?? '')) ?></strong> <?= h($payment['student_prenom'] ?? '') ?></td>
-                        <td style="width: 15%;"><strong><?= __('matricule') ?> :</strong></td>
-                        <td style="width: 25%; font-family: monospace; font-weight: bold;"><?= h($payment['matricule'] ?? '') ?></td>
-                    </tr>
-                    <tr>
-                        <td><strong><?= __('class') ?> :</strong></td>
-                        <td><?= h($payment['classe_nom'] ?: __('not_specified')) ?></td>
-                        <td><strong><?= __('sex') ?> :</strong></td>
-                        <td><?= ($payment['sexe'] ?? '') === 'M' ? __('male') : (($payment['sexe'] ?? '') === 'F' ? __('female') : 'N/A') ?></td>
-                    </tr>
-                    <tr>
-                        <td><strong><?= __('born_on') ?> :</strong></td>
-                        <td>
-                            <?= !empty($payment['date_naissance']) ? date('d/m/Y', strtotime($payment['date_naissance'])) : 'N/A' ?>
-                            <?= !empty($payment['lieu_naissance']) ? ' ' . __('born_at') . ' ' . h($payment['lieu_naissance']) : '' ?>
+                        <td style="padding: 4px 6px; border-bottom: 1px solid #e2e8f0; font-size: 8.5px; line-height: 1.2; vertical-align: middle;">
+                            <strong style="color: #64748b; font-size: 8px;"><?= __('student') ?> :</strong>
+                            <strong style="color: #1e3a8a; text-transform: uppercase;"><?= h($payment['student_nom'] ?? '') ?></strong>
+                            <span style="color: #0f172a; font-weight: bold;"><?= h($payment['student_prenom'] ?? '') ?></span>
                         </td>
-                        <td><strong><?= __('year') ?> :</strong></td>
-                        <td><?= h($settings['display_school_year'] ?? $payment['academic_year_id'] ?? '') ?></td>
+                        <td style="padding: 4px 6px; border-bottom: 1px solid #e2e8f0; border-left: 1px solid #e2e8f0; font-size: 8.5px; line-height: 1.2; vertical-align: middle; width: 40%;">
+                            <strong style="color: #64748b; font-size: 8px;"><?= __('matricule') ?> :</strong>
+                            <span style="font-family: monospace; font-weight: bold; color: #0369a1; background-color: #e0f2fe; padding: 0.5px 3px; border-radius: 3px;"><?= h($payment['matricule'] ?? '') ?></span>
+                        </td>
                     </tr>
-                    <?php if (!empty($payment['adresse'])): ?>
                     <tr>
-                        <td><strong><?= __('address') ?> :</strong></td>
-                        <td colspan="3"><?= h($payment['adresse']) ?></td>
+                        <td style="padding: 4px 6px; border-bottom: 1px solid #e2e8f0; font-size: 8.5px; line-height: 1.2; vertical-align: middle;">
+                            <strong style="color: #64748b; font-size: 8px;"><?= __('class') ?> :</strong>
+                            <span style="color: #0f172a; font-weight: bold;"><?= h($payment['classe_nom'] ?: __('not_specified')) ?></span>
+                        </td>
+                        <td style="padding: 4px 6px; border-bottom: 1px solid #e2e8f0; border-left: 1px solid #e2e8f0; font-size: 8.5px; line-height: 1.2; vertical-align: middle;">
+                            <strong style="color: #64748b; font-size: 8px;"><?= __('sex') ?> :</strong>
+                            <span style="color: #334155; font-weight: bold;"><?= ($payment['sexe'] ?? '') === 'M' ? __('male') : (($payment['sexe'] ?? '') === 'F' ? __('female') : 'N/A') ?></span>
+                        </td>
                     </tr>
-                    <?php endif; ?>
+                    <tr>
+                        <td style="padding: 4px 6px; border-right: 1px solid #e2e8f0; font-size: 8.5px; line-height: 1.2; vertical-align: middle;">
+                            <strong style="color: #64748b; font-size: 8px;"><?= __('born_on') ?> :</strong>
+                            <span style="color: #334155; font-weight: bold;">
+                                <?= !empty($payment['date_naissance']) ? date('d/m/Y', strtotime($payment['date_naissance'])) : 'N/A' ?>
+                                <?= !empty($payment['lieu_naissance']) ? ' ' . __('born_at') . ' ' . h($payment['lieu_naissance']) : '' ?>
+                            </span>
+                        </td>
+                        <td style="padding: 4px 6px; font-size: 8.5px; line-height: 1.2; vertical-align: middle;">
+                            <strong style="color: #64748b; font-size: 8px;"><?= __('year') ?> :</strong>
+                            <span style="color: #334155; font-weight: bold;"><?= h($settings['display_school_year'] ?? $payment['academic_year_id'] ?? '') ?></span>
+                        </td>
+                    </tr>
                 </table>
 
                 <!-- Tableau Financier du versement -->
@@ -652,24 +691,11 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                     <?= __('amount_words_prefix') ?> <strong><?= h($amountInWords) ?></strong>
                 </div>
 
-                <!-- Section de bas : QR Code et Ventilation financière -->
-                <table class="bottom-section-table">
+                <!-- Section de bas : Ventilation financière -->
+                <table class="bottom-section-table" style="width: 100%;">
                     <tr>
-                        <!-- QR Code de lutte contre les faux reçus -->
-                        <td class="qr-col">
-                            <div class="qr-wrapper">
-                                <img src="<?= $qrCodeSrc ?>" class="qr-img" alt="QR Code de Vérification">
-                                <div class="qr-text-info">
-                                    <strong><?= __('verification_enrollment') ?> :</strong><br>
-                                    <?= __('scan_qr_help') ?><br>
-                                    <?= __('jeton') ?> <?= h($payment['verification_code']) ?>
-                                </div>
-                            </div>
-                        </td>
-
-                        <!-- Ventilation financière selon le type de paiement -->
-                        <td class="breakdown-col">
-                            <table class="breakdown-table">
+                        <td class="breakdown-col" style="width: 100%;">
+                            <table class="breakdown-table" style="width: 100%;">
                                 <?php if ($payment['type'] === 'inscription'): 
                                     // Calculer les frais prévus selon le statut
                                     $policy = $settings['registration_fee_policy'] ?? 'all';
@@ -683,31 +709,31 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                                     }
                                 ?>
                                     <tr>
-                                        <td class="label-td"><?= __('registration_payment_option') ?> <?= __('expected_fee_suffix') ?></td>
-                                        <td class="value-td"><?= number_format($expectedFee, 0, '.', ' ') ?> FCFA</td>
+                                        <td class="label-td" style="width: 60%;"><?= __('registration_payment_option') ?> <?= __('expected_fee_suffix') ?></td>
+                                        <td class="value-td" style="width: 40%;"><?= number_format($expectedFee, 0, '.', ' ') ?> FCFA</td>
                                     </tr>
                                     <tr>
-                                        <td class="label-td" style="color: #16a34a; background-color: #f0fdf4;"><?= __('registration_payment_option') ?> <?= __('paid_fee_suffix') ?></td>
-                                        <td class="value-td" style="color: #16a34a; background-color: #f0fdf4;"><?= number_format($payment['amount'], 0, '.', ' ') ?> FCFA</td>
+                                        <td class="label-td" style="color: #16a34a; background-color: #f0fdf4; width: 60%;"><?= __('registration_payment_option') ?> <?= __('paid_fee_suffix') ?></td>
+                                        <td class="value-td" style="color: #16a34a; background-color: #f0fdf4; width: 40%;"><?= number_format($payment['amount'], 0, '.', ' ') ?> FCFA</td>
                                     </tr>
                                     <?php if (!empty($childSurplus)): ?>
                                     <tr>
-                                        <td class="label-td" style="color: #0284c7; background-color: #f0f9ff;">Surplus transféré vers scolarité</td>
-                                        <td class="value-td" style="color: #0284c7; background-color: #f0f9ff;"><?= number_format($childSurplus['amount'], 0, '.', ' ') ?> FCFA</td>
+                                        <td class="label-td" style="color: #0284c7; background-color: #f0f9ff; width: 60%;">Surplus transféré vers scolarité</td>
+                                        <td class="value-td" style="color: #0284c7; background-color: #f0f9ff; width: 40%;"><?= number_format($childSurplus['amount'], 0, '.', ' ') ?> FCFA</td>
                                     </tr>
                                     <?php endif; ?>
                                 <?php else: ?>
                                     <tr>
-                                        <td class="label-td"><?= __('gross_tuition_fee') ?></td>
-                                        <td class="value-td"><?= number_format($enroll['scolarite_nette'] ?? 0, 0, '.', ' ') ?> FCFA</td>
+                                        <td class="label-td" style="width: 60%;"><?= __('gross_tuition_fee') ?></td>
+                                        <td class="value-td" style="width: 40%;"><?= number_format($enroll['scolarite_nette'] ?? 0, 0, '.', ' ') ?> FCFA</td>
                                     </tr>
                                     <tr>
-                                        <td class="label-td"><?= __('total_cumulated_paid') ?></td>
-                                        <td class="value-td"><?= number_format($enroll['total_paye'] ?? 0, 0, '.', ' ') ?> FCFA</td>
+                                        <td class="label-td" style="width: 60%;"><?= __('total_cumulated_paid') ?></td>
+                                        <td class="value-td" style="width: 40%;"><?= number_format($enroll['total_paye'] ?? 0, 0, '.', ' ') ?> FCFA</td>
                                     </tr>
                                     <tr>
-                                        <td class="label-td" style="color: #b91c1c; background-color: #fef2f2;"><?= __('remaining_tuition_balance') ?></td>
-                                        <td class="value-td" style="color: #b91c1c; background-color: #fef2f2; text-decoration: underline;"><?= number_format($enroll['reste_a_payer'] ?? 0, 0, '.', ' ') ?> FCFA</td>
+                                        <td class="label-td" style="color: #b91c1c; background-color: #fef2f2; width: 60%;"><?= __('remaining_tuition_balance') ?></td>
+                                        <td class="value-td" style="color: #b91c1c; background-color: #fef2f2; text-decoration: underline; width: 40%;"><?= number_format($enroll['reste_a_payer'] ?? 0, 0, '.', ' ') ?> FCFA</td>
                                     </tr>
                                 <?php endif; ?>
                             </table>
@@ -715,20 +741,30 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                     </tr>
                 </table>
 
-                <!-- Bloc des signatures -->
-                <table class="signatures-table">
+                <!-- Bloc des signatures & Authentification -->
+                <table class="signatures-table" style="margin-top: 10px; width: 100%;">
                     <tr>
-                        <td class="signature-box-left">
-                            <strong><?= __('parent_signature_label') ?></strong><br>
-                            <span class="signature-line-placeholder"></span>
+                        <!-- QR Code de lutte contre les faux reçus (remplace Signature Parent) -->
+                        <td style="width: 48%; padding-right: 2%; vertical-align: top;">
+                            <div style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 10px; min-height: 80px; background-color: #f8fafc; box-sizing: border-box; display: flex; align-items: center; gap: 8px;">
+                                <img src="<?= $qrCodeSrc ?>" style="border: 1px solid #cbd5e1; padding: 1px; background: #fff; max-width: 50px; max-height: 50px;" alt="QR Code">
+                                <div style="font-size: 7.5px; color: #64748b; line-height: 1.2;">
+                                    <strong style="color: #1e3a8a; font-size: 8px; text-transform: uppercase; display: block; margin-bottom: 2px;"><?= __('verification_enrollment') ?></strong>
+                                    <?= __('jeton') ?> : <span style="font-family: monospace; font-weight: bold; color: #0f172a;"><?= h($payment['verification_code']) ?></span><br>
+                                    <?= __('scan_qr_help') ?>
+                                </div>
+                            </div>
                         </td>
-                        <td class="signature-box-right">
-                            <strong><?= __('cashier_signature_label') ?></strong><br>
-                            <span style="font-size: 8px; color: #475569; display: block; margin-top: 2px;">
-                                <?= __('entered_by') ?> : <?= h($payment['user_nom'] ?? '') ?> <?= h($payment['user_prenom'] ?? '') ?><br>
-                                <?= __('printed_on') ?> <?= date('d/m/Y H:i') ?>
-                            </span>
-                            <span class="signature-line-placeholder" style="margin-top: 8px;"></span>
+                        <!-- Signature de la caisse -->
+                        <td style="width: 48%; padding-left: 2%; vertical-align: top;">
+                            <div style="border: 1px dashed #cbd5e1; border-radius: 6px; padding: 6px 10px; min-height: 80px; background-color: #fafafa; position: relative; box-sizing: border-box;">
+                                <strong style="color: #475569; font-size: 8.5px; text-transform: uppercase;"><?= __('cashier_signature_label') ?></strong>
+                                <div style="font-size: 8.5px; color: #1e293b; margin-top: 4px; line-height: 1.3;">
+                                    <?= __('entered_by') ?> : <strong><?= h($payment['user_nom'] ?? '') ?> <?= h($payment['user_prenom'] ?? '') ?></strong><br>
+                                    <?= __('printed_on') ?> <?= date('d/m/Y H:i') ?>
+                                </div>
+                                <div style="margin-top: 25px; border-top: 1px dotted #94a3b8; width: 100%;"></div>
+                            </div>
                         </td>
                     </tr>
                 </table>

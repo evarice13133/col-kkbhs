@@ -44,7 +44,7 @@ class FinancialService
                 $del = $this->db->prepare("DELETE FROM student_installments WHERE student_id = ? AND academic_year_id = ?");
                 $del->execute([$studentId, $academicYearId]);
 
-                $this->updateEnrollment($studentId, (int)($student['class_id'] ?? 0), $academicYearId, 0.0, 0.0, 0.0, 0.0, 0.0);
+                $this->updateEnrollment($studentId, (int) ($student['class_id'] ?? 0), $academicYearId, 0.0, 0.0, 0.0, 0.0, 0.0);
                 if ($useTransaction) {
                     $this->db->commit();
                 }
@@ -87,9 +87,9 @@ class FinancialService
             $stmt->execute([$studentId]);
             while ($disc = $stmt->fetch()) {
                 if ($disc['amount_type'] === 'percentage') {
-                    $totalReductions += ($grossTuition * (float)$disc['amount'] / 100.0);
+                    $totalReductions += ($grossTuition * (float) $disc['amount'] / 100.0);
                 } else {
-                    $totalReductions += (float)$disc['amount'];
+                    $totalReductions += (float) $disc['amount'];
                 }
             }
 
@@ -98,9 +98,9 @@ class FinancialService
             $stmt->execute([$classId]);
             while ($disc = $stmt->fetch()) {
                 if ($disc['amount_type'] === 'percentage') {
-                    $totalReductions += ($grossTuition * (float)$disc['amount'] / 100.0);
+                    $totalReductions += ($grossTuition * (float) $disc['amount'] / 100.0);
                 } else {
-                    $totalReductions += (float)$disc['amount'];
+                    $totalReductions += (float) $disc['amount'];
                 }
             }
 
@@ -112,9 +112,9 @@ class FinancialService
             $stmt->execute([$studentId]);
             while ($schol = $stmt->fetch()) {
                 if ($schol['amount_type'] === 'percentage') {
-                    $totalScholarships += ($grossTuition * (float)$schol['amount'] / 100.0);
+                    $totalScholarships += ($grossTuition * (float) $schol['amount'] / 100.0);
                 } else {
-                    $totalScholarships += (float)$schol['amount'];
+                    $totalScholarships += (float) $schol['amount'];
                 }
             }
 
@@ -123,9 +123,9 @@ class FinancialService
             $stmt->execute([$classId]);
             while ($schol = $stmt->fetch()) {
                 if ($schol['amount_type'] === 'percentage') {
-                    $totalScholarships += ($grossTuition * (float)$schol['amount'] / 100.0);
+                    $totalScholarships += ($grossTuition * (float) $schol['amount'] / 100.0);
                 } else {
-                    $totalScholarships += (float)$schol['amount'];
+                    $totalScholarships += (float) $schol['amount'];
                 }
             }
 
@@ -150,15 +150,15 @@ class FinancialService
                 // Calcul du prorata
                 $sumClassAmount = 0.0;
                 foreach ($classInstallments as $ci) {
-                    $sumClassAmount += (float)$ci['amount'];
+                    $sumClassAmount += (float) $ci['amount'];
                 }
 
                 if ($sumClassAmount > 0) {
                     $sumCalculated = 0.0;
                     for ($i = 0; $i < count($classInstallments); $i++) {
                         $ci = $classInstallments[$i];
-                        $ciNum = (int)$ci['installment_number'];
-                        $ciAmount = (float)$ci['amount'];
+                        $ciNum = (int) $ci['installment_number'];
+                        $ciAmount = (float) $ci['amount'];
 
                         if ($i === count($classInstallments) - 1) {
                             // Ajustement sur la dernière tranche pour éviter les erreurs d'arrondi
@@ -191,11 +191,11 @@ class FinancialService
             // 5. Récupérer les paiements de scolarité de l'élève (hors annulés)
             $stmt = $this->db->prepare("SELECT SUM(amount) FROM payments WHERE student_id = ? AND academic_year_id = ? AND type = 'scolarite' AND status = 'valide'");
             $stmt->execute([$studentId, $academicYearId]);
-            $totalPaid = (float)$stmt->fetchColumn();
+            $totalPaid = (float) $stmt->fetchColumn();
 
             // 6. Insérer ou mettre à jour student_installments avec la distribution des paiements
             $remainingPaid = $totalPaid;
-            
+
             // On supprime d'abord les anciennes tranches pour cette année
             $del = $this->db->prepare("DELETE FROM student_installments WHERE student_id = ? AND academic_year_id = ?");
             $del->execute([$studentId, $academicYearId]);
@@ -230,7 +230,8 @@ class FinancialService
             try {
                 $insModel = new \App\Models\InsolventStudent();
                 $insModel->refreshCache($academicYearId);
-            } catch (\Exception $ex) {}
+            } catch (\Exception $ex) {
+            }
             return [
                 'success' => true,
                 'data' => [
@@ -260,7 +261,7 @@ class FinancialService
         $studentIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
         foreach ($studentIds as $studentId) {
-            $this->syncStudentFinancials((int)$studentId, $academicYearId);
+            $this->syncStudentFinancials((int) $studentId, $academicYearId);
         }
     }
 
@@ -301,7 +302,7 @@ class FinancialService
             }
 
             // Resynchroniser l'élève
-            $this->syncStudentFinancials((int)$payment['student_id'], (int)$payment['academic_year_id']);
+            $this->syncStudentFinancials((int) $payment['student_id'], (int) $payment['academic_year_id']);
 
             $this->db->commit();
             return ['success' => true, 'message' => 'Le paiement a été annulé avec succès.', 'student_id' => $payment['student_id']];
@@ -353,8 +354,8 @@ class FinancialService
         $oldValue = null,
         $newValue = null
     ): void {
-        $oldValStr = is_array($oldValue) ? json_encode($oldValue, JSON_UNESCAPED_UNICODE) : (string)$oldValue;
-        $newValStr = is_array($newValue) ? json_encode($newValue, JSON_UNESCAPED_UNICODE) : (string)$newValue;
+        $oldValStr = is_array($oldValue) ? json_encode($oldValue, JSON_UNESCAPED_UNICODE) : (string) $oldValue;
+        $newValStr = is_array($newValue) ? json_encode($newValue, JSON_UNESCAPED_UNICODE) : (string) $newValue;
 
         $stmt = $this->db->prepare("INSERT INTO financial_history (user_id, entity_type, entity_id, action, old_value, new_value) 
                                     VALUES (?, ?, ?, ?, ?, ?)");
