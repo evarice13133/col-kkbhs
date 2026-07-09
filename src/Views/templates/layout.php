@@ -319,9 +319,14 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 
-    <link rel="stylesheet" href="/public/css/modern-dashboard.css?v=1.1">
-    <link rel="stylesheet" href="/public/css/alerts-premium.css?v=1.1">
-    <link rel="stylesheet" href="/public/css/ux-improvements.css?v=1.1">
+    <?php
+    $asset_version = file_exists(__DIR__ . '/../../../public/css/modern-dashboard.css')
+        ? filemtime(__DIR__ . '/../../../public/css/modern-dashboard.css')
+        : '1.2.0';
+    ?>
+    <link rel="stylesheet" href="/public/css/modern-dashboard.css?v=<?= $asset_version ?>">
+    <link rel="stylesheet" href="/public/css/alerts-premium.css?v=<?= $asset_version ?>">
+    <link rel="stylesheet" href="/public/css/ux-improvements.css?v=<?= $asset_version ?>">
 
 
     <style>
@@ -890,8 +895,8 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <!-- Services Applicatifs -->
-    <script src="/public/js/AlertService.js?v=1.1"></script>
-    <script src="/public/js/ux-improvements.js?v=1.1"></script>
+    <script src="/public/js/AlertService.js?v=<?= $asset_version ?>"></script>
+    <script src="/public/js/ux-improvements.js?v=<?= $asset_version ?>"></script>
     
     <!-- Assistant IA (Convocore) -->
     <div id="VG_OVERLAY_CONTAINER"></div>
