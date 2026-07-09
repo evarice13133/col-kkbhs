@@ -69,7 +69,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 // BARRAGE DE SÉCURITÉ GLOBAL (Middleware)
 // Redirige ABSOLUMENT tout visiteur non-authentifié ou session expirée vers l'écran de connexion.
-if (!in_array($path, ['/', '/login', '/logout', '/register-teacher', '/sitemap.xml', '/contact/send', '/payments/verify']) && !Security::validateSession()) {
+if (!in_array($path, ['/', '/login', '/logout', '/register-teacher', '/sitemap.xml', '/contact/send', '/payments/verify']) && strpos($path, '/verify-receipt') !== 0 && !Security::validateSession()) {
     header('Location: /login');
     exit;
 }
@@ -515,8 +515,24 @@ elseif (strpos($path, '/academic_years') === 0) {
 
 // ====== ROUTES: GESTION FINANCIÈRE ======
 elseif ($path === '/payments/verify') {
-    $c = new PaymentController();
-    $c->verify();
+    // Rétrocompatibilité pour les anciens QR Codes
+    $c = new \App\Controllers\PublicVerificationController();
+    $c->verifyPublic();
+}
+elseif (strpos($path, '/verify-receipt') === 0) {
+    // Nouvelle route publique de vérification
+    $c = new \App\Controllers\PublicVerificationController();
+    $c->verifyPublic();
+}
+elseif (strpos($path, '/admin/verifications') === 0) {
+    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin', 'comptable'])) {
+        header('Location: /');
+        exit;
+    }
+    $c = new \App\Controllers\VerificationAdminController();
+    if ($path === '/admin/verifications') {
+        $c->index();
+    }
 }
 elseif (strpos($path, '/payments') === 0) {
     if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
