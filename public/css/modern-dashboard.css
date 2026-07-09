@@ -1904,4 +1904,202 @@ p, .text-muted {
         padding: 0.5rem 0.95rem;
     }
 }
+
+/* ========================================== */
+/*   PREMIUM FOLDED CARD DESIGN SYSTEM        */
+/* ========================================== */
+
+.modern-card, .erp-stat-card {
+    position: relative !important;
+    background: rgba(255, 255, 255, 0.8) !important;
+    backdrop-filter: blur(16px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+    border-top-left-radius: var(--radius-lg) !important;
+    border-bottom-left-radius: var(--radius-lg) !important;
+    border-bottom-right-radius: var(--radius-lg) !important;
+    border-top-right-radius: 0px !important;
+    border: 1.5px solid rgba(226, 232, 240, 0.8) !important;
+    box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    overflow: visible !important; /* Ensure the fold is never clipped */
+}
+
+[data-theme="dark"] .modern-card,
+[data-theme="dark"] .erp-stat-card {
+    background: rgba(1, 4, 19, 0.75) !important;
+    border: 1.5px solid rgba(30, 41, 59, 0.7) !important;
+    box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.5) !important;
+}
+
+.modern-card:hover, .erp-stat-card:hover {
+    transform: translateY(-4px) scale(1.005) !important;
+}
+
+/* The visual cut-off mask (uses the page background color to hide the top-right corner) */
+.modern-card::before, .erp-stat-card::before {
+    content: "" !important;
+    position: absolute !important;
+    top: -2px !important; /* cover the border outline */
+    right: -2px !important;
+    width: 38px !important;
+    height: 38px !important;
+    background: var(--bg-body) !important;
+    z-index: 2 !important;
+    clip-path: polygon(0 0, 100% 0, 100% 100%) !important;
+    pointer-events: none !important;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* The folded paper flap pointing inwards with 3D crease borders */
+.modern-card::after, .erp-stat-card::after {
+    content: "" !important;
+    position: absolute !important;
+    top: -2px !important;
+    right: -2px !important;
+    width: 38px !important;
+    height: 38px !important;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(240, 240, 240, 0.9) 50%, rgba(0, 0, 0, 0.15) 51%, rgba(0, 0, 0, 0.08) 100%) !important;
+    z-index: 3 !important;
+    clip-path: polygon(0 0, 100% 100%, 0 100%) !important;
+    border-bottom-left-radius: 6px !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.5) !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.15) !important;
+    filter: drop-shadow(-3px 3px 4px rgba(0, 0, 0, 0.18)) !important;
+    pointer-events: none !important;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+[data-theme="dark"] .modern-card::after,
+[data-theme="dark"] .erp-stat-card::after {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(0, 0, 0, 0.5) 51%, rgba(0, 0, 0, 0.6) 100%) !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.5) !important;
+}
+
+/* On hover, add a subtle fold flap zoom for realism */
+.modern-card:hover::after, .erp-stat-card:hover::after {
+    width: 44px !important;
+    height: 44px !important;
+    filter: drop-shadow(-4px 4px 6px rgba(0, 0, 0, 0.25)) !important;
+}
+.modern-card:hover::before, .erp-stat-card:hover::before {
+    width: 44px !important;
+    height: 44px !important;
+}
+
+/* Ensure child headers and footers match the rounded card corners since overflow:hidden is disabled */
+.modern-card .card-header,
+.modern-card .modern-card-header {
+    background: transparent !important;
+    border-top-left-radius: var(--radius-lg) !important;
+    border-top-right-radius: 0px !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+.modern-card .card-footer,
+.modern-card .modern-card-footer {
+    background: transparent !important;
+    border-bottom-left-radius: var(--radius-lg) !important;
+    border-bottom-right-radius: var(--radius-lg) !important;
+}
+
+/* Themed full-borders & Glowing Radial backgrounds */
+.modern-card.border-primary,
+.modern-card.border-start.border-primary,
+.modern-card.border-top.border-primary,
+.modern-card.border-start-primary,
+.erp-stat-card.card-primary,
+.erp-stat-card.card-info {
+    border: 2px solid rgba(124, 58, 237, 0.8) !important;
+    background: radial-gradient(circle at 100% 0%, rgba(124, 58, 237, 0.06), transparent 45%), var(--bg-card) !important;
+}
+.modern-card.border-primary:hover,
+.modern-card.border-start.border-primary:hover,
+.modern-card.border-top.border-primary:hover,
+.erp-stat-card.card-primary:hover,
+.erp-stat-card.card-info:hover {
+    box-shadow: 0 20px 40px -10px rgba(124, 58, 237, 0.24), 0 4px 12px rgba(124, 58, 237, 0.08) !important;
+}
+
+.modern-card.border-success,
+.modern-card.border-start.border-success,
+.modern-card.border-top.border-success,
+.modern-card.border-start-success,
+.erp-stat-card.card-success {
+    border: 2px solid rgba(16, 185, 129, 0.8) !important;
+    background: radial-gradient(circle at 100% 0%, rgba(16, 185, 129, 0.06), transparent 45%), var(--bg-card) !important;
+}
+.modern-card.border-success:hover,
+.modern-card.border-start.border-success:hover,
+.modern-card.border-top.border-success:hover,
+.erp-stat-card.card-success:hover {
+    box-shadow: 0 20px 40px -10px rgba(16, 185, 129, 0.24), 0 4px 12px rgba(16, 185, 129, 0.08) !important;
+}
+
+.modern-card.border-warning,
+.modern-card.border-start.border-warning,
+.modern-card.border-top.border-warning,
+.modern-card.border-start-warning,
+.erp-stat-card.card-warning {
+    border: 2px solid rgba(245, 158, 11, 0.8) !important;
+    background: radial-gradient(circle at 100% 0%, rgba(245, 158, 11, 0.06), transparent 45%), var(--bg-card) !important;
+}
+.modern-card.border-warning:hover,
+.modern-card.border-start.border-warning:hover,
+.modern-card.border-top.border-warning:hover,
+.erp-stat-card.card-warning:hover {
+    box-shadow: 0 20px 40px -10px rgba(245, 158, 11, 0.24), 0 4px 12px rgba(245, 158, 11, 0.08) !important;
+}
+
+.modern-card.border-danger,
+.modern-card.border-start.border-danger,
+.modern-card.border-top.border-danger,
+.modern-card.border-start-danger,
+.erp-stat-card.card-danger {
+    border: 2px solid rgba(239, 68, 68, 0.8) !important;
+    background: radial-gradient(circle at 100% 0%, rgba(239, 68, 68, 0.06), transparent 45%), var(--bg-card) !important;
+}
+.modern-card.border-danger:hover,
+.modern-card.border-start.border-danger:hover,
+.modern-card.border-top.border-danger:hover,
+.erp-stat-card.card-danger:hover {
+    box-shadow: 0 20px 40px -10px rgba(239, 68, 68, 0.24), 0 4px 12px rgba(239, 68, 68, 0.08) !important;
+}
+
+/* Position card icons inside the folded corner */
+.modern-card .kpi-icon-wrapper,
+.modern-card .erp-icon-box,
+.erp-stat-card .kpi-icon-wrapper,
+.erp-stat-card .erp-icon-box {
+    position: absolute !important;
+    top: 6px !important;
+    right: 6px !important;
+    width: 26px !important;
+    height: 26px !important;
+    margin: 0 !important;
+    z-index: 10 !important;
+    background: transparent !important; /* Transparent background to sit on the fold */
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.modern-card .kpi-icon-wrapper i,
+.modern-card .erp-icon-box i,
+.erp-stat-card .kpi-icon-wrapper i,
+.erp-stat-card .erp-icon-box i {
+    font-size: 0.95rem !important; /* Fits perfectly in the fold */
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Hover rotation on the icon */
+.modern-card:hover .kpi-icon-wrapper i,
+.modern-card:hover .erp-icon-box i,
+.erp-stat-card:hover .kpi-icon-wrapper i,
+.erp-stat-card:hover .erp-icon-box i {
+    transform: scale(1.2) rotate(8deg) !important;
+}
+
 

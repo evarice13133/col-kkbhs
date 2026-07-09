@@ -1,6 +1,9 @@
 <?php
 $title = __("command_center");
 
+$db = \App\Core\Database::getInstance()->getConnection();
+$activeYearName = $db->query("SELECT nom FROM academic_years WHERE is_active = 1 LIMIT 1")->fetchColumn();
+
 if (!function_exists('nm_level_class')) {
     function nm_level_class($label)
     {
@@ -30,6 +33,7 @@ if (!function_exists('nm_backup_state_class')) {
 
 $teachersUnder50 = count(array_filter($teacherMetrics, fn($m) => $m['progress_percent'] < 50));
 $topTeacher = $teacherMetrics[0] ?? null;
+$worstTeacher = !empty($teacherMetrics) ? $teacherMetrics[count($teacherMetrics) - 1] : null;
 $recentTeacherActivity = array_slice($teacherActivitySummary ?? [], 0, 7);
 $backupRecentArchives = $backupOverview['recent_archives'] ?? [];
 $formatDateTime = static function (?string $value): string {
@@ -97,7 +101,7 @@ ob_start();
                 <p class="text-muted-theme small mb-0">Gestion générale et indicateurs clés de performance</p>
             </div>
             <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 fw-bold small">
-                <i class="bi bi-calendar-event me-1"></i> Année Scolaire Active
+                <i class="bi bi-calendar-event me-1"></i> Année Scolaire : <?= htmlspecialchars($activeYearName ?: '') ?>
             </span>
         </div>
         <ul class="nav nav-pills dashboard-nav-pills gap-2 flex-nowrap overflow-auto pb-2" id="dashboard-view-selector" role="tablist">
@@ -414,41 +418,197 @@ ob_start();
         </div>
     </div>
 
-    <!-- Section: Workflow d'Inscription -->
+    <!-- Répartitions Démographiques (Dashboard Exécutif) -->
+    <div class="row g-4 mb-4" data-views="pedagogie">
+        <!-- Taux de Réussite Global Card -->
+        <div class="col-lg-4">
+            <div class="erp-stat-card card-primary h-100 justify-content-center">
+                <div>
+                    <div class="erp-icon-box">
+                        <i class="bi bi-award-fill"></i>
+                    </div>
+                    <div class="kpi-value" data-count-up="<?= (int)$successRate ?>" data-suffix="%"><?= $successRate ?>%</div>
+                    <div class="kpi-label">Taux de Réussite Global</div>
+                </div>
+                <div class="kpi-trend text-primary">
+                    Calculé sur l'ensemble des moyennes >= 10/20
+                </div>
+            </div>
+        </div>
+
+        <!-- Répartition par Sexe -->
+        <div class="col-lg-4">
+            <div class="modern-card border-0 shadow-sm p-4 h-100">
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-gender-ambiguous text-primary me-2"></i>Répartition par Sexe</h6>
+                <?php 
+                $malePercent = $stats_students > 0 ? round(($maleCount / $stats_students) * 100) : 0;
+                $femalePercent = $stats_students > 0 ? round(($femaleCount / $stats_students) * 100) : 0;
+                ?>
+                <div class="progress rounded-pill mb-3" style="height: 20px;">
+                    <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $malePercent ?>%" aria-valuenow="<?= $malePercent ?>" aria-valuemin="0" aria-valuemax="100" title="Garçons: <?= $maleCount ?>"><?= $malePercent ?>%</div>
+                    <div class="progress-bar bg-danger bg-opacity-75" role="progressbar" style="width: <?= $femalePercent ?>%" aria-valuenow="<?= $femalePercent ?>" aria-valuemin="0" aria-valuemax="100" title="Filles: <?= $femaleCount ?>"><?= $femalePercent ?>%</div>
+                </div>
+                <div class="d-flex justify-content-between small text-muted-theme">
+                    <span><i class="bi bi-gender-male text-primary me-1"></i>Garçons (<?= $maleCount ?>)</span>
+                    <span>Filles (<?= $femaleCount ?>)<i class="bi bi-gender-female text-danger ms-1"></i></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Répartition par Cycle -->
+        <div class="col-lg-4">
+            <div class="modern-card border-0 shadow-sm p-4 h-100">
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-diagram-3 text-success me-2"></i>Répartition par Cycle</h6>
+                <div class="d-flex flex-column gap-2" style="max-height: 150px; overflow-y: auto;">
+                    <?php foreach ($cycleRepartition as $cycle): 
+                        $cycleP = $stats_students > 0 ? round(($cycle['count'] / $stats_students) * 100) : 0;
+                    ?>
+                        <div>
+                            <div class="d-flex justify-content-between small mb-1">
+                                <span class="fw-bold text-main-theme"><?= htmlspecialchars($cycle['cycle_nom']) ?></span>
+                                <span class="text-muted-theme"><?= $cycle['count'] ?> élèves (<?= $cycleP ?>%)</span>
+                            </div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: <?= $cycleP ?>%"></div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                    <?php if (empty($cycleRepartition)): ?>
+                        <p class="text-muted small text-center my-2">Aucun cycle enregistré</p>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vue Pédagogie : Supervision Enseignants -->
+    <div class="row g-4 mb-4" data-views="pedagogie">
+        <div class="col-xl-8">
+            <!-- Suivi Progression Enseignants -->
+            <div class="modern-card border-0 shadow-lg border-top border-success border-4 h-100">
+                <div class="modern-card-header bg-transparent p-4 border-bottom">
+                    <h5 class="fw-bold m-0 text-main-theme"><i class="bi bi-clock-history text-success me-2"></i>Suivi de la saisie des notes par enseignant</h5>
+                </div>
+                <div class="table-responsive" style="max-height: 320px; overflow-y: auto;">
+                    <table class="table-modern">
+                        <thead>
+                            <tr>
+                                <th class="ps-4 border-0 py-3">Enseignant</th>
+                                <th class="border-0 py-3 text-center">Saisies</th>
+                                <th class="border-0 py-3">Progression</th>
+                                <th class="border-0 py-3 pe-4">Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($teacherMetrics as $m): ?>
+                                <tr>
+                                    <td class="ps-4 border-0 py-3">
+                                        <div class="fw-bold text-main-theme"><?= h($m['teacher_name']) ?></div>
+                                        <div class="small text-muted-theme"><?= $m['classes_count'] ?> classe(s)</div>
+                                    </td>
+                                    <td class="text-center border-0 fw-bold text-main-theme">
+                                        <?= $m['filled_count'] ?>
+                                        <small class="text-muted-theme">/<?= $m['expected_count'] ?></small>
+                                    </td>
+                                    <td class="border-0" style="min-width: 150px;">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="progress flex-grow-1" style="height: 6px; border-radius: 10px; background: var(--border-color);">
+                                                <div class="progress-bar bg-primary" style="width: <?= $m['progress_percent'] ?>%"></div>
+                                            </div>
+                                            <span class="small fw-bold text-main-theme"><?= $m['progress_percent'] ?>%</span>
+                                        </div>
+                                    </td>
+                                    <td class="pe-4 border-0"><span class="level-badge <?= nm_level_class($m['level_label']) ?>"><?= __($m['level_label']) ?></span></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 d-flex flex-column gap-3">
+            <!-- Enseignant le plus actif -->
+            <?php if ($topTeacher): ?>
+                <div class="modern-card border-0 shadow-sm overflow-hidden text-white flex-grow-1" style="background: linear-gradient(135deg, #10b981, #059669) !important; border-radius: 20px !important;">
+                    <div class="modern-card-body p-4 position-relative d-flex flex-column justify-content-between h-100">
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-2 opacity-75">
+                                <i class="bi bi-star-fill text-warning"></i>
+                                <span class="fw-bold small text-uppercase letter-spacing-1 text-white" style="color: #ffffff !important;">Enseignant le plus actif</span>
+                            </div>
+                            <h4 class="fw-black mb-1 text-white" style="color: #ffffff !important;"><?= h($topTeacher['teacher_name']) ?></h4>
+                            <p class="mb-4 small text-white" style="color: #ffffff !important; opacity: 0.9 !important;"><?= $topTeacher['classes_count'] ?> classe(s) • <?= $topTeacher['filled_count'] ?>/<?= $topTeacher['expected_count'] ?> notes</p>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-auto">
+                            <span class="badge rounded-pill px-3 py-1.5 fw-bold" style="background-color: rgba(255, 255, 255, 0.25) !important; color: #ffffff !important;"><?= $topTeacher['progress_percent'] ?>% Rempli</span>
+                            <i class="bi bi-patch-check-fill text-white fs-1 position-absolute bottom-0 end-0 m-3 opacity-25" style="font-size: 5rem !important;"></i>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <!-- Enseignant le moins actif -->
+            <?php if ($worstTeacher && $worstTeacher['teacher_name'] !== ($topTeacher['teacher_name'] ?? '')): ?>
+                <div class="modern-card border-0 shadow-sm overflow-hidden text-white flex-grow-1" style="background: linear-gradient(135deg, #f43f5e, #e11d48) !important; border-radius: 20px !important;">
+                    <div class="modern-card-body p-4 position-relative d-flex flex-column justify-content-between h-100">
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-2 opacity-75">
+                                <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+                                <span class="fw-bold small text-uppercase letter-spacing-1 text-white" style="color: #ffffff !important;">Enseignant le moins actif</span>
+                            </div>
+                            <h4 class="fw-black mb-1 text-white" style="color: #ffffff !important;"><?= h($worstTeacher['teacher_name']) ?></h4>
+                            <p class="mb-4 small text-white" style="color: #ffffff !important; opacity: 0.9 !important;"><?= $worstTeacher['classes_count'] ?> classe(s) • <?= $worstTeacher['filled_count'] ?>/<?= $worstTeacher['expected_count'] ?> notes</p>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-auto">
+                            <span class="badge rounded-pill px-3 py-1.5 fw-bold" style="background-color: rgba(255, 255, 255, 0.25) !important; color: #ffffff !important;"><?= $worstTeacher['progress_percent'] ?>% Rempli</span>
+                            <i class="bi bi-x-circle-fill text-white fs-1 position-absolute bottom-0 end-0 m-3 opacity-25" style="font-size: 5rem !important;"></i>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- Section: Workflow & Statut des Inscriptions -->
+    <?php $registrationRate = $totalStudents > 0 ? round(($totalEnrolled / $totalStudents) * 100, 1) : 0; ?>
     <div class="row g-3 g-md-4 mb-4" data-views="inscriptions">
         <div class="col-12">
             <div class="d-flex align-items-center gap-2 mt-2 mb-1">
                 <i class="bi bi-person-check text-primary fs-5"></i>
-                <h6 class="fw-bold m-0 text-uppercase small letter-spacing-1 text-main-theme">Suivi du Workflow d'Inscription</h6>
+                <h6 class="fw-bold m-0 text-uppercase small letter-spacing-1 text-main-theme">Statut Administratif & Validation Financière des Inscriptions</h6>
             </div>
         </div>
-        <!-- Élèves Inscrits -->
-        <div class="col-6 col-md-3">
-            <div class="erp-stat-card card-success">
+        <!-- 1. Administratif: Inscrits -->
+        <div class="col-6 col-md-4 col-xl">
+            <div class="erp-stat-card card-success h-100">
                 <div>
                     <div class="erp-icon-box">
                         <i class="bi bi-person-check-fill"></i>
                     </div>
                     <div class="kpi-value text-success" data-count-up="<?= (int) $stats_students_inscrits ?>"><?= $stats_students_inscrits ?></div>
-                    <div class="kpi-label">Élèves Inscrits</div>
+                    <div class="kpi-label">Inscrits (Statut)</div>
+                </div>
+                <div class="kpi-trend text-success">
+                    Taux Conv. : <?= number_format($conversion_rate, 1) ?>%
                 </div>
             </div>
         </div>
-        <!-- Élèves Non Inscrits -->
-        <div class="col-6 col-md-3">
-            <div class="erp-stat-card card-warning">
+        <!-- 2. Administratif: Non Inscrits -->
+        <div class="col-6 col-md-4 col-xl">
+            <div class="erp-stat-card card-warning h-100">
                 <div>
                     <div class="erp-icon-box">
                         <i class="bi bi-person-dash-fill"></i>
                     </div>
                     <div class="kpi-value text-warning" data-count-up="<?= (int) $stats_students_non_inscrits ?>"><?= $stats_students_non_inscrits ?></div>
-                    <div class="kpi-label">Élèves Non Inscrits</div>
+                    <div class="kpi-label">En Attente (Statut)</div>
                 </div>
             </div>
         </div>
-        <!-- Démissionnaires -->
-        <div class="col-6 col-md-3">
-            <div class="erp-stat-card card-danger">
+        <!-- 3. Administratif: Démissionnaires -->
+        <div class="col-6 col-md-4 col-xl">
+            <div class="erp-stat-card card-danger h-100">
                 <div>
                     <div class="erp-icon-box">
                         <i class="bi bi-person-x-fill"></i>
@@ -458,15 +618,30 @@ ob_start();
                 </div>
             </div>
         </div>
-        <!-- Taux de Conversion -->
-        <div class="col-6 col-md-3">
-            <div class="erp-stat-card card-info">
+        <!-- 4. Financier: Payés -->
+        <div class="col-6 col-md-4 col-xl">
+            <div class="erp-stat-card card-primary h-100">
                 <div>
                     <div class="erp-icon-box">
-                        <i class="bi bi-graph-up-arrow"></i>
+                        <i class="bi bi-cash-coin"></i>
                     </div>
-                    <div class="kpi-value text-info" data-count-up="<?= (int) $conversion_rate ?>" data-suffix="%"><?= $conversion_rate ?>%</div>
-                    <div class="kpi-label">Taux de Conversion (Importés → Inscrits)</div>
+                    <div class="kpi-value text-primary" data-count-up="<?= (int) $totalEnrolled ?>"><?= $totalEnrolled ?></div>
+                    <div class="kpi-label">Frais Payés (Caisse)</div>
+                </div>
+                <div class="kpi-trend text-primary">
+                    Taux Pmt : <?= number_format($registrationRate, 1) ?>%
+                </div>
+            </div>
+        </div>
+        <!-- 5. Financier: Reste à payer -->
+        <div class="col-6 col-md-4 col-xl">
+            <div class="erp-stat-card card-secondary h-100">
+                <div>
+                    <div class="erp-icon-box">
+                        <i class="bi bi-hourglass-split"></i>
+                    </div>
+                    <div class="kpi-value text-secondary" data-count-up="<?= (int) $totalNonEnrolled ?>"><?= $totalNonEnrolled ?></div>
+                    <div class="kpi-label">Frais Non Payés</div>
                 </div>
             </div>
         </div>
@@ -1081,59 +1256,180 @@ ob_start();
         </div>
     </div>
 
-    <!-- Inscriptions : KPI Cards (SaaS/ERP Modern style) -->
-    <div class="row g-3 g-md-4 mb-4" data-views="inscriptions">
+    <!-- Scolarité: Tables & Analyse -->
+    <div class="row g-4 mb-4" data-views="scolarite">
+        <!-- Situation des Tranches -->
         <div class="col-12">
-            <div class="kpi-section-title text-success mb-2 d-flex align-items-center gap-2">
-                <i class="bi bi-person-check fs-5"></i> Situation des Inscriptions & Rentrée Scolaire
-            </div>
-        </div>
-        <!-- Élèves Déjà Inscrits -->
-        <div class="col-6 col-md-3">
-            <div class="erp-stat-card card-success">
-                <div>
-                    <div class="erp-icon-box">
-                        <i class="bi bi-person-check"></i>
-                    </div>
-                    <div class="kpi-value" data-count-up="<?= (int)$totalEnrolled ?>"><?= number_format($totalEnrolled) ?></div>
-                    <div class="kpi-label"><?= __('enrolled_students') ?></div>
+            <div class="modern-card border-0 shadow-sm p-4">
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-bar-chart-steps text-primary me-2"></i>Situation des tranches configurées</h6>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr class="text-muted small text-uppercase">
+                                <th>Tranche</th>
+                                <th class="text-end">Montant Attendu</th>
+                                <th class="text-end">Montant Payé</th>
+                                <th class="text-end">Montant Restant</th>
+                                <th style="width: 250px;">Progression</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($tranchesSituation as $ts): 
+                                $planned = (float)$ts['total_planned'];
+                                $paid = (float)$ts['total_paid'];
+                                $remaining = max(0.0, $planned - $paid);
+                                $percent = $planned > 0 ? round(($paid / $planned) * 100, 1) : 0;
+                            ?>
+                                <tr class="border-bottom border-theme-light">
+                                    <td class="fw-bold text-main-theme">Tranche #<?= htmlspecialchars($ts['installment_number']) ?></td>
+                                    <td class="text-end text-main-theme fw-semibold"><?= number_format($planned, 0, ',', ' ') ?> FCFA</td>
+                                    <td class="text-end text-success fw-semibold"><?= number_format($paid, 0, ',', ' ') ?> FCFA</td>
+                                    <td class="text-end text-danger fw-semibold"><?= number_format($remaining, 0, ',', ' ') ?> FCFA</td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="progress flex-grow-1" style="height: 8px;">
+                                                <div class="progress-bar bg-success" style="width: <?= $percent ?>%"></div>
+                                            </div>
+                                            <span class="small fw-bold text-muted-theme"><?= $percent ?>%</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                            <?php if (empty($tranchesSituation)): ?>
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-3">Aucune tranche configurée pour cette année scolaire</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
-        <!-- Élèves Non Inscrits -->
-        <div class="col-6 col-md-3">
-            <div class="erp-stat-card card-danger">
-                <div>
-                    <div class="erp-icon-box">
-                        <i class="bi bi-person-x"></i>
-                    </div>
-                    <div class="kpi-value" data-count-up="<?= (int)$totalNonEnrolled ?>"><?= number_format($totalNonEnrolled) ?></div>
-                    <div class="kpi-label"><?= __('non_enrolled_students') ?></div>
+
+        <!-- Insolvabilité par Classe -->
+        <div class="col-12 col-lg-6">
+            <div class="modern-card border-0 shadow-sm p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold text-main-theme mb-0"><i class="bi bi-door-open text-danger me-2"></i>Insolvabilité par Classe</h6>
+                    <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill"><?= number_format($totalInsolventAmount, 0, ',', ' ') ?> FCFA</span>
+                </div>
+                <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr class="text-muted small text-uppercase">
+                                <th>Classe</th>
+                                <th class="text-center">Élèves</th>
+                                <th class="text-end">Montant Dû</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($insolventsByClass as $ibc): ?>
+                                <tr class="border-bottom border-theme-light">
+                                    <td class="fw-bold text-main-theme"><?= htmlspecialchars($ibc['class_name']) ?></td>
+                                    <td class="text-center text-muted-theme"><?= $ibc['count'] ?></td>
+                                    <td class="text-end text-danger fw-bold"><?= number_format($ibc['total_due'], 0, ',', ' ') ?> FCFA</td>
+                                </tr>
+                            <?php endforeach; ?>
+                            <?php if (empty($insolventsByClass)): ?>
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted py-3">Aucune classe insolvable</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
-        <!-- Taux d'inscription global -->
-        <div class="col-6 col-md-3">
-            <div class="erp-stat-card card-warning">
-                <div>
-                    <div class="erp-icon-box">
-                        <i class="bi bi-percent"></i>
-                    </div>
-                    <?php $registrationRate = $totalStudents > 0 ? round(($totalEnrolled / $totalStudents) * 100, 1) : 0; ?>
-                    <div class="kpi-value" data-count-up="<?= (int)$registrationRate ?>" data-suffix="%"><?= $registrationRate ?>%</div>
-                    <div class="kpi-label"><?= __('registration_rate') ?></div>
+
+        <!-- Top 10 des élèves les plus insolvables -->
+        <div class="col-12 col-lg-6">
+            <div class="modern-card border-0 shadow-sm p-4 h-100">
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-people-fill text-warning me-2"></i>Top 10 des retards les plus importants</h6>
+                <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr class="text-muted small text-uppercase">
+                                <th>Élève</th>
+                                <th>Classe</th>
+                                <th class="text-center">Échéances</th>
+                                <th class="text-end">Retard Dû</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($topInsolvents as $ti): ?>
+                                <tr class="border-bottom border-theme-light">
+                                    <td class="fw-bold text-main-theme"><?= htmlspecialchars(strtoupper($ti['student_nom']) . ' ' . ucwords(strtolower($ti['student_prenom']))) ?></td>
+                                    <td><span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill"><?= htmlspecialchars($ti['class_name']) ?></span></td>
+                                    <td class="text-center text-muted-theme fw-semibold"><?= $ti['unpaid_installments_count'] ?> tranches</td>
+                                    <td class="text-end text-danger fw-bold"><?= number_format($ti['amount_due'], 0, ',', ' ') ?> FCFA</td>
+                                </tr>
+                            <?php endforeach; ?>
+                            <?php if (empty($topInsolvents)): ?>
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-3">Aucun retard de paiement détecté</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
-        <!-- Effectif Total Actif -->
-        <div class="col-6 col-md-3">
-            <div class="erp-stat-card card-info">
-                <div>
-                    <div class="erp-icon-box">
-                        <i class="bi bi-people"></i>
+    </div>
+    <!-- Recettes & Dépenses par Période -->
+    <div class="row g-3 mb-4" data-views="finances">
+        <div class="col-lg-6">
+            <div class="modern-card border-0 shadow-sm p-4 h-100" style="border-radius: 20px !important;">
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-calendar-range text-primary me-2"></i>Détail des Recettes</h6>
+                <div class="row g-2">
+                    <div class="col-4">
+                        <div class="p-3 bg-light bg-opacity-25 rounded-4 border text-center h-100">
+                            <span class="text-muted-theme small fw-bold d-block mb-1">Aujourd'hui</span>
+                            <span class="fw-extrabold text-main-theme small d-block"><?= number_format($dailyCollections, 0, ',', ' ') ?></span>
+                            <small class="text-muted" style="font-size: 8px;">FCFA</small>
+                        </div>
                     </div>
-                    <div class="kpi-value" data-count-up="<?= (int)$totalStudents ?>"><?= number_format($totalStudents) ?></div>
-                    <div class="kpi-label"><?= __('active_students') ?></div>
+                    <div class="col-4">
+                        <div class="p-3 bg-light bg-opacity-25 rounded-4 border text-center h-100">
+                            <span class="text-muted-theme small fw-bold d-block mb-1">Cette semaine</span>
+                            <span class="fw-extrabold text-main-theme small d-block"><?= number_format($weeklyCollections, 0, ',', ' ') ?></span>
+                            <small class="text-muted" style="font-size: 8px;">FCFA</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-3 bg-light bg-opacity-25 rounded-4 border text-center h-100">
+                            <span class="text-muted-theme small fw-bold d-block mb-1">Ce mois</span>
+                            <span class="fw-extrabold text-main-theme small d-block"><?= number_format($monthlyCollections, 0, ',', ' ') ?></span>
+                            <small class="text-muted" style="font-size: 8px;">FCFA</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="modern-card border-0 shadow-sm p-4 h-100" style="border-radius: 20px !important;">
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-wallet2 text-danger me-2"></i>Détail des Dépenses</h6>
+                <div class="row g-2">
+                    <div class="col-4">
+                        <div class="p-3 bg-light bg-opacity-25 rounded-4 border text-center h-100">
+                            <span class="text-muted-theme small fw-bold d-block mb-1">Aujourd'hui</span>
+                            <span class="fw-extrabold text-main-theme small d-block"><?= number_format($dailyExpenses, 0, ',', ' ') ?></span>
+                            <small class="text-muted" style="font-size: 8px;">FCFA</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-3 bg-light bg-opacity-25 rounded-4 border text-center h-100">
+                            <span class="text-muted-theme small fw-bold d-block mb-1">Cette semaine</span>
+                            <span class="fw-extrabold text-main-theme small d-block"><?= number_format($weeklyExpenses, 0, ',', ' ') ?></span>
+                            <small class="text-muted" style="font-size: 8px;">FCFA</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-3 bg-light bg-opacity-25 rounded-4 border text-center h-100">
+                            <span class="text-muted-theme small fw-bold d-block mb-1">Ce mois</span>
+                            <span class="fw-extrabold text-main-theme small d-block"><?= number_format($monthlyExpenses, 0, ',', ' ') ?></span>
+                            <small class="text-muted" style="font-size: 8px;">FCFA</small>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1193,6 +1489,45 @@ ob_start();
         </div>
     </div>
 
+    <!-- Modes de règlement, Bourses & Réductions -->
+    <div class="row g-4 mb-4" data-views="finances">
+        <!-- Modes de Règlement -->
+        <div class="col-lg-4">
+            <div class="modern-card border-0 shadow-sm p-4 h-100" style="border-radius: 20px !important;">
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-credit-card-2-back text-primary me-2"></i>Modes de Règlement</h6>
+                <div style="height: 180px; position: relative;" class="d-flex align-items-center justify-content-center">
+                    <canvas id="adminPaymentMethodChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <!-- Motifs des Réductions -->
+        <div class="col-lg-4">
+            <div class="modern-card border-0 shadow-sm p-4 h-100" style="border-radius: 20px !important;">
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-percent text-warning me-2"></i>Motifs des Réductions</h6>
+                <div style="height: 180px; position: relative;" class="d-flex align-items-center justify-content-center">
+                    <?php if (empty($reductionsRepartition)): ?>
+                        <div class="text-center text-muted small py-5">Aucune réduction active</div>
+                    <?php else: ?>
+                        <canvas id="adminReductionsChart"></canvas>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+        <!-- Motifs des Bourses -->
+        <div class="col-lg-4">
+            <div class="modern-card border-0 shadow-sm p-4 h-100" style="border-radius: 20px !important;">
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-award text-success me-2"></i>Motifs des Bourses</h6>
+                <div style="height: 180px; position: relative;" class="d-flex align-items-center justify-content-center">
+                    <?php if (empty($scholarshipsRepartition)): ?>
+                        <div class="text-center text-muted small py-5">Aucune bourse active</div>
+                    <?php else: ?>
+                        <canvas id="adminScholarshipsChart"></canvas>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Class enrollment stats breakdown -->
     <div class="row g-4 mb-4" data-views="inscriptions">
         <div class="col-12">
@@ -1208,12 +1543,12 @@ ob_start();
                         <table class="table table-hover align-middle mb-0">
                             <thead>
                                 <tr class="border-bottom border-theme-light">
-                                    <th class="ps-4 py-3 fw-semibold text-muted-theme small text-uppercase"><?= __('class_name_header') ?? 'Classe' ?></th>
-                                    <th class="py-3 fw-semibold text-muted-theme text-center small text-uppercase"><?= __('total_students_header') ?? 'Total Élèves' ?></th>
-                                    <th class="py-3 fw-semibold text-muted-theme text-center small text-uppercase"><?= __('enrolled_count_header') ?? 'Élèves Inscrits' ?></th>
-                                    <th class="py-3 fw-semibold text-muted-theme text-center small text-uppercase"><?= __('non_enrolled_count_header') ?? 'Élèves Non Inscrits' ?></th>
-                                    <th class="py-3 fw-semibold text-muted-theme small text-uppercase"><?= __('registration_rate') ?? 'Taux d\'Inscription' ?></th>
-                                    <th class="pe-4 py-3 fw-semibold text-muted-theme text-end small text-uppercase"><?= __('registration_revenue_header') ?? 'Frais Inscription Encaissés' ?></th>
+                                    <th class="ps-4 py-3 fw-semibold text-muted-theme small text-uppercase">Classe</th>
+                                    <th class="py-3 fw-semibold text-muted-theme text-center small text-uppercase">Total Élèves</th>
+                                    <th class="py-3 fw-semibold text-muted-theme text-center small text-uppercase">Inscriptions Payées</th>
+                                    <th class="py-3 fw-semibold text-muted-theme text-center small text-uppercase">Inscriptions Non Payées</th>
+                                    <th class="py-3 fw-semibold text-muted-theme small text-uppercase">Taux de Paiement</th>
+                                    <th class="pe-4 py-3 fw-semibold text-muted-theme text-end small text-uppercase">Montant Encaissé</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1485,8 +1820,9 @@ ob_start();
         </div>
     <?php endif; ?>
 
-    <div class="row g-4" data-views="global,academic">
-        <div class="col-xl-8">
+    <!-- Vue Pédagogie : Anomalies (Matières sans prof & Inactives) -->
+    <div class="row g-4 mb-5" data-views="pedagogie">
+        <div class="col-12">
             <!-- Matières sans prof (Priorité Anomalies) -->
             <div class="modern-card mb-4 border-0 shadow-sm border-top border-warning border-4">
                 <div class="modern-card-header border-bottom bg-transparent py-3">
@@ -1494,8 +1830,7 @@ ob_start();
                         <i class="bi bi-patch-exclamation-fill text-warning fs-5"></i>
                         <h5 class="modern-card-title m-0 text-main-theme"><?= __('subjects_without_teachers') ?></h5>
                     </div>
-                    <span class="badge bg-warning bg-opacity-10 text-warning fw-bold"><?= count($unassignedSubjects) ?>
-                        <?= __('anomalies') ?></span>
+                    <span class="badge bg-warning bg-opacity-10 text-warning fw-bold"><?= count($unassignedSubjects) ?> <?= __('anomalies') ?></span>
                 </div>
                 <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
                     <table class="table-modern">
@@ -1509,22 +1844,17 @@ ob_start();
                         <tbody>
                             <?php if (empty($unassignedSubjects)): ?>
                                 <tr>
-                                    <td colspan="3" class="text-center py-5 text-main-theme"><i
-                                            class="bi bi-check-circle-fill text-success fs-2 d-block mb-2 text-main-theme"></i><?= __('all_subjects_covered') ?>
-                                    </td>
+                                    <td colspan="3" class="text-center py-5 text-main-theme"><i class="bi bi-check-circle-fill text-success fs-2 d-block mb-2 text-main-theme"></i><?= __('all_subjects_covered') ?></td>
                                 </tr>
                             <?php else: ?>
                                 <?php foreach ($unassignedSubjects as $us): ?>
                                     <tr>
-                                        <td class="ps-4 py-3"><span
-                                                class="badge bg-soft-primary px-3 rounded-pill text-main-theme"><?= h($us['class_name']) ?></span>
-                                        </td>
+                                        <td class="ps-4 py-3"><span class="badge bg-soft-primary px-3 rounded-pill text-main-theme"><?= h($us['class_name']) ?></span></td>
                                         <td class="py-3">
                                             <div class="fw-bold text-main-theme"><?= h($us['subject_name']) ?></div>
                                         </td>
                                         <td class="text-end pe-4 py-3">
-                                            <a href="/teachers?assign_subject=<?= $us['subject_id'] ?>&assign_class=<?= $us['class_id'] ?>"
-                                                class="btn btn-sm btn-outline-warning rounded-pill px-3 fw-bold">
+                                            <a href="/teachers?assign_subject=<?= $us['subject_id'] ?>&assign_class=<?= $us['class_id'] ?>" class="btn btn-sm btn-outline-warning rounded-pill px-3 fw-bold">
                                                 <i class="bi bi-person-plus me-1"></i> <?= __('assign') ?>
                                             </a>
                                         </td>
@@ -1564,7 +1894,12 @@ ob_start();
                 </div>
             </div>
             <?php endif; ?>
+        </div>
+    </div>
 
+    <!-- Vue RH : Supervision Enseignants & Backup Center -->
+    <div class="row g-4 mb-5" data-views="rh">
+        <div class="col-xl-8">
             <!-- Suivi Progression Enseignants -->
             <div class="modern-card mb-4 border-0 shadow-lg border-top border-success border-4">
                 <div class="modern-card-header bg-transparent p-4 border-bottom">
@@ -1585,8 +1920,7 @@ ob_start();
                                 <tr>
                                     <td class="ps-4 border-0 py-3">
                                         <div class="fw-bold text-main-theme"><?= h($m['teacher_name']) ?></div>
-                                        <div class="small text-muted-theme"><?= $m['classes_count'] ?>     <?= __('classes') ?>
-                                        </div>
+                                        <div class="small text-muted-theme"><?= $m['classes_count'] ?> <?= __('classes') ?></div>
                                     </td>
                                     <td class="text-center border-0 fw-bold text-main-theme">
                                         <?= $m['filled_count'] ?>
@@ -1594,18 +1928,13 @@ ob_start();
                                     </td>
                                     <td class="border-0" style="min-width: 150px;">
                                         <div class="d-flex align-items-center gap-2">
-                                            <div class="progress flex-grow-1"
-                                                style="height: 6px; border-radius: 10px; background: var(--border-color);">
-                                                <div class="progress-bar bg-primary"
-                                                    style="width: <?= $m['progress_percent'] ?>%"></div>
+                                            <div class="progress flex-grow-1" style="height: 6px; border-radius: 10px; background: var(--border-color);">
+                                                <div class="progress-bar bg-primary" style="width: <?= $m['progress_percent'] ?>%"></div>
                                             </div>
-                                            <span
-                                                class="small fw-bold text-main-theme"><?= $m['progress_percent'] ?>%</span>
+                                            <span class="small fw-bold text-main-theme"><?= $m['progress_percent'] ?>%</span>
                                         </div>
                                     </td>
-                                    <td class="pe-4 border-0"><span
-                                            class="level-badge <?= nm_level_class($m['level_label']) ?>"><?= __($m['level_label']) ?></span>
-                                    </td>
+                                    <td class="pe-4 border-0"><span class="level-badge <?= nm_level_class($m['level_label']) ?>"><?= __($m['level_label']) ?></span></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -1617,21 +1946,17 @@ ob_start();
         <div class="col-xl-4">
             <!-- Enseignant à l'honneur -->
             <?php if ($topTeacher): ?>
-                <div class="modern-card mb-4 border-0 shadow-sm overflow-hidden bg-primary text-white"
-                    style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)) !important;">
+                <div class="modern-card mb-4 border-0 shadow-sm overflow-hidden bg-primary text-white" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)) !important;">
                     <div class="modern-card-body p-4 position-relative">
                         <div class="d-flex align-items-center gap-2 mb-3 opacity-75">
                             <i class="bi bi-star-fill text-warning"></i>
-                            <span
-                                class="fw-bold small text-uppercase letter-spacing-1"><?= __('top_performing_teacher') ?></span>
+                            <span class="fw-bold small text-uppercase letter-spacing-1"><?= __('top_performing_teacher') ?></span>
                         </div>
                         <h3 class="fw-bold mb-1 lh-sm"><?= h($topTeacher['teacher_name']) ?></h3>
                         <div class="d-flex justify-content-between align-items-end mt-4">
                             <div>
-                                <div class="fs-1 fw-black lh-1" data-count-up="<?= (int) $topTeacher['progress_percent'] ?>"
-                                    data-suffix="%"><?= $topTeacher['progress_percent'] ?>%</div>
-                                <div class="small opacity-75 mt-1"><?= $topTeacher['filled_count'] ?>     <?= __('entries') ?>
-                                </div>
+                                <div class="fs-1 fw-black lh-1" data-count-up="<?= (int) $topTeacher['progress_percent'] ?>" data-suffix="%"><?= $topTeacher['progress_percent'] ?>%</div>
+                                <div class="small opacity-75 mt-1"><?= $topTeacher['filled_count'] ?> <?= __('entries') ?></div>
                             </div>
                             <div class="text-end">
                                 <div class="fw-bold"><?= $topTeacher['classes_count'] ?></div>
@@ -1652,20 +1977,16 @@ ob_start();
                         <a href="/teachers" class="admin-pilot-link">
                             <div>
                                 <div class="fw-bold text-main-theme"><?= __('teachers') ?></div>
-                                <div class="small text-muted-theme d-none d-sm-block">
-                                    <?= __('teachers_to_contact', ['count' => $teachersUnder50]) ?>
-                                </div>
+                                <div class="small text-muted-theme d-none d-sm-block"><?= __('teachers_to_contact', ['count' => $teachersUnder50]) ?></div>
                             </div>
-                            <span
-                                class="badge bg-danger bg-opacity-10 text-danger rounded-pill"><?= (int) $teachersUnder50 ?></span>
+                            <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill"><?= (int) $teachersUnder50 ?></span>
                         </a>
                         <a href="/notes" class="admin-pilot-link">
                             <div>
                                 <div class="fw-bold text-main-theme"><?= __('notes_management') ?></div>
                                 <div class="small text-muted-theme d-none d-sm-block"><?= __('processing_in_progress') ?></div>
                             </div>
-                            <span
-                                class="badge bg-warning bg-opacity-10 text-warning rounded-pill"><?= (int) $globalPending ?></span>
+                            <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill"><?= (int) $globalPending ?></span>
                         </a>
                         <a href="/bulletins" class="admin-pilot-link">
                             <div>
@@ -1685,8 +2006,7 @@ ob_start();
                         <div class="d-flex justify-content-between align-items-center">
                             <h5 class="fw-bold m-0"><?= __('backup_center') ?></h5>
                             <?php $stateKey = match ($backupOverview['freshness_state'] ?? 'unknown') { 'success' => 'backup_fresh', 'warning' => 'backup_warning', 'stale' => 'backup_stale', 'failed' => 'status_failed', default => 'status_unknown'}; ?>
-                            <span
-                                class="badge rounded-pill px-3 py-2 <?= nm_backup_state_class((string) ($backupOverview['freshness_state'] ?? 'unknown')) ?>"><?= __($stateKey) ?></span>
+                            <span class="badge rounded-pill px-3 py-2 <?= nm_backup_state_class((string) ($backupOverview['freshness_state'] ?? 'unknown')) ?>"><?= __($stateKey) ?></span>
                         </div>
                     </div>
                     <div class="modern-card-body p-4">
@@ -1706,8 +2026,7 @@ ob_start();
                                 </div>
                             </div>
                         </div>
-                        <a href="/settings#tab-automation"
-                            class="btn btn-primary w-100 rounded-pill fw-bold py-2 shadow-sm d-flex align-items-center justify-content-center gap-2">
+                        <a href="/settings#tab-automation" class="btn btn-primary w-100 rounded-pill fw-bold py-2 shadow-sm d-flex align-items-center justify-content-center gap-2">
                             <i class="bi bi-gear-fill"></i> <?= __('backup_open_settings') ?>
                         </a>
                     </div>
@@ -1964,6 +2283,58 @@ ob_start();
                     plugins: {
                         legend: { display: false },
                         tooltip: { enabled: true }
+                    }
+                }
+            });
+        }
+
+        const redCtx = document.getElementById('adminReductionsChart');
+        if (redCtx) {
+            const rawReductions = <?= json_encode($reductionsRepartition) ?>;
+            new Chart(redCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(rawReductions),
+                    datasets: [{
+                        data: Object.values(rawReductions),
+                        backgroundColor: ['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#64748b'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { boxWidth: 12, font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        const schCtx = document.getElementById('adminScholarshipsChart');
+        if (schCtx) {
+            const rawScholarships = <?= json_encode($scholarshipsRepartition) ?>;
+            new Chart(schCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(rawScholarships),
+                    datasets: [{
+                        data: Object.values(rawScholarships),
+                        backgroundColor: ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { boxWidth: 12, font: { size: 10 } }
+                        }
                     }
                 }
             });
