@@ -13,71 +13,126 @@ ob_start();
 
 <div class="animate-fade-in container-fluid py-4">
 
-    <!-- Page Header -->
-    <div class="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">
-        <div>
-            <h1 class="fw-black text-main-theme mb-1 fs-4 d-flex align-items-center gap-2">
-                <span class="d-inline-flex align-items-center justify-content-center rounded-3 bg-info bg-opacity-10 text-info p-2" style="width:40px;height:40px;">
-                    <i class="bi bi-pc-display fs-5"></i>
-                </span>
-                <?= __('it_dashboard_title') ?>
-            </h1>
-            <p class="text-muted-theme mb-0"><?= __('it_dashboard_subtitle') ?></p>
+    <!-- Tabs header for modern SaaS/ERP -->
+    <div class="dashboard-tabs-container mb-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+            <div>
+                <h5 class="fw-black text-main-theme m-0" style="font-family: 'Outfit', sans-serif; letter-spacing: -0.02em; font-size: 1.4rem;">Portail d'Administration IT</h5>
+                <p class="text-muted-theme small mb-0">Supervision système, rôles et sécurité</p>
+            </div>
+            <span class="badge bg-info bg-opacity-10 text-info rounded-pill px-3 py-2 fw-bold small">
+                <i class="bi bi-shield-check me-1"></i> Admin IT
+            </span>
         </div>
-        <div class="d-flex gap-2">
-            <a href="/users" class="btn btn-info text-white rounded-pill px-4 fw-semibold shadow-sm">
-                <i class="bi bi-people-fill me-2"></i><?= __('users') ?>
-            </a>
+        <ul class="nav nav-pills dashboard-nav-pills gap-2 flex-nowrap overflow-auto pb-2" id="dashboard-view-selector" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button type="button" class="nav-link active" data-view="general" role="tab">
+                    <i class="bi bi-grid-fill"></i> Vue Générale
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button type="button" class="nav-link" data-view="rh" role="tab">
+                    <i class="bi bi-people-fill"></i> Ressources Humaines
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <!-- KPI Cards in Vue Générale -->
+    <div class="row g-3 g-md-4 mb-4" data-views="general">
+        <!-- Utilisateurs -->
+        <div class="col-6 col-md-3">
+            <div class="erp-stat-card card-info">
+                <div>
+                    <div class="erp-icon-box">
+                        <i class="bi bi-person-circle"></i>
+                    </div>
+                    <div class="kpi-value" data-count-up="<?= (int) $totalUsers ?>"><?= $totalUsers ?></div>
+                    <div class="kpi-label"><?= __('total_users') ?></div>
+                </div>
+            </div>
+        </div>
+        <!-- Enseignants -->
+        <div class="col-6 col-md-3">
+            <div class="erp-stat-card card-warning">
+                <div>
+                    <div class="erp-icon-box">
+                        <i class="bi bi-person-badge"></i>
+                    </div>
+                    <div class="kpi-value" data-count-up="<?= (int) $totalTeachers ?>"><?= $totalTeachers ?></div>
+                    <div class="kpi-label"><?= __('total_teachers') ?></div>
+                </div>
+            </div>
+        </div>
+        <!-- Classes -->
+        <div class="col-6 col-md-3">
+            <div class="erp-stat-card card-primary">
+                <div>
+                    <div class="erp-icon-box">
+                        <i class="bi bi-door-open"></i>
+                    </div>
+                    <div class="kpi-value" data-count-up="<?= (int) $totalClasses ?>"><?= $totalClasses ?></div>
+                    <div class="kpi-label"><?= __('classes') ?></div>
+                </div>
+            </div>
+        </div>
+        <!-- Elèves -->
+        <div class="col-6 col-md-3">
+            <div class="erp-stat-card card-success">
+                <div>
+                    <div class="erp-icon-box">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <div class="kpi-value" data-count-up="<?= (int) $totalStudents ?>"><?= $totalStudents ?></div>
+                    <div class="kpi-label"><?= __('students') ?></div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- KPI Cards -->
-    <div class="row g-4 mb-4">
-        <div class="col-sm-6 col-xl-3">
-            <div class="modern-card border-0 shadow-sm p-4 h-100 position-relative overflow-hidden">
-                <div class="kpi-icon bg-info bg-opacity-10 text-info rounded-3 d-flex align-items-center justify-content-center mb-3" style="width:48px;height:48px;">
-                    <i class="bi bi-person-circle fs-4"></i>
+    <!-- Vue Générale : Activité Récente (Pleine largeur) -->
+    <div class="row g-4 mb-4" data-views="general">
+        <div class="col-12">
+            <div class="modern-card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent border-0 px-4 pt-4 pb-0">
+                    <h6 class="fw-black text-main-theme mb-0"><?= __('recent_activity') ?></h6>
                 </div>
-                <div class="fw-black text-main-theme fs-4 mb-1"><?= number_format($totalUsers) ?></div>
-                <div class="text-muted-theme small fw-semibold"><?= __('total_users') ?></div>
-                <div class="position-absolute bottom-0 start-0 w-100" style="height:4px; background: linear-gradient(90deg,#06b6d4,#0ea5e9); border-radius:0 0 12px 12px;"></div>
-            </div>
-        </div>
-        <div class="col-sm-6 col-xl-3">
-            <div class="modern-card border-0 shadow-sm p-4 h-100 position-relative overflow-hidden">
-                <div class="kpi-icon bg-warning bg-opacity-10 text-warning rounded-3 d-flex align-items-center justify-content-center mb-3" style="width:48px;height:48px;">
-                    <i class="bi bi-person-badge fs-4"></i>
+                <div class="card-body px-4 py-3">
+                    <?php if (empty($recentActivity)): ?>
+                        <div class="text-center py-5 text-muted-theme">
+                            <i class="bi bi-activity fs-1 opacity-25 d-block mb-2"></i>
+                            <p class="mb-0 small"><?= __('no_activity_log') ?></p>
+                        </div>
+                    <?php else: ?>
+                        <div class="d-flex flex-column gap-2" style="max-height:400px; overflow-y:auto;">
+                            <?php foreach ($recentActivity as $act): ?>
+                                <div class="d-flex align-items-start gap-3 py-2 border-bottom border-theme-light">
+                                    <div class="mt-1 flex-shrink-0">
+                                        <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-info bg-opacity-10 text-info" style="width:30px;height:30px;">
+                                            <i class="bi bi-activity small"></i>
+                                        </span>
+                                    </div>
+                                    <div class="flex-grow-1 min-w-0">
+                                        <div class="small fw-semibold text-main-theme"><?= htmlspecialchars((string)($act['action'] ?? '')) ?></div>
+                                        <?php if (!empty($act['details'])): ?>
+                                            <div class="extra-small text-muted-theme text-truncate"><?= htmlspecialchars((string)$act['details']) ?></div>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="text-muted-theme extra-small flex-shrink-0">
+                                        <?= isset($act['created_at']) ? date('d/m H:i', strtotime($act['created_at'])) : '' ?>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
                 </div>
-                <div class="fw-black text-main-theme fs-4 mb-1"><?= number_format($totalTeachers) ?></div>
-                <div class="text-muted-theme small fw-semibold"><?= __('total_teachers') ?></div>
-                <div class="position-absolute bottom-0 start-0 w-100" style="height:4px; background: linear-gradient(90deg,#f59e0b,#d97706); border-radius:0 0 12px 12px;"></div>
-            </div>
-        </div>
-        <div class="col-sm-6 col-xl-3">
-            <div class="modern-card border-0 shadow-sm p-4 h-100 position-relative overflow-hidden">
-                <div class="kpi-icon bg-primary bg-opacity-10 text-primary rounded-3 d-flex align-items-center justify-content-center mb-3" style="width:48px;height:48px;">
-                    <i class="bi bi-door-open fs-4"></i>
-                </div>
-                <div class="fw-black text-main-theme fs-4 mb-1"><?= number_format($totalClasses) ?></div>
-                <div class="text-muted-theme small fw-semibold"><?= __('classes') ?></div>
-                <div class="position-absolute bottom-0 start-0 w-100" style="height:4px; background: linear-gradient(90deg,#3b82f6,#6366f1); border-radius:0 0 12px 12px;"></div>
-            </div>
-        </div>
-        <div class="col-sm-6 col-xl-3">
-            <div class="modern-card border-0 shadow-sm p-4 h-100 position-relative overflow-hidden">
-                <div class="kpi-icon bg-success bg-opacity-10 text-success rounded-3 d-flex align-items-center justify-content-center mb-3" style="width:48px;height:48px;">
-                    <i class="bi bi-people fs-4"></i>
-                </div>
-                <div class="fw-black text-main-theme fs-4 mb-1"><?= number_format($totalStudents) ?></div>
-                <div class="text-muted-theme small fw-semibold"><?= __('students') ?></div>
-                <div class="position-absolute bottom-0 start-0 w-100" style="height:4px; background: linear-gradient(90deg,#22c55e,#16a34a); border-radius:0 0 12px 12px;"></div>
             </div>
         </div>
     </div>
 
-    <div class="row g-4">
-        <!-- Role Distribution -->
-        <div class="col-lg-5">
+    <!-- Ressources Humaines : Répartition des Rôles (Centré) -->
+    <div class="row g-4 mb-4 justify-content-center" data-views="rh">
+        <div class="col-lg-6">
             <div class="modern-card border-0 shadow-sm p-4 h-100">
                 <h6 class="fw-black text-main-theme mb-4"><?= __('role_distribution') ?></h6>
                 <?php
@@ -130,48 +185,10 @@ ob_start();
                 </div>
             </div>
         </div>
-
-        <!-- Recent Activity -->
-        <div class="col-lg-7">
-            <div class="modern-card border-0 shadow-sm h-100">
-                <div class="card-header bg-transparent border-0 px-4 pt-4 pb-0">
-                    <h6 class="fw-black text-main-theme mb-0"><?= __('recent_activity') ?></h6>
-                </div>
-                <div class="card-body px-4 py-3">
-                    <?php if (empty($recentActivity)): ?>
-                        <div class="text-center py-5 text-muted-theme">
-                            <i class="bi bi-activity fs-1 opacity-25 d-block mb-2"></i>
-                            <p class="mb-0 small"><?= __('no_activity_log') ?></p>
-                        </div>
-                    <?php else: ?>
-                        <div class="d-flex flex-column gap-2" style="max-height:400px; overflow-y:auto;">
-                            <?php foreach ($recentActivity as $act): ?>
-                                <div class="d-flex align-items-start gap-3 py-2 border-bottom border-theme-light">
-                                    <div class="mt-1 flex-shrink-0">
-                                        <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-info bg-opacity-10 text-info" style="width:30px;height:30px;">
-                                            <i class="bi bi-activity small"></i>
-                                        </span>
-                                    </div>
-                                    <div class="flex-grow-1 min-w-0">
-                                        <div class="small fw-semibold text-main-theme"><?= htmlspecialchars((string)($act['action'] ?? '')) ?></div>
-                                        <?php if (!empty($act['details'])): ?>
-                                            <div class="extra-small text-muted-theme text-truncate"><?= htmlspecialchars((string)$act['details']) ?></div>
-                                        <?php endif; ?>
-                                    </div>
-                                    <div class="text-muted-theme extra-small flex-shrink-0">
-                                        <?= isset($act['created_at']) ? date('d/m H:i', strtotime($act['created_at'])) : '' ?>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="row g-4 mt-2">
+    <!-- Quick Actions (Both views) -->
+    <div class="row g-4 mt-2" data-views="general,rh">
         <div class="col-12">
             <div class="modern-card border-0 shadow-sm p-4">
                 <h6 class="fw-black text-main-theme mb-3"><?= __('quick_actions') ?></h6>
@@ -196,6 +213,49 @@ ob_start();
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const viewSelector = document.getElementById('dashboard-view-selector');
+    if (viewSelector) {
+        const buttons = viewSelector.querySelectorAll('[data-view]');
+        const viewableElements = document.querySelectorAll('[data-views]');
+
+        const applyView = (selectedView) => {
+            buttons.forEach(btn => {
+                if (btn.dataset.view === selectedView) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            viewableElements.forEach(el => {
+                const views = el.dataset.views.split(',');
+                if (views.includes(selectedView)) {
+                    el.style.display = '';
+                } else {
+                    el.style.display = 'none';
+                }
+            });
+        };
+
+        buttons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const view = btn.dataset.view;
+                applyView(view);
+                localStorage.setItem('it_dashboard_active_view', view);
+            });
+        });
+
+        let activeView = localStorage.getItem('it_dashboard_active_view') || 'general';
+        if (activeView === 'academic' || activeView === 'global') {
+            activeView = 'general';
+        }
+        applyView(activeView);
+    }
+});
+</script>
 
 <?php
 $content = ob_get_clean();

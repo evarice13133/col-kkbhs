@@ -1,10 +1,10 @@
-<?php $title = "Création de compte caissier"; ob_start(); ?>
+<?php $title = __('create_cashier_title'); ob_start(); ?>
 
 <div class="animate-fade-in container-fluid py-4">
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div>
-            <h2 class="fw-black text-main-theme mb-0 fs-4">Créer un compte caissier</h2>
-            <p class="text-muted-theme small mb-0">Création rapide d'un autre compte caissier pour l'établissement</p>
+            <h2 class="fw-black text-main-theme mb-0 fs-4"><?= __('create_cashier_title') ?></h2>
+            <p class="text-muted-theme small mb-0"><?= __('create_cashier_subtitle') ?></p>
         </div>
     </div>
 
@@ -74,7 +74,7 @@
 
                         <div class="d-flex justify-content-end border-top border-theme-light pt-4 mt-4">
                             <button type="submit" class="btn btn-primary rounded-pill px-5 py-2 fw-bold shadow-sm transition-base scale-on-hover">
-                                <i class="bi bi-person-plus-fill me-2"></i> Enregistrer le compte
+                                <i class="bi bi-person-plus-fill me-2"></i> <?= __('save_account') ?>
                             </button>
                         </div>
                     </form>
@@ -84,14 +84,14 @@
 
         <div class="col-lg-5">
             <div class="modern-card border-0 shadow-sm p-4 h-100 bg-primary bg-opacity-5 border border-primary border-opacity-10">
-                <h5 class="fw-black text-main-theme mb-4">Conseils</h5>
+                <h5 class="fw-black text-main-theme mb-4"><?= __('user_management_tips') ?></h5>
                 <div class="d-flex flex-column gap-3">
                     <div class="d-flex align-items-start gap-3 bg-white bg-opacity-50 p-3 rounded-4 shadow-sm">
                         <div class="avatar-xs bg-white text-primary rounded-circle shadow-sm d-flex align-items-center justify-content-center flex-shrink-0">
                             <i class="bi bi-lightbulb-fill"></i>
                         </div>
                         <div>
-                            <p class="small text-muted-theme mb-0 lh-sm">Le compte créé disposera immédiatement des droits de caissier pour gérer les encaissements, bourses, réductions et élèves.</p>
+                            <p class="small text-muted-theme mb-0 lh-sm"><?= __('create_cashier_tip') ?></p>
                         </div>
                     </div>
                 </div>

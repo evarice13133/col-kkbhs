@@ -449,6 +449,17 @@ class SchoolFeeController
             exit;
         }
 
+        // Validation du montant par rapport au solde restant (scolarité)
+        $stmtEnroll = $this->db->prepare("SELECT reste_a_payer FROM enrollments WHERE student_id = ? AND academic_year_id = ?");
+        $stmtEnroll->execute([$studentId, $activeYearId]);
+        $balance = (float)$stmtEnroll->fetchColumn();
+
+        if ($amount > $balance) {
+            Session::setFlash('error', "Montant supérieur au solde restant de l'élève.");
+            header("Location: /school_fees/versements");
+            exit;
+        }
+
         try {
             // Enregistrer
             $paymentId = $this->studentPaymentModel->create([

@@ -145,6 +145,10 @@ elseif (strpos($path, '/users') === 0) {
         $c->createCaissier();
     elseif ($path === '/users/store-caissier' && $method === 'POST')
         $c->storeCaissier();
+    elseif ($path === '/users/caissiers')
+        $c->caissiers();
+    elseif ($path === '/users/toggle-status')
+        $c->toggleStatus($_GET['id'] ?? 0);
     elseif ($path === '/users/edit')
         $c->edit($_GET['id'] ?? 0);
     elseif ($path === '/users/update' && $method === 'POST')

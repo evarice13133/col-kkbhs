@@ -288,12 +288,15 @@ ob_start();
 
                         <!-- Right Column: Final Class Selection & Statuses -->
                         <div class="col-lg-4">
-                            <div class="card border-success border-opacity-25 shadow-sm rounded-4 p-4 h-100 bg-success bg-opacity-5">
+                            <div class="card bg-light bg-opacity-50 border-theme-light shadow-sm rounded-4 p-4 h-100">
+                                <span class="fw-bold text-muted-theme extra-small text-uppercase mb-3 d-block">
+                                    <i class="bi bi-door-open-fill text-primary me-1"></i> Classe & Statuts
+                                </span>
                                 <div class="mb-4">
-                                    <label class="form-label text-success fw-black extra-small text-uppercase mb-1 d-flex align-items-center">
-                                        <i class="bi bi-door-open-fill me-1"></i> <?= __('student_class_label') ?> *
+                                    <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1 d-flex align-items-center">
+                                        <?= __('student_class_label') ?> *
                                     </label>
-                                    <select name="class_id" id="class_select" class="form-select premium-input border-success fw-bold" required data-current="<?= h($selectedClass) ?>">
+                                    <select name="class_id" id="class_select" class="form-select premium-input fw-bold" required data-current="<?= h($selectedClass) ?>">
                                         <option value=""><?= __('select_class') ?></option>
                                         <?php foreach ($classes as $cla): ?>
                                             <option value="<?= $cla['id'] ?>" data-teaching-type="<?= $cla['teaching_type_id'] ?>" data-cycle="<?= $cla['cycle_id'] ?>" data-section="<?= $cla['section_id'] ?>" data-department="<?= $cla['department_id'] ?>" data-frais-inscription="<?= $cla['frais_inscription'] ?>" data-frais-reinscription="<?= $cla['frais_inscription_reinscription'] ?>" data-frais-scolarite="<?= $cla['frais_scolarite_brut'] ?>"><?= h($cla['nom']) ?></option>
@@ -305,7 +308,7 @@ ob_start();
                                 <div class="row g-2">
                                     <div class="col-md-12 mb-3">
                                         <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-2">
-                                            <i class="bi bi-arrow-repeat me-1"></i> <?= __('repeat_status') ?>
+                                            <i class="bi bi-arrow-repeat text-warning me-1"></i> <?= __('repeat_status') ?>
                                         </label>
                                         <div class="d-flex gap-2">
                                             <div class="flex-grow-1">
@@ -320,8 +323,8 @@ ob_start();
                                     </div>
 
                                     <div class="col-md-12">
-                                        <label class="form-label text-success fw-black extra-small text-uppercase mb-2 d-flex align-items-center">
-                                            <i class="bi bi-person-badge-fill me-1"></i> Statut d'inscription *
+                                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-2 d-flex align-items-center">
+                                            <i class="bi bi-person-badge-fill text-info me-1"></i> Statut d'inscription *
                                         </label>
                                         <div class="d-flex gap-2">
                                             <div class="flex-grow-1">

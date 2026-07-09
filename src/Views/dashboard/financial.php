@@ -130,267 +130,289 @@ ob_start();
 
 <div class="animate-fade-in container-fluid py-4">
 
-    <!-- Page Header -->
-    <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between mb-4 gap-3">
-        <div>
-            <h1 class="fw-black text-main-theme mb-1 fs-4 d-flex align-items-center gap-2">
-                <span class="d-inline-flex align-items-center justify-content-center rounded-3 bg-success bg-opacity-10 text-success p-2" style="width:40px;height:40px;">
-                    <i class="bi bi-wallet2 fs-5"></i>
-                </span>
-                <?= __('financial_dashboard_title') ?>
-            </h1>
-            <p class="text-muted-theme mb-0"><?= __('financial_dashboard_subtitle') ?></p>
+    <!-- Tabs header for modern SaaS/ERP -->
+    <div class="dashboard-tabs-container mb-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+            <div>
+                <h5 class="fw-black text-main-theme m-0" style="font-family: 'Outfit', sans-serif; letter-spacing: -0.02em; font-size: 1.4rem;">Tableau de bord financier</h5>
+                <p class="text-muted-theme small mb-0">Gestion de la caisse, des scolarités et des inscriptions</p>
+            </div>
+            <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2 fw-bold small">
+                <i class="bi bi-wallet2 me-1"></i> Caisse Active
+            </span>
         </div>
-        <div class="d-flex flex-column flex-md-row gap-2 ms-md-auto mt-3 mt-md-0 align-items-stretch align-items-md-center justify-content-md-end w-100 w-md-auto">
-            <!-- <a href="/school_fees/versements" class="btn btn-primary rounded-pill px-3 px-md-4 fw-semibold shadow-sm text-center text-nowrap">
-                <i class="bi bi-cash-coin me-2"></i><?= __('versements_menu') ?>
-            </a> -->
-            <a href="/payments" class="btn btn-success rounded-pill px-3 px-md-4 fw-semibold shadow-sm text-center text-nowrap">
-                <i class="bi bi-plus-circle me-2"></i><?= __('payments_menu') ?>
-            </a>
-            <!-- Nouveau raccourci -->
-            <button type="button" class="btn btn-info text-white rounded-pill px-3 px-md-4 fw-semibold shadow-sm text-center text-nowrap" data-bs-toggle="modal" data-bs-target="#newVersementModal">
-                <i class="bi bi-wallet-fill me-2"></i><?= __('new_versement') ?>
-            </button>
-            <a href="/financial-history" class="btn btn-outline-secondary rounded-pill px-3 px-md-4 fw-semibold text-center text-nowrap">
-                <i class="bi bi-journal-text me-2"></i><?= __('financial_history') ?>
-            </a>
-        </div>
+        <ul class="nav nav-pills dashboard-nav-pills gap-2 flex-nowrap overflow-auto pb-2" id="dashboard-view-selector" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button type="button" class="nav-link active" data-view="general" role="tab">
+                    <i class="bi bi-grid-fill"></i> Vue Générale
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button type="button" class="nav-link" data-view="finances" role="tab">
+                    <i class="bi bi-wallet2"></i> Finances
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button type="button" class="nav-link" data-view="inscriptions" role="tab">
+                    <i class="bi bi-person-check-fill"></i> Inscriptions
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button type="button" class="nav-link" data-view="scolarite" role="tab">
+                    <i class="bi bi-cash-coin"></i> Scolarité
+                </button>
+            </li>
+        </ul>
     </div>
-    
-    <!-- Modal Nouveau Versement Raccourci (Redirect to page with hash or implement directly, but since we are in dashboard, let's just make it a link to the page that opens the modal) -->
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const newVersementBtn = document.querySelector('[data-bs-target="#newVersementModal"]');
-        if (newVersementBtn) {
-            newVersementBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                window.location.href = '/school_fees/versements#new';
-            });
-        }
-    });
-    </script>
-    <!-- Section: Situation de la Caisse (Recettes) -->
-    <div class="mb-4">
-        <div class="kpi-section-title text-primary mb-3 d-flex align-items-center gap-2">
-            <span class="d-inline-block rounded-circle bg-primary bg-opacity-10 p-1"></span>
-            <?= __('total_general_collected') ?> & Recettes
+
+    <!-- Vue Générale : KPI Cards & Shortcuts -->
+    <div class="row g-3 g-md-4 mb-4" data-views="general">
+        <!-- Effectif Total -->
+        <div class="col-6 col-md-3">
+            <div class="erp-stat-card card-primary">
+                <div>
+                    <div class="erp-icon-box">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                    <div class="kpi-value" data-count-up="<?= (int) $totalStudents ?>"><?= $totalStudents ?></div>
+                    <div class="kpi-label">Effectif Total Actif</div>
+                </div>
+            </div>
         </div>
-        <div class="row g-4">
-            <!-- Recettes Totales de la Caisse -->
-            <div class="col-6 col-xl-3">
-                <div class="modern-card hover-card kpi-card-primary shadow-sm p-3 h-100 position-relative overflow-hidden">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="kpi-icon bg-primary bg-opacity-10 text-primary rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0;">
-                            <i class="bi bi-piggy-bank fs-4"></i>
-                        </div>
-                        <div>
-                            <div class="fw-black text-main-theme fs-5 mb-0"><?= number_format($totalGeneralCollected, 0, ',', ' ') ?> <span style="font-size: 0.75rem;" class="fw-normal text-muted">FCFA</span></div>
-                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;"><?= __('total_general_collected') ?></div>
-                        </div>
+        <!-- Recettes Globales -->
+        <div class="col-6 col-md-3">
+            <div class="erp-stat-card card-success">
+                <div>
+                    <div class="erp-icon-box">
+                        <i class="bi bi-wallet2"></i>
                     </div>
-                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#8b5cf6,#6366f1); border-radius:0 0 12px 12px;"></div>
+                    <div class="kpi-value" style="font-size: 1.45rem; font-weight: 800;"><?= number_format($totalGeneralCollected, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 10px;">FCFA</span></div>
+                    <div class="kpi-label">Recettes Globales</div>
+                </div>
+                <div class="kpi-trend text-success">
+                    <i class="bi bi-percent"></i> <?= number_format($collectionRate, 1) ?>% Recouvrement
                 </div>
             </div>
-            <!-- Frais de Scolarité Encaissés -->
-            <div class="col-6 col-xl-3">
-                <div class="modern-card hover-card kpi-card-success shadow-sm p-3 h-100 position-relative overflow-hidden">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="kpi-icon bg-success bg-opacity-10 text-success rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0;">
-                                <i class="bi bi-cash-stack fs-4"></i>
-                            </div>
-                            <div>
-                                <div class="fw-black text-main-theme fs-5 mb-0"><?= number_format($totalTuitionCollected, 0, ',', ' ') ?> <span style="font-size: 0.75rem;" class="fw-normal text-muted">FCFA</span></div>
-                                <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;"><?= __('total_tuition_collected') ?></div>
-                            </div>
-                        </div>
-                        <span class="badge bg-success-subtle text-success rounded-pill fw-bold px-2 py-1" style="font-size: 0.7rem;"><?= number_format($collectionRate, 1) ?>%</span>
+        </div>
+        <!-- Dépenses de l'Année -->
+        <div class="col-6 col-md-3">
+            <div class="erp-stat-card card-danger">
+                <div>
+                    <div class="erp-icon-box">
+                        <i class="bi bi-cash-stack"></i>
                     </div>
-                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#22c55e,#10b981); border-radius:0 0 12px 12px;"></div>
+                    <div class="kpi-value" style="font-size: 1.45rem; font-weight: 800;"><?= number_format($totalExpenses, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 10px;">FCFA</span></div>
+                    <div class="kpi-label">Dépenses de l'Année</div>
                 </div>
             </div>
-            <!-- Frais d'Inscription Encaissés -->
-            <div class="col-6 col-xl-3">
-                <div class="modern-card hover-card kpi-card-info shadow-sm p-3 h-100 position-relative overflow-hidden">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="kpi-icon bg-info bg-opacity-10 text-info rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0;">
-                            <i class="bi bi-journal-check fs-4"></i>
-                        </div>
-                        <div>
-                            <div class="fw-black text-main-theme fs-5 mb-0"><?= number_format($totalRegistrationCollected, 0, ',', ' ') ?> <span style="font-size: 0.75rem;" class="fw-normal text-muted">FCFA</span></div>
-                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;"><?= __('total_registration_collected') ?></div>
-                        </div>
+        </div>
+        <!-- Taux de Recouvrement -->
+        <div class="col-6 col-md-3">
+            <div class="erp-stat-card card-info">
+                <div>
+                    <div class="erp-icon-box">
+                        <i class="bi bi-percent"></i>
                     </div>
-                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#06b6d4,#0ea5e9); border-radius:0 0 12px 12px;"></div>
-                </div>
-            </div>
-            <!-- Scolarité Attendue -->
-            <div class="col-6 col-xl-3">
-                <div class="modern-card hover-card kpi-card-secondary shadow-sm p-3 h-100 position-relative overflow-hidden">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="kpi-icon bg-secondary bg-opacity-10 text-secondary rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0;">
-                            <i class="bi bi-graph-up-arrow fs-4"></i>
-                        </div>
-                        <div>
-                            <div class="fw-black text-main-theme fs-5 mb-0"><?= number_format($totalExpected, 0, ',', ' ') ?> <span style="font-size: 0.75rem;" class="fw-normal text-muted">FCFA</span></div>
-                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;"><?= __('total_expected') ?></div>
-                            <?php if (!empty($totalReductions) && $totalReductions > 0): ?>
-                                <div class="text-muted-theme small fw-semibold mt-1" style="font-size: 0.65rem;">Après réductions : -<?= number_format($totalReductions, 0, ',', ' ') ?> FCFA</div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#64748b,#475569); border-radius:0 0 12px 12px;"></div>
+                    <div class="kpi-value"><?= number_format($collectionRate, 1) ?>%</div>
+                    <div class="kpi-label">Taux de Recouvrement</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Section: Situation des Dépenses & Solde Réel -->
-    <div class="mb-4 animate-fade-in">
-        <div class="kpi-section-title text-danger mb-3 d-flex align-items-center gap-2">
-            <span class="d-inline-block rounded-circle bg-danger bg-opacity-10 p-1"></span>
-            Suivi des Dépenses & Solde Réel
+    <!-- Quick actions inside Vue Générale -->
+    <div class="modern-card mb-4 border-0 shadow-sm border-top border-primary border-4 animate-fade-in" style="border-radius: 24px !important;" data-views="general">
+        <div class="modern-card-header border-bottom bg-transparent py-3">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-lightning-fill text-primary fs-5"></i>
+                <h5 class="modern-card-title m-0 text-main-theme"><?= __('quick_actions') ?></h5>
+            </div>
         </div>
-        <div class="row g-4">
-            <!-- Solde Réel -->
-            <div class="col-6 col-xl-3">
-                <div class="modern-card hover-card <?= $netBalance >= 0 ? 'kpi-card-success' : 'kpi-card-danger' ?> shadow-sm p-3 h-100 position-relative overflow-hidden">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="kpi-icon <?= $netBalance >= 0 ? 'bg-success bg-opacity-10 text-success' : 'bg-danger bg-opacity-10 text-danger' ?> rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0;">
-                            <i class="bi bi-wallet-fill fs-4"></i>
-                        </div>
-                        <div>
-                            <div class="fw-black text-main-theme fs-5 mb-0"><?= number_format($netBalance, 0, ',', ' ') ?> <span style="font-size: 0.75rem;" class="fw-normal text-muted">FCFA</span></div>
-                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;">Solde Réel (Recettes - Dépenses)</div>
-                        </div>
+        <div class="card-body p-4">
+            <div class="d-flex gap-3 flex-wrap">
+                <button type="button" class="btn btn-info text-white rounded-pill px-4 py-2 fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#newVersementModal">
+                    <i class="bi bi-wallet-fill me-2"></i><?= __('new_versement') ?>
+                </button>
+                <a href="/payments" class="btn btn-success rounded-pill px-4 py-2 fw-semibold shadow-sm">
+                    <i class="bi bi-plus-circle me-2"></i><?= __('payments_menu') ?>
+                </a>
+                <a href="/financial-history" class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-semibold">
+                    <i class="bi bi-journal-text me-2"></i><?= __('financial_history') ?>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Finances : KPI Cards -->
+    <div class="row g-3 g-md-4 mb-4" data-views="finances">
+        <!-- Recettes Globales -->
+        <div class="col-12 col-md-4">
+            <div class="erp-stat-card card-success">
+                <div>
+                    <div class="erp-icon-box">
+                        <i class="bi bi-wallet2"></i>
                     </div>
-                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: <?= $netBalance >= 0 ? 'linear-gradient(90deg,#22c55e,#10b981)' : 'linear-gradient(90deg,#ef4444,#dc2626)' ?>; border-radius:0 0 12px 12px;"></div>
+                    <div class="kpi-value" style="font-size: 1.6rem;"><?= number_format($totalGeneralCollected, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 10px;">FCFA</span></div>
+                    <div class="kpi-label">Recettes Globales</div>
+                </div>
+                <div class="kpi-trend text-success">
+                    Scolarité (<?= number_format($totalTuitionCollected, 0, ',', ' ') ?>) + Inscription (<?= number_format($totalRegistrationCollected, 0, ',', ' ') ?>)
                 </div>
             </div>
-            <!-- Dépenses du Jour -->
-            <div class="col-6 col-xl-3">
-                <div class="modern-card hover-card kpi-card-warning shadow-sm p-3 h-100 position-relative overflow-hidden">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="kpi-icon bg-warning bg-opacity-10 text-warning rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0;">
-                            <i class="bi bi-calendar-day fs-4"></i>
-                        </div>
-                        <div>
-                            <div class="fw-black text-main-theme fs-5 mb-0"><?= number_format($dailyExpenses, 0, ',', ' ') ?> <span style="font-size: 0.75rem;" class="fw-normal text-muted">FCFA</span></div>
-                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;">Dépenses du Jour</div>
-                        </div>
+        </div>
+        <!-- Dépenses Totales -->
+        <div class="col-12 col-md-4">
+            <div class="erp-stat-card card-danger">
+                <div>
+                    <div class="erp-icon-box">
+                        <i class="bi bi-cash-stack"></i>
                     </div>
-                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#f59e0b,#d97706); border-radius:0 0 12px 12px;"></div>
+                    <div class="kpi-value" style="font-size: 1.6rem;"><?= number_format($totalExpenses, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 10px;">FCFA</span></div>
+                    <div class="kpi-label">Dépenses de l'Année</div>
+                </div>
+                <div class="kpi-trend text-danger">
+                    Ce mois : <?= number_format($monthlyExpenses, 0, ',', ' ') ?> FCFA
                 </div>
             </div>
-            <!-- Dépenses du Mois -->
-            <div class="col-6 col-xl-3">
-                <div class="modern-card hover-card kpi-card-info shadow-sm p-3 h-100 position-relative overflow-hidden">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="kpi-icon bg-info bg-opacity-10 text-info rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0;">
-                            <i class="bi bi-calendar-month fs-4"></i>
-                        </div>
-                        <div>
-                            <div class="fw-black text-main-theme fs-5 mb-0"><?= number_format($monthlyExpenses, 0, ',', ' ') ?> <span style="font-size: 0.75rem;" class="fw-normal text-muted">FCFA</span></div>
-                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;">Dépenses du Mois</div>
-                        </div>
+        </div>
+        <!-- Solde Net -->
+        <div class="col-12 col-md-4">
+            <div class="erp-stat-card <?= $netBalance >= 0 ? 'card-info' : 'card-danger' ?>">
+                <div>
+                    <div class="erp-icon-box">
+                        <i class="bi bi-wallet-fill"></i>
                     </div>
-                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#0ea5e9,#0284c7); border-radius:0 0 12px 12px;"></div>
+                    <div class="kpi-value" style="font-size: 1.6rem;"><?= number_format($netBalance, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 10px;">FCFA</span></div>
+                    <div class="kpi-label">Solde Réel (Recettes - Dépenses)</div>
                 </div>
-            </div>
-            <!-- Total Dépenses de l'Année -->
-            <div class="col-6 col-xl-3">
-                <div class="modern-card hover-card kpi-card-danger shadow-sm p-3 h-100 position-relative overflow-hidden">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="kpi-icon bg-danger bg-opacity-10 text-danger rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0;">
-                            <i class="bi bi-cash-stack fs-4"></i>
-                        </div>
-                        <div>
-                            <div class="fw-black text-main-theme fs-5 mb-0"><?= number_format($totalExpenses, 0, ',', ' ') ?> <span style="font-size: 0.75rem;" class="fw-normal text-muted">FCFA</span></div>
-                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;">Dépenses de l'Année</div>
-                        </div>
-                    </div>
-                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#ef4444,#dc2626); border-radius:0 0 12px 12px;"></div>
+                <div class="kpi-trend <?= $netBalance >= 0 ? 'text-info' : 'text-danger' ?>">
+                    <i class="bi <?= $netBalance >= 0 ? 'bi-plus-circle' : 'bi-dash-circle' ?>"></i> Situation Net
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Section: Situation des Inscriptions -->
-    <div class="mb-4">
-        <div class="kpi-section-title text-success mb-3 d-flex align-items-center gap-2">
-            <span class="d-inline-block rounded-circle bg-success bg-opacity-10 p-1"></span>
-            Situation des Inscriptions & Rentrée Scolaire
+    <!-- Scolarité : KPI Cards -->
+    <div class="row g-3 g-md-4 mb-4" data-views="scolarite">
+        <!-- Scolarité Attendue -->
+        <div class="col-6 col-md-3">
+            <div class="erp-stat-card card-primary">
+                <div>
+                    <div class="erp-icon-box">
+                        <i class="bi bi-graph-up-arrow"></i>
+                    </div>
+                    <div class="kpi-value" style="font-size: 1.45rem;"><?= number_format($totalExpected, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 10px;">FCFA</span></div>
+                    <div class="kpi-label">Scolarité Attendue</div>
+                </div>
+                <?php if (!empty($totalReductions) && $totalReductions > 0): ?>
+                    <div class="kpi-trend text-muted">
+                        Brut : <?= number_format($totalExpectedGross, 0, ',', ' ') ?> (-<?= number_format($totalReductions, 0, ',', ' ') ?>)
+                    </div>
+                <?php endif; ?>
+            </div>
         </div>
-        <div class="row g-4">
-            <!-- Élèves Déjà Inscrits -->
-            <div class="col-6 col-xl-3">
-                <div class="modern-card hover-card kpi-card-success shadow-sm p-3 h-100 position-relative overflow-hidden">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="kpi-icon bg-success bg-opacity-10 text-success rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0;">
-                            <i class="bi bi-person-check fs-4"></i>
-                        </div>
-                        <div>
-                            <div class="fw-black text-main-theme fs-5 mb-0"><?= number_format($totalEnrolled) ?></div>
-                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;"><?= __('enrolled_students') ?></div>
-                        </div>
+        <!-- Scolarité Encaissée -->
+        <div class="col-6 col-md-3">
+            <div class="erp-stat-card card-success">
+                <div>
+                    <div class="erp-icon-box">
+                        <i class="bi bi-cash-stack"></i>
                     </div>
-                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#10b981,#059669); border-radius:0 0 12px 12px;"></div>
+                    <div class="kpi-value" style="font-size: 1.45rem;"><?= number_format($totalTuitionCollected, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 10px;">FCFA</span></div>
+                    <div class="kpi-label">Scolarité Encaissée</div>
+                </div>
+                <div class="kpi-trend text-success">
+                    Taux de Recouvrement : <?= number_format($collectionRate, 1) ?>%
                 </div>
             </div>
-            <!-- Élèves Non Inscrits -->
-            <div class="col-6 col-xl-3">
-                <div class="modern-card hover-card kpi-card-danger shadow-sm p-3 h-100 position-relative overflow-hidden">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="kpi-icon bg-danger bg-opacity-10 text-danger rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0;">
-                            <i class="bi bi-person-x fs-4"></i>
-                        </div>
-                        <div>
-                            <div class="fw-black text-main-theme fs-5 mb-0"><?= number_format($totalNonEnrolled) ?></div>
-                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;"><?= __('non_enrolled_students') ?></div>
-                        </div>
+        </div>
+        <!-- Reste à Recouvrer -->
+        <div class="col-6 col-md-3">
+            <div class="erp-stat-card card-danger">
+                <div>
+                    <div class="erp-icon-box">
+                        <i class="bi bi-exclamation-circle-fill"></i>
                     </div>
-                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#ef4444,#dc2626); border-radius:0 0 12px 12px;"></div>
+                    <?php $remainingTuition = max(0.0, $totalExpected - $totalTuitionCollected); ?>
+                    <div class="kpi-value" style="font-size: 1.45rem;"><?= number_format($remainingTuition, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 10px;">FCFA</span></div>
+                    <div class="kpi-label">Reste à Recouvrer</div>
                 </div>
             </div>
-            <!-- Taux d'inscription global -->
-            <div class="col-6 col-xl-3">
-                <div class="modern-card hover-card kpi-card-warning shadow-sm p-3 h-100 position-relative overflow-hidden">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="kpi-icon bg-warning bg-opacity-10 text-warning rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0;">
-                            <i class="bi bi-percent fs-4"></i>
-                        </div>
-                        <div>
-                            <?php 
-                            $registrationRate = $totalStudents > 0 ? round(($totalEnrolled / $totalStudents) * 100, 1) : 0;
-                            ?>
-                            <div class="fw-black text-main-theme fs-5 mb-0"><?= $registrationRate ?>%</div>
-                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;"><?= __('registration_rate') ?></div>
-                        </div>
+        </div>
+        <!-- Réductions et Bourses -->
+        <div class="col-6 col-md-3">
+            <div class="erp-stat-card card-warning">
+                <div>
+                    <div class="erp-icon-box">
+                        <i class="bi bi-gift-fill"></i>
                     </div>
-                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#f59e0b,#d97706); border-radius:0 0 12px 12px;"></div>
+                    <div class="kpi-value" style="font-size: 1.45rem;"><?= number_format($totalReductions, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 10px;">FCFA</span></div>
+                    <div class="kpi-label">Réductions appliquées</div>
                 </div>
             </div>
-            <!-- Effectif Total Actif -->
-            <div class="col-6 col-xl-3">
-                <div class="modern-card hover-card kpi-card-info shadow-sm p-3 h-100 position-relative overflow-hidden">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="kpi-icon bg-info bg-opacity-10 text-info rounded-3 d-flex align-items-center justify-content-center" style="width:50px;height:50px;flex-shrink:0;">
-                            <i class="bi bi-people fs-4"></i>
-                        </div>
-                        <div>
-                            <div class="fw-black text-main-theme fs-5 mb-0"><?= number_format($totalStudents) ?></div>
-                            <div class="text-muted-theme small fw-semibold" style="font-size: 0.72rem;"><?= __('active_students') ?></div>
-                        </div>
+        </div>
+    </div>
+
+    <!-- Inscriptions : KPI Cards -->
+    <div class="row g-3 g-md-4 mb-4" data-views="inscriptions">
+        <div class="col-12">
+            <div class="kpi-section-title text-success mb-2 d-flex align-items-center gap-2">
+                <i class="bi bi-person-check fs-5"></i> Situation des Inscriptions & Rentrée Scolaire
+            </div>
+        </div>
+        <!-- Élèves Déjà Inscrits -->
+        <div class="col-6 col-md-3">
+            <div class="erp-stat-card card-success">
+                <div>
+                    <div class="erp-icon-box">
+                        <i class="bi bi-person-check"></i>
                     </div>
-                    <div class="card-indicator position-absolute bottom-0 start-0 w-100" style="height:3px; background: linear-gradient(90deg,#0ea5e9,#0284c7); border-radius:0 0 12px 12px;"></div>
+                    <div class="kpi-value" data-count-up="<?= (int)$totalEnrolled ?>"><?= number_format($totalEnrolled) ?></div>
+                    <div class="kpi-label"><?= __('enrolled_students') ?></div>
+                </div>
+            </div>
+        </div>
+        <!-- Élèves Non Inscrits -->
+        <div class="col-6 col-md-3">
+            <div class="erp-stat-card card-danger">
+                <div>
+                    <div class="erp-icon-box">
+                        <i class="bi bi-person-x"></i>
+                    </div>
+                    <div class="kpi-value" data-count-up="<?= (int)$totalNonEnrolled ?>"><?= number_format($totalNonEnrolled) ?></div>
+                    <div class="kpi-label"><?= __('non_enrolled_students') ?></div>
+                </div>
+            </div>
+        </div>
+        <!-- Taux d'inscription global -->
+        <div class="col-6 col-md-3">
+            <div class="erp-stat-card card-warning">
+                <div>
+                    <div class="erp-icon-box">
+                        <i class="bi bi-percent"></i>
+                    </div>
+                    <?php $registrationRate = $totalStudents > 0 ? round(($totalEnrolled / $totalStudents) * 100, 1) : 0; ?>
+                    <div class="kpi-value" data-count-up="<?= (int)$registrationRate ?>" data-suffix="%"><?= $registrationRate ?>%</div>
+                    <div class="kpi-label"><?= __('registration_rate') ?></div>
+                </div>
+            </div>
+        </div>
+        <!-- Effectif Total Actif -->
+        <div class="col-6 col-md-3">
+            <div class="erp-stat-card card-info">
+                <div>
+                    <div class="erp-icon-box">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <div class="kpi-value" data-count-up="<?= (int)$totalStudents ?>"><?= number_format($totalStudents) ?></div>
+                    <div class="kpi-label"><?= __('active_students') ?></div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Charts Row -->
-    <div class="row g-4 mb-4">
+    <div class="row g-4 mb-4" data-views="finances">
         <!-- Collection Rate Donut -->
         <div class="col-lg-4 col-xl-3">
             <div class="modern-card border-0 shadow-sm p-4 h-100">
@@ -444,7 +466,7 @@ ob_start();
     </div>
 
     <!-- Class enrollment stats breakdown -->
-    <div class="row g-4 mb-4 animate-fade-in">
+    <div class="row g-4 mb-4 animate-fade-in" data-views="inscriptions">
         <div class="col-12">
             <div class="modern-card border-0 shadow-sm">
                 <div class="card-header bg-transparent border-0 px-4 pt-4 pb-0 d-flex align-items-center justify-content-between flex-wrap gap-2">
@@ -515,7 +537,7 @@ ob_start();
     </div>
 
     <!-- Recent Payments -->
-    <div class="row g-4">
+    <div class="row g-4 mb-4" data-views="finances">
         <div class="col-12">
             <div class="modern-card border-0 shadow-sm">
                 <div class="card-header bg-transparent border-0 px-4 pt-4 pb-0 d-flex align-items-center justify-content-between">
@@ -598,113 +620,165 @@ ob_start();
     const textColor = isDark ? '#94a3b8' : '#64748b';
     const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
 
-    // --- Donut: Collection Rate ---
-    const collected = <?= json_encode($totalCollected) ?>;
-    const expected = <?= json_encode($totalExpected) ?>;
-    const remaining = Math.max(0, expected - collected);
-    const donutCtx = document.getElementById('collectionRateChart');
-    if (donutCtx) {
-        new Chart(donutCtx, {
-            type: 'doughnut',
-            data: {
-                datasets: [{
-                    data: [collected, remaining],
-                    backgroundColor: ['#22c55e', isDark ? '#1e293b' : '#e2e8f0'],
-                    borderWidth: 0,
-                    cutout: '78%'
-                }]
-            },
-            options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false }, tooltip: { enabled: false } } }
+    let financialChartsInitialized = false;
+    window.initFinancialCharts = function() {
+        if (financialChartsInitialized) return;
+
+        // --- Donut: Collection Rate ---
+        const collected = <?= json_encode($totalCollected) ?>;
+        const expected = <?= json_encode($totalExpected) ?>;
+        const remaining = Math.max(0, expected - collected);
+        const donutCtx = document.getElementById('collectionRateChart');
+        if (donutCtx) {
+            new Chart(donutCtx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [collected, remaining],
+                        backgroundColor: ['#22c55e', isDark ? '#1e293b' : '#e2e8f0'],
+                        borderWidth: 0,
+                        cutout: '78%'
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false }, tooltip: { enabled: false } } }
+            });
+        }
+
+        // --- Bar: Monthly Evolution (Revenue vs Expenses) ---
+        const monthlyData = <?= json_encode($monthlyPayments) ?>;
+        const monthlyExpData = <?= json_encode($monthlyExpensesHist) ?>;
+        
+        const allMonths = Array.from(new Set([
+            ...monthlyData.map(r => r.month),
+            ...monthlyExpData.map(e => e.month)
+        ])).sort();
+        
+        const monthLabels = allMonths.map(m => {
+            const [y, mm] = m.split('-');
+            return new Date(y, mm - 1).toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' });
         });
-    }
+        
+        const monthTotals = allMonths.map(m => {
+            const found = monthlyData.find(r => r.month === m);
+            return found ? parseFloat(found.total) : 0;
+        });
+        
+        const monthExpTotals = allMonths.map(m => {
+            const found = monthlyExpData.find(r => r.month === m);
+            return found ? parseFloat(found.total) : 0;
+        });
 
-    // --- Bar: Monthly Evolution (Revenue vs Expenses) ---
-    const monthlyData = <?= json_encode($monthlyPayments) ?>;
-    const monthlyExpData = <?= json_encode($monthlyExpensesHist) ?>;
-    
-    // Union des mois
-    const allMonths = Array.from(new Set([
-        ...monthlyData.map(r => r.month),
-        ...monthlyExpData.map(e => e.month)
-    ])).sort();
-    
-    const monthLabels = allMonths.map(m => {
-        const [y, mm] = m.split('-');
-        return new Date(y, mm - 1).toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' });
-    });
-    
-    const monthTotals = allMonths.map(m => {
-        const found = monthlyData.find(r => r.month === m);
-        return found ? parseFloat(found.total) : 0;
-    });
-    
-    const monthExpTotals = allMonths.map(m => {
-        const found = monthlyExpData.find(r => r.month === m);
-        return found ? parseFloat(found.total) : 0;
-    });
-
-    const barCtx = document.getElementById('monthlyChart');
-    if (barCtx) {
-        new Chart(barCtx, {
-            type: 'bar',
-            data: {
-                labels: monthLabels,
-                datasets: [
-                    {
-                        label: 'Recettes',
-                        data: monthTotals,
-                        backgroundColor: 'rgba(59,130,246,0.75)',
-                        borderRadius: 6,
-                        borderSkipped: false
-                    },
-                    {
-                        label: 'Dépenses',
-                        data: monthExpTotals,
-                        backgroundColor: 'rgba(239,68,68,0.75)',
-                        borderRadius: 6,
-                        borderSkipped: false
+        const barCtx = document.getElementById('monthlyChart');
+        if (barCtx) {
+            new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: monthLabels,
+                    datasets: [
+                        {
+                            label: 'Recettes',
+                            data: monthTotals,
+                            backgroundColor: 'rgba(59,130,246,0.75)',
+                            borderRadius: 6,
+                            borderSkipped: false
+                        },
+                        {
+                            label: 'Dépenses',
+                            data: monthExpTotals,
+                            backgroundColor: 'rgba(239,68,68,0.75)',
+                            borderRadius: 6,
+                            borderSkipped: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: true, labels: { color: textColor } } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: textColor } },
+                        y: { grid: { color: gridColor }, ticks: { color: textColor, callback: v => (v/1000).toFixed(0) + 'k' } }
                     }
-                ]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: true, labels: { color: textColor } } },
-                scales: {
-                    x: { grid: { display: false }, ticks: { color: textColor } },
-                    y: { grid: { color: gridColor }, ticks: { color: textColor, callback: v => (v/1000).toFixed(0) + 'k' } }
                 }
-            }
-        });
-    }
+            });
+        }
 
-    // --- Doughnut: Expenses by Category ---
-    const expCatData = <?= json_encode($expensesByCategory) ?>;
-    const expCatCtx = document.getElementById('expensesCategoryChart');
-    if (expCatCtx && expCatData.length > 0) {
-        new Chart(expCatCtx, {
-            type: 'doughnut',
-            data: {
-                labels: expCatData.map(c => c.category_name),
-                datasets: [{
-                    data: expCatData.map(c => parseFloat(c.total)),
-                    backgroundColor: [
-                        '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', 
-                        '#ec4899', '#6366f1', '#14b8a6', '#f43f5e', '#06b6d4'
-                    ],
-                    borderWidth: 0,
-                    cutout: '70%'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: { enabled: true }
+        // --- Doughnut: Expenses by Category ---
+        const expCatData = <?= json_encode($expensesByCategory) ?>;
+        const expCatCtx = document.getElementById('expensesCategoryChart');
+        if (expCatCtx && expCatData.length > 0) {
+            new Chart(expCatCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: expCatData.map(c => c.category_name),
+                    datasets: [{
+                        data: expCatData.map(c => parseFloat(c.total)),
+                        backgroundColor: [
+                            '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', 
+                            '#ec4899', '#6366f1', '#14b8a6', '#f43f5e', '#06b6d4'
+                        ],
+                        borderWidth: 0,
+                        cutout: '70%'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: true }
+                    }
                 }
+            });
+        }
+
+        financialChartsInitialized = true;
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const viewSelector = document.getElementById('dashboard-view-selector');
+        if (viewSelector) {
+            const buttons = viewSelector.querySelectorAll('[data-view]');
+            const viewableElements = document.querySelectorAll('[data-views]');
+
+            const applyView = (selectedView) => {
+                buttons.forEach(btn => {
+                    if (btn.dataset.view === selectedView) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+
+                viewableElements.forEach(el => {
+                    const views = el.dataset.views.split(',');
+                    if (views.includes(selectedView)) {
+                        el.style.display = '';
+                    } else {
+                        el.style.display = 'none';
+                    }
+                });
+
+                if (selectedView === 'finances') {
+                    window.initFinancialCharts();
+                }
+            };
+
+            buttons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const view = btn.dataset.view;
+                    applyView(view);
+                    localStorage.setItem('financial_dashboard_active_view', view);
+                });
+            });
+
+            // Restore active view or default to general
+            let activeView = localStorage.getItem('financial_dashboard_active_view') || 'general';
+            if (activeView === 'financial' || activeView === 'academic' || activeView === 'global') {
+                activeView = 'general';
             }
-        });
-    }
+            applyView(activeView);
+        }
+    });
 })();
 </script>
 

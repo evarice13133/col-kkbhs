@@ -18,7 +18,7 @@ class UserController
         $this->db = Database::getInstance()->getConnection();
         
         $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-        if ($path === '/users/create-caissier' || $path === '/users/store-caissier') {
+        if ($path === '/users/create-caissier' || $path === '/users/store-caissier' || $path === '/users/caissiers' || $path === '/users/toggle-status') {
             if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
                 header("Location: /");
                 exit;
@@ -171,8 +171,16 @@ class UserController
                     $stmt->execute([$nom, $prenom, $username, $email ?: null, $role, $id]);
                 }
 
+                $stmt = $this->db->prepare("SELECT role FROM users WHERE id = ?");
+                $stmt->execute([$id]);
+                $currentUserRole = $stmt->fetchColumn();
+
                 Session::setFlash('success', \__('user_updated_success'));
-                header("Location: /users");
+                if ($currentUserRole === 'caissier') {
+                    header("Location: /users/caissiers");
+                } else {
+                    header("Location: /users");
+                }
                 exit;
             } catch (\PDOException $e) {
                 Session::setFlash('error', strpos($e->getMessage(), 'Duplicate') !== false ? \__('username_taken') : \__('internal_db_error'));
@@ -258,7 +266,7 @@ class UserController
             if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
                 \App\Core\Security::log("Tentative de CSRF détectée sur l'action User::storeCaissier");
                 Session::setFlash('error', "Session expirée ou requête invalide.");
-                header("Location: /users/create-caissier");
+                header("Location: /users/caissiers");
                 exit;
             }
 
@@ -271,8 +279,9 @@ class UserController
 
             if (empty($nom) || empty($prenom) || empty($username) || empty($password)) {
                 $error = \__('user_required_fields') ?: "Veuillez remplir tous les champs obligatoires.";
-                include __DIR__ . '/../Views/users/create_caissier.php';
-                return;
+                Session::setFlash('error', $error);
+                header("Location: /users/caissiers");
+                exit;
             }
 
             $user = new User($nom, $prenom, $username, $email ?: null, $password, $role);
@@ -289,20 +298,85 @@ class UserController
                     $user->getRole(),
                 ]);
 
-                Session::setFlash('success', "Le compte caissier a été créé avec succès.");
+                Session::setFlash('success', __('cashier_created_success'));
                 
                 $userRole = Session::get('user_role');
-                if (in_array($userRole, ['superadmin', 'admin'])) {
-                    header("Location: /users");
+                if (in_array($userRole, ['superadmin', 'admin', 'caissier', 'comptable'])) {
+                    header("Location: /users/caissiers");
                 } else {
                     header("Location: /students");
                 }
                 exit;
             } catch (\PDOException $e) {
                 $error = strpos($e->getMessage(), 'Duplicate') !== false ? \__('username_taken') : \__('internal_db_error');
-                include __DIR__ . '/../Views/users/create_caissier.php';
-                return;
+                Session::setFlash('error', $error);
+                header("Location: /users/caissiers");
+                exit;
             }
         }
+    }
+
+    public function caissiers()
+    {
+        $search = trim($_GET['q'] ?? '');
+        $statusFilter = $_GET['status'] ?? ''; // '1', '0' or ''
+
+        $sql = "SELECT id, nom, prenom, username, email, status FROM users WHERE role = 'caissier'";
+        $params = [];
+
+        if ($search !== '') {
+            $like = '%' . $search . '%';
+            $sql .= " AND (nom LIKE ? OR prenom LIKE ? OR username LIKE ? OR email LIKE ?)";
+            $params[] = $like;
+            $params[] = $like;
+            $params[] = $like;
+            $params[] = $like;
+        }
+
+        if ($statusFilter !== '') {
+            $sql .= " AND status = ?";
+            $params[] = (int)$statusFilter;
+        }
+
+        $sql .= " ORDER BY nom ASC, prenom ASC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        $cashiers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $filters = ['q' => $search, 'status' => $statusFilter];
+
+        include __DIR__ . '/../Views/users/caissiers.php';
+    }
+
+    public function toggleStatus($id)
+    {
+        $stmt = $this->db->prepare("SELECT role, status FROM users WHERE id = ?");
+        $stmt->execute([$id]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$user) {
+            header("Location: /users/caissiers");
+            exit;
+        }
+
+        // Security: admin cannot deactivate superadmin
+        if (Session::get('user_role') === 'admin' && $user['role'] === 'superadmin') {
+            header("Location: /users/caissiers");
+            exit;
+        }
+
+        // Toggle status
+        $newStatus = $user['status'] ? 0 : 1;
+        $stmt = $this->db->prepare("UPDATE users SET status = ? WHERE id = ?");
+        $stmt->execute([$newStatus, $id]);
+
+        Session::setFlash('success', __('status_updated_success'));
+
+        if ($user['role'] === 'caissier') {
+            header("Location: /users/caissiers");
+        } else {
+            header("Location: /users");
+        }
+        exit;
     }
 }
