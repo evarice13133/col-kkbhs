@@ -208,9 +208,15 @@ ob_start();
                                         </td>
                                         <td class="pe-4 text-center">
                                             <div class="d-flex gap-1 justify-content-center">
-                                                <a href="/payments/receipt?id=<?= $p['id'] ?>" target="_blank" class="btn btn-sm btn-action-modern text-primary" title="<?= __('print_receipt') ?>">
-                                                    <i class="bi bi-printer-fill fs-5"></i>
-                                                </a>
+                                                <?php if ($p['type'] === 'inscription'): ?>
+                                                    <a href="/payments/receipt?id=<?= $p['id'] ?>" target="_blank" class="btn btn-sm btn-action-modern text-primary" title="<?= __('print_receipt') ?>">
+                                                        <i class="bi bi-printer-fill fs-5"></i>
+                                                    </a>
+                                                <?php else: ?>
+                                                    <a href="/school_fees/receipt?id=<?= $p['id'] ?>&back=student&student_id=<?= $student['id'] ?>" target="_blank" class="btn btn-sm btn-action-modern text-primary" title="<?= __('print_receipt') ?>">
+                                                        <i class="bi bi-printer-fill fs-5"></i>
+                                                    </a>
+                                                <?php endif; ?>
                                                 <?php if (\App\Core\Session::get('user_role') === 'superadmin' && $p['status'] !== 'annule'): ?>
                                                     <button type="button" class="btn btn-sm btn-action-modern text-danger" onclick="openCancelModal(<?= $p['id'] ?>)" title="Annuler le paiement">
                                                         <i class="bi bi-trash-fill fs-5"></i>

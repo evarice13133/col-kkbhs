@@ -1717,6 +1717,7 @@ return [
     'cancel_delete' => 'Cancel/Delete',
     'receipt_visualisation' => 'Visualization, printing and print audit',
     'back_to_payments' => '← Back to Payments',
+    'back_to_ledger' => '← Back to Student Ledger',
     'print_action_label' => 'View/Print',
     'receipt_officiel_title' => 'Tuition Receipt No.',
     'montant_valeur' => 'Amount / Value *',

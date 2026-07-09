@@ -1813,6 +1813,7 @@ return [
     'cancel_delete' => 'Annuler/Supprimer',
     'receipt_visualisation' => "Visualisation, impression et audit d'impression",
     'back_to_payments' => '← Retour aux Versements',
+    'back_to_ledger' => '← Retour Fiche Financière',
     'print_action_label' => 'Affichage/Impression',
     'receipt_officiel_title' => 'Reçu Scolarité N°',
     'montant_valeur' => 'Montant / Valeur *',

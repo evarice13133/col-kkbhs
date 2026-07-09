@@ -27,7 +27,7 @@ class StudentPayment extends BaseModel
             LEFT JOIN users u ON sp.created_by = u.id
             WHERE sp.academic_year_id = ?
         ";
-        
+
         $params = [$academicYearId];
         if (!empty($search)) {
             $sql .= " AND (LOWER(s.nom) LIKE ? OR LOWER(s.prenom) LIKE ? OR LOWER(sp.reference) LIKE ?)";
@@ -112,26 +112,27 @@ class StudentPayment extends BaseModel
                 $this->db->beginTransaction();
             }
 
-            $studentId = (int)$data['student_id'];
-            $academicYearId = (int)$data['academic_year_id'];
-            $amount = (float)$data['amount'];
+            $studentId = (int) $data['student_id'];
+            $academicYearId = (int) $data['academic_year_id'];
+            $amount = (float) $data['amount'];
             $paymentDate = $data['payment_date'];
             $paymentMethod = $data['payment_method'];
-            
+
             if (\App\Services\PaymentReferenceGenerator::isCashMethod($paymentMethod)) {
                 $refGen = new \App\Services\PaymentReferenceGenerator($this->db);
                 $reference = $refGen->generateUniqueReference();
             } else {
                 $reference = !empty($data['reference']) ? trim($data['reference']) : null;
             }
-            
+
             $observation = !empty($data['observation']) ? trim($data['observation']) : null;
-            $createdBy = (int)$data['created_by'];
+            $createdBy = (int) $data['created_by'];
+            $parentPaymentId = isset($data['parent_payment_id']) ? (int) $data['parent_payment_id'] : null;
 
             // 1. Insérer dans la table existante (legacy) `payments` pour générer un ID unique global
             $stmtLegacy = $this->db->prepare("
-                INSERT INTO payments (student_id, academic_year_id, amount, type, payment_date, payment_method, reference, commentaire, created_by)
-                VALUES (?, ?, ?, 'scolarite', ?, ?, ?, ?, ?)
+                INSERT INTO payments (student_id, academic_year_id, amount, type, payment_date, payment_method, reference, commentaire, created_by, parent_payment_id)
+                VALUES (?, ?, ?, 'scolarite', ?, ?, ?, ?, ?, ?)
             ");
             $stmtLegacy->execute([
                 $studentId,
@@ -141,9 +142,10 @@ class StudentPayment extends BaseModel
                 $paymentMethod,
                 $reference,
                 $observation,
-                $createdBy
+                $createdBy,
+                $parentPaymentId
             ]);
-            $paymentId = (int)$this->db->lastInsertId();
+            $paymentId = (int) $this->db->lastInsertId();
 
             // 2. Insérer dans student_payments avec le même ID
             $stmt = $this->db->prepare("
@@ -177,7 +179,7 @@ class StudentPayment extends BaseModel
             if (empty($installments)) {
                 $fs = new \App\Services\FinancialService($this->db);
                 $fs->syncStudentFinancials($studentId, $academicYearId);
-                
+
                 // On recharge les tranches
                 $stmtInst->execute([$studentId, $academicYearId]);
                 $installments = $stmtInst->fetchAll(PDO::FETCH_ASSOC);
@@ -195,18 +197,19 @@ class StudentPayment extends BaseModel
             ");
 
             foreach ($installments as $inst) {
-                if ($remaining <= 0) break;
-                
-                $dueForInst = (float)$inst['amount_planned'] - (float)$inst['amount_paid'];
+                if ($remaining <= 0)
+                    break;
+
+                $dueForInst = (float) $inst['amount_planned'] - (float) $inst['amount_paid'];
                 if ($dueForInst > 0) {
                     $allocAmount = min($remaining, $dueForInst);
-                    
+
                     // Enregistrer l'allocation
-                    $stmtAlloc->execute([$paymentId, (int)$inst['id'], $allocAmount]);
-                    
+                    $stmtAlloc->execute([$paymentId, (int) $inst['id'], $allocAmount]);
+
                     // Mettre à jour la tranche
-                    $stmtUpdateInst->execute([$allocAmount, (int)$inst['id']]);
-                    
+                    $stmtUpdateInst->execute([$allocAmount, (int) $inst['id']]);
+
                     $remaining -= $allocAmount;
                 }
             }
@@ -214,14 +217,14 @@ class StudentPayment extends BaseModel
             // Si après répartition sur les tranches il reste un reliquat (sur-paiement), on l'alloue sur la dernière tranche
             if ($remaining > 0 && !empty($installments)) {
                 $lastInst = end($installments);
-                $stmtAlloc->execute([$paymentId, (int)$lastInst['id'], $remaining]);
-                $stmtUpdateInst->execute([$remaining, (int)$lastInst['id']]);
+                $stmtAlloc->execute([$paymentId, (int) $lastInst['id'], $remaining]);
+                $stmtUpdateInst->execute([$remaining, (int) $lastInst['id']]);
             }
 
             // 4. Générer le reçu officiel
             $receiptNum = 'REC-' . date('Ymd', strtotime($paymentDate)) . '-' . sprintf('%04d', $paymentId);
             $vCode = bin2hex(random_bytes(16));
-            
+
             $stmtReceipt = $this->db->prepare("
                 INSERT INTO payment_receipts (student_payment_id, receipt_number, verification_code, print_count)
                 VALUES (?, ?, ?, 0)
@@ -262,12 +265,14 @@ class StudentPayment extends BaseModel
 
             $payment = $this->find($id);
             if (!$payment) {
-                if ($useTransaction) $this->db->rollBack();
+                if ($useTransaction)
+                    $this->db->rollBack();
                 return false;
             }
 
             if (($payment['status'] ?? 'valide') === 'annule') {
-                if ($useTransaction) $this->db->rollBack();
+                if ($useTransaction)
+                    $this->db->rollBack();
                 return false;
             }
 
@@ -279,7 +284,7 @@ class StudentPayment extends BaseModel
                 WHERE id = ?
             ");
             foreach ($allocations as $alloc) {
-                $stmtUpdateInst->execute([(float)$alloc['amount_allocated'], (int)$alloc['student_installment_id']]);
+                $stmtUpdateInst->execute([(float) $alloc['amount_allocated'], (int) $alloc['student_installment_id']]);
             }
 
             // Marquer le versement comme annulé (Soft delete)
@@ -313,7 +318,7 @@ class StudentPayment extends BaseModel
         // Sync and get count
         $stmtGet = $this->db->prepare("SELECT print_count FROM payment_receipts WHERE student_payment_id = ?");
         $stmtGet->execute([$paymentId]);
-        $count = (int)$stmtGet->fetchColumn();
+        $count = (int) $stmtGet->fetchColumn();
 
         // Sync into legacy `payments`
         $stmtLegacy = $this->db->prepare("UPDATE payments SET print_count = ? WHERE id = ?");
