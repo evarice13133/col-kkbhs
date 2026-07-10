@@ -47,7 +47,7 @@ class PublicVerificationController
         if ($code !== '') {
             // Rechercher le paiement par le code de vérification (table legacy payments)
             $stmt = $this->db->prepare("
-                SELECT p.*, s.nom as student_nom, s.prenom as student_prenom, s.email as matricule, s.sexe, s.date_naissance, s.lieu_naissance, s.adresse,
+                SELECT p.*, s.class_id, s.nom as student_nom, s.prenom as student_prenom, s.email as matricule, s.sexe, s.date_naissance, s.lieu_naissance, s.adresse,
                        c.nom as classe_nom, u.nom as user_nom, u.prenom as user_prenom,
                        ay.nom as annee_scolaire
                 FROM payments p
@@ -78,7 +78,7 @@ class PublicVerificationController
             } else {
                 // Rechercher dans payment_receipts -> student_payments (Scolarité nouveau format)
                 $stmt2 = $this->db->prepare("
-                    SELECT pr.*, sp.*, s.nom as student_nom, s.prenom as student_prenom, s.email as matricule, s.sexe, s.date_naissance, s.lieu_naissance, s.adresse,
+                    SELECT pr.*, sp.*, s.class_id, s.nom as student_nom, s.prenom as student_prenom, s.email as matricule, s.sexe, s.date_naissance, s.lieu_naissance, s.adresse,
                            c.nom as classe_nom, u.nom as user_nom, u.prenom as user_prenom,
                            pr.verification_code,
                            ay.nom as annee_scolaire
@@ -163,15 +163,28 @@ class PublicVerificationController
             }
 
             // Échéancier (Tranches)
+            $classId = $payment['class_id'] ?? 0;
             $stmtInst = $this->db->prepare("
-                SELECT si.id, si.amount_expected, si.amount_paid, si.deadline, si.status, f.name as tranche_name
+                SELECT si.id, si.amount_planned as amount_expected, si.amount_paid, 
+                       IFNULL(
+                           (SELECT deadline_date FROM installment_deadlines idl WHERE idl.academic_year_id = si.academic_year_id AND idl.class_id = ? AND idl.installment_number = si.installment_number LIMIT 1),
+                           (SELECT deadline_date FROM fee_installments f WHERE f.academic_year_id = si.academic_year_id AND f.installment_order = si.installment_number LIMIT 1)
+                       ) as deadline,
+                       CONCAT('Tranche ', si.installment_number) as tranche_name
                 FROM student_installments si
-                JOIN fee_installments f ON si.fee_installment_id = f.id
                 WHERE si.student_id = ? AND si.academic_year_id = ?
-                ORDER BY si.deadline ASC
+                ORDER BY si.installment_number ASC
             ");
-            $stmtInst->execute([$studentId, $academicYearId]);
+            $stmtInst->execute([$classId, $studentId, $academicYearId]);
             $installments = $stmtInst->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Format fallback si deadline toujours null
+            foreach ($installments as &$inst) {
+                if (empty($inst['deadline'])) {
+                    $inst['deadline'] = date('Y-m-d');
+                }
+            }
+            unset($inst);
         }
 
         // Charger les settings de l'école
