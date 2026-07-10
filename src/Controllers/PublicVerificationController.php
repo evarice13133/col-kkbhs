@@ -69,7 +69,7 @@ class PublicVerificationController
                 
                 // Récupérer l'inscription correspondante
                 $stmt = $this->db->prepare("
-                    SELECT student_status, reste_a_payer, total_paye, 
+                    SELECT student_status, reste_a_payer, total_paye, frais_scolarite_brut, total_reductions, total_bourses,
                            (frais_scolarite_brut - total_reductions - total_bourses) as scolarite_nette
                     FROM enrollments WHERE student_id = ? AND academic_year_id = ?
                 ");
@@ -105,7 +105,7 @@ class PublicVerificationController
 
                     // Récupérer l'inscription correspondante
                     $stmt = $this->db->prepare("
-                        SELECT student_status, reste_a_payer, total_paye, 
+                        SELECT student_status, reste_a_payer, total_paye, frais_scolarite_brut, total_reductions, total_bourses,
                                (frais_scolarite_brut - total_reductions - total_bourses) as scolarite_nette
                         FROM enrollments WHERE student_id = ? AND academic_year_id = ?
                     ");
@@ -143,17 +143,35 @@ class PublicVerificationController
             }
         }
 
-        // Récupérer l'historique des autres paiements pour l'année académique si valide
         $paymentHistory = [];
+        $installments = [];
+        $lastPayment = null;
+        
         if ($isValid && $studentId && $academicYearId) {
+            // Historique des paiements
             $stmtHist = $this->db->prepare("
-                SELECT 'scolarite' as type, amount, payment_date, payment_method, id
+                SELECT 'scolarite' as type, amount, payment_date, payment_method, id, reference, created_at
                 FROM student_payments 
                 WHERE student_id = ? AND academic_year_id = ? AND status != 'annule'
                 ORDER BY payment_date DESC, created_at DESC
             ");
             $stmtHist->execute([$studentId, $academicYearId]);
             $paymentHistory = $stmtHist->fetchAll(PDO::FETCH_ASSOC);
+            
+            if (!empty($paymentHistory)) {
+                $lastPayment = $paymentHistory[0];
+            }
+
+            // Échéancier (Tranches)
+            $stmtInst = $this->db->prepare("
+                SELECT si.id, si.amount_expected, si.amount_paid, si.deadline, si.status, f.name as tranche_name
+                FROM student_installments si
+                JOIN fee_installments f ON si.fee_installment_id = f.id
+                WHERE si.student_id = ? AND si.academic_year_id = ?
+                ORDER BY si.deadline ASC
+            ");
+            $stmtInst->execute([$studentId, $academicYearId]);
+            $installments = $stmtInst->fetchAll(PDO::FETCH_ASSOC);
         }
 
         // Charger les settings de l'école
