@@ -86,6 +86,8 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
             overflow: hidden;
             box-sizing: border-box;
             height: 460px; 
+            max-height: 460px;
+            page-break-inside: avoid;
         }
 
         /* Style du filigrane d'arrière-plan - Taille réduite */
