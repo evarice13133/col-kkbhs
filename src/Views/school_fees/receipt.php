@@ -76,6 +76,9 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
             background: #fff;
             overflow: hidden;
             box-sizing: border-box;
+            height: 470px;
+            max-height: 470px;
+            page-break-inside: avoid;
         }
 
         /* Style du filigrane d'arrière-plan - Taille réduite */
@@ -880,6 +883,8 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
                                         <?php
                                         $totalHistorique = 0.0;
                                         $historyList = $paymentsHistory ?? [];
+                                        $fullHistoryCount = count($historyList);
+                                        $historyList = array_slice($historyList, 0, 4); // Limite à 4 lignes max pour l'affichage
                                         foreach ($historyList as $ph):
                                             $hAmount = (float) ($ph['amount'] ?? 0);
                                             $totalHistorique += $hAmount;
@@ -896,6 +901,13 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
                                                     <?= number_format($hAmount, 0, '.', ' ') ?></td>
                                             </tr>
                                         <?php endforeach; ?>
+                                        <?php if ($fullHistoryCount > 4): ?>
+                                            <tr>
+                                                <td colspan="4" style="font-size: 8px; text-align: center; color: #64748b; font-style: italic;">
+                                                    ... et <?= $fullHistoryCount - 4 ?> autre(s) versement(s) antérieur(s) masqué(s)
+                                                </td>
+                                            </tr>
+                                        <?php endif; ?>
                                         <tr style="background-color: #f8fafc; font-weight: bold;">
                                             <td colspan="3"
                                                 style="font-size: 9.2px; padding: 1.5px 2px; text-align: right;">
