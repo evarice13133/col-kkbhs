@@ -48,11 +48,13 @@ class PublicVerificationController
             // Rechercher le paiement par le code de vérification (table legacy payments)
             $stmt = $this->db->prepare("
                 SELECT p.*, s.nom as student_nom, s.prenom as student_prenom, s.email as matricule, s.sexe, s.date_naissance, s.lieu_naissance, s.adresse,
-                       c.nom as classe_nom, u.nom as user_nom, u.prenom as user_prenom
+                       c.nom as classe_nom, u.nom as user_nom, u.prenom as user_prenom,
+                       ay.nom as annee_scolaire
                 FROM payments p
                 JOIN students s ON p.student_id = s.id
                 LEFT JOIN classes c ON s.class_id = c.id
                 LEFT JOIN users u ON p.created_by = u.id
+                LEFT JOIN academic_years ay ON p.academic_year_id = ay.id
                 WHERE p.verification_code = ?
             ");
             $stmt->execute([$code]);
@@ -78,12 +80,14 @@ class PublicVerificationController
                 $stmt2 = $this->db->prepare("
                     SELECT pr.*, sp.*, s.nom as student_nom, s.prenom as student_prenom, s.email as matricule, s.sexe, s.date_naissance, s.lieu_naissance, s.adresse,
                            c.nom as classe_nom, u.nom as user_nom, u.prenom as user_prenom,
-                           pr.verification_code
+                           pr.verification_code,
+                           ay.nom as annee_scolaire
                     FROM payment_receipts pr
                     JOIN student_payments sp ON pr.student_payment_id = sp.id
                     JOIN students s ON sp.student_id = s.id
                     LEFT JOIN classes c ON s.class_id = c.id
                     LEFT JOIN users u ON sp.created_by = u.id
+                    LEFT JOIN academic_years ay ON sp.academic_year_id = ay.id
                     WHERE pr.verification_code = ?
                 ");
                 $stmt2->execute([$code]);
