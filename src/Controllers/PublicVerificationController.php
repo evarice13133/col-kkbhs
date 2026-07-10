@@ -202,7 +202,51 @@ class PublicVerificationController
                 $isPublicView = true;
                 $isPdf = ($action === 'pdf');
                 $printLogs = []; // Pas de log d'impression visible en public
+
+                // Préparation des variables requises par les templates de reçus officiels
+                $payment['class_name'] = $payment['classe_nom'] ?? 'N/A';
+                $payment['receipt_number'] = $payment['receipt_number'] ?? $payment['id'] ?? 'N/A';
+                $amountInWords = \App\Core\NumberToWords::toWords($payment['amount'] ?? 0);
+
+                // Simulation des variables complexes pour le reçu de scolarité
+                $studentInstallments = [];
+                $installmentsMap = [];
+                if (!empty($installments)) {
+                    foreach ($installments as $idx => $inst) {
+                        $num = $idx + 1;
+                        if (preg_match('/(\d+)/', $inst['tranche_name'], $matches)) {
+                            $num = (int)$matches[1];
+                        }
+                        $studentInstallments[] = [
+                            'installment_number' => $num,
+                            'amount_planned' => (float)$inst['amount_expected'],
+                            'amount_paid' => (float)$inst['amount_paid']
+                        ];
+                        $installmentsMap[$num] = [
+                            'name' => $inst['tranche_name'],
+                            'deadline' => $inst['deadline']
+                        ];
+                    }
+                } else {
+                    $studentInstallments[] = [
+                        'installment_number' => 1,
+                        'amount_planned' => (float)($payment['amount'] ?? 0),
+                        'amount_paid' => (float)($payment['amount'] ?? 0)
+                    ];
+                    $installmentsMap[1] = ['name' => 'Tranche Unique', 'deadline' => date('Y-m-d')];
+                }
+
+                $paymentsHistory = $paymentHistory ?? [];
                 
+                // Allocation simplifiée pour ce paiement (affecté à la 1ère tranche disponible ou globalement)
+                $allocations = [];
+                $allocations[] = [
+                    'installment_number' => $studentInstallments[0]['installment_number'] ?? 1,
+                    'amount_planned' => $studentInstallments[0]['amount_planned'] ?? ($payment['amount'] ?? 0),
+                    'amount_allocated' => (float)($payment['amount'] ?? 0),
+                    'total_installment_paid' => (float)($payment['amount'] ?? 0)
+                ];
+
                 ob_start();
                 include __DIR__ . $viewFile;
                 $html = ob_get_clean();
