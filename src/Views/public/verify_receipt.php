@@ -224,7 +224,7 @@
                 <?php endif; ?>
                 <div class="detail-row">
                     <span class="detail-label">Année Scolaire</span>
-                    <span class="detail-value"><?= h($settings['display_school_year'] ?? '') ?></span>
+                    <span class="detail-value"><?= h($payment['annee_scolaire'] ?? $settings['display_school_year'] ?? '') ?></span>
                 </div>
             </div>
 
