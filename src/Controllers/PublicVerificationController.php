@@ -150,10 +150,11 @@ class PublicVerificationController
         if ($isValid && $studentId && $academicYearId) {
             // Historique des paiements
             $stmtHist = $this->db->prepare("
-                SELECT 'scolarite' as type, amount, payment_date, payment_method, id, reference, created_at
-                FROM student_payments 
-                WHERE student_id = ? AND academic_year_id = ? AND status != 'annule'
-                ORDER BY payment_date DESC, created_at DESC
+                SELECT 'scolarite' as type, sp.amount, sp.payment_date, sp.payment_method, sp.id, sp.reference, sp.created_at, pr.verification_code
+                FROM student_payments sp
+                LEFT JOIN payment_receipts pr ON pr.student_payment_id = sp.id
+                WHERE sp.student_id = ? AND sp.academic_year_id = ? AND sp.status != 'annule'
+                ORDER BY sp.payment_date DESC, sp.created_at DESC
             ");
             $stmtHist->execute([$studentId, $academicYearId]);
             $paymentHistory = $stmtHist->fetchAll(PDO::FETCH_ASSOC);
@@ -190,6 +191,46 @@ class PublicVerificationController
         // Charger les settings de l'école
         $settingsStore = new SettingsStore($this->db);
         $settings = $settingsStore->all();
+
+        // Gestion des actions spéciales (Voir, PDF, Imprimer) pour un reçu valide
+        if ($isValid && isset($_GET['action'])) {
+            $action = $_GET['action'];
+            if (in_array($action, ['view', 'pdf', 'print'])) {
+                $viewFile = ($receiptType === 'inscription') ? '/../Views/payments/receipt.php' : '/../Views/school_fees/receipt.php';
+                
+                // Indiquer que c'est une vue publique/parent pour cacher l'audit
+                $isPublicView = true;
+                $isPdf = ($action === 'pdf');
+                $printLogs = []; // Pas de log d'impression visible en public
+                
+                ob_start();
+                include __DIR__ . $viewFile;
+                $html = ob_get_clean();
+                
+                if ($action === 'pdf') {
+                    require_once __DIR__ . '/../../vendor/autoload.php';
+                    $options = new \Dompdf\Options();
+                    $options->set('isHtml5ParserEnabled', true);
+                    $options->set('isRemoteEnabled', true);
+                    // Autoriser chroot pour accéder au logo localement si nécessaire
+                    $options->set('chroot', realpath(__DIR__ . '/../../public'));
+                    
+                    $dompdf = new \Dompdf\Dompdf($options);
+                    $dompdf->loadHtml($html);
+                    $dompdf->setPaper('A4', 'portrait');
+                    $dompdf->render();
+                    $receiptNumber = $payment['receipt_number'] ?? $payment['id'];
+                    $dompdf->stream("Recu_" . $receiptNumber . ".pdf", ["Attachment" => true]);
+                    exit;
+                } else {
+                    echo $html;
+                    if ($action === 'print') {
+                        echo '<script>window.onload = function() { window.print(); }</script>';
+                    }
+                    exit;
+                }
+            }
+        }
 
         include __DIR__ . '/../Views/public/verify_receipt.php';
     }

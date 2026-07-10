@@ -14,33 +14,66 @@
     <style>
         :root {
             --primary: #2563eb;
-            --success: #16a34a;
-            --danger: #dc2626;
-            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            --primary-light: #3b82f6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg-dark: #0f172a;
             --card-bg: rgba(255, 255, 255, 0.95);
         }
 
         body {
             font-family: 'Outfit', sans-serif;
-            background: var(--bg-gradient);
+            background-color: var(--bg-dark);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
             color: #334155;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background Blobs */
+        .bg-blob {
+            position: absolute;
+            filter: blur(80px);
+            z-index: 0;
+            opacity: 0.6;
+            animation: float 10s infinite alternate ease-in-out;
+        }
+        .blob-1 {
+            width: 300px; height: 300px;
+            background: #3b82f6;
+            top: -50px; left: -50px;
+        }
+        .blob-2 {
+            width: 400px; height: 400px;
+            background: #8b5cf6;
+            bottom: -100px; right: -50px;
+            animation-delay: -5s;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0) scale(1); }
+            100% { transform: translateY(30px) scale(1.1); }
         }
 
         .verify-card {
             background: var(--card-bg);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             overflow: hidden;
             width: 100%;
             max-width: 650px;
-            animation: slideUp 0.5s ease-out forwards;
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             margin: auto;
+            position: relative;
+            z-index: 10;
         }
 
         @keyframes slideUp {
@@ -89,14 +122,22 @@
         }
 
         .section-title {
-            font-size: 14px;
-            font-weight: 700;
-            color: #1e293b;
+            font-size: 13px;
+            font-weight: 800;
+            color: #475569;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin: 25px 25px 10px 25px;
-            padding-bottom: 5px;
+            letter-spacing: 1px;
+            margin: 30px 25px 15px 25px;
+            padding-bottom: 8px;
             border-bottom: 2px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .section-title i {
+            color: var(--primary);
+            font-size: 16px;
         }
 
         .details-list {
@@ -107,8 +148,17 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #f1f5f9;
+            padding: 12px 0;
+            border-bottom: 1px dashed #e2e8f0;
+            transition: background-color 0.2s;
+        }
+
+        .detail-row:hover {
+            background-color: rgba(241, 245, 249, 0.5);
+            border-radius: 6px;
+            padding: 12px 10px;
+            margin: 0 -10px;
+            border-bottom-color: transparent;
         }
 
         .detail-row:last-child {
@@ -130,43 +180,72 @@
 
         .detail-value.amount {
             color: var(--primary);
-            font-size: 16px;
+            font-size: 18px;
+            letter-spacing: -0.5px;
         }
 
         .verify-footer {
             background: #f8fafc;
             padding: 20px;
             text-align: center;
-            border-top: 1px solid #f1f5f9;
-            font-size: 11px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 12px;
             color: #64748b;
+            border-radius: 0 0 24px 24px;
         }
 
         .history-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            background: #f8fafc;
-            border-radius: 8px;
-            margin-bottom: 8px;
+            padding: 15px;
+            background: #ffffff;
+            border-radius: 12px;
+            margin-bottom: 12px;
             border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            transition: all 0.2s ease;
+        }
+
+        .history-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.05);
+            border-color: #cbd5e1;
         }
 
         .history-date {
-            font-size: 12px;
-            color: #64748b;
-            font-weight: 600;
+            font-size: 13px;
+            color: #475569;
         }
 
         .history-amount {
-            font-size: 14px;
-            font-weight: 700;
-            color: #0f172a;
+            font-size: 15px;
+            letter-spacing: -0.5px;
+        }
+
+        .stagger-1 { animation: fadeIn 0.5s ease-out 0.1s both; }
+        .stagger-2 { animation: fadeIn 0.5s ease-out 0.2s both; }
+        .stagger-3 { animation: fadeIn 0.5s ease-out 0.3s both; }
+        .stagger-4 { animation: fadeIn 0.5s ease-out 0.4s both; }
+        .stagger-5 { animation: fadeIn 0.5s ease-out 0.5s both; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .btn-modern {
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-modern:hover {
+            transform: translateY(-1px);
         }
     </style>
 </head>
 <body>
+
+    <!-- Background Elements -->
+    <div class="bg-blob blob-1"></div>
+    <div class="bg-blob blob-2"></div>
 
     <div class="verify-card">
         
@@ -181,8 +260,8 @@
                 <small class="opacity-75"><?= __('verified_authentic_sub') ?? 'Ce paiement est certifié valide par l\'établissement' ?></small>
             </div>
 
-            <div class="section-title"><i class="bi bi-receipt"></i> Informations du Paiement</div>
-            <div class="details-list">
+            <div class="section-title stagger-1"><i class="bi bi-receipt"></i> Informations du Paiement</div>
+            <div class="details-list stagger-1">
                 <div class="detail-row">
                     <span class="detail-label"><?= __('jeton') ?? 'Jeton de vérification' ?></span>
                     <span class="detail-value text-primary font-monospace"><?= h($code) ?></span>
@@ -228,8 +307,8 @@
                 </div>
             </div>
 
-            <div class="section-title"><i class="bi bi-person-badge"></i> Informations de l'Élève</div>
-            <div class="details-list">
+            <div class="section-title stagger-2"><i class="bi bi-person-badge"></i> Informations de l'Élève</div>
+            <div class="details-list stagger-2">
                 <div class="detail-row">
                     <span class="detail-label"><?= __('student') ?? 'Élève' ?></span>
                     <span class="detail-value"><?= h($payment['student_nom'] ?? '') ?> <?= h($payment['student_prenom'] ?? '') ?></span>
@@ -252,8 +331,8 @@
             </div>
 
             <?php if (!empty($enroll)): ?>
-            <div class="section-title"><i class="bi bi-wallet2"></i> Résumé Financier (<?= h($payment['annee_scolaire'] ?? $settings['display_school_year'] ?? '') ?>)</div>
-            <div class="details-list">
+            <div class="section-title stagger-3"><i class="bi bi-wallet2"></i> Résumé Financier (<?= h($payment['annee_scolaire'] ?? $settings['display_school_year'] ?? '') ?>)</div>
+            <div class="details-list stagger-3">
                 <div class="row g-2 mb-3">
                     <div class="col-6">
                         <div class="p-2 bg-light rounded text-center border">
@@ -284,8 +363,8 @@
             <?php endif; ?>
 
             <?php if (!empty($lastPayment)): ?>
-            <div class="section-title"><i class="bi bi-star-fill text-warning"></i> Dernier Paiement Effectué</div>
-            <div class="details-list pb-2">
+            <div class="section-title stagger-4"><i class="bi bi-star-fill text-warning"></i> Dernier Paiement Effectué</div>
+            <div class="details-list pb-2 stagger-4">
                 <div class="p-3 rounded border border-primary bg-primary bg-opacity-10 text-center">
                     <div class="fw-bold text-primary fs-3 mb-1"><?= number_format($lastPayment['amount'], 0, '.', ' ') ?> FCFA</div>
                     <div class="text-muted small mb-2">
@@ -301,8 +380,8 @@
             <?php endif; ?>
 
             <?php if (!empty($installments)): ?>
-            <div class="section-title"><i class="bi bi-list-check"></i> Tranches et Échéances</div>
-            <div class="details-list p-0 mx-3 mb-4 border rounded overflow-hidden">
+            <div class="section-title stagger-4"><i class="bi bi-list-check"></i> Tranches et Échéances</div>
+            <div class="details-list p-0 mx-4 mb-4 border rounded overflow-hidden stagger-4 shadow-sm">
                 <div class="table-responsive">
                     <table class="table table-sm table-hover mb-0" style="font-size: 12px;">
                         <thead class="table-light">
@@ -352,20 +431,38 @@
             <?php endif; ?>
 
             <?php if (!empty($paymentHistory)): ?>
-            <div class="section-title"><i class="bi bi-clock-history"></i> Historique Complet (Année en cours)</div>
-            <div class="details-list">
+            <div class="section-title stagger-5"><i class="bi bi-clock-history"></i> Historique Complet (Année en cours)</div>
+            <div class="details-list stagger-5">
                 <?php foreach ($paymentHistory as $hist): ?>
                     <div class="history-item <?= ($hist['id'] == $paymentId) ? 'border-primary shadow-sm bg-white' : '' ?>">
-                        <div class="history-date">
-                            <i class="bi bi-calendar-check text-primary"></i> <?= date('d/m/Y', strtotime($hist['payment_date'])) ?>
-                            <div class="fw-normal text-muted" style="font-size:10px; margin-left: 18px;">
-                                <?= date('H:i', strtotime($hist['created_at'])) ?> • <?= h($hist['payment_method']) ?>
+                        <div class="w-100">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <div class="history-date">
+                                    <i class="bi bi-calendar-check text-primary"></i> <span class="fw-bold"><?= date('d/m/Y', strtotime($hist['payment_date'])) ?></span>
+                                </div>
+                                <div class="history-amount text-success fw-bold">
+                                    <?= number_format($hist['amount'], 0, '.', ' ') ?> FCFA
+                                    <?php if ($hist['id'] == $paymentId): ?>
+                                        <div class="badge bg-primary ms-2" style="font-size:9px;">Ce reçu</div>
+                                    <?php endif; ?>
+                                </div>
                             </div>
-                        </div>
-                        <div class="history-amount text-success text-end">
-                            <?= number_format($hist['amount'], 0, '.', ' ') ?> FCFA
-                            <?php if ($hist['id'] == $paymentId): ?>
-                                <div class="badge bg-primary d-block mt-1" style="font-size:9px;">Ce reçu</div>
+                            <div class="fw-normal text-muted mb-2" style="font-size:11px; margin-left: 20px;">
+                                <i class="bi bi-clock"></i> <?= date('H:i', strtotime($hist['created_at'])) ?> &nbsp;•&nbsp; 
+                                <i class="bi bi-credit-card"></i> <?= h($hist['payment_method']) ?>
+                            </div>
+                            <?php if (!empty($hist['verification_code'])): ?>
+                                <div class="d-flex gap-2 mt-2" style="margin-left: 20px;">
+                                    <a href="<?= APP_URL ?>/verify-receipt/<?= urlencode($hist['verification_code']) ?>?action=view" class="btn btn-modern btn-sm btn-outline-primary" style="font-size: 10px; padding: 3px 10px;">
+                                        <i class="bi bi-eye"></i> Voir le reçu
+                                    </a>
+                                    <a href="<?= APP_URL ?>/verify-receipt/<?= urlencode($hist['verification_code']) ?>?action=pdf" class="btn btn-modern btn-sm btn-outline-danger" style="font-size: 10px; padding: 3px 10px;">
+                                        <i class="bi bi-file-earmark-pdf"></i> PDF
+                                    </a>
+                                    <a href="<?= APP_URL ?>/verify-receipt/<?= urlencode($hist['verification_code']) ?>?action=print" class="btn btn-modern btn-sm btn-outline-secondary" style="font-size: 10px; padding: 3px 10px;">
+                                        <i class="bi bi-printer"></i> Imprimer
+                                    </a>
+                                </div>
                             <?php endif; ?>
                         </div>
                     </div>
