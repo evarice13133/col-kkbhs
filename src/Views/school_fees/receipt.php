@@ -665,12 +665,12 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
                                     </div>
                                     <div style="margin-top: 1px;">
                                         <strong><?= __('date_label') ?></strong>
-                                        <?= date('d/m/Y H:i', strtotime($payment['created_at'])) ?>
+                                        <?= date('d/m/Y H:i', strtotime($payment['created_at'] ?? 'now')) ?>
                                     </div>
                                     <div style="margin-top: 1px;">
                                         <strong><?= __('receipt_no_label') ?></strong> <span
-                                            style="font-family: monospace; font-weight: bold;"><?= h($payment['receipt_number']) ?></span>
-                                        <?php if ($isDuplicate): ?>
+                                           <div style="font-weight: bold; font-size: 13px; color: #b91c1c;">N° <?= h($payment['receipt_number'] ?? $payment['id'] ?? '') ?></div></span>
+                                        <?php if ($isDuplicate ?? false): ?>
                                             <span class="duplicate-badge"><?= __('duplicata') ?></span>
                                         <?php else: ?>
                                             <span class="duplicate-badge"
@@ -700,19 +700,19 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
                                         </td>
                                         <td style="padding: 4px 6px; border-bottom: 1px solid #e2e8f0; border-left: 1px solid #e2e8f0; font-size: 8.5px; line-height: 1.2; vertical-align: middle; width: 40%;">
                                             <strong style="color: #64748b; font-size: 8px;"><?= __('matricule') ?> :</strong>
-                                            <span style="font-family: monospace; font-weight: bold; color: #0369a1; background-color: #e0f2fe; padding: 0.5px 3px; border-radius: 3px;"><?= h($payment['matricule'] ?? 'MAT-' . sprintf('%04d', $payment['student_id'])) ?></span>
+                                            <span style="font-family: monospace; font-weight: bold; color: #0369a1; background-color: #e0f2fe; padding: 0.5px 3px; border-radius: 3px;"><?= h($payment['matricule'] ?? 'MAT-' . sprintf('%04d', $payment['student_id'] ?? 0)) ?></span>
                                         </td>
                                     </tr>
                                     <tr>
                                         <td style="padding: 4px 6px; font-size: 8.5px; line-height: 1.2; vertical-align: middle;">
                                             <strong style="color: #64748b; font-size: 8px;"><?= __('class') ?> :</strong>
-                                            <strong style="color: #0f172a;"><?= h($payment['class_name'] ?: '-') ?></strong>
+                                            <strong style="color: #0f172a;"><?= h($payment['class_name'] ?? '-') ?></strong>
                                         </td>
                                         <td style="padding: 4px 6px; border-left: 1px solid #e2e8f0; font-size: 8.5px; line-height: 1.2; vertical-align: middle;">
                                             <strong style="color: #64748b; font-size: 8px;"><?= __('born_on') ?> :</strong>
                                             <span style="color: #334155; font-weight: bold;">
-                                                <?= !empty($payment['date_naissance']) ? date('d/m/Y', strtotime($payment['date_naissance'])) : 'N/A' ?>
-                                                <?= !empty($payment['lieu_naissance']) ? ' ' . __('born_at') . ' ' . h($payment['lieu_naissance']) : '' ?>
+                                                <?= !empty($payment['date_naissance'] ?? '') ? date('d/m/Y', strtotime($payment['date_naissance'])) : 'N/A' ?>
+                                                <?= !empty($payment['lieu_naissance'] ?? '') ? ' ' . __('born_at') . ' ' . h($payment['lieu_naissance']) : '' ?>
                                             </span>
                                         </td>
                                     </tr>
@@ -741,12 +741,13 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
                                         <?php
                                         $totalOperationAmount = 0.0;
                                         $totalOperationRemaining = 0.0;
-                                        foreach ($allocations as $alloc):
-                                            $orderNum = (int) $alloc['installment_number'];
+                                        $allocationsList = $allocations ?? [];
+                                        foreach ($allocationsList as $alloc):
+                                            $orderNum = (int) ($alloc['installment_number'] ?? 0);
                                             $instName = isset($installmentsMap[$orderNum]) ? $installmentsMap[$orderNum]['name'] : 'Tranche N°' . $orderNum;
-                                            $amountPlanned = (float) $alloc['amount_planned'];
-                                            $amountAllocated = (float) $alloc['amount_allocated'];
-                                            $reste = max(0.0, $amountPlanned - (float) $alloc['total_installment_paid']);
+                                            $amountPlanned = (float) ($alloc['amount_planned'] ?? 0);
+                                            $amountAllocated = (float) ($alloc['amount_allocated'] ?? 0);
+                                            $reste = max(0.0, $amountPlanned - (float) ($alloc['total_installment_paid'] ?? 0));
 
                                             $totalOperationAmount += $amountAllocated;
                                             $totalOperationRemaining += $reste;
@@ -779,7 +780,7 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
 
                     <!-- Somme en toutes lettres (Intercalé) -->
                     <div class="amount-in-words-box" style="margin-bottom: 2px;">
-                        <?= __('amount_words_prefix') ?> <strong><?= h($amountInWords) ?></strong>
+                        <?= __('amount_words_prefix') ?> <strong><?= h($amountInWords ?? '') ?></strong>
                     </div>
 
                     <!-- SECTION COTE-A-COTE 2: SITUATION GLOBALE & HISTORIQUE + VENTILATION & QR CODE (Wrapper Table) -->
@@ -806,14 +807,15 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
                                     <tbody>
                                         <?php
                                         $currentDate = date('Y-m-d');
-                                        foreach ($studentInstallments as $si):
-                                            $orderNum = (int) $si['installment_number'];
+                                        $installmentsList = $studentInstallments ?? [];
+                                        foreach ($installmentsList as $si):
+                                            $orderNum = (int) ($si['installment_number'] ?? 0);
                                             $instName = isset($installmentsMap[$orderNum]) ? $installmentsMap[$orderNum]['name'] : 'Tranche N°' . $orderNum;
                                             $deadlineRaw = isset($installmentsMap[$orderNum]) ? $installmentsMap[$orderNum]['deadline'] : '';
                                             $deadline = $deadlineRaw ? date('d/m/Y', strtotime($deadlineRaw)) : 'N/A';
 
-                                            $amountPlanned = (float) $si['amount_planned'];
-                                            $amountPaid = (float) $si['amount_paid'];
+                                            $amountPlanned = (float) ($si['amount_planned'] ?? 0);
+                                            $amountPaid = (float) ($si['amount_paid'] ?? 0);
                                             $reste = max(0.0, $amountPlanned - $amountPaid);
 
                                             // Determine status
@@ -837,7 +839,7 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
                                             ?>
                                             <tr>
                                                 <td style="font-weight: bold; color: #1e3a8a;"><?= h($instName) ?></td>
-                                                <td><?= h($deadline) ?></td>
+                                                <td><?= h($payment['class_name'] ?? $payment['classe_nom'] ?? '') ?></td>
                                                 <td style="text-align: right;"><?= number_format($amountPlanned, 0, '.', ' ') ?>
                                                 </td>
                                                 <td style="text-align: right; font-weight: bold; color: #16a34a;">
@@ -874,20 +876,22 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
                                     </thead>
                                     <tbody>
                                         <?php
-                                        $histTotal = 0.0;
-                                        foreach ($paymentsHistory as $hist):
-                                            $histTotal += (float) $hist['amount'];
+                                        $totalHistorique = 0.0;
+                                        $historyList = $paymentsHistory ?? [];
+                                        foreach ($historyList as $ph):
+                                            $hAmount = (float) ($ph['amount'] ?? 0);
+                                            $totalHistorique += $hAmount;
                                             ?>
                                             <tr>
                                                 <td style="font-family: monospace; font-size: 8.8px; padding: 1.5px 2px;">
-                                                    <?= h($hist['reference'] ?: 'N/A') ?></td>
+                                                    <?= h($ph['reference'] ?? 'N/A') ?></td>
                                                 <td style="font-size: 8.8px; padding: 1.5px 2px;">
-                                                    <?= h($hist['payment_method']) ?></td>
+                                                    <?= h($ph['payment_method'] ?? '') ?></td>
                                                 <td style="font-size: 8.8px; padding: 1.5px 2px;">
-                                                    <?= date('d/m/Y', strtotime($hist['payment_date'])) ?></td>
+                                                    <?= date('d/m/Y', strtotime($ph['payment_date'] ?? 'now')) ?></td>
                                                 <td
                                                     style="font-size: 8.8px; padding: 1.5px 2px; text-align: right; font-weight: bold;">
-                                                    <?= number_format($hist['amount'], 0, '.', ' ') ?></td>
+                                                    <?= number_format($hAmount, 0, '.', ' ') ?></td>
                                             </tr>
                                         <?php endforeach; ?>
                                         <tr style="background-color: #f8fafc; font-weight: bold;">
@@ -896,7 +900,7 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
                                                 <?= __('cumul') ?></td>
                                             <td
                                                 style="font-size: 9.2px; padding: 1.5px 2px; text-align: right; color: #16a34a;">
-                                                <?= number_format($histTotal, 0, '.', ' ') ?></td>
+                                                <?= number_format($totalHistorique, 0, '.', ' ') ?></td>
                                         </tr>
                                     </tbody>
                                 </table>
