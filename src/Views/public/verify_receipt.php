@@ -252,36 +252,121 @@
             </div>
 
             <?php if (!empty($enroll)): ?>
-            <div class="section-title"><i class="bi bi-wallet2"></i> Dernière Opération</div>
+            <div class="section-title"><i class="bi bi-wallet2"></i> Résumé Financier (<?= h($payment['annee_scolaire'] ?? $settings['display_school_year'] ?? '') ?>)</div>
             <div class="details-list">
-                <div class="detail-row">
-                    <span class="detail-label">Scolarité Nette (Annuelle)</span>
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <div class="p-2 bg-light rounded text-center border">
+                            <small class="text-muted d-block" style="font-size:11px;">Frais Brut</small>
+                            <span class="fw-bold" style="font-size:13px;"><?= number_format($enroll['frais_scolarite_brut'] ?? 0, 0, '.', ' ') ?></span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 bg-light rounded text-center border">
+                            <small class="text-muted d-block" style="font-size:11px;">Réductions/Bourses</small>
+                            <span class="fw-bold text-success" style="font-size:13px;">-<?= number_format(($enroll['total_reductions'] ?? 0) + ($enroll['total_bourses'] ?? 0), 0, '.', ' ') ?></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="detail-row bg-light px-2 rounded mb-2">
+                    <span class="detail-label text-dark">Scolarité Nette</span>
                     <span class="detail-value"><?= number_format($enroll['scolarite_nette'] ?? 0, 0, '.', ' ') ?> FCFA</span>
                 </div>
-                <div class="detail-row">
-                    <span class="detail-label">Total Cumulé Payé</span>
+                <div class="detail-row px-2">
+                    <span class="detail-label">Total Payé</span>
                     <span class="detail-value text-success"><?= number_format($enroll['total_paye'] ?? 0, 0, '.', ' ') ?> FCFA</span>
                 </div>
-                <div class="detail-row">
+                <div class="detail-row px-2">
                     <span class="detail-label">Reste à Payer</span>
                     <span class="detail-value text-danger"><?= number_format($enroll['reste_a_payer'] ?? 0, 0, '.', ' ') ?> FCFA</span>
                 </div>
             </div>
             <?php endif; ?>
 
-            <?php if (!empty($paymentHistory) && count($paymentHistory) > 1): ?>
-            <div class="section-title"><i class="bi bi-clock-history"></i> Historique des versements (Année en cours)</div>
+            <?php if (!empty($lastPayment)): ?>
+            <div class="section-title"><i class="bi bi-star-fill text-warning"></i> Dernier Paiement Effectué</div>
+            <div class="details-list pb-2">
+                <div class="p-3 rounded border border-primary bg-primary bg-opacity-10 text-center">
+                    <div class="fw-bold text-primary fs-3 mb-1"><?= number_format($lastPayment['amount'], 0, '.', ' ') ?> FCFA</div>
+                    <div class="text-muted small mb-2">
+                        Le <?= date('d/m/Y', strtotime($lastPayment['payment_date'])) ?>
+                        à <?= date('H:i', strtotime($lastPayment['created_at'])) ?>
+                    </div>
+                    <div class="d-flex justify-content-between text-start small border-top border-primary border-opacity-25 pt-2 mt-2">
+                        <div><span class="text-muted">Réf:</span> <span class="font-monospace"><?= h($lastPayment['reference'] ?? 'N/A') ?></span></div>
+                        <div><span class="text-muted">Mode:</span> <?= h($lastPayment['payment_method']) ?></div>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <?php if (!empty($installments)): ?>
+            <div class="section-title"><i class="bi bi-list-check"></i> Tranches et Échéances</div>
+            <div class="details-list p-0 mx-3 mb-4 border rounded overflow-hidden">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0" style="font-size: 12px;">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Tranche</th>
+                                <th>Échéance</th>
+                                <th class="text-end">Reste</th>
+                                <th class="text-center">Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php 
+                            $today = date('Y-m-d');
+                            foreach ($installments as $idx => $inst): 
+                                $reste = $inst['amount_expected'] - $inst['amount_paid'];
+                                
+                                // Calcul du statut dynamique
+                                if ($reste <= 0) {
+                                    $statusBadge = '<span class="badge bg-success">Payée</span>';
+                                } elseif ($inst['amount_paid'] > 0 && $reste > 0) {
+                                    if ($inst['deadline'] < $today) {
+                                        $statusBadge = '<span class="badge bg-danger">En retard</span>';
+                                    } else {
+                                        $statusBadge = '<span class="badge bg-warning text-dark">Partielle</span>';
+                                    }
+                                } else {
+                                    if ($inst['deadline'] < $today) {
+                                        $statusBadge = '<span class="badge bg-danger">En retard</span>';
+                                    } else {
+                                        $statusBadge = '<span class="badge bg-secondary">Non payée</span>';
+                                    }
+                                }
+                            ?>
+                            <tr>
+                                <td class="fw-medium text-nowrap"><?= h($inst['tranche_name']) ?></td>
+                                <td class="text-nowrap"><?= date('d/m/Y', strtotime($inst['deadline'])) ?></td>
+                                <td class="text-end fw-bold <?= $reste > 0 ? 'text-danger' : 'text-success' ?>">
+                                    <?= number_format($reste, 0, '.', ' ') ?>
+                                </td>
+                                <td class="text-center"><?= $statusBadge ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <?php if (!empty($paymentHistory)): ?>
+            <div class="section-title"><i class="bi bi-clock-history"></i> Historique Complet (Année en cours)</div>
             <div class="details-list">
                 <?php foreach ($paymentHistory as $hist): ?>
                     <div class="history-item <?= ($hist['id'] == $paymentId) ? 'border-primary shadow-sm bg-white' : '' ?>">
                         <div class="history-date">
-                            <i class="bi bi-calendar-check"></i> <?= date('d/m/Y', strtotime($hist['payment_date'])) ?>
-                            <?php if ($hist['id'] == $paymentId): ?>
-                                <span class="badge bg-primary ms-2">Ce reçu</span>
-                            <?php endif; ?>
+                            <i class="bi bi-calendar-check text-primary"></i> <?= date('d/m/Y', strtotime($hist['payment_date'])) ?>
+                            <div class="fw-normal text-muted" style="font-size:10px; margin-left: 18px;">
+                                <?= date('H:i', strtotime($hist['created_at'])) ?> • <?= h($hist['payment_method']) ?>
+                            </div>
                         </div>
-                        <div class="history-amount text-success">
+                        <div class="history-amount text-success text-end">
                             <?= number_format($hist['amount'], 0, '.', ' ') ?> FCFA
+                            <?php if ($hist['id'] == $paymentId): ?>
+                                <div class="badge bg-primary d-block mt-1" style="font-size:9px;">Ce reçu</div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 <?php endforeach; ?>
