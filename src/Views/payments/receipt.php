@@ -515,6 +515,7 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
     </style>
 </head>
 <body>
+    <?php if (!(isset($isPdf) && $isPdf)): ?>
      <!-- Barre d'actions écran -->
     <div class="print-btn-container no-print receipt-container" style="display: flex; justify-content: space-between; align-items: center;">
         <div>
@@ -530,6 +531,7 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
             </button>
         </div>
     </div>
+    <?php endif; ?>
 
     <div class="receipt-container">
         

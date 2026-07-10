@@ -536,6 +536,7 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
 
 <body>
 
+    <?php if (!(isset($isPdf) && $isPdf)): ?>
     <!-- Barre d'actions écran -->
     <div class="print-btn-container no-print receipt-container"
         style="display: flex; justify-content: space-between; align-items: center;">
@@ -558,6 +559,7 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
             </button>
         </div>
     </div>
+    <?php endif; ?>
 
     <div class="receipt-container">
 

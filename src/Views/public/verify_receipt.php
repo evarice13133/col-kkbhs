@@ -453,14 +453,8 @@
                             </div>
                             <?php if (!empty($hist['verification_code'])): ?>
                                 <div class="d-flex gap-2 mt-2" style="margin-left: 20px;">
-                                    <a href="<?= APP_URL ?>/verify-receipt/<?= urlencode($hist['verification_code']) ?>?action=view" class="btn btn-modern btn-sm btn-outline-primary" style="font-size: 10px; padding: 3px 10px;">
-                                        <i class="bi bi-eye"></i> Voir le reçu
-                                    </a>
                                     <a href="<?= APP_URL ?>/verify-receipt/<?= urlencode($hist['verification_code']) ?>?action=pdf" class="btn btn-modern btn-sm btn-outline-danger" style="font-size: 10px; padding: 3px 10px;">
-                                        <i class="bi bi-file-earmark-pdf"></i> PDF
-                                    </a>
-                                    <a href="<?= APP_URL ?>/verify-receipt/<?= urlencode($hist['verification_code']) ?>?action=print" class="btn btn-modern btn-sm btn-outline-secondary" style="font-size: 10px; padding: 3px 10px;">
-                                        <i class="bi bi-printer"></i> Imprimer
+                                        <i class="bi bi-file-earmark-pdf"></i> Télécharger PDF
                                     </a>
                                 </div>
                             <?php endif; ?>
