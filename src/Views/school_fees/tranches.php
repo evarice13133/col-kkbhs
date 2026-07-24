@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 $title = __('tranches_title');
 ob_start();
 ?>
@@ -108,9 +108,9 @@ ob_start();
         <div class="page-header-actions d-flex align-items-center gap-2 gap-sm-3">
             <div class="search-pill d-flex">
                 <i class="bi bi-search text-muted ms-1" style="font-size:.85rem;"></i>
-                <input type="text" id="search-cfg" placeholder="Rechercher une configuration...">
+                <input type="text" id="search-cfg" placeholder="<?= __('search_config_placeholder') ?>">
             </div>
-            <button type="button" class="btn-add-new flex-shrink-0" id="btn-open-new" title="Nouvelle configuration"
+            <button type="button" class="btn-add-new flex-shrink-0" id="btn-open-new" title="<?= __('new_config_title') ?>"
                 data-bs-toggle="modal" data-bs-target="#modal-edit-config">
                 <i class="bi bi-plus-lg fs-5"></i>
             </button>
@@ -172,7 +172,7 @@ ob_start();
                     <h5 class="text-main-theme fw-bold mb-2"><?= __('no_config_yet') ?></h5>
                     <p class="text-muted small mb-4 px-2"><?= __('use_editor_to_start') ?></p>
                     <button type="button" class="btn btn-primary rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#modal-edit-config" id="btn-empty-new">
-                        <i class="bi bi-plus-circle-fill me-2"></i>Creer une configuration
+                        <i class="bi bi-plus-circle-fill me-2"></i><?= __('create_config_btn') ?>
                     </button>
                 </div>
             </div>
@@ -195,7 +195,7 @@ ob_start();
                                 data-type="<?= $group['raw_type'] ?>"
                                 data-id="<?= $group['target_id'] ?>"
                                 data-label="<?= h($group['label']) ?>"
-                                title="Modifier cette configuration"
+                                title="<?= __('edit_this_config') ?>"
                                 onclick="openEditModal(this)">
                                 <i class="bi bi-pencil-square"></i>
                             </button>
@@ -216,9 +216,9 @@ ob_start();
                         </div>
                         <div class="mt-3 pt-2 border-top config-card-footer d-flex align-items-center justify-content-between">
                             <span class="text-muted extra-small fw-semibold">
-                                <i class="bi bi-stack me-1"></i><?= count($group['items']) ?> tranche<?= count($group['items']) > 1 ? 's' : '' ?>
+                                <i class="bi bi-stack me-1"></i><?= count($group['items']) ?> <?= count($group['items']) > 1 ? __('tranches_count_plural') : __('tranches_count') ?>
                             </span>
-                            <span class="extra-small text-muted fw-medium"><?= $group['raw_type'] === 'class' ? 'Classe' : ($group['raw_type'] === 'cycle' ? 'Cycle' : 'Type enseign.') ?></span>
+                            <span class="extra-small text-muted fw-medium"><?= $group['raw_type'] === 'class' ? __('class') : ($group['raw_type'] === 'cycle' ? __('cycle') : __('teaching_type')) ?></span>
                         </div>
                     </div>
                 </div>
@@ -233,11 +233,11 @@ ob_start();
             <div class="modal-header border-0 pb-0 pt-4 px-4 modal-header-gradient">
                 <div class="pe-3">
                     <h5 class="modal-title fw-black text-main-theme mb-1 fs-5" id="modal-edit-label">
-                        <i class="bi bi-sliders2 text-primary me-2"></i>Configuration des tranches
+                        <i class="bi bi-sliders2 text-primary me-2"></i><?= __('config_editor') ?>
                     </h5>
-                    <p class="text-muted small mb-0" id="modal-edit-subtitle">Definissez les tranches de paiement</p>
+                    <p class="text-muted small mb-0" id="modal-edit-subtitle"><?= __('tranches_subtitle') ?></p>
                 </div>
-                <button type="button" class="btn-close ms-auto flex-shrink-0" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                <button type="button" class="btn-close ms-auto flex-shrink-0" data-bs-dismiss="modal" aria-label="<?= __('cancel') ?>"></button>
             </div>
             <form id="modal-config-form" class="modal-config-form" action="/school_fees/tranches" method="POST" novalidate>
                 <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
@@ -246,35 +246,35 @@ ob_start();
                 <div class="modal-body px-4 py-3">
                     <!-- Target selector (visible for new config) -->
                     <div id="modal-target-selector" class="mb-4 modal-target-panel">
-                        <label class="form-label fw-bold text-muted-theme extra-small text-uppercase mb-2" style="letter-spacing:.5px;">Niveau d'application</label>
+                        <label class="form-label fw-bold text-muted-theme extra-small text-uppercase mb-2" style="letter-spacing:.5px;"><?= __('application_level') ?></label>
                         <select id="modal-level-select" class="form-select mi mb-3" onchange="handleModalLevelChange(this.value)">
-                            <option value="" disabled selected>Choisir un niveau...</option>
-                            <option value="class">Par Classe</option>
-                            <option value="cycle">Par Cycle</option>
-                            <option value="teaching_type">Par Type d'Enseignement</option>
+                            <option value="" disabled selected><?= __('choose_level') ?></option>
+                            <option value="class"><?= __('by_class') ?></option>
+                            <option value="cycle"><?= __('by_cycle') ?></option>
+                            <option value="teaching_type"><?= __('by_teaching_type') ?></option>
                         </select>
                         <div id="modal-sub-class" class="d-none">
-                            <label class="form-label fw-bold text-muted-theme extra-small text-uppercase mb-2" style="letter-spacing:.5px;">Classe</label>
+                            <label class="form-label fw-bold text-muted-theme extra-small text-uppercase mb-2" style="letter-spacing:.5px;"><?= __('select_class_editor') ?></label>
                             <select id="modal-sel-class" class="form-select mi" onchange="handleModalTargetChange(this.value)">
-                                <option value="" disabled selected>Choisir une classe...</option>
+                                <option value="" disabled selected><?= __('choose_class_placeholder') ?></option>
                                 <?php foreach ($classes as $c): ?>
                                     <option value="<?= $c['id'] ?>"><?= h($c['nom']) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
                         <div id="modal-sub-cycle" class="d-none">
-                            <label class="form-label fw-bold text-muted-theme extra-small text-uppercase mb-2" style="letter-spacing:.5px;">Cycle</label>
+                            <label class="form-label fw-bold text-muted-theme extra-small text-uppercase mb-2" style="letter-spacing:.5px;"><?= __('select_cycle_editor') ?></label>
                             <select id="modal-sel-cycle" class="form-select mi" onchange="handleModalTargetChange(this.value)">
-                                <option value="" disabled selected>Choisir un cycle...</option>
+                                <option value="" disabled selected><?= __('choose_cycle_placeholder') ?></option>
                                 <?php foreach ($cycles as $cy): ?>
                                     <option value="<?= $cy['id'] ?>"><?= h($cy['nom']) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
                         <div id="modal-sub-type" class="d-none">
-                            <label class="form-label fw-bold text-muted-theme extra-small text-uppercase mb-2" style="letter-spacing:.5px;">Type d'Enseignement</label>
+                            <label class="form-label fw-bold text-muted-theme extra-small text-uppercase mb-2" style="letter-spacing:.5px;"><?= __('select_teaching_type_editor') ?></label>
                             <select id="modal-sel-type" class="form-select mi" onchange="handleModalTargetChange(this.value)">
-                                <option value="" disabled selected>Choisir un type...</option>
+                                <option value="" disabled selected><?= __('choose_type_placeholder') ?></option>
                                 <?php foreach ($teachingTypes as $tt): ?>
                                     <option value="<?= $tt['id'] ?>"><?= h($tt['nom']) ?></option>
                                 <?php endforeach; ?>
@@ -284,8 +284,8 @@ ob_start();
                     <!-- Budget bar -->
                     <div id="modal-budget-bar" class="mb-4 d-none modal-budget-panel">
                         <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
-                            <span class="small fw-semibold text-muted">Scolarite attendue : <strong id="modal-tuition-lbl" class="text-primary">-</strong></span>
-                            <span class="small fw-semibold" id="modal-sum-lbl">Affecte : <strong class="text-dark">0 FCFA</strong></span>
+                            <span class="small fw-semibold text-muted"><?= __('expected_tuition_lbl') ?> <strong id="modal-tuition-lbl" class="text-primary">-</strong></span>
+                            <span class="small fw-semibold" id="modal-sum-lbl"><?= __('assigned_lbl') ?> <strong class="text-dark">0 FCFA</strong></span>
                         </div>
                         <div class="budget-bar-wrap">
                             <div id="modal-budget-fill" class="budget-bar-fill bg-primary" style="width:0%"></div>
@@ -295,31 +295,31 @@ ob_start();
                     <!-- Loader -->
                     <div id="modal-loader" class="text-center modal-loader-panel d-none">
                         <div class="spinner-border text-primary" role="status"></div>
-                        <p class="mt-2 text-muted small mb-0">Chargement des tranches...</p>
+                        <p class="mt-2 text-muted small mb-0"><?= __('loading_config') ?></p>
                     </div>
                     <!-- Presets -->
                     <div id="modal-presets" class="mb-3 d-none modal-presets-panel">
                         <div class="d-flex flex-wrap gap-2 align-items-center">
-                            <span class="extra-small text-muted fw-bold me-1">Repartition rapide :</span>
+                            <span class="extra-small text-muted fw-bold me-1"><?= __('quick_distribution') ?></span>
                             <button type="button" class="preset-chip" onclick="applyPreset([100])">100%</button>
                             <button type="button" class="preset-chip" onclick="applyPreset([50,50])">50 / 50</button>
                             <button type="button" class="preset-chip" onclick="applyPreset([60,40])">60 / 40</button>
                             <button type="button" class="preset-chip" onclick="applyPreset([50,25,25])">50 / 25 / 25</button>
                             <button type="button" class="preset-chip" onclick="applyPreset([40,30,30])">40 / 30 / 30</button>
-                            <button type="button" class="preset-chip" onclick="splitEqual()"><i class="bi bi-distribute-horizontal me-1"></i>Equi</button>
+                            <button type="button" class="preset-chip" onclick="splitEqual()"><i class="bi bi-distribute-horizontal me-1"></i><?= __('equi_btn') ?></button>
                         </div>
                     </div>
                     <!-- Tranche rows -->
                     <div id="modal-rows-container" class="mb-3"></div>
                     <!-- Add row -->
                     <button type="button" id="modal-btn-add" class="btn btn-sm btn-outline-primary rounded-pill px-3 d-none" onclick="modalAddRow('', 0, '', null)">
-                        <i class="bi bi-plus-circle-fill me-1"></i>Ajouter une tranche
+                        <i class="bi bi-plus-circle-fill me-1"></i><?= __('add_tranche') ?>
                     </button>
                 </div>
                 <div class="modal-footer border-0 px-4 pb-4 pt-0">
-                    <button type="button" class="btn btn-light btn-modal-cancel rounded-pill px-4" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-light btn-modal-cancel rounded-pill px-4" data-bs-dismiss="modal"><?= __('cancel') ?></button>
                     <button type="submit" id="modal-btn-submit" class="btn btn-primary btn-modal-save rounded-pill px-5 fw-bold shadow-sm" disabled>
-                        <i class="bi bi-check-circle-fill me-2"></i>Enregistrer
+                        <i class="bi bi-check-circle-fill me-2"></i><?= __('save') ?>
                     </button>
                 </div>
             </form>
@@ -332,6 +332,26 @@ ob_start();
 (function() {
 'use strict';
 var modalTuition = 0;
+var I18N = {
+    defineLevelTarget: <?= json_encode(__('define_level_target')) ?>,
+    selectTargetWarning: <?= json_encode(__('select_target_warning')) ?>,
+    addAtLeastOneTranche: <?= json_encode(__('add_at_least_one_tranche')) ?>,
+    savingInProgress: <?= json_encode(__('saving_in_progress')) ?>,
+    configSavedSuccess: <?= json_encode(__('config_saved_success')) ?>,
+    errorGeneric: <?= json_encode(__('error_generic')) ?>,
+    networkError: <?= json_encode(__('network_error')) ?>,
+    notDefined: <?= json_encode(__('not_defined')) ?>,
+    errorTitle: <?= json_encode(__('error_title')) ?>,
+    trancheRowNamePlaceholder: <?= json_encode(__('tranche_row_name_placeholder')) ?>,
+    trancheName: <?= json_encode(__('tranche_name')) ?>,
+    delete: <?= json_encode(__('delete')) ?>,
+    amountFcfaLabel: <?= json_encode(__('amount_fcfa_label')) ?>,
+    deadlineLabel: <?= json_encode(__('deadline_label')) ?>,
+    assignedLbl: <?= json_encode(__('assigned_lbl')) ?>,
+    balanced100Percent: <?= json_encode(__('balanced_100_percent')) ?>,
+    excessOf: <?= json_encode(__('excess_of')) ?>,
+    remainingBalance: <?= json_encode(__('remaining_balance')) ?>
+};
 
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
@@ -367,7 +387,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function openNewModal() {
         resetModalFull();
         document.getElementById('modal-target-selector').classList.remove('d-none');
-        document.getElementById('modal-edit-subtitle').textContent = 'Definissez un niveau et une cible';
+        document.getElementById('modal-edit-subtitle').textContent = I18N.defineLevelTarget;
         document.getElementById('modal-target-type').value = '';
         document.getElementById('modal-target-id').value   = '';
         document.getElementById('modal-btn-submit').disabled = true;
@@ -390,26 +410,26 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         var tid  = document.getElementById('modal-target-id').value;
         var ttyp = document.getElementById('modal-target-type').value;
-        if (!tid || !ttyp) { showToast('Veuillez selectionner une cible.', 'warning'); return; }
+        if (!tid || !ttyp) { showToast(I18N.selectTargetWarning, 'warning'); return; }
         var rows = document.querySelectorAll('#modal-rows-container .modal-tranche-row');
-        if (!rows.length) { showToast('Ajoutez au moins une tranche.', 'warning'); return; }
+        if (!rows.length) { showToast(I18N.addAtLeastOneTranche, 'warning'); return; }
         var btnSub = document.getElementById('modal-btn-submit');
         var oldHtml = btnSub.innerHTML;
         btnSub.disabled = true;
-        btnSub.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Enregistrement...';
+        btnSub.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>' + esc(I18N.savingInProgress);
         var fd = new FormData(document.getElementById('modal-config-form'));
         fd.append('ajax', '1');
         fetch('/school_fees/tranches', { method:'POST', body:fd, headers:{'X-Requested-With':'XMLHttpRequest'} })
         .then(function(r){ return r.json(); })
         .then(function(res) {
             if (res.success) {
-                showToast(res.message || 'Configuration enregistree !', 'success');
+                showToast(res.message || I18N.configSavedSuccess, 'success');
                 var bsModal = bootstrap.Modal.getInstance(document.getElementById('modal-edit-config'));
                 if (bsModal) bsModal.hide();
                 reloadGrid();
-            } else { showToast(res.message || 'Une erreur est survenue.', 'danger'); }
+            } else { showToast(res.message || I18N.errorGeneric, 'danger'); }
         })
-        .catch(function(err){ showToast('Erreur reseau : ' + err.message, 'danger'); })
+        .catch(function(err){ showToast(I18N.networkError + ' ' + err.message, 'danger'); })
         .finally(function(){ btnSub.disabled=false; btnSub.innerHTML=oldHtml; });
     });
 });
@@ -445,7 +465,7 @@ function loadTargetConfig(type, id) {
         showModalLoader(false);
         modalTuition = parseFloat(d.tuition_amount) || 0;
         document.getElementById('modal-budget-bar').classList.remove('d-none');
-        document.getElementById('modal-tuition-lbl').textContent = modalTuition > 0 ? modalTuition.toLocaleString('fr-FR') + ' FCFA' : '(non defini)';
+        document.getElementById('modal-tuition-lbl').textContent = modalTuition > 0 ? modalTuition.toLocaleString('fr-FR') + ' FCFA' : I18N.notDefined;
         document.getElementById('modal-presets').classList.remove('d-none');
         document.getElementById('modal-btn-add').classList.remove('d-none');
         document.getElementById('modal-btn-submit').disabled = false;
@@ -453,13 +473,13 @@ function loadTargetConfig(type, id) {
             d.installments.forEach(function(inst, i){ modalAddRow(inst.name, parseFloat(inst.amount), inst.deadline_date, i+1); });
         } else {
             if (modalTuition > 0) applyPreset([50,25,25]);
-            else modalAddRow('Tranche 1', 0, '', 1);
+            else modalAddRow(I18N.trancheName + ' 1', 0, '', 1);
         }
         calcModalSum();
     })
     .catch(function(err){
         showModalLoader(false);
-        document.getElementById('modal-rows-container').innerHTML = '<div class="alert alert-danger small"><i class="bi bi-exclamation-triangle-fill me-2"></i>Erreur : ' + esc(err.message) + '</div>';
+        document.getElementById('modal-rows-container').innerHTML = '<div class="alert alert-danger small"><i class="bi bi-exclamation-triangle-fill me-2"></i>' + esc(I18N.errorTitle) + ' : ' + esc(err.message) + '</div>';
     });
 }
 
@@ -471,13 +491,13 @@ window.modalAddRow = function(name, amount, deadline, num) {
     row.innerHTML =
         '<div class="d-flex align-items-center gap-2 mb-2">' +
         '<span class="badge bg-primary bg-opacity-10 text-primary fw-bold rounded-pill" style="font-size:.68rem;min-width:24px;">#'+num+'</span>' +
-        '<input type="text" name="tranche_name[]" class="form-control form-control-sm mi flex-grow-1" placeholder="Nom de la tranche" value="'+esc(name||'Tranche '+num)+'" required>' +
-        '<button type="button" class="btn btn-sm btn-link text-danger p-1 btn-rm-row" title="Supprimer"><i class="bi bi-trash3-fill"></i></button>' +
+        '<input type="text" name="tranche_name[]" class="form-control form-control-sm mi flex-grow-1" placeholder="' + esc(I18N.trancheRowNamePlaceholder) + '" value="'+esc(name||(I18N.trancheName + ' '+num))+'" required>' +
+        '<button type="button" class="btn btn-sm btn-link text-danger p-1 btn-rm-row" title="' + esc(I18N.delete) + '"><i class="bi bi-trash3-fill"></i></button>' +
         '</div>' +
         '<div class="row g-2">' +
-        '<div class="col-6"><label class="form-label extra-small fw-bold text-muted mb-1"><i class="bi bi-cash-stack text-success me-1"></i>Montant (FCFA)</label>' +
+        '<div class="col-6"><label class="form-label extra-small fw-bold text-muted mb-1"><i class="bi bi-cash-stack text-success me-1"></i>' + esc(I18N.amountFcfaLabel) + '</label>' +
         '<input type="number" name="tranche_amount[]" min="0" step="1" class="form-control form-control-sm mi input-amount" value="'+(amount||0)+'" required></div>' +
-        '<div class="col-6"><label class="form-label extra-small fw-bold text-muted mb-1"><i class="bi bi-calendar-check text-info me-1"></i>Echeance</label>' +
+        '<div class="col-6"><label class="form-label extra-small fw-bold text-muted mb-1"><i class="bi bi-calendar-check text-info me-1"></i>' + esc(I18N.deadlineLabel) + '</label>' +
         '<input type="date" name="tranche_deadline[]" class="form-control form-control-sm mi input-deadline" value="'+deadline+'" required></div>' +
         '</div>';
     row.querySelector('.btn-rm-row').addEventListener('click', function(){
@@ -493,7 +513,8 @@ function reindexRows() {
     document.querySelectorAll('#modal-rows-container .modal-tranche-row').forEach(function(r,i){
         var badge=r.querySelector('.badge'); if(badge) badge.textContent='#'+(i+1);
         var ni=r.querySelector('input[name="tranche_name[]"]');
-        if(ni && /^Tranche \d+$/.test(ni.value.trim())) ni.value='Tranche '+(i+1);
+        var reg = new RegExp('^' + I18N.trancheName + ' \\d+$');
+        if(ni && (reg.test(ni.value.trim()) || /^Tranche \d+$/.test(ni.value.trim()))) ni.value = I18N.trancheName + ' ' + (i+1);
     });
 }
 
@@ -501,15 +522,15 @@ function calcModalSum() {
     var sum=0;
     document.querySelectorAll('#modal-rows-container .input-amount').forEach(function(inp){ sum+=parseFloat(inp.value)||0; });
     var cls=(modalTuition>0&&sum===modalTuition)?'text-success':(sum>modalTuition&&modalTuition>0?'text-danger':'text-dark');
-    document.getElementById('modal-sum-lbl').innerHTML='Affecte : <strong class="'+cls+'">'+sum.toLocaleString('fr-FR')+' FCFA</strong>';
+    document.getElementById('modal-sum-lbl').innerHTML= esc(I18N.assignedLbl) + ' <strong class="'+cls+'">'+sum.toLocaleString('fr-FR')+' FCFA</strong>';
     var fill=document.getElementById('modal-budget-fill'), msg=document.getElementById('modal-budget-msg');
     if(modalTuition>0){
         var pct=Math.min((sum/modalTuition)*100,100);
         fill.style.width=pct+'%';
         fill.className='budget-bar-fill '+(sum===modalTuition?'bg-success':sum>modalTuition?'bg-danger':'bg-primary');
-        if(sum===modalTuition){msg.className='mt-1 text-center extra-small fw-bold text-success';msg.innerHTML='<i class="bi bi-check-circle-fill me-1"></i>100% - Repartition equilibree';}
-        else if(sum>modalTuition){msg.className='mt-1 text-center extra-small fw-bold text-danger';msg.innerHTML='<i class="bi bi-exclamation-triangle-fill me-1"></i>Exces de '+(sum-modalTuition).toLocaleString('fr-FR')+' FCFA';}
-        else{msg.className='mt-1 text-center extra-small fw-bold text-warning';msg.innerHTML='<i class="bi bi-info-circle-fill me-1"></i>Reste : '+(modalTuition-sum).toLocaleString('fr-FR')+' FCFA';}
+        if(sum===modalTuition){msg.className='mt-1 text-center extra-small fw-bold text-success';msg.innerHTML='<i class="bi bi-check-circle-fill me-1"></i>' + esc(I18N.balanced100Percent);}
+        else if(sum>modalTuition){msg.className='mt-1 text-center extra-small fw-bold text-danger';msg.innerHTML='<i class="bi bi-exclamation-triangle-fill me-1"></i>' + esc(I18N.excessOf) + ' '+(sum-modalTuition).toLocaleString('fr-FR')+' FCFA';}
+        else{msg.className='mt-1 text-center extra-small fw-bold text-warning';msg.innerHTML='<i class="bi bi-info-circle-fill me-1"></i>' + esc(I18N.remainingBalance) + ' '+(modalTuition-sum).toLocaleString('fr-FR')+' FCFA';}
     } else { fill.style.width='0%'; msg.textContent=''; }
 }
 
@@ -520,7 +541,7 @@ window.applyPreset = function(parts) {
         var amt=0;
         if(modalTuition>0){ amt=(i===parts.length-1)?Math.max(0,modalTuition-sf):Math.round((pct/100)*modalTuition); sf+=amt; }
         var d=new Date(); d.setDate(d.getDate()+(i+1)*30);
-        modalAddRow('Tranche '+(i+1), amt, d.toISOString().slice(0,10), i+1);
+        modalAddRow(I18N.trancheName + ' '+(i+1), amt, d.toISOString().slice(0,10), i+1);
     });
     calcModalSum();
 };

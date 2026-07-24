@@ -1576,7 +1576,7 @@ class StudentController
         $academicYearId = $this->academicYearService->getActiveYearId();
 
         // --- 1. Construction des conditions ---
-        $where = " WHERE s.is_withdrawn = ? AND s.actif = 1";
+        $where = " WHERE s.is_withdrawn = ? AND s.actif = 1 AND (c.department_id IS NULL OR d.status = 1)";
         $params = [$showWithdrawn];
 
         if ($statusFilter !== null && $statusFilter !== '') {

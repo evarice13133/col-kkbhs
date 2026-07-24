@@ -54,10 +54,9 @@ class SubjectController
             exit;
         }
 
-        $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $classes = $this->db->query("SELECT c.id, c.nom FROM classes c LEFT JOIN departments d ON c.department_id = d.id WHERE (c.department_id IS NULL OR d.status = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $deptQuery = Session::get('user_role') === 'superadmin' ? "SELECT id, nom, teaching_type_id FROM departments ORDER BY nom ASC" : "SELECT id, nom, teaching_type_id FROM departments WHERE status = 1 ORDER BY nom ASC";
-        $departments = $this->db->query($deptQuery)->fetchAll(PDO::FETCH_ASSOC);
+        $departments = $this->db->query("SELECT id, nom, teaching_type_id FROM departments WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         include __DIR__ . '/../Views/subjects/index.php';
     }
 

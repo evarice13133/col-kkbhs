@@ -61,11 +61,12 @@ $nav_items = [
     // SECTION: CENTRE DE PILOTAGE
     [
         'section' => __('centre_de_pilotage'),
-        'roles' => ['superadmin', 'admin'],
+        'roles' => ['superadmin', 'admin', 'it_manager'],
         'icon' => 'bi-sliders2',
         'items' => [
-            ['icon' => 'bi-calendar-event', 'label' => __('academic_years'), 'url' => '/academic_years', 'roles' => ['superadmin', 'admin']],
-            ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'roles' => ['superadmin', 'admin']],
+            ['icon' => 'bi-building', 'label' => __('departments'), 'url' => '/departments', 'roles' => ['superadmin', 'admin', 'it_manager']],
+            ['icon' => 'bi-calendar-event', 'label' => __('academic_years'), 'url' => '/academic_years', 'roles' => ['superadmin', 'admin', 'it_manager']],
+            ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'roles' => ['superadmin', 'admin', 'it_manager']],
         ]
     ],
     // SECTION: STRUCTURE
@@ -77,7 +78,6 @@ $nav_items = [
             ['icon' => 'bi-diagram-3', 'label' => __('teaching_types'), 'url' => '/teaching_types', 'roles' => ['superadmin']],
             ['icon' => 'bi-layers', 'label' => __('academic_cycles'), 'url' => '/cycles', 'roles' => ['superadmin']],
             ['icon' => 'bi-grid-3x3-gap', 'label' => __('academic_sections'), 'url' => '/sections', 'roles' => ['superadmin']],
-            ['icon' => 'bi-building', 'label' => __('departments'), 'url' => '/departments', 'roles' => ['superadmin']],
         ]
     ],
     // SECTION: RESSOURCES HUMAINES

@@ -38,7 +38,10 @@ ob_start();
                     </span>
                 </div>
             </div>
-            <div class="ms-md-auto">
+            <div class="ms-md-auto d-flex gap-2 flex-wrap">
+                <a href="/payments/full-history?id=<?= (int)$student['id'] ?>" target="_blank" class="btn btn-outline-primary rounded-pill px-3 py-2 fw-bold shadow-sm" title="<?= __('full_payment_history_doc') ?>">
+                    <i class="bi bi-file-earmark-text-fill me-1.5"></i> <?= __('full_payment_history_doc') ?>
+                </a>
                 <button type="button" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
                     <i class="bi bi-plus-circle-fill me-2"></i> <?= __('enter_payment') ?>
                 </button>

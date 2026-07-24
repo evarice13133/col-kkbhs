@@ -22,6 +22,27 @@ class PublicVerificationController
      */
     public function verifyPublic()
     {
+        // Initialiser la langue via Locale (supports GET ?lang=, session, cookie)
+        $lang = \App\Core\Locale::bootstrapFromRequest();
+
+        // Si changement de langue explicite via GET ?switch_lang= ou AJAX header/query
+        if (isset($_GET['switch_lang'])) {
+            $newLang = \App\Core\Locale::set($_GET['switch_lang']);
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => true, 'lang' => $newLang]);
+                exit;
+            }
+            $redirectUrl = strtok($_SERVER['REQUEST_URI'], '?');
+            $params = $_GET;
+            unset($params['switch_lang']);
+            if (!empty($params)) {
+                $redirectUrl .= '?' . http_build_query($params);
+            }
+            header("Location: " . $redirectUrl);
+            exit;
+        }
+
         // On récupère le token soit depuis la query string (rétrocompatibilité),
         // soit depuis le path /verify-receipt/{token}
         $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);

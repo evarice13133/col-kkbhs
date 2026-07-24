@@ -245,10 +245,7 @@ elseif (strpos($path, '/cycles') === 0) {
     elseif ($path === '/sections/delete')
         $c->delete($_GET['id'] ?? 0);
 } elseif (strpos($path, '/departments') === 0) {
-    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
-        header('Location: /');
-        exit;
-    }
+    \App\Core\PermissionManager::requirePermission('manage_departments');
     $c = new DepartmentController();
     if ($path === '/departments')
         $c->index();
@@ -567,6 +564,8 @@ elseif (strpos($path, '/payments') === 0) {
         $c->delete($_GET['id'] ?? 0);
     elseif ($path === '/payments/receipt')
         $c->receipt($_GET['id'] ?? 0);
+    elseif ($path === '/payments/full-history')
+        $c->fullHistory();
 }
 
 elseif (strpos($path, '/discounts') === 0) {
