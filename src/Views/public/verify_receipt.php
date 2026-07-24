@@ -1,13 +1,14 @@
 <?php
 // Vue publique de vérification d'un reçu (Inscription & Scolarité)
-// Style Premium, responsive et autonome
+// Style Premium, responsive et autonome avec i18n
+$currentLang = \App\Core\Locale::get();
 ?>
 <!DOCTYPE html>
-<html lang="<?= htmlspecialchars((string) __('lang')) ?>">
+<html lang="<?= htmlspecialchars((string) $currentLang) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= __('verification_title') ?? 'Vérification de Reçu' ?></title>
+    <title><?= __('verification_title') ?></title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
@@ -58,6 +59,87 @@
         @keyframes float {
             0% { transform: translateY(0) scale(1); }
             100% { transform: translateY(30px) scale(1.1); }
+        }
+
+        /* Floating Language Switcher Widget */
+        .lang-switcher-wrap {
+            position: fixed;
+            top: 18px;
+            right: 18px;
+            z-index: 9999;
+        }
+
+        .lang-switcher-btn {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #ffffff;
+            border-radius: 50px;
+            padding: 6px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .lang-switcher-btn:hover {
+            background: rgba(30, 41, 59, 0.95);
+            transform: translateY(-2px);
+            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.4);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .lang-dropdown-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 6px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            min-width: 140px;
+            display: none;
+            flex-direction: column;
+            gap: 4px;
+            animation: dropdownFade 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .lang-dropdown-menu.show {
+            display: flex;
+        }
+
+        @keyframes dropdownFade {
+            from { opacity: 0; transform: translateY(-8px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .lang-opt-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-radius: 10px;
+            color: #1e293b;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.15s ease;
+        }
+
+        .lang-opt-item:hover {
+            background: #f1f5f9;
+            color: #2563eb;
+        }
+
+        .lang-opt-item.active {
+            background: #eff6ff;
+            color: #2563eb;
         }
 
         .verify-card {
@@ -243,6 +325,25 @@
 </head>
 <body>
 
+    <!-- Floating Language Switcher -->
+    <div class="lang-switcher-wrap">
+        <button type="button" class="lang-switcher-btn" onclick="toggleLangMenu(event)">
+            <i class="bi bi-globe2 me-1"></i>
+            <span><?= $currentLang === 'en' ? '🇬🇧 EN' : '🇫🇷 FR' ?></span>
+            <i class="bi bi-chevron-down ms-1 opacity-75" style="font-size: 10px;"></i>
+        </button>
+        <div class="lang-dropdown-menu" id="langMenu">
+            <a href="javascript:void(0)" onclick="switchLang('fr')" class="lang-opt-item <?= $currentLang === 'fr' ? 'active' : '' ?>">
+                <span>🇫🇷 Français</span>
+                <?php if ($currentLang === 'fr'): ?><i class="bi bi-check2"></i><?php endif; ?>
+            </a>
+            <a href="javascript:void(0)" onclick="switchLang('en')" class="lang-opt-item <?= $currentLang === 'en' ? 'active' : '' ?>">
+                <span>🇬🇧 English</span>
+                <?php if ($currentLang === 'en'): ?><i class="bi bi-check2"></i><?php endif; ?>
+            </a>
+        </div>
+    </div>
+
     <!-- Background Elements -->
     <div class="bg-blob blob-1"></div>
     <div class="bg-blob blob-2"></div>
@@ -256,140 +357,140 @@
                 <div>
                     <span class="status-icon"><i class="bi bi-patch-check-fill"></i></span>
                 </div>
-                <h3 class="fw-bold m-0"><?= __('verified_authentic') ?? 'Reçu Authentique' ?></h3>
-                <small class="opacity-75"><?= __('verified_authentic_sub') ?? 'Ce paiement est certifié valide par l\'établissement' ?></small>
+                <h3 class="fw-bold m-0"><?= __('verified_authentic') ?></h3>
+                <small class="opacity-75"><?= __('cert_valid_sub') ?></small>
             </div>
 
-            <div class="section-title stagger-1"><i class="bi bi-receipt"></i> Informations du Paiement</div>
+            <div class="section-title stagger-1"><i class="bi bi-receipt"></i> <?= __('payment_info_section') ?></div>
             <div class="details-list stagger-1">
                 <div class="detail-row">
-                    <span class="detail-label"><?= __('jeton') ?? 'Jeton de vérification' ?></span>
+                    <span class="detail-label"><?= __('verification_token_label') ?></span>
                     <span class="detail-value text-primary font-monospace"><?= h($code) ?></span>
                 </div>
                 <?php if (!empty($payment['receipt_number']) || !empty($payment['id'])): ?>
                 <div class="detail-row">
-                    <span class="detail-label"><?= __('receipt_number') ?? 'Numéro de reçu' ?></span>
+                    <span class="detail-label"><?= __('receipt_number') ?></span>
                     <span class="detail-value">
                         <?= h($payment['receipt_number'] ?? '#' . $payment['id']) ?>
                     </span>
                 </div>
                 <?php endif; ?>
                 <div class="detail-row">
-                    <span class="detail-label"><?= __('nature_payment') ?? 'Nature' ?></span>
+                    <span class="detail-label"><?= __('nature_payment') ?></span>
                     <span class="detail-value">
-                        <?= $receiptType === 'inscription' ? (__('registration_payment_option') ?? 'Frais d\'inscription') : (__('tuition_payment_option') ?? 'Frais de scolarité') ?>
+                        <?= $receiptType === 'inscription' ? __('registration_payment_option') : __('tuition_payment_option') ?>
                     </span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label"><?= __('amount_paid') ?? 'Montant payé' ?></span>
+                    <span class="detail-label"><?= __('amount_paid') ?></span>
                     <span class="detail-value amount"><?= number_format($payment['amount'], 0, '.', ' ') ?> FCFA</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label"><?= __('payment_date') ?? 'Date de paiement' ?></span>
+                    <span class="detail-label"><?= __('payment_date') ?></span>
                     <span class="detail-value">
                         <?= date('d/m/Y', strtotime($payment['payment_date'] ?? $payment['created_at'])) ?>
-                        <?php if (isset($payment['created_at'])) echo " à " . date('H:i', strtotime($payment['created_at'])); ?>
+                        <?php if (isset($payment['created_at'])) echo " " . __('last_payment_at') . " " . date('H:i', strtotime($payment['created_at'])); ?>
                     </span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label"><?= __('payment_method_label') ?? 'Méthode' ?></span>
+                    <span class="detail-label"><?= __('payment_method_label') ?></span>
                     <span class="detail-value"><?= h($payment['payment_method']) ?></span>
                 </div>
                 <?php if (!empty($payment['reference'])): ?>
                     <div class="detail-row">
-                        <span class="detail-label"><?= __('col_reference') ?? 'Référence' ?></span>
+                        <span class="detail-label"><?= __('col_reference') ?></span>
                         <span class="detail-value font-monospace"><?= h($payment['reference']) ?></span>
                     </div>
                 <?php endif; ?>
                 <div class="detail-row">
-                    <span class="detail-label">Année Scolaire</span>
+                    <span class="detail-label"><?= __('academic_year_verify') ?></span>
                     <span class="detail-value"><?= h($payment['annee_scolaire'] ?? $settings['display_school_year'] ?? '') ?></span>
                 </div>
             </div>
 
-            <div class="section-title stagger-2"><i class="bi bi-person-badge"></i> Informations de l'Élève</div>
+            <div class="section-title stagger-2"><i class="bi bi-person-badge"></i> <?= __('student_info_section_title') ?></div>
             <div class="details-list stagger-2">
                 <div class="detail-row">
-                    <span class="detail-label"><?= __('student') ?? 'Élève' ?></span>
+                    <span class="detail-label"><?= __('student') ?></span>
                     <span class="detail-value"><?= h($payment['student_nom'] ?? '') ?> <?= h($payment['student_prenom'] ?? '') ?></span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label"><?= __('matricule') ?? 'Matricule' ?></span>
+                    <span class="detail-label"><?= __('matricule') ?></span>
                     <span class="detail-value font-monospace"><?= h($payment['matricule'] ?? 'N/A') ?></span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label"><?= __('born_on') ?? 'Né(e) le' ?></span>
+                    <span class="detail-label"><?= __('born_on') ?></span>
                     <span class="detail-value">
                         <?= !empty($payment['date_naissance']) ? date('d/m/Y', strtotime($payment['date_naissance'])) : 'N/A' ?>
-                        <?= !empty($payment['lieu_naissance']) ? ' ' . (__('born_at') ?? 'à') . ' ' . h($payment['lieu_naissance']) : '' ?>
+                        <?= !empty($payment['lieu_naissance']) ? ' ' . __('born_at') . ' ' . h($payment['lieu_naissance']) : '' ?>
                     </span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label"><?= __('class') ?? 'Classe' ?></span>
+                    <span class="detail-label"><?= __('class') ?></span>
                     <span class="detail-value"><?= h($payment['classe_nom'] ?: 'N/A') ?></span>
                 </div>
             </div>
 
             <?php if (!empty($enroll)): ?>
-            <div class="section-title stagger-3"><i class="bi bi-wallet2"></i> Résumé Financier (<?= h($payment['annee_scolaire'] ?? $settings['display_school_year'] ?? '') ?>)</div>
+            <div class="section-title stagger-3"><i class="bi bi-wallet2"></i> <?= __('financial_summary') ?> (<?= h($payment['annee_scolaire'] ?? $settings['display_school_year'] ?? '') ?>)</div>
             <div class="details-list stagger-3">
                 <div class="row g-2 mb-3">
                     <div class="col-6">
                         <div class="p-2 bg-light rounded text-center border">
-                            <small class="text-muted d-block" style="font-size:11px;">Frais Brut</small>
-                            <span class="fw-bold" style="font-size:13px;"><?= number_format($enroll['frais_scolarite_brut'] ?? 0, 0, '.', ' ') ?></span>
+                            <small class="text-muted d-block" style="font-size:11px;"><?= __('gross_fee') ?></small>
+                            <span class="fw-bold" style="font-size:13px;"><?= number_format($enroll['frais_scolarite_brut'] ?? 0, 0, '.', ' ') ?> FCFA</span>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="p-2 bg-light rounded text-center border">
-                            <small class="text-muted d-block" style="font-size:11px;">Réductions/Bourses</small>
-                            <span class="fw-bold text-success" style="font-size:13px;">-<?= number_format(($enroll['total_reductions'] ?? 0) + ($enroll['total_bourses'] ?? 0), 0, '.', ' ') ?></span>
+                            <small class="text-muted d-block" style="font-size:11px;"><?= __('discounts_scholarships') ?></small>
+                            <span class="fw-bold text-success" style="font-size:13px;">-<?= number_format(($enroll['total_reductions'] ?? 0) + ($enroll['total_bourses'] ?? 0), 0, '.', ' ') ?> FCFA</span>
                         </div>
                     </div>
                 </div>
                 <div class="detail-row bg-light px-2 rounded mb-2">
-                    <span class="detail-label text-dark">Scolarité Nette</span>
+                    <span class="detail-label text-dark"><?= __('net_tuition') ?></span>
                     <span class="detail-value"><?= number_format($enroll['scolarite_nette'] ?? 0, 0, '.', ' ') ?> FCFA</span>
                 </div>
                 <div class="detail-row px-2">
-                    <span class="detail-label">Total Payé</span>
+                    <span class="detail-label"><?= __('total_already_collected') ?></span>
                     <span class="detail-value text-success"><?= number_format($enroll['total_paye'] ?? 0, 0, '.', ' ') ?> FCFA</span>
                 </div>
                 <div class="detail-row px-2">
-                    <span class="detail-label">Reste à Payer</span>
+                    <span class="detail-label"><?= __('remaining_tuition_balance') ?></span>
                     <span class="detail-value text-danger"><?= number_format($enroll['reste_a_payer'] ?? 0, 0, '.', ' ') ?> FCFA</span>
                 </div>
             </div>
             <?php endif; ?>
 
             <?php if (!empty($lastPayment)): ?>
-            <div class="section-title stagger-4"><i class="bi bi-star-fill text-warning"></i> Dernier Paiement Effectué</div>
+            <div class="section-title stagger-4"><i class="bi bi-star-fill text-warning"></i> <?= __('last_payment_made') ?></div>
             <div class="details-list pb-2 stagger-4">
                 <div class="p-3 rounded border border-primary bg-primary bg-opacity-10 text-center">
                     <div class="fw-bold text-primary fs-3 mb-1"><?= number_format($lastPayment['amount'], 0, '.', ' ') ?> FCFA</div>
                     <div class="text-muted small mb-2">
-                        Le <?= date('d/m/Y', strtotime($lastPayment['payment_date'])) ?>
-                        à <?= date('H:i', strtotime($lastPayment['created_at'])) ?>
+                        <?= __('last_payment_on') ?> <?= date('d/m/Y', strtotime($lastPayment['payment_date'])) ?>
+                        <?= __('last_payment_at') ?> <?= date('H:i', strtotime($lastPayment['created_at'])) ?>
                     </div>
                     <div class="d-flex justify-content-between text-start small border-top border-primary border-opacity-25 pt-2 mt-2">
-                        <div><span class="text-muted">Réf:</span> <span class="font-monospace"><?= h($lastPayment['reference'] ?? 'N/A') ?></span></div>
-                        <div><span class="text-muted">Mode:</span> <?= h($lastPayment['payment_method']) ?></div>
+                        <div><span class="text-muted"><?= __('col_reference') ?>:</span> <span class="font-monospace"><?= h($lastPayment['reference'] ?? 'N/A') ?></span></div>
+                        <div><span class="text-muted"><?= __('col_method') ?>:</span> <?= h($lastPayment['payment_method']) ?></div>
                     </div>
                 </div>
             </div>
             <?php endif; ?>
 
             <?php if (!empty($installments)): ?>
-            <div class="section-title stagger-4"><i class="bi bi-list-check"></i> Tranches et Échéances</div>
+            <div class="section-title stagger-4"><i class="bi bi-list-check"></i> <?= __('installments_deadlines_section') ?></div>
             <div class="details-list p-0 mx-4 mb-4 border rounded overflow-hidden stagger-4 shadow-sm">
                 <div class="table-responsive">
                     <table class="table table-sm table-hover mb-0" style="font-size: 12px;">
                         <thead class="table-light">
                             <tr>
-                                <th>Tranche</th>
-                                <th>Échéance</th>
-                                <th class="text-end">Reste</th>
-                                <th class="text-center">Statut</th>
+                                <th><?= __('col_installment') ?></th>
+                                <th><?= __('col_deadline') ?></th>
+                                <th class="text-end"><?= __('col_remaining') ?></th>
+                                <th class="text-center"><?= __('col_status') ?></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -400,18 +501,18 @@
                                 
                                 // Calcul du statut dynamique
                                 if ($reste <= 0) {
-                                    $statusBadge = '<span class="badge bg-success">Payée</span>';
+                                    $statusBadge = '<span class="badge bg-success">' . __('status_paid') . '</span>';
                                 } elseif ($inst['amount_paid'] > 0 && $reste > 0) {
                                     if ($inst['deadline'] < $today) {
-                                        $statusBadge = '<span class="badge bg-danger">En retard</span>';
+                                        $statusBadge = '<span class="badge bg-danger">' . __('status_overdue') . '</span>';
                                     } else {
-                                        $statusBadge = '<span class="badge bg-warning text-dark">Partielle</span>';
+                                        $statusBadge = '<span class="badge bg-warning text-dark">' . __('status_partial') . '</span>';
                                     }
                                 } else {
                                     if ($inst['deadline'] < $today) {
-                                        $statusBadge = '<span class="badge bg-danger">En retard</span>';
+                                        $statusBadge = '<span class="badge bg-danger">' . __('status_overdue') . '</span>';
                                     } else {
-                                        $statusBadge = '<span class="badge bg-secondary">Non payée</span>';
+                                        $statusBadge = '<span class="badge bg-secondary">' . __('status_unpaid') . '</span>';
                                     }
                                 }
                             ?>
@@ -419,7 +520,7 @@
                                 <td class="fw-medium text-nowrap"><?= h($inst['tranche_name']) ?></td>
                                 <td class="text-nowrap"><?= date('d/m/Y', strtotime($inst['deadline'])) ?></td>
                                 <td class="text-end fw-bold <?= $reste > 0 ? 'text-danger' : 'text-success' ?>">
-                                    <?= number_format($reste, 0, '.', ' ') ?>
+                                    <?= number_format($reste, 0, '.', ' ') ?> FCFA
                                 </td>
                                 <td class="text-center"><?= $statusBadge ?></td>
                             </tr>
@@ -431,7 +532,14 @@
             <?php endif; ?>
 
             <?php if (!empty($paymentHistory)): ?>
-            <div class="section-title stagger-5"><i class="bi bi-clock-history"></i> Historique Complet (Année en cours)</div>
+            <div class="section-title stagger-5 d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-clock-history"></i> <?= __('full_history_current_year') ?></span>
+                <?php if (!empty($studentId) && \App\Core\Session::isLogged()): ?>
+                    <a href="/payments/full-history?id=<?= (int)$studentId ?>" target="_blank" class="btn btn-modern btn-sm btn-outline-primary" style="font-size: 11px; padding: 4px 12px;">
+                        <i class="bi bi-file-earmark-text me-1"></i> <?= __('full_payment_history_doc') ?>
+                    </a>
+                <?php endif; ?>
+            </div>
             <div class="details-list stagger-5">
                 <?php foreach ($paymentHistory as $hist): ?>
                     <div class="history-item <?= ($hist['id'] == $paymentId) ? 'border-primary shadow-sm bg-white' : '' ?>">
@@ -443,7 +551,7 @@
                                 <div class="history-amount text-success fw-bold">
                                     <?= number_format($hist['amount'], 0, '.', ' ') ?> FCFA
                                     <?php if ($hist['id'] == $paymentId): ?>
-                                        <div class="badge bg-primary ms-2" style="font-size:9px;">Ce reçu</div>
+                                        <div class="badge bg-primary ms-2" style="font-size:9px;"><?= __('this_receipt') ?></div>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -454,7 +562,7 @@
                             <?php if (!empty($hist['verification_code'])): ?>
                                 <div class="d-flex gap-2 mt-2" style="margin-left: 20px;">
                                     <a href="<?= APP_URL ?>/verify-receipt/<?= urlencode($hist['verification_code']) ?>?action=pdf" class="btn btn-modern btn-sm btn-outline-danger" style="font-size: 10px; padding: 3px 10px;">
-                                        <i class="bi bi-file-earmark-pdf"></i> Télécharger PDF
+                                        <i class="bi bi-file-earmark-pdf"></i> <?= __('download_pdf') ?>
                                     </a>
                                 </div>
                             <?php endif; ?>
@@ -467,40 +575,75 @@
         <?php else: ?>
             <!-- CAS 2: REÇU INVALIDE OU CODE ERRONÉ -->
             <div class="status-header invalid">
-                <span class="school-badge"><?= __('security_warning_badge') ?? 'Alerte Sécurité' ?></span>
+                <span class="school-badge"><?= __('security_warning_badge') ?></span>
                 <div>
                     <span class="status-icon"><i class="bi bi-shield-x"></i></span>
                 </div>
-                <h3 class="fw-bold m-0"><?= __('receipt_invalid') ?? 'Reçu Invalide' ?></h3>
+                <h3 class="fw-bold m-0"><?= __('receipt_invalid') ?></h3>
                 <small class="opacity-75">
                     <?php 
-                    if ($errorCase === 'cancelled') echo "Ce reçu a été annulé dans le système.";
-                    elseif ($errorCase === 'missing_code') echo "Aucun code fourni.";
-                    else echo "Ce reçu n'existe pas dans le système.";
+                    if ($errorCase === 'cancelled') echo __('receipt_cancelled_msg');
+                    elseif ($errorCase === 'missing_code') echo __('no_code_provided_msg');
+                    else echo __('receipt_not_found_msg');
                     ?>
                 </small>
             </div>
 
             <div class="details-list text-center py-5">
                 <i class="bi bi-exclamation-triangle text-danger fs-1"></i>
-                <h5 class="fw-bold mt-3 text-dark"><?= __('counterfeit_risk') ?? 'Risque de falsification' ?></h5>
+                <h5 class="fw-bold mt-3 text-dark"><?= __('counterfeit_risk') ?></h5>
                 <p class="text-muted small px-3">
-                    <?= __('counterfeit_help') ?? 'Veuillez vous rapprocher de la direction financière de l\'établissement.' ?>
+                    <?= __('counterfeit_help') ?>
                 </p>
                 <?php if (!empty($code)): ?>
                     <div class="mt-4 p-2 bg-light rounded font-monospace text-danger border border-danger border-opacity-10 small" style="word-break: break-all;">
-                        <?= __('code_searched') ?? 'Code :' ?> <?= h($code) ?>
+                        <?= __('code_searched') ?> <?= h($code) ?>
                     </div>
                 <?php endif; ?>
             </div>
         <?php endif; ?>
 
         <div class="verify-footer">
-            <?= __('official_validation_platform') ?? 'Plateforme officielle de validation' ?><br>
-            <span class="extra-small opacity-50"><?= __('generated_on') ?? 'Généré le' ?> <?= date('d/m/Y H:i:s') ?></span>
+            <?= __('official_validation_platform') ?><br>
+            <span class="extra-small opacity-50"><?= __('generated_on') ?> <?= date('d/m/Y H:i:s') ?></span>
         </div>
 
     </div>
 
+    <script>
+    function toggleLangMenu(e) {
+        e.stopPropagation();
+        var menu = document.getElementById('langMenu');
+        menu.classList.toggle('show');
+    }
+
+    document.addEventListener('click', function() {
+        var menu = document.getElementById('langMenu');
+        if (menu) menu.classList.remove('show');
+    });
+
+    function switchLang(lang) {
+        var url = new URL(window.location.href);
+        url.searchParams.set('switch_lang', lang);
+        
+        fetch(url.toString(), {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                window.location.search = url.search;
+            }
+        })
+        .catch(function() {
+            window.location.search = url.search;
+        });
+    }
+    </script>
 </body>
 </html>
+

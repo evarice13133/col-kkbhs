@@ -278,13 +278,13 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
         .amount-in-words-box {
             font-style: italic;
             font-weight: bold;
-            background: #f8fafc;
-            border-left: 4px solid #3b82f6;
-            color: #1e293b;
+            background-color: #f1f5f9;
+            border: none;
+            color: #0f172a;
             padding: 6px 10px;
             margin-bottom: 6px;
             font-size: 9.5px;
-            border-radius: 0 6px 6px 0;
+            border-radius: 4px;
         }
 
         /* Section de bas avec QR Code et Totaux */
@@ -569,7 +569,7 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
 
             <!-- Filigranes statutaires -->
             <?php if (($payment['status'] ?? 'valide') === 'annule'): ?>
-                <div class="watermark-text-diagonal" style="color: #ef4444; opacity: 0.15;">ANNULÉ</div>
+                <div class="watermark-text-diagonal" style="color: #ef4444; opacity: 0.15;"><?= mb_strtoupper(__('status_cancelled')) ?></div>
             <?php elseif ($isDuplicate): ?>
                 <div class="watermark-text-diagonal"><?= __('duplicata') ?></div>
             <?php endif; ?>
@@ -719,7 +719,7 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                                     </tr>
                                     <?php if (!empty($childSurplus)): ?>
                                     <tr>
-                                        <td class="label-td" style="color: #0284c7; background-color: #f0f9ff; width: 60%;">Surplus transféré vers scolarité</td>
+                                        <td class="label-td" style="color: #0284c7; background-color: #f0f9ff; width: 60%;"><?= __('surplus_transferred_tuition') ?></td>
                                         <td class="value-td" style="color: #0284c7; background-color: #f0f9ff; width: 40%;"><?= number_format($childSurplus['amount'], 0, '.', ' ') ?> FCFA</td>
                                     </tr>
                                     <?php endif; ?>
@@ -751,7 +751,6 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                                 <img src="<?= $qrCodeSrc ?>" style="border: 1px solid #cbd5e1; padding: 1px; background: #fff; max-width: 50px; max-height: 50px;" alt="QR Code">
                                 <div style="font-size: 7.5px; color: #64748b; line-height: 1.2;">
                                     <strong style="color: #1e3a8a; font-size: 8px; text-transform: uppercase; display: block; margin-bottom: 2px;"><?= __('verification_enrollment') ?></strong>
-                                    <?= __('jeton') ?> : <span style="font-family: monospace; font-weight: bold; color: #0f172a;"><?= h($payment['verification_code']) ?></span><br>
                                     <?= __('scan_qr_help') ?>
                                 </div>
                             </div>

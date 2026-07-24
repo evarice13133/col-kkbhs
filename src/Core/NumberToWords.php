@@ -131,16 +131,112 @@ class NumberToWords
         return $milliardWord . ' ' . self::convert($rest);
     }
 
+    private static $unitsEn = [
+        0 => 'zero', 1 => 'one', 2 => 'two', 3 => 'three', 4 => 'four',
+        5 => 'five', 6 => 'six', 7 => 'seven', 8 => 'eight', 9 => 'nine',
+        10 => 'ten', 11 => 'eleven', 12 => 'twelve', 13 => 'thirteen',
+        14 => 'fourteen', 15 => 'fifteen', 16 => 'sixteen', 17 => 'seventeen',
+        18 => 'eighteen', 19 => 'nineteen'
+    ];
+
+    private static $tensEn = [
+        10 => 'ten', 20 => 'twenty', 30 => 'thirty', 40 => 'forty',
+        50 => 'fifty', 60 => 'sixty', 70 => 'seventy', 80 => 'eighty', 90 => 'ninety'
+    ];
+
+    /**
+     * Convertit un entier en mots anglais.
+     * 
+     * @param int $number
+     * @return string
+     */
+    public static function convertEn($number)
+    {
+        $number = (int)$number;
+        if ($number < 0) {
+            return 'minus ' . self::convertEn(-$number);
+        }
+
+        if ($number < 20) {
+            return self::$unitsEn[$number];
+        }
+
+        if ($number < 100) {
+            $ten = (int)($number / 10) * 10;
+            $unit = $number % 10;
+            if ($unit === 0) {
+                return self::$tensEn[$ten];
+            }
+            return self::$tensEn[$ten] . '-' . self::$unitsEn[$unit];
+        }
+
+        if ($number < 1000) {
+            $hundred = (int)($number / 100);
+            $rest = $number % 100;
+            $word = self::$unitsEn[$hundred] . ' hundred';
+            if ($rest === 0) {
+                return $word;
+            }
+            return $word . ' ' . self::convertEn($rest);
+        }
+
+        if ($number < 1000000) {
+            $thousand = (int)($number / 1000);
+            $rest = $number % 1000;
+            $word = self::convertEn($thousand) . ' thousand';
+            if ($rest === 0) {
+                return $word;
+            }
+            return $word . ' ' . self::convertEn($rest);
+        }
+
+        if ($number < 1000000000) {
+            $million = (int)($number / 1000000);
+            $rest = $number % 1000000;
+            $word = self::convertEn($million) . ' million';
+            if ($rest === 0) {
+                return $word;
+            }
+            return $word . ' ' . self::convertEn($rest);
+        }
+
+        $billion = (int)($number / 1000000000);
+        $rest = $number % 1000000000;
+        $word = self::convertEn($billion) . ' billion';
+        if ($rest === 0) {
+            return $word;
+        }
+        return $word . ' ' . self::convertEn($rest);
+    }
+
     /**
      * Formate le montant complet en toutes lettres avec devise.
      * 
      * @param float|int $amount
      * @param string $currency
+     * @param string|null $lang
      * @return string
      */
-    public static function toWords($amount, $currency = 'FCFA')
+    public static function toWords($amount, $currency = 'FCFA', ?string $lang = null)
     {
+        if ($lang === null) {
+            $lang = \App\Core\Translator::lang();
+        }
+
         $amount = (int)$amount;
+
+        if ($lang === 'en') {
+            if ($amount === 0) {
+                return 'zero CFA francs';
+            }
+            $words = self::convertEn($amount);
+            $words = mb_strtoupper(mb_substr($words, 0, 1)) . mb_substr($words, 1);
+            if ($currency === 'FCFA') {
+                return $words . ' CFA francs';
+            }
+            return $words . ' ' . $currency;
+        }
+
         if ($amount === 0) {
             return 'zéro franc CFA';
         }

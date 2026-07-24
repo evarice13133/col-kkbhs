@@ -59,11 +59,7 @@ class ClassController
         $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         
         // Seuls les départements actifs sont visibles pour le filtrage usuel
-        $deptQuery = "SELECT id, nom FROM departments WHERE status = 1 ORDER BY nom ASC";
-        if (Session::get('user_role') === 'superadmin') {
-            $deptQuery = "SELECT id, nom FROM departments ORDER BY nom ASC";
-        }
-        $departments = $this->db->query($deptQuery)->fetchAll(PDO::FETCH_ASSOC);
+        $departments = $this->db->query("SELECT id, nom FROM departments WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         
         include __DIR__ . '/../Views/classes/index.php';
     }
@@ -102,9 +98,8 @@ class ClassController
         $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         
-        // Pour la création, on ne propose que les départements actifs (sauf SuperAdmin), avec leur teaching_type_id
-        $deptQuery = Session::get('user_role') === 'superadmin' ? "SELECT id, nom, teaching_type_id FROM departments ORDER BY nom ASC" : "SELECT id, nom, teaching_type_id FROM departments WHERE status = 1 ORDER BY nom ASC";
-        $departments = $this->db->query($deptQuery)->fetchAll(PDO::FETCH_ASSOC);
+        // Pour la création, on ne propose que les départements actifs
+        $departments = $this->db->query("SELECT id, nom, teaching_type_id FROM departments WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         
         include __DIR__ . '/../Views/classes/create.php';
     }
@@ -424,7 +419,7 @@ class ClassController
                     $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                     $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                     $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-                    $departments = $this->db->query("SELECT id, nom FROM departments ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                    $departments = $this->db->query("SELECT id, nom FROM departments WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                     include __DIR__ . '/../Views/classes/edit.php';
                     return;
                 }
@@ -514,7 +509,7 @@ class ClassController
                 $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-                $departments = $this->db->query("SELECT id, nom FROM departments ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $departments = $this->db->query("SELECT id, nom FROM departments WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/classes/edit.php';
             }
         }
@@ -675,7 +670,7 @@ class ClassController
         // Classes are now shared across years, no year filtering needed
 
         // 1. Count total
-        $countSql = "SELECT COUNT(*) FROM classes c WHERE 1=1";
+        $countSql = "SELECT COUNT(*) FROM classes c LEFT JOIN departments d ON c.department_id = d.id WHERE (c.department_id IS NULL OR d.status = 1)";
         $countParams = [];
         
         // No academic year filtering for classes
@@ -716,7 +711,7 @@ class ClassController
                 LEFT JOIN departments d ON c.department_id = d.id
                 LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id
                 LEFT JOIN users u ON c.main_teacher_id = u.id
-                WHERE 1=1";
+                WHERE (c.department_id IS NULL OR d.status = 1)";
         $params = [];
 
         // No academic year filtering for classes

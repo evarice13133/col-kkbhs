@@ -4,13 +4,14 @@ namespace App\Controllers;
 
 use App\Core\Database;
 use App\Core\Session;
+use App\Core\PermissionManager;
 use PDO;
 
 /**
  * DepartmentController
  * 
  * Gère le registre des départements pédagogiques.
- * Accès gestion (Create/Update/Status) réservé au SUPERADMIN.
+ * Accès réservé aux utilisateurs ayant la permission 'manage_departments'.
  */
 class DepartmentController
 {
@@ -20,7 +21,6 @@ class DepartmentController
     {
         $this->db = Database::getInstance()->getConnection();
         
-        // Sécurité de base : Authentification requise
         if (!Session::isLogged()) {
             header("Location: /login");
             exit;
@@ -28,36 +28,53 @@ class DepartmentController
     }
 
     /**
-     * Liste les départements.
+     * Liste les départements avec support des filtres et recherche instantanée.
      */
     public function index()
     {
-        // Seul le superadmin peut voir la liste
-        if (Session::get('user_role') !== 'superadmin') {
-            header("Location: /");
-            exit;
+        PermissionManager::requirePermission('manage_departments');
+
+        $q = trim((string) ($_GET['q'] ?? ''));
+        $teaching_type_id = !empty($_GET['teaching_type_id']) ? (int) $_GET['teaching_type_id'] : null;
+
+        $conditions = [];
+        $params = [];
+
+        if ($q !== '') {
+            $conditions[] = "(d.nom LIKE ? OR d.code LIKE ?)";
+            $params[] = '%' . $q . '%';
+            $params[] = '%' . $q . '%';
         }
 
-        $query = "SELECT d.*, t.nom as teaching_type_nom FROM departments d LEFT JOIN teaching_types t ON d.teaching_type_id = t.id";
-        if (Session::get('user_role') !== 'superadmin') {
-            $query .= " WHERE d.status = 1";
+        if ($teaching_type_id !== null) {
+            $conditions[] = "d.teaching_type_id = ?";
+            $params[] = $teaching_type_id;
         }
-        $query .= " ORDER BY d.nom ASC";
-        
-        $departments = $this->db->query($query)->fetchAll(PDO::FETCH_ASSOC);
-        
+
+        $whereClause = !empty($conditions) ? " WHERE " . implode(" AND ", $conditions) : "";
+        $query = "SELECT d.*, t.nom as teaching_type_nom FROM departments d LEFT JOIN teaching_types t ON d.teaching_type_id = t.id" . $whereClause . " ORDER BY d.nom ASC";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->execute($params);
+        $departments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $teachingTypes = $this->db->query("SELECT * FROM teaching_types ORDER BY position ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+        $filters = [
+            'q' => $q,
+            'teaching_type_id' => $teaching_type_id
+        ];
+
         include __DIR__ . '/../Views/departments/index.php';
     }
 
     /**
-     * Formulaire de création (SuperAdmin uniquement).
+     * Formulaire de création.
      */
     public function create()
     {
-        if (Session::get('user_role') !== 'superadmin') {
-            header("Location: /departments");
-            exit;
-        }
+        PermissionManager::requirePermission('manage_departments');
+
         $teachingTypes = $this->db->query("SELECT * FROM teaching_types ORDER BY position ASC")->fetchAll(PDO::FETCH_ASSOC);
         include __DIR__ . '/../Views/departments/create.php';
     }
@@ -67,10 +84,7 @@ class DepartmentController
      */
     public function store()
     {
-        if (Session::get('user_role') !== 'superadmin') {
-            header("Location: /departments");
-            exit;
-        }
+        PermissionManager::requirePermission('manage_departments');
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $nom = trim((string)($_POST['nom'] ?? ''));
@@ -93,20 +107,18 @@ class DepartmentController
                 exit;
             } catch (\PDOException $e) {
                 $error = __('error_generic');
+                $teachingTypes = $this->db->query("SELECT * FROM teaching_types ORDER BY position ASC")->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/departments/create.php';
             }
         }
     }
 
     /**
-     * Formulaire d'édition (SuperAdmin uniquement).
+     * Formulaire d'édition.
      */
     public function edit($id)
     {
-        if (Session::get('user_role') !== 'superadmin') {
-            header("Location: /departments");
-            exit;
-        }
+        PermissionManager::requirePermission('manage_departments');
 
         $stmt = $this->db->prepare("SELECT * FROM departments WHERE id = ?");
         $stmt->execute([(int)$id]);
@@ -126,10 +138,7 @@ class DepartmentController
      */
     public function update($id)
     {
-        if (Session::get('user_role') !== 'superadmin') {
-            header("Location: /departments");
-            exit;
-        }
+        PermissionManager::requirePermission('manage_departments');
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $nom = trim((string)($_POST['nom'] ?? ''));
@@ -161,14 +170,11 @@ class DepartmentController
     }
 
     /**
-     * Active/Désactive un département (SuperAdmin uniquement).
+     * Active/Désactive un département.
      */
     public function toggleStatus($id)
     {
-        if (Session::get('user_role') !== 'superadmin') {
-            header("Location: /departments");
-            exit;
-        }
+        PermissionManager::requirePermission('manage_departments');
 
         $stmt = $this->db->prepare("UPDATE departments SET status = NOT status WHERE id = ?");
         $stmt->execute([(int)$id]);
@@ -179,23 +185,14 @@ class DepartmentController
     }
 
     /**
-     * Supprime un département si inutilisé.
+     * La suppression définitive d'un département est désactivée.
+     * La désactivation est l'unique moyen de retirer un département de l'utilisation active.
      */
     public function delete($id)
     {
-        if (Session::get('user_role') !== 'superadmin') {
-            header("Location: /departments");
-            exit;
-        }
+        PermissionManager::requirePermission('manage_departments');
 
-        try {
-            $stmt = $this->db->prepare("DELETE FROM departments WHERE id = ?");
-            $stmt->execute([(int)$id]);
-            Session::setFlash('success', __('deleted_success'));
-        } catch (\PDOException $e) {
-            Session::setFlash('error', __('error_generic'));
-        }
-
+        Session::setFlash('error', "La suppression définitive des départements est désactivée. Veuillez utiliser la désactivation pour suspendre son utilisation.");
         header("Location: /departments");
         exit;
     }

@@ -507,6 +507,88 @@ class PaymentController
     }
 
     /**
+     * Génère le document indépendant "Historique complet des versements" d'un élève.
+     */
+    public function fullHistory()
+    {
+        $studentId = (int) ($_GET['id'] ?? 0);
+        if ($studentId <= 0) {
+            Session::setFlash('error', "Élève non spécifié.");
+            header("Location: /payments");
+            exit;
+        }
+
+        $activeYearId = $this->academicYearService->getActiveYearId();
+
+        // 1. Informations de l'élève (avec alias matricule = s.email / s.matricule)
+        $stmt = $this->db->prepare("
+            SELECT s.*, s.email as matricule, c.nom as classe_nom 
+            FROM students s 
+            LEFT JOIN classes c ON s.class_id = c.id 
+            WHERE s.id = ?
+        ");
+        $stmt->execute([$studentId]);
+        $student = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$student) {
+            Session::setFlash('error', "Élève introuvable.");
+            header("Location: /payments");
+            exit;
+        }
+
+        // 2. Inscription & Finances de l'année
+        $stmt = $this->db->prepare("
+            SELECT student_status, reste_a_payer, total_paye, total_reductions, total_bourses, frais_scolarite_brut,
+                   (frais_scolarite_brut - total_reductions - total_bourses) as scolarite_nette,
+                   ay.nom as annee_scolaire
+            FROM enrollments e
+            LEFT JOIN academic_years ay ON e.academic_year_id = ay.id
+            WHERE e.student_id = ? AND e.academic_year_id = ?
+        ");
+        $stmt->execute([$studentId, $activeYearId]);
+        $enroll = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // 3. Récupération de l'historique complet des versements (inscription + scolarité)
+        $studentPaymentModel = new StudentPayment();
+        $paymentsHistory = $studentPaymentModel->getByStudent($studentId, $activeYearId);
+
+        // 4. Settings de l'établissement
+        $settingsStore = new \App\Services\SettingsStore($this->db);
+        $settings = $settingsStore->all();
+
+        $isPdf = isset($_GET['pdf']) && $_GET['pdf'] == 1;
+
+        if ($isPdf) {
+            require_once __DIR__ . '/../../vendor/autoload.php';
+            $options = new \Dompdf\Options();
+            $options->set('isHtml5ParserEnabled', true);
+            $options->set('isRemoteEnabled', true);
+            $options->set('defaultFont', 'Helvetica');
+            $options->set('chroot', realpath(__DIR__ . '/../../public'));
+
+            $dompdf = new \Dompdf\Dompdf($options);
+
+            ob_start();
+            include __DIR__ . '/../Views/payments/full_history.php';
+            $html = ob_get_clean();
+
+            $dompdf->loadHtml($html);
+            $dompdf->setPaper('A4', 'portrait');
+
+            try {
+                $dompdf->render();
+                $dompdf->stream("Historique_Versements_" . preg_replace('/[^A-Za-z0-9]/', '_', $student['nom']) . ".pdf", ['Attachment' => false]);
+                exit;
+            } catch (\Throwable $e) {
+                echo "Erreur de génération PDF: " . $e->getMessage();
+                exit;
+            }
+        }
+
+        include __DIR__ . '/../Views/payments/full_history.php';
+    }
+
+    /**
      * Page publique de vérification de reçu de versement (Scan QR Code).
      */
     public function verify()

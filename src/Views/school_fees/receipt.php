@@ -42,6 +42,7 @@ try {
 // Déterminer le statut de duplicata
 $isDuplicate = (int) ($payment['print_count'] ?? 1) > 1;
 $app_lang = \App\Core\Session::get('app_lang', 'fr');
+\App\Core\Translator::load($app_lang);
 ?>
 <!DOCTYPE html>
 <html lang="<?= $app_lang ?>">
@@ -295,13 +296,13 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
         .amount-in-words-box {
             font-style: italic;
             font-weight: bold;
-            background: #f8fafc;
-            border-left: 4px solid #3b82f6;
-            color: #1e293b;
-            padding: 4px 8px;
+            background-color: #f1f5f9;
+            border: none;
+            color: #0f172a;
+            padding: 5px 8px;
             font-size: 9.2px;
-            border-radius: 0 6px 6px 0;
-            margin-bottom: 2px;
+            border-radius: 4px;
+            margin-bottom: 3px;
         }
 
         /* Section de bas avec QR Code et Totaux */
@@ -603,7 +604,7 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
 
                 <!-- Filigranes statutaires -->
                 <?php if (($payment['status'] ?? 'valide') === 'annule'): ?>
-                    <div class="watermark-text-diagonal" style="color: #ef4444; opacity: 0.15;">ANNULÉ</div>
+                    <div class="watermark-text-diagonal" style="color: #ef4444; opacity: 0.15;"><?= mb_strtoupper(__('status_cancelled')) ?></div>
                 <?php elseif ($isDuplicate): ?>
                     <div class="watermark-text-diagonal"><?= __('duplicata') ?></div>
                 <?php endif; ?>
@@ -616,8 +617,7 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
                             <td class="school-info-col" style="width: 65%; vertical-align: top;">
                                 <div
                                     style="margin-bottom: 2px; font-size: 8px; font-weight: bold; text-transform: uppercase; color: #64748b; letter-spacing: 0.2px;">
-                                    <?= h($settings['school_republic'] ?? 'République du Cameroun') ?> &nbsp;|&nbsp; PAIX -
-                                    TRAVAIL - PATRIE
+                                    <?= h(($app_lang === 'en') ? ($settings['school_republic_en'] ?? 'Republic of Cameroon') : ($settings['school_republic'] ?? 'République du Cameroun')) ?> &nbsp;|&nbsp; <?= ($app_lang === 'en') ? 'PEACE - WORK - FATHERLAND' : 'PAIX - TRAVAIL - PATRIE' ?>
                                 </div>
                                 <table style="width: 100%; border-collapse: collapse; border: none;">
                                     <tr>
@@ -640,13 +640,13 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
                                             </div>
                                             <div class="school-contact-text"
                                                 style="font-size: 8.5px; color: #475569; line-height: 1.25;">
-                                                Tel: <?= h($settings['school_phone'] ?? '686061923/696007229') ?>
+                                                Tel: <?= h($settings['school_phone'] ?? '679164801/659099093') ?>
                                                 &nbsp;|&nbsp;
                                                 Email:
-                                                <?= h($settings['school_email'] ?? 'fotsomarietherese2024@gmail.com') ?><br>
+                                                <?= h($settings['school_email'] ?? 'contact@camertech.com') ?><br>
                                                 BP: <?= h($settings['school_po_box'] ?? '51442') ?> &nbsp;|&nbsp;
                                                 Web:
-                                                <?= h($settings['school_website'] ?? 'https://copobimat.camertech.com') ?>
+                                                <?= h($settings['school_website'] ?? 'https://futura.camertech.com') ?>
                                             </div>
                                         </td>
                                     </tr>
@@ -788,25 +788,22 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
                         <?= __('amount_words_prefix') ?> <strong><?= h($amountInWords ?? '') ?></strong>
                     </div>
 
-                    <!-- SECTION COTE-A-COTE 2: SITUATION GLOBALE & HISTORIQUE + VENTILATION & QR CODE (Wrapper Table) -->
-                    <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 2px;">
+                    <!-- SECTION COTE-A-COTE: ÉTAT DE LA SCOLARITÉ (GAUCHE) & SITUATION GLOBALE (DROITE) -->
+                    <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 6px;">
                         <tr>
-                            <!-- Gauche: État complet des tranches de scolarité ET Historique complet des versements -->
-                            <td style="width: 59%; vertical-align: top; padding-right: 4px;">
-                                <!-- ÉTAT COMPLET DE LA SCOLARITÉ -->
-                                <div
-                                    style="font-weight: bold; font-size: 9.2px; color: #1e3a8a; margin-bottom: 1px; text-transform: uppercase;">
+                            <!-- Gauche: État complet des tranches de scolarité (55%) -->
+                            <td style="width: 55%; vertical-align: top; padding-right: 6px;">
+                                <div style="font-weight: bold; font-size: 9.2px; color: #1e3a8a; margin-bottom: 2px; text-transform: uppercase;">
                                     <i class="bi bi-calendar-check"></i> <?= __('tuition_status_section') ?>
                                 </div>
-                                <table class="financial-table" style="margin-bottom: 6px;">
+                                <table class="financial-table" style="margin-bottom: 0;">
                                     <thead>
                                         <tr>
-                                            <th style="width: 25%;"><?= __('col_installment') ?></th>
-                                            <th style="width: 18%;"><?= __('col_deadline') ?></th>
-                                            <th style="width: 16%; text-align: right;"><?= __('col_planned') ?></th>
-                                            <th style="width: 16%; text-align: right;"><?= __('col_paid') ?></th>
-                                            <th style="width: 13%; text-align: right;"><?= __('col_remaining') ?></th>
-                                            <th style="width: 12%; text-align: center;"><?= __('col_status') ?></th>
+                                            <th style="width: 28%;"><?= __('col_installment') ?></th>
+                                            <th style="width: 20%;"><?= __('col_deadline') ?></th>
+                                            <th style="width: 17%; text-align: right;"><?= __('col_planned') ?></th>
+                                            <th style="width: 17%; text-align: right;"><?= __('col_paid') ?></th>
+                                            <th style="width: 18%; text-align: right;"><?= __('col_remaining') ?></th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -822,179 +819,90 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
                                             $amountPlanned = (float) ($si['amount_planned'] ?? 0);
                                             $amountPaid = (float) ($si['amount_paid'] ?? 0);
                                             $reste = max(0.0, $amountPlanned - $amountPaid);
-
-                                            // Determine status
-                                            $status = __('status_unpaid');
-                                            $statusColor = '#64748b';
-                                            $statusBg = '#f1f5f9';
-
-                                            if ($amountPaid >= $amountPlanned) {
-                                                $status = __('status_paid');
-                                                $statusColor = '#16a34a';
-                                                $statusBg = '#d1fae5';
-                                            } elseif ($deadlineRaw && $currentDate > $deadlineRaw) {
-                                                $status = __('status_overdue');
-                                                $statusColor = '#ef4444';
-                                                $statusBg = '#fee2e2';
-                                            } elseif ($amountPaid > 0) {
-                                                $status = __('status_partial');
-                                                $statusColor = '#d97706';
-                                                $statusBg = '#fef3c7';
-                                            }
                                             ?>
                                             <tr>
                                                 <td style="font-weight: bold; color: #1e3a8a;"><?= h($instName) ?></td>
-                                                <td><?= h($payment['class_name'] ?? $payment['classe_nom'] ?? '') ?></td>
-                                                <td style="text-align: right;"><?= number_format($amountPlanned, 0, '.', ' ') ?>
-                                                </td>
-                                                <td style="text-align: right; font-weight: bold; color: #16a34a;">
-                                                    <?= number_format($amountPaid, 0, '.', ' ') ?></td>
-                                                <td
-                                                    style="text-align: right; font-weight: bold; color: <?= $reste > 0 ? '#b91c1c' : '#1e293b' ?>;">
-                                                    <?= number_format($reste, 0, '.', ' ') ?></td>
-                                                <td style="text-align: center; padding: 1px;">
-                                                    <span
-                                                        style="display: inline-block; padding: 0.5px 2px; border-radius: 3px; font-size: 6.8px; font-weight: bold; color: <?= $statusColor ?>; background-color: <?= $statusBg ?>; text-transform: uppercase;">
-                                                        <?= $status ?>
-                                                    </span>
-                                                </td>
+                                                <td><?= h($deadline) ?></td>
+                                                <td style="text-align: right;"><?= number_format($amountPlanned, 0, '.', ' ') ?></td>
+                                                <td style="text-align: right; font-weight: bold; color: #16a34a;"><?= number_format($amountPaid, 0, '.', ' ') ?></td>
+                                                <td style="text-align: right; font-weight: bold; color: <?= $reste > 0 ? '#b91c1c' : '#1e293b' ?>;"><?= number_format($reste, 0, '.', ' ') ?></td>
                                             </tr>
                                         <?php endforeach; ?>
-                                    </tbody>
-                                </table>
-
-                                <!-- HISTORIQUE COMPLET DES VERSEMENTS -->
-                                <div
-                                    style="font-weight: bold; font-size: 9.2px; color: #1e3a8a; margin-bottom: 1px; text-transform: uppercase;">
-                                    <i class="bi bi-clock-history"></i> <?= __('payments_history_section') ?>
-                                </div>
-                                <table class="financial-table">
-                                    <thead>
-                                        <tr>
-                                            <th style="font-size: 9.2px; padding: 1.5px 2px;"><?= __('col_reference') ?>
-                                            </th>
-                                            <th style="font-size: 9.2px; padding: 1.5px 2px;"><?= __('col_method') ?></th>
-                                            <th style="font-size: 9.2px; padding: 1.5px 2px;"><?= __('col_date') ?></th>
-                                            <th style="font-size: 9.2px; padding: 1.5px 2px; text-align: right;">
-                                                <?= __('col_amount') ?></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php
-                                        $totalHistorique = 0.0;
-                                        $historyList = $paymentsHistory ?? [];
-                                        $fullHistoryCount = count($historyList);
-                                        $historyList = array_slice($historyList, 0, 4); // Limite à 4 lignes max pour l'affichage
-                                        foreach ($historyList as $ph):
-                                            $hAmount = (float) ($ph['amount'] ?? 0);
-                                            $totalHistorique += $hAmount;
-                                            ?>
-                                            <tr>
-                                                <td style="font-family: monospace; font-size: 8.8px; padding: 1.5px 2px;">
-                                                    <?= h($ph['reference'] ?? 'N/A') ?></td>
-                                                <td style="font-size: 8.8px; padding: 1.5px 2px;">
-                                                    <?= h($ph['payment_method'] ?? '') ?></td>
-                                                <td style="font-size: 8.8px; padding: 1.5px 2px;">
-                                                    <?= date('d/m/Y', strtotime($ph['payment_date'] ?? 'now')) ?></td>
-                                                <td
-                                                    style="font-size: 8.8px; padding: 1.5px 2px; text-align: right; font-weight: bold;">
-                                                    <?= number_format($hAmount, 0, '.', ' ') ?></td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                        <?php if ($fullHistoryCount > 4): ?>
-                                            <tr>
-                                                <td colspan="4" style="font-size: 8px; text-align: center; color: #64748b; font-style: italic;">
-                                                    ... et <?= $fullHistoryCount - 4 ?> autre(s) versement(s) antérieur(s) masqué(s)
-                                                </td>
-                                            </tr>
-                                        <?php endif; ?>
-                                        <tr style="background-color: #f8fafc; font-weight: bold;">
-                                            <td colspan="3"
-                                                style="font-size: 9.2px; padding: 1.5px 2px; text-align: right;">
-                                                <?= __('cumul') ?></td>
-                                            <td
-                                                style="font-size: 9.2px; padding: 1.5px 2px; text-align: right; color: #16a34a;">
-                                                <?= number_format($totalHistorique, 0, '.', ' ') ?></td>
-                                        </tr>
                                     </tbody>
                                 </table>
                             </td>
 
-                            <!-- Droite: État général des frais (Tableau de ventilation) + QR Code & Mention Légale -->
-                            <td style="width: 39%; vertical-align: top; padding-left: 4px;">
-                                <!-- SITUATION FINANCIÈRE GLOBALE -->
-                                <div
-                                    style="font-weight: bold; font-size: 9.2px; color: #1e3a8a; margin-bottom: 1px; text-transform: uppercase;">
+                            <!-- Droite: Situation Financière Globale (45%) -->
+                            <td style="width: 45%; vertical-align: top; padding-left: 6px;">
+                                <div style="font-weight: bold; font-size: 9.2px; color: #1e3a8a; margin-bottom: 2px; text-transform: uppercase;">
                                     <i class="bi bi-calculator"></i> <?= __('global_financial_status') ?>
                                 </div>
-                                <table class="breakdown-table"
-                                    style="border: 1px solid #cbd5e1; width: 100%; margin-left: 0; margin-bottom: 3px;">
+                                <table class="breakdown-table" style="border: 1px solid #cbd5e1; width: 100%; margin-left: 0; margin-bottom: 4px;">
                                     <tr>
                                         <td class="label-td"><?= __('gross_tuition_fee') ?></td>
-                                        <td class="value-td">
-                                            <?= number_format($enroll['frais_scolarite_brut'] ?? 0, 0, '.', ' ') ?> FCFA
-                                        </td>
+                                        <td class="value-td"><?= number_format($enroll['frais_scolarite_brut'] ?? 0, 0, '.', ' ') ?> FCFA</td>
                                     </tr>
                                     <tr>
                                         <td class="label-td"><?= __('discounts_applied') ?></td>
-                                        <td class="value-td" style="color: #ef4444;">
-                                            -<?= number_format($enroll['total_reductions'] ?? 0, 0, '.', ' ') ?> FCFA</td>
+                                        <td class="value-td" style="color: #ef4444;">-<?= number_format($enroll['total_reductions'] ?? 0, 0, '.', ' ') ?> FCFA</td>
                                     </tr>
                                     <tr>
                                         <td class="label-td"><?= __('scholarships_applied') ?></td>
-                                        <td class="value-td" style="color: #ef4444;">
-                                            -<?= number_format($enroll['total_bourses'] ?? 0, 0, '.', ' ') ?> FCFA</td>
+                                        <td class="value-td" style="color: #ef4444;">-<?= number_format($enroll['total_bourses'] ?? 0, 0, '.', ' ') ?> FCFA</td>
                                     </tr>
                                     <tr style="background-color: #f1f5f9; border-top: 1.5px solid #475569;">
                                         <td class="label-td"><?= __('net_amount_due') ?></td>
-                                        <td class="value-td" style="color: #1e3a8a;">
-                                            <?= number_format($enroll['scolarite_nette'] ?? 0, 0, '.', ' ') ?> FCFA</td>
+                                        <td class="value-td" style="color: #1e3a8a;"><?= number_format($enroll['scolarite_nette'] ?? 0, 0, '.', ' ') ?> FCFA</td>
                                     </tr>
                                     <tr>
                                         <td class="label-td" style="color: #16a34a;"><?= __('total_cumulated_paid') ?></td>
-                                        <td class="value-td" style="color: #16a34a;">
-                                            <?= number_format($enroll['total_paye'] ?? 0, 0, '.', ' ') ?> FCFA</td>
+                                        <td class="value-td" style="color: #16a34a;"><?= number_format($enroll['total_paye'] ?? 0, 0, '.', ' ') ?> FCFA</td>
                                     </tr>
                                     <tr style="background-color: #fef2f2; border-top: 1px double #ef4444;">
-                                        <td class="label-td" style="color: #b91c1c;"><?= __('remaining_tuition_balance') ?>
-                                        </td>
-                                        <td class="value-td" style="color: #b91c1c; text-decoration: underline;">
-                                            <?= number_format($enroll['reste_a_payer'] ?? 0, 0, '.', ' ') ?> FCFA</td>
+                                        <td class="label-td" style="color: #b91c1c;"><?= __('remaining_tuition_balance') ?></td>
+                                        <td class="value-td" style="color: #b91c1c; text-decoration: underline;"><?= number_format($enroll['reste_a_payer'] ?? 0, 0, '.', ' ') ?> FCFA</td>
                                     </tr>
                                 </table>
 
-                                <!-- MENTION OBLIGATOIRE EN GRAS, VISIBLE -->
-                                <div
-                                    style="font-weight: bold; font-size: 9.5px; color: #ef4444; margin-top: 2px; text-align: left; letter-spacing: 0.1px;">
+                                <!-- MENTION OBLIGATOIRE EN GRAS -->
+                                <div style="font-weight: bold; font-size: 8.5px; color: #ef4444; text-align: left; letter-spacing: 0.1px;">
                                     <?= __('non_refundable_notice') ?>
                                 </div>
                             </td>
                         </tr>
                     </table>
 
-                    <!-- Bloc des signatures & Authentification -->
-                    <table class="signatures-table" style="margin-top: 10px; width: 100%;">
+                    <!-- SECTION BAS: BLOC QR CODE (GAUCHE - 50%) & BLOC CAISSE SIGNATURE (DROITE - 50%) -->
+                    <table class="signatures-table" style="margin-top: 4px; width: 100%;">
                         <tr>
-                            <!-- QR Code de lutte contre les faux reçus (remplace Signature Parent) -->
-                            <td style="width: 48%; padding-right: 2%; vertical-align: top;">
-                                <div style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 10px; min-height: 80px; background-color: #f8fafc; box-sizing: border-box; display: flex; align-items: center; gap: 8px;">
-                                    <img src="<?= $qrCodeSrc ?>" style="border: 1px solid #cbd5e1; padding: 1px; background: #fff; max-width: 50px; max-height: 50px;" alt="QR Code">
-                                    <div style="font-size: 7.5px; color: #64748b; line-height: 1.2;">
-                                        <strong style="color: #1e3a8a; font-size: 8px; text-transform: uppercase; display: block; margin-bottom: 2px;"><?= __('verification_enrollment') ?></strong>
-                                        <?= __('jeton') ?> : <span style="font-family: monospace; font-weight: bold; color: #0f172a;"><?= h($payment['verification_code']) ?></span><br>
-                                        <?= __('scan_qr_help') ?>
+                            <!-- QR Code de vérification d'authenticité -->
+                            <td style="width: 50%; padding-right: 4px; vertical-align: stretch;">
+                                <div style="border: 1px solid #1e3a8a; border-radius: 6px; padding: 6px 8px; background: #ffffff; box-sizing: border-box; display: flex; align-items: center; gap: 8px; height: 100%;">
+                                    <div style="text-align: center; flex-shrink: 0;">
+                                        <img src="<?= $qrCodeSrc ?>" style="border: 1px solid #1e3a8a; padding: 1px; background: #fff; border-radius: 4px; width: 48px; height: 48px; display: block;" alt="QR Code">
+                                        <span style="font-size: 6.5px; font-weight: bold; color: #1e3a8a; letter-spacing: 0.3px; text-transform: uppercase; margin-top: 2px; display: block;">VERIFIÉ</span>
+                                    </div>
+                                    <div style="font-size: 8.5px; color: #0f172a; line-height: 1.3; flex-grow: 1;">
+                                        <strong style="color: #1e3a8a; font-size: 8.5px; text-transform: uppercase; display: block; margin-bottom: 3px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 1px;">
+                                            <i class="bi bi-patch-check-fill me-1"></i><?= __('verification_enrollment') ?>
+                                        </strong>
+                                        <div style="color: #0f172a; font-size: 8.5px; font-weight: 500; line-height: 1.25;">
+                                            <?= __('scan_qr_help') ?>
+                                        </div>
                                     </div>
                                 </div>
                             </td>
-                            <!-- Signature de la caisse -->
-                            <td style="width: 48%; padding-left: 2%; vertical-align: top;">
-                                <div style="border: 1px dashed #cbd5e1; border-radius: 6px; padding: 6px 10px; min-height: 80px; background-color: #fafafa; position: relative; box-sizing: border-box;">
-                                    <strong style="color: #475569; font-size: 8.5px; text-transform: uppercase;"><?= __('cashier_signature_label') ?></strong>
-                                    <div style="font-size: 8.5px; color: #1e293b; margin-top: 4px; line-height: 1.3;">
-                                        <?= __('cashier_label') ?> <strong><?= h($payment['creator_nom'] ?? $payment['user_nom'] ?? '') ?> <?= h($payment['creator_prenom'] ?? $payment['user_prenom'] ?? '') ?></strong><br>
-                                        <?= __('printed_on') ?> <?= date('d/m/Y H:i') ?>
+                            <!-- Signature de la caisse (Même hauteur & lisibilité accrue) -->
+                            <td style="width: 50%; padding-left: 4px; vertical-align: stretch;">
+                                <div style="border: 1px dashed #94a3b8; border-radius: 6px; padding: 10px; background-color: #fafafa; position: relative; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
+                                    <div>
+                                        <strong style="color: #1e3a8a; font-size: 8.5px; text-transform: uppercase; border-bottom: 1px dashed #cbd5e1; display: block; padding-bottom: 1px; margin-bottom: 3px;"><?= __('cashier_signature_label') ?></strong>
+                                        <div style="font-size: 8.5px; color: #0f172a; line-height: 1.3;">
+                                            <?= __('cashier_label') ?> <strong><?= h($payment['creator_nom'] ?? $payment['user_nom'] ?? '') ?> <?= h($payment['creator_prenom'] ?? $payment['user_prenom'] ?? '') ?></strong><br>
+                                            <span style="color: #475569; font-size: 8px;"><?= __('printed_on') ?> <?= date('d/m/Y H:i') ?></span>
+                                        </div>
                                     </div>
-                                    <div style="margin-top: 25px; border-top: 1px dotted #94a3b8; width: 100%;"></div>
+                                    <div style="margin-top: 15px; border-top: 1px dotted #64748b; width: 100%;"></div>
                                 </div>
                             </td>
                         </tr>
