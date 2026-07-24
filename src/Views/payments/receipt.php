@@ -17,7 +17,8 @@ $settings = $settingsStore->all();
 // URL de vérification publique pour le QR Code
 $verifyUrl = APP_URL . '/verify-receipt/' . urlencode($payment['verification_code'] ?? '');
 
-$qrCodeApiUrl = "https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=" . urlencode($verifyUrl);
+$qrCodeApiUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=2&ecc=M&data=" . urlencode($verifyUrl);
+$qrCodeFallbackUrl = "https://quickchart.io/qr?size=200&margin=2&text=" . urlencode($verifyUrl);
 
 // Tenter de convertir le QR code en Base64 pour garantir son rendu local dans Dompdf
 $qrCodeSrc = $qrCodeApiUrl;
@@ -28,10 +29,13 @@ try {
             "verify_peer_name" => false,
         ],
         "http" => [
-            "timeout" => 3
+            "timeout" => 4
         ]
     ]);
     $qrImage = @file_get_contents($qrCodeApiUrl, false, $ctx);
+    if (!$qrImage) {
+        $qrImage = @file_get_contents($qrCodeFallbackUrl, false, $ctx);
+    }
     if ($qrImage) {
         $qrCodeSrc = 'data:image/png;base64,' . base64_encode($qrImage);
     }
@@ -748,7 +752,7 @@ $isDuplicate = (int)($payment['print_count'] ?? 1) > 1;
                         <!-- QR Code de lutte contre les faux reçus (remplace Signature Parent) -->
                         <td style="width: 48%; padding-right: 2%; vertical-align: top;">
                             <div style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 10px; min-height: 80px; background-color: #f8fafc; box-sizing: border-box; display: flex; align-items: center; gap: 8px;">
-                                <img src="<?= $qrCodeSrc ?>" style="border: 1px solid #cbd5e1; padding: 1px; background: #fff; max-width: 50px; max-height: 50px;" alt="QR Code">
+                                <img src="<?= $qrCodeSrc ?>" style="border: 1px solid #94a3b8; padding: 2px; background: #ffffff; width: 60px; height: 60px; display: block; border-radius: 4px;" alt="QR Code">
                                 <div style="font-size: 7.5px; color: #64748b; line-height: 1.2;">
                                     <strong style="color: #1e3a8a; font-size: 8px; text-transform: uppercase; display: block; margin-bottom: 2px;"><?= __('verification_enrollment') ?></strong>
                                     <?= __('scan_qr_help') ?>

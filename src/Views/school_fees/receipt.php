@@ -17,7 +17,8 @@ $settings = $settingsStore->all();
 // URL de vérification publique pour le QR Code
 $verifyUrl = APP_URL . '/verify-receipt/' . urlencode($payment['verification_code'] ?? '');
 
-$qrCodeApiUrl = "https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=" . urlencode($verifyUrl);
+$qrCodeApiUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=2&ecc=M&data=" . urlencode($verifyUrl);
+$qrCodeFallbackUrl = "https://quickchart.io/qr?size=200&margin=2&text=" . urlencode($verifyUrl);
 
 // Tenter de convertir le QR code en Base64 pour garantir son rendu local dans Dompdf
 $qrCodeSrc = $qrCodeApiUrl;
@@ -28,10 +29,13 @@ try {
             "verify_peer_name" => false,
         ],
         "http" => [
-            "timeout" => 3
+            "timeout" => 4
         ]
     ]);
     $qrImage = @file_get_contents($qrCodeApiUrl, false, $ctx);
+    if (!$qrImage) {
+        $qrImage = @file_get_contents($qrCodeFallbackUrl, false, $ctx);
+    }
     if ($qrImage) {
         $qrCodeSrc = 'data:image/png;base64,' . base64_encode($qrImage);
     }
@@ -879,7 +883,7 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
                             <td style="width: 50%; padding-right: 4px; vertical-align: stretch;">
                                 <div style="border: 1px solid #1e3a8a; border-radius: 6px; padding: 6px 8px; background: #ffffff; box-sizing: border-box; display: flex; align-items: center; gap: 8px; height: 100%;">
                                     <div style="text-align: center; flex-shrink: 0;">
-                                        <img src="<?= $qrCodeSrc ?>" style="border: 1px solid #1e3a8a; padding: 1px; background: #fff; border-radius: 4px; width: 48px; height: 48px; display: block;" alt="QR Code">
+                                        <img src="<?= $qrCodeSrc ?>" style="border: 1px solid #94a3b8; padding: 2px; background: #ffffff; border-radius: 4px; width: 60px; height: 60px; display: block;" alt="QR Code">
                                         <span style="font-size: 6.5px; font-weight: bold; color: #1e3a8a; letter-spacing: 0.3px; text-transform: uppercase; margin-top: 2px; display: block;">VERIFIÉ</span>
                                     </div>
                                     <div style="font-size: 8.5px; color: #0f172a; line-height: 1.3; flex-grow: 1;">
