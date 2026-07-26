@@ -31,7 +31,7 @@ class InsolventStudent extends BaseModel
             LEFT JOIN cycles cy ON c.cycle_id = cy.id
             LEFT JOIN sections sec ON c.section_id = sec.id
             LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id
-            WHERE ins.academic_year_id = ?
+            WHERE ins.academic_year_id = ? AND s.is_withdrawn = 0 AND s.actif = 1 AND s.status != 'Démission' AND s.status != 'Démissionnaire' AND s.status != 'Abandon'
         ";
 
         $params = [$academicYearId];
@@ -80,7 +80,7 @@ class InsolventStudent extends BaseModel
             SELECT e.student_id, e.class_id, e.reste_a_payer 
             FROM enrollments e
             JOIN students s ON e.student_id = s.id
-            WHERE e.academic_year_id = $academicYearId AND s.is_withdrawn = 0
+            WHERE e.academic_year_id = $academicYearId AND s.is_withdrawn = 0 AND s.actif = 1 AND s.status != 'Démission' AND s.status != 'Démissionnaire' AND s.status != 'Abandon'
         ")->fetchAll(PDO::FETCH_ASSOC);
 
         $stmtInst = $this->db->prepare("
@@ -203,6 +203,10 @@ class InsolventStudent extends BaseModel
             LEFT JOIN student_installments si ON (si.student_id = s.id AND si.academic_year_id = e.academic_year_id AND si.installment_number = :installment_number)
             WHERE e.academic_year_id = :academic_year_id
               AND s.is_withdrawn = 0
+              AND s.actif = 1
+              AND s.status != 'Démission'
+              AND s.status != 'Démissionnaire'
+              AND s.status != 'Abandon'
               AND s.class_id = :class_id
             ORDER BY s.nom ASC, s.prenom ASC
         ";

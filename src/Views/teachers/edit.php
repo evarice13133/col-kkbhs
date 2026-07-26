@@ -18,6 +18,13 @@ ob_start();
     <form action="/teachers/update?id=<?= (int) $teacher['id'] ?>" method="POST" id="teacherEditForm">
         <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
 
+        <?php if (!empty($error)): ?>
+            <div class="alert alert-danger border-0 shadow-sm alert-dismissible fade show rounded-4 mb-4" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i><?= htmlspecialchars((string) $error) ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
+
         <div class="subject-card-compact border-0 shadow-sm overflow-hidden mb-4">
             <div class="card-body p-4">
                 

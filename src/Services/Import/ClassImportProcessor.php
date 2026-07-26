@@ -14,6 +14,7 @@ class ClassImportProcessor
     private array $cyclesByName = [];
     private array $sectionsByName = [];
     private array $departmentsByName = [];
+    private array $teachingTypesByName = [];
 
     public function __construct(PDO $db)
     {
@@ -71,7 +72,7 @@ class ClassImportProcessor
 
     private function rowHasData(array $row): bool
     {
-        foreach (['A', 'B', 'C', 'D'] as $col) {
+        foreach (['A', 'B', 'C', 'D', 'E'] as $col) {
             if (trim((string) ($row[$col] ?? '')) !== '') {
                 return true;
             }
@@ -93,6 +94,7 @@ class ClassImportProcessor
         $cycleName = trim((string) ($row['B'] ?? ''));
         $sectionName = trim((string) ($row['C'] ?? ''));
         $deptName = trim((string) ($row['D'] ?? ''));
+        $teachingTypeName = trim((string) ($row['E'] ?? ''));
 
         if ($className === '') {
             $this->logError($line, 'Le nom de classe est obligatoire.');
@@ -113,6 +115,23 @@ class ClassImportProcessor
             return;
         }
 
+        $teachingTypeId = $this->resolveTeachingTypeId($teachingTypeName, $line);
+        if ($teachingTypeName !== '' && $teachingTypeId === false) {
+            return;
+        }
+        if (!$teachingTypeId && $cycleId) {
+            $stmtCycle = $this->db->prepare("SELECT teaching_type_id FROM cycles WHERE id = ?");
+            $stmtCycle->execute([$cycleId]);
+            $teachingTypeId = $stmtCycle->fetchColumn();
+        }
+        if (!$teachingTypeId) {
+            $stmtTT = $this->db->query("SELECT id FROM teaching_types WHERE code = 'ESG' OR LOWER(nom) LIKE '%secondaire%' LIMIT 1");
+            $teachingTypeId = $stmtTT ? $stmtTT->fetchColumn() : null;
+            if (!$teachingTypeId) {
+                $teachingTypeId = $this->db->query("SELECT id FROM teaching_types ORDER BY id ASC LIMIT 1")->fetchColumn();
+            }
+        }
+
         try {
             $stmt = $this->db->prepare("SELECT id FROM classes WHERE LOWER(TRIM(nom)) = LOWER(TRIM(?)) LIMIT 1");
             $stmt->execute([$className]);
@@ -121,8 +140,8 @@ class ClassImportProcessor
                 return;
             }
 
-            $ins = $this->db->prepare("INSERT INTO classes (nom, cycle_id, section_id, department_id) VALUES (?, ?, ?, ?)");
-            $ins->execute([$className, $cycleId ?: null, $sectionId ?: null, $deptId ?: null]);
+            $ins = $this->db->prepare("INSERT INTO classes (nom, cycle_id, section_id, department_id, teaching_type_id) VALUES (?, ?, ?, ?, ?)");
+            $ins->execute([$className, $cycleId ?: null, $sectionId ?: null, $deptId ?: null, $teachingTypeId ?: null]);
             $this->successCount++;
         } catch (\Throwable $e) {
             $this->logError($line, 'Erreur base de donnees : ' . $e->getMessage());
@@ -168,6 +187,19 @@ class ClassImportProcessor
         return (int) $this->departmentsByName[$key];
     }
 
+    private function resolveTeachingTypeId(string $name, int $line)
+    {
+        if ($name === '') {
+            return null;
+        }
+        $key = mb_strtolower($name);
+        if (!isset($this->teachingTypesByName[$key])) {
+            $this->logError($line, "Type d'enseignement introuvable : {$name}");
+            return false;
+        }
+        return (int) $this->teachingTypesByName[$key];
+    }
+
     private function warmupLookups(): void
     {
         $cycles = $this->db->query("SELECT id, nom FROM cycles")->fetchAll(PDO::FETCH_ASSOC);
@@ -183,6 +215,12 @@ class ClassImportProcessor
         $departments = $this->db->query("SELECT id, nom FROM departments")->fetchAll(PDO::FETCH_ASSOC);
         foreach ($departments as $row) {
             $this->departmentsByName[mb_strtolower((string) $row['nom'])] = (int) $row['id'];
+        }
+
+        $teachingTypes = $this->db->query("SELECT id, nom, code FROM teaching_types")->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($teachingTypes as $row) {
+            $this->teachingTypesByName[mb_strtolower((string) $row['nom'])] = (int) $row['id'];
+            $this->teachingTypesByName[mb_strtolower((string) $row['code'])] = (int) $row['id'];
         }
     }
 

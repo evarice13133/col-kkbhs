@@ -139,18 +139,25 @@ class SectionController
     }
 
     /**
-     * Supprime une section de la base de données.
+     * Active ou désactive une section.
+     */
+    public function toggleStatus($id)
+    {
+        $stmt = $this->db->prepare("UPDATE sections SET status = NOT status WHERE id = ?");
+        $stmt->execute([(int)$id]);
+        
+        Session::setFlash('success', __('updated_success'));
+        header("Location: /sections");
+        exit;
+    }
+
+    /**
+     * La suppression définitive d'une section est désactivée pour préserver la cohérence des données.
+     * La désactivation est l'unique moyen de retirer une section de l'utilisation active.
      */
     public function delete($id)
     {
-        try {
-            $stmt = $this->db->prepare("DELETE FROM sections WHERE id = ?");
-            $stmt->execute([(int)$id]);
-            Session::setFlash('success', __('deleted_success'));
-        } catch (\PDOException $e) {
-            Session::setFlash('error', __('error_generic'));
-        }
-
+        Session::setFlash('error', "La suppression définitive des sections est désactivée. Veuillez utiliser la désactivation pour suspendre son utilisation.");
         header("Location: /sections");
         exit;
     }

@@ -34,12 +34,24 @@ ob_start();
                     </div>
                 </div>
 
+                <!-- Filtre Type Enseignement -->
+                <div>
+                    <select name="teaching_type_id" id="filter_teaching_type" class="form-select border-0 bg-white bg-opacity-10 shadow-none py-2 text-main rounded-pill px-3" style="min-width: 150px;" onchange="this.form.submit()">
+                        <option value="">Tous les types</option>
+                        <?php foreach ($teachingTypes as $tt): ?>
+                            <option value="<?= $tt['id'] ?>" <?= (int) ($filters['teaching_type_id'] ?? 0) === (int) $tt['id'] ? 'selected' : '' ?>>
+                                <?= htmlspecialchars((string) $tt['nom']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
                 <!-- Filtre Classe -->
                 <div>
-                    <select name="class_id" class="form-select border-0 bg-white bg-opacity-10 shadow-none py-2 text-main rounded-pill px-3" style="min-width: 150px;">
+                    <select name="class_id" id="filter_class" class="form-select border-0 bg-white bg-opacity-10 shadow-none py-2 text-main rounded-pill px-3" style="min-width: 150px;">
                         <option value=""><?= __('all_classes') ?></option>
                         <?php foreach ($classes as $class): ?>
-                            <option value="<?= $class['id'] ?>" <?= (int) $filters['class_id'] === (int) $class['id'] ? 'selected' : '' ?>>
+                            <option value="<?= $class['id'] ?>" data-teaching-type="<?= $class['teaching_type_id'] ?? '' ?>" <?= (int) $filters['class_id'] === (int) $class['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($class['nom']) ?>
                             </option>
                         <?php endforeach; ?>
@@ -48,10 +60,10 @@ ob_start();
 
                 <!-- Filtre Matière -->
                 <div>
-                    <select name="subject_id" class="form-select border-0 bg-white bg-opacity-10 shadow-none py-2 text-main rounded-pill px-3" style="min-width: 150px;">
+                    <select name="subject_id" id="filter_subject" class="form-select border-0 bg-white bg-opacity-10 shadow-none py-2 text-main rounded-pill px-3" style="min-width: 150px;">
                         <option value=""><?= __('all_subjects') ?></option>
                         <?php foreach ($subjects as $subject): ?>
-                            <option value="<?= $subject['id'] ?>" <?= (int) $filters['subject_id'] === (int) $subject['id'] ? 'selected' : '' ?>>
+                            <option value="<?= $subject['id'] ?>" data-teaching-type="<?= $subject['teaching_type_id'] ?? '' ?>" <?= (int) $filters['subject_id'] === (int) $subject['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($subject['nom']) ?>
                             </option>
                         <?php endforeach; ?>

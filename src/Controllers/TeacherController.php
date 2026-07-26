@@ -59,17 +59,25 @@ class TeacherController
         $assignContext = null;
         if (isset($_GET['assign_subject']) && isset($_GET['assign_class'])) {
             $stmt = $this->db->prepare("
-                SELECT s.nom as subject_name, c.nom as class_name 
-                FROM subjects s, classes c 
+                SELECT s.nom as subject_name, c.nom as class_name, tt.actif
+                FROM subjects s
+                JOIN classes c
+                JOIN teaching_types tt ON s.teaching_type_id = tt.id
                 WHERE s.id = ? AND c.id = ?
             ");
             $stmt->execute([(int) $_GET['assign_subject'], (int) $_GET['assign_class']]);
             $assignContext = $stmt->fetch(PDO::FETCH_ASSOC);
-            if ($assignContext) {
+            if ($assignContext && (int) $assignContext['actif'] === 1) {
                 $assignContext['subject_id'] = (int) $_GET['assign_subject'];
                 $assignContext['class_id'] = (int) $_GET['assign_class'];
+            } else {
+                $assignContext = null;
+                Session::setFlash('error', __('subject_not_active_teaching_type') ?? 'La matière doit être rattachée à un type d\'enseignement actif.');
             }
         }
+
+        // Récupérer les types d'enseignement actifs pour le formulaire (modale/page)
+        $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         include __DIR__ . '/../Views/teachers/index.php';
     }
@@ -162,6 +170,21 @@ class TeacherController
     public function store()
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+                || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false);
+
+            if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+                $errMsg = __('session_expired_retry') ?? 'Session expirée, veuillez réessayer.';
+                if ($isAjax) {
+                    header('Content-Type: application/json', true, 400);
+                    echo json_encode(['success' => false, 'message' => $errMsg]);
+                    exit;
+                }
+                Session::setFlash('error', $errMsg);
+                header('Location: /teachers/create');
+                exit;
+            }
+
             $nom = trim($_POST['nom'] ?? '');
             $prenom = trim($_POST['prenom'] ?? '');
             $username = trim($_POST['username'] ?? '');
@@ -169,20 +192,43 @@ class TeacherController
             $password = trim($_POST['password'] ?? '');
             $teaching_type_ids = $_POST['teaching_type_ids'] ?? [];
 
-            if (empty($nom) || empty($username) || empty($password)) {
-                $error = __('teacher_required_fields');
+            if (empty($nom) || empty($prenom) || empty($username) || empty($password) || empty($teaching_type_ids)) {
+                $error = empty($teaching_type_ids)
+                    ? __('select_at_least_one_teaching_type')
+                    : __('teacher_required_fields');
+                if ($isAjax) {
+                    header('Content-Type: application/json', true, 400);
+                    echo json_encode(['success' => false, 'message' => $error]);
+                    exit;
+                }
                 $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/teachers/create.php';
                 return;
             }
 
             try {
+                // Vérifier l'unicité du nom d'utilisateur
+                $chk = $this->db->prepare('SELECT id FROM users WHERE username = ? LIMIT 1');
+                $chk->execute([$username]);
+                if ($chk->fetch()) {
+                    throw new \RuntimeException(__('teacher_username_taken') ?? 'Nom d\'utilisateur déjà pris.');
+                }
+
+                // Vérifier l'unicité de l'adresse e-mail
+                if ($email !== '') {
+                    $chkE = $this->db->prepare('SELECT id FROM users WHERE email = ? LIMIT 1');
+                    $chkE->execute([$email]);
+                    if ($chkE->fetch()) {
+                        throw new \RuntimeException(__('email_already_used') ?? 'Adresse e-mail déjà utilisée.');
+                    }
+                }
+
                 $this->db->beginTransaction();
 
                 $pwdHash = password_hash($password, PASSWORD_BCRYPT);
                 $stmt = $this->db->prepare("INSERT INTO users (nom, prenom, username, email, password, role) VALUES (?, ?, ?, ?, ?, 'enseignant')");
                 $stmt->execute([$nom, $prenom, $username, $email ?: null, $pwdHash]);
-                $teacherId = $this->db->lastInsertId();
+                $teacherId = (int) $this->db->lastInsertId();
 
                 if (!empty($teaching_type_ids)) {
                     $stmtPivot = $this->db->prepare("INSERT INTO user_teaching_types (user_id, teaching_type_id) VALUES (?, ?)");
@@ -192,14 +238,29 @@ class TeacherController
                 }
 
                 $this->db->commit();
-                Session::setFlash('success', __('teacher_created_success'));
+                $successMsg = __('teacher_created_success');
+
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => true, 'message' => $successMsg]);
+                    exit;
+                }
+
+                Session::setFlash('success', $successMsg);
                 header("Location: /teachers");
                 exit;
-            } catch (\PDOException $e) {
+            } catch (\Throwable $e) {
                 if ($this->db->inTransaction()) {
                     $this->db->rollBack();
                 }
-                $error = strpos($e->getMessage(), 'Duplicate') !== false ? __('teacher_username_taken') : __('teacher_db_error');
+                $error = $e->getMessage();
+
+                if ($isAjax) {
+                    header('Content-Type: application/json', true, 400);
+                    echo json_encode(['success' => false, 'message' => $error]);
+                    exit;
+                }
+
                 $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/teachers/create.php';
             }
@@ -280,11 +341,12 @@ class TeacherController
             SELECT s.id as subject_id, s.nom as subject_nom, c.id as class_id, c.nom as class_nom,
                    u.id as teacher_id, u.nom as teacher_nom, u.prenom as teacher_prenom
             FROM subjects s
+            JOIN teaching_types tt ON s.teaching_type_id = tt.id
             JOIN subject_classes sc ON s.id = sc.subject_id
             JOIN classes c ON sc.class_id = c.id
             LEFT JOIN teacher_assignments ta ON (s.id = ta.subject_id AND c.id = ta.class_id AND ta.academic_year_id = {$activeYearId})
             LEFT JOIN users u ON ta.user_id = u.id
-            WHERE s.status = 1 {$ttCondition}
+            WHERE s.status = 1 AND tt.actif = 1 {$ttCondition}
             ORDER BY s.nom ASC, c.nom ASC
         ")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -329,6 +391,20 @@ class TeacherController
         $academicYearId = $this->academicYearService->getActiveYearId();
 
         try {
+            // Vérifier que la matière appartient à un type d'enseignement actif
+            $stmtTtCheck = $this->db->prepare("
+                SELECT COUNT(*) 
+                FROM subjects s
+                JOIN teaching_types tt ON s.teaching_type_id = tt.id
+                WHERE s.id = ? AND tt.actif = 1
+            ");
+            $stmtTtCheck->execute([$subject_id]);
+            if ((int) $stmtTtCheck->fetchColumn() === 0) {
+                Session::setFlash('error', __('subject_not_active_teaching_type') ?? 'La matière doit être rattachée à un type d\'enseignement actif.');
+                header("Location: /teachers");
+                exit;
+            }
+
             // Vérifier s'il y a déjà une affectation pour ce couple Matière-Classe
             $stmtCheck = $this->db->prepare("SELECT user_id FROM teacher_assignments WHERE subject_id = ? AND class_id = ? AND academic_year_id = ?");
             $stmtCheck->execute([$subject_id, $class_id, $academicYearId]);
@@ -375,6 +451,21 @@ class TeacherController
                 foreach ($assignments as $pair) {
                     [$subj_id, $cls_id] = explode('_', $pair);
 
+                    // Valider que la matière appartient à un type d'enseignement actif
+                    $stmtTtCheck = $this->db->prepare("
+                        SELECT COUNT(*) 
+                        FROM subjects s
+                        JOIN teaching_types tt ON s.teaching_type_id = tt.id
+                        WHERE s.id = ? AND tt.actif = 1
+                    ");
+                    $stmtTtCheck->execute([(int) $subj_id]);
+                    if ((int) $stmtTtCheck->fetchColumn() === 0) {
+                        $this->db->rollBack();
+                        Session::setFlash('error', __('subject_not_active_teaching_type') ?? 'La matière affectée doit être rattachée à un type d\'enseignement actif.');
+                        header("Location: /teachers/assign?id=" . $id);
+                        exit;
+                    }
+
                     $stmtCheck = $this->db->prepare("
                         SELECT u.nom, u.prenom, s.nom as subject_name, c.nom as class_name 
                         FROM teacher_assignments ta
@@ -401,7 +492,16 @@ class TeacherController
                 }
 
                 // 3. Purge et ré-affectation propre
-                $stmtDelAssig = $this->db->prepare("DELETE FROM teacher_assignments WHERE user_id = ? AND academic_year_id = ?");
+                $stmtDelAssig = $this->db->prepare("
+                    DELETE FROM teacher_assignments 
+                    WHERE user_id = ? AND academic_year_id = ? 
+                      AND subject_id IN (
+                          SELECT s.id 
+                          FROM subjects s 
+                          JOIN teaching_types tt ON s.teaching_type_id = tt.id 
+                          WHERE tt.actif = 1
+                      )
+                ");
                 $stmtDelAssig->execute([$id, $academicYearId]);
 
                 $stmtInsAssig = $this->db->prepare("INSERT INTO teacher_assignments (user_id, subject_id, class_id, academic_year_id) VALUES (?, ?, ?, ?)");
@@ -459,31 +559,72 @@ class TeacherController
 
     public function upload(): void
     {
+        $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+            || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false);
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_FILES['import_file'])) {
+            if ($isAjax) {
+                header('Content-Type: application/json', true, 400);
+                echo json_encode(['success' => false, 'message' => __('invalid_request')]);
+                exit;
+            }
             header('Location: /teachers/import');
             exit;
         }
+
         if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
-            Session::setFlash('error', __('session_expired_error'));
+            $errMsg = __('session_expired_error');
+            if ($isAjax) {
+                header('Content-Type: application/json', true, 400);
+                echo json_encode(['success' => false, 'message' => $errMsg]);
+                exit;
+            }
+            Session::setFlash('error', $errMsg);
             header('Location: /teachers/import');
             exit;
         }
+
         $file = $_FILES['import_file'];
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         if ($ext !== 'xlsx') {
-            Session::setFlash('error', __('invalid_file_format_excel'));
+            $errMsg = __('invalid_file_format_excel');
+            if ($isAjax) {
+                header('Content-Type: application/json', true, 400);
+                echo json_encode(['success' => false, 'message' => $errMsg]);
+                exit;
+            }
+            Session::setFlash('error', $errMsg);
             header('Location: /teachers/import');
             exit;
         }
+
         $processor = new TeacherImportProcessor($this->db);
         $lang = Session::get('app_lang', 'fr') === 'en' ? 'en' : 'fr';
         $result = $processor->process($file['tmp_name'], $lang);
+
         if ($result['success']) {
-            Session::setFlash('success', __('teacher_import_success_count', ['count' => $result['count']]));
+            $successMsg = __('teacher_import_success_count', ['count' => $result['count']]);
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => true, 'message' => $successMsg, 'count' => $result['count']]);
+                exit;
+            }
+            Session::setFlash('success', $successMsg);
             header('Location: /teachers');
             exit;
         }
+
         $errors = $result['errors'];
+        if ($isAjax) {
+            header('Content-Type: application/json', true, 400);
+            echo json_encode([
+                'success' => false,
+                'message' => implode("<br>", array_map('htmlspecialchars', $errors)),
+                'errors' => $errors
+            ]);
+            exit;
+        }
+
         include __DIR__ . '/../Views/teachers/import.php';
     }
 
@@ -620,14 +761,19 @@ class TeacherController
                 (SELECT GROUP_CONCAT(DISTINCT s.nom ORDER BY s.nom SEPARATOR ', ')
                     FROM teacher_assignments ta
                     JOIN subjects s ON ta.subject_id = s.id
-                    WHERE ta.user_id = u.id AND ta.academic_year_id = {$academicYearId}) as subjects_list,
+                    JOIN teaching_types tt ON s.teaching_type_id = tt.id
+                    WHERE ta.user_id = u.id AND ta.academic_year_id = {$academicYearId} AND tt.actif = 1) as subjects_list,
                 (SELECT GROUP_CONCAT(DISTINCT c.nom ORDER BY c.nom SEPARATOR ', ')
                     FROM teacher_assignments ta
                     JOIN classes c ON ta.class_id = c.id
-                    WHERE ta.user_id = u.id AND ta.academic_year_id = {$academicYearId}) as classes_list,
+                    JOIN subjects s ON ta.subject_id = s.id
+                    JOIN teaching_types tt ON s.teaching_type_id = tt.id
+                    WHERE ta.user_id = u.id AND ta.academic_year_id = {$academicYearId} AND tt.actif = 1) as classes_list,
                 (SELECT COUNT(DISTINCT ta.subject_id)
                     FROM teacher_assignments ta
-                    WHERE ta.user_id = u.id AND ta.academic_year_id = {$academicYearId}) as subjects_count
+                    JOIN subjects s ON ta.subject_id = s.id
+                    JOIN teaching_types tt ON s.teaching_type_id = tt.id
+                    WHERE ta.user_id = u.id AND ta.academic_year_id = {$academicYearId} AND tt.actif = 1) as subjects_count
                 FROM users u
                 WHERE u.role = 'enseignant'";
 

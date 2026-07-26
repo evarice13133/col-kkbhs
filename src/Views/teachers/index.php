@@ -5,19 +5,23 @@ ob_start(); ?>
 
 
 
-    <?php if ($msg = App\Core\Session::get('success_msg')): ?>
+    <?php 
+    $msg = App\Core\Session::getFlash('success_msg') ?: App\Core\Session::getFlash('success');
+    if ($msg): 
+    ?>
         <div class="alert alert-success border-0 shadow-sm alert-dismissible fade show rounded-4 mb-4" role="alert">
             <i class="bi bi-check-circle-fill me-2"></i><?= htmlspecialchars((string) $msg) ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-        <?php App\Core\Session::remove('success_msg'); ?>
     <?php endif; ?>
-    <?php if ($err = App\Core\Session::get('error_msg')): ?>
+    <?php 
+    $err = App\Core\Session::getFlash('error_msg') ?: App\Core\Session::getFlash('error');
+    if ($err): 
+    ?>
         <div class="alert alert-danger border-0 shadow-sm alert-dismissible fade show rounded-4 mb-4" role="alert">
             <i class="bi bi-exclamation-triangle-fill me-2"></i><?= htmlspecialchars((string) $err) ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-        <?php App\Core\Session::remove('error_msg'); ?>
     <?php endif; ?>
 
     <!-- BANNIÈRE MODE AFFECTATION -->
@@ -89,12 +93,12 @@ ob_start(); ?>
                 
                 <!-- Boutons d'Action Principaux -->
                 <div class="d-flex gap-2 pe-3 border-end border-opacity-10 border-secondary me-2">
-                    <a href="/teachers/create" class="btn btn-primary rounded-pill px-3 fw-bold shadow-sm text-nowrap">
+                    <button type="button" class="btn btn-primary rounded-pill px-3 fw-bold shadow-sm text-nowrap" data-bs-toggle="modal" data-bs-target="#createTeacherModal">
                         <i class="bi bi-person-plus me-1"></i> <?= __('add_teacher') ?>
-                    </a>
-                    <a href="/teachers/import" class="btn btn-outline-success rounded-pill px-3 fw-bold text-nowrap d-none d-xl-inline-block">
+                    </button>
+                    <button type="button" class="btn btn-outline-success rounded-pill px-3 fw-bold text-nowrap" data-bs-toggle="modal" data-bs-target="#importTeachersModal">
                         <i class="bi bi-file-earmark-spreadsheet me-1"></i> <?= __('import_excel') ?>
-                    </a>
+                    </button>
                 </div>
 
                 <!-- Barre de Recherche (Extensible) -->
@@ -126,142 +130,179 @@ ob_start(); ?>
         </div>
     </div>
 
-    <!-- LISTE DES ENSEIGNANTS -->
-    <div class="modern-card border-0 shadow-sm overflow-hidden animate-fade-in">
-        <div class="table-responsive">
-            <table class="table-modern">
-                <thead>
-                    <tr>
-                        <th class="ps-4"><?= __('teacher') ?></th>
-                        <th><?= __('username') ?></th>
-                        <th><?= __('subjects') ?></th>
-                        <th><?= __('classes') ?></th>
-                        <th class="text-end pe-4"><?= __('actions') ?></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($teachers)): ?>
+    <!-- LISTE ET PAGINATION DES ENSEIGNANTS -->
+    <div id="teachersListContainer">
+        <div class="modern-card border-0 shadow-sm overflow-hidden animate-fade-in">
+            <div class="table-responsive">
+                <table class="table-modern">
+                    <thead>
                         <tr>
-                            <td colspan="5" class="text-center py-5">
-                                <i class="bi bi-person-workspace fs-1 opacity-25 mb-3 d-block"></i>
-                                <span class="opacity-50"><?= __('no_data') ?></span>
-                            </td>
+                            <th class="ps-4"><?= __('teacher') ?></th>
+                            <th><?= __('username') ?></th>
+                            <th><?= __('subjects') ?></th>
+                            <th><?= __('classes') ?></th>
+                            <th class="text-end pe-4"><?= __('actions') ?></th>
                         </tr>
-                    <?php else: ?>
-                        <?php foreach ($teachers as $t): ?>
+                    </thead>
+                    <tbody>
+                        <?php if (empty($teachers)): ?>
                             <tr>
-                                <td class="ps-4">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <div class="avatar-init bg-primary bg-opacity-10 text-primary fw-bold rounded-circle d-flex align-items-center justify-content-center shadow-sm"
-                                            style="width: 36px; height: 36px; font-size: 1rem; border: 1px solid rgba(var(--primary-rgb), 0.2);">
-                                            <?= strtoupper(substr((string) $t['nom'], 0, 1)) ?>
-                                        </div>
-                                        <div>
-                                            <div class="fw-bold text-main-theme">
-                                                <?= htmlspecialchars((string) $t['nom']) ?>
-                                            </div>
-                                            <div class="text-muted-theme opacity-75"
-                                                style="font-size: 0.85rem;"><?= htmlspecialchars((string) $t['prenom']) ?>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge bg-primary bg-opacity-10 text-primary fw-bold px-3 py-1 rounded-3">
-                                        <?= htmlspecialchars((string) $t['username']) ?>
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="badge bg-info bg-opacity-10 text-info fw-bold px-3 py-1 rounded-3">
-                                        <?= (int) $t['subjects_count'] ?>
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="text-muted small"><?= htmlspecialchars((string) ($t['classes_list'] ?: '-')) ?></span>
-                                </td>
-                                <td class="text-end pe-4">
-                                    <div class="d-flex justify-content-end gap-1">
-                                        <?php if (!$assignContext): ?>
-                                            <a href="/teachers/edit?id=<?= $t['id'] ?>"
-                                                class="btn btn-sm btn-action-modern text-primary" title="<?= __('edit') ?>">
-                                                <i class="bi bi-pencil-square fs-5"></i>
-                                            </a>
-                                            <a href="/teachers/assign?id=<?= $t['id'] ?>"
-                                                class="btn btn-sm btn-action-modern text-info" title="<?= __('assignments') ?>">
-                                                <i class="bi bi-journal-plus fs-5"></i>
-                                            </a>
-                                        <?php else: ?>
-                                            <a href="/teachers/direct_assign?teacher_id=<?= $t['id'] ?>&subject_id=<?= $assignContext['subject_id'] ?>&class_id=<?= $assignContext['class_id'] ?>"
-                                                class="btn btn-sm btn-action-modern text-success" title="<?= __('choose') ?>">
-                                                <i class="bi bi-check2-circle fs-5"></i>
-                                            </a>
-                                        <?php endif; ?>
-                                        <a href="/teachers/delete?id=<?= $t['id'] ?>"
-                                            class="btn btn-sm btn-action-modern text-danger btn-confirm-delete"
-                                            data-confirm="<?= __('delete_teacher_confirm') ?>"
-                                            title="<?= __('delete') ?>">
-                                            <i class="bi bi-trash fs-5"></i>
-                                        </a>
-                                    </div>
+                                <td colspan="5" class="text-center py-5">
+                                    <i class="bi bi-person-workspace fs-1 opacity-25 mb-3 d-block"></i>
+                                    <span class="opacity-50"><?= __('no_data') ?></span>
                                 </td>
                             </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
+                        <?php else: ?>
+                            <?php foreach ($teachers as $t): ?>
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="avatar-init bg-primary bg-opacity-10 text-primary fw-bold rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+                                                style="width: 36px; height: 36px; font-size: 1rem; border: 1px solid rgba(var(--primary-rgb), 0.2);">
+                                                <?= strtoupper(substr((string) $t['nom'], 0, 1)) ?>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold text-main-theme">
+                                                    <?= htmlspecialchars((string) $t['nom']) ?>
+                                                </div>
+                                                <div class="text-muted-theme opacity-75"
+                                                    style="font-size: 0.85rem;"><?= htmlspecialchars((string) $t['prenom']) ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary bg-opacity-10 text-primary fw-bold px-3 py-1 rounded-3">
+                                            <?= htmlspecialchars((string) $t['username']) ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info bg-opacity-10 text-info fw-bold px-3 py-1 rounded-3">
+                                            <?= (int) $t['subjects_count'] ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="text-muted small"><?= htmlspecialchars((string) ($t['classes_list'] ?: '-')) ?></span>
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <div class="d-flex justify-content-end gap-1">
+                                            <?php if (!$assignContext): ?>
+                                                <a href="/teachers/edit?id=<?= $t['id'] ?>"
+                                                    class="btn btn-sm btn-action-modern text-primary" title="<?= __('edit') ?>">
+                                                    <i class="bi bi-pencil-square fs-5"></i>
+                                                </a>
+                                                <a href="/teachers/assign?id=<?= $t['id'] ?>"
+                                                    class="btn btn-sm btn-action-modern text-info" title="<?= __('assignments') ?>">
+                                                    <i class="bi bi-journal-plus fs-5"></i>
+                                                </a>
+                                            <?php else: ?>
+                                                <a href="/teachers/direct_assign?teacher_id=<?= $t['id'] ?>&subject_id=<?= $assignContext['subject_id'] ?>&class_id=<?= $assignContext['class_id'] ?>"
+                                                    class="btn btn-sm btn-action-modern text-success" title="<?= __('choose') ?>">
+                                                    <i class="bi bi-check2-circle fs-5"></i>
+                                                </a>
+                                            <?php endif; ?>
+                                            <a href="/teachers/delete?id=<?= $t['id'] ?>"
+                                                class="btn btn-sm btn-action-modern text-danger btn-confirm-delete"
+                                                data-confirm="<?= __('delete_teacher_confirm') ?>"
+                                                title="<?= __('delete') ?>">
+                                                <i class="bi bi-trash fs-5"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
+
+        <!-- PAGINATION -->
+        <?php if ($totalPages > 1): ?>
+            <div class="d-flex justify-content-between align-items-center mt-5 mb-4 flex-wrap gap-3">
+                <div class="text-muted small">
+                    <?= __('showing_count', [
+                        'start' => $offset + 1,
+                        'end' => min($offset + $limit, $totalCount),
+                        'total' => $totalCount
+                    ]) ?>
+                </div>
+                <nav aria-label="Page navigation">
+                    <ul class="pagination pagination-modern mb-0">
+                        <?php if ($page > 1): ?>
+                            <li class="page-item">
+                                <a class="page-link" href="?<?= http_build_query(array_merge($filters, ['page' => $page - 1])) ?>" aria-label="Previous">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+                        <?php endif; ?>
+
+                        <?php
+                        $start = max(1, $page - 2);
+                        $end = min($totalPages, $page + 2);
+                        if ($start > 1): ?>
+                            <li class="page-item"><a class="page-link" href="?<?= http_build_query(array_merge($filters, ['page' => 1])) ?>">1</a></li>
+                            <?php if ($start > 2): ?><li class="page-item disabled"><span class="page-link">...</span></li><?php endif; ?>
+                        <?php endif; ?>
+
+                        <?php for ($i = $start; $i <= $end; $i++): ?>
+                            <li class="page-item <?= $i === $page ? 'active' : '' ?>">
+                                <a class="page-link" href="?<?= http_build_query(array_merge($filters, ['page' => $i])) ?>"><?= $i ?></a>
+                            </li>
+                        <?php endfor; ?>
+
+                        <?php if ($end < $totalPages): ?>
+                            <?php if ($end < $totalPages - 1): ?><li class="page-item disabled"><span class="page-link">...</span></li><?php endif; ?>
+                            <li class="page-item"><a class="page-link" href="?<?= http_build_query(array_merge($filters, ['page' => $totalPages])) ?>"><?= $totalPages ?></a></li>
+                        <?php endif; ?>
+
+                        <?php if ($page < $totalPages): ?>
+                            <li class="page-item">
+                                <a class="page-link" href="?<?= http_build_query(array_merge($filters, ['page' => $page + 1])) ?>" aria-label="Next">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                        <?php endif; ?>
+                    </ul>
+                </nav>
+            </div>
+        <?php endif; ?>
     </div>
 
-    <!-- PAGINATION -->
-    <?php if ($totalPages > 1): ?>
-        <div class="d-flex justify-content-between align-items-center mt-5 mb-4 flex-wrap gap-3">
-            <div class="text-muted small">
-                <?= __('showing_count', [
-                    'start' => $offset + 1,
-                    'end' => min($offset + $limit, $totalCount),
-                    'total' => $totalCount
-                ]) ?>
+    <!-- MODALE CRÉATION ENSEIGNANT -->
+    <div class="modal fade" id="createTeacherModal" tabindex="-1" aria-labelledby="createTeacherModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+                <div class="modal-header border-bottom border-theme-light p-4 bg-primary bg-opacity-10">
+                    <h5 class="modal-title fw-black text-main-theme" id="createTeacherModalLabel">
+                        <i class="bi bi-person-plus-fill me-2 text-primary"></i><?= __('add_teacher') ?>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <?php 
+                    $isModal = true;
+                    include __DIR__ . '/_form.php'; 
+                    ?>
+                </div>
             </div>
-            <nav aria-label="Page navigation">
-                <ul class="pagination pagination-modern mb-0">
-                    <?php if ($page > 1): ?>
-                        <li class="page-item">
-                            <a class="page-link" href="?<?= http_build_query(array_merge($filters, ['page' => $page - 1])) ?>" aria-label="Previous">
-                                <i class="bi bi-chevron-left"></i>
-                            </a>
-                        </li>
-                    <?php endif; ?>
-
-                    <?php
-                    $start = max(1, $page - 2);
-                    $end = min($totalPages, $page + 2);
-                    if ($start > 1): ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query(array_merge($filters, ['page' => 1])) ?>">1</a></li>
-                        <?php if ($start > 2): ?><li class="page-item disabled"><span class="page-link">...</span></li><?php endif; ?>
-                    <?php endif; ?>
-
-                    <?php for ($i = $start; $i <= $end; $i++): ?>
-                        <li class="page-item <?= $i === $page ? 'active' : '' ?>">
-                            <a class="page-link" href="?<?= http_build_query(array_merge($filters, ['page' => $i])) ?>"><?= $i ?></a>
-                        </li>
-                    <?php endfor; ?>
-
-                    <?php if ($end < $totalPages): ?>
-                        <?php if ($end < $totalPages - 1): ?><li class="page-item disabled"><span class="page-link">...</span></li><?php endif; ?>
-                        <li class="page-item"><a class="page-link" href="?<?= http_build_query(array_merge($filters, ['page' => $totalPages])) ?>"><?= $totalPages ?></a></li>
-                    <?php endif; ?>
-
-                    <?php if ($page < $totalPages): ?>
-                        <li class="page-item">
-                            <a class="page-link" href="?<?= http_build_query(array_merge($filters, ['page' => $page + 1])) ?>" aria-label="Next">
-                                <i class="bi bi-chevron-right"></i>
-                            </a>
-                        </li>
-                    <?php endif; ?>
-                </ul>
-            </nav>
         </div>
-    <?php endif; ?>
+    <!-- MODALE IMPORT EXCEL ENSEIGNANTS -->
+    <div class="modal fade" id="importTeachersModal" tabindex="-1" aria-labelledby="importTeachersModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+                <div class="modal-header border-bottom border-theme-light p-4 bg-success bg-opacity-10">
+                    <h5 class="modal-title fw-black text-main-theme" id="importTeachersModalLabel">
+                        <i class="bi bi-file-earmark-spreadsheet-fill me-2 text-success"></i><?= __('import_teachers_title') ?>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <?php include __DIR__ . '/_import_form.php'; ?>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <style>
@@ -456,6 +497,169 @@ ob_start(); ?>
 </style>
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modalEl = document.getElementById('createTeacherModal');
+    const teacherForm = document.getElementById('teacherCreateForm');
+
+    if (teacherForm) {
+        teacherForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // Verification front-end : au moins un type d'enseignement doit être sélectionné
+            const checked = teacherForm.querySelectorAll('input[name="teaching_type_ids[]"]:checked');
+            if (checked.length === 0) {
+                const msg = "<?= htmlspecialchars(__('select_at_least_one_teaching_type'), ENT_QUOTES) ?>";
+                if (typeof AlertService !== 'undefined') {
+                    AlertService.toast('error', msg);
+                } else {
+                    alert(msg);
+                }
+                return;
+            }
+
+            const formData = new FormData(teacherForm);
+            const submitBtn = teacherForm.querySelector('button[type="submit"]');
+            if (submitBtn) submitBtn.disabled = true;
+
+            fetch('/teachers/store', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: formData
+            })
+            .then(async response => {
+                const data = await response.json();
+                return { ok: response.ok, data: data };
+            })
+            .then(({ ok, data }) => {
+                if (submitBtn) submitBtn.disabled = false;
+
+                if (ok && data.success) {
+                    // Fermeture de la modale Bootstrap 5
+                    if (modalEl) {
+                        const bsModal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                        bsModal.hide();
+                    }
+                    teacherForm.reset();
+
+                    // Notification de succès via le service centralisé
+                    if (typeof AlertService !== 'undefined') {
+                        AlertService.toast('success', data.message);
+                    }
+
+                    // Rafraîchissement automatique de la liste sans recharger la page
+                    refreshTeachersList();
+                } else {
+                    const errorMsg = data.message || "<?= addslashes((string) __('teacher_required_fields')) ?>";
+                    if (typeof AlertService !== 'undefined') {
+                        AlertService.error("<?= addslashes((string) __('error_title')) ?>", errorMsg);
+                    } else {
+                        alert(errorMsg);
+                    }
+                }
+            })
+            .catch(err => {
+                if (submitBtn) submitBtn.disabled = false;
+                console.error('Submit error:', err);
+                if (typeof AlertService !== 'undefined') {
+                    AlertService.toast('error', "<?= addslashes((string) __('communication_error')) ?>");
+                }
+            });
+        });
+    }
+
+    // Gestion de l'importation Excel via AJAX
+    const importModalEl = document.getElementById('importTeachersModal');
+    const importForm = document.getElementById('teacherImportForm');
+    const importFileInput = document.getElementById('teacher-import-file');
+    const importSubmitBtn = document.getElementById('teacher-import-submit');
+
+    if (importFileInput && importSubmitBtn) {
+        importFileInput.addEventListener('change', function() {
+            importSubmitBtn.disabled = importFileInput.files.length === 0;
+        });
+    }
+
+    if (importForm) {
+        importForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            if (!importFileInput || importFileInput.files.length === 0) {
+                return;
+            }
+
+            const formData = new FormData(importForm);
+            if (importSubmitBtn) importSubmitBtn.disabled = true;
+
+            fetch('/teachers/upload', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: formData
+            })
+            .then(async response => {
+                const data = await response.json();
+                return { ok: response.ok, data: data };
+            })
+            .then(({ ok, data }) => {
+                if (importSubmitBtn) importSubmitBtn.disabled = false;
+
+                if (ok && data.success) {
+                    if (importModalEl) {
+                        const bsModal = bootstrap.Modal.getInstance(importModalEl) || new bootstrap.Modal(importModalEl);
+                        bsModal.hide();
+                    }
+                    importForm.reset();
+                    if (importSubmitBtn) importSubmitBtn.disabled = true;
+
+                    if (typeof AlertService !== 'undefined') {
+                        AlertService.toast('success', data.message);
+                    }
+
+                    refreshTeachersList();
+                } else {
+                    const errorMsg = data.message || "<?= addslashes((string) __('error_occurred')) ?>";
+                    if (typeof AlertService !== 'undefined') {
+                        AlertService.error("<?= addslashes((string) __('error_title')) ?>", errorMsg);
+                    } else {
+                        alert(errorMsg);
+                    }
+                }
+            })
+            .catch(err => {
+                if (importSubmitBtn) importSubmitBtn.disabled = false;
+                console.error('Import submit error:', err);
+                if (typeof AlertService !== 'undefined') {
+                    AlertService.toast('error', "<?= addslashes((string) __('communication_error')) ?>");
+                }
+            });
+        });
+    }
+
+    function refreshTeachersList() {
+        fetch(window.location.href, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(res => res.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newContent = doc.getElementById('teachersListContainer');
+            const currentContent = document.getElementById('teachersListContainer');
+            if (newContent && currentContent) {
+                currentContent.innerHTML = newContent.innerHTML;
+            }
+        })
+        .catch(err => console.error('Error refreshing teachers list:', err));
+    }
+});
+
 function toggleTeacherNamesOnBulletins(checkbox) {
     const newValue = checkbox.checked ? '1' : '0';
     

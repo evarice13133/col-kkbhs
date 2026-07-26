@@ -158,10 +158,10 @@ ob_start();
 
                         <div class="col-md-6">
                             <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('cycle_membership') ?></label>
-                            <select name="cycle_id" class="form-select premium-input">
+                            <select name="cycle_id" id="cycle_id" class="form-select premium-input">
                                 <option value=""><?= __('no_specific_cycle') ?></option>
                                 <?php foreach ($cycles as $cy): ?>
-                                    <option value="<?= $cy['id'] ?>" <?= (($classe['cycle_id'] ?? '') == $cy['id']) ? 'selected' : '' ?>><?= h($cy['nom']) ?></option>
+                                    <option value="<?= $cy['id'] ?>" data-teaching-type-id="<?= $cy['teaching_type_id'] ?>" <?= (($classe['cycle_id'] ?? '') == $cy['id']) ? 'selected' : '' ?>><?= h($cy['nom']) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -290,35 +290,47 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const teachingTypeSelect = document.querySelector('select[name="teaching_type_id"]');
     const departmentSelect = document.getElementById('department_id');
-    const originalDeptOptions = Array.from(departmentSelect.options);
+    const cycleSelect = document.getElementById('cycle_id');
+    const originalDeptOptions = departmentSelect ? Array.from(departmentSelect.options) : [];
+    const originalCycleOptions = cycleSelect ? Array.from(cycleSelect.options) : [];
 
-    function filterDepartments() {
-        const selectedType = teachingTypeSelect.value;
-        const currentDeptValue = departmentSelect.value;
+    function filterDepartmentsAndCycles() {
+        const selectedType = teachingTypeSelect ? teachingTypeSelect.value : '';
         
-        departmentSelect.innerHTML = '';
-        
-        let foundCurrent = false;
-        
-        originalDeptOptions.forEach(opt => {
-            if (opt.value === '' || !selectedType || opt.dataset.teachingTypeId == selectedType || !opt.dataset.teachingTypeId) {
-                departmentSelect.appendChild(opt.cloneNode(true));
-                if (opt.value === currentDeptValue) {
-                    foundCurrent = true;
+        if (departmentSelect) {
+            const currentDeptValue = departmentSelect.value;
+            departmentSelect.innerHTML = '';
+            let foundCurrentDept = false;
+            originalDeptOptions.forEach(opt => {
+                if (opt.value === '' || !selectedType || opt.dataset.teachingTypeId == selectedType || !opt.dataset.teachingTypeId) {
+                    departmentSelect.appendChild(opt.cloneNode(true));
+                    if (opt.value === currentDeptValue) {
+                        foundCurrentDept = true;
+                    }
                 }
-            }
-        });
-        
-        if (!foundCurrent) {
-            departmentSelect.value = '';
-        } else {
-            departmentSelect.value = currentDeptValue;
+            });
+            departmentSelect.value = foundCurrentDept ? currentDeptValue : '';
+        }
+
+        if (cycleSelect) {
+            const currentCycleValue = cycleSelect.value;
+            cycleSelect.innerHTML = '';
+            let foundCurrentCycle = false;
+            originalCycleOptions.forEach(opt => {
+                if (opt.value === '' || !selectedType || opt.dataset.teachingTypeId == selectedType || !opt.dataset.teachingTypeId) {
+                    cycleSelect.appendChild(opt.cloneNode(true));
+                    if (opt.value === currentCycleValue) {
+                        foundCurrentCycle = true;
+                    }
+                }
+            });
+            cycleSelect.value = foundCurrentCycle ? currentCycleValue : '';
         }
     }
 
     if (teachingTypeSelect) {
-        teachingTypeSelect.addEventListener('change', filterDepartments);
-        filterDepartments(); // Initial call
+        teachingTypeSelect.addEventListener('change', filterDepartmentsAndCycles);
+        filterDepartmentsAndCycles(); // Initial call
     }
 
     // Dynamic Tranches Logic

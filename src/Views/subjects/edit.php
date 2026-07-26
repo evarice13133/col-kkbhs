@@ -44,7 +44,7 @@ ob_start();
                     </div>
                     <div class="col-md-4">
                         <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Type Enseignement *</label>
-                        <select name="teaching_type_id" class="form-select premium-input border-primary border-opacity-25" required>
+                        <select name="teaching_type_id" id="teaching_type_id" class="form-select premium-input border-primary border-opacity-25" required>
                             <option value="">Sélectionner un type</option>
                             <?php foreach ($teachingTypes as $tt): ?>
                                 <option value="<?= $tt['id'] ?>" <?= (($subject['teaching_type_id'] ?? null) == $tt['id']) ? 'selected' : '' ?>><?= h($tt['nom']) ?></option>
@@ -64,10 +64,13 @@ ob_start();
                     </div>
                     <div class="col-md-8">
                         <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('subject_group') ?></label>
-                        <select name="groupe" class="form-select premium-input">
-                            <option value="Groupe 1" <?= ($subject['groupe'] ?? '') === 'Groupe 1' ? 'selected' : '' ?>>Groupe 1 - Matières Littéraires</option>
-                            <option value="Groupe 2" <?= ($subject['groupe'] ?? '') === 'Groupe 2' ? 'selected' : '' ?>>Groupe 2 - Matières Scientifiques</option>
-                            <option value="Groupe 3" <?= ($subject['groupe'] ?? '') === 'Groupe 3' ? 'selected' : '' ?>>Groupe 3 - Développement Personnel</option>
+                        <select name="subject_group_id" id="subject_group_id" class="form-select premium-input">
+                            <option value="">Sélectionner un groupe de modules...</option>
+                            <?php foreach ($subjectGroups as $grp): ?>
+                                <option value="<?= $grp['id'] ?>" data-teaching-type-id="<?= $grp['teaching_type_id'] ?>" <?= ((int)($subject['subject_group_id'] ?? 0) === (int)$grp['id']) ? 'selected' : '' ?>>
+                                    <?= h($grp['libelle']) ?>
+                                </option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="col-md-4">
@@ -116,7 +119,7 @@ ob_start();
                             foreach($classes as $c): 
                             ?>
                                 <?php $isChecked = in_array($c['id'], $assigned_classes ?? []); ?>
-                                <div class="col-6 col-sm-4 col-md-3 col-xl-2">
+                                <div class="col-6 col-sm-4 col-md-3 col-xl-2 class-wrapper" data-teaching-type-id="<?= $c['teaching_type_id'] ?? '' ?>">
                                     <div class="class-selection-item d-flex align-items-center p-2 rounded-3 border border-theme-light h-100 transition-base mobile-compact">
                                         <div class="form-check mb-0">
                                             <input class="form-check-input border-primary class-checkbox" 
@@ -174,15 +177,19 @@ document.addEventListener('DOMContentLoaded', function() {
     if (selectAll) {
         selectAll.addEventListener('change', function() {
             checkboxes.forEach(cb => {
-                cb.checked = selectAll.checked;
+                const wrapper = cb.closest('.class-wrapper');
+                if (!wrapper || !wrapper.classList.contains('d-none')) {
+                    cb.checked = selectAll.checked;
+                }
             });
         });
     }
 
     checkboxes.forEach(cb => {
         cb.addEventListener('change', function () {
-            const allChecked = Array.from(checkboxes).every(c => c.checked);
-            const noneChecked = Array.from(checkboxes).every(c => !c.checked);
+            const visibleCheckboxes = Array.from(checkboxes).filter(c => !c.closest('.class-wrapper').classList.contains('d-none'));
+            const allChecked = visibleCheckboxes.every(c => c.checked);
+            const noneChecked = visibleCheckboxes.every(c => !c.checked);
             selectAll.checked = allChecked;
             selectAll.indeterminate = !allChecked && !noneChecked;
         });
@@ -198,7 +205,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             classItems.forEach(item => {
                 const label = item.querySelector('.text-truncate').textContent.toLowerCase();
-                const container = item.closest('.col-6'); // The grid column wrapper
+                const container = item.closest('.class-wrapper') || item.closest('.col-6');
                 
                 if (label.includes(query)) {
                     container.classList.remove('d-none');
@@ -207,6 +214,72 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         });
+    }
+
+    // Dynamic Filtering between Teaching Type, Department, Subject Groups and Classes
+    const teachingTypeSelect = document.getElementById('teaching_type_id');
+    const deptSelect = document.getElementById('department_id');
+    const groupSelect = document.getElementById('subject_group_id');
+    const classWrappers = document.querySelectorAll('.class-wrapper');
+
+    if (teachingTypeSelect) {
+        function filterDeptAndClasses() {
+            const selectedTT = teachingTypeSelect.value;
+
+            // 1. Filter Departments
+            if (deptSelect) {
+                const originalDeptVal = deptSelect.value;
+                let deptValid = false;
+                Array.from(deptSelect.options).forEach(opt => {
+                    if (!opt.value) return;
+                    const optTT = opt.getAttribute('data-teaching-type-id');
+                    if (!selectedTT || !optTT || optTT === selectedTT) {
+                        opt.style.display = '';
+                        if (opt.value === originalDeptVal) deptValid = true;
+                    } else {
+                        opt.style.display = 'none';
+                    }
+                });
+                if (originalDeptVal && !deptValid) {
+                    deptSelect.value = '';
+                }
+            }
+
+            // 2. Filter Subject Groups
+            if (groupSelect) {
+                const originalGrpVal = groupSelect.value;
+                let grpValid = false;
+                Array.from(groupSelect.options).forEach(opt => {
+                    if (!opt.value) return;
+                    const optTT = opt.getAttribute('data-teaching-type-id');
+                    if (!selectedTT || !optTT || optTT === selectedTT) {
+                        opt.style.display = '';
+                        if (opt.value === originalGrpVal) grpValid = true;
+                    } else {
+                        opt.style.display = 'none';
+                    }
+                });
+                if (originalGrpVal && !grpValid) {
+                    groupSelect.value = '';
+                }
+            }
+
+            // 3. Filter Classes
+            classWrappers.forEach(wrapper => {
+                const classTT = wrapper.getAttribute('data-teaching-type-id');
+                const checkbox = wrapper.querySelector('.class-checkbox');
+
+                if (!selectedTT || !classTT || classTT === selectedTT) {
+                    wrapper.classList.remove('d-none');
+                } else {
+                    wrapper.classList.add('d-none');
+                    if (checkbox) checkbox.checked = false;
+                }
+            });
+        }
+
+        teachingTypeSelect.addEventListener('change', filterDeptAndClasses);
+        filterDeptAndClasses();
     }
 });
 </script>

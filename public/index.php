@@ -37,6 +37,7 @@ use App\Controllers\FinancialHistoryController;
 use App\Controllers\DiscountTypeController;
 use App\Controllers\SchoolFeeController;
 use App\Controllers\AIAssistantController;
+use App\Controllers\SubjectGroupController;
 
 
 
@@ -224,6 +225,8 @@ elseif (strpos($path, '/cycles') === 0) {
         $c->edit($_GET['id'] ?? 0); // Formulaire de modification
     elseif ($path === '/cycles/update' && $method === 'POST')
         $c->update($_GET['id'] ?? 0); // Traitement de la modification (POST)
+    elseif ($path === '/cycles/toggle')
+        $c->toggleStatus($_GET['id'] ?? 0);
     elseif ($path === '/cycles/delete')
         $c->delete($_GET['id'] ?? 0); // Suppression
 } elseif (strpos($path, '/sections') === 0) {
@@ -242,6 +245,8 @@ elseif (strpos($path, '/cycles') === 0) {
         $c->edit($_GET['id'] ?? 0);
     elseif ($path === '/sections/update' && $method === 'POST')
         $c->update($_GET['id'] ?? 0);
+    elseif ($path === '/sections/toggle')
+        $c->toggleStatus($_GET['id'] ?? 0);
     elseif ($path === '/sections/delete')
         $c->delete($_GET['id'] ?? 0);
 } elseif (strpos($path, '/departments') === 0) {
@@ -331,6 +336,26 @@ elseif (strpos($path, '/cycles') === 0) {
         $c->delete($_GET['id'] ?? 0);
     else {
         header('Location: /teaching_types');
+        exit;
+    }
+} elseif (strpos($path, '/subject-groups') === 0) {
+    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+        header('Location: /');
+        exit;
+    }
+    $c = new SubjectGroupController();
+    if ($path === '/subject-groups' || $path === '/subject-groups/')
+        $c->index();
+    elseif ($path === '/subject-groups/store' && $method === 'POST')
+        $c->store();
+    elseif ($path === '/subject-groups/update' && $method === 'POST')
+        $c->update($_GET['id'] ?? 0);
+    elseif ($path === '/subject-groups/toggle')
+        $c->toggle($_GET['id'] ?? 0);
+    elseif ($path === '/subject-groups/delete')
+        $c->delete($_GET['id'] ?? 0);
+    else {
+        header('Location: /subject-groups');
         exit;
     }
 }

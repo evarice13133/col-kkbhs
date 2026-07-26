@@ -24,12 +24,23 @@ ob_start();
                         <h6 class="fw-black text-primary m-0 text-uppercase letter-spacing-1"><?= __('cycle_modification') ?></h6>
                     </div>
                     
-                    <div class="col-md-12">
+                    <div class="col-md-6">
                         <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('cycle_name_label') ?></label>
                         <input type="text" name="nom" class="form-control premium-input" 
                             placeholder="<?= __('cycle_name_placeholder') ?>" 
                             value="<?= htmlspecialchars((string)($cycle['nom'] ?? '')) ?>" required autofocus>
                         <div class="form-text extra-small mt-1 opacity-75">Ex: 1er Cycle, 2nd Cycle, etc.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Type Enseignement *</label>
+                        <select name="teaching_type_id" class="form-select premium-input border-primary border-opacity-25" required>
+                            <option value="" disabled>Sélectionner un type d'enseignement</option>
+                            <?php foreach ($teachingTypes as $tt): ?>
+                                <option value="<?= $tt['id'] ?>" <?= ((int)($cycle['teaching_type_id'] ?? 0) === (int)$tt['id']) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars((string) $tt['nom']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('honor_roll_threshold_label') ?></label>

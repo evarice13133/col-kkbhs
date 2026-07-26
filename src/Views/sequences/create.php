@@ -30,7 +30,7 @@ ob_start(); ?>
                                 placeholder="Ex: Trimestre 1 - Séquence 1" required>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-bold text-main-theme small"><?= __('Short Label') ?></label>
+                            <label class="form-label fw-bold text-main-theme small"><?= __('Short_Label') ?></label>
                             <input type="text" name="short_label" class="form-control"
                                 placeholder="Ex: SEQ 1 or CC 1" maxlength="20" required>
                         </div>

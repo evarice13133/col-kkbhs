@@ -214,16 +214,12 @@ class GradeController
 
 
 
-        $classes = $this->extractAccessibleClasses($assignments);
-        $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-
-
-
         $filters = $this->getAssignmentFilters();
 
+        $classes = $this->extractAccessibleClasses($assignments, (int) $filters['teaching_type_id']);
+        $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
-
-        $subjects = $this->extractAccessibleSubjects($assignments, (int) $filters['class_id']);
+        $subjects = $this->extractAccessibleSubjects($assignments, (int) $filters['class_id'], (int) $filters['teaching_type_id']);
 
 
 
@@ -235,7 +231,7 @@ class GradeController
 
 
 
-        $evaluationTypes = $this->getAvailableEvaluationTypes();
+        $evaluationTypes = $this->getAvailableEvaluationTypes((int) ($filters['teaching_type_id'] ?? 0));
 
 
 
@@ -271,7 +267,7 @@ class GradeController
 
 
 
-        $activeSequencesCount = (int) $this->db->query("SELECT COUNT(*) FROM sequences WHERE is_active = 1")->fetchColumn();
+        $activeSequencesCount = (int) $this->db->query("SELECT COUNT(*) FROM sequences s LEFT JOIN teaching_types tt ON s.teaching_type_id = tt.id WHERE s.is_active = 1 AND (tt.actif = 1 OR s.teaching_type_id IS NULL)")->fetchColumn();
 
 
 
@@ -391,7 +387,7 @@ class GradeController
 
 
 
-        $evaluationTypes = $this->getAvailableEvaluationTypes();
+        $evaluationTypes = $this->getAvailableEvaluationTypes((int) ($filters['teaching_type_id'] ?? 0));
 
 
 
@@ -703,7 +699,7 @@ class GradeController
 
         // Classes are now shared across years, no year filtering
 
-        $classInfo = $this->fetchOne("SELECT id, nom FROM classes WHERE id = ?", [$classId]);
+        $classInfo = $this->fetchOne("SELECT id, nom, teaching_type_id FROM classes WHERE id = ?", [$classId]);
 
 
 
@@ -715,7 +711,7 @@ class GradeController
 
 
 
-        $activeEvaluations = $this->getAvailableEvaluationTypes();
+        $activeEvaluations = $this->getAvailableEvaluationTypes((int) ($classInfo['teaching_type_id'] ?? 0));
 
 
 
@@ -935,130 +931,40 @@ class GradeController
 
 
 
-        $periodes = $this->getAvailableEvaluationTypes();
-
-
-
-        $periode = $_GET['periode'] ?? ($periodes[0] ?? '');
-
-
-
-
-
-
-
-        // Validation de la période demandée pour éviter les injections de labels fantaisistes
-
-
-
-        if (!$this->isAllowedEvaluationType($periode, $periodes)) {
-
-
-
-            $periode = $periodes[0] ?? '';
-
-
-
-        }
-
-
-
-
-
-
-
-        // Vérification stricte des autorisations de saisie
-
-
-
-        if (!$this->canManageAssignment($subject_id, $class_id)) {
-
-
-
-            die(__('unauthorized_gradebook_access'));
-
-
-
-        }
-
-
-
-
-
-
-
         // Classes are now shared across years, no year filtering
-
-        $classInfo = $this->fetchOne("SELECT id, nom FROM classes WHERE id = ?", [$class_id]);
-
-
-
+        $classInfo = $this->fetchOne("SELECT id, nom, teaching_type_id FROM classes WHERE id = ?", [$class_id]);
         $subjectInfo = $this->fetchOne("SELECT id, nom, coefficient FROM subjects WHERE id = ?", [$subject_id]);
 
-
-
-
-
-
-
         if (!$classInfo || !$subjectInfo) {
-
-
-
             header("Location: /notes");
-
-
-
             exit;
-
-
-
         }
 
+        // Vérification stricte des autorisations de saisie
+        if (!$this->canManageAssignment($subject_id, $class_id)) {
+            die(__('unauthorized_gradebook_access'));
+        }
 
+        // Récupérer uniquement les évaluations correspondant au type d'enseignement de la classe
+        $periodes = $this->getAvailableEvaluationTypes((int) ($classInfo['teaching_type_id'] ?? 0));
+        $periode = $_GET['periode'] ?? ($periodes[0] ?? '');
 
-
-
-
+        // Validation de la période demandée pour éviter les injections de labels fantaisistes
+        if (!$this->isAllowedEvaluationType($periode, $periodes)) {
+            $periode = $periodes[0] ?? '';
+        }
 
         $activeYear = $this->getActiveAcademicYear();
-
-
-
         if (!$activeYear) {
-
-
-
             die(__('no_active_year_defined'));
-
-
-
         }
-
-
-
-
-
-
 
         if (empty($periodes)) {
-
-
-
             die(__('no_active_evaluation_available'));
-
-
-
         }
 
-
-
-
-
-
-
         // Récupération enrichie des élèves de la classe avec leurs notes existantes si saisies
-
+        // Exclut les élèves supprimés (actif = 0) et démissionnaires/abondon
         $sql = "SELECT st.id as student_id, st.nom, st.prenom,
                        g.valeur, g.appreciation
                 FROM students st
@@ -1067,13 +973,15 @@ class GradeController
                     AND g.subject_id = ?
                     AND g.periode = ?
                     AND g.academic_year_id = ?
-                WHERE st.class_id = ? AND st.academic_year_id = ? AND st.is_withdrawn = 0
+                WHERE st.class_id = ? 
+                  AND st.academic_year_id = ? 
+                  AND st.is_withdrawn = 0 
+                  AND st.actif = 1 
+                  AND st.status NOT IN ('Démission', 'Démissionnaire', 'Abandon')
                 ORDER BY st.nom ASC, st.prenom ASC";
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$subject_id, $periode, $activeYear['id'], $class_id, $activeYear['id']]);
-
-
 
         $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -1619,106 +1527,65 @@ class GradeController
 
 
 
-
-
-
     private function getAccessibleAssignments()
-
-
 
     {
 
-
-
         $role = Session::get('user_role');
-
-
 
         $user_id = (int) Session::get('user_id');
 
 
 
-
-
-
-
         if (in_array($role, ['superadmin', 'admin'], true)) {
 
+            return $this->db->query("SELECT sc.subject_id, sc.class_id, s.nom as subject_nom, c.nom as class_nom,
 
+                                            COALESCE(s.teaching_type_id, c.teaching_type_id) as teaching_type_id,
 
-            return $this->db->query("SELECT sc.subject_id, sc.class_id, s.nom as subject_nom, c.nom as class_nom, c.teaching_type_id,
                                             u.nom as teacher_nom, u.prenom as teacher_prenom
-
-
 
                                      FROM subject_classes sc
 
-
-
                                      JOIN subjects s ON sc.subject_id = s.id
-
-
 
                                      JOIN classes c ON sc.class_id = c.id
 
-
+                                     LEFT JOIN teaching_types tt ON COALESCE(s.teaching_type_id, c.teaching_type_id) = tt.id
 
                                      LEFT JOIN teacher_assignments ta ON sc.subject_id = ta.subject_id AND sc.class_id = ta.class_id
 
-
-
                                      LEFT JOIN users u ON ta.user_id = u.id
 
-
-
-                                     WHERE s.status = 1
-
-
+                                     WHERE s.status = 1 AND (tt.actif = 1 OR COALESCE(s.teaching_type_id, c.teaching_type_id) IS NULL)
 
                                      ORDER BY c.nom ASC, s.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-
-
 
         }
 
 
 
+        $stmt = $this->db->prepare("SELECT ta.subject_id, ta.class_id, s.nom as subject_nom, c.nom as class_nom,
 
-
-
-
-        $stmt = $this->db->prepare("SELECT ta.subject_id, ta.class_id, s.nom as subject_nom, c.nom as class_nom, c.teaching_type_id,
+                                           COALESCE(s.teaching_type_id, c.teaching_type_id) as teaching_type_id,
 
                                            u.nom as teacher_nom, u.prenom as teacher_prenom
 
-
-
                                     FROM teacher_assignments ta
-
-
 
                                     JOIN subjects s ON ta.subject_id = s.id
 
-
-
                                     JOIN classes c ON ta.class_id = c.id
 
-
+                                    LEFT JOIN teaching_types tt ON COALESCE(s.teaching_type_id, c.teaching_type_id) = tt.id
 
                                     JOIN users u ON ta.user_id = u.id
 
-
-
-                                    WHERE ta.user_id = ? AND s.status = 1
-
-
+                                    WHERE ta.user_id = ? AND s.status = 1 AND (tt.actif = 1 OR COALESCE(s.teaching_type_id, c.teaching_type_id) IS NULL)
 
                                     ORDER BY c.nom ASC, s.nom ASC");
 
-
-
         $stmt->execute([$user_id]);
-
 
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -1835,39 +1702,19 @@ class GradeController
 
                 LEFT JOIN users u ON g.teacher_id = u.id
 
+                LEFT JOIN academic_years ay ON g.academic_year_id = ay.id
 
-
-                LEFT JOIN academic_years ay ON g.academic_year_id = ay.id";
-
-
-
-
-
-
+                LEFT JOIN teaching_types tt ON COALESCE(sub.teaching_type_id, c.teaching_type_id) = tt.id";
 
         $params = [];
 
-
-
         if (!in_array($role, ['superadmin', 'admin'], true)) {
-
-
 
             $sql .= " JOIN teacher_assignments ta ON ta.subject_id = g.subject_id AND ta.class_id = c.id AND ta.user_id = ?";
 
-
-
             $params[] = $user_id;
 
-
-
         }
-
-
-
-
-
-
 
         $activeYear = $this->getActiveAcademicYear();
         $academicYearId = $activeYear['id'] ?? 0;
@@ -1875,6 +1722,12 @@ class GradeController
         $sql .= " WHERE g.academic_year_id = ? AND s.academic_year_id = ?";
         $params[] = $academicYearId;
         $params[] = $academicYearId;
+
+        $teachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
+        if ($teachingTypeId > 0) {
+            $sql .= " AND COALESCE(sub.teaching_type_id, c.teaching_type_id) = ?";
+            $params[] = $teachingTypeId;
+        }
 
         if ($classId > 0) {
             $sql .= " AND c.id = ?";
@@ -1886,7 +1739,7 @@ class GradeController
             $params[] = $subjectId;
         }
 
-        $sql .= " AND s.is_withdrawn = 0 AND s.actif = 1 AND sub.status = 1";
+        $sql .= " AND s.is_withdrawn = 0 AND s.actif = 1 AND sub.status = 1 AND (tt.actif = 1 OR COALESCE(sub.teaching_type_id, c.teaching_type_id) IS NULL)";
 
 
 
@@ -1922,37 +1775,29 @@ class GradeController
 
 
 
-    private function extractAccessibleClasses(array $assignments): array
-
-
+    private function extractAccessibleClasses(array $assignments, int $teachingTypeId = 0): array
 
     {
 
-
-
         $classes = [];
-
-
 
         foreach ($assignments as $a) {
 
+            if ($teachingTypeId > 0 && (int) ($a['teaching_type_id'] ?? 0) !== $teachingTypeId) {
+                continue;
+            }
 
-
-            $classes[(int) $a['class_id']] = ['id' => (int) $a['class_id'], 'nom' => $a['class_nom']];
-
-
+            $classes[(int) $a['class_id']] = [
+                'id' => (int) $a['class_id'],
+                'nom' => $a['class_nom'],
+                'teaching_type_id' => (int) ($a['teaching_type_id'] ?? 0)
+            ];
 
         }
 
-
-
         uasort($classes, fn($a, $b) => strcmp($a['nom'], $b['nom']));
 
-
-
         return array_values($classes);
-
-
 
     }
 
@@ -1962,45 +1807,33 @@ class GradeController
 
 
 
-    private function extractAccessibleSubjects(array $assignments, int $classId = 0): array
-
-
+    private function extractAccessibleSubjects(array $assignments, int $classId = 0, int $teachingTypeId = 0): array
 
     {
 
-
-
         $subjects = [];
-
-
 
         foreach ($assignments as $a) {
 
-
-
-            if ($classId > 0 && (int) $a['class_id'] !== $classId)
-
-
-
+            if ($classId > 0 && (int) $a['class_id'] !== $classId) {
                 continue;
+            }
 
+            if ($teachingTypeId > 0 && (int) ($a['teaching_type_id'] ?? 0) !== $teachingTypeId) {
+                continue;
+            }
 
-
-            $subjects[(int) $a['subject_id']] = ['id' => (int) $a['subject_id'], 'nom' => $a['subject_nom']];
-
-
+            $subjects[(int) $a['subject_id']] = [
+                'id' => (int) $a['subject_id'],
+                'nom' => $a['subject_nom'],
+                'teaching_type_id' => (int) ($a['teaching_type_id'] ?? 0)
+            ];
 
         }
 
-
-
         uasort($subjects, fn($a, $b) => strcmp($a['nom'], $b['nom']));
 
-
-
         return array_values($subjects);
-
-
 
     }
 
@@ -2074,34 +1907,26 @@ class GradeController
 
 
 
-    private function getAvailableEvaluationTypes(): array
-
-
-
+    private function getAvailableEvaluationTypes(?int $teachingTypeId = null): array
     {
-
-
-
         try {
+            $sql = "SELECT s.label 
+                    FROM sequences s 
+                    LEFT JOIN teaching_types tt ON s.teaching_type_id = tt.id 
+                    WHERE s.is_active = 1 AND (tt.actif = 1 OR s.teaching_type_id IS NULL)";
+            $params = [];
+            if ($teachingTypeId) {
+                $sql .= " AND s.teaching_type_id = ?";
+                $params[] = $teachingTypeId;
+            }
+            $sql .= " ORDER BY s.position ASC";
 
-
-
-            $stmt = $this->db->query("SELECT label FROM sequences WHERE is_active = 1 ORDER BY position ASC");
-
-
-
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
             $labels = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
-
-
             if (!empty($labels))
-
-
-
                 return array_values(array_map('strval', $labels));
-
-
-
         } catch (\Throwable $e) {
 
 
@@ -2195,7 +2020,7 @@ class GradeController
         $activeYear = $this->getActiveAcademicYear();
         $academicYearId = $activeYear['id'] ?? 0;
 
-        $stmt = $this->db->prepare("SELECT COUNT(*) FROM students WHERE class_id = ? AND academic_year_id = ? AND actif = 1");
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM students WHERE class_id = ? AND academic_year_id = ? AND actif = 1 AND is_withdrawn = 0 AND status NOT IN ('Démission', 'Démissionnaire', 'Abandon')");
         $stmt->execute([$classId, $academicYearId]);
         return (int) $stmt->fetchColumn();
     }
@@ -2235,7 +2060,7 @@ class GradeController
         $activeYear = $this->getActiveAcademicYear();
         $academicYearId = $activeYear['id'] ?? 0;
 
-        $stmt = $this->db->prepare("SELECT COUNT(*) FROM students WHERE class_id = ? AND academic_year_id = ? AND is_withdrawn = 0 AND actif = 1");
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM students WHERE class_id = ? AND academic_year_id = ? AND is_withdrawn = 0 AND actif = 1 AND status NOT IN ('Démission', 'Démissionnaire', 'Abandon')");
         $stmt->execute([$classId, $academicYearId]);
 
 
@@ -2257,7 +2082,7 @@ class GradeController
         $activeYear = $this->getActiveAcademicYear();
         $academicYearId = $activeYear['id'] ?? 0;
 
-        $stmt = $this->db->prepare("SELECT id, nom, prenom FROM students WHERE class_id = ? AND academic_year_id = ? AND is_withdrawn = 0 AND actif = 1 ORDER BY nom ASC, prenom ASC");
+        $stmt = $this->db->prepare("SELECT id, nom, prenom FROM students WHERE class_id = ? AND academic_year_id = ? AND is_withdrawn = 0 AND actif = 1 AND status NOT IN ('Démission', 'Démissionnaire', 'Abandon') ORDER BY nom ASC, prenom ASC");
         $stmt->execute([$classId, $academicYearId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -2621,7 +2446,7 @@ class GradeController
 
 
 
-        $stmt = $this->db->query("SELECT class_id, COUNT(*) as count FROM students WHERE is_withdrawn = 0 AND actif = 1 GROUP BY class_id");
+        $stmt = $this->db->query("SELECT class_id, COUNT(*) as count FROM students WHERE is_withdrawn = 0 AND actif = 1 AND status NOT IN ('Démission', 'Démissionnaire', 'Abandon') GROUP BY class_id");
 
 
 
@@ -2813,33 +2638,35 @@ class GradeController
 
         }
 
+        $academicYearId = $activeYear['id'];
 
+        // Récupérer toutes les séquences actives
+        $allSequences = $this->db->query("
+            SELECT s.label, s.teaching_type_id 
+            FROM sequences s 
+            LEFT JOIN teaching_types tt ON s.teaching_type_id = tt.id 
+            WHERE s.is_active = 1 AND (tt.actif = 1 OR s.teaching_type_id IS NULL)
+            ORDER BY s.position ASC
+        ")->fetchAll(PDO::FETCH_ASSOC);
 
-        // On utilise toutes les périodes actives (évaluations activées), pas seulement $periode.
-
-        // Cela correspond au besoin "total de note a saisir pour les evaluations activé".
-
-        $evaluationTypes = $this->getAvailableEvaluationTypes();
-
-        $evalCount = count($evaluationTypes);
-
-
-
-        if ($evalCount <= 0) {
-
-            return [];
-
+        $evalTypesByTT = [];
+        $allUniqueActiveLabels = [];
+        foreach ($allSequences as $seq) {
+            $ttId = (int)($seq['teaching_type_id'] ?? 0);
+            $evalTypesByTT[$ttId][] = $seq['label'];
+            $allUniqueActiveLabels[] = $seq['label'];
         }
+        $allUniqueActiveLabels = array_values(array_unique($allUniqueActiveLabels));
 
-
+        if (empty($allUniqueActiveLabels)) {
+            return [];
+        }
 
         // 1) Total élèves par classe (dénominateur) * nombre d'évaluations actives
 
         $studentCounts = [];
 
-        $academicYearId = $activeYear['id'];
-
-        $stmt = $this->db->query("SELECT class_id, COUNT(*) as count FROM students WHERE academic_year_id = {$academicYearId} AND is_withdrawn = 0 AND actif = 1 GROUP BY class_id");
+        $stmt = $this->db->query("SELECT class_id, COUNT(*) as count FROM students WHERE academic_year_id = {$academicYearId} AND is_withdrawn = 0 AND actif = 1 AND status NOT IN ('Démission', 'Démissionnaire', 'Abandon') GROUP BY class_id");
 
         while ($row = $stmt->fetch()) {
 
@@ -2897,7 +2724,7 @@ class GradeController
 
 
 
-        $periodePlaceholders = implode(',', array_fill(0, $evalCount, '?'));
+        $periodePlaceholders = implode(',', array_fill(0, count($allUniqueActiveLabels), '?'));
 
 
 
@@ -2930,7 +2757,7 @@ class GradeController
 
 
         $stmt = $this->db->prepare($sql);
-        $stmt->execute(array_merge([$activeYear['id'], $activeYear['id']], $evaluationTypes, $classIds, $subjectIds, $teacherParams));
+        $stmt->execute(array_merge([$academicYearId, $academicYearId], $allUniqueActiveLabels, $classIds, $subjectIds, $teacherParams));
 
 
 
@@ -2953,6 +2780,7 @@ class GradeController
             $classId = (int) $a['class_id'];
 
             $subjectId = (int) $a['subject_id'];
+            $ttId = (int) ($a['teaching_type_id'] ?? 0);
 
 
 
@@ -2962,7 +2790,11 @@ class GradeController
 
             $studentsInClass = $studentCounts[$classId] ?? 0;
 
-            $total = $studentsInClass * $evalCount;
+            // Récupérer le nombre exact d'évaluations attendues pour ce type d'enseignement
+            $classEvalTypes = $evalTypesByTT[$ttId] ?? $evalTypesByTT[0] ?? [];
+            $classEvalCount = count($classEvalTypes);
+
+            $total = $studentsInClass * $classEvalCount;
 
             $filled = $gradeCounts[$key] ?? 0;
 
@@ -3306,25 +3138,21 @@ class GradeController
 
             'subject_id' => (int) ($_GET['subject_id'] ?? 0),
 
+            'teaching_type_id' => (int) ($_GET['teaching_type_id'] ?? 0),
+
             'periode' => $_GET['periode'] ?? '',
 
         ];
 
-
-
-        // Récupérer les données pour les filtres
-
-        // Classes are now shared across years, no year filtering
-
-        $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-
-        $subjects = $this->db->query("SELECT id, nom FROM subjects WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        // Récupérer les données pour les filtres intelligemment selon le type d'enseignement actif
+        $assignments = $this->getAccessibleAssignments();
+        $classes = $this->extractAccessibleClasses($assignments, (int) $filters['teaching_type_id']);
+        $subjects = $this->extractAccessibleSubjects($assignments, (int) $filters['class_id'], (int) $filters['teaching_type_id']);
+        $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         $activeYear = $this->getActiveAcademicYear();
         $academicYearId = $activeYear['id'] ?? 0;
         $periods = $this->db->query("SELECT DISTINCT label FROM sequences WHERE is_active = 1 AND academic_year_id = {$academicYearId} ORDER BY position ASC")->fetchAll(PDO::FETCH_COLUMN);
-
-
 
         // Récupérer les notes récentes avec pagination
 
@@ -3334,17 +3162,17 @@ class GradeController
 
         $offset = ($page - 1) * $perPage;
 
-
-
         // Construire les conditions WHERE
 
-        $whereConditions = ['g.academic_year_id = (SELECT id FROM academic_years WHERE is_active = 1 LIMIT 1)', 's.academic_year_id = (SELECT id FROM academic_years WHERE is_active = 1 LIMIT 1)'];
+        $whereConditions = [
+            'g.academic_year_id = (SELECT id FROM academic_years WHERE is_active = 1 LIMIT 1)',
+            's.academic_year_id = (SELECT id FROM academic_years WHERE is_active = 1 LIMIT 1)',
+            '(tt.actif = 1 OR COALESCE(sub.teaching_type_id, c.teaching_type_id) IS NULL)'
+        ];
 
         $params = [];
 
         $countParams = [];
-
-
 
         if (!$isAdmin) {
 
@@ -3356,7 +3184,15 @@ class GradeController
 
         }
 
+        if ($filters['teaching_type_id'] > 0) {
 
+            $whereConditions[] = 'COALESCE(sub.teaching_type_id, c.teaching_type_id) = ?';
+
+            $params[] = $filters['teaching_type_id'];
+
+            $countParams[] = $filters['teaching_type_id'];
+
+        }
 
         if (!empty($filters['q'])) {
 
@@ -3378,8 +3214,6 @@ class GradeController
 
         }
 
-
-
         if ($filters['class_id'] > 0) {
 
             $whereConditions[] = 'c.id = ?';
@@ -3389,8 +3223,6 @@ class GradeController
             $countParams[] = $filters['class_id'];
 
         }
-
-
 
         if ($filters['subject_id'] > 0) {
 
@@ -3402,8 +3234,6 @@ class GradeController
 
         }
 
-
-
         if (!empty($filters['periode'])) {
 
             $whereConditions[] = 'g.periode = ?';
@@ -3414,11 +3244,7 @@ class GradeController
 
         }
 
-
-
         $whereClause = implode(' AND ', $whereConditions);
-
-
 
         // Construire la requête
 
@@ -3437,6 +3263,8 @@ class GradeController
             JOIN subjects sub ON g.subject_id = sub.id
 
             JOIN classes c ON s.class_id = c.id
+
+            LEFT JOIN teaching_types tt ON COALESCE(sub.teaching_type_id, c.teaching_type_id) = tt.id
 
             LEFT JOIN users u ON g.teacher_id = u.id
 
@@ -3465,6 +3293,8 @@ class GradeController
             JOIN subjects sub ON g.subject_id = sub.id
 
             JOIN classes c ON s.class_id = c.id
+
+            LEFT JOIN teaching_types tt ON COALESCE(sub.teaching_type_id, c.teaching_type_id) = tt.id
 
             WHERE {$whereClause}
 
