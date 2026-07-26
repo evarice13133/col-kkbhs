@@ -260,7 +260,7 @@ ob_start();
                                         <select id="cycle_select" name="cycle_id" class="form-select premium-input">
                                             <option value=""><?= __('all_cycles') ?></option>
                                             <?php foreach ($cycles as $cy): ?>
-                                                <option value="<?= $cy['id'] ?>" <?= $selectedCycle === (string) $cy['id'] ? 'selected' : '' ?>><?= h($cy['nom']) ?></option>
+                                                <option value="<?= $cy['id'] ?>" data-teaching-type="<?= $cy['teaching_type_id'] ?? '' ?>" <?= $selectedCycle === (string) $cy['id'] ? 'selected' : '' ?>><?= h($cy['nom']) ?></option>
                                             <?php endforeach; ?>
                                         </select>
                                     </div>
@@ -755,7 +755,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Dropdown Filtering Logic
+    // Dropdown Filtering Logic (Intelligence bi-directionnelle)
     const teachingTypeSelect = document.getElementById('teaching_type_select');
     const cycleSelect = document.getElementById('cycle_select');
     const sectionSelect = document.getElementById('section_select');
@@ -766,49 +766,70 @@ document.addEventListener('DOMContentLoaded', function () {
         'selectClass' => __('select_class'),
         'noClassForCriteria' => __('no_class_for_criteria'),
         'allDepartments' => __('all_departments') ?? 'Tous les départements',
+        'allCycles' => __('all_cycles') ?? 'Tous les cycles',
     ], JSON_UNESCAPED_UNICODE) ?>;
 
     const originalOptions = Array.from(classSelect.options).filter(opt => opt.value !== '');
     const originalDeptOptions = Array.from(departmentSelect.options).filter(opt => opt.value !== '');
+    const originalCycleOptions = Array.from(cycleSelect.options).filter(opt => opt.value !== '');
 
-    function filterDepartments() {
+    function filterStructureFilters() {
         if (!teachingTypeSelect) return;
-        const selectedTeachingType = teachingTypeSelect.value;
-        const currentDeptId = departmentSelect.value;
-        
-        departmentSelect.innerHTML = '<option value="">' + labels.allDepartments + '</option>';
-        
-        let deptFoundSelected = false;
-        
-        originalDeptOptions.forEach(opt => {
-            const optTeachingType = opt.getAttribute('data-teaching-type');
-            const matchTeachingType = !selectedTeachingType || !optTeachingType || optTeachingType === selectedTeachingType;
-            
-            if (matchTeachingType) {
-                const clonedOption = opt.cloneNode(true);
-                if (clonedOption.value === currentDeptId) {
-                    clonedOption.selected = true;
-                    deptFoundSelected = true;
+        const selectedTT = teachingTypeSelect.value;
+
+        // 1. Filtrer les Cycles selon le type d'enseignement
+        const currentCycleId = cycleSelect.value;
+        cycleSelect.innerHTML = '<option value="">' + labels.allCycles + '</option>';
+        let cycleStillValid = false;
+        originalCycleOptions.forEach(opt => {
+            const optTT = opt.getAttribute('data-teaching-type');
+            if (!selectedTT || !optTT || optTT === selectedTT) {
+                const cloned = opt.cloneNode(true);
+                if (cloned.value === currentCycleId) {
+                    cloned.selected = true;
+                    cycleStillValid = true;
                 }
-                departmentSelect.appendChild(clonedOption);
+                cycleSelect.appendChild(cloned);
             }
         });
-        
-        if (currentDeptId && !deptFoundSelected) {
+        if (currentCycleId && !cycleStillValid) {
+            cycleSelect.value = '';
+        }
+
+        // 2. Filtrer les Départements selon le type d'enseignement
+        const currentDeptId = departmentSelect.value;
+        departmentSelect.innerHTML = '<option value="">' + labels.allDepartments + '</option>';
+        let deptStillValid = false;
+        originalDeptOptions.forEach(opt => {
+            const optTT = opt.getAttribute('data-teaching-type');
+            if (!selectedTT || !optTT || optTT === selectedTT) {
+                const cloned = opt.cloneNode(true);
+                if (cloned.value === currentDeptId) {
+                    cloned.selected = true;
+                    deptStillValid = true;
+                }
+                departmentSelect.appendChild(cloned);
+            }
+        });
+        if (currentDeptId && !deptStillValid) {
             departmentSelect.value = '';
         }
-        
+
         filterClasses();
     }
 
     function filterClasses() {
-        const selectedTeachingType = teachingTypeSelect.value;
-        const selectedCycle = cycleSelect.value;
-        const selectedSection = sectionSelect.value;
-        const selectedDept = departmentSelect.value;
+        const selectedTeachingType = teachingTypeSelect ? teachingTypeSelect.value : '';
+        const selectedCycle = cycleSelect ? cycleSelect.value : '';
+        const selectedSection = sectionSelect ? sectionSelect.value : '';
+        const selectedDept = departmentSelect ? departmentSelect.value : '';
+
+        const selectedClassId = classSelect.value;
         classSelect.innerHTML = '<option value="">' + labels.selectClass + '</option>';
 
         let addedCount = 0;
+        let classStillValid = false;
+
         originalOptions.forEach(opt => {
             const matchTeachingType = !selectedTeachingType || opt.getAttribute('data-teaching-type') === selectedTeachingType;
             const matchCycle = !selectedCycle || opt.getAttribute('data-cycle') === selectedCycle;
@@ -817,7 +838,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (matchTeachingType && matchCycle && matchSection && matchDept) {
                 const clonedOption = opt.cloneNode(true);
-                if (clonedOption.value === currentClassId) clonedOption.selected = true;
+                if (clonedOption.value === (selectedClassId || currentClassId)) {
+                    clonedOption.selected = true;
+                    classStillValid = true;
+                }
                 classSelect.appendChild(clonedOption);
                 addedCount++;
             }
@@ -826,13 +850,44 @@ document.addEventListener('DOMContentLoaded', function () {
         if (addedCount === 0 && (selectedTeachingType || selectedCycle || selectedSection || selectedDept)) {
             classSelect.innerHTML = '<option value="">' + labels.noClassForCriteria + '</option>';
         }
+
+        if (selectedClassId && !classStillValid) {
+            classSelect.value = '';
+            calculateFees();
+        }
     }
 
-    if (teachingTypeSelect) teachingTypeSelect.addEventListener('change', filterDepartments);
+    // Auto-remplissage des filtres si une classe est directement sélectionnée
+    classSelect.addEventListener('change', function() {
+        const selectedOpt = classSelect.options[classSelect.selectedIndex];
+        if (!selectedOpt || !selectedOpt.value) return;
+
+        const optTT = selectedOpt.getAttribute('data-teaching-type');
+        const optCycle = selectedOpt.getAttribute('data-cycle');
+        const optSection = selectedOpt.getAttribute('data-section');
+        const optDept = selectedOpt.getAttribute('data-department');
+
+        if (optTT && teachingTypeSelect && teachingTypeSelect.value !== optTT) {
+            teachingTypeSelect.value = optTT;
+            filterStructureFilters();
+        }
+        if (optCycle && cycleSelect && cycleSelect.value !== optCycle) {
+            cycleSelect.value = optCycle;
+        }
+        if (optSection && sectionSelect && sectionSelect.value !== optSection) {
+            sectionSelect.value = optSection;
+        }
+        if (optDept && departmentSelect && departmentSelect.value !== optDept) {
+            departmentSelect.value = optDept;
+        }
+    });
+
+    if (teachingTypeSelect) teachingTypeSelect.addEventListener('change', filterStructureFilters);
     if (cycleSelect) cycleSelect.addEventListener('change', filterClasses);
-    sectionSelect.addEventListener('change', filterClasses);
-    departmentSelect.addEventListener('change', filterClasses);
-    if (teachingTypeSelect) filterDepartments(); else filterClasses();
+    if (sectionSelect) sectionSelect.addEventListener('change', filterClasses);
+    if (departmentSelect) departmentSelect.addEventListener('change', filterClasses);
+
+    if (teachingTypeSelect) filterStructureFilters(); else filterClasses();
 
     // Photo preview
     const photoInput = document.getElementById('photoInput');

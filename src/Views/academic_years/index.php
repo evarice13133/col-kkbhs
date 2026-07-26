@@ -4,16 +4,16 @@
     <div class="d-flex justify-content-center mb-5">
         <div class="filter-island px-3 py-2 shadow-lg animate-slide-down" style="min-width: 40%;">
             <div class="d-flex align-items-center justify-content-center gap-2 w-100">
-                <a href="/academic_years/create" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm scale-on-hover">
+                <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm scale-on-hover" data-bs-toggle="modal" data-bs-target="#createAcademicYearModal">
                     <i class="bi bi-plus-lg me-2"></i><?= __('add_year') ?>
-                </a>
+                </button>
             </div>
         </div>
     </div>
 
 <div class="row g-4">
     <!-- Main column: year list -->
-    <div class="col-lg-8">
+    <div class="col-lg-8" id="academicYearsListContainer">
         <div class="modern-card border-0 shadow-sm overflow-hidden animate-fade-in">
             <div class="table-responsive">
                 <table class="table-modern">
@@ -61,9 +61,12 @@
                                             </a>
                                         <?php endif; ?>
                                         <?php if (in_array(App\Core\Session::get('user_role'), ['superadmin', 'admin'])): ?>
-                                            <a href="/academic_years/edit?id=<?= $year['id'] ?>" class="btn btn-sm btn-action-modern text-primary" title="<?= __('edit') ?>">
+                                            <button type="button" class="btn btn-sm btn-action-modern text-primary edit-academic-year-btn" 
+                                                    data-id="<?= $year['id'] ?>" 
+                                                    data-nom="<?= htmlspecialchars((string) $year['nom'], ENT_QUOTES) ?>" 
+                                                    title="<?= __('edit') ?>">
                                                 <i class="bi bi-pencil-square fs-5"></i>
-                                            </a>
+                                            </button>
                                         <?php endif; ?>
                                         <a href="/academic_years/archive_wizard?id=<?= $year['id'] ?>" class="btn btn-sm btn-action-modern text-danger" title="<?= __('archive_close') ?>">
                                             <i class="bi bi-archive fs-5"></i>
@@ -169,6 +172,47 @@
     </div>
 </div>
 
+<!-- MODALE CRÉATION ANNÉE SCOLAIRE -->
+<div class="modal fade" id="createAcademicYearModal" tabindex="-1" aria-labelledby="createAcademicYearModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+            <div class="modal-header border-bottom border-theme-light p-4 bg-primary bg-opacity-10">
+                <h5 class="modal-title fw-black text-main-theme" id="createAcademicYearModalLabel">
+                    <i class="bi bi-plus-circle-fill me-2 text-primary"></i><?= __('create_new_academic_year') ?>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <?php 
+                $isModal = true;
+                include __DIR__ . '/_create_form.php'; 
+                ?>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODALE MODIFICATION ANNÉE SCOLAIRE -->
+<div class="modal fade" id="editAcademicYearModal" tabindex="-1" aria-labelledby="editAcademicYearModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+            <div class="modal-header border-bottom border-theme-light p-4 bg-warning bg-opacity-10">
+                <h5 class="modal-title fw-black text-main-theme" id="editAcademicYearModalLabel">
+                    <i class="bi bi-pencil-square me-2 text-warning"></i><?= __('edit_academic_year') ?>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <?php 
+                $isModal = true;
+                $year = ['id' => '', 'nom' => ''];
+                include __DIR__ . '/_edit_form.php'; 
+                ?>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
     /* Floating Island Filters */
     .filter-island {
@@ -196,6 +240,168 @@
         to { transform: translateY(0); opacity: 1; }
     }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const createModalEl = document.getElementById('createAcademicYearModal');
+    const editModalEl = document.getElementById('editAcademicYearModal');
+    const createForm = document.getElementById('academicYearCreateForm');
+    const editForm = document.getElementById('academicYearEditForm');
+
+    // Ouverture et préremplissage de la modale d'édition via délégation d'événement
+    document.addEventListener('click', function(e) {
+        const editBtn = e.target.closest('.edit-academic-year-btn');
+        if (editBtn) {
+            const yearId = editBtn.getAttribute('data-id');
+            const yearNom = editBtn.getAttribute('data-nom');
+
+            const idInput = document.getElementById('edit_academic_year_id');
+            const nomInput = document.getElementById('edit_academic_year_nom');
+
+            if (idInput) idInput.value = yearId;
+            if (nomInput) nomInput.value = yearNom;
+
+            if (editForm) {
+                editForm.action = '/academic_years/update?id=' + yearId;
+            }
+
+            if (editModalEl) {
+                const bsModal = bootstrap.Modal.getInstance(editModalEl) || new bootstrap.Modal(editModalEl);
+                bsModal.show();
+            }
+        }
+    });
+
+    // Soumission AJAX - Création
+    if (createForm) {
+        createForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(createForm);
+            const submitBtn = createForm.querySelector('button[type="submit"]');
+            if (submitBtn) submitBtn.disabled = true;
+
+            fetch(createForm.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: formData
+            })
+            .then(async response => {
+                const data = await response.json();
+                return { ok: response.ok, data: data };
+            })
+            .then(({ ok, data }) => {
+                if (submitBtn) submitBtn.disabled = false;
+
+                if (ok && data.success) {
+                    if (createModalEl) {
+                        const bsModal = bootstrap.Modal.getInstance(createModalEl) || new bootstrap.Modal(createModalEl);
+                        bsModal.hide();
+                    }
+                    createForm.reset();
+
+                    if (typeof AlertService !== 'undefined') {
+                        AlertService.toast('success', data.message);
+                    }
+
+                    refreshAcademicYearsList();
+                } else {
+                    const errorMsg = data.message || "<?= addslashes((string) __('error_occurred')) ?>";
+                    if (typeof AlertService !== 'undefined') {
+                        AlertService.error("<?= addslashes((string) __('error_title')) ?>", errorMsg);
+                    } else {
+                        alert(errorMsg);
+                    }
+                }
+            })
+            .catch(err => {
+                if (submitBtn) submitBtn.disabled = false;
+                console.error('Create submit error:', err);
+                if (typeof AlertService !== 'undefined') {
+                    AlertService.toast('error', "<?= addslashes((string) __('communication_error')) ?>");
+                }
+            });
+        });
+    }
+
+    // Soumission AJAX - Édition
+    if (editForm) {
+        editForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(editForm);
+            const submitBtn = editForm.querySelector('button[type="submit"]');
+            if (submitBtn) submitBtn.disabled = true;
+
+            fetch(editForm.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: formData
+            })
+            .then(async response => {
+                const data = await response.json();
+                return { ok: response.ok, data: data };
+            })
+            .then(({ ok, data }) => {
+                if (submitBtn) submitBtn.disabled = false;
+
+                if (ok && data.success) {
+                    if (editModalEl) {
+                        const bsModal = bootstrap.Modal.getInstance(editModalEl) || new bootstrap.Modal(editModalEl);
+                        bsModal.hide();
+                    }
+                    editForm.reset();
+
+                    if (typeof AlertService !== 'undefined') {
+                        AlertService.toast('success', data.message);
+                    }
+
+                    refreshAcademicYearsList();
+                } else {
+                    const errorMsg = data.message || "<?= addslashes((string) __('error_occurred')) ?>";
+                    if (typeof AlertService !== 'undefined') {
+                        AlertService.error("<?= addslashes((string) __('error_title')) ?>", errorMsg);
+                    } else {
+                        alert(errorMsg);
+                    }
+                }
+            })
+            .catch(err => {
+                if (submitBtn) submitBtn.disabled = false;
+                console.error('Edit submit error:', err);
+                if (typeof AlertService !== 'undefined') {
+                    AlertService.toast('error', "<?= addslashes((string) __('communication_error')) ?>");
+                }
+            });
+        });
+    }
+
+    function refreshAcademicYearsList() {
+        fetch(window.location.href, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(res => res.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newContent = doc.getElementById('academicYearsListContainer');
+            const currentContent = document.getElementById('academicYearsListContainer');
+            if (newContent && currentContent) {
+                currentContent.innerHTML = newContent.innerHTML;
+            }
+        })
+        .catch(err => console.error('Error refreshing academic years list:', err));
+    }
+});
+</script>
 
 <?php
 $content = ob_get_clean();

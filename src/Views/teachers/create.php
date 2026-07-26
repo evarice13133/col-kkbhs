@@ -12,89 +12,27 @@ ob_start();
         </a>
     </div>
 
-    <form action="/teachers/store" method="POST" id="teacherCreateForm">
-        <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
-
-        <div class="subject-card-compact border-0 shadow-sm overflow-hidden mb-4">
-            <div class="card-body p-4">
-                
-                <!-- Identity Section -->
-                <div class="row g-4 mb-5">
-                    <div class="col-12 border-bottom border-theme-light pb-2 mb-2">
-                        <h6 class="fw-black text-success m-0 text-uppercase letter-spacing-1"><?= __('employee_identity') ?></h6>
-                    </div>
-                    
-                    <div class="col-md-4">
-                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('name') ?></label>
-                        <input type="text" name="nom" class="form-control premium-input" 
-                            placeholder="<?= __('name_placeholder') ?>" required autofocus>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('first_names') ?></label>
-                        <input type="text" name="prenom" class="form-control premium-input" 
-                            placeholder="<?= __('first_name_placeholder') ?>" required>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('contact_email_optional') ?></label>
-                        <input type="email" name="email" class="form-control premium-input" 
-                            placeholder="<?= __('contact_email_placeholder') ?>">
-                    </div>
-                </div>
-
-
-                <!-- Teaching Type Section -->
-                <div class="row g-4 mb-4">
-                    <div class="col-12 border-bottom border-theme-light pb-2 mb-2">
-                        <h6 class="fw-black text-warning m-0 text-uppercase letter-spacing-1">Type d'Enseignement</h6>
-                    </div>
-                    
-                    <div class="col-12">
-                        <div class="d-flex flex-wrap gap-3">
-                            <?php foreach ($teachingTypes as $tt): ?>
-                                <div class="form-check">
-                                    <input class="form-check-input border-primary" type="checkbox" name="teaching_type_ids[]" value="<?= $tt['id'] ?>" id="tt_<?= $tt['id'] ?>">
-                                    <label class="form-check-label fw-bold" for="tt_<?= $tt['id'] ?>">
-                                        <?= h($tt['nom']) ?>
-                                    </label>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Account Section -->
-                <div class="row g-4 mb-4">
-                    <div class="col-12 border-bottom border-theme-light pb-2 mb-2">
-                        <h6 class="fw-black text-primary m-0 text-uppercase letter-spacing-1"><?= __('login_information') ?></h6>
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('username_login') ?></label>
-                        <input type="text" name="username" class="form-control premium-input" 
-                            placeholder="<?= __('username_placeholder') ?>" required>
-                        <div class="form-text extra-small mt-1 opacity-75"><?= __('username_help') ?></div>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('temporary_password') ?></label>
-                        <div class="input-group shadow-none">
-                            <span class="input-group-text bg-light border-theme-light text-primary"><i class="bi bi-key-fill"></i></span>
-                            <input type="text" name="password" class="form-control premium-input border-start-0" value="0000" required>
-                        </div>
-                        <div class="form-text extra-small mt-1 text-danger opacity-75"><i class="bi bi-exclamation-triangle-fill me-1"></i><?= __('temporary_password_help') ?></div>
-                    </div>
-                </div>
-
-                <!-- Action Footer -->
-                <div class="d-flex justify-content-end border-top border-theme-light pt-4 mt-2">
-                    <button type="submit" class="btn btn-primary rounded-pill px-5 py-2 fw-bold shadow-sm transition-base scale-on-hover">
-                        <i class="bi bi-check-circle-fill me-2"></i> Valider
-                    </button>
-                </div>
-
-            </div>
-        </div>
-    </form>
+    <?php include __DIR__ . '/_form.php'; ?>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('teacherCreateForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const checked = form.querySelectorAll('input[name="teaching_type_ids[]"]:checked');
+            if (checked.length === 0) {
+                e.preventDefault();
+                if (typeof AlertService !== 'undefined') {
+                    AlertService.toast('error', "<?= htmlspecialchars(__('select_at_least_one_teaching_type'), ENT_QUOTES) ?>");
+                } else {
+                    alert("<?= htmlspecialchars(__('select_at_least_one_teaching_type'), ENT_QUOTES) ?>");
+                }
+            }
+        });
+    }
+});
+</script>
 
 <?php
 $content = ob_get_clean();

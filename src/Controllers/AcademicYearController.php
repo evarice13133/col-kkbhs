@@ -108,51 +108,62 @@ class AcademicYearController
 
 
     public function store()
-
     {
-
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+                || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false);
+
+            if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+                $errMsg = __('session_expired_retry') ?? 'Session expirée, veuillez réessayer.';
+                if ($isAjax) {
+                    header('Content-Type: application/json', true, 400);
+                    echo json_encode(['success' => false, 'message' => $errMsg]);
+                    exit;
+                }
+                Session::setFlash('error', $errMsg);
+                header('Location: /academic_years/create');
+                exit;
+            }
 
             $nom = trim($_POST['nom'] ?? '');
             $start_date = trim($_POST['start_date'] ?? '');
             $end_date = trim($_POST['end_date'] ?? '');
 
-
-
             if (empty($nom)) {
-
                 $error = \__('academic_year_name_required');
-
+                if ($isAjax) {
+                    header('Content-Type: application/json', true, 400);
+                    echo json_encode(['success' => false, 'message' => $error]);
+                    exit;
+                }
                 include __DIR__ . '/../Views/academic_years/create.php';
-
                 return;
-
             }
-
-
 
             try {
-
                 $stmt = $this->db->prepare("INSERT INTO academic_years (nom, start_date, end_date, status) VALUES (?, ?, ?, 'active')");
-
                 $stmt->execute([$nom, $start_date ?: null, $end_date ?: null]);
 
+                $successMsg = __('academic_year_created_success') ?? 'Année scolaire créée avec succès.';
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => true, 'message' => $successMsg]);
+                    exit;
+                }
+
+                Session::setFlash('success', $successMsg);
                 header("Location: /academic_years");
-
                 exit;
-
             } catch (\PDOException $e) {
-
-                // Erreur de duplicata SQL STATE 23000
-
                 $error = \__('academic_year_exists');
-
+                if ($isAjax) {
+                    header('Content-Type: application/json', true, 400);
+                    echo json_encode(['success' => false, 'message' => $error]);
+                    exit;
+                }
                 include __DIR__ . '/../Views/academic_years/create.php';
-
             }
-
         }
-
     }
 
 
@@ -963,78 +974,85 @@ class AcademicYearController
 
 
 
-    public function update($id)
-
+    public function update($id = null)
     {
-
         // Autorisé pour admin et superadmin
-
         if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
-
+            $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+                || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false);
+            if ($isAjax) {
+                header('Content-Type: application/json', true, 403);
+                echo json_encode(['success' => false, 'message' => __('access_denied') ?? 'Accès refusé.']);
+                exit;
+            }
             header("Location: /academic_years");
-
             exit;
-
         }
-
-
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+                || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false);
 
-            $id = (int) $id;
+            if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+                $errMsg = __('session_expired_retry') ?? 'Session expirée, veuillez réessayer.';
+                if ($isAjax) {
+                    header('Content-Type: application/json', true, 400);
+                    echo json_encode(['success' => false, 'message' => $errMsg]);
+                    exit;
+                }
+                Session::setFlash('error', $errMsg);
+                header('Location: /academic_years');
+                exit;
+            }
 
+            $id = (int) ($id ?: ($_POST['id'] ?? $_GET['id'] ?? 0));
             $nom = trim($_POST['nom'] ?? '');
 
-
-
             if (empty($nom)) {
-
                 $error = \__('academic_year_name_required');
+                if ($isAjax) {
+                    header('Content-Type: application/json', true, 400);
+                    echo json_encode(['success' => false, 'message' => $error]);
+                    exit;
+                }
 
                 $stmt = $this->db->prepare("SELECT * FROM academic_years WHERE id = ?");
-
                 $stmt->execute([$id]);
-
                 $year = $stmt->fetch(PDO::FETCH_ASSOC);
 
                 include __DIR__ . '/../Views/academic_years/edit.php';
-
                 return;
-
             }
-
-
 
             try {
-
                 $stmt = $this->db->prepare("UPDATE academic_years SET nom = ? WHERE id = ?");
-
                 $stmt->execute([$nom, $id]);
 
-                Session::setFlash('success', __('academic_year_updated_success'));
+                $successMsg = __('academic_year_updated_success');
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => true, 'message' => $successMsg]);
+                    exit;
+                }
 
+                Session::setFlash('success', $successMsg);
                 header("Location: /academic_years");
-
                 exit;
-
             } catch (\PDOException $e) {
-
-                // Erreur de duplicata SQL STATE 23000
-
                 $error = \__('academic_year_exists');
+                if ($isAjax) {
+                    header('Content-Type: application/json', true, 400);
+                    echo json_encode(['success' => false, 'message' => $error]);
+                    exit;
+                }
 
                 $stmt = $this->db->prepare("SELECT * FROM academic_years WHERE id = ?");
-
                 $stmt->execute([$id]);
-
                 $year = $stmt->fetch(PDO::FETCH_ASSOC);
 
                 include __DIR__ . '/../Views/academic_years/edit.php';
-
             }
-
         }
-
     }
 
 

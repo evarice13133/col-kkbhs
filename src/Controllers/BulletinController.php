@@ -1559,13 +1559,13 @@ class BulletinController
 
     protected function getActiveSequences()
     {
-        $stmt = $this->db->query("SELECT * FROM sequences WHERE is_active = 1 ORDER BY position ASC");
+        $stmt = $this->db->query("SELECT s.* FROM sequences s LEFT JOIN teaching_types tt ON s.teaching_type_id = tt.id WHERE s.is_active = 1 AND (tt.actif = 1 OR s.teaching_type_id IS NULL) ORDER BY s.position ASC");
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     protected function getActiveSequencesByTerm(int $term)
     {
-        $stmt = $this->db->prepare("SELECT * FROM sequences WHERE trimestre = ? AND is_active = 1 ORDER BY position ASC");
+        $stmt = $this->db->prepare("SELECT s.* FROM sequences s LEFT JOIN teaching_types tt ON s.teaching_type_id = tt.id WHERE s.trimestre = ? AND s.is_active = 1 AND (tt.actif = 1 OR s.teaching_type_id IS NULL) ORDER BY s.position ASC");
         $stmt->execute([$term]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -1627,20 +1627,55 @@ class BulletinController
     }
 
     protected function ensureSequencesSchema()
+
     {
+
         $this->db->exec("CREATE TABLE IF NOT EXISTS sequences (
+
             id INT AUTO_INCREMENT PRIMARY KEY,
-            code VARCHAR(20) NOT NULL UNIQUE,
-            label VARCHAR(100) NOT NULL UNIQUE,
+
+            teaching_type_id INT NULL,
+
+            code VARCHAR(20) NOT NULL,
+
+            label VARCHAR(100) NOT NULL,
+
             trimestre TINYINT NOT NULL,
+
             position TINYINT NOT NULL,
+
             is_active TINYINT(1) NOT NULL DEFAULT 1
+
         )");
 
-        $stmt = $this->db->prepare("INSERT IGNORE INTO sequences (code, label, trimestre, position, is_active) VALUES (?, ?, ?, ?, 1)");
-        foreach (self::DEFAULT_SEQUENCES as $sequence) {
-            $stmt->execute([$sequence['code'], $sequence['label'], $sequence['trimestre'], $sequence['position']]);
+
+
+        $count = $this->db->query("SELECT COUNT(*) FROM sequences")->fetchColumn();
+
+        if ($count == 0) {
+
+            $stmtTT = $this->db->query("SELECT id FROM teaching_types WHERE code = 'ESG' OR LOWER(nom) LIKE '%secondaire%' LIMIT 1");
+
+            $defaultTT = $stmtTT ? $stmtTT->fetchColumn() : null;
+
+            if (!$defaultTT) {
+                $defaultTT = $this->db->query("SELECT id FROM teaching_types ORDER BY id ASC LIMIT 1")->fetchColumn();
+            }
+
+            if (!$defaultTT) {
+                return; // Ne pas insérer si aucun type d'enseignement n'existe
+            }
+
+            $stmt = $this->db->prepare("INSERT INTO sequences (teaching_type_id, code, label, trimestre, position, is_active) VALUES (?, ?, ?, ?, ?, 1)");
+
+            foreach (self::DEFAULT_SEQUENCES as $sequence) {
+
+                $stmt->execute([$defaultTT, $sequence['code'], $sequence['label'], $sequence['trimestre'], $sequence['position']]);
+
+            }
+
         }
+
     }
 
     protected function ensureDisciplineSchema()

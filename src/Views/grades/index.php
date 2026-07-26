@@ -54,7 +54,7 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
                         <span class="input-group-text border-0 bg-transparent text-primary small fw-bold text-uppercase me-2 d-none d-xl-inline-block">
                             Type Ensg
                         </span>
-                        <select name="teaching_type_id" class="form-select border-0 bg-transparent shadow-none fw-bold text-main"
+                        <select name="teaching_type_id" id="filter_teaching_type" class="form-select border-0 bg-transparent shadow-none fw-bold text-main"
                                 onchange="this.form.submit()">
                             <option value="">Tous les types</option>
                             <?php foreach ($teachingTypes as $tt): ?>
@@ -71,7 +71,7 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
 
                         </span>
 
-                        <select name="class_id" class="form-select border-0 bg-transparent shadow-none fw-bold text-main"
+                        <select name="class_id" id="filter_class" class="form-select border-0 bg-transparent shadow-none fw-bold text-main"
 
                                 onchange="this.form.submit()">
 
@@ -79,7 +79,7 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
 
                             <?php foreach ($classes as $class): ?>
 
-                                <option value="<?= $class['id'] ?>" <?= (int) $filters['class_id'] === (int) $class['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $class['nom']) ?></option>
+                                <option value="<?= $class['id'] ?>" data-teaching-type="<?= $class['teaching_type_id'] ?? '' ?>" <?= (int) $filters['class_id'] === (int) $class['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $class['nom']) ?></option>
 
                             <?php endforeach; ?>
 
@@ -97,7 +97,7 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
 
                         </span>
 
-                        <select name="subject_id" class="form-select border-0 bg-transparent shadow-none fw-bold text-main"
+                        <select name="subject_id" id="filter_subject" class="form-select border-0 bg-transparent shadow-none fw-bold text-main"
 
                                 onchange="this.form.submit()">
 
@@ -105,7 +105,7 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
 
                             <?php foreach ($subjects as $subject): ?>
 
-                                <option value="<?= $subject['id'] ?>" <?= (int) $filters['subject_id'] === (int) $subject['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $subject['nom']) ?></option>
+                                <option value="<?= $subject['id'] ?>" data-teaching-type="<?= $subject['teaching_type_id'] ?? '' ?>" <?= (int) $filters['subject_id'] === (int) $subject['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $subject['nom']) ?></option>
 
                             <?php endforeach; ?>
 

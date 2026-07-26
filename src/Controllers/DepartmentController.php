@@ -40,6 +40,9 @@ class DepartmentController
         $conditions = [];
         $params = [];
 
+        // Ne sélectionner que les départements rattachés à un type d'enseignement actif (ou sans type)
+        $conditions[] = "(t.actif = 1 OR d.teaching_type_id IS NULL)";
+
         if ($q !== '') {
             $conditions[] = "(d.nom LIKE ? OR d.code LIKE ?)";
             $params[] = '%' . $q . '%';
@@ -58,7 +61,7 @@ class DepartmentController
         $stmt->execute($params);
         $departments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $teachingTypes = $this->db->query("SELECT * FROM teaching_types ORDER BY position ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $teachingTypes = $this->db->query("SELECT * FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         $filters = [
             'q' => $q,

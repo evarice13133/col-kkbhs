@@ -54,12 +54,12 @@ class ClassController
         }
         
         // Listes pour alimenter les menus déroulants de filtrage dans la vue
-        $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $cycles = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id FROM cycles c LEFT JOIN teaching_types t ON c.teaching_type_id = t.id WHERE c.status = 1 AND (t.actif = 1 OR c.teaching_type_id IS NULL) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $sections = $this->db->query("SELECT id, nom FROM sections WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         
         // Seuls les départements actifs sont visibles pour le filtrage usuel
-        $departments = $this->db->query("SELECT id, nom FROM departments WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $departments = $this->db->query("SELECT d.id, d.nom, d.teaching_type_id FROM departments d LEFT JOIN teaching_types t ON d.teaching_type_id = t.id WHERE d.status = 1 AND (t.actif = 1 OR d.teaching_type_id IS NULL) ORDER BY d.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         
         include __DIR__ . '/../Views/classes/index.php';
     }
@@ -93,13 +93,13 @@ class ClassController
      */
     public function create()
     {
-        // Chargement des dépendances structurelles (Cycles et Sections)
-        $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        // Chargement des dépendances structurelles (Cycles, Sections, Types d'enseignement, Départements)
+        $cycles = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id FROM cycles c LEFT JOIN teaching_types t ON c.teaching_type_id = t.id WHERE c.status = 1 AND (t.actif = 1 OR c.teaching_type_id IS NULL) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $sections = $this->db->query("SELECT id, nom FROM sections WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         
-        // Pour la création, on ne propose que les départements actifs
-        $departments = $this->db->query("SELECT id, nom, teaching_type_id FROM departments WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        // Pour la création, on ne propose que les départements actifs rattachés à un type d'enseignement actif (ou sans type)
+        $departments = $this->db->query("SELECT d.id, d.nom, d.teaching_type_id FROM departments d LEFT JOIN teaching_types t ON d.teaching_type_id = t.id WHERE d.status = 1 AND (t.actif = 1 OR d.teaching_type_id IS NULL) ORDER BY d.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         
         include __DIR__ . '/../Views/classes/create.php';
     }
@@ -154,7 +154,7 @@ class ClassController
 
             if ($hasError) {
                 $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-                $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $sections = $this->db->query("SELECT id, nom FROM sections WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $departments = $this->db->query("SELECT id, nom FROM departments ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $classe = [
@@ -182,7 +182,7 @@ class ClassController
                 if ($deptTeachingTypeId && $deptTeachingTypeId != $teaching_type_id) {
                     $error = __('department_teaching_type_mismatch') ?? 'Le type d\'enseignement de la classe doit correspondre à celui du département.';
                     $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-                    $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                    $sections = $this->db->query("SELECT id, nom FROM sections WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                     $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                     $departments = $this->db->query("SELECT id, nom FROM departments ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                     $classe = [
@@ -261,7 +261,7 @@ class ClassController
                 }
                 $error = __('error_generic') . " : " . $e->getMessage();
                 $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-                $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $sections = $this->db->query("SELECT id, nom FROM sections WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $departments = $this->db->query("SELECT id, nom FROM departments ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $classe = [
@@ -315,8 +315,8 @@ class ClassController
             ];
         }
 
-        $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $cycles = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id FROM cycles c LEFT JOIN teaching_types t ON c.teaching_type_id = t.id WHERE c.status = 1 AND (t.actif = 1 OR c.teaching_type_id IS NULL) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $sections = $this->db->query("SELECT id, nom FROM sections WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $deptQuery = Session::get('user_role') === 'superadmin' ? "SELECT id, nom, teaching_type_id FROM departments ORDER BY nom ASC" : "SELECT id, nom, teaching_type_id FROM departments WHERE status = 1 ORDER BY nom ASC";
         $departments = $this->db->query($deptQuery)->fetchAll(PDO::FETCH_ASSOC);
@@ -627,31 +627,70 @@ class ClassController
 
     public function upload(): void
     {
+        $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+            || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false);
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_FILES['import_file'])) {
+            if ($isAjax) {
+                header('Content-Type: application/json', true, 400);
+                echo json_encode(['success' => false, 'message' => __('invalid_request')]);
+                exit;
+            }
             header('Location: /classes/import');
             exit;
         }
+
         if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
-            Session::setFlash('error', __('session_expired_retry') ?? 'Session expirée ou requête invalide.');
+            $errMsg = __('session_expired_retry') ?? 'Session expirée ou requête invalide.';
+            if ($isAjax) {
+                header('Content-Type: application/json', true, 400);
+                echo json_encode(['success' => false, 'message' => $errMsg]);
+                exit;
+            }
+            Session::setFlash('error', $errMsg);
             header('Location: /classes/import');
             exit;
         }
+
         $ext = strtolower(pathinfo((string) ($_FILES['import_file']['name'] ?? ''), PATHINFO_EXTENSION));
         if ($ext !== 'xlsx') {
-            Session::setFlash('error', __('invalid_file_format_excel'));
+            $errMsg = __('invalid_file_format_excel');
+            if ($isAjax) {
+                header('Content-Type: application/json', true, 400);
+                echo json_encode(['success' => false, 'message' => $errMsg]);
+                exit;
+            }
+            Session::setFlash('error', $errMsg);
             header('Location: /classes/import');
             exit;
         }
 
         $processor = new ClassImportProcessor($this->db);
         $result = $processor->process((string) $_FILES['import_file']['tmp_name']);
+
         if ($result['success']) {
-            Session::setFlash('success', __('classes_imported_success', ['count' => $result['count']]));
+            $successMsg = __('classes_imported_success', ['count' => $result['count']]);
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => true, 'message' => $successMsg, 'count' => $result['count']]);
+                exit;
+            }
+            Session::setFlash('success', $successMsg);
             header('Location: /classes');
             exit;
         }
 
         $errors = $result['errors'];
+        if ($isAjax) {
+            header('Content-Type: application/json', true, 400);
+            echo json_encode([
+                'success' => false,
+                'message' => implode("<br>", array_map('htmlspecialchars', $errors)),
+                'errors' => $errors
+            ]);
+            exit;
+        }
+
         include __DIR__ . '/../Views/classes/import.php';
     }
 
@@ -670,7 +709,15 @@ class ClassController
         // Classes are now shared across years, no year filtering needed
 
         // 1. Count total
-        $countSql = "SELECT COUNT(*) FROM classes c LEFT JOIN departments d ON c.department_id = d.id WHERE (c.department_id IS NULL OR d.status = 1)";
+        $countSql = "SELECT COUNT(*) FROM classes c 
+                     LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id
+                     LEFT JOIN cycles cy ON c.cycle_id = cy.id
+                     LEFT JOIN sections s ON c.section_id = s.id
+                     LEFT JOIN departments d ON c.department_id = d.id 
+                     WHERE (c.teaching_type_id IS NULL OR tt.actif = 1)
+                       AND (c.cycle_id IS NULL OR cy.status = 1)
+                       AND (c.section_id IS NULL OR s.status = 1)
+                       AND (c.department_id IS NULL OR d.status = 1)";
         $countParams = [];
         
         // No academic year filtering for classes
@@ -711,7 +758,10 @@ class ClassController
                 LEFT JOIN departments d ON c.department_id = d.id
                 LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id
                 LEFT JOIN users u ON c.main_teacher_id = u.id
-                WHERE (c.department_id IS NULL OR d.status = 1)";
+                WHERE (c.teaching_type_id IS NULL OR tt.actif = 1)
+                  AND (c.cycle_id IS NULL OR cy.status = 1)
+                  AND (c.section_id IS NULL OR s.status = 1)
+                  AND (c.department_id IS NULL OR d.status = 1)";
         $params = [];
 
         // No academic year filtering for classes

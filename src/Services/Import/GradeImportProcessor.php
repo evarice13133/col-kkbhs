@@ -31,73 +31,173 @@ class GradeImportProcessor
      * @return array{success: bool, count: int, errors: list<string>}
      */
     public function process(string $filePath, int $classId, int $subjectId): array
+
     {
+
         try {
+
             $spreadsheet = IOFactory::load($filePath);
+
             $sheets = $spreadsheet->getAllSheets();
 
+
+
             if (count($sheets) === 0) {
+
                 throw new Exception('Document vide ou sans feuilles.');
+
+            }
+
+
+
+            // Déterminer le type d'enseignement de la classe
+            $stmtTT = $this->db->prepare("SELECT teaching_type_id FROM classes WHERE id = ?");
+            $stmtTT->execute([$classId]);
+            $teachingTypeId = (int) $stmtTT->fetchColumn();
+
+            // Charger les séquences spécifiques à ce type d'enseignement
+            $stmtSeq = $this->db->prepare("
+                SELECT s.label 
+                FROM sequences s 
+                LEFT JOIN teaching_types tt ON s.teaching_type_id = tt.id 
+                WHERE s.is_active = 1 
+                  AND (tt.actif = 1 OR s.teaching_type_id IS NULL) 
+                  AND s.teaching_type_id = ? 
+                ORDER BY s.position ASC
+            ");
+            $stmtSeq->execute([$teachingTypeId]);
+            $this->evaluationTypes = $stmtSeq->fetchAll(PDO::FETCH_COLUMN);
+
+            // Fallback si vide
+            if (empty($this->evaluationTypes)) {
+                $stmtSeq = $this->db->prepare("
+                    SELECT s.label 
+                    FROM sequences s 
+                    LEFT JOIN teaching_types tt ON s.teaching_type_id = tt.id 
+                    WHERE s.is_active = 1 
+                      AND (tt.actif = 1 OR s.teaching_type_id IS NULL) 
+                    ORDER BY s.position ASC
+                ");
+                $stmtSeq->execute();
+                $this->evaluationTypes = $stmtSeq->fetchAll(PDO::FETCH_COLUMN);
             }
 
             // Récupérer les infos de l'enseignant pour les snapshots
+
             $teacherData = $this->db->prepare("SELECT nom, prenom FROM users WHERE id = ? LIMIT 1");
+
             $teacherData->execute([$this->teacherId]);
+
             $teacherResult = $teacherData->fetch(PDO::FETCH_ASSOC);
+
             $teacherNom = $teacherResult['nom'] ?? 'Enseignant Supprimé';
+
             $teacherPrenom = $teacherResult['prenom'] ?? '';
+
+
 
             $this->db->beginTransaction();
 
+
+
             // Traiter chaque feuille (chaque feuille = une matière)
+
             foreach ($sheets as $sheet) {
+
                 $sheetName = $sheet->getTitle();
+
                 $rows = $sheet->toArray(null, true, true, true);
 
+
+
                 if (count($rows) < 2) {
+
                     continue; // Feuille vide
+
                 }
+
+
 
                 $headers = array_shift($rows);
+
                 $this->validateHeaders($headers);
 
+
+
                 // Récupérer l'ID de la matière à partir du nom de la feuille
+
                 $subjectId = $this->resolveSubjectId($sheetName, $classId);
+
                 if ($subjectId === null) {
+
                     $this->logError(0, "Feuille '{$sheetName}': matière introuvable pour cette classe.");
+
                     continue;
+
                 }
+
+
 
                 // Récupérer les infos de la matière pour les snapshots
+
                 $subjectData = $this->db->prepare("SELECT nom FROM subjects WHERE id = ? LIMIT 1");
+
                 $subjectData->execute([$subjectId]);
+
                 $subjectResult = $subjectData->fetch(PDO::FETCH_ASSOC);
+
                 $subjectNom = $subjectResult['nom'] ?? 'Matière Supprimée';
 
+
+
                 // Identifier les colonnes de périodes (à partir de la colonne C)
+
                 $periodColumns = [];
+
                 $col = 'C';
+
                 while (isset($headers[$col])) {
+
                     $periodLabel = trim((string) $headers[$col]);
+
                     if ($periodLabel !== '' && in_array($periodLabel, $this->evaluationTypes, true)) {
+
                         $periodColumns[$col] = $periodLabel;
+
                     }
+
                     $col++;
+
                 }
+
+
 
                 if (empty($periodColumns)) {
+
                     $this->logError(0, "Feuille '{$sheetName}': aucune période valide trouvée dans les en-têtes.");
+
                     continue;
+
                 }
 
+
+
                 // Traiter chaque ligne (chaque ligne = un élève)
+
                 foreach ($rows as $idx => $row) {
+
                     $line = $idx + 2;
+
                     if (!$this->rowHasData($row)) {
+
                         continue;
+
                     }
-                    $this->processRowMultiPeriod($row, $line, $classId, $subjectId, $subjectNom, $teacherNom, $teacherPrenom, $periodColumns, $sheetName);
+
+                    $this->processRowMultiPeriod($row, $line, $classId, $subjectId, $subjectNom, $teacherNom, $teacherPrenom, $periodColumns, $sheetName, $teachingTypeId);
+
                 }
+
             }
 
             if (empty($this->errors)) {
@@ -156,7 +256,7 @@ class GradeImportProcessor
         return $id ? (int) $id : null;
     }
 
-    private function processRowMultiPeriod(array $row, int $line, int $classId, int $subjectId, string $subjectNom, string $teacherNom, string $teacherPrenom, array $periodColumns, string $sheetName): void
+    private function processRowMultiPeriod(array $row, int $line, int $classId, int $subjectId, string $subjectNom, string $teacherNom, string $teacherPrenom, array $periodColumns, string $sheetName, int $teachingTypeId): void
     {
         $studentNom = trim((string) ($row['A'] ?? ''));
         $studentPrenom = trim((string) ($row['B'] ?? ''));
@@ -187,10 +287,33 @@ class GradeImportProcessor
                 continue;
             }
 
-            // Récupérer l'ID de séquence
-            $seqStmt = $this->db->prepare("SELECT id FROM sequences WHERE label = ? LIMIT 1");
-            $seqStmt->execute([$periode]);
+            // Récupérer l'ID de séquence en filtrant par le type d'enseignement
+            $seqStmt = $this->db->prepare("
+                SELECT s.id 
+                FROM sequences s 
+                LEFT JOIN teaching_types tt ON s.teaching_type_id = tt.id 
+                WHERE s.label = ? 
+                  AND s.teaching_type_id = ?
+                  AND s.is_active = 1
+                LIMIT 1
+            ");
+            $seqStmt->execute([$periode, $teachingTypeId]);
             $sequenceId = $seqStmt->fetchColumn();
+
+            // Fallback si non trouvé
+            if (!$sequenceId) {
+                $seqStmt = $this->db->prepare("
+                    SELECT s.id 
+                    FROM sequences s 
+                    LEFT JOIN teaching_types tt ON s.teaching_type_id = tt.id 
+                    WHERE s.label = ? 
+                      AND s.is_active = 1
+                    LIMIT 1
+                ");
+                $seqStmt->execute([$periode]);
+                $sequenceId = $seqStmt->fetchColumn();
+            }
+
             if (!$sequenceId) {
                 $this->logError($line, "Feuille '{$sheetName}': Periode invalide: {$periode}");
                 continue;
@@ -272,7 +395,7 @@ class GradeImportProcessor
 
     private function warmupStudents(): void
     {
-        $rows = $this->db->query("SELECT id, nom, prenom FROM students WHERE academic_year_id = {$this->activeYearId} AND is_withdrawn = 0 AND actif = 1")->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $this->db->query("SELECT id, nom, prenom FROM students WHERE academic_year_id = {$this->activeYearId} AND is_withdrawn = 0 AND actif = 1 AND status NOT IN ('Démission', 'Démissionnaire', 'Abandon')")->fetchAll(PDO::FETCH_ASSOC);
         foreach ($rows as $row) {
             $key = mb_strtolower($row['nom'] . '|' . $row['prenom']);
             $this->studentsByName[$key] = (int) $row['id'];
