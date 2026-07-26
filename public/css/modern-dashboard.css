@@ -393,80 +393,167 @@ p, .text-muted {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 0.6rem 0.85rem;
+    padding: 0.65rem 0.95rem;
     color: var(--text-muted);
     text-decoration: none;
-    border-radius: 12px;
-    font-weight: 600;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    margin: 0 0.65rem 0.25rem 0.65rem;
+    border-radius: 10px;
+    font-weight: 550;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    margin: 0.2rem 0.75rem;
     border: 1px solid transparent;
-    position: relative;
     font-size: 0.85rem;
-    overflow: hidden;
-}
-
-.nav-link-custom::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 3px;
-    height: 0;
-    background-color: var(--primary-color);
-    border-radius: 0 4px 4px 0;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.nav-link-custom:hover::after {
-    height: 16px;
-}
-
-.nav-link-custom.active::after {
-    height: 18px;
-    background-color: #ffffff;
-    width: 4px;
-}
-
-.nav-link-custom:hover {
-    background: rgba(124, 58, 237, 0.08) !important;
-    color: var(--primary-color) !important;
-    border-color: rgba(124, 58, 237, 0.15) !important;
-    transform: translateX(4px);
-}
-
-[data-theme="dark"] .nav-link-custom:hover {
-    color: #a78bfa !important;
-    background: rgba(124, 58, 237, 0.15) !important;
+    position: relative;
 }
 
 .nav-link-custom i {
     width: 1.35rem;
     text-align: center;
-    font-size: 1.05rem;
-    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    font-size: 1.1rem;
+    transition: all 0.2s ease;
     color: var(--text-muted);
 }
 
-.nav-link-custom:hover i {
-    transform: scale(1.18);
+/* Hover State */
+.nav-link-custom:hover:not(.active):not(.active-parent) {
+    background: rgba(124, 58, 237, 0.05) !important;
     color: var(--primary-color) !important;
+    border-color: rgba(124, 58, 237, 0.08) !important;
+    transform: translateX(3px);
+}
+
+[data-theme="dark"] .nav-link-custom:hover:not(.active):not(.active-parent) {
+    background: rgba(255, 255, 255, 0.04) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.nav-link-custom:hover i {
+    color: var(--primary-color) !important;
+    transform: scale(1.08);
 }
 
 [data-theme="dark"] .nav-link-custom:hover i {
-    color: #a78bfa !important;
+    color: #ffffff !important;
 }
 
+/* Active State (Full highlight) */
 .nav-link-custom.active {
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)) !important;
-    color: white !important;
-    box-shadow: 0 8px 20px -6px rgba(124, 58, 237, 0.45) !important;
-    border-color: rgba(124, 58, 237, 0.3) !important;
+    color: #ffffff !important;
+    border-color: transparent !important;
+    box-shadow: 0 4px 12px -3px rgba(124, 58, 237, 0.35) !important;
+    font-weight: 600 !important;
 }
 
 .nav-link-custom.active i {
-    color: white !important;
+    color: #ffffff !important;
+}
+
+/* Active Parent State (When submenu has an active child) */
+.nav-link-custom.active-parent,
+.nav-link-custom.dropdown-toggle-custom.active-parent {
+    background: rgba(124, 58, 237, 0.06) !important;
+    color: var(--primary-color) !important;
+    border-color: rgba(124, 58, 237, 0.12) !important;
+    font-weight: 600 !important;
+}
+
+.nav-link-custom.active-parent i {
+    color: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .nav-link-custom.active-parent {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .nav-link-custom.active-parent i {
+    color: #ffffff !important;
+}
+
+/* Submenu layout and connectors */
+.submenu-collapse {
+    margin-left: 1.85rem;
+    border-left: 1px dashed rgba(124, 58, 237, 0.2);
+    padding-left: 0.25rem;
+    margin-top: 0.15rem;
+    margin-bottom: 0.4rem;
+    transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .submenu-collapse {
+    border-left-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Submenu Links */
+.submenu-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0.45rem 0.85rem 0.45rem 1.15rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    margin: 0.15rem 0.5rem;
+    font-weight: 500;
+    border: 1px solid transparent;
+}
+
+.submenu-link i {
+    font-size: 0.95rem;
+    color: inherit;
+    transition: transform 0.2s ease;
+}
+
+.submenu-link:hover {
+    background: rgba(124, 58, 237, 0.04) !important;
+    color: var(--primary-color) !important;
+    transform: translateX(3px);
+}
+
+[data-theme="dark"] .submenu-link:hover {
+    background: rgba(255, 255, 255, 0.03) !important;
+    color: #ffffff !important;
+}
+
+.submenu-link:hover i {
+    transform: scale(1.1);
+}
+
+.submenu-link.active {
+    background: rgba(124, 58, 237, 0.08) !important;
+    color: var(--primary-color) !important;
+    font-weight: 600 !important;
+    border-color: rgba(124, 58, 237, 0.08) !important;
+}
+
+[data-theme="dark"] .submenu-link.active {
+    background: rgba(255, 255, 255, 0.07) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Nested Dropdowns inside Submenu */
+.nested-dropdown {
+    margin: 0.15rem 0;
+}
+
+.nested-submenu-collapse {
+    border-left: 1px dashed rgba(124, 58, 237, 0.2);
+    margin-left: 1.8rem;
+    padding-left: 0.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    margin-top: 0.1rem;
+    margin-bottom: 0.3rem;
+}
+
+[data-theme="dark"] .nested-submenu-collapse {
+    border-left-color: rgba(255, 255, 255, 0.1);
 }
 
 .sidebar-footer {
@@ -1429,11 +1516,17 @@ p, .text-muted {
     box-shadow: 0 4px 12px -4px rgba(124, 58, 237, 0.3) !important;
 }
 
-.sidebar-card .nav-link-custom.active-parent {
-    color: var(--text-main) !important;
-    background: color-mix(in srgb, var(--primary-soft) 30%, transparent) !important;
-    border-left: 3px solid var(--primary-color) !important;
-    border-radius: 8px 8px 0 0 !important;
+..sidebar-card .nav-link-custom.active-parent {
+    color: var(--primary-color) !important;
+    background: rgba(124, 58, 237, 0.06) !important;
+    border: 1px solid rgba(124, 58, 237, 0.12) !important;
+    border-radius: 8px !important;
+}
+
+[data-theme="dark"] .sidebar-card .nav-link-custom.active-parent {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 /* ==========================================================================
