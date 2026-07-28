@@ -69,6 +69,7 @@ $nav_items = [
             ['icon' => 'bi-layers', 'label' => __('academic_cycles'), 'url' => '/cycles', 'roles' => ['superadmin']],
             ['icon' => 'bi-grid-3x3-gap', 'label' => __('academic_sections'), 'url' => '/sections', 'roles' => ['superadmin']],
             ['icon' => 'bi-building', 'label' => __('departments'), 'url' => '/departments', 'roles' => ['superadmin', 'admin', 'it_manager']],
+            ['icon' => 'bi-gear', 'label' => __('settings'), 'url' => '/settings', 'roles' => ['superadmin']],
             ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'roles' => ['superadmin', 'admin', 'it_manager']],
         ]
     ],
@@ -87,11 +88,12 @@ $nav_items = [
     // SECTION: GESTION DES UTILISATEURS
     [
         'section' => __('users_management_menu'),
-        'roles' => ['superadmin', 'admin', 'caissier', 'comptable'],
+        'roles' => ['superadmin', 'admin', 'caissier', 'comptable', 'it_manager'],
         'icon' => 'bi-person-gear',
         'items' => [
+            ['icon' => 'bi-people-fill', 'label' => __('users'), 'url' => '/users', 'roles' => ['superadmin', 'it_manager']],
             ['icon' => 'bi-person-plus-fill', 'label' => __('manage_cashiers_menu'), 'url' => '/users/caissiers', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-            ['icon' => 'bi-person-badge', 'label' => __('teachers'), 'url' => '/teachers', 'roles' => ['superadmin', 'admin']],
+            ['icon' => 'bi-person-badge', 'label' => __('teachers'), 'url' => '/teachers', 'roles' => ['superadmin', 'admin', 'it_manager']],
         ]
     ],
     // SECTION: GESTION FINANCIÈRE
@@ -167,21 +169,9 @@ $nav_items = [
         'roles' => ['it_manager'],
         'icon' => 'bi-pc-display',
         'items' => [
-            ['icon' => 'bi-people-fill', 'label' => __('users'), 'url' => '/users', 'roles' => ['it_manager']],
-            ['icon' => 'bi-people', 'label' => __('teachers'), 'url' => '/teachers', 'roles' => ['it_manager']],
             ['icon' => 'bi-door-open', 'label' => __('classes'), 'url' => '/classes', 'roles' => ['it_manager']],
             ['icon' => 'bi-calendar-event', 'label' => __('academic_years'), 'url' => '/academic_years', 'roles' => ['it_manager']],
             ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'roles' => ['it_manager']],
-        ]
-    ],
-    // SECTION: ADMINISTRATION (SuperAdmin)
-    [
-        'section' => __('administration'),
-        'roles' => ['superadmin'],
-        'icon' => 'bi-shield-lock',
-        'items' => [
-            ['icon' => 'bi-people-fill', 'label' => __('users'), 'url' => '/users', 'roles' => ['superadmin']],
-            ['icon' => 'bi-gear', 'label' => __('settings'), 'url' => '/settings', 'roles' => ['superadmin']],
         ]
     ]
 ];
@@ -371,13 +361,6 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
             color: #b91c1c;
         }
 
-        .nav-link-custom.active {
-            background: linear-gradient(135deg, var(--primary-color), #4f46e5);
-            box-shadow: 0 8px 20px -6px rgba(59, 130, 246, 0.5);
-            color: white !important;
-            transform: translateX(4px);
-        }
-
         .nav-section {
             padding: 1.5rem 1.5rem 0.5rem;
             opacity: 0.8;
@@ -391,43 +374,6 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
             color: var(--primary-color);
             border-bottom: 1px solid rgba(var(--primary-rgb), 0.1);
             padding-bottom: 4px;
-        }
-
-        .nav-link-custom {
-            margin: 0.2rem 0.75rem;
-            padding: 0.7rem 1rem;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: #64748b;
-            font-weight: 600;
-            font-size: 0.875rem;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            text-decoration: none;
-        }
-
-        .nav-link-custom:hover:not(.active) {
-            background: rgba(var(--primary-rgb), 0.05);
-            color: var(--primary-color);
-            transform: translateX(4px);
-        }
-
-        .nav-link-custom i {
-            font-size: 1.1rem;
-            transition: transform 0.2s;
-        }
-
-        .nav-link-custom:hover i {
-            transform: scale(1.1);
-        }
-
-        [data-theme="dark"] .nav-link-custom {
-            color: #94a3b8;
-        }
-
-        [data-theme="dark"] .nav-link-custom:hover:not(.active) {
-            background: rgba(255, 255, 255, 0.05);
         }
 
         .dropdown-menu-modern {
@@ -592,6 +538,20 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
                 </a>
             </div>
             <!-- end logo head -->
+
+            <?php if (\App\Core\Session::isLogged()): ?>
+                <!-- Search Input for Menu filtering -->
+                <div class="px-3 pt-3 pb-1" id="sidebarSearchWrapper">
+                    <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-2 align-items-center" style="border: 1px solid var(--border-color) !important;">
+                        <span class="input-group-text border-0 bg-transparent text-primary p-1 ps-2">
+                            <i class="bi bi-search" style="font-size: 0.85rem;"></i>
+                        </span>
+                        <input type="text" id="sidebarNavSearch" class="form-control border-0 bg-transparent shadow-none py-1 text-main"
+                            placeholder="Rechercher... (Ctrl+K)" autocomplete="off" style="font-size: 0.8rem; height: 32px;">
+                        <span class="badge bg-secondary bg-opacity-10 text-muted border rounded-pill extra-small px-1-5 py-0-5 me-1 d-none d-md-inline" style="font-size: 0.65rem;">⌘K</span>
+                    </div>
+                </div>
+            <?php endif; ?>
 
             <div class="sidebar-content">
                 <?php if (\App\Core\Session::isLogged()): ?>
@@ -1041,6 +1001,142 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
                     }
                 });
             });
+
+            // Quick Nav Search (Command Filter)
+            const searchInput = document.getElementById('sidebarNavSearch');
+            if (searchInput) {
+                searchInput.addEventListener('input', function () {
+                    const query = this.value.trim().toLowerCase();
+                    const flatCards = [];
+                    const dropdownCards = [];
+                    
+                    // Separate flat items from dropdown accordions
+                    document.querySelectorAll('.sidebar-content > .sidebar-card').forEach(card => {
+                        const link = card.querySelector('a.nav-link-custom');
+                        if (link && !link.classList.contains('dropdown-toggle-custom')) {
+                            flatCards.push(card);
+                        } else {
+                            dropdownCards.push(card);
+                        }
+                    });
+
+                    // Also select any .nav-item-dropdown
+                    document.querySelectorAll('.nav-item-dropdown').forEach(card => {
+                        if (!dropdownCards.includes(card)) dropdownCards.push(card);
+                    });
+
+                    if (query === '') {
+                        // Reset all flat cards
+                        flatCards.forEach(card => card.style.display = '');
+                        
+                        // Reset all dropdown cards
+                        dropdownCards.forEach(card => {
+                            card.style.display = '';
+                            const toggle = card.querySelector('.dropdown-toggle-custom');
+                            const submenu = card.querySelector('.submenu-collapse');
+                            const isParentActive = toggle && toggle.classList.contains('active-parent');
+                            if (submenu && !isParentActive) {
+                                submenu.classList.remove('show');
+                                if (toggle) toggle.setAttribute('aria-expanded', 'false');
+                            }
+                            
+                            // Reset nested submenus
+                            card.querySelectorAll('.submenu-link').forEach(link => {
+                                link.style.display = '';
+                            });
+                            card.querySelectorAll('.nested-dropdown').forEach(nested => {
+                                nested.style.display = '';
+                                const nestedToggle = nested.querySelector('.dropdown-toggle-nested');
+                                const nestedSubmenu = nested.querySelector('.nested-submenu-collapse');
+                                const isNestedActive = nestedToggle && nestedToggle.classList.contains('active-parent-nested');
+                                if (nestedSubmenu && !isNestedActive) {
+                                    nestedSubmenu.style.maxHeight = '0';
+                                    if (nestedToggle) nestedToggle.setAttribute('aria-expanded', 'false');
+                                }
+                            });
+                        });
+                        return;
+                    }
+
+                    // 1. Process flat cards
+                    flatCards.forEach(card => {
+                        const text = card.textContent.toLowerCase();
+                        card.style.display = text.includes(query) ? '' : 'none';
+                    });
+
+                    // 2. Process dropdown cards
+                    dropdownCards.forEach(card => {
+                        const sectionToggle = card.querySelector('.dropdown-toggle-custom');
+                        const sectionTitle = sectionToggle ? (sectionToggle.getAttribute('data-title') || '').toLowerCase() : '';
+                        const submenuLinks = card.querySelectorAll('.submenu-link:not(.dropdown-toggle-nested)');
+                        const nestedDropdowns = card.querySelectorAll('.nested-dropdown');
+                        
+                        let hasMatchingChild = false;
+
+                        // Check simple submenu links
+                        submenuLinks.forEach(link => {
+                            if (link.closest('.nested-submenu-collapse')) return;
+
+                            const text = link.textContent.toLowerCase();
+                            const isMatch = text.includes(query) || sectionTitle.includes(query);
+                            link.style.display = isMatch ? '' : 'none';
+                            if (text.includes(query)) {
+                                hasMatchingChild = true;
+                            }
+                        });
+
+                        // Check nested dropdowns
+                        nestedDropdowns.forEach(nested => {
+                            const nestedToggle = nested.querySelector('.dropdown-toggle-nested');
+                            const nestedTitle = nestedToggle ? nestedToggle.textContent.toLowerCase() : '';
+                            const nestedLinks = nested.querySelectorAll('.nested-submenu-collapse .submenu-link');
+                            
+                            let hasMatchingNestedChild = false;
+
+                            nestedLinks.forEach(link => {
+                                const text = link.textContent.toLowerCase();
+                                const isMatch = text.includes(query) || nestedTitle.includes(query) || sectionTitle.includes(query);
+                                link.style.display = isMatch ? '' : 'none';
+                                if (text.includes(query)) {
+                                    hasMatchingNestedChild = true;
+                                    hasMatchingChild = true;
+                                }
+                            });
+
+                            if (hasMatchingNestedChild || nestedTitle.includes(query) || sectionTitle.includes(query)) {
+                                nested.style.display = '';
+                                const nestedSubmenu = nested.querySelector('.nested-submenu-collapse');
+                                if (nestedSubmenu) {
+                                    nestedSubmenu.style.maxHeight = '500px';
+                                    if (nestedToggle) nestedToggle.setAttribute('aria-expanded', 'true');
+                                }
+                            } else {
+                                nested.style.display = 'none';
+                            }
+                        });
+
+                        // Show/hide parent section accordion based on matches
+                        if (hasMatchingChild || sectionTitle.includes(query)) {
+                            card.style.display = '';
+                            const submenu = card.querySelector('.submenu-collapse');
+                            if (submenu) {
+                                submenu.classList.add('show');
+                                if (sectionToggle) sectionToggle.setAttribute('aria-expanded', 'true');
+                            }
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+                });
+
+                // Keyboard Shortcut Ctrl+K / Cmd+K
+                document.addEventListener('keydown', function (e) {
+                    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+                        e.preventDefault();
+                        searchInput.focus();
+                    }
+                });
+            }
 
             // Initialisation des tooltips
             const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))

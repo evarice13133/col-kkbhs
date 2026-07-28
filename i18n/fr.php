@@ -253,7 +253,7 @@ return [
     'disciplines_taught' => 'Matières enseignées',
     'confirmed_entries' => 'Saisies confirmées',
     'students_short' => 'élèves',
-    'proces_verbaux' => 'Procès-Verbaux',
+    'proces_verbaux' => 'Procès-Verbaux(PV)',
     'active_gradebooks' => 'Carnets de notes actifs',
     'no_pending_assignments' => 'Toutes vos affectations sont à jour.',
     'all_grades_filled' => 'Excellent travail !',
