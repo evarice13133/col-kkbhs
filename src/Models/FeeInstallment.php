@@ -133,6 +133,9 @@ class FeeInstallment extends BaseModel
      */
     public function create(array $data): bool
     {
+        $rawDeadline = !empty($data['deadline_date']) ? trim((string)$data['deadline_date']) : null;
+        $deadlineDate = ($rawDeadline !== null && $rawDeadline !== '') ? $rawDeadline : date('Y-12-31');
+
         $stmt = $this->db->prepare("
             INSERT INTO fee_installments (academic_year_id, name, installment_order, amount, deadline_date, class_id, cycle_id, teaching_type_id)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -142,7 +145,7 @@ class FeeInstallment extends BaseModel
             trim((string)$data['name']),
             (int)$data['installment_order'],
             (float)$data['amount'],
-            $data['deadline_date'],
+            $deadlineDate,
             !empty($data['class_id']) ? (int)$data['class_id'] : null,
             !empty($data['cycle_id']) ? (int)$data['cycle_id'] : null,
             !empty($data['teaching_type_id']) ? (int)$data['teaching_type_id'] : null

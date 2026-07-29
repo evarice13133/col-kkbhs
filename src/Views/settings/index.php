@@ -3,8 +3,22 @@
 <div class="animate-fade-in container-fluid py-4">
     <!-- BARRE D'ACTIONS COMPLÈTE : Style Floating Island -->
     <div class="d-flex justify-content-center mb-5">
-        <div class="filter-island px-3 py-2 shadow-lg animate-slide-down" style="min-width: 40%;">
-            <div class="d-flex align-items-center justify-content-center gap-2 w-100">
+        <div class="filter-island px-3 py-2 shadow-lg animate-slide-down" style="min-width: 50%;">
+            <div class="d-flex align-items-center justify-content-center flex-wrap gap-2 w-100">
+                <?php if (!empty($teachingTypes)): ?>
+                    <form method="GET" action="/settings" class="d-inline-block m-0" id="ttSelectForm">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-transparent border-0 text-primary fw-bold"><i class="bi bi-diagram-3 me-1"></i> Type :</span>
+                            <select name="teaching_type_id" class="form-select rounded-pill px-3 fw-bold border-theme-light bg-soft-primary text-primary" onchange="document.getElementById('ttSelectForm').submit()">
+                                <?php foreach ($teachingTypes as $tt): ?>
+                                    <option value="<?= $tt['id'] ?>" <?= ((int)$currentTeachingTypeId === (int)$tt['id']) ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars((string)$tt['nom']) ?> (<?= htmlspecialchars((string)$tt['code']) ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </form>
+                <?php endif; ?>
                 <button type="submit" form="settingsForm" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm scale-on-hover">
                     <i class="bi bi-check-circle-fill me-2"></i> <?= __('save') ?>
                 </button>
@@ -65,16 +79,19 @@
                     <i class="bi bi-lock me-2"></i> <?= __('login_tab') ?>
                 </button>
             </li>
+            <?php if (\App\Core\Session::get('user_role') === 'superadmin'): ?>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="automation-tab" data-bs-toggle="pill" data-bs-target="#tab-automation"
                     type="button" role="tab">
                     <i class="bi bi-cloud-check me-2"></i> <?= __('automation_tab') ?>
                 </button>
             </li>
+            <?php endif; ?>
         </ul>
     </div>
 
     <form action="/settings/store" method="POST" enctype="multipart/form-data" id="settingsForm">
+        <input type="hidden" name="teaching_type_id" value="<?= (int)$currentTeachingTypeId ?>">
         <div class="tab-content" id="settingsTabsContent">
             <div class="tab-pane fade show active" id="tab-general" role="tabpanel">
                 <?php include __DIR__ . '/partials/institution.php'; ?>
@@ -92,9 +109,11 @@
                 <?php include __DIR__ . '/partials/login.php'; ?>
             </div>
 
+            <?php if (\App\Core\Session::get('user_role') === 'superadmin'): ?>
             <div class="tab-pane fade" id="tab-automation" role="tabpanel">
                 <?php include __DIR__ . '/partials/automation.php'; ?>
             </div>
+            <?php endif; ?>
         </div>
     </form>
     

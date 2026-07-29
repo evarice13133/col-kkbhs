@@ -71,6 +71,7 @@
                         </div>
                         <small class="extra-small text-muted-theme opacity-75 mt-1 d-block"><?= __('honor_roll_default_threshold_help') ?></small>
                     </div>
+                    <?php if (\App\Core\Session::get('user_role') === 'superadmin'): ?>
                     <div class="mb-0">
                         <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-2">Impression des bulletins</label>
                         <div class="d-flex align-items-center gap-3 p-3 border-theme-dynamic rounded-4 bg-soft-primary">
@@ -84,6 +85,7 @@
                             <small class="extra-small text-muted-theme opacity-75">Active ou désactive l'accès à l'impression des bulletins pour les administrateurs.</small>
                         </div>
                     </div>
+                    <?php endif; ?>
                 </div>
 
                 <div class="col-md-12 border-top border-theme-light pt-4 mt-4 mb-2">

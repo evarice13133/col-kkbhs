@@ -67,12 +67,14 @@
                                                 ]), ENT_QUOTES, 'UTF-8') ?>)" title="<?= __('edit') ?>">
                                                 <i class="bi bi-pencil-fill"></i>
                                             </button>
-                                            <a href="/cycles/delete?id=<?= $cycle['id'] ?>&csrf_token=<?= \App\Core\Session::generateCsrfToken() ?>"
-                                                class="btn-icon-action text-danger position-relative btn-confirm-delete"
-                                                style="z-index: 10; width: 30px; height: 30px; font-size: 0.85rem;"
-                                                data-confirm="<?= __('confirm_delete_text') ?>" title="<?= __('delete') ?>">
-                                                <i class="bi bi-trash-fill"></i>
-                                            </a>
+                                            <?php if (App\Core\Session::get('user_role') === 'superadmin'): ?>
+                                                <a href="/cycles/delete?id=<?= $cycle['id'] ?>&csrf_token=<?= \App\Core\Session::generateCsrfToken() ?>"
+                                                    class="btn-icon-action text-danger position-relative btn-confirm-delete"
+                                                    style="z-index: 10; width: 30px; height: 30px; font-size: 0.85rem;"
+                                                    data-confirm="<?= __('confirm_delete_text') ?>" title="<?= __('delete') ?>">
+                                                    <i class="bi bi-trash-fill"></i>
+                                                </a>
+                                            <?php endif; ?>
                                         <?php endif; ?>
                                     </div>
                                 </div>

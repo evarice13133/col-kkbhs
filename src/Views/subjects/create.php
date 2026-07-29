@@ -26,21 +26,23 @@ ob_start();
                     </div>
 
                     <div class="col-md-4">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('teaching_type') ?? 'Type Enseignement' ?> *</label>
+                        <select name="teaching_type_id" id="teaching_type_id" class="form-select premium-input border-primary border-opacity-25" required>
+                            <option value=""><?= __('select_teaching_type') ?? 'Sélectionner un type' ?></option>
+                            <?php foreach ($teachingTypes as $tt): ?>
+                                <option value="<?= $tt['id'] ?>" data-code="<?= h($tt['code'] ?? '') ?>"><?= h($tt['nom']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
                         <label
-                            class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('subject_official_name') ?></label>
+                            class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('subject_official_name') ?> *</label>
                         <input type="text" name="nom" class="form-control premium-input"
                             placeholder="<?= __('subject_name_placeholder') ?>" value="<?= h($nom ?? '') ?>" required
                             autofocus>
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Type Enseignement *</label>
-                        <select name="teaching_type_id" id="teaching_type_id" class="form-select premium-input border-primary border-opacity-25" required>
-                            <option value="">Sélectionner un type</option>
-                            <?php foreach ($teachingTypes as $tt): ?>
-                                <option value="<?= $tt['id'] ?>"><?= h($tt['nom']) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
+
                     <div class="col-md-4">
                         <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('department') ?></label>
                         <select name="department_id" id="department_id" class="form-select premium-input">
@@ -52,6 +54,7 @@ ob_start();
                             <?php endforeach; ?>
                         </select>
                     </div>
+
                     <div class="col-md-8">
                         <label
                             class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('subject_group') ?></label>
@@ -64,11 +67,31 @@ ob_start();
                             <?php endforeach; ?>
                         </select>
                     </div>
+
                     <div class="col-md-4">
                         <label
                             class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('base_coefficient') ?></label>
                         <input type="number" name="coefficient" class="form-control premium-input text-center"
                             value="<?= h($coeff ?? 1) ?>" min="1" required>
+                    </div>
+
+                    <!-- Dynamic LMD Fields (Code UV / Code UE) -->
+                    <div class="col-12" id="lmd_fields_container" style="display: none;">
+                        <div class="p-3 bg-primary bg-opacity-10 border border-primary border-opacity-25 rounded-4">
+                            <h6 class="fw-bold text-primary mb-2 extra-small text-uppercase">
+                                <i class="bi bi-mortarboard-fill me-1"></i><?= __('lmd_academic_info') ?? 'Informations Supérieur LMD' ?>
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('code_uv_optional') ?? 'Code UV (Optionnel)' ?></label>
+                                    <input type="text" name="code_uv" id="code_uv" class="form-control premium-input" placeholder="Ex: INF301" value="<?= h($code_uv ?? '') ?>">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('code_ue_optional') ?? 'Code UE (Optionnel)' ?></label>
+                                    <input type="text" name="code_ue" id="code_ue" class="form-control premium-input" placeholder="Ex: UE-INF3" value="<?= h($code_ue ?? '') ?>">
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -361,9 +384,35 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    if(teachingTypeSelect && departmentSelect) {
-        teachingTypeSelect.addEventListener('change', filterDepartments);
-        filterDepartments(); // Initial call
+    function toggleLmdFields() {
+        const select = document.getElementById('teaching_type_id');
+        const container = document.getElementById('lmd_fields_container');
+        if (!select || !container) return;
+        const selectedOption = select.options[select.selectedIndex];
+        if (!selectedOption || !selectedOption.value) {
+            container.style.display = 'none';
+            return;
+        }
+        const code = (selectedOption.getAttribute('data-code') || '').toUpperCase();
+        const text = (selectedOption.textContent || selectedOption.innerText || '').toUpperCase();
+        if (code === 'LMD' || text.includes('LMD') || text.includes('SUPÉRIEUR') || text.includes('SUPERIEUR')) {
+            container.style.display = 'block';
+        } else {
+            container.style.display = 'none';
+            const uv = document.getElementById('code_uv');
+            const ue = document.getElementById('code_ue');
+            if (uv) uv.value = '';
+            if (ue) ue.value = '';
+        }
+    }
+
+    if (teachingTypeSelect) {
+        teachingTypeSelect.addEventListener('change', function() {
+            if (typeof filterDepartments === 'function') filterDepartments();
+            toggleLmdFields();
+        });
+        if (typeof filterDepartments === 'function') filterDepartments();
+        toggleLmdFields();
     }
 });
 </script>

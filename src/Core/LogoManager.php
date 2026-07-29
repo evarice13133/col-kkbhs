@@ -7,25 +7,26 @@ use App\Services\SettingsStore;
 
 class LogoManager
 {
-    private static ?LogoManager $instance = null;
+    private static array $instances = [];
     private SettingsStore $settingsStore;
     private string $logoPath = '';
     private string $logoUrl = '';
     private bool $logoExists = false;
     private array $logoInfo = [];
 
-    private function __construct(PDO $db)
+    private function __construct(PDO $db, ?int $teachingTypeId = null)
     {
-        $this->settingsStore = new SettingsStore($db);
+        $this->settingsStore = new SettingsStore($db, $teachingTypeId);
         $this->loadLogo();
     }
 
-    public static function getInstance(PDO $db): LogoManager
+    public static function getInstance(PDO $db, ?int $teachingTypeId = null): LogoManager
     {
-        if (self::$instance === null) {
-            self::$instance = new self($db);
+        $key = $teachingTypeId ?? 0;
+        if (!isset(self::$instances[$key])) {
+            self::$instances[$key] = new self($db, $teachingTypeId);
         }
-        return self::$instance;
+        return self::$instances[$key];
     }
 
     private function loadLogo(): void
@@ -64,12 +65,10 @@ class LogoManager
             return '';
         }
         
-        // Si c'est déjà une URL complète ou commence par /, retourner tel quel
         if (preg_match('#^https?://#', $path) || $path[0] === '/') {
             return $path;
         }
         
-        // Ajouter / au début pour l'accès web
         return '/' . ltrim($path, '/');
     }
 
@@ -79,18 +78,14 @@ class LogoManager
             return '';
         }
         
-        // Base directory: the project root (up from src/Core)
         $baseDir = realpath(__DIR__ . '/../../');
         if (!$baseDir) return '';
 
-        // Clean the stored path
         $cleanPath = ltrim(str_replace('\\', '/', $this->logoPath), '/');
 
-        // If the path already starts with 'public/', it's already absolute from root
         if (str_starts_with($cleanPath, 'public/')) {
              $fullPath = $baseDir . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $cleanPath);
         } else {
-             // Otherwise, it's relative to public/
              $fullPath = $baseDir . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $cleanPath);
         }
 
@@ -147,14 +142,14 @@ class LogoManager
         return 'data:' . $mimeType . ';base64,' . base64_encode($imageData);
     }
 
-    public function updateLogo(string $newPath): bool
+    public function updateLogo(string $newPath, ?int $teachingTypeId = null): bool
     {
-        $this->settingsStore->set('school_logo', $newPath);
-        $this->loadLogo(); // Recharger les informations
+        $this->settingsStore->set('school_logo', $newPath, $teachingTypeId);
+        $this->loadLogo();
         return $this->hasLogo();
     }
 
-    public function deleteLogo(): bool
+    public function deleteLogo(?int $teachingTypeId = null): bool
     {
         if ($this->hasLogo()) {
             $fullPath = $this->getFullFileSystemPath();
@@ -163,7 +158,7 @@ class LogoManager
             }
         }
         
-        $this->settingsStore->set('school_logo', '');
+        $this->settingsStore->set('school_logo', '', $teachingTypeId);
         $this->loadLogo();
         return !$this->hasLogo();
     }

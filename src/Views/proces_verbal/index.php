@@ -60,84 +60,116 @@ ob_start();
     <?php if ($classeId > 0): ?>
         <div class="modern-card border-0 shadow-sm">
             <div class="modern-card-body p-4 p-lg-5">
-                <form id="unifiedPvForm" target="_blank" action="#" method="GET">
-                    <input type="hidden" name="academic_year_id" value="<?= (int) $anneeId ?>">
-                    <input type="hidden" name="class_id" value="<?= (int) $classeId ?>">
+                <?php if (!empty($isLmdClass)): ?>
+                    <!-- FORMULAIRE SPÉCIFIQUE : SUPÉRIEUR LMD (Génération par Évaluation uniquement) -->
+                    <form id="lmdPvForm" target="_blank" action="/proces-verbal/evaluation" method="GET">
+                        <input type="hidden" name="academic_year_id" value="<?= (int) $anneeId ?>">
+                        <input type="hidden" name="class_id" value="<?= (int) $classeId ?>">
 
-                    <!-- ÉTAPE 1 : Type de PV -->
-                    <div class="flow-step mb-5">
-                        <div class="flow-step-number">1</div>
-                        <h5 class="fw-bold mb-3"><?= __('select_pv_type') ?></h5>
-                        <div class="row g-3">
-                            <div class="col-md-4">
-                                <label class="w-100 pv-type-card m-0" data-type="sequence">
-                                    <input type="radio" name="pv_type" value="sequence" class="d-none" required>
-                                    <div class="card card-body text-center shadow-sm hover-elevate border-light transition-all rounded-4 cursor-pointer">
-                                        <i class="bi bi-layout-text-sidebar-reverse fs-1 text-info mb-2"></i>
-                                        <h6 class="fw-bold m-0"><?= __('Proces verbal de sequence') ?></h6>
-                                        <small class="text-muted extra-small d-block mt-1"><?= __('pv_type_seq_hint') ?></small>
-                                    </div>
-                                </label>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="w-100 pv-type-card m-0" data-type="trimestre">
-                                    <input type="radio" name="pv_type" value="trimestre" class="d-none">
-                                    <div class="card card-body text-center shadow-sm hover-elevate border-light transition-all rounded-4 cursor-pointer">
-                                        <i class="bi bi-calendar3 fs-1 text-success mb-2"></i>
-                                        <h6 class="fw-bold m-0"><?= __('Proces verbal de trimestre') ?></h6>
-                                        <small class="text-muted extra-small d-block mt-1"><?= __('pv_type_trim_hint') ?></small>
-                                    </div>
-                                </label>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="w-100 pv-type-card m-0" data-type="annuel">
-                                    <input type="radio" name="pv_type" value="annuel" class="d-none">
-                                    <div class="card card-body text-center shadow-sm hover-elevate border-light transition-all rounded-4 cursor-pointer">
-                                        <i class="bi bi-award fs-1 text-warning mb-2"></i>
-                                        <h6 class="fw-bold m-0"><?= __('Proces verbal annuel') ?></h6>
-                                        <small class="text-muted extra-small d-block mt-1"><?= __('pv_type_ann_hint') ?></small>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ÉTAPE 2 : Période (si nécessaire) -->
-                    <div id="dynamic-period-section" class="flow-step mb-5 d-none">
-                        <div class="flow-step-number">2</div>
-                        
-                        <div id="sequence-select" class="d-none animate-fade-in">
-                            <h5 class="fw-bold mb-3 text-main-theme"><?= __('sequence') ?></h5>
-                            <select name="sequence_id" id="sequence_id_input" class="form-select form-select-lg rounded-4 shadow-sm">
+                        <div class="flow-step mb-5">
+                            <div class="flow-step-number">1</div>
+                            <h5 class="fw-bold mb-3 text-main-theme"><?= __('select_evaluation_lmd') ?></h5>
+                            <select name="sequence_id" id="lmd_evaluation_id_input" class="form-select form-select-lg rounded-4 shadow-sm" required>
                                 <option value=""><?= __('choose_sequence') ?></option>
                                 <?php foreach ($sequences as $seq): ?>
-                                    <option value="<?= $seq['id'] ?>"><?= htmlspecialchars($seq['label']) ?></option>
+                                    <option value="<?= $seq['id'] ?>">
+                                        <?= htmlspecialchars($seq['label']) ?> <?= !empty($seq['code']) ? '(' . htmlspecialchars($seq['code']) . ')' : '' ?>
+                                    </option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
 
-                        <div id="term-select" class="d-none animate-fade-in">
-                            <h5 class="fw-bold mb-3 text-main-theme"><?= __('trimestre') ?></h5>
-                            <select name="term" id="term_input" class="form-select form-select-lg rounded-4 shadow-sm">
-                                <option value=""><?= __('choose_term') ?></option>
-                                <?php foreach ($trimestres as $t): ?>
-                                    <option value="<?= $t ?>"><?= __('Trimesters') ?> <?= $t ?></option>
-                                <?php endforeach; ?>
-                            </select>
+                        <div class="text-end border-top pt-4">
+                            <button type="submit" id="generate-pv-lmd-btn"
+                                class="btn btn-primary btn-lg rounded-pill px-5 py-3 fw-bold shadow-lg d-inline-flex align-items-center gap-2"
+                                disabled style="transition: all 0.3s;">
+                                <span class="spinner-border spinner-border-sm d-none" id="pv-loader-lmd"></span>
+                                <i class="bi bi-file-earmark-pdf fs-5" id="pv-icon-lmd"></i>
+                                <span id="pv-text-lmd"><?= __('complete_selections') ?></span>
+                            </button>
                         </div>
-                    </div>
+                    </form>
+                <?php else: ?>
+                    <!-- FORMULAIRE SEC00 / SECONDAIRE (Séquence, Trimestre, Annuel) -->
+                    <form id="unifiedPvForm" target="_blank" action="#" method="GET">
+                        <input type="hidden" name="academic_year_id" value="<?= (int) $anneeId ?>">
+                        <input type="hidden" name="class_id" value="<?= (int) $classeId ?>">
 
-                    <!-- ÉTAPE FINALE : Bouton de génération -->
-                    <div class="text-end border-top pt-4">
-                        <button type="submit" id="generate-pv-btn"
-                            class="btn btn-primary btn-lg rounded-pill px-5 py-3 fw-bold shadow-lg d-inline-flex align-items-center gap-2"
-                            disabled style="transition: all 0.3s;">
-                            <span class="spinner-border spinner-border-sm d-none" id="pv-loader"></span>
-                            <i class="bi bi-file-earmark-pdf fs-5" id="pv-icon"></i>
-                            <span id="pv-text"><?= __('complete_selections') ?></span>
-                        </button>
-                    </div>
-                </form>
+                        <!-- ÉTAPE 1 : Type de PV -->
+                        <div class="flow-step mb-5">
+                            <div class="flow-step-number">1</div>
+                            <h5 class="fw-bold mb-3"><?= __('select_pv_type') ?></h5>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="w-100 pv-type-card m-0" data-type="sequence">
+                                        <input type="radio" name="pv_type" value="sequence" class="d-none" required>
+                                        <div class="card card-body text-center shadow-sm hover-elevate border-light transition-all rounded-4 cursor-pointer">
+                                            <i class="bi bi-layout-text-sidebar-reverse fs-1 text-info mb-2"></i>
+                                            <h6 class="fw-bold m-0"><?= __('Proces verbal de sequence') ?></h6>
+                                            <small class="text-muted extra-small d-block mt-1"><?= __('pv_type_seq_hint') ?></small>
+                                        </div>
+                                    </label>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="w-100 pv-type-card m-0" data-type="trimestre">
+                                        <input type="radio" name="pv_type" value="trimestre" class="d-none">
+                                        <div class="card card-body text-center shadow-sm hover-elevate border-light transition-all rounded-4 cursor-pointer">
+                                            <i class="bi bi-calendar3 fs-1 text-success mb-2"></i>
+                                            <h6 class="fw-bold m-0"><?= __('Proces verbal de trimestre') ?></h6>
+                                            <small class="text-muted extra-small d-block mt-1"><?= __('pv_type_trim_hint') ?></small>
+                                        </div>
+                                    </label>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="w-100 pv-type-card m-0" data-type="annuel">
+                                        <input type="radio" name="pv_type" value="annuel" class="d-none">
+                                        <div class="card card-body text-center shadow-sm hover-elevate border-light transition-all rounded-4 cursor-pointer">
+                                            <i class="bi bi-award fs-1 text-warning mb-2"></i>
+                                            <h6 class="fw-bold m-0"><?= __('Proces verbal annuel') ?></h6>
+                                            <small class="text-muted extra-small d-block mt-1"><?= __('pv_type_ann_hint') ?></small>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ÉTAPE 2 : Période (si nécessaire) -->
+                        <div id="dynamic-period-section" class="flow-step mb-5 d-none">
+                            <div class="flow-step-number">2</div>
+                            
+                            <div id="sequence-select" class="d-none animate-fade-in">
+                                <h5 class="fw-bold mb-3 text-main-theme"><?= __('sequence') ?></h5>
+                                <select name="sequence_id" id="sequence_id_input" class="form-select form-select-lg rounded-4 shadow-sm">
+                                    <option value=""><?= __('choose_sequence') ?></option>
+                                    <?php foreach ($sequences as $seq): ?>
+                                        <option value="<?= $seq['id'] ?>"><?= htmlspecialchars($seq['label']) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+
+                            <div id="term-select" class="d-none animate-fade-in">
+                                <h5 class="fw-bold mb-3 text-main-theme"><?= __('trimestre') ?></h5>
+                                <select name="term" id="term_input" class="form-select form-select-lg rounded-4 shadow-sm">
+                                    <option value=""><?= __('choose_term') ?></option>
+                                    <?php foreach ($trimestres as $t): ?>
+                                        <option value="<?= $t ?>"><?= __('Trimesters') ?> <?= $t ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- ÉTAPE FINALE : Bouton de génération -->
+                        <div class="text-end border-top pt-4">
+                            <button type="submit" id="generate-pv-btn"
+                                class="btn btn-primary btn-lg rounded-pill px-5 py-3 fw-bold shadow-lg d-inline-flex align-items-center gap-2"
+                                disabled style="transition: all 0.3s;">
+                                <span class="spinner-border spinner-border-sm d-none" id="pv-loader"></span>
+                                <i class="bi bi-file-earmark-pdf fs-5" id="pv-icon"></i>
+                                <span id="pv-text"><?= __('complete_selections') ?></span>
+                            </button>
+                        </div>
+                    </form>
+                <?php endif; ?>
             </div>
         </div>
     <?php else: ?>
@@ -199,6 +231,35 @@ ob_start();
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Formulaire Supérieur LMD
+        const lmdForm = document.getElementById('lmdPvForm');
+        if (lmdForm) {
+            const lmdEvalInput = document.getElementById('lmd_evaluation_id_input');
+            const generateLmdBtn = document.getElementById('generate-pv-lmd-btn');
+            const generateLmdText = document.getElementById('pv-text-lmd');
+
+            lmdEvalInput.addEventListener('change', function() {
+                const isValid = !!this.value;
+                generateLmdBtn.disabled = !isValid;
+                generateLmdText.textContent = isValid ? "<?= __('pv_generate_btn') ?>" : "<?= __('complete_selections') ?>";
+            });
+
+            lmdForm.addEventListener('submit', function (e) {
+                const loader = document.getElementById('pv-loader-lmd');
+                const icon = document.getElementById('pv-icon-lmd');
+                loader.classList.remove('d-none');
+                icon.classList.add('d-none');
+                generateLmdBtn.classList.add('disabled', 'opacity-75');
+
+                setTimeout(() => {
+                    loader.classList.add('d-none');
+                    icon.classList.remove('d-none');
+                    generateLmdBtn.classList.remove('disabled', 'opacity-75');
+                }, 2000);
+            });
+        }
+
+        // Formulaire SEC00 / Secondaire
         const form = document.getElementById('unifiedPvForm');
         if (!form) return;
 

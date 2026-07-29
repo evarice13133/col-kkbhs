@@ -38,6 +38,7 @@ use App\Controllers\DiscountTypeController;
 use App\Controllers\SchoolFeeController;
 use App\Controllers\AIAssistantController;
 use App\Controllers\SubjectGroupController;
+use App\Controllers\LevelController;
 
 
 
@@ -205,8 +206,7 @@ elseif (strpos($path, '/students') === 0) {
 // ====== ROUTES: AUTRES PARAMETRES ======
 // Vérifie si l'URL commence par "/cycles"
 elseif (strpos($path, '/cycles') === 0) {
-    // Sécurité : Vérifie si l'utilisateur est connecté et possède le rôle superadmin uniquement
-    if (!Session::isLogged() || Session::get('user_role') !== 'superadmin') {
+    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
         header('Location: /');
         exit;
     }
@@ -214,7 +214,7 @@ elseif (strpos($path, '/cycles') === 0) {
     // Instancie le contrôleur des Cycles
     $c = new CycleController();
 
-    // Aiguillage vers les méthodes du contrôleur selon le chemin de l'URL
+    // Aiguillage vers les méthodes du contrôleur selon le chemin de l'URL 
     if ($path === '/cycles')
         $c->index(); // Liste des cycles
     elseif ($path === '/cycles/create')
@@ -230,7 +230,7 @@ elseif (strpos($path, '/cycles') === 0) {
     elseif ($path === '/cycles/delete')
         $c->delete($_GET['id'] ?? 0); // Suppression
 } elseif (strpos($path, '/sections') === 0) {
-    if (!Session::isLogged() || Session::get('user_role') !== 'superadmin') {
+    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
         header('Location: /');
         exit;
     }
@@ -352,10 +352,28 @@ elseif (strpos($path, '/cycles') === 0) {
         $c->update($_GET['id'] ?? 0);
     elseif ($path === '/subject-groups/toggle')
         $c->toggle($_GET['id'] ?? 0);
-    elseif ($path === '/subject-groups/delete')
+} elseif (strpos($path, '/levels') === 0) {
+    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+        header('Location: /');
+        exit;
+    }
+    $c = new LevelController();
+    if ($path === '/levels' || $path === '/levels/' || $path === '/levels/index.php')
+        $c->index();
+    elseif ($path === '/levels/create')
+        $c->create();
+    elseif ($path === '/levels/store' && $method === 'POST')
+        $c->store();
+    elseif ($path === '/levels/edit')
+        $c->edit($_GET['id'] ?? 0);
+    elseif ($path === '/levels/update' && $method === 'POST')
+        $c->update($_GET['id'] ?? 0);
+    elseif ($path === '/levels/toggle')
+        $c->toggleStatus($_GET['id'] ?? 0);
+    elseif ($path === '/levels/delete')
         $c->delete($_GET['id'] ?? 0);
     else {
-        header('Location: /subject-groups');
+        header('Location: /levels');
         exit;
     }
 }
@@ -454,6 +472,8 @@ elseif (strpos($path, '/proces-verbal') === 0) {
         $c->trimestre();
     elseif ($path === '/proces-verbal/annuel')
         $c->annuel();
+    elseif ($path === '/proces-verbal/evaluation')
+        $c->evaluation();
 }
 
 
@@ -503,7 +523,7 @@ elseif (strpos($path, '/subjects') === 0) {
 
 // ====== ROUTES: ANNEES ACADEMIQUES ======
 elseif (strpos($path, '/academic_years') === 0) {
-    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'it_manager'])) {
         header('Location: /');
         exit;
     }
@@ -731,7 +751,7 @@ elseif (strpos($path, '/pilotage') === 0) {
 
 // ====== ROUTES: CONFIGURATIONS GLOBALES ======
 elseif (strpos($path, '/settings') === 0) {
-    if (!Session::isLogged() || Session::get('user_role') !== 'superadmin') {
+    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
         header('Location: /');
         exit;
     }
@@ -740,8 +760,13 @@ elseif (strpos($path, '/settings') === 0) {
         $c->index();
     elseif ($path === '/settings/store' && $method === 'POST')
         $c->store();
-    elseif ($path === '/settings/run_backup' && $method === 'POST')
+    elseif ($path === '/settings/run_backup' && $method === 'POST') {
+        if (Session::get('user_role') !== 'superadmin') {
+            header('Location: /');
+            exit;
+        }
         $c->runBackup();
+    }
     elseif ($path === '/settings/reset')
         $c->reset();
 }

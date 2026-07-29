@@ -57,6 +57,7 @@ class ClassController
         $cycles = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id FROM cycles c LEFT JOIN teaching_types t ON c.teaching_type_id = t.id WHERE c.status = 1 AND (t.actif = 1 OR c.teaching_type_id IS NULL) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $sections = $this->db->query("SELECT id, nom FROM sections WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $levels = $this->db->query("SELECT l.id, l.code, l.libelle_fr, l.libelle_en, l.teaching_type_id FROM levels l LEFT JOIN teaching_types tt ON l.teaching_type_id = tt.id WHERE l.status = 1 AND (tt.actif = 1 OR l.teaching_type_id IS NULL) ORDER BY l.code ASC, l.libelle_fr ASC")->fetchAll(PDO::FETCH_ASSOC);
         
         // Seuls les départements actifs sont visibles pour le filtrage usuel
         $departments = $this->db->query("SELECT d.id, d.nom, d.teaching_type_id FROM departments d LEFT JOIN teaching_types t ON d.teaching_type_id = t.id WHERE d.status = 1 AND (t.actif = 1 OR d.teaching_type_id IS NULL) ORDER BY d.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -93,10 +94,11 @@ class ClassController
      */
     public function create()
     {
-        // Chargement des dépendances structurelles (Cycles, Sections, Types d'enseignement, Départements)
+        // Chargement des dépendances structurelles (Cycles, Sections, Types d'enseignement, Départements, Niveaux)
         $cycles = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id FROM cycles c LEFT JOIN teaching_types t ON c.teaching_type_id = t.id WHERE c.status = 1 AND (t.actif = 1 OR c.teaching_type_id IS NULL) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $sections = $this->db->query("SELECT id, nom FROM sections WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $levels = $this->db->query("SELECT l.id, l.code, l.libelle_fr, l.libelle_en, l.teaching_type_id FROM levels l LEFT JOIN teaching_types tt ON l.teaching_type_id = tt.id WHERE l.status = 1 AND (tt.actif = 1 OR l.teaching_type_id IS NULL) ORDER BY l.code ASC, l.libelle_fr ASC")->fetchAll(PDO::FETCH_ASSOC);
         
         // Pour la création, on ne propose que les départements actifs rattachés à un type d'enseignement actif (ou sans type)
         $departments = $this->db->query("SELECT d.id, d.nom, d.teaching_type_id FROM departments d LEFT JOIN teaching_types t ON d.teaching_type_id = t.id WHERE d.status = 1 AND (t.actif = 1 OR d.teaching_type_id IS NULL) ORDER BY d.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -115,6 +117,7 @@ class ClassController
             $section_id = !empty($_POST['section_id']) ? (int) $_POST['section_id'] : null;
             $department_id = !empty($_POST['department_id']) ? (int) $_POST['department_id'] : null;
             $teaching_type_id = !empty($_POST['teaching_type_id']) ? (int) $_POST['teaching_type_id'] : null;
+            $level_id = !empty($_POST['level_id']) ? (int) $_POST['level_id'] : null;
 
             $frais_inscription = !empty($_POST['frais_inscription']) ? (float)$_POST['frais_inscription'] : 0.0;
             $frais_inscription_reinscription = !empty($_POST['frais_inscription_reinscription']) ? (float)$_POST['frais_inscription_reinscription'] : 0.0;
@@ -130,8 +133,8 @@ class ClassController
             }
 
             $hasError = false;
-            if ($nom === '') {
-                $error = __('required');
+            if ($nom === '' || !$level_id) {
+                $error = $nom === '' ? __('required') : (__('level_required') ?? 'Le niveau est obligatoire.');
                 $hasError = true;
             } elseif ($frais_scolarite_brut > 0) {
                 if ($nbr_tranches <= 0) {
@@ -156,6 +159,7 @@ class ClassController
                 $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $sections = $this->db->query("SELECT id, nom FROM sections WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $levels = $this->db->query("SELECT l.id, l.code, l.libelle_fr, l.libelle_en, l.teaching_type_id FROM levels l LEFT JOIN teaching_types tt ON l.teaching_type_id = tt.id WHERE l.status = 1 AND (tt.actif = 1 OR l.teaching_type_id IS NULL) ORDER BY l.code ASC, l.libelle_fr ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $departments = $this->db->query("SELECT id, nom FROM departments ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $classe = [
                     'nom' => $nom,
@@ -163,6 +167,7 @@ class ClassController
                     'section_id' => $section_id,
                     'department_id' => $department_id,
                     'teaching_type_id' => $teaching_type_id,
+                    'level_id' => $level_id,
                     'frais_inscription' => $frais_inscription,
                     'frais_inscription_reinscription' => $frais_inscription_reinscription,
                     'frais_scolarite_brut' => $frais_scolarite_brut,
@@ -184,6 +189,7 @@ class ClassController
                     $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                     $sections = $this->db->query("SELECT id, nom FROM sections WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                     $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                    $levels = $this->db->query("SELECT l.id, l.code, l.libelle_fr, l.libelle_en, l.teaching_type_id FROM levels l LEFT JOIN teaching_types tt ON l.teaching_type_id = tt.id WHERE l.status = 1 AND (tt.actif = 1 OR l.teaching_type_id IS NULL) ORDER BY l.code ASC, l.libelle_fr ASC")->fetchAll(PDO::FETCH_ASSOC);
                     $departments = $this->db->query("SELECT id, nom FROM departments ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                     $classe = [
                         'nom' => $nom,
@@ -191,6 +197,7 @@ class ClassController
                         'section_id' => $section_id,
                         'department_id' => $department_id,
                         'teaching_type_id' => $teaching_type_id,
+                        'level_id' => $level_id,
                         'frais_inscription' => $frais_inscription,
                         'frais_inscription_reinscription' => $frais_inscription_reinscription,
                         'frais_scolarite_brut' => $frais_scolarite_brut,
@@ -206,8 +213,8 @@ class ClassController
             try {
                 $this->db->beginTransaction();
 
-                $stmt = $this->db->prepare("INSERT INTO classes (nom, cycle_id, section_id, department_id, teaching_type_id, frais_inscription, frais_inscription_reinscription, frais_scolarite_brut, nbr_tranches) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$nom, $cycle_id, $section_id, $department_id, $teaching_type_id, $frais_inscription, $frais_inscription_reinscription, $frais_scolarite_brut, $nbr_tranches]);
+                $stmt = $this->db->prepare("INSERT INTO classes (nom, cycle_id, section_id, department_id, teaching_type_id, level_id, frais_inscription, frais_inscription_reinscription, frais_scolarite_brut, nbr_tranches) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$nom, $cycle_id, $section_id, $department_id, $teaching_type_id, $level_id, $frais_inscription, $frais_inscription_reinscription, $frais_scolarite_brut, $nbr_tranches]);
                 $newClassId = (int) $this->db->lastInsertId();
 
                 $activeYearId = $this->academicYearService->getActiveYearId();
@@ -219,12 +226,13 @@ class ClassController
 
                     for ($i = 1; $i <= $nbr_tranches; $i++) {
                         $amt = isset($tranches[$i]['amount']) ? (float)$tranches[$i]['amount'] : 0.0;
-                        $deadline = isset($tranches[$i]['deadline']) ? $tranches[$i]['deadline'] : null;
+                        $rawDeadline = !empty($tranches[$i]['deadline']) ? trim((string)$tranches[$i]['deadline']) : null;
+                        $deadlineDate = ($rawDeadline !== null && $rawDeadline !== '') ? $rawDeadline : date('Y-12-31');
 
                         $ins->execute([$newClassId, $i, $amt]);
-                        $insFeeInst->execute([$activeYearId, "Tranche " . $i, $i, $amt, $deadline, $newClassId]);
-                        if ($deadline) {
-                            $insDeadlines->execute([$activeYearId, $newClassId, $i, $deadline]);
+                        $insFeeInst->execute([$activeYearId, "Tranche " . $i, $i, $amt, $deadlineDate, $newClassId]);
+                        if ($rawDeadline !== null && $rawDeadline !== '') {
+                            $insDeadlines->execute([$activeYearId, $newClassId, $i, $rawDeadline]);
                         }
                     }
                 }
@@ -318,6 +326,7 @@ class ClassController
         $cycles = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id FROM cycles c LEFT JOIN teaching_types t ON c.teaching_type_id = t.id WHERE c.status = 1 AND (t.actif = 1 OR c.teaching_type_id IS NULL) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $sections = $this->db->query("SELECT id, nom FROM sections WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $levels = $this->db->query("SELECT l.id, l.code, l.libelle_fr, l.libelle_en, l.teaching_type_id FROM levels l LEFT JOIN teaching_types tt ON l.teaching_type_id = tt.id WHERE l.status = 1 AND (tt.actif = 1 OR l.teaching_type_id IS NULL) ORDER BY l.code ASC, l.libelle_fr ASC")->fetchAll(PDO::FETCH_ASSOC);
         $deptQuery = Session::get('user_role') === 'superadmin' ? "SELECT id, nom, teaching_type_id FROM departments ORDER BY nom ASC" : "SELECT id, nom, teaching_type_id FROM departments WHERE status = 1 ORDER BY nom ASC";
         $departments = $this->db->query($deptQuery)->fetchAll(PDO::FETCH_ASSOC);
         
@@ -335,6 +344,7 @@ class ClassController
             $section_id = !empty($_POST['section_id']) ? (int) $_POST['section_id'] : null;
             $department_id = !empty($_POST['department_id']) ? (int) $_POST['department_id'] : null;
             $teaching_type_id = !empty($_POST['teaching_type_id']) ? (int) $_POST['teaching_type_id'] : null;
+            $level_id = !empty($_POST['level_id']) ? (int) $_POST['level_id'] : null;
 
             $frais_inscription = !empty($_POST['frais_inscription']) ? (float)$_POST['frais_inscription'] : 0.0;
             $frais_inscription_reinscription = !empty($_POST['frais_inscription_reinscription']) ? (float)$_POST['frais_inscription_reinscription'] : 0.0;
@@ -350,8 +360,8 @@ class ClassController
             }
 
             $hasError = false;
-            if ($nom === '') {
-                $error = __('required');
+            if ($nom === '' || !$level_id) {
+                $error = $nom === '' ? __('required') : (__('level_required') ?? 'Le niveau est obligatoire.');
                 $hasError = true;
             } elseif ($frais_scolarite_brut > 0) {
                 if ($nbr_tranches <= 0) {
@@ -380,6 +390,7 @@ class ClassController
                     'section_id' => $section_id,
                     'department_id' => $department_id,
                     'teaching_type_id' => $teaching_type_id,
+                    'level_id' => $level_id,
                     'frais_inscription' => $frais_inscription,
                     'frais_inscription_reinscription' => $frais_inscription_reinscription,
                     'frais_scolarite_brut' => $frais_scolarite_brut,
@@ -390,6 +401,7 @@ class ClassController
                 $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $levels = $this->db->query("SELECT l.id, l.code, l.libelle_fr, l.libelle_en, l.teaching_type_id FROM levels l LEFT JOIN teaching_types tt ON l.teaching_type_id = tt.id WHERE l.status = 1 AND (tt.actif = 1 OR l.teaching_type_id IS NULL) ORDER BY l.code ASC, l.libelle_fr ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $departments = $this->db->query("SELECT id, nom FROM departments ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/classes/edit.php';
                 return;
@@ -409,6 +421,7 @@ class ClassController
                         'section_id' => $section_id,
                         'department_id' => $department_id,
                         'teaching_type_id' => $teaching_type_id,
+                        'level_id' => $level_id,
                         'frais_inscription' => $frais_inscription,
                         'frais_inscription_reinscription' => $frais_inscription_reinscription,
                         'frais_scolarite_brut' => $frais_scolarite_brut,
@@ -419,6 +432,7 @@ class ClassController
                     $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                     $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                     $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                    $levels = $this->db->query("SELECT l.id, l.code, l.libelle_fr, l.libelle_en, l.teaching_type_id FROM levels l LEFT JOIN teaching_types tt ON l.teaching_type_id = tt.id WHERE l.status = 1 AND (tt.actif = 1 OR l.teaching_type_id IS NULL) ORDER BY l.code ASC, l.libelle_fr ASC")->fetchAll(PDO::FETCH_ASSOC);
                     $departments = $this->db->query("SELECT id, nom FROM departments WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                     include __DIR__ . '/../Views/classes/edit.php';
                     return;
@@ -438,8 +452,8 @@ class ClassController
                 $oldClass['tranches'] = $stmtOldTr->fetchAll(PDO::FETCH_KEY_PAIR);
 
                 // Mettre à jour la classe
-                $stmt = $this->db->prepare("UPDATE classes SET nom = ?, cycle_id = ?, section_id = ?, department_id = ?, teaching_type_id = ?, frais_inscription = ?, frais_inscription_reinscription = ?, frais_scolarite_brut = ?, nbr_tranches = ? WHERE id = ?");
-                $stmt->execute([$nom, $cycle_id, $section_id, $department_id, $teaching_type_id, $frais_inscription, $frais_inscription_reinscription, $frais_scolarite_brut, $nbr_tranches, (int)$id]);
+                $stmt = $this->db->prepare("UPDATE classes SET nom = ?, cycle_id = ?, section_id = ?, department_id = ?, teaching_type_id = ?, level_id = ?, frais_inscription = ?, frais_inscription_reinscription = ?, frais_scolarite_brut = ?, nbr_tranches = ? WHERE id = ?");
+                $stmt->execute([$nom, $cycle_id, $section_id, $department_id, $teaching_type_id, $level_id, $frais_inscription, $frais_inscription_reinscription, $frais_scolarite_brut, $nbr_tranches, (int)$id]);
                 
                 // Mettre à jour les tranches et échéances
                 $del = $this->db->prepare("DELETE FROM class_installments WHERE class_id = ?");
@@ -456,12 +470,13 @@ class ClassController
 
                     for ($i = 1; $i <= $nbr_tranches; $i++) {
                         $amt = isset($tranches[$i]['amount']) ? (float)$tranches[$i]['amount'] : 0.0;
-                        $deadline = isset($tranches[$i]['deadline']) ? $tranches[$i]['deadline'] : null;
+                        $rawDeadline = !empty($tranches[$i]['deadline']) ? trim((string)$tranches[$i]['deadline']) : null;
+                        $deadlineDate = ($rawDeadline !== null && $rawDeadline !== '') ? $rawDeadline : date('Y-12-31');
 
                         $ins->execute([(int)$id, $i, $amt]);
-                        $insFeeInst->execute([$activeYearId, "Tranche " . $i, $i, $amt, $deadline, (int)$id]);
-                        if ($deadline) {
-                            $insDeadlines->execute([$activeYearId, (int)$id, $i, $deadline]);
+                        $insFeeInst->execute([$activeYearId, "Tranche " . $i, $i, $amt, $deadlineDate, (int)$id]);
+                        if ($rawDeadline !== null && $rawDeadline !== '') {
+                            $insDeadlines->execute([$activeYearId, (int)$id, $i, $rawDeadline]);
                         }
                     }
                 }
@@ -706,6 +721,7 @@ class ClassController
         $sectionId = (int) ($_GET['section_id'] ?? 0);
         $departmentId = (int) ($_GET['department_id'] ?? 0);
         $teachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
+        $levelId = (int) ($_GET['level_id'] ?? 0);
         // Classes are now shared across years, no year filtering needed
 
         // 1. Count total
@@ -714,10 +730,12 @@ class ClassController
                      LEFT JOIN cycles cy ON c.cycle_id = cy.id
                      LEFT JOIN sections s ON c.section_id = s.id
                      LEFT JOIN departments d ON c.department_id = d.id 
+                     LEFT JOIN levels lvl ON c.level_id = lvl.id
                      WHERE (c.teaching_type_id IS NULL OR tt.actif = 1)
                        AND (c.cycle_id IS NULL OR cy.status = 1)
                        AND (c.section_id IS NULL OR s.status = 1)
-                       AND (c.department_id IS NULL OR d.status = 1)";
+                       AND (c.department_id IS NULL OR d.status = 1)
+                       AND (c.level_id IS NULL OR lvl.status = 1)";
         $countParams = [];
         
         // No academic year filtering for classes
@@ -742,14 +760,19 @@ class ClassController
             $countSql .= " AND c.teaching_type_id = ?";
             $countParams[] = $teachingTypeId;
         }
+        if ($levelId > 0) {
+            $countSql .= " AND c.level_id = ?";
+            $countParams[] = $levelId;
+        }
         $stmtCount = $this->db->prepare($countSql);
         $stmtCount->execute($countParams);
         $totalCount = (int) $stmtCount->fetchColumn();
 
         // 2. Fetch data
-        // Jointures pour récupérer les noms des cycles, sections, départements et du professeur principal
+        // Jointures pour récupérer les noms des cycles, sections, départements, niveaux et du professeur principal
         $academicYearId = $this->academicYearService->getActiveYearId();
-        $sql = "SELECT c.id, c.nom, cy.nom as cycle_nom, s.nom as section_nom, d.nom as department_nom, tt.nom as teaching_type_nom,
+        $sql = "SELECT c.id, c.nom, c.level_id, cy.nom as cycle_nom, s.nom as section_nom, d.nom as department_nom, tt.nom as teaching_type_nom,
+                       lvl.code as level_code, lvl.libelle_fr as level_libelle_fr, lvl.libelle_en as level_libelle_en,
                        u.nom as main_teacher_nom, u.prenom as main_teacher_prenom,
                        (SELECT COUNT(*) FROM students WHERE class_id = c.id AND academic_year_id = {$academicYearId} AND is_withdrawn = 0 AND actif = 1) as student_count
                 FROM classes c
@@ -757,11 +780,13 @@ class ClassController
                 LEFT JOIN sections s ON c.section_id = s.id
                 LEFT JOIN departments d ON c.department_id = d.id
                 LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id
+                LEFT JOIN levels lvl ON c.level_id = lvl.id
                 LEFT JOIN users u ON c.main_teacher_id = u.id
                 WHERE (c.teaching_type_id IS NULL OR tt.actif = 1)
                   AND (c.cycle_id IS NULL OR cy.status = 1)
                   AND (c.section_id IS NULL OR s.status = 1)
-                  AND (c.department_id IS NULL OR d.status = 1)";
+                  AND (c.department_id IS NULL OR d.status = 1)
+                  AND (c.level_id IS NULL OR lvl.status = 1)";
         $params = [];
 
         // No academic year filtering for classes
@@ -789,6 +814,10 @@ class ClassController
             $sql .= " AND c.teaching_type_id = ?";
             $params[] = $teachingTypeId;
         }
+        if ($levelId > 0) {
+            $sql .= " AND c.level_id = ?";
+            $params[] = $levelId;
+        }
 
         $sql .= " ORDER BY c.nom ASC";
 
@@ -799,6 +828,6 @@ class ClassController
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
 
-        return [$stmt->fetchAll(PDO::FETCH_ASSOC), ['q' => $search, 'cycle_id' => $cycleId, 'section_id' => $sectionId, 'department_id' => $departmentId, 'teaching_type_id' => $teachingTypeId], $totalCount];
+        return [$stmt->fetchAll(PDO::FETCH_ASSOC), ['q' => $search, 'cycle_id' => $cycleId, 'section_id' => $sectionId, 'department_id' => $departmentId, 'teaching_type_id' => $teachingTypeId, 'level_id' => $levelId], $totalCount];
     }
 }

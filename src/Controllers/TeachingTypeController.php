@@ -106,7 +106,46 @@ class TeachingTypeController
 
     public function delete($id)
     {
+        if (Session::get('user_role') !== 'superadmin') {
+            Session::setFlash('error', "Seul le Super Administrateur est autorisé à supprimer un type d'enseignement.");
+            header("Location: /teaching_types");
+            exit;
+        }
+
         try {
+            $stmtCode = $this->db->prepare("SELECT code FROM teaching_types WHERE id = ?");
+            $stmtCode->execute([(int)$id]);
+            $code = $stmtCode->fetchColumn();
+
+            if ($code === 'SEC00') {
+                Session::setFlash('error', "Le type d'enseignement système SEC00 est protégé et ne peut pas être supprimé.");
+                header("Location: /teaching_types");
+                exit;
+            }
+
+            $deps = [];
+            $checkCycles = $this->db->prepare("SELECT COUNT(*) FROM cycles WHERE teaching_type_id = ?");
+            $checkCycles->execute([(int)$id]);
+            if ($checkCycles->fetchColumn() > 0) $deps[] = 'cycles';
+
+            $checkDepts = $this->db->prepare("SELECT COUNT(*) FROM departments WHERE teaching_type_id = ?");
+            $checkDepts->execute([(int)$id]);
+            if ($checkDepts->fetchColumn() > 0) $deps[] = 'départements';
+
+            $checkClasses = $this->db->prepare("SELECT COUNT(*) FROM classes WHERE teaching_type_id = ?");
+            $checkClasses->execute([(int)$id]);
+            if ($checkClasses->fetchColumn() > 0) $deps[] = 'classes';
+
+            $checkSubjects = $this->db->prepare("SELECT COUNT(*) FROM subjects WHERE teaching_type_id = ?");
+            $checkSubjects->execute([(int)$id]);
+            if ($checkSubjects->fetchColumn() > 0) $deps[] = 'matières';
+
+            if (!empty($deps)) {
+                Session::setFlash('error', "Impossible de supprimer ce type d'enseignement car des éléments (" . implode(', ', $deps) . ") y sont rattachés.");
+                header("Location: /teaching_types");
+                exit;
+            }
+
             $stmt = $this->db->prepare("DELETE FROM teaching_types WHERE id = ?");
             $stmt->execute([(int)$id]);
             Session::setFlash('success', __('deleted_success') ?? 'Supprimé avec succès.');

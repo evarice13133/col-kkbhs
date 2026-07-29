@@ -32,13 +32,135 @@ class ProcesVerbalController extends BulletinController
             $anneeId = (int) $anneeActive['id'];
         }
 
-        $classes   = $this->getAccessibleClasses();
+        $classes   = $this->getAccessibleClassesWithTeachingType();
         $classeId  = (int) ($_GET['class_id'] ?? 0);
-        $sequences = $this->getActiveSequences();
+
+        // Sélection des métadonnées de la classe active si présente
+        $selectedClassInfo = $classeId > 0 ? $this->getClassInfo($classeId) : null;
+        $isLmdClass = ($selectedClassInfo['teaching_type_code'] ?? '') === 'LMD';
+        $teachingTypeId = (int) ($selectedClassInfo['teaching_type_id'] ?? 0);
+
+        $sequences = $this->getEvaluationsByTeachingType($teachingTypeId);
         $trimestres = [1, 2, 3];
 
         $titrePage = __('pv_title');
         include __DIR__ . '/../Views/proces_verbal/index.php';
+    }
+
+    /**
+     * Génère le procès-verbal d'Évaluation pour le Supérieur LMD.
+     * Route : GET /proces-verbal/evaluation
+     */
+    public function evaluation(): void
+    {
+        $classeId   = (int) ($_GET['class_id'] ?? 0);
+        $sequenceId = (int) ($_GET['sequence_id'] ?? $_GET['evaluation_id'] ?? 0);
+        $anneeId    = (int) ($_GET['academic_year_id'] ?? 0);
+
+        $sequence = $this->getSequenceById($sequenceId);
+        if (!$this->canAccessClass($classeId) || !$sequence || !(int) $sequence['is_active']) {
+            header("Location: /proces-verbal");
+            exit;
+        }
+
+        $annee      = $this->resolveAcademicYear($anneeId);
+        $eleves     = $this->getStudentsByClass($classeId);
+        $classeInfo = $this->getClassInfo($classeId);
+
+        if (empty($eleves)) {
+            header("Location: /proces-verbal");
+            exit;
+        }
+
+        $donneesPV = $this->construireDataSequence($classeId, $sequence, $annee, $eleves);
+
+        $isLmd = ($classeInfo['teaching_type_code'] ?? '') === 'LMD';
+        if ($isLmd) {
+            $donneesPV['matriceEleves'] = $this->enrichirMatriceLmd($donneesPV['matriceEleves'], $donneesPV['matieres']);
+            $donneesPV['statsClasseLmd'] = $this->calculerStatsLmd($donneesPV['matriceEleves'], $donneesPV['matieres'], count($eleves));
+        }
+
+        // Formater la période d'évaluation (dates de début et fin)
+        $periodeLabel = '-';
+        if (!empty($sequence['start_date']) && !empty($sequence['end_date'])) {
+            $startDate = date('d/m/Y', strtotime($sequence['start_date']));
+            $endDate   = date('d/m/Y', strtotime($sequence['end_date']));
+            $periodeLabel = "Du {$startDate} au {$endDate}";
+        } elseif (!empty($sequence['start_date'])) {
+            $periodeLabel = "À partir du " . date('d/m/Y', strtotime($sequence['start_date']));
+        } else {
+            $periodeLabel = htmlspecialchars($sequence['label']);
+        }
+
+        // Nom de la session
+        $sessionNom = !empty($sequence['short_label']) ? $sequence['short_label'] : ('Session ' . ($sequence['position'] ?? 1));
+
+        $contexte = [
+            'typeEvaluation'    => htmlspecialchars($sequence['label']),
+            'libelleEvaluation' => htmlspecialchars($sequence['label']),
+            'codeEvaluation'    => htmlspecialchars(!empty($sequence['code']) ? $sequence['code'] : ('EVAL-' . $sequence['id'])),
+            'periodeLabel'      => $periodeLabel,
+            'sessionNom'        => htmlspecialchars($sessionNom),
+            'classeNom'         => htmlspecialchars($classeInfo['nom'] ?? '-'),
+            'specialiteNom'     => htmlspecialchars($classeInfo['nom'] ?? '-'),
+            'niveauNom'         => htmlspecialchars(!empty($classeInfo['niveau_nom']) ? $classeInfo['niveau_nom'] : '-'),
+            'cycleNom'          => htmlspecialchars(!empty($classeInfo['cycle_nom']) ? $classeInfo['cycle_nom'] : '-'),
+            'departementNom'    => htmlspecialchars(!empty($classeInfo['departement_nom']) ? $classeInfo['departement_nom'] : '-'),
+            'filiereNom'        => htmlspecialchars(!empty($classeInfo['filiere_nom']) ? $classeInfo['filiere_nom'] : ($classeInfo['departement_nom'] ?? '-')),
+            'anneeNom'          => htmlspecialchars($annee['nom'] ?? '-'),
+            'dateGeneration'    => date('d/m/Y'),
+            'effectif'          => count($eleves),
+            'institution'       => $this->getInstitutionSettings(),
+        ];
+
+        $nomFichier = $this->genererNomFichierPV($classeInfo['nom'] ?? 'classe', $sequence['code'] ?? $sequence['label']);
+        $template = $isLmd ? __DIR__ . '/../Views/proces_verbal/document_lmd.php' : __DIR__ . '/../Views/proces_verbal/document.php';
+        include $template;
+    }
+
+    /**
+     * Récupère les classes accessibles avec leur code de type d'enseignement.
+     */
+    protected function getAccessibleClassesWithTeachingType(): array
+    {
+        if (in_array(Session::get('user_role'), ['superadmin', 'admin'], true)) {
+            $stmt = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id, tt.code as teaching_type_code 
+                                      FROM classes c 
+                                      LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id 
+                                      ORDER BY c.nom ASC");
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+
+        $academicYearId = $this->getActiveAcademicYear()['id'] ?? 0;
+        $stmt = $this->db->prepare("SELECT DISTINCT c.id, c.nom, c.teaching_type_id, tt.code as teaching_type_code
+            FROM teacher_assignments ta
+            JOIN classes c ON c.id = ta.class_id
+            LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id
+            WHERE ta.user_id = ? AND ta.academic_year_id = ?
+            ORDER BY c.nom ASC");
+        $stmt->execute([(int) Session::get('user_id'), $academicYearId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Récupère les évaluations filtrées par type d'enseignement si spécifié.
+     */
+    protected function getEvaluationsByTeachingType(?int $teachingTypeId = null): array
+    {
+        $sql = "SELECT s.* 
+                FROM sequences s 
+                LEFT JOIN teaching_types tt ON s.teaching_type_id = tt.id 
+                WHERE s.is_active = 1 AND (tt.actif = 1 OR s.teaching_type_id IS NULL)";
+        $params = [];
+        if ($teachingTypeId && $teachingTypeId > 0) {
+            $sql .= " AND (s.teaching_type_id = ? OR s.teaching_type_id IS NULL)";
+            $params[] = $teachingTypeId;
+        }
+        $sql .= " ORDER BY s.position ASC";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
@@ -68,10 +190,22 @@ class ProcesVerbalController extends BulletinController
 
         $donneesPV = $this->construireDataSequence($classeId, $sequence, $annee, $eleves);
 
+        $isLmd = ($classeInfo['teaching_type_code'] ?? '') === 'LMD';
+        if ($isLmd) {
+            $donneesPV['matriceEleves'] = $this->enrichirMatriceLmd($donneesPV['matriceEleves'], $donneesPV['matieres']);
+            $donneesPV['statsClasseLmd'] = $this->calculerStatsLmd($donneesPV['matriceEleves'], $donneesPV['matieres'], count($eleves));
+        }
+
         $contexte = [
             'typeEvaluation' => __('pv_sequence'),
             'periodeLabel'   => htmlspecialchars($sequence['label']),
             'classeNom'      => htmlspecialchars($classeInfo['nom'] ?? '-'),
+            'specialiteNom'  => htmlspecialchars($classeInfo['nom'] ?? '-'),
+            'niveauNom'      => htmlspecialchars(!empty($classeInfo['niveau_nom']) ? $classeInfo['niveau_nom'] : '-'),
+            'cycleNom'       => htmlspecialchars(!empty($classeInfo['cycle_nom']) ? $classeInfo['cycle_nom'] : '-'),
+            'departementNom' => htmlspecialchars(!empty($classeInfo['departement_nom']) ? $classeInfo['departement_nom'] : '-'),
+            'filiereNom'     => htmlspecialchars(!empty($classeInfo['filiere_nom']) ? $classeInfo['filiere_nom'] : ($classeInfo['departement_nom'] ?? '-')),
+            'codeEvaluation' => 'SEQ-' . $sequence['id'],
             'anneeNom'       => htmlspecialchars($annee['nom'] ?? '-'),
             'dateGeneration' => date('d/m/Y'),
             'effectif'       => count($eleves),
@@ -79,7 +213,8 @@ class ProcesVerbalController extends BulletinController
         ];
 
         $nomFichier = $this->genererNomFichierPV($classeInfo['nom'] ?? 'classe', $sequence['label']);
-        include __DIR__ . '/../Views/proces_verbal/document.php';
+        $template = $isLmd ? __DIR__ . '/../Views/proces_verbal/document_lmd.php' : __DIR__ . '/../Views/proces_verbal/document.php';
+        include $template;
     }
 
     /**
@@ -109,10 +244,22 @@ class ProcesVerbalController extends BulletinController
 
         $donneesPV = $this->construireDataTrimestre($classeId, $trimestre, $sequencesTrimestre, $annee, $eleves);
 
+        $isLmd = ($classeInfo['teaching_type_code'] ?? '') === 'LMD';
+        if ($isLmd) {
+            $donneesPV['matriceEleves'] = $this->enrichirMatriceLmd($donneesPV['matriceEleves'], $donneesPV['matieres']);
+            $donneesPV['statsClasseLmd'] = $this->calculerStatsLmd($donneesPV['matriceEleves'], $donneesPV['matieres'], count($eleves));
+        }
+
         $contexte = [
             'typeEvaluation' => __('pv_trimestre') . ' ' . $trimestre,
             'periodeLabel'   => __('Trimestre') . ' ' . $trimestre,
             'classeNom'      => htmlspecialchars($classeInfo['nom'] ?? '-'),
+            'specialiteNom'  => htmlspecialchars($classeInfo['nom'] ?? '-'),
+            'niveauNom'      => htmlspecialchars(!empty($classeInfo['niveau_nom']) ? $classeInfo['niveau_nom'] : '-'),
+            'cycleNom'       => htmlspecialchars(!empty($classeInfo['cycle_nom']) ? $classeInfo['cycle_nom'] : '-'),
+            'departementNom' => htmlspecialchars(!empty($classeInfo['departement_nom']) ? $classeInfo['departement_nom'] : '-'),
+            'filiereNom'     => htmlspecialchars(!empty($classeInfo['filiere_nom']) ? $classeInfo['filiere_nom'] : ($classeInfo['departement_nom'] ?? '-')),
+            'codeEvaluation' => 'TRIM-' . $trimestre,
             'anneeNom'       => htmlspecialchars($annee['nom'] ?? '-'),
             'dateGeneration' => date('d/m/Y'),
             'effectif'       => count($eleves),
@@ -120,7 +267,8 @@ class ProcesVerbalController extends BulletinController
         ];
 
         $nomFichier = $this->genererNomFichierPV($classeInfo['nom'] ?? 'classe', 'trimestre-' . $trimestre);
-        include __DIR__ . '/../Views/proces_verbal/document.php';
+        $template = $isLmd ? __DIR__ . '/../Views/proces_verbal/document_lmd.php' : __DIR__ . '/../Views/proces_verbal/document.php';
+        include $template;
     }
 
     /**
@@ -148,10 +296,22 @@ class ProcesVerbalController extends BulletinController
 
         $donneesPV = $this->construireDataAnnuel($classeId, $annee, $eleves);
 
+        $isLmd = ($classeInfo['teaching_type_code'] ?? '') === 'LMD';
+        if ($isLmd) {
+            $donneesPV['matriceEleves'] = $this->enrichirMatriceLmd($donneesPV['matriceEleves'], $donneesPV['matieres']);
+            $donneesPV['statsClasseLmd'] = $this->calculerStatsLmd($donneesPV['matriceEleves'], $donneesPV['matieres'], count($eleves));
+        }
+
         $contexte = [
             'typeEvaluation' => __('pv_annuel'),
             'periodeLabel'   => __('pv_annuel'),
             'classeNom'      => htmlspecialchars($classeInfo['nom'] ?? '-'),
+            'specialiteNom'  => htmlspecialchars($classeInfo['nom'] ?? '-'),
+            'niveauNom'      => htmlspecialchars(!empty($classeInfo['niveau_nom']) ? $classeInfo['niveau_nom'] : '-'),
+            'cycleNom'       => htmlspecialchars(!empty($classeInfo['cycle_nom']) ? $classeInfo['cycle_nom'] : '-'),
+            'departementNom' => htmlspecialchars(!empty($classeInfo['departement_nom']) ? $classeInfo['departement_nom'] : '-'),
+            'filiereNom'     => htmlspecialchars(!empty($classeInfo['filiere_nom']) ? $classeInfo['filiere_nom'] : ($classeInfo['departement_nom'] ?? '-')),
+            'codeEvaluation' => 'ANNUAL',
             'anneeNom'       => htmlspecialchars($annee['nom'] ?? '-'),
             'dateGeneration' => date('d/m/Y'),
             'effectif'       => count($eleves),
@@ -159,7 +319,8 @@ class ProcesVerbalController extends BulletinController
         ];
 
         $nomFichier = $this->genererNomFichierPV($classeInfo['nom'] ?? 'classe', 'annuel');
-        include __DIR__ . '/../Views/proces_verbal/document.php';
+        $template = $isLmd ? __DIR__ . '/../Views/proces_verbal/document_lmd.php' : __DIR__ . '/../Views/proces_verbal/document.php';
+        include $template;
     }
 
     // =========================================================================
@@ -444,6 +605,7 @@ class ProcesVerbalController extends BulletinController
             }
 
             $lignes[] = [
+                'id'             => $eleveId,
                 'nom'            => htmlspecialchars(strtoupper(trim($eleve['nom']))),
                 'prenom'         => htmlspecialchars(ucfirst(strtolower(trim($eleve['prenom'])))),
                 'rang'           => $rang,
@@ -541,4 +703,252 @@ class ProcesVerbalController extends BulletinController
         $periodeSlug = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '-', $periode), '-'));
         return 'pv-' . ($classeSlug ?: 'classe') . '-' . ($periodeSlug ?: 'periode') . '.pdf';
     }
+
+    /**
+     * Surcharge de getClassInfo pour extraire les métadonnées spécifiques au LMD (teaching_type, department, cycle, etc.)
+     */
+    protected function getClassInfo(int $classId)
+    {
+        $sql = "SELECT c.id, c.nom, c.section_id, c.cycle_id, c.department_id, c.level_id, c.teaching_type_id,
+                       u.nom as main_teacher_nom, u.prenom as main_teacher_prenom,
+                       tt.code as teaching_type_code, tt.nom as teaching_type_nom,
+                       d.nom as departement_nom,
+                       cy.nom as cycle_nom,
+                       COALESCE(lvl.libelle_fr, lvl.code, '') as niveau_nom
+                FROM classes c 
+                LEFT JOIN users u ON c.main_teacher_id = u.id 
+                LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id
+                LEFT JOIN departments d ON c.department_id = d.id
+                LEFT JOIN cycles cy ON c.cycle_id = cy.id
+                LEFT JOIN levels lvl ON c.level_id = lvl.id
+                WHERE c.id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$classId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * Enrichit la matrice des élèves avec les crédits LMD, le sexe, le matricule et la décision.
+     */
+    private function enrichirMatriceLmd(array $matriceEleves, array $matieres): array
+    {
+        if (empty($matriceEleves)) return [];
+
+        // Récupérer sexe et matricule depuis la BDD pour chaque élève
+        $eleveIds = [];
+        foreach ($matriceEleves as $el) {
+            if (isset($el['id'])) $eleveIds[] = (int)$el['id'];
+        }
+
+        $detailsEleves = [];
+        if (!empty($eleveIds)) {
+            $in = implode(',', array_fill(0, count($eleveIds), '?'));
+            // Dans ce schema, le matricule de l'élève est stocké dans le champ 'email' de la table students
+            $stmt = $this->db->prepare("SELECT id, email as matricule FROM students WHERE id IN ($in)");
+            $stmt->execute($eleveIds);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $detailsEleves[(int)$row['id']] = $row;
+            }
+
+            // Si la colonne 'sexe' existe dans la table 'students'
+            try {
+                $stmtSexe = $this->db->prepare("SELECT id, sexe FROM students WHERE id IN ($in)");
+                $stmtSexe->execute($eleveIds);
+                foreach ($stmtSexe->fetchAll(PDO::FETCH_ASSOC) as $rowSexe) {
+                    if (isset($detailsEleves[(int)$rowSexe['id']])) {
+                        $detailsEleves[(int)$rowSexe['id']]['sexe'] = $rowSexe['sexe'];
+                    }
+                }
+            } catch (\Exception $e) {
+                // Colonne sexe optionnelle si absente
+            }
+        }
+
+        foreach ($matriceEleves as &$el) {
+            $eId = (int)($el['id'] ?? 0);
+            $el['matricule'] = $detailsEleves[$eId]['matricule'] ?? '-';
+            $el['sexe'] = !empty($detailsEleves[$eId]['sexe']) ? strtoupper(substr($detailsEleves[$eId]['sexe'], 0, 1)) : 'M';
+
+            // Groupement des matières par Groupe de Modules (UE)
+            $groupedMatieres = [];
+            foreach ($matieres as $m) {
+                $grp = $m['groupe_nom'] ?? $m['groupe'] ?? $m['group_name'] ?? 'UE FONDAMENTALES';
+                $groupedMatieres[$grp][] = $m;
+            }
+
+            $moyennesUE = [];
+            $creditsAcquis = 0;
+            $allUEValidated = true;
+            $hasNotes = false;
+
+            foreach ($groupedMatieres as $grpName => $subs) {
+                $sumWeighted = 0;
+                $sumCoef = 0;
+                $ueCreditsAcquis = 0;
+                $ueTotalCredits = 0;
+                $ueEliminated = false; // Règle d'élimination UE
+
+                foreach ($subs as $m) {
+                    $mid = (int)$m['id'];
+                    $coef = (float)($m['coefficient'] ?? 1);
+                    $ueTotalCredits += $coef;
+                    $note = $el['notesParMatiere'][$mid] ?? null;
+
+                    // Si la note est absente (NULL, vide ou non saisie) ou < 10 => ÉLIMINÉ DANS CETTE UE
+                    if ($note === null || $note === '' || (float)$note < 10.0) {
+                        $ueEliminated = true;
+                    }
+
+                    if ($note !== null && $note !== '') {
+                        $hasNotes = true;
+                        $nVal = (float)$note;
+                        $sumWeighted += ($nVal * $coef);
+                        $sumCoef += $coef;
+                        if ($nVal >= 10.0) {
+                            $creditsAcquis += $coef;
+                            $ueCreditsAcquis += $coef;
+                        }
+                    }
+                }
+
+                // La Moy. UE ne doit être calculée que si toutes les notes du groupe sont renseignées et >= 10/20
+                if (!$ueEliminated && $sumCoef > 0) {
+                    $moyUE = $sumWeighted / $sumCoef;
+                    $isUEValidated = true;
+                } else {
+                    $moyUE = null; // Remplacée par "EL"
+                    $isUEValidated = false;
+                    $allUEValidated = false;
+                }
+
+                $moyennesUE[$grpName] = [
+                    'moyenne' => $moyUE,
+                    'is_valid' => $isUEValidated,
+                    'is_eliminated' => $ueEliminated,
+                    'credits_acquis' => $ueCreditsAcquis,
+                    'credits_total' => $ueTotalCredits
+                ];
+            }
+
+            $el['moyennesUE'] = $moyennesUE;
+            $el['creditsAcquis'] = $creditsAcquis;
+
+            // Calcul de la Moy. Gén. : moyenne des Moy. UE si toutes validées (aucun EL)
+            $sumMoyUE = 0;
+            $countMoyUE = 0;
+            foreach ($moyennesUE as $ueRes) {
+                if ($ueRes['moyenne'] !== null) {
+                    $sumMoyUE += $ueRes['moyenne'];
+                    $countMoyUE++;
+                }
+            }
+
+            if ($allUEValidated && $countMoyUE > 0 && $hasNotes) {
+                $moyenneGeneraleLmd = $sumMoyUE / $countMoyUE;
+                $el['moyenneLmdRaw'] = $moyenneGeneraleLmd;
+                $el['moyenneLmdDisplay'] = number_format($moyenneGeneraleLmd, 2, ',', ' ');
+                $el['isAdmisLmd'] = true;
+            } else {
+                $el['moyenneLmdRaw'] = null;
+                $el['moyenneLmdDisplay'] = 'EL';
+                $el['isAdmisLmd'] = false;
+            }
+
+            $el['mention'] = ($el['moyenneLmdRaw'] !== null) ? $this->getMention($el['moyenneLmdRaw']) : '-';
+        }
+        unset($el);
+
+        return $matriceEleves;
+    }
+
+    /**
+     * Calcule le tableau des 15 indicateurs statistiques du Supérieur LMD.
+     */
+    private function calculerStatsLmd(array $matriceEleves, array $matieres, int $effectifTotal): array
+    {
+        $presents = 0;
+        $absents = 0;
+        $admis = 0;
+        $rattrapages = 0;
+        $totalCreditsValides = 0;
+        $totalCreditsAttendusIndiv = 0;
+        foreach ($matieres as $m) {
+            $totalCreditsAttendusIndiv += (float)($m['coefficient'] ?? 1);
+        }
+        $totalCreditsAttendusAll = $totalCreditsAttendusIndiv * $effectifTotal;
+
+        $toutesMoyennes = [];
+        $notesParSubject = [];
+
+        foreach ($matriceEleves as $el) {
+            $moy = $el['moyenneLmdRaw'] ?? $el['moyenne'] ?? null;
+            if ($moy !== null) {
+                $presents++;
+                $valMoy = (float)$moy;
+                $toutesMoyennes[] = $valMoy;
+                if (!empty($el['isAdmisLmd'])) {
+                    $admis++;
+                } else {
+                    $rattrapages++;
+                }
+            } else {
+                $absents++;
+            }
+
+            $totalCreditsValides += ($el['creditsAcquis'] ?? 0);
+
+            foreach ($matieres as $m) {
+                $mid = (int)$m['id'];
+                $n = $el['notesParMatiere'][$mid] ?? null;
+                if ($n !== null) {
+                    $notesParSubject[$mid][] = (float)$n;
+                }
+            }
+        }
+
+        // Taux de réussite
+        $tauxReussite = $effectifTotal > 0 ? round(($admis / $effectifTotal) * 100, 1) : 0;
+
+        // Analyse matières : plus de notes < 10 et plus de notes >= 10
+        $matiereInf10Count = [];
+        $matiereSup10Count = [];
+        foreach ($matieres as $m) {
+            $mid = (int)$m['id'];
+            $notes = $notesParSubject[$mid] ?? [];
+            $inf = 0; $sup = 0;
+            foreach ($notes as $nVal) {
+                if ($nVal >= 10.0) $sup++; else $inf++;
+            }
+            $matiereInf10Count[$mid] = $inf;
+            $matiereSup10Count[$mid] = $sup;
+        }
+
+        $midInfMax = !empty($matiereInf10Count) ? array_search(max($matiereInf10Count), $matiereInf10Count) : null;
+        $midSupMax = !empty($matiereSup10Count) ? array_search(max($matiereSup10Count), $matiereSup10Count) : null;
+
+        $nomMatiereInf10 = '-';
+        $nomMatiereSup10 = '-';
+        foreach ($matieres as $m) {
+            if ((int)$m['id'] === $midInfMax) $nomMatiereInf10 = $m['nom'];
+            if ((int)$m['id'] === $midSupMax) $nomMatiereSup10 = $m['nom'];
+        }
+
+        return [
+            'effectifTotal' => $effectifTotal,
+            'presents' => $presents,
+            'absents' => $absents,
+            'admis' => $admis,
+            'rattrapages' => $rattrapages,
+            'tauxReussite' => $tauxReussite,
+            'totalCreditsValides' => $totalCreditsValides,
+            'totalCreditsAttendus' => $totalCreditsAttendusAll,
+            'totalCreditsObtenus' => $totalCreditsValides,
+            'totalCreditsNonValides' => max(0, $totalCreditsAttendusAll - $totalCreditsValides),
+            'matierePlusNotesInf10' => $nomMatiereInf10,
+            'matierePlusNotesSup10' => $nomMatiereSup10,
+            'meilleureMoyenne' => !empty($toutesMoyennes) ? max($toutesMoyennes) : 0,
+            'plusFaibleMoyenne' => !empty($toutesMoyennes) ? min($toutesMoyennes) : 0,
+        ];
+    }
 }
+

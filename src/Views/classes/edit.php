@@ -157,6 +157,18 @@ ob_start();
                         </div>
 
                         <div class="col-md-6">
+                            <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('level') ?? 'Niveau' ?> *</label>
+                            <select name="level_id" id="level_id" class="form-select premium-input border-primary border-opacity-25" required>
+                                <option value=""><?= __('select_level') ?? '-- Sélectionner un niveau --' ?></option>
+                                <?php foreach ($levels as $lvl): ?>
+                                    <option value="<?= $lvl['id'] ?>" data-teaching-type-id="<?= $lvl['teaching_type_id'] ?>" <?= (($classe['level_id'] ?? '') == $lvl['id']) ? 'selected' : '' ?>>
+                                        [<?= h($lvl['code']) ?>] <?= h(\App\Core\Translator::lang() === 'en' ? $lvl['libelle_en'] : $lvl['libelle_fr']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
                             <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('cycle_membership') ?></label>
                             <select name="cycle_id" id="cycle_id" class="form-select premium-input">
                                 <option value=""><?= __('no_specific_cycle') ?></option>

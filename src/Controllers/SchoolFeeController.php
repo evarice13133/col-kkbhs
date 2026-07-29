@@ -348,10 +348,12 @@ class SchoolFeeController
                     foreach ($resolvedInsts as $inst) {
                         $ord = (int) $inst['installment_order'];
                         $amt = (float) $inst['amount'];
-                        $deadline = $inst['deadline_date'];
+                        $rawDeadline = !empty($inst['deadline_date']) ? trim((string)$inst['deadline_date']) : null;
 
                         $insLegacy->execute([$cId, $ord, $amt]);
-                        $insDeadline->execute([$activeYearId, $cId, $ord, $deadline]);
+                        if ($rawDeadline !== null && $rawDeadline !== '') {
+                            $insDeadline->execute([$activeYearId, $cId, $ord, $rawDeadline]);
+                        }
                     }
 
                     // 5. Relancer le recalcul et la resynchronisation de tous les élèves de la classe
