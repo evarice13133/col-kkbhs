@@ -191,12 +191,25 @@ class CycleController
      */
     public function delete($id)
     {
+        if (Session::get('user_role') !== 'superadmin') {
+            Session::setFlash('error', "Seul le Super Administrateur est autorisé à supprimer un cycle académique.");
+            header("Location: /cycles");
+            exit;
+        }
+
         try {
+            $checkClasses = $this->db->prepare("SELECT COUNT(*) FROM classes WHERE cycle_id = ?");
+            $checkClasses->execute([(int)$id]);
+            if ($checkClasses->fetchColumn() > 0) {
+                Session::setFlash('error', "Impossible de supprimer ce cycle académique car des classes y sont rattachées.");
+                header("Location: /cycles");
+                exit;
+            }
+
             $stmt = $this->db->prepare("DELETE FROM cycles WHERE id = ?");
             $stmt->execute([(int)$id]);
             Session::setFlash('success', __('deleted_success'));
         } catch (\PDOException $e) {
-            // Empêche la suppression si lié à des classes (clé étrangère)
             Session::setFlash('error', __('error_generic'));
         }
 

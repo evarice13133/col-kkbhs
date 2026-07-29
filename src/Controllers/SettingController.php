@@ -20,7 +20,7 @@ class SettingController
     {
         $this->db = Database::getInstance()->getConnection();
         
-        // Sécurité RBAC : Accès réservé aux superadmins
+        // Sécurité RBAC : Accès réservé aux superadmins / admins
         PermissionManager::requirePermission('manage_settings');
 
         $this->settingsStore = new SettingsStore($this->db);
@@ -28,7 +28,18 @@ class SettingController
 
     public function index()
     {
-        $settings = $this->settingsStore->all();
+        $teachingTypeId = isset($_GET['teaching_type_id']) && (int)$_GET['teaching_type_id'] > 0 
+            ? (int) $_GET['teaching_type_id'] 
+            : null;
+
+        $stmtTT = $this->db->query("SELECT * FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC");
+        $teachingTypes = $stmtTT->fetchAll(PDO::FETCH_ASSOC);
+
+        $currentTeachingTypeId = $teachingTypeId ?? $this->settingsStore->getDefaultTeachingTypeId();
+        $this->settingsStore->setTeachingTypeId($currentTeachingTypeId);
+
+        $settings = $this->settingsStore->all($currentTeachingTypeId);
+        $logoManager = LogoManager::getInstance($this->db, $currentTeachingTypeId);
 
         include __DIR__ . '/../Views/settings/index.php';
     }
@@ -36,6 +47,10 @@ class SettingController
     public function store()
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $teachingTypeId = isset($_POST['teaching_type_id']) && (int)$_POST['teaching_type_id'] > 0 
+                ? (int) $_POST['teaching_type_id'] 
+                : $this->settingsStore->getDefaultTeachingTypeId();
+
             $allowed_keys = [
                 'school_name',
                 'school_code',
@@ -104,13 +119,32 @@ class SettingController
             ];
 
             $updates = [];
+            if (Session::get('user_role') !== 'superadmin') {
+                $restrictedKeys = [
+                    'bulletin_printing_enabled',
+                    'backup_enabled',
+                    'backup_push_enabled',
+                    'backup_storage_path',
+                    'backup_git_worktree',
+                    'backup_retention_count',
+                    'backup_schedule_day',
+                    'backup_schedule_time',
+                    'backup_github_owner',
+                    'backup_github_repository',
+                    'backup_github_branch',
+                    'backup_github_auth',
+                    'backup_git_user_name',
+                    'backup_git_user_email',
+                ];
+                $allowed_keys = array_diff($allowed_keys, $restrictedKeys);
+            }
+
             foreach ($allowed_keys as $key) {
                 if (isset($_POST[$key])) {
                     $updates[$key] = trim((string) $_POST[$key]);
                 }
             }
 
-            // Gérer explicitement les checkboxes (elles ne sont pas envoyées si décochées)
             $checkbox_keys = ['bulletin_printing_enabled', 'backup_enabled', 'backup_push_enabled'];
             foreach ($checkbox_keys as $key) {
                 if (in_array($key, $allowed_keys)) {
@@ -118,21 +152,20 @@ class SettingController
                 }
             }
 
-            $this->settingsStore->setMany($updates);
-            $this->handleImageUpload('school_logo');
-            $this->handleImageUpload('principal_signature');
-            $this->handleImageUpload('school_stamp');
+            $this->settingsStore->setMany($updates, $teachingTypeId);
+            $this->handleImageUpload('school_logo', $teachingTypeId);
+            $this->handleImageUpload('principal_signature', $teachingTypeId);
+            $this->handleImageUpload('school_stamp', $teachingTypeId);
             (new ActivityTracker($this->db))->recordSettingsUpdate();
 
             Session::set('success_msg', \__('settings_saved_success'));
-            header("Location: /settings");
+            header("Location: /settings?teaching_type_id=" . $teachingTypeId);
             exit;
         }
     }
 
     public function reset()
     {
-        // On définit uniquement les thèmes par défaut pour ne pas toucher aux entêtes (Logo, Nom, etc.)
         $defaults = [
             'theme_navbar_bg' => '#0a1726',
             'theme_navbar_hover' => '#ffffff14',
@@ -162,7 +195,7 @@ class SettingController
         ];
 
         foreach ($defaults as $key => $value) {
-            $this->settingsStore->set($key, $value);
+            $this->settingsStore->set($key, $value, 0);
         }
 
         Session::set('success_msg', \__('theme_reset_success'));
@@ -172,6 +205,11 @@ class SettingController
 
     public function runBackup()
     {
+        if (Session::get('user_role') !== 'superadmin') {
+            header("Location: /settings");
+            exit;
+        }
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header("Location: /settings");
             exit;
@@ -200,7 +238,7 @@ class SettingController
         exit;
     }
 
-    private function handleImageUpload($fieldName)
+    private function handleImageUpload($fieldName, ?int $teachingTypeId = null)
     {
         if (!isset($_FILES[$fieldName]) || $_FILES[$fieldName]['error'] !== UPLOAD_ERR_OK) {
             return;
@@ -219,13 +257,11 @@ class SettingController
         if ($fileType && strpos($fileType, 'image/') === 0 && move_uploaded_file($fileTmp, $destPath)) {
             $webPath = '/public/uploads/' . $fileName;
             
-            // Utiliser le LogoManager pour le logo
             if ($fieldName === 'school_logo') {
-                $logoManager = LogoManager::getInstance($this->db);
-                $logoManager->updateLogo($webPath);
+                $logoManager = LogoManager::getInstance($this->db, $teachingTypeId);
+                $logoManager->updateLogo($webPath, $teachingTypeId);
             } else {
-                // Pour les autres images (signature, tampon)
-                $this->settingsStore->set($fieldName, $webPath);
+                $this->settingsStore->set($fieldName, $webPath, $teachingTypeId);
             }
         }
     }

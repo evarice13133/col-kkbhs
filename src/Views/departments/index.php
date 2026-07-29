@@ -127,6 +127,15 @@
                                             <?= $dept['status'] ? __('deactivate_department') : __('activate_department') ?>
                                         </button>
                                     </li>
+                                    <?php if (\App\Core\Session::get('user_role') === 'superadmin'): ?>
+                                    <li>
+                                        <a class="dropdown-item dropdown-item-modern text-danger border-0 bg-transparent text-start w-100 btn-confirm-delete"
+                                           href="/departments/delete?id=<?= $dept['id'] ?>&csrf_token=<?= \App\Core\Session::generateCsrfToken() ?>"
+                                           data-confirm="<?= __('confirm_delete_text') ?? 'Voulez-vous supprimer ce département ?' ?>">
+                                            <i class="bi bi-trash text-danger"></i> <?= __('delete') ?>
+                                        </a>
+                                    </li>
+                                    <?php endif; ?>
                                 </ul>
                             </div>
                             <?php endif; ?>

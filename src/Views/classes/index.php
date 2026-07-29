@@ -73,6 +73,16 @@ ob_start(); ?>
                         <?php endforeach; ?>
                     </select>
 
+                    <!-- Niveau -->
+                    <select name="level_id" id="filter_level" class="form-select border-0 bg-white bg-opacity-10 shadow-none py-2 text-main rounded-pill px-3 flex-grow-1" style="min-width: 130px; max-width: 180px;">
+                        <option value=""><?= __('all_levels') ?? 'Tous les niveaux' ?></option>
+                        <?php foreach ($levels as $lvl): ?>
+                            <option value="<?= $lvl['id'] ?>" data-teaching-type="<?= $lvl['teaching_type_id'] ?? '' ?>" <?= (int) ($filters['level_id'] ?? 0) === (int) $lvl['id'] ? 'selected' : '' ?>>
+                                <?= htmlspecialchars((string) $lvl['code']) ?> - <?= htmlspecialchars((string) (\App\Core\Translator::lang() === 'en' ? $lvl['libelle_en'] : $lvl['libelle_fr'])) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+
                     <!-- Département -->
                     <select name="department_id" id="filter_department" class="form-select border-0 bg-white bg-opacity-10 shadow-none py-2 text-main rounded-pill px-3 flex-grow-1" style="min-width: 130px; max-width: 180px;">
                         <option value=""><?= __('all_departments') ?? 'Tous les départements' ?></option>
@@ -158,6 +168,13 @@ ob_start(); ?>
 
                                     <!-- Info Badge Row -->
                                     <div class="mt-1 d-flex flex-wrap gap-1 align-items-center">
+                                        <?php if (!empty($c['level_code'])): ?>
+                                            <div class="badge bg-warning text-dark px-2 py-1 rounded-pill fw-bold shadow-sm"
+                                                style="font-size: 0.65rem;" title="<?= htmlspecialchars((string)(\App\Core\Translator::lang() === 'en' ? $c['level_libelle_en'] : $c['level_libelle_fr'])) ?>">
+                                                <i class="bi bi-bar-chart-steps me-1"></i><?= htmlspecialchars((string) $c['level_code']) ?>
+                                            </div>
+                                        <?php endif; ?>
+
                                         <?php if ($c['cycle_nom']): ?>
                                             <div class="badge bg-primary text-white px-2 py-1 rounded-pill fw-bold shadow-sm"
                                                 style="font-size: 0.65rem;">

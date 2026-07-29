@@ -151,13 +151,30 @@ class SectionController
         exit;
     }
 
-    /**
-     * La suppression définitive d'une section est désactivée pour préserver la cohérence des données.
-     * La désactivation est l'unique moyen de retirer une section de l'utilisation active.
-     */
     public function delete($id)
     {
-        Session::setFlash('error', "La suppression définitive des sections est désactivée. Veuillez utiliser la désactivation pour suspendre son utilisation.");
+        if (Session::get('user_role') !== 'superadmin') {
+            Session::setFlash('error', "Seul le Super Administrateur est autorisé à supprimer une section académique.");
+            header("Location: /sections");
+            exit;
+        }
+
+        try {
+            $checkClasses = $this->db->prepare("SELECT COUNT(*) FROM classes WHERE section_id = ?");
+            $checkClasses->execute([(int)$id]);
+            if ($checkClasses->fetchColumn() > 0) {
+                Session::setFlash('error', "Impossible de supprimer cette section académique car des classes y sont rattachées.");
+                header("Location: /sections");
+                exit;
+            }
+
+            $stmt = $this->db->prepare("DELETE FROM sections WHERE id = ?");
+            $stmt->execute([(int)$id]);
+            Session::setFlash('success', __('deleted_success') ?? 'Supprimé avec succès.');
+        } catch (\PDOException $e) {
+            Session::setFlash('error', __('error_generic') ?? 'Erreur lors de la suppression.');
+        }
+
         header("Location: /sections");
         exit;
     }

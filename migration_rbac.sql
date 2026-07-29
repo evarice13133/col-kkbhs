@@ -163,7 +163,7 @@ WHERE perm_code IN (
     'view_classes', 'manage_classes_structure', 'manage_teaching_types',
     'manage_cycles', 'manage_sections', 'manage_departments',
     'manage_subjects', 'manage_teachers', 'manage_timetables',
-    'manage_academic_years', 'manage_sequences',
+    'manage_sequences',
     'view_students', 'manage_students', 'manage_marks',
     'manage_bulletins', 'manage_absences',
     'manage_staff', 'manage_contracts',

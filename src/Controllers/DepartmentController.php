@@ -187,15 +187,39 @@ class DepartmentController
         exit;
     }
 
-    /**
-     * La suppression définitive d'un département est désactivée.
-     * La désactivation est l'unique moyen de retirer un département de l'utilisation active.
-     */
     public function delete($id)
     {
         PermissionManager::requirePermission('manage_departments');
 
-        Session::setFlash('error', "La suppression définitive des départements est désactivée. Veuillez utiliser la désactivation pour suspendre son utilisation.");
+        if (Session::get('user_role') !== 'superadmin') {
+            Session::setFlash('error', "Seul le Super Administrateur est autorisé à supprimer un département.");
+            header("Location: /departments");
+            exit;
+        }
+
+        try {
+            $deps = [];
+            $checkSubjects = $this->db->prepare("SELECT COUNT(*) FROM subjects WHERE department_id = ?");
+            $checkSubjects->execute([(int)$id]);
+            if ($checkSubjects->fetchColumn() > 0) $deps[] = 'matières';
+
+            $checkClasses = $this->db->prepare("SELECT COUNT(*) FROM classes WHERE department_id = ?");
+            $checkClasses->execute([(int)$id]);
+            if ($checkClasses->fetchColumn() > 0) $deps[] = 'classes';
+
+            if (!empty($deps)) {
+                Session::setFlash('error', "Impossible de supprimer ce département car des éléments (" . implode(', ', $deps) . ") y sont rattachés.");
+                header("Location: /departments");
+                exit;
+            }
+
+            $stmt = $this->db->prepare("DELETE FROM departments WHERE id = ?");
+            $stmt->execute([(int)$id]);
+            Session::setFlash('success', __('deleted_success') ?? 'Supprimé avec succès.');
+        } catch (\PDOException $e) {
+            Session::setFlash('error', __('error_generic') ?? 'Erreur lors de la suppression.');
+        }
+
         header("Location: /departments");
         exit;
     }

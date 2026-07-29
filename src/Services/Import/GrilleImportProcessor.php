@@ -260,9 +260,14 @@ class GrilleImportProcessor
                 $insDeadlines = $this->db->prepare("INSERT INTO installment_deadlines (academic_year_id, class_id, installment_number, deadline_date) VALUES (?, ?, ?, ?)");
 
                 foreach ($tranchesList as $tr) {
+                    $rawDeadline = !empty($tr['deadline']) ? trim((string)$tr['deadline']) : null;
+                    $deadlineDate = ($rawDeadline !== null && $rawDeadline !== '') ? $rawDeadline : date('Y-12-31');
+
                     $insClassInst->execute([$classId, $tr['order'], $tr['amount']]);
-                    $insFeeInst->execute([$academicYearId, $tr['name'], $tr['order'], $tr['amount'], $tr['deadline'], $classId]);
-                    $insDeadlines->execute([$academicYearId, $classId, $tr['order'], $tr['deadline']]);
+                    $insFeeInst->execute([$academicYearId, $tr['name'], $tr['order'], $tr['amount'], $deadlineDate, $classId]);
+                    if ($rawDeadline !== null && $rawDeadline !== '') {
+                        $insDeadlines->execute([$academicYearId, $classId, $tr['order'], $rawDeadline]);
+                    }
                 }
             }
 

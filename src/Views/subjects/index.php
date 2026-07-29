@@ -133,10 +133,20 @@ ob_start(); ?>
                                             <?= __('coef') ?>: <?= (int) $s['coefficient'] ?>
                                         </span>
                                         <?php if (!empty($s['teaching_type_nom'])): ?>
-                                            <div class="mt-1">
+                                            <div class="mt-1 d-flex gap-1 flex-wrap align-items-center">
                                                 <span class="badge bg-success bg-opacity-10 text-success fw-bold px-2 py-1 rounded-pill" style="font-size: 0.65rem;">
                                                     <i class="bi bi-diagram-3-fill me-1"></i><?= htmlspecialchars((string) $s['teaching_type_nom']) ?>
                                                 </span>
+                                                <?php if (!empty($s['code_uv'])): ?>
+                                                    <span class="badge bg-purple bg-opacity-10 text-purple border border-purple border-opacity-25 px-2 py-1 rounded-pill" style="font-size: 0.65rem; color: #8b5cf6; background: rgba(139,92,246,0.1);">
+                                                        UV: <?= htmlspecialchars((string)$s['code_uv']) ?>
+                                                    </span>
+                                                <?php endif; ?>
+                                                <?php if (!empty($s['code_ue'])): ?>
+                                                    <span class="badge bg-dark bg-opacity-10 text-dark border border-dark border-opacity-25 px-2 py-1 rounded-pill" style="font-size: 0.65rem;">
+                                                        UE: <?= htmlspecialchars((string)$s['code_ue']) ?>
+                                                    </span>
+                                                <?php endif; ?>
                                             </div>
                                         <?php endif; ?>
                                     </td>

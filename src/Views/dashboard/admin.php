@@ -68,7 +68,6 @@ $quickAccessLinks = [
     ['url' => '/proces-verbal', 'icon' => 'bi-file-earmark-text','label' => __('proces_verbaux'),      'meta' => null],
     // ── Pilotage ─────────────────────────────────────────────
     ['url' => '/sequences',       'icon' => 'bi-check2-square',  'label' => __('evaluations'),         'meta' => null],
-    ['url' => '/academic_years',  'icon' => 'bi-calendar-event', 'label' => __('academic_years'),      'meta' => null],
     // ── Affectations ─────────────────────────────────────────
     ['url' => '/teachers', 'icon' => 'bi-diagram-3-fill',        'label' => __('academic_assignment'), 'meta' => (string) ((int) $teachers_without_assignment)],
     // ── Aide ─────────────────────────────────────────────────
@@ -80,12 +79,17 @@ if ($bulletin_printing_enabled ?? true) {
     array_splice($quickAccessLinks, 6, 0, [['url' => '/bulletins','icon' => 'bi-file-earmark-pdf', 'label' => __('bulletins'), 'meta' => null]]);
 }
 
+if (in_array(\App\Core\Session::get('user_role'), ['superadmin', 'it_manager'])) {
+    $quickAccessLinks[] = ['url' => '/academic_years',  'icon' => 'bi-calendar-event', 'label' => __('academic_years'),      'meta' => null];
+}
+
+$quickAccessLinks[] = ['url' => '/departments', 'icon' => 'bi-building',       'label' => __('departments'),       'meta' => null];
+$quickAccessLinks[] = ['url' => '/sections',    'icon' => 'bi-grid-3x3-gap',   'label' => __('academic_sections'), 'meta' => null];
+$quickAccessLinks[] = ['url' => '/cycles',      'icon' => 'bi-layers',          'label' => __('academic_cycles'),   'meta' => null];
+$quickAccessLinks[] = ['url' => '/settings',    'icon' => 'bi-gear-fill',       'label' => __('settings'),          'meta' => null];
+
 if (\App\Core\Session::get('user_role') === 'superadmin') {
-    $quickAccessLinks[] = ['url' => '/departments', 'icon' => 'bi-building',       'label' => __('departments'),       'meta' => null];
-    $quickAccessLinks[] = ['url' => '/sections',    'icon' => 'bi-grid-3x3-gap',   'label' => __('academic_sections'), 'meta' => null];
-    $quickAccessLinks[] = ['url' => '/cycles',      'icon' => 'bi-layers',          'label' => __('academic_cycles'),   'meta' => null];
     $quickAccessLinks[] = ['url' => '/users',       'icon' => 'bi-people-fill',     'label' => __('users'),             'meta' => (string) ((int) $stats_users)];
-    $quickAccessLinks[] = ['url' => '/settings',    'icon' => 'bi-gear-fill',       'label' => __('settings'),          'meta' => null];
 }
 
 ob_start();
