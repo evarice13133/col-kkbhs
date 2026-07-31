@@ -1,5 +1,5 @@
 <div class="modern-card border-0 shadow-sm overflow-hidden animate-fade-in bg-glass-theme">
-    <div class="card-body p-4 p-md-5">
+    <div class="card-body p-4 p-md-5">  
         <div class="row g-4">
             <div class="col-md-12 border-bottom border-theme-light pb-2 mb-2">
                 <h6 class="fw-black text-primary m-0 text-uppercase letter-spacing-1"><?= __('login_page_theme') ?></h6>
@@ -62,6 +62,7 @@
                     </div>
                 </div>
             </div>
+
             <!-- Options supplémentaires du Login -->
             <div class="col-md-12 border-bottom border-theme-light pb-2 mb-2 mt-4">
                 <h6 class="fw-black text-primary m-0 text-uppercase letter-spacing-1"><?= __('login_features') ?? 'Fonctionnalités' ?></h6>
@@ -70,7 +71,6 @@
             <div class="col-md-12 mt-0">
                 <div class="p-4 border-theme-dynamic rounded-4 bg-soft-light shadow-sm">
                     <div class="form-check form-switch d-flex align-items-start gap-3 m-0">
-                        <!-- Input hidden pour forcer l'envoi de '0' si décoché -->
                         <input type="hidden" name="allow_teacher_registration" value="0">
                         <input class="form-check-input" type="checkbox" role="switch" id="allow_teacher_registration" name="allow_teacher_registration" value="1" <?= (isset($settings['allow_teacher_registration']) && $settings['allow_teacher_registration'] == '1') ? 'checked' : '' ?> style="transform: scale(1.3); cursor: pointer; margin-top: 0.25rem;">
                         <label class="form-check-label fw-bold" for="allow_teacher_registration" style="cursor: pointer; color: var(--text-main);">
@@ -80,7 +80,6 @@
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
 </div>

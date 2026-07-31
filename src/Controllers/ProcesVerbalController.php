@@ -32,15 +32,36 @@ class ProcesVerbalController extends BulletinController
             $anneeId = (int) $anneeActive['id'];
         }
 
-        $classes   = $this->getAccessibleClassesWithTeachingType();
-        $classeId  = (int) ($_GET['class_id'] ?? 0);
+        // 1. Récupération des types d'enseignement actifs
+        $teachingTypes = $this->db->query(
+            "SELECT id, code, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC"
+        )->fetchAll(PDO::FETCH_ASSOC);
 
-        // Sélection des métadonnées de la classe active si présente
+        $teachingTypeId = isset($_GET['teaching_type_id']) ? (int)$_GET['teaching_type_id'] : 0;
+        $classeId = (int) ($_GET['class_id'] ?? 0);
+
+        // Si une classe était présélectionnée, vérifier son type d'enseignement
         $selectedClassInfo = $classeId > 0 ? $this->getClassInfo($classeId) : null;
-        $isLmdClass = ($selectedClassInfo['teaching_type_code'] ?? '') === 'LMD';
-        $teachingTypeId = (int) ($selectedClassInfo['teaching_type_id'] ?? 0);
 
-        $sequences = $this->getEvaluationsByTeachingType($teachingTypeId);
+        // Si le filtre type d'enseignement a été choisi explicitement (ex: teaching_type_id > 0)
+        // et qu'une classe était sélectionnée mais n'appartient pas à ce type, on réinitialise la classe
+        if ($teachingTypeId > 0 && $selectedClassInfo) {
+            if ((int)($selectedClassInfo['teaching_type_id'] ?? 0) !== $teachingTypeId) {
+                $classeId = 0;
+                $selectedClassInfo = null;
+            }
+        } elseif ($teachingTypeId <= 0 && $selectedClassInfo) {
+            // Si pas de filtre explicite mais classe sélectionnée, déduire le type
+            $teachingTypeId = (int) ($selectedClassInfo['teaching_type_id'] ?? 0);
+        }
+
+        // Récupération des classes filtrées par le type d'enseignement (si spécifié > 0)
+        $classes = $this->getAccessibleClassesWithTeachingType($teachingTypeId > 0 ? $teachingTypeId : null);
+
+        $isLmdClass = ($selectedClassInfo['teaching_type_code'] ?? '') === 'LMD';
+        $evalTtId = $teachingTypeId > 0 ? $teachingTypeId : (int)($selectedClassInfo['teaching_type_id'] ?? 0);
+
+        $sequences = $this->getEvaluationsByTeachingType($evalTtId > 0 ? $evalTtId : null);
         $trimestres = [1, 2, 3];
 
         $titrePage = __('pv_title');
@@ -53,9 +74,10 @@ class ProcesVerbalController extends BulletinController
      */
     public function evaluation(): void
     {
-        $classeId   = (int) ($_GET['class_id'] ?? 0);
-        $sequenceId = (int) ($_GET['sequence_id'] ?? $_GET['evaluation_id'] ?? 0);
-        $anneeId    = (int) ($_GET['academic_year_id'] ?? 0);
+        $classeId       = (int) ($_GET['class_id'] ?? 0);
+        $sequenceId     = (int) ($_GET['sequence_id'] ?? $_GET['evaluation_id'] ?? 0);
+        $anneeId        = (int) ($_GET['academic_year_id'] ?? 0);
+        $reqTtId        = (int) ($_GET['teaching_type_id'] ?? 0);
 
         $sequence = $this->getSequenceById($sequenceId);
         if (!$this->canAccessClass($classeId) || !$sequence || !(int) $sequence['is_active']) {
@@ -66,6 +88,15 @@ class ProcesVerbalController extends BulletinController
         $annee      = $this->resolveAcademicYear($anneeId);
         $eleves     = $this->getStudentsByClass($classeId);
         $classeInfo = $this->getClassInfo($classeId);
+        $classTtId  = (int) ($classeInfo['teaching_type_id'] ?? 0);
+
+        // Vérification que la classe appartient au Type d'enseignement sélectionné si spécifié
+        if ($reqTtId > 0 && $classTtId > 0 && $reqTtId !== $classTtId) {
+            header("Location: /proces-verbal");
+            exit;
+        }
+
+        $teachingTypeId = $reqTtId > 0 ? $reqTtId : $classTtId;
 
         if (empty($eleves)) {
             header("Location: /proces-verbal");
@@ -80,17 +111,8 @@ class ProcesVerbalController extends BulletinController
             $donneesPV['statsClasseLmd'] = $this->calculerStatsLmd($donneesPV['matriceEleves'], $donneesPV['matieres'], count($eleves));
         }
 
-        // Formater la période d'évaluation (dates de début et fin)
-        $periodeLabel = '-';
-        if (!empty($sequence['start_date']) && !empty($sequence['end_date'])) {
-            $startDate = date('d/m/Y', strtotime($sequence['start_date']));
-            $endDate   = date('d/m/Y', strtotime($sequence['end_date']));
-            $periodeLabel = "Du {$startDate} au {$endDate}";
-        } elseif (!empty($sequence['start_date'])) {
-            $periodeLabel = "À partir du " . date('d/m/Y', strtotime($sequence['start_date']));
-        } else {
-            $periodeLabel = htmlspecialchars($sequence['label']);
-        }
+        // Formater la période d'évaluation (dates de début et fin avec i18n)
+        $periodeLabel = $this->formatPeriodeEvaluation($sequence);
 
         // Nom de la session
         $sessionNom = !empty($sequence['short_label']) ? $sequence['short_label'] : ('Session ' . ($sequence['position'] ?? 1));
@@ -110,7 +132,8 @@ class ProcesVerbalController extends BulletinController
             'anneeNom'          => htmlspecialchars($annee['nom'] ?? '-'),
             'dateGeneration'    => date('d/m/Y'),
             'effectif'          => count($eleves),
-            'institution'       => $this->getInstitutionSettings(),
+            'teaching_type_id'  => $teachingTypeId,
+            'institution'       => $this->getInstitutionSettings($teachingTypeId),
         ];
 
         $nomFichier = $this->genererNomFichierPV($classeInfo['nom'] ?? 'classe', $sequence['code'] ?? $sequence['label']);
@@ -119,26 +142,115 @@ class ProcesVerbalController extends BulletinController
     }
 
     /**
-     * Récupère les classes accessibles avec leur code de type d'enseignement.
+     * Formate la période réelle d'une évaluation pour l'affichage dans le PV.
+     * Respecte le système i18n (FR/EN) et les règles métier spécifiées.
      */
-    protected function getAccessibleClassesWithTeachingType(): array
+    protected function formatPeriodeEvaluation(?array $sequence = null): string
     {
+        $hasStart = !empty($sequence['start_date']);
+        $hasEnd   = !empty($sequence['end_date']);
+
+        if ($hasStart && $hasEnd) {
+            $tsStart = strtotime($sequence['start_date']);
+            $tsEnd   = strtotime($sequence['end_date']);
+
+            if ($tsStart && $tsEnd) {
+                $monthStartNum = (int) date('n', $tsStart);
+                $monthEndNum   = (int) date('n', $tsEnd);
+                $yearStart     = date('Y', $tsStart);
+                $yearEnd       = date('Y', $tsEnd);
+
+                $lang = \App\Core\Locale::get();
+
+                $monthsFr = [
+                    1 => 'Janvier', 2 => 'Février', 3 => 'Mars', 4 => 'Avril',
+                    5 => 'Mai', 6 => 'Juin', 7 => 'Juillet', 8 => 'Août',
+                    9 => 'Septembre', 10 => 'Octobre', 11 => 'Novembre', 12 => 'Décembre'
+                ];
+
+                $monthsEn = [
+                    1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
+                    5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',
+                    9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December'
+                ];
+
+                $months = ($lang === 'en') ? $monthsEn : $monthsFr;
+
+                // Même mois et même année (ex: Janvier 2026 / January 2026)
+                if ($monthStartNum === $monthEndNum && $yearStart === $yearEnd) {
+                    return $months[$monthStartNum] . ' ' . $yearStart;
+                }
+
+                // Mois différents mais même année (ex: Janvier - Février 2026 / January - February 2026)
+                if ($yearStart === $yearEnd) {
+                    return $months[$monthStartNum] . ' - ' . $months[$monthEndNum] . ' ' . $yearStart;
+                }
+
+                // Années différentes (ex: Décembre 2025 - Janvier 2026)
+                return $months[$monthStartNum] . ' ' . $yearStart . ' - ' . $months[$monthEndNum] . ' ' . $yearEnd;
+            }
+        }
+
+        // Période par défaut si aucune date de début/fin n'est définie : Mois et Année de la date courante (date serveur)
+        $lang = \App\Core\Locale::get();
+        $currentMonthNum = (int) date('n');
+        $currentYear     = date('Y');
+
+        $monthsFr = [
+            1 => 'Janvier', 2 => 'Février', 3 => 'Mars', 4 => 'Avril',
+            5 => 'Mai', 6 => 'Juin', 7 => 'Juillet', 8 => 'Août',
+            9 => 'Septembre', 10 => 'Octobre', 11 => 'Novembre', 12 => 'Décembre'
+        ];
+
+        $monthsEn = [
+            1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
+            5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',
+            9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December'
+        ];
+
+        $months = ($lang === 'en') ? $monthsEn : $monthsFr;
+
+        return $months[$currentMonthNum] . ' ' . $currentYear;
+    }
+
+    /**
+     * Récupère les classes accessibles avec leur code de type d'enseignement, optionnellement filtrées par type.
+     */
+    protected function getAccessibleClassesWithTeachingType(?int $teachingTypeId = null): array
+    {
+        $params = [];
+        $whereTt = "";
+        if ($teachingTypeId && $teachingTypeId > 0) {
+            $whereTt = " WHERE c.teaching_type_id = ? ";
+            $params[] = $teachingTypeId;
+        }
+
         if (in_array(Session::get('user_role'), ['superadmin', 'admin'], true)) {
-            $stmt = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id, tt.code as teaching_type_code 
-                                      FROM classes c 
-                                      LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id 
-                                      ORDER BY c.nom ASC");
+            $sql = "SELECT c.id, c.nom, c.teaching_type_id, tt.code as teaching_type_code 
+                    FROM classes c 
+                    LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id 
+                    {$whereTt}
+                    ORDER BY c.nom ASC";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
         $academicYearId = $this->getActiveAcademicYear()['id'] ?? 0;
-        $stmt = $this->db->prepare("SELECT DISTINCT c.id, c.nom, c.teaching_type_id, tt.code as teaching_type_code
+        $sql = "SELECT DISTINCT c.id, c.nom, c.teaching_type_id, tt.code as teaching_type_code
             FROM teacher_assignments ta
             JOIN classes c ON c.id = ta.class_id
             LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id
-            WHERE ta.user_id = ? AND ta.academic_year_id = ?
-            ORDER BY c.nom ASC");
-        $stmt->execute([(int) Session::get('user_id'), $academicYearId]);
+            WHERE ta.user_id = ? AND ta.academic_year_id = ?" . ($teachingTypeId > 0 ? " AND c.teaching_type_id = ?" : "") . "
+            ORDER BY c.nom ASC";
+        
+        $paramsUser = [(int) Session::get('user_id'), $academicYearId];
+        if ($teachingTypeId > 0) {
+            $paramsUser[] = $teachingTypeId;
+        }
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($paramsUser);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -172,6 +284,7 @@ class ProcesVerbalController extends BulletinController
         $classeId   = (int) ($_GET['class_id'] ?? 0);
         $sequenceId = (int) ($_GET['sequence_id'] ?? 0);
         $anneeId    = (int) ($_GET['academic_year_id'] ?? 0);
+        $reqTtId    = (int) ($_GET['teaching_type_id'] ?? 0);
 
         $sequence = $this->getSequenceById($sequenceId);
         if (!$this->canAccessClass($classeId) || !$sequence || !(int) $sequence['is_active']) {
@@ -182,6 +295,14 @@ class ProcesVerbalController extends BulletinController
         $annee      = $this->resolveAcademicYear($anneeId);
         $eleves     = $this->getStudentsByClass($classeId);
         $classeInfo = $this->getClassInfo($classeId);
+        $classTtId  = (int) ($classeInfo['teaching_type_id'] ?? 0);
+
+        if ($reqTtId > 0 && $classTtId > 0 && $reqTtId !== $classTtId) {
+            header("Location: /proces-verbal");
+            exit;
+        }
+
+        $teachingTypeId = $reqTtId > 0 ? $reqTtId : $classTtId;
 
         if (empty($eleves)) {
             header("Location: /proces-verbal");
@@ -198,7 +319,7 @@ class ProcesVerbalController extends BulletinController
 
         $contexte = [
             'typeEvaluation' => __('pv_sequence'),
-            'periodeLabel'   => htmlspecialchars($sequence['label']),
+            'periodeLabel'   => $this->formatPeriodeEvaluation($sequence),
             'classeNom'      => htmlspecialchars($classeInfo['nom'] ?? '-'),
             'specialiteNom'  => htmlspecialchars($classeInfo['nom'] ?? '-'),
             'niveauNom'      => htmlspecialchars(!empty($classeInfo['niveau_nom']) ? $classeInfo['niveau_nom'] : '-'),
@@ -209,7 +330,8 @@ class ProcesVerbalController extends BulletinController
             'anneeNom'       => htmlspecialchars($annee['nom'] ?? '-'),
             'dateGeneration' => date('d/m/Y'),
             'effectif'       => count($eleves),
-            'institution'    => $this->getInstitutionSettings(),
+            'teaching_type_id' => $teachingTypeId,
+            'institution'    => $this->getInstitutionSettings($teachingTypeId),
         ];
 
         $nomFichier = $this->genererNomFichierPV($classeInfo['nom'] ?? 'classe', $sequence['label']);
@@ -226,6 +348,7 @@ class ProcesVerbalController extends BulletinController
         $classeId  = (int) ($_GET['class_id'] ?? 0);
         $trimestre = (int) ($_GET['term'] ?? 0);
         $anneeId   = (int) ($_GET['academic_year_id'] ?? 0);
+        $reqTtId   = (int) ($_GET['teaching_type_id'] ?? 0);
 
         if (!$this->canAccessClass($classeId) || !in_array($trimestre, [1, 2, 3], true)) {
             header("Location: /proces-verbal");
@@ -235,6 +358,14 @@ class ProcesVerbalController extends BulletinController
         $annee              = $this->resolveAcademicYear($anneeId);
         $eleves             = $this->getStudentsByClass($classeId);
         $classeInfo         = $this->getClassInfo($classeId);
+        $classTtId          = (int) ($classeInfo['teaching_type_id'] ?? 0);
+
+        if ($reqTtId > 0 && $classTtId > 0 && $reqTtId !== $classTtId) {
+            header("Location: /proces-verbal");
+            exit;
+        }
+
+        $teachingTypeId = $reqTtId > 0 ? $reqTtId : $classTtId;
         $sequencesTrimestre = $this->getActiveSequencesByTerm($trimestre);
 
         if (empty($eleves)) {
@@ -250,9 +381,21 @@ class ProcesVerbalController extends BulletinController
             $donneesPV['statsClasseLmd'] = $this->calculerStatsLmd($donneesPV['matriceEleves'], $donneesPV['matieres'], count($eleves));
         }
 
+        // Si des séquences existent pour le trimestre, déduire la plage globale
+        $seqMin = null;
+        $seqMax = null;
+        if (!empty($sequencesTrimestre)) {
+            $starts = array_filter(array_column($sequencesTrimestre, 'start_date'));
+            $ends   = array_filter(array_column($sequencesTrimestre, 'end_date'));
+            $seqMin = !empty($starts) ? min($starts) : null;
+            $seqMax = !empty($ends) ? max($ends) : null;
+        }
+
+        $dummySequence = ($seqMin || $seqMax) ? ['start_date' => $seqMin, 'end_date' => $seqMax] : null;
+
         $contexte = [
             'typeEvaluation' => __('pv_trimestre') . ' ' . $trimestre,
-            'periodeLabel'   => __('Trimestre') . ' ' . $trimestre,
+            'periodeLabel'   => $this->formatPeriodeEvaluation($dummySequence),
             'classeNom'      => htmlspecialchars($classeInfo['nom'] ?? '-'),
             'specialiteNom'  => htmlspecialchars($classeInfo['nom'] ?? '-'),
             'niveauNom'      => htmlspecialchars(!empty($classeInfo['niveau_nom']) ? $classeInfo['niveau_nom'] : '-'),
@@ -263,7 +406,8 @@ class ProcesVerbalController extends BulletinController
             'anneeNom'       => htmlspecialchars($annee['nom'] ?? '-'),
             'dateGeneration' => date('d/m/Y'),
             'effectif'       => count($eleves),
-            'institution'    => $this->getInstitutionSettings(),
+            'teaching_type_id' => $teachingTypeId,
+            'institution'    => $this->getInstitutionSettings($teachingTypeId),
         ];
 
         $nomFichier = $this->genererNomFichierPV($classeInfo['nom'] ?? 'classe', 'trimestre-' . $trimestre);
@@ -279,6 +423,7 @@ class ProcesVerbalController extends BulletinController
     {
         $classeId = (int) ($_GET['class_id'] ?? 0);
         $anneeId  = (int) ($_GET['academic_year_id'] ?? 0);
+        $reqTtId  = (int) ($_GET['teaching_type_id'] ?? 0);
 
         if (!$this->canAccessClass($classeId)) {
             header("Location: /proces-verbal");
@@ -288,6 +433,14 @@ class ProcesVerbalController extends BulletinController
         $annee      = $this->resolveAcademicYear($anneeId);
         $eleves     = $this->getStudentsByClass($classeId);
         $classeInfo = $this->getClassInfo($classeId);
+        $classTtId  = (int) ($classeInfo['teaching_type_id'] ?? 0);
+
+        if ($reqTtId > 0 && $classTtId > 0 && $reqTtId !== $classTtId) {
+            header("Location: /proces-verbal");
+            exit;
+        }
+
+        $teachingTypeId = $reqTtId > 0 ? $reqTtId : $classTtId;
 
         if (empty($eleves)) {
             header("Location: /proces-verbal");
@@ -304,7 +457,7 @@ class ProcesVerbalController extends BulletinController
 
         $contexte = [
             'typeEvaluation' => __('pv_annuel'),
-            'periodeLabel'   => __('pv_annuel'),
+            'periodeLabel'   => $this->formatPeriodeEvaluation(null),
             'classeNom'      => htmlspecialchars($classeInfo['nom'] ?? '-'),
             'specialiteNom'  => htmlspecialchars($classeInfo['nom'] ?? '-'),
             'niveauNom'      => htmlspecialchars(!empty($classeInfo['niveau_nom']) ? $classeInfo['niveau_nom'] : '-'),
@@ -315,7 +468,8 @@ class ProcesVerbalController extends BulletinController
             'anneeNom'       => htmlspecialchars($annee['nom'] ?? '-'),
             'dateGeneration' => date('d/m/Y'),
             'effectif'       => count($eleves),
-            'institution'    => $this->getInstitutionSettings(),
+            'teaching_type_id' => $teachingTypeId,
+            'institution'    => $this->getInstitutionSettings($teachingTypeId),
         ];
 
         $nomFichier = $this->genererNomFichierPV($classeInfo['nom'] ?? 'classe', 'annuel');

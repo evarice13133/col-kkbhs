@@ -22,25 +22,69 @@
                             placeholder="Code" value="<?= htmlspecialchars((string) ($settings['school_code'] ?? '')) ?>" required>
                     </div>
                 </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('creation_decree_label') ?></label>
+                    <input type="text" name="creation_decree" class="form-control premium-input" 
+                        placeholder="<?= __('creation_decree_placeholder') ?>"
+                        value="<?= htmlspecialchars((string) ($settings['creation_decree'] ?? '')) ?>">
+                </div>
             </div>
 
             <div class="col-md-5 mt-md-0">
-                <div class="p-4 border-theme-dynamic rounded-4 bg-soft-light text-center h-100 d-flex flex-column justify-content-center align-items-center">
-                    <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-2 d-block"><?= __('institution_logo') ?></label>
-                    <div class="position-relative mb-3 group-hover">
-                        <?php 
-                        $db = \App\Core\Database::getInstance()->getConnection();
-                        $logoManager = \App\Core\LogoManager::getInstance($db);
-                        ?>
-                        <?php if ($logoManager->hasLogo()): ?>
-                            <img src="<?= $logoManager->getLogoBase64() ?>" alt="Logo" class="img-fluid rounded-4 shadow-sm border border-theme-light" style="max-height: 100px; min-width: 100px; object-fit: contain;">
-                        <?php else: ?>
-                            <div class="avatar-init bg-soft-primary text-primary rounded-4 d-flex align-items-center justify-content-center shadow-sm" style="width: 100px; height: 100px;">
-                                <i class="bi bi-image fs-1 opacity-25"></i>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="p-3 border-theme-dynamic rounded-4 bg-soft-light text-center d-flex flex-column justify-content-center align-items-center">
+                            <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-2 d-block"><?= __('institution_logo') ?></label>
+                            <div class="position-relative mb-2 group-hover">
+                                <?php 
+                                $db = \App\Core\Database::getInstance()->getConnection();
+                                $currentTtId = $currentTeachingTypeId ?? null;
+                                $logoManager = \App\Core\LogoManager::getInstance($db, $currentTtId);
+                                ?>
+                                <?php if ($logoManager->hasLogo()): ?>
+                                    <img src="<?= $logoManager->getLogoBase64() ?>" alt="Logo" class="img-fluid rounded-4 shadow-sm border border-theme-light" style="max-height: 80px; min-width: 80px; object-fit: contain;">
+                                <?php else: ?>
+                                    <div class="avatar-init bg-soft-primary text-primary rounded-4 d-flex align-items-center justify-content-center shadow-sm" style="width: 80px; height: 80px;">
+                                        <i class="bi bi-image fs-1 opacity-25"></i>
+                                    </div>
+                                <?php endif; ?>
                             </div>
-                        <?php endif; ?>
+                            <input type="file" name="school_logo" class="form-control premium-input-sm border-theme-light shadow-none" accept="image/*">
+                        </div>
                     </div>
-                    <input type="file" name="school_logo" class="form-control premium-input-sm border-theme-light shadow-none" accept="image/*">
+
+                    <?php 
+                    // Vérifier si le type d'enseignement actif est Supérieur LMD (ou code LMD)
+                    $isLmdTt = false;
+                    if (!empty($teachingTypes) && !empty($currentTeachingTypeId)) {
+                        foreach ($teachingTypes as $tt) {
+                            if ((int)$tt['id'] === (int)$currentTeachingTypeId && ($tt['code'] === 'LMD' || strpos(strtolower($tt['nom']), 'lmd') !== false)) {
+                                $isLmdTt = true;
+                                break;
+                            }
+                        }
+                    }
+                    ?>
+                    <?php if ($isLmdTt): ?>
+                    <div class="col-12">
+                        <div class="p-3 border-theme-dynamic rounded-4 bg-soft-light text-center d-flex flex-column justify-content-center align-items-center">
+                            <label class="form-label text-primary fw-bold extra-small text-uppercase mb-2 d-block">
+                                <i class="bi bi-patch-check me-1"></i> <?= __('tutelage_logo') ?>
+                            </label>
+                            <div class="position-relative mb-2 group-hover">
+                                <?php $tutelageLogo = $settings['tutelage_logo'] ?? ''; ?>
+                                <?php if (!empty($tutelageLogo)): ?>
+                                    <img src="<?= htmlspecialchars($tutelageLogo) ?>" alt="Logo Tutelle" class="img-fluid rounded-4 shadow-sm border border-theme-light" style="max-height: 80px; min-width: 80px; object-fit: contain;">
+                                <?php else: ?>
+                                    <div class="avatar-init bg-soft-info text-info rounded-4 d-flex align-items-center justify-content-center shadow-sm" style="width: 80px; height: 80px;">
+                                        <i class="bi bi-building fs-1 opacity-25"></i>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                            <input type="file" name="tutelage_logo" class="form-control premium-input-sm border-theme-light shadow-none" accept="image/*">
+                        </div>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
 
