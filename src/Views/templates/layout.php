@@ -270,7 +270,7 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
     <meta property="og:image" content="https://notemaster.camertech.com/public/img/og-image.jpg">
 
     <!-- Structured Data (JSON-LD) -->
-    <script type="application/ld+json">
+    <script type="application/ld+json"> 
     {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
@@ -853,7 +853,7 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
     <script src="/public/js/ux-improvements.js?v=<?= $asset_version ?>"></script>
     
     <!-- Assistant IA (Convocore) -->
-    <div id="VG_OVERLAY_CONTAINER"></div>
+    <!-- <div id="VG_OVERLAY_CONTAINER"></div>
     <script>
         (function() {
             window.VG_CONFIG = {
@@ -875,7 +875,7 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
             VG_SCRIPT.src = "https://cdn.convocore.ai/vg_live_build/vg_bundle.js";
             document.body.appendChild(VG_SCRIPT);
         })();
-    </script>
+    </script> -->
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
