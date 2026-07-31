@@ -1709,43 +1709,15 @@ class BulletinController
         }
     }
 
-    protected function getInstitutionSettings()
+    protected function getInstitutionSettings(?int $teachingTypeId = null)
     {
-        $defaults = [
-            'school_republic' => 'Republique du Cameroun',
-            'school_republic_en' => 'Republic of Cameroon',
-            'school_ministry' => 'Ministere des Enseignements Secondaires',
-            'school_ministry_en' => 'Ministry of Secondary Education',
-            'school_slogan' => 'Discipline - Travail - Succes',
-            'school_slogan_en' => 'Discipline - Work - Success',
-            'school_motto' => 'Paix - Travail - Patrie',
-            'school_motto_en' => 'Peace - Work - Fatherland',
-            'school_logo' => '',
-            'school_code' => 'CMR-COL',
-            'school_po_box' => '',
-            'school_phone' => '',
-            'school_fax' => '',
-            'school_email' => '',
-            'school_website' => '',
-        ];
+        $settingsStore = new \App\Services\SettingsStore($this->db, $teachingTypeId);
+        $defaults = $settingsStore->all($teachingTypeId);
 
-        try {
-            $this->db->exec("CREATE TABLE IF NOT EXISTS settings (setting_key VARCHAR(50) PRIMARY KEY, setting_value TEXT)");
-            $stmt = $this->db->query("SELECT setting_key, setting_value FROM settings");
-            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-                $defaults[$row['setting_key']] = $row['setting_value'];
-            }
-        } catch (\Throwable $e) {
-        }
-
-        // Transformation du logo en Base64 pour Dompdf (plus fiable que les URLs/chemins)
-        if (!empty($defaults['school_logo'])) {
-            $logoPath = __DIR__ . '/../../public/' . ltrim($defaults['school_logo'], '/');
-            if (file_exists($logoPath)) {
-                $type = pathinfo($logoPath, PATHINFO_EXTENSION);
-                $data = file_get_contents($logoPath);
-                $defaults['school_logo_base64'] = 'data:image/' . $type . ';base64,' . base64_encode($data);
-            }
+        $logoManager = \App\Core\LogoManager::getInstance($this->db, $teachingTypeId);
+        if ($logoManager->hasLogo()) {
+            $defaults['school_logo'] = $logoManager->getLogoUrl();
+            $defaults['school_logo_base64'] = $logoManager->getLogoBase64();
         }
 
         return $defaults;

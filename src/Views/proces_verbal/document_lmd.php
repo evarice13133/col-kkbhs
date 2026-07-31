@@ -17,7 +17,8 @@ $totalChunks = max(1, count($chunks));
 
 // Logo institutionnel
 $db = \App\Core\Database::getInstance()->getConnection();
-$logoManager = \App\Core\LogoManager::getInstance($db);
+$teachingTypeId = (int) ($contexte['teaching_type_id'] ?? 0);
+$logoManager = \App\Core\LogoManager::getInstance($db, $teachingTypeId > 0 ? $teachingTypeId : null);
 $logoData = [
     'has_logo' => $logoManager->hasLogo(),
     'base64' => $logoManager->hasLogo() ? $logoManager->getLogoBase64() : '',
@@ -69,52 +70,105 @@ $lang = \App\Core\Locale::get();
         }
         .pv-page-container:last-child { page-break-after: auto; }
 
-        /* En-tête LMD officiel */
-        .pv-header { display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 6px; margin-bottom: 8px; }
-        .header-side { width: 38%; text-align: center; font-size: 8px; text-transform: uppercase; line-height: 1.35; font-weight: 700; }
-        .header-center { width: 24%; text-align: center; }
-        .school-logo { width: 50px; height: 50px; object-fit: contain; }
-        .school-name { font-size: 12px; font-weight: 900; text-transform: uppercase; margin-top: 4px; }
+        /* En-tête LMD 3 colonnes institutionnelles */
+        .pv-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 2px solid #000; 
+            padding-bottom: 6px; 
+            margin-bottom: 8px; 
+        }
+        .header-side-lmd { 
+            width: 38%; 
+            text-align: center; 
+            font-size: 8px; 
+            line-height: 1.3; 
+        }
+        .header-side-lmd .school-title {
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            color: #000;
+        }
+        .header-side-lmd .decree-text {
+            font-style: italic;
+            font-size: 7.5px;
+            color: #1e293b;
+            margin-top: 1px;
+            margin-bottom: 2px;
+        }
+        .header-side-lmd .contact-info {
+            font-size: 7.5px;
+            font-weight: 600;
+            color: #334155;
+        }
+        .header-center-lmd { 
+            width: 28%; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            gap: 14px; 
+        }
+        .header-center-lmd img { 
+            max-height: 70px; 
+            max-width: 90px; 
+            width: auto;
+            height: auto;
+            object-fit: contain; 
+            image-rendering: high-quality;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+            -ms-interpolation-mode: bicubic;
+        }
 
-        /* Cartouche des informations LMD */
+        /* Cartouche des informations LMD (sans bordure) */
         .lmd-info-card {
-            border: 1.5px solid #000;
-            background: #f8fafc;
-            padding: 6px 10px;
-            margin-bottom: 8px;
-            border-radius: 4px;
+            border: none;
+            background: transparent;
+            padding: 4px 0;
+            margin-bottom: 10px;
+            text-align: center;
         }
         .lmd-info-title {
             text-align: center;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 900;
             text-transform: uppercase;
-            text-decoration: underline;
-            margin-bottom: 6px;
+            margin-bottom: 2px;
+            color: #0f172a;
         }
-        .lmd-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 4px 12px;
-            font-size: 8.5px;
-        }
-        .lmd-item {
-            display: flex;
-            align-items: baseline;
-        }
-        .lmd-label {
+        .lmd-info-subtitle {
+            text-align: center;
+            font-size: 10px;
             font-weight: 800;
             text-transform: uppercase;
-            margin-right: 4px;
+            margin-bottom: 6px;
+            color: #1e293b;
+            letter-spacing: 0.3px;
+        }
+        .lmd-single-line-info {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px 12px;
+            font-size: 8.5px;
+            padding-top: 2px;
+        }
+        .lmd-info-item {
             white-space: nowrap;
         }
-        .lmd-val {
+        .lmd-info-item .lbl {
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+        .lmd-info-item .val {
             font-weight: 700;
-            border-bottom: 1px dotted #000;
-            flex: 1;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        }
+        .lmd-info-sep {
+            color: #94a3b8;
+            font-weight: bold;
         }
 
         /* Tableau Principal LMD : Bordures visibles (1px solid #000) et toutes lignes en GRAS */
@@ -192,12 +246,12 @@ $lang = \App\Core\Locale::get();
             text-transform: uppercase;
         }
 
-        /* Section Légende */
+        /* Section Légende (sans cadre global, sous-blocs avec bordures noires bien visibles) */
         .legend-container {
-            border: 1.5px solid #000;
-            border-radius: 4px;
-            padding: 5px;
-            background: #fafafa;
+            border: none;
+            border-radius: 0;
+            padding: 2px 0;
+            background: transparent;
             margin-bottom: 8px;
             font-size: 7.5px;
         }
@@ -215,16 +269,17 @@ $lang = \App\Core\Locale::get();
         }
         .legend-box {
             background: white;
-            border: 1px solid #cbd5e1;
-            padding: 4px;
+            border: 1.5px solid #000000;
+            padding: 5px 7px;
             border-radius: 3px;
         }
         .legend-box-title {
-            font-weight: 800;
+            font-weight: 900;
             font-size: 8px;
             margin-bottom: 3px;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid #000000;
             padding-bottom: 2px;
+            text-transform: uppercase;
         }
         .legend-list {
             list-style: none;
@@ -235,21 +290,27 @@ $lang = \App\Core\Locale::get();
             margin-bottom: 2px;
             line-height: 1.2;
         }
+        .legend-inline-text {
+            font-size: 7.5px;
+            line-height: 1.35;
+            color: #1e293b;
+        }
 
-        /* Section Signatures */
+        /* Section Signatures sans cadre et dynamique après la légende */
         .signatures-grid {
             display: flex;
             justify-content: space-between;
-            margin-top: auto;
-            padding-top: 6px;
+            margin-top: 12px;
+            padding-top: 4px;
+            page-break-inside: avoid;
         }
         .sig-card {
-            width: 42%;
-            border: 1.5px solid #000;
-            height: 65px;
-            padding: 5px;
+            width: 45%;
+            border: none;
+            background: transparent;
+            padding: 0;
             text-align: center;
-            border-radius: 4px;
+            min-height: 50px;
         }
         .sig-title {
             font-weight: 900;
@@ -257,16 +318,17 @@ $lang = \App\Core\Locale::get();
             text-transform: uppercase;
             text-decoration: underline;
             display: block;
+            margin-bottom: 25px;
         }
 
-        /* Footer minimal */
+        /* Footer minimal (ancré en bas de page) */
         .minimal-footer {
             font-size: 7.5px;
             color: #4a5568;
             display: flex;
             justify-content: space-between;
             border-top: 1px dashed #000;
-            margin-top: 6px;
+            margin-top: auto;
             padding-top: 3px;
         }
         .page-num::after { counter-increment: page_counter; content: "PAGE : " counter(page_counter) " / <?= $totalChunks ?>"; font-weight: bold; }
@@ -293,45 +355,88 @@ $lang = \App\Core\Locale::get();
     <?php foreach ($chunks as $chunkIndex => $currentChunk): ?>
         <div class="pv-page-container">
             
-            <!-- EN-TÊTE OFFICIEL BILINGUE -->
+            <!-- EN-TÊTE OFFICIEL SUPÉRIEUR LMD (3 COLONNES INSTITUTIONNELLES) -->
             <header class="pv-header">
-                <div class="header-side">
-                    <div><?= htmlspecialchars($contexte['institution']['school_republic'] ?? 'REPUBLIQUE DU CAMEROUN') ?></div>
-                    <div style="font-style: italic;"><?= htmlspecialchars($contexte['institution']['school_motto'] ?? 'Paix - Travail - Patrie') ?></div>
-                    <div>**********</div>
-                    <div><?= htmlspecialchars($contexte['institution']['school_ministry'] ?? 'MINISTERE DE L\'ENSEIGNEMENT SUPERIEUR') ?></div>
-                </div>
-                <div class="header-center">
-                    <?php if ($logoData['has_logo'] && !empty($logoData['base64'])): ?>
-                        <img src="<?= htmlspecialchars($logoData['base64']) ?>" class="school-logo" alt="Logo">
-                    <?php elseif ($logoData['has_logo'] && !empty($logoData['url'])): ?>
-                        <img src="<?= htmlspecialchars($logoData['url']) ?>" class="school-logo" alt="Logo">
+                <!-- Colonne gauche -->
+                <div class="header-side-lmd">
+                    <div style="font-weight: 800; font-size: 7.5px; text-transform: uppercase;"><?= htmlspecialchars($contexte['institution']['school_republic'] ?? 'REPUBLIQUE DU CAMEROUN') ?></div>
+                    <div style="font-size: 7px; font-style: italic; font-weight: bold; margin-bottom: 1px;"><?= htmlspecialchars($contexte['institution']['school_motto'] ?? 'Paix - Travail - Patrie') ?></div>
+                    <div style="font-size: 7px; font-style: italic;"><?= htmlspecialchars($contexte['institution']['school_ministry'] ?? 'MINISTERE DE L\'ENSEIGNEMENT SUPERIEUR') ?></div>
+                    <div class="school-title"><?= htmlspecialchars($contexte['institution']['school_name'] ?? 'NotesMaster') ?></div>
+                    <?php if (!empty($contexte['institution']['creation_decree'])): ?>
+                        <div class="decree-text"><?= htmlspecialchars($contexte['institution']['creation_decree']) ?></div>
                     <?php endif; ?>
-                    <div class="school-name"><?= htmlspecialchars($contexte['institution']['school_name'] ?? 'NotesMaster') ?></div>
+                    <div class="contact-info">
+                        <?php 
+                        $contactsFr = [];
+                        if (!empty($contexte['institution']['school_email'])) $contactsFr[] = 'Email : ' . htmlspecialchars($contexte['institution']['school_email']);
+                        if (!empty($contexte['institution']['school_phone'])) $contactsFr[] = 'Tél : ' . htmlspecialchars($contexte['institution']['school_phone']);
+                        if (!empty($contexte['institution']['school_city']))  $contactsFr[] = htmlspecialchars($contexte['institution']['school_city']);
+                        echo implode(' - ', $contactsFr);
+                        ?>
+                    </div>
+                    <?php if (!empty($contexte['institution']['school_website'])): ?>
+                        <div class="website-info" style="font-size: 7.5px; font-style: italic; margin-top: 1px;">
+                            Site Web : <u style="font-weight: bold;"><?= htmlspecialchars($contexte['institution']['school_website']) ?></u>
+                        </div>
+                    <?php endif; ?>
                 </div>
-                <div class="header-side">
-                    <div><?= htmlspecialchars($contexte['institution']['school_republic_en'] ?? 'REPUBLIC OF CAMEROON') ?></div>
-                    <div style="font-style: italic;"><?= htmlspecialchars($contexte['institution']['school_motto_en'] ?? 'Peace - Work - Fatherland') ?></div>
-                    <div>**********</div>
-                    <div><?= htmlspecialchars($contexte['institution']['school_ministry_en'] ?? 'MINISTRY OF HIGHER EDUCATION') ?></div>
+
+                <!-- Colonne centrale : Logo Tutelle & Logo Établissement -->
+                <div class="header-center-lmd">
+                    <?php if (!empty($contexte['institution']['tutelage_logo'])): ?>
+                        <img src="<?= htmlspecialchars($contexte['institution']['tutelage_logo']) ?>" alt="Logo Tutelle" title="Tutelle">
+                    <?php endif; ?>
+                    <?php if ($logoData['has_logo'] && !empty($logoData['base64'])): ?>
+                        <img src="<?= htmlspecialchars($logoData['base64']) ?>" alt="Logo Établissement">
+                    <?php elseif ($logoData['has_logo'] && !empty($logoData['url'])): ?>
+                        <img src="<?= htmlspecialchars($logoData['url']) ?>" alt="Logo Établissement">
+                    <?php endif; ?>
+                </div>
+
+                <!-- Colonne droite -->
+                <div class="header-side-lmd">
+                    <div style="font-weight: 800; font-size: 7.5px; text-transform: uppercase;"><?= htmlspecialchars($contexte['institution']['school_republic_en'] ?? 'REPUBLIC OF CAMEROON') ?></div>
+                    <div style="font-size: 7px; font-style: italic; font-weight: bold; margin-bottom: 1px;"><?= htmlspecialchars($contexte['institution']['school_motto_en'] ?? 'Peace - Work - Fatherland') ?></div>
+                    <div style="font-size: 7px; font-style: italic;"><?= htmlspecialchars($contexte['institution']['school_ministry_en'] ?? 'MINISTRY OF HIGHER EDUCATION') ?></div>
+                    <div class="school-title"><?= htmlspecialchars($contexte['institution']['school_name'] ?? 'NotesMaster') ?></div>
+                    <?php if (!empty($contexte['institution']['creation_decree'])): ?>
+                        <div class="decree-text"><?= htmlspecialchars($contexte['institution']['creation_decree']) ?></div>
+                    <?php endif; ?>
+                    <div class="contact-info">
+                        <?php 
+                        $contactsEn = [];
+                        if (!empty($contexte['institution']['school_email'])) $contactsEn[] = 'Email: ' . htmlspecialchars($contexte['institution']['school_email']);
+                        if (!empty($contexte['institution']['school_phone'])) $contactsEn[] = 'Tel: ' . htmlspecialchars($contexte['institution']['school_phone']);
+                        if (!empty($contexte['institution']['school_po_box'])) $contactsEn[] = 'P.O Box: ' . htmlspecialchars($contexte['institution']['school_po_box']);
+                        echo implode(' - ', $contactsEn);
+                        ?>
+                    </div>
+                    <?php if (!empty($contexte['institution']['school_website'])): ?>
+                        <div class="website-info" style="font-size: 7.5px; font-style: italic; margin-top: 1px;">
+                            Website: <u style="font-weight: bold;"><?= htmlspecialchars($contexte['institution']['school_website']) ?></u>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </header>
 
             <!-- CARTOUCHE DES INFORMATIONS LMD -->
             <div class="lmd-info-card">
-                <div class="lmd-info-title"><?= __('pv_document_title') ?> - SUPÉRIEUR LMD</div>
-                <div class="lmd-grid">
-                    <div class="lmd-item"><span class="lmd-label"><?= __('pv_specialty') ?> :</span><span class="lmd-val"><?= htmlspecialchars($contexte['specialiteNom']) ?></span></div>
-                    <div class="lmd-item"><span class="lmd-label"><?= __('pv_level') ?> :</span><span class="lmd-val"><?= htmlspecialchars($contexte['niveauNom']) ?></span></div>
-                    <div class="lmd-item"><span class="lmd-label"><?= __('pv_cycle') ?> :</span><span class="lmd-val"><?= htmlspecialchars($contexte['cycleNom']) ?></span></div>
-                    <div class="lmd-item"><span class="lmd-label"><?= __('pv_department') ?> :</span><span class="lmd-val"><?= htmlspecialchars($contexte['departementNom']) ?></span></div>
-                    
-                    <div class="lmd-item"><span class="lmd-label"><?= __('pv_filiere') ?> :</span><span class="lmd-val"><?= htmlspecialchars($contexte['filiereNom']) ?></span></div>
-                    <div class="lmd-item"><span class="lmd-label"><?= __('year') ?> :</span><span class="lmd-val"><?= htmlspecialchars($contexte['anneeNom']) ?></span></div>
-                    <div class="lmd-item"><span class="lmd-label"><?= __('pv_eval_code') ?> :</span><span class="lmd-val"><?= htmlspecialchars($contexte['codeEvaluation']) ?></span></div>
-                    <div class="lmd-item"><span class="lmd-label"><?= __('pv_eval_label') ?> :</span><span class="lmd-val"><?= htmlspecialchars($contexte['libelleEvaluation'] ?? $contexte['typeEvaluation']) ?></span></div>
-                    <div class="lmd-item"><span class="lmd-label"><?= __('pv_period') ?> :</span><span class="lmd-val"><?= htmlspecialchars($contexte['periodeLabel']) ?></span></div>
-                    <div class="lmd-item"><span class="lmd-label"><?= __('pv_session') ?> :</span><span class="lmd-val"><?= htmlspecialchars($contexte['sessionNom'] ?? '-') ?></span></div>
+                <div class="lmd-info-title"><?= __('pv_lmd_summary_title') ?> <?= htmlspecialchars(mb_strtoupper($contexte['libelleEvaluation'] ?? $contexte['typeEvaluation'], 'UTF-8')) ?></div>
+                <div class="lmd-info-subtitle"><?= __('pv_session_of') ?> : <?= htmlspecialchars(mb_strtoupper($contexte['periodeLabel'], 'UTF-8')) ?></div>
+                
+                <div class="lmd-single-line-info">
+                    <span class="lmd-info-item"><span class="lbl"><?= __('pv_specialty') ?> :</span> <span class="val"><?= htmlspecialchars($contexte['specialiteNom']) ?></span></span>
+                    <span class="lmd-info-sep">|</span>
+                    <span class="lmd-info-item"><span class="lbl"><?= __('pv_level') ?> :</span> <span class="val"><?= htmlspecialchars($contexte['niveauNom']) ?></span></span>
+                    <span class="lmd-info-sep">|</span>
+                    <span class="lmd-info-item"><span class="lbl"><?= __('pv_cycle') ?> :</span> <span class="val"><?= htmlspecialchars($contexte['cycleNom']) ?></span></span>
+                    <span class="lmd-info-sep">|</span>
+                    <span class="lmd-info-item"><span class="lbl"><?= __('pv_department') ?> :</span> <span class="val"><?= htmlspecialchars($contexte['departementNom']) ?></span></span>
+                    <span class="lmd-info-sep">|</span>
+                    <span class="lmd-info-item"><span class="lbl"><?= __('year') ?> :</span> <span class="val"><?= htmlspecialchars($contexte['anneeNom']) ?></span></span>
+                    <span class="lmd-info-sep">|</span>
+                    <span class="lmd-info-item"><span class="lbl"><?= __('pv_effectif') ?> :</span> <span class="val"><?= (int)$contexte['effectif'] ?> <?= ($lang === 'en') ? 'student(s)' : 'étudiant(s)' ?></span></span>
                 </div>
             </div>
 
@@ -513,14 +618,18 @@ $lang = \App\Core\Locale::get();
                     <div class="legend-grid">
                         <div class="legend-box">
                             <div class="legend-box-title"><?= __('pv_teaching_codes') ?></div>
-                            <ul class="legend-list">
-                                <?php foreach ($matieres as $m): ?>
-                                    <li>
-                                        <strong><?= htmlspecialchars($m['code_ue'] ?? $m['code'] ?? ('UE' . $m['id'])) ?></strong> : 
-                                        <?= htmlspecialchars($m['nom']) ?> (<strong>CR : <?= (float)($m['coefficient'] ?? 1) ?></strong>)
-                                    </li>
-                                <?php endforeach; ?>
-                            </ul>
+                            <div class="legend-inline-text">
+                                <?php 
+                                    $items = [];
+                                    foreach ($matieres as $m) {
+                                        $code = htmlspecialchars($m['code_ue'] ?? $m['code'] ?? ('UE' . $m['id']));
+                                        $nom  = htmlspecialchars($m['nom']);
+                                        $cr   = (float)($m['coefficient'] ?? 1);
+                                        $items[] = "<strong>{$code}</strong> : {$nom} (<strong>CR : {$cr}</strong>)";
+                                    }
+                                    echo implode(' ; &nbsp; ', $items);
+                                ?>
+                            </div>
                         </div>
                         <div class="legend-box">
                             <div class="legend-box-title"><?= __('pv_symbols_meaning') ?></div>

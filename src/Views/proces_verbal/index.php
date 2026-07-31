@@ -32,6 +32,23 @@ ob_start();
                         </select>
                     </div>
 
+                    <?php if (!empty($teachingTypes)): ?>
+                        <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-3 py-1 flex-grow-1">
+                            <span class="input-group-text border-0 bg-transparent text-primary small fw-bold text-uppercase me-2">
+                                <?= __('Type d\'enseignement') ?>
+                            </span>
+                            <select name="teaching_type_id" class="form-select border-0 bg-transparent shadow-none fw-bold text-main"
+                                onchange="this.form.class_id.value=''; this.form.submit();">
+                                <option value=""><?= __('Tous les types') ?></option>
+                                <?php foreach ($teachingTypes as $tt): ?>
+                                    <option value="<?= $tt['id'] ?>" <?= (int)$teachingTypeId === (int)$tt['id'] ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($tt['nom']) ?> (<?= htmlspecialchars($tt['code']) ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    <?php endif; ?>
+
                     <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-3 py-1 flex-grow-1">
                         <span class="input-group-text border-0 bg-transparent text-primary small fw-bold text-uppercase me-2">
                             <?= __('class') ?>
@@ -64,6 +81,7 @@ ob_start();
                     <!-- FORMULAIRE SPÉCIFIQUE : SUPÉRIEUR LMD (Génération par Évaluation uniquement) -->
                     <form id="lmdPvForm" target="_blank" action="/proces-verbal/evaluation" method="GET">
                         <input type="hidden" name="academic_year_id" value="<?= (int) $anneeId ?>">
+                        <input type="hidden" name="teaching_type_id" value="<?= (int) $teachingTypeId ?>">
                         <input type="hidden" name="class_id" value="<?= (int) $classeId ?>">
 
                         <div class="flow-step mb-5">
@@ -93,6 +111,7 @@ ob_start();
                     <!-- FORMULAIRE SEC00 / SECONDAIRE (Séquence, Trimestre, Annuel) -->
                     <form id="unifiedPvForm" target="_blank" action="#" method="GET">
                         <input type="hidden" name="academic_year_id" value="<?= (int) $anneeId ?>">
+                        <input type="hidden" name="teaching_type_id" value="<?= (int) $teachingTypeId ?>">
                         <input type="hidden" name="class_id" value="<?= (int) $classeId ?>">
 
                         <!-- ÉTAPE 1 : Type de PV -->

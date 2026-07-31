@@ -99,6 +99,7 @@ class SettingController
                 'allow_teacher_registration',
                 'matricule_format',
                 'matricule_counter',
+                'creation_decree',
                 'backup_enabled',
                 'backup_push_enabled',
                 'backup_storage_path',
@@ -154,6 +155,7 @@ class SettingController
 
             $this->settingsStore->setMany($updates, $teachingTypeId);
             $this->handleImageUpload('school_logo', $teachingTypeId);
+            $this->handleImageUpload('tutelage_logo', $teachingTypeId);
             $this->handleImageUpload('principal_signature', $teachingTypeId);
             $this->handleImageUpload('school_stamp', $teachingTypeId);
             (new ActivityTracker($this->db))->recordSettingsUpdate();
@@ -240,7 +242,12 @@ class SettingController
 
     private function handleImageUpload($fieldName, ?int $teachingTypeId = null)
     {
-        if (!isset($_FILES[$fieldName]) || $_FILES[$fieldName]['error'] !== UPLOAD_ERR_OK) {
+        if (!isset($_FILES[$fieldName]) || $_FILES[$fieldName]['error'] === UPLOAD_ERR_NO_FILE) {
+            return;
+        }
+
+        if ($_FILES[$fieldName]['error'] !== UPLOAD_ERR_OK) {
+            Session::set('error_msg', \__('upload_failed_error', ['code' => $_FILES[$fieldName]['error']]));
             return;
         }
 
@@ -250,19 +257,33 @@ class SettingController
         }
 
         $fileTmp = $_FILES[$fieldName]['tmp_name'];
+        $extension = strtolower(pathinfo($_FILES[$fieldName]['name'], PATHINFO_EXTENSION));
+        $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+
+        if (!in_array($extension, $allowedExtensions, true)) {
+            Session::set('error_msg', "Format d'image non supporté. Extensions autorisées : JPG, PNG, WEBP, GIF, SVG.");
+            return;
+        }
+
         $fileName = time() . '_' . preg_replace("/[^a-zA-Z0-9.\-_]/", "", basename($_FILES[$fieldName]['name']));
         $destPath = $uploadDir . $fileName;
-        $fileType = mime_content_type($fileTmp);
+        $fileType = @mime_content_type($fileTmp);
 
-        if ($fileType && strpos($fileType, 'image/') === 0 && move_uploaded_file($fileTmp, $destPath)) {
-            $webPath = '/public/uploads/' . $fileName;
-            
-            if ($fieldName === 'school_logo') {
-                $logoManager = LogoManager::getInstance($this->db, $teachingTypeId);
-                $logoManager->updateLogo($webPath, $teachingTypeId);
+        if (($fileType && strpos($fileType, 'image/') === 0) || $fileType === 'image/svg+xml') {
+            if (move_uploaded_file($fileTmp, $destPath)) {
+                $webPath = '/public/uploads/' . $fileName;
+                
+                if ($fieldName === 'school_logo') {
+                    $logoManager = LogoManager::getInstance($this->db, $teachingTypeId);
+                    $logoManager->updateLogo($webPath, $teachingTypeId);
+                } else {
+                    $this->settingsStore->set($fieldName, $webPath, $teachingTypeId);
+                }
             } else {
-                $this->settingsStore->set($fieldName, $webPath, $teachingTypeId);
+                Session::set('error_msg', "Impossible de déplacer le fichier téléversé dans public/uploads. Vérifiez les permissions.");
             }
+        } else {
+            Session::set('error_msg', "Le fichier téléversé n'est pas une image valide.");
         }
     }
 }

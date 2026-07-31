@@ -36,7 +36,8 @@ $minAvg = !empty($allAverages) ? min($allAverages) : 0;
 // --- 1.4 Récupération sécurisée du logo institutionnel via le LogoManager ---
 // Utilisation du format Base64 ou de l'URL pour assurer l'affichage même lors de l'impression hors-ligne.
 $db = \App\Core\Database::getInstance()->getConnection();
-$logoManager = \App\Core\LogoManager::getInstance($db);
+$teachingTypeId = (int) ($contexte['teaching_type_id'] ?? 0);
+$logoManager = \App\Core\LogoManager::getInstance($db, $teachingTypeId > 0 ? $teachingTypeId : null);
 $logoData = [
     'has_logo' => $logoManager->hasLogo(),
     'base64' => $logoManager->hasLogo() ? $logoManager->getLogoBase64() : '',
