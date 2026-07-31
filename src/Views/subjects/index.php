@@ -1,75 +1,105 @@
-<?php $title = __('subjects');
-ob_start(); ?>
+<?php 
+$title = __('subjects') ?? 'Matières';
+ob_start(); 
 
-<div class="animate-fade-in container-fluid py-3 px-2 px-md-4">
+$canManage = \App\Core\PermissionManager::hasPermission('manage_subjects') || in_array(App\Core\Session::get('user_role'), ['superadmin', 'admin']);
+?>
 
-    <!-- Boutons d'Action Principaux (Au-dessus du filtre) -->
-    <?php if (\App\Core\PermissionManager::hasPermission('manage_subjects')): ?>
-    <div class="d-flex justify-content-center mb-3">
-        <div class="d-flex gap-2">
-            <a href="/subjects/create" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm text-nowrap">
-                <i class="bi bi-plus-circle me-1"></i> <?= __('add_subject') ?>
-            </a>
-            <button type="button" class="btn btn-outline-success rounded-pill px-4 fw-bold shadow-sm text-nowrap" data-bs-toggle="modal" data-bs-target="#importSubjectsModal">
-                <i class="bi bi-upload me-1"></i> <?= __('import') ?>
-            </button>
+<div class="animate-fade-in container-fluid py-3 px-md-4">
+
+    <!-- EN-TÊTE DE PAGE : Style Glassmorphism Premium avec support Mode Sombre -->
+    <div class="dept-header-card mb-4 p-3 p-md-4 rounded-4 shadow-sm position-relative overflow-hidden">
+        <div class="dept-header-bg"></div>
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between w-100 gap-3 position-relative" style="z-index: 2;">
+            <div class="d-flex align-items-center gap-3">
+                <div class="dept-icon-wrapper rounded-4 d-flex align-items-center justify-content-center flex-shrink-0">
+                    <i class="bi bi-journal-bookmark-fill fs-4 text-primary"></i>
+                </div>
+                <div>
+                    <h1 class="fw-black fs-4 text-main-theme mb-1 lh-1">
+                        <?= __('subjects') ?? 'Matières & Disciplines' ?>
+                    </h1>
+                    <p class="text-muted-theme mb-0 fw-medium opacity-75" style="font-size: 0.88rem;">
+                        <?= __('lang') === 'en' ? 'Manage subjects, coefficients and academic groups' : 'Gérez les matières, coefficients et groupes de cours de l\'établissement' ?>
+                    </p>
+                </div>
+            </div>
+            
+            <div class="d-flex flex-row w-100 w-md-auto justify-content-end ms-md-auto gap-2 mt-2 mt-md-0">
+                <a href="/subjects/export?<?= http_build_query($filters) ?>" class="btn btn-light-theme rounded-pill px-3 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 scale-on-hover" title="<?= __('export_list') ?? 'Exporter PDF' ?>">
+                    <i class="bi bi-file-earmark-pdf text-danger fs-6"></i>
+                    <span class="d-none d-sm-inline"><?= __('export') ?? 'Exporter' ?></span>
+                </a>
+                <?php if ($canManage): ?>
+                <button type="button" class="btn btn-light-theme rounded-pill px-3 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 scale-on-hover" data-bs-toggle="modal" data-bs-target="#importSubjectsModal">
+                    <i class="bi bi-file-earmark-spreadsheet text-success fs-6"></i> 
+                    <span><?= __('import') ?? 'Importer' ?></span>
+                </button>
+                <a href="/subjects/create" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm flex-grow-1 flex-md-grow-0 d-flex justify-content-center align-items-center gap-2 text-nowrap scale-on-hover">
+                    <i class="bi bi-plus-lg"></i> 
+                    <span><?= __('add_subject') ?? 'Ajouter une matière' ?></span>
+                </a>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
-    <?php endif; ?>
 
-    <!-- BARRE DE FILTRES : Style Floating Island -->
-    <div class="d-flex justify-content-center mb-4 mb-md-5">
-        <div class="filter-island px-2 px-md-3 py-2 shadow-lg animate-slide-down w-100" style="max-width: 95%;">
-            <form method="GET" class="d-flex align-items-center gap-2 flex-wrap flex-md-nowrap filter-form w-100">
+    <!-- BARRE DE FILTRES ET RECHERCHE INSTANTANÉE -->
+    <div class="filter-island-container mb-4">
+        <div class="filter-island p-3 rounded-4 shadow-sm">
+            <form method="GET" action="/subjects" id="subject-filter-form" class="filter-form w-100 m-0">
+                <div class="d-flex flex-column flex-md-row gap-3 align-items-md-center justify-content-between">
 
-                <!-- Barre de Recherche -->
-                <div class="flex-grow-1 d-flex gap-2 flex-wrap flex-md-nowrap w-100">
-                    <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-2 flex-grow-1">
-                        <span class="input-group-text border-0 bg-transparent text-primary">
-                            <i class="bi bi-search"></i>
-                        </span>
-                        <input type="text" name="q" class="form-control border-0 bg-transparent shadow-none py-2 text-main"
-                            value="<?= htmlspecialchars((string) $filters['q']) ?>"
-                            placeholder="<?= __('subject_name') ?>...">
+                    <div class="d-flex flex-column flex-sm-row gap-2 flex-grow-1 flex-wrap">
+                        <!-- Recherche instantanée -->
+                        <div class="dept-search-pill flex-grow-1 position-relative" style="min-width: 200px;">
+                            <i class="bi bi-search search-icon"></i>
+                            <input type="text" name="q" id="search-input" class="form-control dept-filter-input ps-5"
+                                value="<?= htmlspecialchars((string) ($filters['q'] ?? '')) ?>"
+                                placeholder="<?= __('search') ?? 'Rechercher' ?> (<?= __('subject_name') ?? 'Intitulé de la matière' ?>)...">
+                        </div>
+
+                        <!-- Type Enseignement -->
+                        <div class="dept-select-wrapper flex-grow-1" style="min-width: 150px; max-width: 190px;">
+                            <select name="teaching_type_id" id="filter_teaching_type" class="form-select dept-filter-select">
+                                <option value=""><?= __('all_teaching_types') ?? 'Tous les Types' ?></option>
+                                <?php foreach ($teachingTypes as $tt): ?>
+                                    <option value="<?= $tt['id'] ?>" <?= (int) ($filters['teaching_type_id'] ?? 0) === (int) $tt['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $tt['nom']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <!-- Département -->
+                        <div class="dept-select-wrapper flex-grow-1" style="min-width: 150px; max-width: 190px;">
+                            <select name="department_id" id="filter_department" class="form-select dept-filter-select">
+                                <option value=""><?= __('all_departments') ?? 'Tous les départements' ?></option>
+                                <?php foreach ($departments as $dept): ?>
+                                    <option value="<?= $dept['id'] ?>" data-teaching-type="<?= $dept['teaching_type_id'] ?? '' ?>" <?= (int) ($filters['department_id'] ?? 0) === (int) $dept['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $dept['nom']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <!-- Classe -->
+                        <div class="dept-select-wrapper flex-grow-1" style="min-width: 150px; max-width: 190px;">
+                            <select name="class_id" id="filter_class" class="form-select dept-filter-select">
+                                <option value=""><?= __('all_classes') ?? 'Toutes les classes' ?></option>
+                                <?php foreach ($classes as $class): ?>
+                                    <option value="<?= $class['id'] ?>" data-teaching-type="<?= $class['teaching_type_id'] ?? '' ?>" <?= (int) ($filters['class_id'] ?? 0) === (int) $class['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $class['nom']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                     </div>
-                    <!-- Type Enseignement -->
-                    <select name="teaching_type_id" id="filter_teaching_type" class="form-select border-0 bg-white bg-opacity-10 shadow-none py-2 text-main rounded-pill px-3 flex-shrink-0" style="max-width: 150px; min-width: 120px;">
-                        <option value="">Tous les Types</option>
-                        <?php foreach ($teachingTypes as $tt): ?>
-                            <option value="<?= $tt['id'] ?>" <?= (int) ($filters['teaching_type_id'] ?? 0) === (int) $tt['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $tt['nom']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
 
-                    <!-- Département -->
-                    <select name="department_id" id="filter_department" class="form-select border-0 bg-white bg-opacity-10 shadow-none py-2 text-main rounded-pill px-3 flex-shrink-0" style="max-width: 160px; min-width: 130px;">
-                        <option value=""><?= __('all_departments') ?? 'Tous les départements' ?></option>
-                        <?php foreach ($departments as $dept): ?>
-                            <option value="<?= $dept['id'] ?>" data-teaching-type="<?= $dept['teaching_type_id'] ?? '' ?>" <?= (int) ($filters['department_id'] ?? 0) === (int) $dept['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $dept['nom']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
+                    <!-- Actions Filtre -->
+                    <div class="d-flex gap-2 align-items-center justify-content-end">
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm text-nowrap scale-on-hover">
+                            <i class="bi bi-funnel-fill me-1"></i> <?= __('filter') ?? 'Filtrer' ?>
+                        </button>
+                        <a href="/subjects" class="btn btn-light-theme rounded-circle p-2 d-flex align-items-center justify-content-center reset-btn scale-on-hover" style="width: 42px; height: 42px;" title="<?= __('reset') ?? 'Réinitialiser' ?>">
+                            <i class="bi bi-arrow-counterclockwise fs-5"></i>
+                        </a>
+                    </div>
 
-                    <!-- Classe -->
-                    <select name="class_id" id="filter_class" class="form-select border-0 bg-white bg-opacity-10 shadow-none py-2 text-main rounded-pill px-3 flex-shrink-0" style="max-width: 150px; min-width: 120px;">
-                        <option value=""><?= __('all_classes') ?></option>
-                        <?php foreach ($classes as $class): ?>
-                            <option value="<?= $class['id'] ?>" data-teaching-type="<?= $class['teaching_type_id'] ?? '' ?>" <?= (int) $filters['class_id'] === (int) $class['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $class['nom']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <!-- Filtres et Utilitaires -->
-                <div class="d-flex gap-2 align-items-center ps-md-2 flex-shrink-0">
-                    <button type="submit" class="btn btn-primary rounded-pill px-3 px-md-4 fw-bold shadow-sm text-nowrap">
-                        <i class="bi bi-funnel-fill d-inline d-md-none"></i>
-                        <span class="d-none d-md-inline"><?= __('filter') ?></span>
-                    </button>
-                    <a href="/subjects" class="btn btn-light rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;" title="<?= __('reset') ?>">
-                        <i class="bi bi-arrow-counterclockwise"></i>
-                    </a>
-                    <a href="/subjects/export?<?= http_build_query($filters) ?>"
-                        class="btn-export-minimal shadow-sm" style="width: 38px; height: 38px;" title="<?= __('export_list') ?>">
-                        <i class="bi bi-file-earmark-pdf"></i>
-                    </a>
                 </div>
             </form>
         </div>
@@ -249,16 +279,13 @@ ob_start(); ?>
                     </ul>
                 </nav>
             </div>
-        <?php endif; ?>
-    </div>
-
-    <!-- MODALE IMPORT EXCEL MATIÈRES -->
+        <?php endif; ?>    <!-- MODALE IMPORT EXCEL MATIÈRES -->
     <div class="modal fade" id="importSubjectsModal" tabindex="-1" aria-labelledby="importSubjectsModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered">
-            <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+            <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden" style="background: var(--bg-card);">
                 <div class="modal-header border-bottom border-theme-light p-4 bg-success bg-opacity-10">
                     <h5 class="modal-title fw-black text-main-theme" id="importSubjectsModalLabel">
-                        <i class="bi bi-file-earmark-spreadsheet-fill me-2 text-success"></i><?= __('import_subjects') ?>
+                        <i class="bi bi-file-earmark-spreadsheet-fill me-2 text-success"></i><?= __('import_subjects') ?? 'Importer des matières' ?>
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -271,46 +298,137 @@ ob_start(); ?>
 </div>
 
 <style>
-    /* Floating Island Filters */
+    .dept-header-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-theme);
+        backdrop-filter: blur(16px);
+        transition: all 0.3s ease;
+    }
+
+    [data-theme="dark"] .dept-header-card {
+        background: rgba(30, 41, 59, 0.7);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .dept-header-bg {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 320px;
+        height: 100%;
+        background: radial-gradient(circle at top right, rgba(var(--primary-rgb, 59, 130, 246), 0.15), transparent 70%);
+        pointer-events: none;
+    }
+
+    .dept-icon-wrapper {
+        width: 52px;
+        height: 52px;
+        background: rgba(var(--primary-rgb, 59, 130, 246), 0.12);
+        border: 1px solid rgba(var(--primary-rgb, 59, 130, 246), 0.2);
+        box-shadow: inset 0 0 12px rgba(var(--primary-rgb, 59, 130, 246), 0.1);
+    }
+
+    .scale-on-hover {
+        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+    }
+
+    .scale-on-hover:hover {
+        transform: translateY(-2px) scale(1.02);
+    }
+
+    /* Filter Bar High Contrast Styles */
     .filter-island {
-        background: rgba(var(--bg-card-rgb), 0.7);
-        backdrop-filter: blur(20px) saturate(180%);
-        border: 1px solid rgba(var(--primary-rgb), 0.15);
-        border-radius: 100px;
-        min-width: 70%;
+        background: var(--bg-card, #ffffff);
+        border: 1px solid var(--border-theme, #e2e8f0);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
         transition: all 0.3s ease;
     }
 
     [data-theme="dark"] .filter-island {
-        background: rgba(30, 30, 45, 0.6);
-        border-color: rgba(255, 255, 255, 0.08);
+        background: rgba(30, 41, 59, 0.7);
+        border-color: rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.25);
     }
 
-    .filter-island:focus-within {
-        border-color: var(--primary-color);
-        box-shadow: 0 15px 35px -10px rgba(var(--primary-rgb), 0.25);
-        transform: translateY(-2px);
-    }
-
-    .btn-export-minimal {
-        width: 40px;
-        height: 40px;
+    .dept-search-pill {
         display: flex;
         align-items: center;
-        justify-content: center;
-        border-radius: 12px;
-        background: var(--bg-card);
-        color: #f1c40f;
-        border: 1px solid rgba(241, 196, 15, 0.2);
-        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        text-decoration: none !important;
     }
 
-    .btn-export-minimal:hover {
-        background: #f1c40f;
-        color: white !important;
-        transform: scale(1.1) rotate(8deg);
-        box-shadow: 0 8px 20px rgba(241, 196, 15, 0.3);
+    .search-icon {
+        position: absolute;
+        left: 14px;
+        color: var(--primary-color, #3b82f6);
+        font-size: 1rem;
+        z-index: 5;
+        pointer-events: none;
+    }
+
+    .dept-filter-input {
+        background: var(--bg-body, #f8fafc) !important;
+        border: 1px solid var(--border-theme, #cbd5e1) !important;
+        color: var(--text-main, #0f172a) !important;
+        border-radius: 50px !important;
+        padding: 10px 16px 10px 42px !important;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+
+    .dept-filter-input:focus {
+        border-color: var(--primary-color) !important;
+        box-shadow: 0 0 0 3px rgba(var(--primary-rgb, 59, 130, 246), 0.15) !important;
+    }
+
+    [data-theme="dark"] .dept-filter-input {
+        background: rgba(15, 23, 42, 0.6) !important;
+        border-color: rgba(255, 255, 255, 0.12) !important;
+        color: #f8fafc !important;
+    }
+
+    .dept-filter-select {
+        background-color: var(--bg-body, #f8fafc) !important;
+        border: 1px solid var(--border-theme, #cbd5e1) !important;
+        color: var(--text-main, #0f172a) !important;
+        border-radius: 50px !important;
+        padding: 10px 20px !important;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+
+    .dept-filter-select:focus {
+        border-color: var(--primary-color) !important;
+        box-shadow: 0 0 0 3px rgba(var(--primary-rgb, 59, 130, 246), 0.15) !important;
+    }
+
+    [data-theme="dark"] .dept-filter-select {
+        background-color: rgba(15, 23, 42, 0.6) !important;
+        border-color: rgba(255, 255, 255, 0.12) !important;
+        color: #f8fafc !important;
+    }
+
+    .dept-filter-select option, select.premium-input option {
+        background-color: #ffffff;
+        color: #0f172a;
+        padding: 10px;
+    }
+
+    [data-theme="dark"] .dept-filter-select option, [data-theme="dark"] select.premium-input option {
+        background-color: #1e293b !important;
+        color: #f8fafc !important;
+    }
+
+    .btn-light-theme {
+        background: var(--bg-body, #f1f5f9);
+        color: var(--text-main, #334155);
+        border: 1px solid var(--border-theme, #cbd5e1);
+    }
+
+    [data-theme="dark"] .btn-light-theme {
+        background: rgba(255, 255, 255, 0.1);
+        color: #f8fafc;
+        border-color: rgba(255, 255, 255, 0.12);
     }
 
     /* Animations */
@@ -357,7 +475,7 @@ ob_start(); ?>
 
     /* Thème sombre pour le tableau des matières */
     [data-theme="dark"] .modern-card {
-        background: rgba(30, 30, 45, 0.6);
+        background: rgba(30, 41, 59, 0.7);
         border-color: rgba(255, 255, 255, 0.08);
     }
 
@@ -398,9 +516,29 @@ ob_start(); ?>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const filterForm = document.getElementById('subject-filter-form');
+    const searchInput = document.getElementById('search-input');
     const filterTT = document.getElementById('filter_teaching_type');
     const filterDept = document.getElementById('filter_department');
     const filterClass = document.getElementById('filter_class');
+    let debounceTimer;
+
+    if (searchInput && filterForm) {
+        searchInput.addEventListener('input', function () {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                filterForm.submit();
+            }, 400);
+        });
+    }
+
+    [filterTT, filterDept, filterClass].forEach(selectEl => {
+        if (selectEl && filterForm) {
+            selectEl.addEventListener('change', function () {
+                filterForm.submit();
+            });
+        }
+    });
 
     if (!filterTT || !filterClass) return;
 
@@ -435,7 +573,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 2. Filtrer les Classes
         const currentClassId = filterClass.value;
-        filterClass.innerHTML = '<option value=""><?= addslashes(__('all_classes')) ?></option>';
+        filterClass.innerHTML = '<option value=""><?= addslashes(__('all_classes') ?? 'Toutes les classes') ?></option>';
         let classValid = false;
 
         originalClasses.forEach(opt => {
@@ -546,6 +684,8 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(err => console.error('Error refreshing subjects list:', err));
     }
+});
+</script>    }
 });
 </script>
 

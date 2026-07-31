@@ -1,100 +1,161 @@
-<?php $title = __('academic_sections'); ob_start(); ?>
+<?php 
+$title = __('academic_sections') ?? 'Sections d\'Enseignement'; 
+ob_start(); 
 
-<div class="animate-fade-in container-fluid py-4">
-    
-    <!-- BARRE D'ACTIONS COMPLÈTE : Style Floating Island -->
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-column flex-md-row gap-3">
-        <div>
-            <h1 class="fw-black fs-4 text-main-theme mb-1 lh-1">
-                <?= __('academic_sections') ?>
-            </h1>
-            <p class="text-muted-theme mb-0 small opacity-75">
-                Gérez les sections d'enseignement de l'établissement
-            </p>
+$canManage = \App\Core\PermissionManager::hasPermission('manage_sections') || in_array(App\Core\Session::get('user_role'), ['superadmin', 'admin']);
+$filters = [
+    'q' => $q ?? '',
+    'status' => $status ?? ''
+];
+?>
+
+<div class="animate-fade-in container-fluid py-3 px-md-4">
+
+    <!-- EN-TÊTE DE PAGE : Style Glassmorphism Premium avec support Mode Sombre -->
+    <div class="dept-header-card mb-4 p-3 p-md-4 rounded-4 shadow-sm position-relative overflow-hidden">
+        <div class="dept-header-bg"></div>
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between w-100 gap-3 position-relative" style="z-index: 2;">
+            <div class="d-flex align-items-center gap-3">
+                <div class="dept-icon-wrapper rounded-4 d-flex align-items-center justify-content-center flex-shrink-0">
+                    <i class="bi bi-grid-3x3-gap fs-4 text-primary"></i>
+                </div>
+                <div>
+                    <h1 class="fw-black fs-4 text-main-theme mb-1 lh-1">
+                        <?= __('academic_sections') ?? 'Sections d\'Enseignement' ?>
+                    </h1>
+                    <p class="text-muted-theme mb-0 fw-medium opacity-75" style="font-size: 0.88rem;">
+                        <?= __('lang') === 'en' ? 'Manage educational sections and language subsytems' : 'Gérez les sections d\'enseignement et sous-systèmes linguistiques de l\'établissement' ?>
+                    </p>
+                </div>
+            </div>
+            
+            <?php if ($canManage): ?>
+            <div class="d-flex flex-row w-100 w-md-auto justify-content-end ms-md-auto gap-2 mt-2 mt-md-0">
+                <button type="button" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm flex-grow-1 flex-md-grow-0 d-flex justify-content-center align-items-center gap-2 text-nowrap scale-on-hover" onclick="openCreateSectionModal()">
+                    <i class="bi bi-plus-lg"></i> 
+                    <span><?= __('add_section') ?? 'Ajouter une section' ?></span>
+                </button>
+            </div>
+            <?php endif; ?>
         </div>
-        
-        <?php if (\App\Core\PermissionManager::hasPermission('manage_sections')): ?>
-            <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm scale-on-hover text-nowrap" onclick="openCreateSectionModal()">
-                <i class="bi bi-plus-lg me-2"></i><?= __('add_section') ?>
-            </button>
-        <?php endif; ?>
     </div>
 
-    <!-- LISTE DES SECTIONS (Grille harmonisée sur le modèle cycles/index.php) -->
-    <div class="row g-2 g-md-4">
+    <!-- BARRE DE FILTRES ET RECHERCHE INSTANTANÉE -->
+    <div class="filter-island-container mb-4">
+        <div class="filter-island p-3 rounded-4 shadow-sm">
+            <form method="GET" action="/sections" id="section-filter-form" class="filter-form w-100 m-0">
+                <div class="d-flex flex-column flex-md-row gap-3 align-items-md-center justify-content-between">
+
+                    <div class="d-flex flex-column flex-sm-row gap-2 flex-grow-1">
+                        <!-- Recherche instantanée -->
+                        <div class="dept-search-pill flex-grow-1 position-relative">
+                            <i class="bi bi-search search-icon"></i>
+                            <input type="text" name="q" id="search-input" class="form-control dept-filter-input ps-5"
+                                value="<?= htmlspecialchars((string) ($filters['q'] ?? '')) ?>"
+                                placeholder="<?= __('search') ?? 'Rechercher' ?> (<?= __('section_name') ?? 'Nom de la section' ?>)...">
+                        </div>
+
+                        <!-- Statut -->
+                        <div class="dept-select-wrapper" style="min-width: 140px;">
+                            <select name="status" id="status-select" class="form-select dept-filter-select">
+                                <option value=""><?= __('all_status') ?? 'Tous les statuts' ?></option>
+                                <option value="1" <?= isset($filters['status']) && $filters['status'] === '1' ? 'selected' : '' ?>><?= __('active') ?? 'Actif' ?></option>
+                                <option value="0" <?= isset($filters['status']) && $filters['status'] === '0' ? 'selected' : '' ?>><?= __('inactive') ?? 'Inactif' ?></option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Actions Filtre -->
+                    <div class="d-flex gap-2 align-items-center justify-content-end">
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm text-nowrap scale-on-hover">
+                            <i class="bi bi-funnel-fill me-1"></i> <?= __('filter') ?? 'Filtrer' ?>
+                        </button>
+                        <a href="/sections" class="btn btn-light-theme rounded-circle p-2 d-flex align-items-center justify-content-center reset-btn scale-on-hover" style="width: 42px; height: 42px;" title="<?= __('reset') ?? 'Réinitialiser' ?>">
+                            <i class="bi bi-arrow-counterclockwise fs-5"></i>
+                        </a>
+                    </div>
+
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- GRILLE DES SECTIONS -->
+    <div class="row g-4" id="sections-grid">
         <?php foreach ($sections as $num => $section): ?>
-            <div class="col-6 col-sm-6 col-xl-3">
-                <div class="subject-card-compact border-theme-dynamic h-100 position-relative <?= ($section['status'] ?? 1) ? '' : 'opacity-75' ?>">
+            <div class="col-12 col-md-6 col-xl-4 section-card-item">
+                <div class="subject-card-compact border-theme-dynamic h-100 position-relative <?= ($canManage && !($section['status'] ?? 1)) ? 'opacity-75' : '' ?>">
                     <div class="subject-card-glow"></div>
-                    <div class="card-body p-3 h-100 position-relative" style="z-index: 1;">
-                        <div class="d-flex flex-column h-100 justify-content-between gap-2">
-                            <div>
-                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <div class="flex-shrink-0">
-                                            <div class="avatar-init bg-primary bg-opacity-10 text-primary fw-black rounded-circle d-flex align-items-center justify-content-center shadow-sm"
-                                                style="width: 34px; height: 34px; font-size: 0.9rem;">
-                                                <i class="bi bi-grid-3x3-gap"></i>
-                                            </div>
-                                        </div>
-                                        <div class="overflow-hidden">
-                                            <h6 class="fw-bold lh-1 text-main-theme m-0 text-truncate"
-                                                style="font-size: 0.9rem;"
-                                                title="<?= htmlspecialchars((string) $section['nom']) ?>">
-                                                <?= htmlspecialchars((string) $section['nom']) ?>
-                                            </h6>
-                                            <div class="extra-small text-muted-theme opacity-75 text-truncate"
-                                                style="font-size: 0.72rem;">
+                    <div class="card-body p-4 position-relative d-flex flex-column justify-content-between h-100" style="z-index: 1;">
+                        <div>
+                            <div class="d-flex align-items-start justify-content-between mb-3">
+                                <div class="d-flex align-items-center gap-3 overflow-hidden">
+                                    <div class="avatar-init bg-primary bg-opacity-10 text-primary fw-black rounded-4 d-flex align-items-center justify-content-center shadow-sm flex-shrink-0"
+                                        style="width: 54px; height: 54px; font-size: 1.2rem;">
+                                        <i class="bi bi-grid-3x3-gap"></i>
+                                    </div>
+                                    <div class="overflow-hidden">
+                                        <h5 class="fw-black m-0 text-main-theme text-truncate" title="<?= htmlspecialchars((string) $section['nom']) ?>">
+                                            <?= htmlspecialchars((string) $section['nom']) ?>
+                                        </h5>
+                                        <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
+                                            <span class="badge bg-soft-primary text-primary extra-small fw-bold px-2 py-1 rounded-pill">
                                                 #<?= str_pad($num + 1, 2, '0', STR_PAD_LEFT) ?>
-                                            </div>
+                                            </span>
                                         </div>
                                     </div>
-                                    <div class="d-flex gap-1 align-items-center" style="z-index: 10;">
-                                        <?php if (\App\Core\PermissionManager::hasPermission('manage_sections')): ?>
-                                            <a href="/sections/toggle?id=<?= $section['id'] ?>"
-                                                class="btn-icon-action <?= ($section['status'] ?? 1) ? 'text-warning' : 'text-success' ?> position-relative"
-                                                style="z-index: 10; width: 30px; height: 30px; font-size: 0.85rem;"
-                                                title="<?= ($section['status'] ?? 1) ? 'Désactiver' : 'Activer' ?>">
-                                                <i class="bi <?= ($section['status'] ?? 1) ? 'bi-eye-slash-fill' : 'bi-eye-fill' ?>"></i>
-                                            </a>
-                                            <button type="button" class="btn-icon-action text-primary position-relative border-0 bg-transparent"
-                                                style="z-index: 10; width: 30px; height: 30px; font-size: 0.85rem;"
-                                                onclick="openEditSectionModal(<?= htmlspecialchars(json_encode([
-                                                    'id' => (int)$section['id'],
-                                                    'nom' => $section['nom']
-                                                ]), ENT_QUOTES, 'UTF-8') ?>)" title="<?= __('edit') ?>">
-                                                <i class="bi bi-pencil-fill"></i>
+                                </div>
+                                
+                                <?php if ($canManage): ?>
+                                <div class="dropdown flex-shrink-0">
+                                    <button class="btn btn-link text-muted p-0 shadow-none border-0" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-three-dots-vertical fs-5"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2">
+                                        <li>
+                                            <button type="button" class="dropdown-item dropdown-item-modern border-0 bg-transparent text-start w-100" onclick="openEditSectionModal(<?= htmlspecialchars(json_encode([
+                                                'id' => (int)$section['id'],
+                                                'nom' => $section['nom']
+                                            ]), ENT_QUOTES, 'UTF-8') ?>)">
+                                                <i class="bi bi-pencil text-primary"></i> <?= __('edit') ?? 'Modifier' ?>
                                             </button>
-                                            <?php if (\App\Core\Session::get('user_role') === 'superadmin'): ?>
-                                                <a href="/sections/delete?id=<?= $section['id'] ?>&csrf_token=<?= \App\Core\Session::generateCsrfToken() ?>"
-                                                    class="btn-icon-action text-danger position-relative btn-confirm-delete"
-                                                    style="z-index: 10; width: 30px; height: 30px; font-size: 0.85rem;"
-                                                    data-confirm="<?= __('confirm_delete_text') ?? 'Voulez-vous supprimer ?' ?>" title="<?= __('delete') ?>">
-                                                    <i class="bi bi-trash-fill"></i>
-                                                </a>
-                                            <?php endif; ?>
+                                        </li>
+                                        <li>
+                                            <button type="button" class="dropdown-item dropdown-item-modern border-0 bg-transparent text-start w-100" onclick="confirmToggleSection(<?= (int)$section['id'] ?>, <?= htmlspecialchars(json_encode($section['nom']), ENT_QUOTES, 'UTF-8') ?>, <?= ($section['status'] ?? 1) ? 'true' : 'false' ?>)">
+                                                <i class="bi <?= ($section['status'] ?? 1) ? 'bi-eye-slash text-warning' : 'bi-eye text-success' ?>"></i> 
+                                                <?= ($section['status'] ?? 1) ? 'Désactiver la section' : 'Activer la section' ?>
+                                            </button>
+                                        </li>
+                                        <?php if (App\Core\Session::get('user_role') === 'superadmin'): ?>
+                                        <li>
+                                            <a class="dropdown-item dropdown-item-modern text-danger border-0 bg-transparent text-start w-100 btn-confirm-delete"
+                                               href="/sections/delete?id=<?= $section['id'] ?>&csrf_token=<?= \App\Core\Session::generateCsrfToken() ?>"
+                                               data-confirm="<?= __('confirm_delete_text') ?? 'Voulez-vous supprimer cette section ?' ?>">
+                                                <i class="bi bi-trash text-danger"></i> <?= __('delete') ?? 'Supprimer' ?>
+                                            </a>
+                                        </li>
                                         <?php endif; ?>
-                                    </div>
+                                    </ul>
                                 </div>
-
-                                <!-- Info Badge Row -->
-                                <div class="mt-2 d-flex flex-wrap gap-1 align-items-center">
-                                    <?php if ($section['status'] ?? 1): ?>
-                                        <div class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-10 extra-small px-2 py-1 rounded-pill fw-bold">
-                                            <i class="bi bi-check-circle-fill me-1"></i><?= __('active') ?>
-                                        </div>
-                                    <?php else: ?>
-                                        <div class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-10 extra-small px-2 py-1 rounded-pill fw-bold">
-                                            <i class="bi bi-x-circle-fill me-1"></i><?= __('inactive') ?? 'Inactif' ?>
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
+                                <?php endif; ?>
                             </div>
+                        </div>
 
-                            <div class="mt-auto d-flex justify-content-end align-items-center position-relative" style="z-index: 1;">
-                                <div class="card-arrow-container">
-                                    <i class="bi bi-arrow-right-short text-primary opacity-50 fs-5"></i>
-                                </div>
+                        <div class="mt-4 pt-3 border-top border-theme-light d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-2">
+                                <?php if ($section['status'] ?? 1): ?>
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-10 rounded-pill extra-small px-3">
+                                        <i class="bi bi-check-circle-fill me-1"></i> <?= __('active') ?? 'Actif' ?>
+                                    </span>
+                                <?php else: ?>
+                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-10 rounded-pill extra-small px-3">
+                                        <i class="bi bi-x-circle-fill me-1"></i> <?= __('inactive') ?? 'Inactif' ?>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                            
+                            <div class="text-muted-theme extra-small opacity-75">
+                                <i class="bi bi-grid-3x3-gap me-1"></i> Section Académique
                             </div>
                         </div>
                     </div>
@@ -106,7 +167,11 @@
             <div class="col-12">
                 <div class="subject-card-compact p-5 text-center border-dashed">
                     <i class="bi bi-grid-3x3-gap fs-1 opacity-25 mb-3 d-block"></i>
-                    <h5 class="text-muted"><?= __('no_data') ?></h5>
+                    <h5 class="text-muted"><?= __('no_data') ?? 'Aucune donnée disponible' ?></h5>
+                    <?php if ($canManage): ?>
+                        <p class="small text-muted mb-4">Commencez par créer la première section d'enseignement de votre établissement.</p>
+                        <button type="button" class="btn btn-primary rounded-pill px-4" onclick="openCreateSectionModal()"><?= __('add_section') ?? 'Ajouter une section' ?></button>
+                    <?php endif; ?>
                 </div>
             </div>
         <?php endif; ?>
@@ -114,7 +179,7 @@
 </div>
 
 <!-- MODAL: Section (Création / Modification) -->
-<?php if (\App\Core\PermissionManager::hasPermission('manage_sections')): ?>
+<?php if ($canManage): ?>
 <div class="modal fade" id="sectionModal" tabindex="-1" aria-labelledby="sectionModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden" style="background: var(--bg-card);">
@@ -124,8 +189,8 @@
                         <i class="bi bi-grid-plus fs-4"></i>
                     </div>
                     <div>
-                        <h5 class="modal-title fw-black text-main-theme" id="sectionModalLabel"><?= __('add_section') ?></h5>
-                        <p class="text-muted-theme small mb-0 opacity-75" id="sectionModalSubtext">Détails de la section académique</p>
+                        <h5 class="modal-title fw-black text-main-theme" id="sectionModalLabel"><?= __('add_section') ?? 'Ajouter une section' ?></h5>
+                        <p class="text-muted-theme small mb-0 opacity-75" id="sectionModalSubtext">Formulaire de configuration de la section académique</p>
                     </div>
                 </div>
                 <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -134,9 +199,9 @@
             <form id="sectionForm" action="/sections/store" method="POST">
                 <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
                 <div class="modal-body p-4">
-                    <div class="mb-3">
+                    <div class="mb-4">
                         <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-2">
-                            <?= __('section_name') ?> <span class="text-danger">*</span>
+                            <?= __('section_name') ?? 'Nom de la Section' ?> <span class="text-danger">*</span>
                         </label>
                         <div class="input-group-modern">
                             <span class="input-group-text-modern"><i class="bi bi-fonts"></i></span>
@@ -148,10 +213,10 @@
 
                 <div class="modal-footer border-top-0 pt-0 px-4 pb-4 gap-2">
                     <button type="button" class="btn btn-light rounded-pill px-4 fw-bold scale-on-hover" data-bs-dismiss="modal">
-                        <?= __('cancel') ?>
+                        <?= __('cancel') ?? 'Annuler' ?>
                     </button>
                     <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm scale-on-hover">
-                        <i class="bi bi-check-circle-fill me-2"></i> <span id="sectionSubmitBtnText"><?= __('save') ?></span>
+                        <i class="bi bi-check-circle-fill me-2"></i> <span id="sectionSubmitBtnText"><?= __('save') ?? 'Enregistrer' ?></span>
                     </button>
                 </div>
             </form>
@@ -160,25 +225,193 @@
 </div>
 <?php endif; ?>
 
+<!-- MODAL: Confirmation de Désactivation / Activation -->
+<?php if ($canManage): ?>
+<div class="modal fade" id="confirmToggleModal" tabindex="-1" aria-labelledby="confirmToggleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden" style="background: var(--bg-card);">
+            <div class="modal-header border-bottom-0 pb-0 px-4 pt-4">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="avatar-init bg-warning bg-opacity-10 text-warning rounded-4 d-flex align-items-center justify-content-center shadow-sm" style="width: 44px; height: 44px;" id="toggleModalIcon">
+                        <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title fw-black text-main-theme" id="confirmToggleModalLabel">Désactiver la section</h5>
+                        <p class="text-muted-theme small mb-0 opacity-75" id="toggleModalSectionName"></p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body p-4">
+                <div class="alert alert-warning border-0 rounded-3 mb-0" id="toggleModalAlert">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    <span id="toggleModalMessage">
+                        Attention : La désactivation de cette section la masquera des sélecteurs et registres actifs.
+                    </span>
+                </div>
+            </div>
+
+            <div class="modal-footer border-top-0 pt-0 px-4 pb-4 gap-2">
+                <button type="button" class="btn btn-light rounded-pill px-4 fw-bold scale-on-hover" data-bs-dismiss="modal">
+                    <?= __('cancel') ?? 'Annuler' ?>
+                </button>
+                <a href="#" id="toggleConfirmBtn" class="btn btn-warning rounded-pill px-4 fw-bold shadow-sm scale-on-hover text-dark">
+                    <i class="bi bi-check-circle-fill me-1"></i> <span id="toggleConfirmBtnText">Confirmer</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
 <style>
-    .scale-on-hover:hover { transform: scale(1.05); }
+    .dept-header-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-theme);
+        backdrop-filter: blur(16px);
+        transition: all 0.3s ease;
+    }
+
+    [data-theme="dark"] .dept-header-card {
+        background: rgba(30, 41, 59, 0.7);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .dept-header-bg {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 320px;
+        height: 100%;
+        background: radial-gradient(circle at top right, rgba(var(--primary-rgb, 59, 130, 246), 0.15), transparent 70%);
+        pointer-events: none;
+    }
+
+    .dept-icon-wrapper {
+        width: 52px;
+        height: 52px;
+        background: rgba(var(--primary-rgb, 59, 130, 246), 0.12);
+        border: 1px solid rgba(var(--primary-rgb, 59, 130, 246), 0.2);
+        box-shadow: inset 0 0 12px rgba(var(--primary-rgb, 59, 130, 246), 0.1);
+    }
+
+    .scale-on-hover {
+        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+    }
+
+    .scale-on-hover:hover {
+        transform: translateY(-2px) scale(1.02);
+    }
+
+    /* Filter Bar High Contrast Styles */
+    .filter-island {
+        background: var(--bg-card, #ffffff);
+        border: 1px solid var(--border-theme, #e2e8f0);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+        transition: all 0.3s ease;
+    }
+
+    [data-theme="dark"] .filter-island {
+        background: rgba(30, 41, 59, 0.7);
+        border-color: rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.25);
+    }
+
+    .dept-search-pill {
+        display: flex;
+        align-items: center;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 14px;
+        color: var(--primary-color, #3b82f6);
+        font-size: 1rem;
+        z-index: 5;
+        pointer-events: none;
+    }
+
+    .dept-filter-input {
+        background: var(--bg-body, #f8fafc) !important;
+        border: 1px solid var(--border-theme, #cbd5e1) !important;
+        color: var(--text-main, #0f172a) !important;
+        border-radius: 50px !important;
+        padding: 10px 16px 10px 42px !important;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+
+    .dept-filter-input:focus {
+        border-color: var(--primary-color) !important;
+        box-shadow: 0 0 0 3px rgba(var(--primary-rgb, 59, 130, 246), 0.15) !important;
+    }
+
+    [data-theme="dark"] .dept-filter-input {
+        background: rgba(15, 23, 42, 0.6) !important;
+        border-color: rgba(255, 255, 255, 0.12) !important;
+        color: #f8fafc !important;
+    }
+
+    .dept-filter-select {
+        background-color: var(--bg-body, #f8fafc) !important;
+        border: 1px solid var(--border-theme, #cbd5e1) !important;
+        color: var(--text-main, #0f172a) !important;
+        border-radius: 50px !important;
+        padding: 10px 20px !important;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+
+    .dept-filter-select:focus {
+        border-color: var(--primary-color) !important;
+        box-shadow: 0 0 0 3px rgba(var(--primary-rgb, 59, 130, 246), 0.15) !important;
+    }
+
+    [data-theme="dark"] .dept-filter-select {
+        background-color: rgba(15, 23, 42, 0.6) !important;
+        border-color: rgba(255, 255, 255, 0.12) !important;
+        color: #f8fafc !important;
+    }
+
+    .dept-filter-select option, select.premium-input option {
+        background-color: #ffffff;
+        color: #0f172a;
+        padding: 10px;
+    }
+
+    [data-theme="dark"] .dept-filter-select option, [data-theme="dark"] select.premium-input option {
+        background-color: #1e293b !important;
+        color: #f8fafc !important;
+    }
+
+    .btn-light-theme {
+        background: var(--bg-body, #f1f5f9);
+        color: var(--text-main, #334155);
+        border: 1px solid var(--border-theme, #cbd5e1);
+    }
+
+    [data-theme="dark"] .btn-light-theme {
+        background: rgba(255, 255, 255, 0.1);
+        color: #f8fafc;
+        border-color: rgba(255, 255, 255, 0.12);
+    }
 
     .subject-card-compact {
         background: var(--bg-card);
         border-radius: 24px;
         border: 1px solid var(--border-theme) !important;
-        display: block;
-        text-decoration: none !important;
         transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
-        position: relative;
         overflow: hidden;
     }
 
-    [data-theme="dark"] .subject-card-compact {
-        background: rgba(255, 255, 255, 0.03);
-        backdrop-filter: blur(10px);
-        border-color: rgba(255, 255, 255, 0.08) !important;
+    .subject-card-compact:hover {
+        transform: translateY(-6px);
+        border-color: var(--primary-color) !important;
+        box-shadow: 0 16px 32px rgba(var(--primary-rgb), 0.12);
     }
 
     .subject-card-glow {
@@ -187,48 +420,47 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: radial-gradient(circle at top right, rgba(var(--primary-rgb), 0.15), transparent 70%);
+        background: radial-gradient(circle at top right, rgba(var(--primary-rgb), 0.1), transparent 70%);
         opacity: 0;
         transition: opacity 0.4s ease;
-    }
-
-    .subject-card-compact:hover {
-        transform: translateY(-8px) scale(1.02);
-        border-color: var(--primary-color) !important;
-        box-shadow: 0 20px 40px rgba(var(--primary-rgb), 0.12);
     }
 
     .subject-card-compact:hover .subject-card-glow {
         opacity: 1;
     }
 
-    .btn-icon-action {
-        width: 32px;
-        height: 32px;
+    .dropdown-item-modern {
+        border-radius: 10px;
+        padding: 8px 12px;
+        font-weight: 600;
+        font-size: 0.85rem;
         display: flex;
         align-items: center;
-        justify-content: center;
-        border-radius: 10px;
-        background: rgba(var(--primary-rgb), 0.05);
+        gap: 10px;
         transition: all 0.2s ease;
-        text-decoration: none !important;
-        font-size: 0.9rem;
     }
 
-    .btn-icon-action.text-danger {
-        background: rgba(220, 53, 69, 0.05);
-    }
-
-    .btn-icon-action:hover {
-        transform: scale(1.1);
-        background: var(--primary-color);
-        color: white !important;
+    .dropdown-item-modern:hover {
+        background-color: rgba(var(--primary-rgb), 0.08);
+        color: var(--primary-color);
+        transform: translateX(4px);
     }
 
     .avatar-init {
         font-family: 'Inter', sans-serif;
         letter-spacing: -1px;
     }
+
+    .animate-slide-down {
+        animation: slideDown 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    @keyframes slideDown {
+        from { transform: translateY(-15px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+
+    .border-dashed { border-style: dashed !important; border-width: 2px !important; }
 
     /* Modal Inputs & Contrast */
     .input-group-modern {
@@ -271,17 +503,58 @@
         font-size: 0.95rem;
     }
 
-    .border-dashed { border-style: dashed !important; border-width: 2px !important; }
+    select.premium-input {
+        height: 50px !important;
+        min-height: 50px !important;
+        padding-right: 25px !important;
+        cursor: pointer;
+    }
+
+    [data-theme="dark"] .premium-input {
+        color: #f8fafc !important;
+    }
+
+    [data-theme="dark"] .modal-content {
+        background: #1e293b !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: #f8fafc;
+    }
+
+    [data-theme="dark"] .btn-close {
+        filter: invert(1) grayscale(100%) brightness(200%);
+    }
 </style>
 
 <script>
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('search-input');
+    const statusSelect = document.getElementById('status-select');
+    const filterForm = document.getElementById('section-filter-form');
+    let debounceTimer;
+
+    if (searchInput && filterForm) {
+        searchInput.addEventListener('input', function () {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                filterForm.submit();
+            }, 400);
+        });
+    }
+
+    if (statusSelect && filterForm) {
+        statusSelect.addEventListener('change', function () {
+            filterForm.submit();
+        });
+    }
+});
+
 function openCreateSectionModal() {
     const form = document.getElementById('sectionForm');
     if (!form) return;
     form.action = '/sections/store';
-    document.getElementById('sectionModalLabel').textContent = "<?= addslashes(__('add_section')) ?>";
-    document.getElementById('sectionModalSubtext').textContent = "Détails de la section académique";
-    document.getElementById('sectionSubmitBtnText').textContent = "<?= addslashes(__('save')) ?>";
+    document.getElementById('sectionModalLabel').textContent = "<?= addslashes(__('add_section') ?? 'Ajouter une section') ?>";
+    document.getElementById('sectionModalSubtext').textContent = "Formulaire de configuration de la section académique";
+    document.getElementById('sectionSubmitBtnText').textContent = "<?= addslashes(__('save') ?? 'Enregistrer') ?>";
     document.getElementById('sectionModalIcon').innerHTML = '<i class="bi bi-grid-plus fs-4"></i>';
     document.getElementById('section_nom').value = '';
 
@@ -293,13 +566,36 @@ function openEditSectionModal(sec) {
     const form = document.getElementById('sectionForm');
     if (!form || !sec) return;
     form.action = '/sections/update?id=' + sec.id;
-    document.getElementById('sectionModalLabel').textContent = "<?= addslashes(__('edit_section')) ?>";
+    document.getElementById('sectionModalLabel').textContent = "<?= addslashes(__('edit_section') ?? 'Modifier la section') ?>";
     document.getElementById('sectionModalSubtext').textContent = sec.nom || '';
-    document.getElementById('sectionSubmitBtnText').textContent = "<?= addslashes(__('save')) ?>";
+    document.getElementById('sectionSubmitBtnText').textContent = "<?= addslashes(__('save') ?? 'Enregistrer') ?>";
     document.getElementById('sectionModalIcon').innerHTML = '<i class="bi bi-pencil-square fs-4"></i>';
     document.getElementById('section_nom').value = sec.nom || '';
 
     const modal = new bootstrap.Modal(document.getElementById('sectionModal'));
+    modal.show();
+}
+
+function confirmToggleSection(sectionId, sectionName, isCurrentlyActive) {
+    const confirmBtn = document.getElementById('toggleConfirmBtn');
+    if (!confirmBtn) return;
+    
+    confirmBtn.href = '/sections/toggle?id=' + sectionId;
+    document.getElementById('toggleModalSectionName').textContent = sectionName;
+
+    if (isCurrentlyActive) {
+        document.getElementById('confirmToggleModalLabel').textContent = "Désactiver la section";
+        document.getElementById('toggleModalMessage').textContent = "Attention : La désactivation de cette section la masquera immédiatement des sélecteurs et registres actifs.";
+        document.getElementById('toggleConfirmBtnText').textContent = "Désactiver la section";
+        confirmBtn.className = "btn btn-warning rounded-pill px-4 fw-bold shadow-sm scale-on-hover text-dark";
+    } else {
+        document.getElementById('confirmToggleModalLabel').textContent = "Activer la section";
+        document.getElementById('toggleModalMessage').textContent = "Réactiver cette section la rendra de nouveau disponible dans l'ensemble des formulaires et listes actives.";
+        document.getElementById('toggleConfirmBtnText').textContent = "Activer la section";
+        confirmBtn.className = "btn btn-success rounded-pill px-4 fw-bold shadow-sm scale-on-hover text-white";
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById('confirmToggleModal'));
     modal.show();
 }
 </script>
@@ -308,3 +604,4 @@ function openEditSectionModal(sec) {
 $content = ob_get_clean();
 include __DIR__ . '/../templates/layout.php';
 ?>
+
