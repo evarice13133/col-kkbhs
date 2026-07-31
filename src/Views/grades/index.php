@@ -28,224 +28,135 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
 
 
 
-<div class="animate-fade-in grades-workspace">
+<div class="animate-fade-in grades-workspace py-3 px-md-4">
 
-
-
-
-
-    <?php if (in_array(App\Core\Session::get('user_role'), ['admin', 'superadmin'])): ?>
-
-    <!-- BARRE D'ACTIONS COMPLÈTE : Style Floating Island -->
-
-    <div class="d-flex justify-content-center mb-5">
-
-        <div class="filter-island px-3 py-2 shadow-lg animate-slide-down" style="min-width: 90%;">
-
-            <form method="GET" class="d-flex align-items-center gap-2 flex-wrap flex-md-nowrap filter-form w-100" id="filterForm">
-
-                
-
-                <!-- Sélecteurs de Contexte -->
-
-                <div class="d-flex gap-2 pe-3 border-end border-opacity-10 border-secondary me-2">
-
-                    <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-2 py-1">
-                        <span class="input-group-text border-0 bg-transparent text-primary small fw-bold text-uppercase me-2 d-none d-xl-inline-block">
-                            Type Ensg
-                        </span>
-                        <select name="teaching_type_id" id="filter_teaching_type" class="form-select border-0 bg-transparent shadow-none fw-bold text-main"
-                                onchange="this.form.submit()">
-                            <option value="">Tous les types</option>
-                            <?php foreach ($teachingTypes as $tt): ?>
-                                <option value="<?= $tt['id'] ?>" <?= (int) $filters['teaching_type_id'] === (int) $tt['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $tt['nom']) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-2 py-1">
-
-                        <span class="input-group-text border-0 bg-transparent text-primary small fw-bold text-uppercase me-2 d-none d-xl-inline-block">
-
-                            <?= __('class') ?>
-
-                        </span>
-
-                        <select name="class_id" id="filter_class" class="form-select border-0 bg-transparent shadow-none fw-bold text-main"
-
-                                onchange="this.form.submit()">
-
-                            <option value=""><?= __('all_classes') ?></option>
-
-                            <?php foreach ($classes as $class): ?>
-
-                                <option value="<?= $class['id'] ?>" data-teaching-type="<?= $class['teaching_type_id'] ?? '' ?>" <?= (int) $filters['class_id'] === (int) $class['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $class['nom']) ?></option>
-
-                            <?php endforeach; ?>
-
-                        </select>
-
-                    </div>
-
-
-
-                    <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-2 py-1">
-
-                        <span class="input-group-text border-0 bg-transparent text-primary small fw-bold text-uppercase me-2 d-none d-xl-inline-block">
-
-                            <?= __('subject') ?>
-
-                        </span>
-
-                        <select name="subject_id" id="filter_subject" class="form-select border-0 bg-transparent shadow-none fw-bold text-main"
-
-                                onchange="this.form.submit()">
-
-                            <option value=""><?= __('all_subjects') ?></option>
-
-                            <?php foreach ($subjects as $subject): ?>
-
-                                <option value="<?= $subject['id'] ?>" data-teaching-type="<?= $subject['teaching_type_id'] ?? '' ?>" <?= (int) $filters['subject_id'] === (int) $subject['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $subject['nom']) ?></option>
-
-                            <?php endforeach; ?>
-
-                        </select>
-
-                    </div>
-
+    <!-- EN-TÊTE DE PAGE : Style Glassmorphism Premium avec support Mode Sombre -->
+    <div class="dept-header-card mb-4 p-3 p-md-4 rounded-4 shadow-sm position-relative overflow-hidden">
+        <div class="dept-header-bg"></div>
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between w-100 gap-3 position-relative" style="z-index: 2;">
+            <div class="d-flex align-items-center gap-3">
+                <div class="dept-icon-wrapper rounded-4 d-flex align-items-center justify-content-center flex-shrink-0">
+                    <i class="bi bi-journal-check fs-4 text-primary"></i>
                 </div>
-
-
-
-                <!-- Barre de Recherche Locale -->
-
-                <div class="flex-grow-1">
-
-                    <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-2">
-
-                        <span class="input-group-text border-0 bg-transparent text-primary">
-
-                            <i class="bi bi-search"></i>
-
-                        </span>
-
-                        <input type="text" id="subject-search" class="form-control border-0 bg-transparent shadow-none py-2 text-main"
-
-                            placeholder="<?= __('search_placeholder_global') ?>...">
-
-                    </div>
-
+                <div>
+                    <h1 class="fw-black fs-4 text-main-theme mb-1 lh-1">
+                        <?= __('notes_management') ?? 'Gestion des Notes' ?>
+                    </h1>
+                    <p class="text-muted-theme mb-0 fw-medium opacity-75" style="font-size: 0.88rem;">
+                        <?= __('lang') === 'en' ? 'Manage grades, entry sheets and class evaluation reports' : 'Consultez, saisissez et exportez les notes et procès-verbaux d\'évaluation' ?>
+                    </p>
                 </div>
-
-
-
-                <!-- Utilitaires -->
-
-                <div class="d-flex gap-2 align-items-center ps-2">
-
-                    <a href="/notes" class="btn btn-light rounded-circle p-2 d-flex align-items-center justify-content-center reset-btn" style="width: 40px; height: 40px;" title="<?= __('reset') ?>">
-
-                        <i class="bi bi-arrow-counterclockwise"></i>
-
-                    </a>
-
-                    
-
-                    <!-- Export Panel (Compact Dropdown) -->
-
-                    <div class="dropdown">
-
-                        <button class="btn-export-minimal shadow-sm" type="button" data-bs-toggle="dropdown">
-
-                            <i class="bi bi-file-earmark-pdf"></i>
-
-                        </button>
-
-                        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-modern shadow-lg">
-
-                            <li><h6 class="dropdown-header small text-uppercase fw-bold opacity-75"><?= __('exports') ?></h6></li>
-
-                            <?php if ($canExportList): ?>
-
-                                <li><a class="dropdown-item dropdown-item-modern" href="<?= htmlspecialchars($listExportUrl) ?>">
-
-                                    <i class="bi bi-file-pdf text-danger"></i> <?= __('grade_list_export') ?>
-
-                                </a></li>
-
-                            <?php endif; ?>
-
-                            <?php if ($canExportReport): ?>
-
-                                <li><a class="dropdown-item dropdown-item-modern" href="<?= htmlspecialchars($reportExportUrl) ?>">
-
-                                    <i class="bi bi-printer-fill text-primary"></i> <?= __('grade_report_sheet') ?>
-
-                                </a></li>
-
-                                <li><a class="dropdown-item dropdown-item-modern" href="<?= htmlspecialchars($reportPdfUrl) ?>">
-
-                                    <i class="bi bi-file-earmark-pdf-fill text-danger"></i> <?= __('grade_report_pdf') ?>
-
-                                </a></li>
-
-                            <?php endif; ?>
-
-                            <?php if (!$canExportList && !$canExportReport): ?>
-
-                                <li class="px-3 py-2 small text-muted"><?= __('grade_export_hint') ?></li>
-
-                            <?php endif; ?>
-
-                        </ul>
-
-                    </div>
-
+            </div>
+            
+            <div class="d-flex flex-row w-100 w-md-auto justify-content-end ms-md-auto gap-2 mt-2 mt-md-0">
+                <!-- Export Panel (Compact Dropdown) -->
+                <div class="dropdown">
+                    <button class="btn btn-light-theme rounded-pill px-3 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 scale-on-hover" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-file-earmark-pdf text-danger fs-6"></i>
+                        <span><?= __('exports') ?? 'Exportations' ?></span>
+                        <i class="bi bi-chevron-down small opacity-75"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-4 p-2">
+                        <li><h6 class="dropdown-header extra-small text-uppercase fw-bold text-muted"><?= __('exports') ?? 'Exportations' ?></h6></li>
+                        <?php if ($canExportList): ?>
+                            <li>
+                                <a class="dropdown-item dropdown-item-modern" href="<?= htmlspecialchars($listExportUrl) ?>">
+                                    <i class="bi bi-file-pdf text-danger"></i> <?= __('grade_list_export') ?? 'Liste des notes (PDF)' ?>
+                                </a>
+                            </li>
+                        <?php endif; ?>
+                        <?php if ($canExportReport): ?>
+                            <li>
+                                <a class="dropdown-item dropdown-item-modern" href="<?= htmlspecialchars($reportExportUrl) ?>">
+                                    <i class="bi bi-printer-fill text-primary"></i> <?= __('grade_report_sheet') ?? 'Fiche de saisie' ?>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item dropdown-item-modern" href="<?= htmlspecialchars($reportPdfUrl) ?>">
+                                    <i class="bi bi-file-earmark-pdf-fill text-danger"></i> <?= __('grade_report_pdf') ?? 'PV des notes (PDF)' ?>
+                                </a>
+                            </li>
+                        <?php endif; ?>
+                        <?php if (!$canExportList && !$canExportReport): ?>
+                            <li class="px-3 py-2 extra-small text-muted"><?= __('grade_export_hint') ?? 'Sélectionnez une classe et une matière pour exporter' ?></li>
+                        <?php endif; ?>
+                    </ul>
                 </div>
-
-            </form>
-
+            </div>
         </div>
-
     </div>
 
-    <?php else: ?>
+    <?php if (in_array(App\Core\Session::get('user_role'), ['admin', 'superadmin'])): ?>
+    <!-- BARRE DE FILTRES ET RECHERCHE INSTANTANÉE -->
+    <div class="filter-island-container mb-4">
+        <div class="filter-island p-3 rounded-4 shadow-sm">
+            <form method="GET" action="/notes" class="filter-form w-100 m-0" id="filterForm">
+                <div class="d-flex flex-column flex-md-row gap-3 align-items-md-center justify-content-between">
 
-        <!-- TEACHER BARRE D'ACTIONS COMPLÈTE -->
-
-        <div class="d-flex justify-content-center mb-5">
-
-            <div class="filter-island px-3 py-2 shadow-lg animate-slide-down" style="min-width: 60%;">
-
-                <form class="d-flex align-items-center gap-2 filter-form w-100">
-
-                    <div class="flex-grow-1">
-
-                        <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-2">
-
-                            <span class="input-group-text border-0 bg-transparent text-primary">
-
-                                <i class="bi bi-search"></i>
-
-                            </span>
-
-                            <input type="text" id="subject-search" class="form-control border-0 bg-transparent shadow-none py-2 text-main"
-
-                                placeholder="<?= __('search') ?>...">
-
+                    <div class="d-flex flex-column flex-sm-row gap-2 flex-grow-1 flex-wrap">
+                        <!-- Type Enseignement -->
+                        <div class="dept-select-wrapper flex-grow-1" style="min-width: 150px; max-width: 200px;">
+                            <select name="teaching_type_id" id="filter_teaching_type" class="form-select dept-filter-select" onchange="this.form.submit()">
+                                <option value=""><?= __('all_teaching_types') ?? 'Tous les types' ?></option>
+                                <?php foreach ($teachingTypes as $tt): ?>
+                                    <option value="<?= $tt['id'] ?>" <?= (int) $filters['teaching_type_id'] === (int) $tt['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $tt['nom']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
 
+                        <!-- Classe -->
+                        <div class="dept-select-wrapper flex-grow-1" style="min-width: 150px; max-width: 200px;">
+                            <select name="class_id" id="filter_class" class="form-select dept-filter-select" onchange="this.form.submit()">
+                                <option value=""><?= __('all_classes') ?? 'Toutes les classes' ?></option>
+                                <?php foreach ($classes as $class): ?>
+                                    <option value="<?= $class['id'] ?>" data-teaching-type="<?= $class['teaching_type_id'] ?? '' ?>" <?= (int) $filters['class_id'] === (int) $class['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $class['nom']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <!-- Matière -->
+                        <div class="dept-select-wrapper flex-grow-1" style="min-width: 150px; max-width: 200px;">
+                            <select name="subject_id" id="filter_subject" class="form-select dept-filter-select" onchange="this.form.submit()">
+                                <option value=""><?= __('all_subjects') ?? 'Toutes les matières' ?></option>
+                                <?php foreach ($subjects as $subject): ?>
+                                    <option value="<?= $subject['id'] ?>" data-teaching-type="<?= $subject['teaching_type_id'] ?? '' ?>" <?= (int) $filters['subject_id'] === (int) $subject['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $subject['nom']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <!-- Recherche Locale -->
+                        <div class="dept-search-pill flex-grow-1 position-relative" style="min-width: 180px;">
+                            <i class="bi bi-search search-icon"></i>
+                            <input type="text" id="subject-search" class="form-control dept-filter-input ps-5"
+                                placeholder="<?= __('search_placeholder_global') ?? 'Rechercher' ?>...">
+                        </div>
                     </div>
 
-                </form>
+                    <!-- Actions Filtre -->
+                    <div class="d-flex gap-2 align-items-center justify-content-end">
+                        <a href="/notes" class="btn btn-light-theme rounded-circle p-2 d-flex align-items-center justify-content-center reset-btn scale-on-hover" style="width: 42px; height: 42px;" title="<?= __('reset') ?? 'Réinitialiser' ?>">
+                            <i class="bi bi-arrow-counterclockwise fs-5"></i>
+                        </a>
+                    </div>
 
-            </div>
-
+                </div>
+            </form>
         </div>
-
+    </div>
+    <?php else: ?>
+    <!-- BARRE DE RECHERCHE ENSEIGNANT -->
+    <div class="filter-island-container mb-4">
+        <div class="filter-island p-3 rounded-4 shadow-sm" style="max-width: 600px; margin: 0 auto;">
+            <form class="filter-form w-100 m-0">
+                <div class="dept-search-pill position-relative w-100">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" id="subject-search" class="form-control dept-filter-input ps-5"
+                        placeholder="<?= __('search') ?? 'Rechercher' ?>...">
+                </div>
+            </form>
+        </div>
+    </div>
     <?php endif; ?>
-
-
 
     <!-- Main Content Workspace -->
 
@@ -771,142 +682,224 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
 
 
 
-    .grades-workspace {
-
-        --border-theme: rgba(226, 232, 240, 0.5);
-
+    .dept-header-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-theme);
+        backdrop-filter: blur(16px);
+        transition: all 0.3s ease;
     }
 
+    [data-theme="dark"] .dept-header-card {
+        background: rgba(30, 41, 59, 0.7);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
 
+    .dept-header-bg {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 320px;
+        height: 100%;
+        background: radial-gradient(circle at top right, rgba(var(--primary-rgb, 59, 130, 246), 0.15), transparent 70%);
+        pointer-events: none;
+    }
+
+    .dept-icon-wrapper {
+        width: 52px;
+        height: 52px;
+        background: rgba(var(--primary-rgb, 59, 130, 246), 0.12);
+        border: 1px solid rgba(var(--primary-rgb, 59, 130, 246), 0.2);
+        box-shadow: inset 0 0 12px rgba(var(--primary-rgb, 59, 130, 246), 0.1);
+    }
+
+    .scale-on-hover {
+        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+    }
+
+    .scale-on-hover:hover {
+        transform: translateY(-2px) scale(1.02);
+    }
+
+    /* Filter Bar High Contrast Styles */
+    .filter-island {
+        background: var(--bg-card, #ffffff);
+        border: 1px solid var(--border-theme, #e2e8f0);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+        transition: all 0.3s ease;
+    }
+
+    [data-theme="dark"] .filter-island {
+        background: rgba(30, 41, 59, 0.7);
+        border-color: rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.25);
+    }
+
+    .dept-search-pill {
+        display: flex;
+        align-items: center;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 14px;
+        color: var(--primary-color, #3b82f6);
+        font-size: 1rem;
+        z-index: 5;
+        pointer-events: none;
+    }
+
+    .dept-filter-input {
+        background: var(--bg-body, #f8fafc) !important;
+        border: 1px solid var(--border-theme, #cbd5e1) !important;
+        color: var(--text-main, #0f172a) !important;
+        border-radius: 50px !important;
+        padding: 10px 16px 10px 42px !important;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+
+    .dept-filter-input:focus {
+        border-color: var(--primary-color) !important;
+        box-shadow: 0 0 0 3px rgba(var(--primary-rgb, 59, 130, 246), 0.15) !important;
+    }
+
+    [data-theme="dark"] .dept-filter-input {
+        background: rgba(15, 23, 42, 0.6) !important;
+        border-color: rgba(255, 255, 255, 0.12) !important;
+        color: #f8fafc !important;
+    }
+
+    .dept-filter-select {
+        background-color: var(--bg-body, #f8fafc) !important;
+        border: 1px solid var(--border-theme, #cbd5e1) !important;
+        color: var(--text-main, #0f172a) !important;
+        border-radius: 50px !important;
+        padding: 10px 20px !important;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+
+    .dept-filter-select:focus {
+        border-color: var(--primary-color) !important;
+        box-shadow: 0 0 0 3px rgba(var(--primary-rgb, 59, 130, 246), 0.15) !important;
+    }
+
+    [data-theme="dark"] .dept-filter-select {
+        background-color: rgba(15, 23, 42, 0.6) !important;
+        border-color: rgba(255, 255, 255, 0.12) !important;
+        color: #f8fafc !important;
+    }
+
+    .dept-filter-select option, select.premium-input option {
+        background-color: #ffffff;
+        color: #0f172a;
+        padding: 10px;
+    }
+
+    [data-theme="dark"] .dept-filter-select option, [data-theme="dark"] select.premium-input option {
+        background-color: #1e293b !important;
+        color: #f8fafc !important;
+    }
+
+    .btn-light-theme {
+        background: var(--bg-body, #f1f5f9);
+        color: var(--text-main, #334155);
+        border: 1px solid var(--border-theme, #cbd5e1);
+    }
+
+    [data-theme="dark"] .btn-light-theme {
+        background: rgba(255, 255, 255, 0.1);
+        color: #f8fafc;
+        border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .dropdown-item-modern {
+        border-radius: 10px;
+        padding: 8px 12px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.2s ease;
+    }
+
+    .dropdown-item-modern:hover {
+        background-color: rgba(var(--primary-rgb), 0.08);
+        color: var(--primary-color);
+        transform: translateX(4px);
+    }
+
+    .grades-workspace {
+        --border-theme: rgba(226, 232, 240, 0.5);
+    }
 
     [data-theme="dark"] .grades-workspace {
-
         --border-theme: rgba(255, 255, 255, 0.05);
-
     }
-
-
 
     .fw-black { font-weight: 800; }
 
-
-
     .class-header-icon {
-
         width: 42px;
-
         height: 42px;
-
         background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 70%, black) 100%);
-
         color: white;
-
         border-radius: 12px;
-
         display: flex;
-
         align-items: center;
-
         justify-content: center;
-
         font-size: 1.25rem;
-
         box-shadow: 0 8px 16px rgba(var(--primary-rgb), 0.2);
-
     }
-
-
 
     .subject-card-compact {
-
         background: var(--bg-card);
-
         border-radius: 24px;
-
         border: 1px solid var(--border-theme) !important;
-
         display: block;
-
         text-decoration: none !important;
-
         transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
-
         position: relative;
-
         overflow: hidden;
-
     }
-
-
 
     [data-theme="dark"] .subject-card-compact {
-
         background: rgba(255, 255, 255, 0.03);
-
         backdrop-filter: blur(10px);
-
         border-color: rgba(255, 255, 255, 0.08) !important;
-
     }
-
-
 
     .subject-card-glow {
-
         position: absolute;
-
         top: 0;
-
         left: 0;
-
         width: 100%;
-
         height: 100%;
-
         background: radial-gradient(circle at top right, rgba(var(--primary-rgb), 0.15), transparent 70%);
-
         opacity: 0;
-
         transition: opacity 0.4s ease;
-
     }
-
-
 
     .subject-card-compact:hover {
-
         transform: translateY(-8px) scale(1.02);
-
         border-color: var(--primary-color) !important;
-
         box-shadow: 0 20px 40px rgba(var(--primary-rgb), 0.12);
-
     }
-
-
 
     .subject-card-compact:hover .subject-card-glow {
-
         opacity: 1;
-
     }
-
-
 
     @media (max-width: 991.98px) {
-
         .filter-island {
-
             border-radius: 24px;
-
             padding: 1rem !important;
-
         }
-
     }
-
 </style>
 
 

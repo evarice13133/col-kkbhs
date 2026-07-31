@@ -1,23 +1,78 @@
-<?php $title = __('sequences'); ob_start(); ?>
+<?php 
+$title = __('sequences') ?? 'Séquences & Évaluations'; 
+ob_start(); 
 
-<div class="animate-fade-in container-fluid py-4">
-    
-    <!-- BARRE D'ACTIONS ET FILTRE : Style Floating Island -->
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-column flex-md-row gap-3">
-        <form method="GET" action="/sequences" class="d-flex gap-2 align-items-center w-100 w-md-auto">
-            <select name="teaching_type_id" id="index_teaching_type_filter" class="form-select rounded-pill px-3 py-2 border-theme-light" onchange="this.form.submit()">
-                <option value=""><?= __('all_teaching_types') ?? 'Tous les types d\'enseignement' ?></option>
-                <?php foreach ($teachingTypes as $tt): ?>
-                    <option value="<?= $tt['id'] ?>" data-code="<?= htmlspecialchars($tt['code']) ?>" <?= (int) ($filters['teaching_type_id'] ?? 0) === (int) $tt['id'] ? 'selected' : '' ?>>
-                        <?= htmlspecialchars((string) $tt['nom']) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </form>
+$canManage = \App\Core\PermissionManager::hasRole(['superadmin', 'admin']);
+?>
 
-        <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm scale-on-hover text-nowrap" onclick="openCreateEvaluationModal()">
-            <i class="bi bi-plus-lg me-2"></i> <?= __('add_sequence') ?>
-        </button>
+<div class="animate-fade-in container-fluid py-3 px-md-4">
+
+    <!-- EN-TÊTE DE PAGE : Style Glassmorphism Premium avec support Mode Sombre -->
+    <div class="dept-header-card mb-4 p-3 p-md-4 rounded-4 shadow-sm position-relative overflow-hidden">
+        <div class="dept-header-bg"></div>
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between w-100 gap-3 position-relative" style="z-index: 2;">
+            <div class="d-flex align-items-center gap-3">
+                <div class="dept-icon-wrapper rounded-4 d-flex align-items-center justify-content-center flex-shrink-0">
+                    <i class="bi bi-calendar-event-fill fs-4 text-primary"></i>
+                </div>
+                <div>
+                    <h1 class="fw-black fs-4 text-main-theme mb-1 lh-1">
+                        <?= __('sequences') ?? 'Séquences & Évaluations' ?>
+                    </h1>
+                    <p class="text-muted-theme mb-0 fw-medium opacity-75" style="font-size: 0.88rem;">
+                        <?= __('lang') === 'en' ? 'Manage evaluation sequences, semesters and academic trimesters' : 'Configurez les séquences d\'évaluation, semestres et trimestres académiques' ?>
+                    </p>
+                </div>
+            </div>
+            
+            <?php if ($canManage): ?>
+            <div class="d-flex flex-row w-100 w-md-auto justify-content-end ms-md-auto gap-2 mt-2 mt-md-0">
+                <button type="button" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm flex-grow-1 flex-md-grow-0 d-flex justify-content-center align-items-center gap-2 text-nowrap scale-on-hover" onclick="openCreateEvaluationModal()">
+                    <i class="bi bi-plus-lg"></i> 
+                    <span><?= __('add_sequence') ?? 'Ajouter une séquence' ?></span>
+                </button>
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- BARRE DE FILTRES ET RECHERCHE INSTANTANÉE -->
+    <div class="filter-island-container mb-4">
+        <div class="filter-island p-3 rounded-4 shadow-sm">
+            <form method="GET" action="/sequences" id="sequence-filter-form" class="filter-form w-100 m-0">
+                <div class="d-flex flex-column flex-md-row gap-3 align-items-md-center justify-content-between">
+
+                    <div class="d-flex flex-column flex-sm-row gap-2 flex-grow-1">
+                        <!-- Recherche instantanée -->
+                        <div class="dept-search-pill flex-grow-1 position-relative">
+                            <i class="bi bi-search search-icon"></i>
+                            <input type="text" id="sequence-search-input" class="form-control dept-filter-input ps-5"
+                                placeholder="<?= __('search') ?? 'Rechercher' ?> (Intitulé, Code)...">
+                        </div>
+
+                        <!-- Type Enseignement -->
+                        <div class="dept-select-wrapper" style="min-width: 220px;">
+                            <select name="teaching_type_id" id="index_teaching_type_filter" class="form-select dept-filter-select" onchange="this.form.submit()">
+                                <option value=""><?= __('all_teaching_types') ?? 'Tous les types d\'enseignement' ?></option>
+                                <?php foreach ($teachingTypes as $tt): ?>
+                                    <option value="<?= $tt['id'] ?>" data-code="<?= htmlspecialchars($tt['code']) ?>" <?= (int) ($filters['teaching_type_id'] ?? 0) === (int) $tt['id'] ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars((string) $tt['nom']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Actions Filtre -->
+                    <div class="d-flex gap-2 align-items-center justify-content-end">
+                        <a href="/sequences" class="btn btn-light-theme rounded-circle p-2 d-flex align-items-center justify-content-center reset-btn scale-on-hover" style="width: 42px; height: 42px;" title="<?= __('reset') ?? 'Réinitialiser' ?>">
+                            <i class="bi bi-arrow-counterclockwise fs-5"></i>
+                        </a>
+                    </div>
+
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- LISTE DES ÉVALUATIONS / SÉQUENCES -->
