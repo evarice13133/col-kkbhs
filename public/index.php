@@ -39,6 +39,7 @@ use App\Controllers\SchoolFeeController;
 use App\Controllers\AIAssistantController;
 use App\Controllers\SubjectGroupController;
 use App\Controllers\LevelController;
+use App\Controllers\TranscriptController;
 
 
 
@@ -474,6 +475,19 @@ elseif (strpos($path, '/proces-verbal') === 0) {
         $c->annuel();
     elseif ($path === '/proces-verbal/evaluation')
         $c->evaluation();
+}
+
+// ====== ROUTES: RELEVÉS DE NOTES ======
+elseif (strpos($path, '/transcripts') === 0) {
+    if (!Session::isLogged()) {
+        header('Location: /login');
+        exit;
+    }
+    $c = new TranscriptController();
+    if ($path === '/transcripts')
+        $c->index();
+    elseif ($path === '/transcripts/generate')
+        $c->generate();
 }
 
 
