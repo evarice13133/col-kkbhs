@@ -8,9 +8,9 @@
     --sidebar-collapsed-width: 70px;
     --topbar-height: 52px;
 
-    /* Palette SaaS Premium - Violet Edition */
+    /* Palette SaaS Premium - Violet Edition (Canva Inspired) */
     --primary-color: #7c3aed;
-    /* Violet vibrant */
+    --primary-gradient: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
     --primary-soft: rgba(124, 58, 237, 0.1);
     --secondary-color: #6d28d9;
     --accent-color: #a78bfa;
@@ -18,11 +18,36 @@
     --warning-color: #f59e0b;
     --danger-color: #ef4444;
 
+    /* Canva Design System Tokens */
+    --cva-primary: #7e22ce;
+    --cva-primary-gradient: linear-gradient(135deg, #7e22ce 0%, #6366f1 100%);
+    --cva-primary-hover: #6b21a8;
+    --cva-primary-light: #f3e8ff;
+    --cva-primary-glow: rgba(126, 34, 206, 0.18);
+    
+    --cva-accent-teal: #0d9488;
+    --cva-accent-pink: #ec4899;
+    --cva-accent-amber: #f59e0b;
+    --cva-accent-emerald: #10b981;
+    --cva-accent-rose: #f43f5e;
+
+    --cva-bg-canvas: #f8fafc;
+    --cva-bg-surface: #ffffff;
+    --cva-border-subtle: #e2e8f0;
+    --cva-text-main: #0f172a;
+    --cva-text-muted: #64748b;
+
+    --cva-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05);
+    --cva-shadow-md: 0 4px 20px -2px rgba(15, 23, 42, 0.06);
+    --cva-shadow-lg: 0 12px 32px -4px rgba(15, 23, 42, 0.1);
+    --cva-radius-card: 16px;
+    --cva-radius-btn: 10px;
+
     /* Theme Light (Default) */
     --bg-body: #f8fafc;
     --bg-sidebar: #ffffff;
     --bg-card: #ffffff;
-    --bg-topbar: rgba(255, 255, 255, 0.8);
+    --bg-topbar: rgba(255, 255, 255, 0.85);
     --text-main: #0f172a;
     --text-muted: #64748b;
     --border-color: #e2e8f0;
@@ -3098,19 +3123,463 @@ body {
     background: rgba(124, 58, 237, 0.07);
 }
 
-.ribbon-group-exploded-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    padding: 0.15rem 0.45rem;
-    border-radius: 6px;
-    background: var(--primary-soft);
-    color: var(--primary-color);
-    font-size: 0.68rem;
-    font-weight: 700;
+/* ==========================================================================
+   INTERACTIVE ONBOARDING GUIDED TOUR & RICH MS WORD TOOLTIPS (SPOTLIGHT TOUR)
+   ========================================================================== */
+
+@keyframes spotlightPulse {
+    0% {
+        box-shadow: 0 0 0 3px var(--primary-color), 0 0 15px rgba(124, 58, 237, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 5px var(--primary-color), 0 0 25px rgba(124, 58, 237, 0.7);
+    }
+    100% {
+        box-shadow: 0 0 0 3px var(--primary-color), 0 0 15px rgba(124, 58, 237, 0.4);
+    }
+}
+
+/* Remove dark backdrop overlay completely - Keep application 100% visible */
+.onboarding-backdrop {
+    display: none !important;
+}
+
+.onboarding-highlight {
+    position: relative !important;
+    z-index: 1090 !important;
+    border-radius: 10px !important;
+    animation: spotlightPulse 2s infinite ease-in-out !important;
+    transition: all 0.25s ease !important;
+}
+
+/* Pointer Card with Floating Arrow Indicator */
+.onboarding-card {
+    position: fixed;
+    z-index: 1100;
+    width: 90%;
+    max-width: 380px;
+    background: var(--bg-card);
+    border: 1px solid var(--primary-color);
+    border-radius: 16px;
+    padding: 1.15rem;
+    box-shadow: 0 15px 40px rgba(15, 23, 42, 0.2), 0 0 0 1px rgba(124, 58, 237, 0.15);
+    animation: ribbonSlideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Arrow Pointer Caret */
+.onboarding-card::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 24px;
+    width: 14px;
+    height: 14px;
+    background: var(--bg-card);
+    border-top: 1px solid var(--primary-color);
+    border-left: 1px solid var(--primary-color);
+    transform: rotate(45deg);
+}
+
+[data-theme="dark"] .onboarding-card {
+    background: #020617;
+    border-color: #a78bfa;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 20px rgba(167, 139, 250, 0.25);
+}
+
+[data-theme="dark"] .onboarding-card::before {
+    background: #020617;
+    border-color: #a78bfa;
+}
+
+.onboarding-step-badge {
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    background: var(--primary-color);
+    color: #ffffff;
+    font-size: 0.7rem;
+    font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
+
+
+/* Rich MS Word Tooltip Styling */
+.tooltip-inner {
+    max-width: 260px !important;
+    padding: 0.65rem 0.85rem !important;
+    background: rgba(15, 23, 42, 0.95) !important;
+    backdrop-filter: blur(10px) !important;
+    border-radius: 10px !important;
+    font-size: 0.78rem !important;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2) !important;
+    text-align: left !important;
+}
+
+.tooltip-rich-title {
+    font-weight: 700;
+    color: #a78bfa;
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.tooltip-rich-desc {
+    color: #e2e8f0;
+    font-weight: 400;
+    line-height: 1.35;
+}
+
+/* ==========================================================================
+   CANVA SAAS DESIGN SYSTEM - COMPONENTS & UTILITIES
+   ========================================================================== */
+
+/* --- 1. CARDS & KPI WIDGETS --- */
+.cva-card {
+    background: var(--cva-bg-surface);
+    border: 1px solid var(--cva-border-subtle);
+    border-radius: var(--cva-radius-card);
+    box-shadow: var(--cva-shadow-md);
+    padding: 1.5rem;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.cva-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--cva-shadow-lg);
+    border-color: rgba(126, 34, 206, 0.25);
+}
+
+.cva-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--cva-border-subtle);
+}
+
+.cva-card-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--cva-text-main);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.cva-kpi-card {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.cva-kpi-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    background: var(--cva-primary-light);
+    color: var(--cva-primary);
+    flex-shrink: 0;
+    transition: transform 0.25s ease;
+}
+
+.cva-card:hover .cva-kpi-icon {
+    transform: scale(1.08) rotate(-3deg);
+}
+
+.cva-kpi-val {
+    font-size: 1.85rem;
+    font-weight: 800;
+    color: var(--cva-text-main);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+}
+
+.cva-kpi-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--cva-text-muted);
+    margin-bottom: 0.35rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* --- 2. BUTTONS & ACTIONS --- */
+.cva-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    font-size: 0.88rem;
+    padding: 0.6rem 1.25rem;
+    border-radius: var(--cva-radius-btn);
+    border: 1px solid transparent;
+    transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    cursor: pointer;
+    text-decoration: none !important;
+}
+
+.cva-btn:active {
+    transform: scale(0.97);
+}
+
+.cva-btn-primary {
+    background: var(--cva-primary-gradient);
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px var(--cva-primary-glow);
+}
+
+.cva-btn-primary:hover {
+    background: linear-gradient(135deg, #6b21a8 0%, #4f46e5 100%);
+    box-shadow: 0 6px 20px rgba(126, 34, 206, 0.35);
+    transform: translateY(-2px);
+    color: #ffffff !important;
+}
+
+.cva-btn-secondary {
+    background: var(--cva-primary-light);
+    color: var(--cva-primary) !important;
+    border: 1px solid rgba(126, 34, 206, 0.15);
+}
+
+.cva-btn-secondary:hover {
+    background: rgba(126, 34, 206, 0.2);
+    color: var(--cva-primary-hover) !important;
+    transform: translateY(-1px);
+}
+
+.cva-btn-ghost {
+    background: transparent;
+    color: var(--cva-text-main) !important;
+    border: 1px solid var(--cva-border-subtle);
+}
+
+.cva-btn-ghost:hover {
+    background: var(--cva-primary-light);
+    color: var(--cva-primary) !important;
+    border-color: var(--cva-primary);
+}
+
+.cva-btn-icon {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border-radius: 50%;
+}
+
+/* --- 3. BADGES & STATUS PILLS --- */
+.cva-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    line-height: 1;
+}
+
+.cva-badge-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.cva-badge-success {
+    background: rgba(16, 185, 129, 0.12);
+    color: #059669;
+}
+.cva-badge-success .cva-badge-dot { background: #10b981; }
+
+.cva-badge-warning {
+    background: rgba(245, 158, 11, 0.12);
+    color: #d97706;
+}
+.cva-badge-warning .cva-badge-dot { background: #f59e0b; }
+
+.cva-badge-danger {
+    background: rgba(244, 63, 94, 0.12);
+    color: #e11d48;
+}
+.cva-badge-danger .cva-badge-dot { background: #f43f5e; }
+
+.cva-badge-purple {
+    background: var(--cva-primary-light);
+    color: var(--cva-primary);
+}
+.cva-badge-purple .cva-badge-dot { background: var(--cva-primary); }
+
+.cva-badge-info {
+    background: rgba(13, 148, 136, 0.12);
+    color: #0d9488;
+}
+.cva-badge-info .cva-badge-dot { background: #0d9488; }
+
+/* --- 4. MODERN TABLES --- */
+.cva-table-container {
+    background: var(--cva-bg-surface);
+    border: 1px solid var(--cva-border-subtle);
+    border-radius: var(--cva-radius-card);
+    box-shadow: var(--cva-shadow-md);
+    overflow: hidden;
+}
+
+.cva-table {
+    width: 100%;
+    margin-bottom: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.cva-table th {
+    background: var(--cva-bg-canvas);
+    color: var(--cva-text-muted);
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.9rem 1.25rem;
+    border-bottom: 1px solid var(--cva-border-subtle);
+}
+
+.cva-table td {
+    padding: 0.95rem 1.25rem;
+    color: var(--cva-text-main);
+    font-size: 0.88rem;
+    border-bottom: 1px solid var(--cva-border-subtle);
+    vertical-align: middle;
+    transition: background-color 0.2s ease;
+}
+
+.cva-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.cva-table tbody tr:hover td {
+    background-color: rgba(126, 34, 206, 0.04);
+}
+
+/* --- 5. FORMS & INPUTS --- */
+.cva-form-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--cva-text-main);
+    margin-bottom: 0.4rem;
+    display: block;
+}
+
+.cva-input, .cva-select {
+    width: 100%;
+    padding: 0.65rem 1rem;
+    border-radius: var(--cva-radius-btn);
+    border: 1px solid var(--cva-border-subtle);
+    background: var(--cva-bg-surface);
+    color: var(--cva-text-main);
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.cva-input:focus, .cva-select:focus {
+    border-color: var(--cva-primary);
+    box-shadow: 0 0 0 4px var(--cva-primary-glow);
+}
+
+/* --- 6. EMPTY STATES --- */
+.cva-empty-state {
+    padding: 3rem 1.5rem;
+    text-align: center;
+    background: var(--cva-bg-surface);
+    border: 2px dashed var(--cva-border-subtle);
+    border-radius: var(--cva-radius-card);
+}
+
+.cva-empty-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 1.25rem;
+    border-radius: 50%;
+    background: var(--cva-primary-light);
+    color: var(--cva-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.85rem;
+}
+
+.cva-empty-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--cva-text-main);
+    margin-bottom: 0.5rem;
+}
+
+.cva-empty-desc {
+    font-size: 0.88rem;
+    color: var(--cva-text-muted);
+    max-width: 420px;
+    margin: 0 auto 1.5rem;
+}
+
+/* --- 7. BREADCRUMB --- */
+.cva-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+    color: var(--cva-text-muted);
+    margin-bottom: 1rem;
+}
+
+.cva-breadcrumb-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.cva-breadcrumb-item a {
+    color: var(--cva-text-muted);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.cva-breadcrumb-item a:hover {
+    color: var(--cva-primary);
+}
+
+.cva-breadcrumb-item.active {
+    color: var(--cva-text-main);
+    font-weight: 600;
+}
+
+/* --- 8. MICRO-ANIMATIONS & UTILITIES --- */
+.cva-fade-in-up {
+    animation: cvaFadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes cvaFadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
 
 
 

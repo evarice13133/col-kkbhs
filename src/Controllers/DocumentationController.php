@@ -23,6 +23,23 @@ class DocumentationController
     }
 
     /**
+     * Résout le chemin du fichier de manuel avec fallback sécurisé.
+     */
+    private function getManualPath(string $role, string $lang): string
+    {
+        $baseDir = __DIR__ . '/../Views/documentation/';
+        $file = $baseDir . "manual_{$role}_{$lang}.php";
+        if (file_exists($file)) {
+            return $file;
+        }
+        $fallbackLang = $baseDir . "manual_{$role}_fr.php";
+        if (file_exists($fallbackLang)) {
+            return $fallbackLang;
+        }
+        return $baseDir . "manual_admin_fr.php";
+    }
+
+    /**
      * Affiche l'interface de consultation de la documentation.
      */
     public function index()
@@ -34,13 +51,17 @@ class DocumentationController
         $roleLabels = [
             'superadmin' => __('superadmin'),
             'admin' => __('admin'),
+            'it_manager' => 'IT Manager',
+            'comptable' => 'Comptable',
+            'caissier' => 'Caissier',
             'enseignant' => __('teacher_role'),
         ];
         $roleLabel = $roleLabels[$role] ?? ucfirst((string) $role);
         
-        // Charger le contenu pour l'affichage direct
+        // Charger le contenu pour l'affichage direct avec fallback
+        $manualFile = $this->getManualPath((string) $role, (string) $lang);
         ob_start();
-        include __DIR__ . "/../Views/documentation/manual_{$role}_{$lang}.php";
+        include $manualFile;
         $manual_content = ob_get_clean();
 
         // Extraire le CSS
@@ -68,8 +89,9 @@ class DocumentationController
         $lang = \App\Core\Locale::get();
 
         // Préparation du contenu HTML basé sur le rôle et la langue
+        $manualFile = $this->getManualPath((string) $role, (string) $lang);
         ob_start();
-        include __DIR__ . "/../Views/documentation/manual_{$role}_{$lang}.php";
+        include $manualFile;
         $html = ob_get_clean();
 
         // Configuration de Dompdf

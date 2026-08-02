@@ -1,0 +1,275 @@
+/* ==========================================================================
+   TOP BAR ONBOARDING & ACTIVATION SYSTEM - UX/UI STYLESHEET
+   Inspired by Linear, Notion & Microsoft 365
+   ========================================================================== */
+
+/* 1. Micro-Barre de Progression sous la Top Bar */
+.topbar-progress-container {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    z-index: 10;
+}
+
+[data-theme="dark"] .topbar-progress-container {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.topbar-progress-line {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #7c3aed 0%, #3b82f6 50%, #10b981 100%);
+    border-radius: 0 4px 4px 0;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 8px rgba(124, 58, 237, 0.4);
+}
+
+/* 2. Pill Badge Widget de Progression */
+.onboarding-pill-badge {
+    background: rgba(124, 58, 237, 0.08);
+    color: var(--primary-color, #7c3aed);
+    border: 1px solid rgba(124, 58, 237, 0.2);
+    border-radius: 50rem;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    user-select: none;
+}
+
+.onboarding-pill-badge:hover,
+.onboarding-pill-badge:focus {
+    background: rgba(124, 58, 237, 0.15);
+    border-color: rgba(124, 58, 237, 0.35);
+    transform: translateY(-1px);
+}
+
+[data-theme="dark"] .onboarding-pill-badge {
+    background: rgba(124, 58, 237, 0.25);
+    color: #a78bfa;
+    border-color: rgba(167, 139, 250, 0.3);
+}
+
+[data-theme="dark"] .onboarding-pill-badge:hover {
+    background: rgba(124, 58, 237, 0.35);
+    border-color: rgba(167, 139, 250, 0.5);
+}
+
+.onboarding-pill-badge .pill-sparkle {
+    display: inline-block;
+    animation: sparklePulse 2s infinite ease-in-out;
+}
+
+@keyframes sparklePulse {
+    0%, 100% { transform: scale(1); opacity: 0.9; }
+    50% { transform: scale(1.2); opacity: 1; filter: drop-shadow(0 0 4px rgba(124, 58, 237, 0.6)); }
+}
+
+/* 3. Popover Checklist Interactive */
+.onboarding-checklist-menu {
+    width: 320px;
+    padding: 0.75rem;
+    border-radius: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="dark"] .onboarding-checklist-menu {
+    background-color: #121316;
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+.onboarding-checklist-header {
+    padding-bottom: 0.6rem;
+    margin-bottom: 0.6rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="dark"] .onboarding-checklist-header {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.onboarding-step-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0.5rem 0.6rem;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    color: var(--text-color, #1e293b);
+    transition: background 0.2s;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+[data-theme="dark"] .onboarding-step-item {
+    color: #e2e8f0;
+}
+
+.onboarding-step-item:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .onboarding-step-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.onboarding-step-item.completed {
+    opacity: 0.75;
+    text-decoration: line-through;
+}
+
+.onboarding-step-item.completed .step-check-icon {
+    background: #10b981;
+    color: #ffffff;
+    border-color: #10b981;
+}
+
+.step-check-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #cbd5e1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .step-check-icon {
+    border-color: #475569;
+}
+
+/* 4. Bouton CTA Dynamique Contextuel */
+.btn-onboarding-cta {
+    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+    color: #ffffff !important;
+    font-weight: 600;
+    font-size: 0.78rem;
+    padding: 0.35rem 0.9rem;
+    border-radius: 50rem;
+    border: none;
+    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.35);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+}
+
+.btn-onboarding-cta:hover {
+    background: linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%);
+    box-shadow: 0 4px 14px rgba(124, 58, 237, 0.5);
+    transform: translateY(-1px);
+}
+
+.btn-onboarding-cta.pulse-glow {
+    animation: ctaPulseGlow 2.5s infinite;
+}
+
+@keyframes ctaPulseGlow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.6); }
+    50% { box-shadow: 0 0 0 8px rgba(124, 58, 237, 0); }
+}
+
+/* 5. Bannière Contextuelle sous la Top Bar */
+.onboarding-context-banner {
+    background: linear-gradient(90deg, rgba(124, 58, 237, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%);
+    border-bottom: 1px solid rgba(124, 58, 237, 0.15);
+    padding: 0.45rem 1.25rem;
+    font-size: 0.82rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    transition: all 0.3s ease;
+}
+
+[data-theme="dark"] .onboarding-context-banner {
+    background: linear-gradient(90deg, rgba(124, 58, 237, 0.18) 0%, rgba(59, 130, 246, 0.18) 100%);
+    border-bottom-color: rgba(167, 139, 250, 0.2);
+}
+
+.onboarding-context-banner .banner-dismiss-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+[data-theme="dark"] .onboarding-context-banner .banner-dismiss-btn {
+    color: #94a3b8;
+}
+
+.onboarding-context-banner .banner-dismiss-btn:hover {
+    background: rgba(0, 0, 0, 0.06);
+    color: #0f172a;
+}
+
+[data-theme="dark"] .onboarding-context-banner .banner-dismiss-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+/* 6. Cloche de Notification d'Accueil Intelligente */
+.notification-bell-btn {
+    position: relative;
+}
+
+.notification-bell-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 8px;
+    height: 8px;
+    background-color: #ef4444;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    animation: bellBadgePulse 2s infinite;
+}
+
+[data-theme="dark"] .notification-bell-badge {
+    border-color: #0f172a;
+}
+
+@keyframes bellBadgePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.25); }
+}
+
+.notification-drawer-menu {
+    width: 330px;
+    max-height: 420px;
+    overflow-y: auto;
+    border-radius: 16px;
+}
+
+.notification-item-card {
+    padding: 0.65rem 0.75rem;
+    border-radius: 10px;
+    transition: background 0.2s;
+    margin-bottom: 4px;
+}
+
+.notification-item-card:hover {
+    background: rgba(124, 58, 237, 0.05);
+}
+
+[data-theme="dark"] .notification-item-card:hover {
+    background: rgba(255, 255, 255, 0.06);
+}

@@ -174,6 +174,10 @@ class GradeController
 
 
 
+        \App\Core\PermissionManager::requirePermission('manage_marks');
+
+
+
     }
 
 
