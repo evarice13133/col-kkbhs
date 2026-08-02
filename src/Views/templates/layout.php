@@ -75,7 +75,17 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
     return true;
 };
 
-// Ribbon UI Definition (Inspired by Microsoft Word 365)
+$isItemAllowed = function ($item) use ($user_role) {
+    if (isset($item['permission']) && !empty($item['permission'])) {
+        return \App\Core\PermissionManager::hasPermission($item['permission']);
+    }
+    if (isset($item['roles']) && is_array($item['roles'])) {
+        return in_array($user_role, $item['roles'], true);
+    }
+    return true;
+};
+
+// Ribbon UI Definition (Inspired by Microsoft Word 365 with Rich Contextual Descriptions)
 $ribbon_structure = [
     [
         'id' => 'tab-home',
@@ -85,21 +95,23 @@ $ribbon_structure = [
             [
                 'title' => __('pilotage') ?? 'Pilotage',
                 'items' => [
-                    ['icon' => 'bi-speedometer2', 'label' => __('dashboard'), 'url' => '/', 'roles' => ['superadmin', 'admin', 'enseignant', 'caissier', 'comptable', 'it_manager']]
+                    ['icon' => 'bi-speedometer2', 'label' => __('dashboard'), 'url' => '/', 'roles' => ['superadmin', 'admin', 'enseignant', 'caissier', 'comptable', 'it_manager'], 'desc' => 'Vue globale des indicateurs clés et statistiques de l\'établissement.']
                 ]
             ],
             [
                 'title' => __('enseignant') ?? 'Enseignant',
                 'items' => [
-                    ['icon' => 'bi-pencil-square', 'label' => __('enter_marks'), 'url' => '/notes', 'roles' => ['enseignant']],
-                    ['icon' => 'bi-people', 'label' => __('my_students'), 'url' => '/students', 'roles' => ['enseignant']],
-                    ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'roles' => ['enseignant']],
+                    ['icon' => 'bi-pencil-square', 'label' => __('enter_marks'), 'url' => '/notes', 'permission' => 'manage_marks', 'roles' => ['enseignant'], 'desc' => 'Saisie et validation des notes d\'évaluation par classe et matière.'],
+                    ['icon' => 'bi-people', 'label' => __('my_students'), 'url' => '/students', 'permission' => 'view_students', 'roles' => ['enseignant'], 'desc' => 'Consulter la liste et le suivi individuel de vos élèves.'],
+                    ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'roles' => ['enseignant'], 'desc' => 'Guides d\'utilisation et centre d\'assistance.'],
                 ]
             ],
             [
                 'title' => __('caisse') ?? 'Caisse',
                 'items' => [
-                    ['icon' => 'bi-door-open', 'label' => __('classes'), 'url' => '/classes', 'roles' => ['caissier', 'comptable']]
+                    ['icon' => 'bi-credit-card', 'label' => __('payments_menu'), 'url' => '/payments', 'permission' => 'manage_payments', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Enregistrement des versements de scolarité et impression des reçus.'],
+                    ['icon' => 'bi-exclamation-triangle', 'label' => __('insolvent_title'), 'url' => '/school_fees/insolvables', 'permission' => 'view_financial_reports', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Rapport des élèves en retard de paiement.'],
+                    ['icon' => 'bi-door-open', 'label' => __('classes'), 'url' => '/classes', 'permission' => 'view_classes', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Gestion et état d\'avancement des paiements par classe.']
                 ]
             ]
         ]
@@ -112,19 +124,19 @@ $ribbon_structure = [
             [
                 'title' => 'Structure Académique',
                 'items' => [
-                    ['icon' => 'bi-calendar-event', 'label' => __('academic_years'), 'url' => '/academic_years', 'roles' => ['superadmin', 'it_manager']],
-                    ['icon' => 'bi-diagram-3', 'label' => __('teaching_types'), 'url' => '/teaching_types', 'roles' => ['superadmin', 'admin']],
-                    ['icon' => 'bi-bar-chart-steps', 'label' => __('levels') ?? 'Niveaux', 'url' => '/levels', 'roles' => ['superadmin', 'admin']],
-                    ['icon' => 'bi-layers', 'label' => __('academic_cycles'), 'url' => '/cycles', 'roles' => ['superadmin', 'admin']],
-                    ['icon' => 'bi-grid-3x3-gap', 'label' => __('academic_sections'), 'url' => '/sections', 'roles' => ['superadmin', 'admin']],
-                    ['icon' => 'bi-building', 'label' => __('departments'), 'url' => '/departments', 'roles' => ['superadmin', 'admin', 'it_manager']],
+                    ['icon' => 'bi-calendar-event', 'label' => __('academic_years'), 'url' => '/academic_years', 'permission' => 'manage_academic_years', 'roles' => ['superadmin', 'it_manager'], 'desc' => 'Configuration des années scolaires et périodes académiques.'],
+                    ['icon' => 'bi-diagram-3', 'label' => __('teaching_types'), 'url' => '/teaching_types', 'permission' => 'manage_teaching_types', 'roles' => ['superadmin', 'admin'], 'desc' => 'Définition des types d\'enseignement (Général, Technique, etc.).'],
+                    ['icon' => 'bi-bar-chart-steps', 'label' => __('levels') ?? 'Niveaux', 'url' => '/levels', 'permission' => 'manage_classes_structure', 'roles' => ['superadmin', 'admin'], 'desc' => 'Gestion des niveaux scolaires et coefficients.'],
+                    ['icon' => 'bi-layers', 'label' => __('academic_cycles'), 'url' => '/cycles', 'permission' => 'manage_cycles', 'roles' => ['superadmin', 'admin'], 'desc' => 'Cycles d\'études (Premier cycle, Second cycle).'],
+                    ['icon' => 'bi-grid-3x3-gap', 'label' => __('academic_sections'), 'url' => '/sections', 'permission' => 'manage_sections', 'roles' => ['superadmin', 'admin'], 'desc' => 'Sections francophones, anglophones et spécialités.'],
+                    ['icon' => 'bi-building', 'label' => __('departments'), 'url' => '/departments', 'permission' => 'manage_departments', 'roles' => ['superadmin', 'admin', 'it_manager'], 'desc' => 'Organisation des départements académiques.'],
                 ]
             ],
             [
                 'title' => 'Système & Config',
                 'items' => [
-                    ['icon' => 'bi-gear', 'label' => __('settings'), 'url' => '/settings', 'roles' => ['superadmin', 'admin']],
-                    ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'roles' => ['superadmin', 'admin', 'it_manager']],
+                    ['icon' => 'bi-gear', 'label' => __('settings'), 'url' => '/settings', 'permission' => 'manage_settings', 'roles' => ['superadmin', 'admin'], 'desc' => 'Identité de l\'école, logos, documents officiels et paramètres généraux.'],
+                    ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'roles' => ['superadmin', 'admin', 'it_manager'], 'desc' => 'Documentation technique et manuels utilisateur.'],
                 ]
             ]
         ]
@@ -137,10 +149,10 @@ $ribbon_structure = [
             [
                 'title' => 'Inscriptions & Élèves',
                 'items' => [
-                    ['icon' => 'bi-person-plus', 'label' => __('register_student_menu'), 'url' => '/students/create', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-                    ['icon' => 'bi-people', 'label' => __('registered_students_menu'), 'url' => '/students', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-                    ['icon' => 'bi-person-dash', 'label' => __('unregistered_students_menu'), 'url' => '/students/non-inscrits', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-                    ['icon' => 'bi-person-check', 'label' => __('my_registrations_menu'), 'url' => '/students?only_mine=1', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                    ['icon' => 'bi-person-plus', 'label' => __('register_student_menu'), 'url' => '/students/create', 'permission' => 'manage_students', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Inscrire un nouvel élève, attribuer une classe et générer un matricule.'],
+                    ['icon' => 'bi-people', 'label' => __('registered_students_menu'), 'url' => '/students', 'permission' => 'view_students', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Annuaire et dossiers complets de tous les élèves inscrits.'],
+                    ['icon' => 'bi-person-dash', 'label' => __('unregistered_students_menu'), 'url' => '/students/non-inscrits', 'permission' => 'view_students', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Élèves pré-inscrits en attente de régularisation.'],
+                    ['icon' => 'bi-person-check', 'label' => __('my_registrations_menu'), 'url' => '/students?only_mine=1', 'permission' => 'view_students', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Historique des inscriptions enregistrées par votre compte.'],
                 ]
             ]
         ]
@@ -153,9 +165,9 @@ $ribbon_structure = [
             [
                 'title' => 'Personnel & Comptes',
                 'items' => [
-                    ['icon' => 'bi-people-fill', 'label' => __('users'), 'url' => '/users', 'roles' => ['superadmin', 'it_manager']],
-                    ['icon' => 'bi-person-plus-fill', 'label' => __('manage_cashiers_menu'), 'url' => '/users/caissiers', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-                    ['icon' => 'bi-person-badge', 'label' => __('teachers'), 'url' => '/teachers', 'roles' => ['superadmin', 'admin', 'it_manager']],
+                    ['icon' => 'bi-people-fill', 'label' => __('users'), 'url' => '/users', 'permission' => 'manage_users', 'roles' => ['superadmin', 'it_manager'], 'desc' => 'Création des comptes administrateurs, enseignants et gestionnaires.'],
+                    ['icon' => 'bi-person-plus-fill', 'label' => __('manage_cashiers_menu'), 'url' => '/users/caissiers', 'permission' => 'manage_users', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Gestion spécifique des caissiers et agents de saisie.'],
+                    ['icon' => 'bi-person-badge', 'label' => __('teachers'), 'url' => '/teachers', 'permission' => 'manage_teachers', 'roles' => ['superadmin', 'admin', 'it_manager'], 'desc' => 'Attribution des matières et des classes au corps enseignant.'],
                 ]
             ]
         ]
@@ -168,28 +180,28 @@ $ribbon_structure = [
             [
                 'title' => __('scolarite_menu'),
                 'items' => [
-                    ['icon' => 'bi-credit-card', 'label' => __('payments_menu'), 'url' => '/payments', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-                    ['icon' => 'bi-table', 'label' => __('grille_title'), 'url' => '/school_fees/grille', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-                    ['icon' => 'bi-diagram-2', 'label' => __('tranches_menu'), 'url' => '/school_fees/tranches', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-                    ['icon' => 'bi-receipt-cutoff', 'label' => __('versements_menu'), 'url' => '/school_fees/versements', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-                    ['icon' => 'bi-exclamation-triangle', 'label' => __('insolvent_title'), 'url' => '/school_fees/insolvables', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                    ['icon' => 'bi-credit-card', 'label' => __('payments_menu'), 'url' => '/payments', 'permission' => 'manage_payments', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Enregistrement des versements de scolarité et impression des reçus.'],
+                    ['icon' => 'bi-table', 'label' => __('grille_title'), 'url' => '/school_fees/grille', 'permission' => 'view_class_finances', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Grille tarifaire des frais de scolarité par classe.'],
+                    ['icon' => 'bi-diagram-2', 'label' => __('tranches_menu'), 'url' => '/school_fees/tranches', 'permission' => 'edit_class_finances', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Configuration des tranches et échéanciers de paiement.'],
+                    ['icon' => 'bi-receipt-cutoff', 'label' => __('versements_menu'), 'url' => '/school_fees/versements', 'permission' => 'view_financial_history', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Journal détaillé des reçus et opérations de caisse.'],
+                    ['icon' => 'bi-exclamation-triangle', 'label' => __('insolvent_title'), 'url' => '/school_fees/insolvables', 'permission' => 'view_financial_reports', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Rapport des élèves en retard de paiement.'],
                 ]
             ],
             [
                 'title' => __('discounts'),
                 'items' => [
-                    ['icon' => 'bi-percent', 'label' => __('discounts_granted'), 'url' => '/discounts', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-                    ['icon' => 'bi-mortarboard', 'label' => __('scholarships'), 'url' => '/scholarships', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-                    ['icon' => 'bi-tags', 'label' => __('discount_types_title'), 'url' => '/discount_types', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                    ['icon' => 'bi-percent', 'label' => __('discounts_granted'), 'url' => '/discounts', 'permission' => 'manage_discounts', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Liste des remises exceptionnelles accordées.'],
+                    ['icon' => 'bi-mortarboard', 'label' => __('scholarships'), 'url' => '/scholarships', 'permission' => 'manage_scholarships', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Bourses d\'études attribuées aux élèves boursiers.'],
+                    ['icon' => 'bi-tags', 'label' => __('discount_types_title'), 'url' => '/discount_types', 'permission' => 'manage_discounts', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Types et règles d\'exonération tarifaire.'],
                 ]
             ],
             [
                 'title' => __('expenses_menu'),
                 'items' => [
-                    ['icon' => 'bi-journal-text', 'label' => __('financial_history'), 'url' => '/financial-history', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-                    ['icon' => 'bi-list-ul', 'label' => __('expenses_list'), 'url' => '/expenses', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-                    ['icon' => 'bi-tags-fill', 'label' => __('expense_categories'), 'url' => '/expenses/categories', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-                    ['icon' => 'bi-shield-check', 'label' => __('expense_audit'), 'url' => '/expenses/audit', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                    ['icon' => 'bi-journal-text', 'label' => __('financial_history'), 'url' => '/financial-history', 'permission' => 'view_financial_history', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Historique comptable global des entrées et sorties.'],
+                    ['icon' => 'bi-list-ul', 'label' => __('expenses_list'), 'url' => '/expenses', 'permission' => 'manage_fees', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Saisie et approbation des dépenses d\'exploitation.'],
+                    ['icon' => 'bi-tags-fill', 'label' => __('expense_categories'), 'url' => '/expenses/categories', 'permission' => 'manage_fees', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Catégories budgétaires des dépenses.'],
+                    ['icon' => 'bi-shield-check', 'label' => __('expense_audit'), 'url' => '/expenses/audit', 'permission' => 'view_system_logs', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Piste d\'audit et contrôle financier.'],
                 ]
             ]
         ]
@@ -202,12 +214,12 @@ $ribbon_structure = [
             [
                 'title' => 'Évaluations & Matières',
                 'items' => [
-                    ['icon' => 'bi-check2-square', 'label' => __('evaluations'), 'url' => '/sequences', 'roles' => ['superadmin', 'admin']],
-                    ['icon' => 'bi-pencil-square', 'label' => __('enter_marks'), 'url' => '/notes', 'roles' => ['superadmin', 'admin']],
-                    ['icon' => 'bi-door-open', 'label' => __('classes'), 'url' => '/classes', 'roles' => ['superadmin', 'admin']],
-                    ['icon' => 'bi-book', 'label' => __('subjects'), 'url' => '/subjects', 'roles' => ['superadmin', 'admin']],
-                    ['icon' => 'bi-collection', 'label' => __('subject_groups') ?? 'Groupe de Modules', 'url' => '/subject-groups', 'roles' => ['superadmin', 'admin']],
-                    ['icon' => 'bi-shield-check', 'label' => __('discipline_management'), 'url' => '/bulletins/discipline', 'roles' => ['superadmin', 'admin']],
+                    ['icon' => 'bi-check2-square', 'label' => __('evaluations'), 'url' => '/sequences', 'permission' => 'manage_sequences', 'roles' => ['superadmin', 'admin'], 'desc' => 'Configuration des séquences et trimestres d\'évaluation.'],
+                    ['icon' => 'bi-pencil-square', 'label' => __('enter_marks'), 'url' => '/notes', 'permission' => 'manage_marks', 'roles' => ['superadmin', 'admin'], 'desc' => 'Saisie centralisée des notes d\'évaluation par classe.'],
+                    ['icon' => 'bi-door-open', 'label' => __('classes'), 'url' => '/classes', 'permission' => 'view_classes', 'roles' => ['superadmin', 'admin'], 'desc' => 'Aperçu des performances académiques par classe.'],
+                    ['icon' => 'bi-book', 'label' => __('subjects'), 'url' => '/subjects', 'permission' => 'manage_subjects', 'roles' => ['superadmin', 'admin'], 'desc' => 'Programme d\'enseignement et matières dispensées.'],
+                    ['icon' => 'bi-collection', 'label' => __('subject_groups') ?? 'Groupe de Modules', 'url' => '/subject-groups', 'permission' => 'manage_subjects', 'roles' => ['superadmin', 'admin'], 'desc' => 'Regroupement de matières en unités d\'enseignement (UE).'],
+                    ['icon' => 'bi-shield-check', 'label' => __('discipline_management'), 'url' => '/bulletins/discipline', 'permission' => 'manage_absences', 'roles' => ['superadmin', 'admin'], 'desc' => 'Saisie des absences, blâmes et avertissements disciplinaires.'],
                 ]
             ]
         ]
@@ -220,10 +232,10 @@ $ribbon_structure = [
             [
                 'title' => 'Édition & Documents',
                 'items' => [
-                    ['icon' => 'bi-file-earmark-pdf', 'label' => __('bulletins'), 'url' => '/bulletins', 'roles' => ['superadmin', 'admin']],
-                    ['icon' => 'bi-award', 'label' => __('honor_roll_title'), 'url' => '/honors', 'roles' => ['superadmin', 'admin']],
-                    ['icon' => 'bi-file-earmark-text', 'label' => __('proces_verbaux'), 'url' => '/proces-verbal', 'roles' => ['superadmin', 'admin']],
-                    ['icon' => 'bi-file-earmark-spreadsheet', 'label' => __('transcripts') ?? 'Relevé de Notes', 'url' => '/transcripts', 'roles' => ['superadmin', 'admin']],
+                    ['icon' => 'bi-file-earmark-pdf', 'label' => __('bulletins'), 'url' => '/bulletins', 'permission' => 'manage_bulletins', 'roles' => ['superadmin', 'admin'], 'desc' => 'Génération et impression des bulletins de notes périodiques.'],
+                    ['icon' => 'bi-award', 'label' => __('honor_roll_title'), 'url' => '/honors', 'permission' => 'manage_bulletins', 'roles' => ['superadmin', 'admin'], 'desc' => 'Impression des tableaux d\'honneur et félicitations.'],
+                    ['icon' => 'bi-file-earmark-text', 'label' => __('proces_verbaux'), 'url' => '/proces-verbal', 'permission' => 'manage_bulletins', 'roles' => ['superadmin', 'admin'], 'desc' => 'Édition des procès-verbaux de récapitulation annuelle.'],
+                    ['icon' => 'bi-file-earmark-spreadsheet', 'label' => __('transcripts') ?? 'Relevé de Notes', 'url' => '/transcripts', 'permission' => 'view_transcripts', 'roles' => ['superadmin', 'admin'], 'desc' => 'Génération des relevés de notes consolidés.'],
                 ]
             ]
         ]
@@ -235,7 +247,7 @@ $active_tab_id = 'tab-home';
 foreach ($ribbon_structure as $tab) {
     foreach ($tab['groups'] as $group) {
         foreach ($group['items'] as $item) {
-            if (in_array($user_role, $item['roles']) && $isUrlActive($item['url'])) {
+            if ($isItemAllowed($item) && $isUrlActive($item['url'])) {
                 $active_tab_id = $tab['id'];
                 break 3;
             }
@@ -248,13 +260,14 @@ $authorized_commands = [];
 foreach ($ribbon_structure as $tab) {
     foreach ($tab['groups'] as $group) {
         foreach ($group['items'] as $item) {
-            if (in_array($user_role, $item['roles'])) {
+            if ($isItemAllowed($item)) {
                 $authorized_commands[] = [
                     'tab' => $tab['title'],
                     'group' => $group['title'],
                     'label' => $item['label'],
                     'icon' => $item['icon'],
-                    'url' => $item['url']
+                    'url' => $item['url'],
+                    'desc' => $item['desc'] ?? ''
                 ];
             }
         }
@@ -339,11 +352,12 @@ foreach ($ribbon_structure as $tab) {
     <?php
     $asset_version = file_exists(__DIR__ . '/../../../public/css/modern-dashboard.css')
         ? filemtime(__DIR__ . '/../../../public/css/modern-dashboard.css')
-        : '2.1.0';
+        : '2.4.0';
     ?>
     <link rel="stylesheet" href="/public/css/modern-dashboard.css?v=<?= $asset_version ?>">
     <link rel="stylesheet" href="/public/css/alerts-premium.css?v=<?= $asset_version ?>">
     <link rel="stylesheet" href="/public/css/ux-improvements.css?v=<?= $asset_version ?>">
+    <link rel="stylesheet" href="/public/css/topbar-onboarding.css?v=<?= $asset_version ?>">
 
     <style>
         :root {
@@ -440,10 +454,10 @@ foreach ($ribbon_structure as $tab) {
 
     <div class="dashboard-wrapper">
         <!-- MICROSOFT WORD STYLE RIBBON UI NAVIGATION -->
-        <nav class="word-ribbon-container">
+        <nav class="word-ribbon-container" id="ribbonNavContainer">
             
             <!-- 1. BARRE SUPÉRIEURE INDÉPENDANTE (Brand + QAT + Global Search + Utility Actions) -->
-            <div class="ribbon-top-bar">
+            <div class="ribbon-top-bar" id="ribbonTopBar">
                 <!-- Gauche : Mobile Button + Logo + Quick Access Toolbar (QAT) + Global Search Input -->
                 <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 750px;">
                     <!-- Mobile Menu Button -->
@@ -454,7 +468,7 @@ foreach ($ribbon_structure as $tab) {
                     <?php endif; ?>
 
                     <!-- Brand / Logo -->
-                    <a href="/" class="ribbon-brand flex-shrink-0 me-2">
+                    <a href="/" class="ribbon-brand flex-shrink-0 me-2" id="tourBrandLogo">
                         <?php if ($logoData['has_logo'] && !empty($logoData['base64'])): ?>
                             <div class="sidebar-logo-container" style="width: 32px; height: 32px;">
                                 <img src="<?= htmlspecialchars($logoData['base64']) ?>" alt="Logo" class="sidebar-logo">
@@ -473,25 +487,27 @@ foreach ($ribbon_structure as $tab) {
 
                     <!-- MS Word Quick Access Toolbar (QAT - Barre d'Accès Rapide) -->
                     <?php if (\App\Core\Session::isLogged()): ?>
-                        <div class="ribbon-qat-container d-none d-md-flex me-2 flex-shrink-0">
-                            <a href="/" class="ribbon-qat-btn <?= $current_path === '/' ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="bottom" title="<?= __('dashboard') ?>">
+                        <div class="ribbon-qat-container d-none d-md-flex me-2 flex-shrink-0" id="tourQAT">
+                            <a href="/" class="ribbon-qat-btn <?= $current_path === '/' ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-html="true" title="<div class='tooltip-rich-title'><i class='bi bi-house-door'></i> Tableau de bord</div><div class='tooltip-rich-desc'>Vue d'ensemble et statistiques générales de l'école.</div>">
                                 <i class="bi bi-house-door"></i>
                             </a>
-                            <?php if (in_array($user_role, ['superadmin', 'admin', 'enseignant'])): ?>
-                                <a href="/notes" class="ribbon-qat-btn <?= strpos($current_path, '/notes') === 0 ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="bottom" title="<?= __('enter_marks') ?>">
+                            <?php if (\App\Core\PermissionManager::hasPermission('manage_marks')): ?>
+                                <a href="/notes" class="ribbon-qat-btn <?= strpos($current_path, '/notes') === 0 ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-html="true" title="<div class='tooltip-rich-title'><i class='bi bi-pencil-square'></i> Saisie des Notes</div><div class='tooltip-rich-desc'>Saisir et valider les notes d'évaluation par classe.</div>">
                                     <i class="bi bi-pencil-square"></i>
                                 </a>
                             <?php endif; ?>
-                            <?php if (in_array($user_role, ['superadmin', 'admin', 'caissier', 'comptable'])): ?>
-                                <a href="/payments" class="ribbon-qat-btn <?= strpos($current_path, '/payments') === 0 ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="bottom" title="<?= __('payments_menu') ?>">
+                            <?php if (\App\Core\PermissionManager::hasPermission('manage_payments')): ?>
+                                <a href="/payments" class="ribbon-qat-btn <?= strpos($current_path, '/payments') === 0 ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-html="true" title="<div class='tooltip-rich-title'><i class='bi bi-credit-card'></i> Caisse & Versements</div><div class='tooltip-rich-desc'>Encaisser les frais de scolarité et délivrer les reçus.</div>">
                                     <i class="bi bi-credit-card"></i>
                                 </a>
-                                <a href="/students/create" class="ribbon-qat-btn <?= strpos($current_path, '/students/create') === 0 ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="bottom" title="<?= __('register_student_menu') ?>">
+                            <?php endif; ?>
+                            <?php if (\App\Core\PermissionManager::hasPermission('manage_students')): ?>
+                                <a href="/students/create" class="ribbon-qat-btn <?= strpos($current_path, '/students/create') === 0 ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-html="true" title="<div class='tooltip-rich-title'><i class='bi bi-person-plus'></i> Inscription Élève</div><div class='tooltip-rich-desc'>Enregistrer un nouvel élève et lui attribuer une classe.</div>">
                                     <i class="bi bi-person-plus"></i>
                                 </a>
                             <?php endif; ?>
-                            <?php if (in_array($user_role, ['superadmin', 'admin'])): ?>
-                                <a href="/bulletins" class="ribbon-qat-btn <?= strpos($current_path, '/bulletins') === 0 ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="bottom" title="<?= __('bulletins') ?>">
+                            <?php if (\App\Core\PermissionManager::hasPermission('manage_bulletins')): ?>
+                                <a href="/bulletins" class="ribbon-qat-btn <?= strpos($current_path, '/bulletins') === 0 ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-html="true" title="<div class='tooltip-rich-title'><i class='bi bi-printer'></i> Impression Bulletins</div><div class='tooltip-rich-desc'>Générer les bulletins de notes périodiques officiels.</div>">
                                     <i class="bi bi-printer"></i>
                                 </a>
                             <?php endif; ?>
@@ -511,8 +527,87 @@ foreach ($ribbon_structure as $tab) {
                     <?php endif; ?>
                 </div>
 
-                <!-- Droite : Theme Switcher + Compact User Account Avatar -->
+                <!-- Droite : Onboarding Progress Pill + Primary CTA + Notification Bell + Theme Switcher + User Account -->
                 <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                    <?php if (\App\Core\Session::isLogged()): ?>
+                        <!-- 1. Pill Badge Widget de Progression (Checklist Interactive Popover) -->
+                        <div class="dropdown me-1" id="onboardingProgressPillDropdown">
+                            <div class="onboarding-pill-badge" data-bs-toggle="dropdown" aria-expanded="false" title="Progression de la configuration de votre espace">
+                                <span class="pill-sparkle">✨</span>
+                                <span id="onboardingPillText">⚡ 0% configuré</span>
+                                <i class="bi bi-chevron-down extra-small opacity-75 ms-1"></i>
+                            </div>
+                            <div class="dropdown-menu dropdown-menu-end onboarding-checklist-menu p-3">
+                                <div class="onboarding-checklist-header d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <h6 class="fw-bold m-0 fs-6 text-main-theme">Guide d'Onboarding</h6>
+                                        <small class="text-muted" id="onboardingChecklistRemaining">Étapes restantes</small>
+                                    </div>
+                                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2 py-1 extra-small">Setup</span>
+                                </div>
+                                <div id="onboardingChecklistContainer" class="d-flex flex-column gap-1 my-2">
+                                    <!-- Dynamic Checklist items rendered via JS -->
+                                </div>
+                                <div class="mt-2 pt-2 border-top text-center">
+                                    <a href="/documentation" class="text-decoration-none extra-small text-muted hover-opacity-100">
+                                        <i class="bi bi-question-circle me-1"></i> Besoin d'aide pour configurer ?
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Bouton CTA Dynamique Contextuel -->
+                        <a href="/settings" class="btn-onboarding-cta pulse-glow me-1 d-none d-sm-inline-flex" id="onboardingPrimaryCTA">
+                            <i class="bi bi-rocket-takeoff"></i> Configurer maintenant
+                        </a>
+
+                        <!-- 3. Smart Notification Bell Dropdown -->
+                        <div class="dropdown" id="onboardingBellDropdown">
+                            <button type="button" class="btn btn-theme-soft notification-bell-btn rounded-circle d-flex align-items-center justify-content-center p-0 border-0 shadow-sm transition-all"
+                                    data-bs-toggle="dropdown" aria-expanded="false" title="Notifications & Conseils Onboarding" style="width: 36px; height: 36px;">
+                                <i class="bi bi-bell fs-6 text-main-theme"></i>
+                                <span class="notification-bell-badge" id="onboardingBellBadge"></span>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end notification-drawer-menu shadow-lg border-0 p-3 mt-2">
+                                <div class="d-flex align-items-center justify-content-between pb-2 mb-2 border-bottom">
+                                    <h6 class="fw-bold m-0 fs-6 text-main-theme">Notifications & Conseils</h6>
+                                    <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill extra-small">Onboarding</span>
+                                </div>
+                                <div class="notification-item-card">
+                                    <div class="d-flex align-items-start gap-2">
+                                        <div class="p-2 rounded-circle bg-primary bg-opacity-10 text-primary flex-shrink-0">
+                                            <i class="bi bi-hand-thumbs-up fs-6"></i>
+                                        </div>
+                                        <div>
+                                            <span class="fw-semibold d-block text-main-theme" style="font-size: 0.82rem;">Bienvenue dans NoteMaster !</span>
+                                            <p class="text-muted extra-small mb-1">Découvrez les 5 étapes simples pour configurer votre établissement.</p>
+                                            <a href="javascript:void(0)" onclick="TopBarOnboarding.updateUI()" class="extra-small text-primary fw-semibold text-decoration-none">
+                                                Voir la checklist →
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="notification-item-card">
+                                    <div class="d-flex align-items-start gap-2">
+                                        <div class="p-2 rounded-circle bg-info bg-opacity-10 text-info flex-shrink-0">
+                                            <i class="bi bi-lightning-charge fs-6"></i>
+                                        </div>
+                                        <div>
+                                            <span class="fw-semibold d-block text-main-theme" style="font-size: 0.82rem;">Conseil Pro : Raccourcis</span>
+                                            <p class="text-muted extra-small mb-0">Utilisez <kbd class="extra-small">Cmd+K</kbd> pour naviguer instantanément à travers l'application.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 4. Interactive Guided Tour Button -->
+                        <button type="button" class="btn btn-theme-soft rounded-circle d-flex align-items-center justify-content-center p-0 border-0 shadow-sm transition-all"
+                                id="startGuidedTour" title="Découvrir la Navigation (Visite Guidée)" style="width: 36px; height: 36px;">
+                            <i class="bi bi-compass fs-6 text-primary"></i>
+                        </button>
+                    <?php endif; ?>
+
                     <!-- Theme Toggle -->
                     <button class="theme-toggle-btn btn btn-theme-soft rounded-circle d-flex align-items-center justify-content-center p-0 border-0 shadow-sm transition-all"
                             id="themeToggle" title="<?= __('change_theme') ?>" style="width: 36px; height: 36px;">
@@ -521,7 +616,7 @@ foreach ($ribbon_structure as $tab) {
 
                     <!-- Compact User Account Avatar Dropdown (Space-Saving) -->
                     <?php if (\App\Core\Session::isLogged()): ?>
-                        <div class="dropdown">
+                        <div class="dropdown" id="tourUserAccount">
                             <a href="#"
                                 class="user-avatar-btn"
                                 data-bs-toggle="dropdown" aria-expanded="false"
@@ -583,18 +678,40 @@ foreach ($ribbon_structure as $tab) {
                         </div>
                     <?php endif; ?>
                 </div>
+
+                <!-- Bottom Micro Progress Line -->
+                <?php if (\App\Core\Session::isLogged()): ?>
+                    <div class="topbar-progress-container" title="Progression de la configuration de votre espace">
+                        <div class="topbar-progress-line" id="topbarProgressLine" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                <?php endif; ?>
             </div>
+
+            <!-- Onboarding Contextual Banner -->
+            <?php if (\App\Core\Session::isLogged()): ?>
+                <div class="onboarding-context-banner" id="onboardingContextBanner" style="display: none;">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="fs-5">✨</span>
+                        <span id="onboardingBannerText">Bienvenue 👋 Commençons la configuration de votre espace.</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="banner-dismiss-btn" id="dismissOnboardingBanner" title="Masquer cette bannière">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                </div>
+            <?php endif; ?>
 
             <!-- 2. BARRE D'ONGLETS RIBBON DÉDIÉE (Pleine Largeur - Exclusivité Menus Métier) -->
             <?php if (\App\Core\Session::isLogged()): ?>
-                <div class="ribbon-tabs-bar border-bottom d-none d-lg-flex px-3">
+                <div class="ribbon-tabs-bar border-bottom d-none d-lg-flex px-3" id="tourRibbonTabs">
                     <div class="ribbon-tabs-wrapper flex-grow-1" id="ribbonTabsWrapper">
                         <?php foreach ($ribbon_structure as $tab): ?>
                             <?php
                             $tab_accessible_count = 0;
                             foreach ($tab['groups'] as $group) {
                                 foreach ($group['items'] as $item) {
-                                    if (in_array($user_role, $item['roles'])) {
+                                    if ($isItemAllowed($item)) {
                                         $tab_accessible_count++;
                                     }
                                 }
@@ -623,7 +740,7 @@ foreach ($ribbon_structure as $tab) {
                             $tab_accessible_items = [];
                             foreach ($tab['groups'] as $group) {
                                 foreach ($group['items'] as $item) {
-                                    if (in_array($user_role, $item['roles'])) {
+                                    if ($isItemAllowed($item)) {
                                         $tab_accessible_items[] = $item;
                                     }
                                 }
@@ -632,11 +749,11 @@ foreach ($ribbon_structure as $tab) {
                             ?>
                             <?php if ($total_tab_items > 0): ?>
                                 <div class="ribbon-tab-pane <?= $tab['id'] === $active_tab_id ? 'active' : '' ?>" id="<?= $tab['id'] ?>">
-                                    <?php if ($total_tab_items <= 10): ?>
-                                        <!-- CAS 1 : <= 10 SOUS-MENUS -> AFFICHAGE DIRECT EN GROUPES RIBBON -->
+                                    <?php if ($total_tab_items <= 15): ?>
+                                        <!-- CAS 1 : <= 15 SOUS-MENUS -> AFFICHAGE HARMONISÉ EN GROUPES RIBBON DIRECTS -->
                                         <?php foreach ($tab['groups'] as $group): ?>
                                             <?php
-                                            $group_visible_items = array_filter($group['items'], fn($i) => in_array($user_role, $i['roles']));
+                                            $group_visible_items = array_filter($group['items'], fn($i) => $isItemAllowed($i));
                                             ?>
                                             <?php if (count($group_visible_items) > 0): ?>
                                                 <div class="ribbon-group">
@@ -645,7 +762,8 @@ foreach ($ribbon_structure as $tab) {
                                                             <?php $isActive = $isUrlActive($item['url']); ?>
                                                             <a href="<?= $item['url'] ?>" 
                                                                class="ribbon-btn-large <?= $isActive ? 'active' : '' ?>" 
-                                                               title="<?= htmlspecialchars($item['label']) ?>">
+                                                               data-bs-toggle="tooltip" data-bs-html="true"
+                                                               title="<div class='tooltip-rich-title'><i class='bi <?= $item['icon'] ?>'></i> <?= htmlspecialchars($item['label']) ?></div><div class='tooltip-rich-desc'><?= htmlspecialchars($item['desc'] ?? '') ?></div>">
                                                                 <i class="bi <?= $item['icon'] ?>"></i>
                                                                 <span><?= htmlspecialchars($item['label']) ?></span>
                                                             </a>
@@ -656,11 +774,11 @@ foreach ($ribbon_structure as $tab) {
                                             <?php endif; ?>
                                         <?php endforeach; ?>
                                     <?php else: ?>
-                                        <!-- CAS 2 : > 10 SOUS-MENUS -> DISSOLUTION DE LA DROPDOWN CLASSIQUE & ÉCLATEMENT VISUEL AU MÊME NIVEAU (SUB-RIBBON SECTIONS) -->
+                                        <!-- CAS 2 : > 15 SOUS-MENUS -> ÉCLATEMENT VISUEL AU MÊME NIVEAU -->
                                         <div class="d-flex align-items-stretch gap-2 flex-grow-1 overflow-x-auto" style="scrollbar-width: thin;">
                                             <?php foreach ($tab['groups'] as $group): ?>
                                                 <?php
-                                                $group_visible_items = array_filter($group['items'], fn($i) => in_array($user_role, $i['roles']));
+                                                $group_visible_items = array_filter($group['items'], fn($i) => $isItemAllowed($i));
                                                 ?>
                                                 <?php if (count($group_visible_items) > 0): ?>
                                                     <div class="ribbon-group-exploded">
@@ -669,7 +787,8 @@ foreach ($ribbon_structure as $tab) {
                                                                 <?php $isActive = $isUrlActive($item['url']); ?>
                                                                 <a href="<?= $item['url'] ?>" 
                                                                    class="ribbon-btn-large <?= $isActive ? 'active' : '' ?>" 
-                                                                   title="<?= htmlspecialchars($item['label']) ?>">
+                                                                   data-bs-toggle="tooltip" data-bs-html="true"
+                                                                   title="<div class='tooltip-rich-title'><i class='bi <?= $item['icon'] ?>'></i> <?= htmlspecialchars($item['label']) ?></div><div class='tooltip-rich-desc'><?= htmlspecialchars($item['desc'] ?? '') ?></div>">
                                                                     <i class="bi <?= $item['icon'] ?>"></i>
                                                                     <span><?= htmlspecialchars($item['label']) ?></span>
                                                                 </a>
@@ -794,6 +913,20 @@ foreach ($ribbon_structure as $tab) {
         </div>
     </div>
 
+    <!-- SPOTLIGHT GUIDED TOUR CARD (NO DARK BACKDROP OVERLAY) -->
+    <div class="onboarding-card" id="onboardingCard" style="display: none;">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <span class="onboarding-step-badge" id="onboardingStepBadge">Étape 1 / 5</span>
+            <button type="button" class="btn-close" id="closeOnboardingBtn" aria-label="Close"></button>
+        </div>
+        <h5 class="fw-bold text-main-theme mb-1" id="onboardingTitle">Bienvenue sur NoteMaster !</h5>
+        <p class="small text-muted mb-3" id="onboardingBody">Découvrez votre nouvelle navigation style Microsoft Word 365 conçue pour accélérer votre travail quotidien.</p>
+        <div class="d-flex align-items-center justify-content-between pt-2 border-top">
+            <button type="button" class="btn btn-sm btn-light rounded-pill px-3" id="prevOnboardingBtn">Précédent</button>
+            <button type="button" class="btn btn-sm btn-primary rounded-pill px-4 fw-bold shadow-sm" id="nextOnboardingBtn">Suivant</button>
+        </div>
+    </div>
+
     <!-- Scripts de base -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -804,6 +937,115 @@ foreach ($ribbon_structure as $tab) {
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // --- INTERACTIVE SPOTLIGHT GUIDED TOUR CONTROLLER (NO DARK OVERLAY) ---
+            const tourSteps = [
+                {
+                    target: '#tourBrandLogo',
+                    title: "Identité de l'Établissement",
+                    body: "Retrouvez ici le nom et le logo officiels de votre école. Un clic vous ramène instantanément au tableau de bord principal."
+                },
+                {
+                    target: '#tourQAT',
+                    title: "Barre d'Accès Rapide (QAT)",
+                    body: "Accédez en 1 clic aux 5 fonctionnalités les plus vitales : Accueil, Saisie des notes, Caisse, Inscription élève et Bulletins."
+                },
+                {
+                    target: '#openCmdPaletteTrigger',
+                    title: "Recherche Globale & Command Palette (Ctrl+K)",
+                    body: "Recherchez n'importe quel module ou commande au clavier grâce à la combinaison Ctrl+K ou ⌘K."
+                },
+                {
+                    target: '#tourRibbonTabs',
+                    title: "Onglets Métier du Ruban",
+                    body: "Naviguez entre les grands pôles de gestion (Pilotage, RH, Finances, Notes, Impression). Utilisez les flèches du clavier ← → pour basculer rapidement."
+                },
+                {
+                    target: '#tourUserAccount',
+                    title: "Compte & Préférences",
+                    body: "Gérez votre profil utilisateur, les paramètres système, le choix de la langue (Français/Anglais) et le mode Sombre."
+                }
+            ];
+
+            let currentStepIdx = 0;
+            const card = document.getElementById('onboardingCard');
+            const stepBadge = document.getElementById('onboardingStepBadge');
+            const titleEl = document.getElementById('onboardingTitle');
+            const bodyEl = document.getElementById('onboardingBody');
+            const prevBtn = document.getElementById('prevOnboardingBtn');
+            const nextBtn = document.getElementById('nextOnboardingBtn');
+            const closeBtn = document.getElementById('closeOnboardingBtn');
+            const startBtn = document.getElementById('startGuidedTour');
+
+            const showTourStep = (idx) => {
+                // Clear previous highlights
+                document.querySelectorAll('.onboarding-highlight').forEach(el => el.classList.remove('onboarding-highlight'));
+
+                if (idx < 0 || idx >= tourSteps.length) {
+                    endTour();
+                    return;
+                }
+
+                currentStepIdx = idx;
+                const step = tourSteps[idx];
+                const targetEl = document.querySelector(step.target);
+
+                stepBadge.textContent = `Étape ${idx + 1} / ${tourSteps.length}`;
+                titleEl.textContent = step.title;
+                bodyEl.textContent = step.body;
+
+                prevBtn.style.display = idx === 0 ? 'none' : 'inline-block';
+                nextBtn.textContent = idx === tourSteps.length - 1 ? 'Terminer' : 'Suivant';
+
+                card.style.display = 'block';
+
+                if (targetEl) {
+                    targetEl.classList.add('onboarding-highlight');
+                    const rect = targetEl.getBoundingClientRect();
+                    const cardHeight = 200;
+                    
+                    let topPos = rect.bottom + 12;
+                    if (topPos + cardHeight > window.innerHeight) {
+                        topPos = Math.max(20, rect.top - cardHeight - 12);
+                    }
+
+                    let leftPos = Math.max(15, Math.min(rect.left, window.innerWidth - 400));
+                    
+                    card.style.top = topPos + 'px';
+                    card.style.left = leftPos + 'px';
+                } else {
+                    card.style.top = '20%';
+                    card.style.left = '50%';
+                    card.style.transform = 'translateX(-50%)';
+                }
+            };
+
+            const endTour = () => {
+                card.style.display = 'none';
+                document.querySelectorAll('.onboarding-highlight').forEach(el => el.classList.remove('onboarding-highlight'));
+                localStorage.setItem('nm_tour_completed', 'true');
+            };
+
+            if (startBtn) {
+                startBtn.addEventListener('click', () => showTourStep(0));
+            }
+
+            if (nextBtn) {
+                nextBtn.addEventListener('click', () => showTourStep(currentStepIdx + 1));
+            }
+
+            if (prevBtn) {
+                prevBtn.addEventListener('click', () => showTourStep(currentStepIdx - 1));
+            }
+
+            if (closeBtn) {
+                closeBtn.addEventListener('click', endTour);
+            }
+
+            // Auto-trigger tour for first-time visitors
+            if (!localStorage.getItem('nm_tour_completed')) {
+                setTimeout(() => showTourStep(0), 1200);
+            }
+
             // --- DYNAMIC COMMAND PALETTE CONTROLLER (LINEAR / VS CODE STYLE) ---
             const cmdPalette = document.getElementById('commandPalette');
             const cmdPaletteInput = document.getElementById('cmdPaletteInput');
@@ -829,7 +1071,7 @@ foreach ($ribbon_structure as $tab) {
                             <i class="bi ${item.icon} fs-5 text-primary"></i>
                             <div>
                                 <div class="fw-bold">${item.label}</div>
-                                <div class="extra-small text-muted">${item.tab} &bull; ${item.group}</div>
+                                <div class="extra-small text-muted">${item.tab} &bull; ${item.group} - ${item.desc || ''}</div>
                             </div>
                         </div>
                         <span class="command-palette-badge">${item.tab}</span>
@@ -865,7 +1107,8 @@ foreach ($ribbon_structure as $tab) {
                         const filtered = (window.NM_COMMANDS || []).filter(item => 
                             item.label.toLowerCase().includes(q) ||
                             item.tab.toLowerCase().includes(q) ||
-                            item.group.toLowerCase().includes(q)
+                            item.group.toLowerCase().includes(q) ||
+                            (item.desc && item.desc.toLowerCase().includes(q))
                         );
                         renderResults(filtered);
                     }
@@ -903,8 +1146,12 @@ foreach ($ribbon_structure as $tab) {
                     } else {
                         openCmdPalette();
                     }
-                } else if (e.key === 'Escape' && cmdPalette && cmdPalette.classList.contains('active')) {
-                    closeCmdPalette();
+                } else if (e.key === 'Escape') {
+                    if (cmdPalette && cmdPalette.classList.contains('active')) {
+                        closeCmdPalette();
+                    } else if (card && card.style.display === 'block') {
+                        endTour();
+                    }
                 }
             });
 
@@ -914,7 +1161,7 @@ foreach ($ribbon_structure as $tab) {
                 });
             }
 
-            // --- RIBBON UI CONTROLLER (Microsoft Word Style) ---
+            // --- RIBBON UI CONTROLLER (Microsoft Word Style Expand/Collapse Toggle Rules) ---
             const tabButtons = document.querySelectorAll('.ribbon-tab-btn');
             const tabPanes = document.querySelectorAll('.ribbon-tab-pane');
             const toolbarContainer = document.getElementById('ribbonToolbarContainer');
@@ -929,24 +1176,39 @@ foreach ($ribbon_structure as $tab) {
                 }
             }
 
-            // Tab Switching Handler
+            // Tab Toggle & Switching Handler (MS Word Style Expand/Collapse Rules)
             tabButtons.forEach((btn, index) => {
-                btn.addEventListener('click', function () {
+                btn.addEventListener('click', function (e) {
                     const targetSelector = this.getAttribute('data-tab-target');
                     const targetPane = document.querySelector(targetSelector);
 
                     if (!targetPane) return;
 
-                    // Deactivate all tabs and panes
+                    const isCurrentlyActive = this.classList.contains('active');
+                    const isToolbarCollapsed = toolbarContainer ? toolbarContainer.classList.contains('collapsed') : false;
+
+                    // RULE 2: If clicking the ALREADY ACTIVE tab and toolbar is OPEN -> Collapse it!
+                    if (isCurrentlyActive && !isToolbarCollapsed) {
+                        if (toolbarContainer) {
+                            toolbarContainer.classList.add('collapsed');
+                            localStorage.setItem('ribbon-collapsed', 'true');
+                        }
+                        this.classList.remove('active');
+                        if (collapseToggle) {
+                            const icon = collapseToggle.querySelector('i');
+                            if (icon) icon.className = 'bi bi-chevron-down';
+                        }
+                        return;
+                    }
+
+                    // RULE 1 & 3: Click on a closed tab OR a different tab -> Deactivate others and open/expand!
                     tabButtons.forEach(b => b.classList.remove('active'));
                     tabPanes.forEach(p => p.classList.remove('active'));
 
-                    // Activate clicked tab and target pane
                     this.classList.add('active');
                     targetPane.classList.add('active');
 
-                    // If toolbar was collapsed, expand it when user explicitly clicks a tab
-                    if (toolbarContainer && toolbarContainer.classList.contains('collapsed')) {
+                    if (toolbarContainer) {
                         toolbarContainer.classList.remove('collapsed');
                         localStorage.setItem('ribbon-collapsed', 'false');
                         if (collapseToggle) {
@@ -981,6 +1243,17 @@ foreach ($ribbon_structure as $tab) {
                     }
                 });
             }
+
+            // Outside Click Handler to close floating elements / tour if clicked outside ribbon
+            document.addEventListener('click', function (e) {
+                const ribbonNav = document.getElementById('ribbonNavContainer');
+                if (ribbonNav && !ribbonNav.contains(e.target)) {
+                    // Close tour if active and user clicks outside
+                    if (card && card.style.display === 'block' && !card.contains(e.target) && e.target.id !== 'startGuidedTour') {
+                        endTour();
+                    }
+                }
+            });
 
             // Theme Toggle Handler
             const themeToggle = document.getElementById('themeToggle');
@@ -1039,6 +1312,7 @@ foreach ($ribbon_structure as $tab) {
             tooltipTriggerList.map(t => new bootstrap.Tooltip(t));
         });
     </script>
+    <script src="/public/js/topbar-onboarding.js?v=<?= $asset_version ?>"></script>
 </body>
 
 </html>

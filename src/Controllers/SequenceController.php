@@ -23,6 +23,7 @@ class SequenceController
     {
         $this->db = Database::getInstance()->getConnection();
         $this->ensureSchema();
+        \App\Core\PermissionManager::requirePermission('manage_sequences');
     }
 
     /**

@@ -13,11 +13,7 @@ class TeachingTypeController
     public function __construct()
     {
         $this->db = Database::getInstance()->getConnection();
-        
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
-            header("Location: /");
-            exit;
-        }
+        \App\Core\PermissionManager::requirePermission('manage_teaching_types');
     }
 
     public function index()

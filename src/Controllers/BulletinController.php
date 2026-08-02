@@ -36,6 +36,11 @@ class BulletinController
             header("Location: /");
             exit;
         }
+
+        // Sécurité RBAC : Exiger permission manage_bulletins ou manage_absences
+        if (!PermissionManager::hasPermission('manage_bulletins') && !PermissionManager::hasPermission('manage_absences')) {
+            PermissionManager::requirePermission('manage_bulletins');
+        }
     }
 
     public function index()
