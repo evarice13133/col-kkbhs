@@ -160,6 +160,7 @@ $nav_items = [
                     ['icon' => 'bi-file-earmark-pdf', 'label' => __('bulletins'), 'url' => '/bulletins', 'roles' => ['superadmin', 'admin']],
                     ['icon' => 'bi-award', 'label' => __('honor_roll_title'), 'url' => '/honors', 'roles' => ['superadmin', 'admin']],
                     ['icon' => 'bi-file-earmark-text', 'label' => __('proces_verbaux'), 'url' => '/proces-verbal', 'roles' => ['superadmin', 'admin']],
+                    ['icon' => 'bi-file-earmark-spreadsheet', 'label' => __('transcripts') ?? 'Relevé de Notes', 'url' => '/transcripts', 'roles' => ['superadmin', 'admin']],
                 ]
             ]
         ]
@@ -220,6 +221,9 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
             return false;
         }
         if ($itemPath === '/proces-verbal' && strpos($current_path, '/proces-verbal/') === 0) {
+            return false;
+        }
+        if ($itemPath === '/transcripts' && strpos($current_path, '/transcripts/') === 0) {
             return false;
         }
     }
