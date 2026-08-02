@@ -23,161 +23,6 @@ $logoData = [
     'fallback_letter' => $logoManager->getFallbackLetter()
 ];
 
-// Navigation Items based on role (nested hierarchical structure)
-$nav_items = [
-    // Dashboard (Flat)
-    [
-        'icon' => 'bi-speedometer2',
-        'label' => __('dashboard'),
-        'url' => '/',
-        'roles' => ['superadmin', 'admin', 'enseignant', 'caissier', 'comptable', 'it_manager']
-    ],
-    // Flat teacher shortcuts (no nested sections)
-    [
-        'icon' => 'bi-pencil-square',
-        'label' => __('enter_marks'),
-        'url' => '/notes',
-        'roles' => ['enseignant']
-    ],
-    [
-        'icon' => 'bi-people',
-        'label' => __('my_students'),
-        'url' => '/students',
-        'roles' => ['enseignant']
-    ],
-    [
-        'icon' => 'bi-question-circle',
-        'label' => __('help'),
-        'url' => '/documentation',
-        'roles' => ['enseignant']
-    ],
-    // Flat Classes menu for Cashier/Accountant
-    [
-        'icon' => 'bi-door-open',
-        'label' => __('classes'),
-        'url' => '/classes',
-        'roles' => ['caissier', 'comptable']
-    ],
-    // SECTION: CENTRE DE PILOTAGE
-    [
-        'section' => __('centre_de_pilotage'),
-        'roles' => ['superadmin', 'admin', 'it_manager'],
-        'icon' => 'bi-sliders2',
-        'items' => [
-            ['icon' => 'bi-calendar-event', 'label' => __('academic_years'), 'url' => '/academic_years', 'roles' => ['superadmin', 'it_manager']],
-            ['icon' => 'bi-diagram-3', 'label' => __('teaching_types'), 'url' => '/teaching_types', 'roles' => ['superadmin', 'admin']],
-            ['icon' => 'bi-bar-chart-steps', 'label' => __('levels') ?? 'Niveaux', 'url' => '/levels', 'roles' => ['superadmin', 'admin']],
-            ['icon' => 'bi-layers', 'label' => __('academic_cycles'), 'url' => '/cycles', 'roles' => ['superadmin', 'admin']],
-            ['icon' => 'bi-grid-3x3-gap', 'label' => __('academic_sections'), 'url' => '/sections', 'roles' => ['superadmin', 'admin']],
-            ['icon' => 'bi-building', 'label' => __('departments'), 'url' => '/departments', 'roles' => ['superadmin', 'admin', 'it_manager']],
-            ['icon' => 'bi-gear', 'label' => __('settings'), 'url' => '/settings', 'roles' => ['superadmin', 'admin']],
-            ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'roles' => ['superadmin', 'admin', 'it_manager']],
-        ]
-    ],
-    // SECTION: RESSOURCES HUMAINES
-    [
-        'section' => __('ressources_humaines'),
-        'roles' => ['superadmin', 'admin', 'caissier', 'comptable'],
-        'icon' => 'bi-people',
-        'items' => [
-            ['icon' => 'bi-person-plus', 'label' => __('register_student_menu'), 'url' => '/students/create', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-            ['icon' => 'bi-people', 'label' => __('registered_students_menu'), 'url' => '/students', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-            ['icon' => 'bi-person-dash', 'label' => __('unregistered_students_menu'), 'url' => '/students/non-inscrits', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-            ['icon' => 'bi-person-check', 'label' => __('my_registrations_menu'), 'url' => '/students?only_mine=1', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-        ]
-    ],
-    // SECTION: GESTION DES UTILISATEURS
-    [
-        'section' => __('users_management_menu'),
-        'roles' => ['superadmin', 'admin', 'caissier', 'comptable', 'it_manager'],
-        'icon' => 'bi-person-gear',
-        'items' => [
-            ['icon' => 'bi-people-fill', 'label' => __('users'), 'url' => '/users', 'roles' => ['superadmin', 'it_manager']],
-            ['icon' => 'bi-person-plus-fill', 'label' => __('manage_cashiers_menu'), 'url' => '/users/caissiers', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-            ['icon' => 'bi-person-badge', 'label' => __('teachers'), 'url' => '/teachers', 'roles' => ['superadmin', 'admin', 'it_manager']],
-        ]
-    ],
-    // SECTION: GESTION FINANCIÈRE
-    [
-        'section' => __('financial_management'),
-        'roles' => ['superadmin', 'admin', 'caissier', 'comptable'],
-        'icon' => 'bi-wallet2',
-        'items' => [
-            [
-                'label' => __('scolarite_menu'),
-                'roles' => ['superadmin', 'admin', 'caissier', 'comptable'],
-                'icon' => 'bi-book-half',
-                'submenu' => [
-                    ['label' => __('payments_menu'), 'url' => '/payments', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-                    ['label' => __('grille_title'), 'url' => '/school_fees/grille', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-                    ['label' => __('tranches_menu'), 'url' => '/school_fees/tranches', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-                    ['label' => __('versements_menu'), 'url' => '/school_fees/versements', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-                    ['label' => __('insolvent_title'), 'url' => '/school_fees/insolvables', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-                ]
-            ],
-            [
-                'label' => __('discounts'),
-                'roles' => ['superadmin', 'admin', 'caissier', 'comptable'],
-                'icon' => 'bi-percent',
-                'submenu' => [
-                    ['label' => __('discounts_granted'), 'url' => '/discounts', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-                    ['label' => __('scholarships'), 'url' => '/scholarships', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-                    ['label' => __('discount_types_title'), 'url' => '/discount_types', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-                ]
-            ],
-            ['icon' => 'bi-journal-text', 'label' => __('financial_history'), 'url' => '/financial-history', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-        ]
-    ],
-    // SECTION: GESTION DES DÉPENSES
-    [
-        'section' => __('expenses_menu'),
-        'roles' => ['superadmin', 'admin', 'caissier', 'comptable'],
-        'icon' => 'bi-wallet2',
-        'items' => [
-            ['icon' => 'bi-list-ul', 'label' => __('expenses_list'), 'url' => '/expenses', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-            ['icon' => 'bi-tags', 'label' => __('expense_categories'), 'url' => '/expenses/categories', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-            ['icon' => 'bi-shield-check', 'label' => __('expense_audit'), 'url' => '/expenses/audit', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
-        ]
-    ],
-    // SECTION: GESTION DES NOTES
-    [
-        'section' => __('gestion_des_notes'),
-        'roles' => ['superadmin', 'admin'],
-        'icon' => 'bi-journal-check',
-        'items' => [
-            
-            ['icon' => 'bi-check2-square', 'label' => __('evaluations'), 'url' => '/sequences', 'roles' => ['superadmin', 'admin']],
-            ['icon' => 'bi-pencil-square', 'label' => __('enter_marks'), 'url' => '/notes', 'roles' => ['superadmin', 'admin']],
-            ['icon' => 'bi-door-open', 'label' => __('classes'), 'url' => '/classes', 'roles' => ['superadmin', 'admin']],
-            ['icon' => 'bi-book', 'label' => __('subjects'), 'url' => '/subjects', 'roles' => ['superadmin', 'admin']],
-            ['icon' => 'bi-collection', 'label' => __('subject_groups') ?? 'Groupe de Modules', 'url' => '/subject-groups', 'roles' => ['superadmin', 'admin']],
-            ['icon' => 'bi-shield-check', 'label' => __('discipline_management'), 'url' => '/bulletins/discipline', 'roles' => ['superadmin', 'admin']],
-            [
-                'label' => __('print'),
-                'roles' => ['superadmin', 'admin'],
-                'icon' => 'bi-printer',
-                'submenu' => [
-                    ['icon' => 'bi-file-earmark-pdf', 'label' => __('bulletins'), 'url' => '/bulletins', 'roles' => ['superadmin', 'admin']],
-                    ['icon' => 'bi-award', 'label' => __('honor_roll_title'), 'url' => '/honors', 'roles' => ['superadmin', 'admin']],
-                    ['icon' => 'bi-file-earmark-text', 'label' => __('proces_verbaux'), 'url' => '/proces-verbal', 'roles' => ['superadmin', 'admin']],
-                    ['icon' => 'bi-file-earmark-spreadsheet', 'label' => __('transcripts') ?? 'Relevé de Notes', 'url' => '/transcripts', 'roles' => ['superadmin', 'admin']],
-                ]
-            ]
-        ]
-    ],
-    // SECTION: ADMINISTRATION SYSTÈME (IT Manager)
-    [
-        'section' => __('system_administration'),
-        'roles' => ['it_manager'],
-        'icon' => 'bi-pc-display',
-        'items' => [
-            ['icon' => 'bi-door-open', 'label' => __('classes'), 'url' => '/classes', 'roles' => ['it_manager']],
-            ['icon' => 'bi-calendar-event', 'label' => __('academic_years'), 'url' => '/academic_years', 'roles' => ['it_manager']],
-            ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'roles' => ['it_manager']],
-        ]
-    ]
-];
-
 $current_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $current_uri = $_SERVER['REQUEST_URI'];
 
@@ -229,6 +74,192 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
     }
     return true;
 };
+
+// Ribbon UI Definition (Inspired by Microsoft Word 365)
+$ribbon_structure = [
+    [
+        'id' => 'tab-home',
+        'title' => __('home'),
+        'icon' => 'bi-house-door',
+        'groups' => [
+            [
+                'title' => __('pilotage') ?? 'Pilotage',
+                'items' => [
+                    ['icon' => 'bi-speedometer2', 'label' => __('dashboard'), 'url' => '/', 'roles' => ['superadmin', 'admin', 'enseignant', 'caissier', 'comptable', 'it_manager']]
+                ]
+            ],
+            [
+                'title' => __('enseignant') ?? 'Enseignant',
+                'items' => [
+                    ['icon' => 'bi-pencil-square', 'label' => __('enter_marks'), 'url' => '/notes', 'roles' => ['enseignant']],
+                    ['icon' => 'bi-people', 'label' => __('my_students'), 'url' => '/students', 'roles' => ['enseignant']],
+                    ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'roles' => ['enseignant']],
+                ]
+            ],
+            [
+                'title' => __('caisse') ?? 'Caisse',
+                'items' => [
+                    ['icon' => 'bi-door-open', 'label' => __('classes'), 'url' => '/classes', 'roles' => ['caissier', 'comptable']]
+                ]
+            ]
+        ]
+    ],
+    [
+        'id' => 'tab-pilotage',
+        'title' => __('centre_de_pilotage'),
+        'icon' => 'bi-sliders2',
+        'groups' => [
+            [
+                'title' => 'Structure Académique',
+                'items' => [
+                    ['icon' => 'bi-calendar-event', 'label' => __('academic_years'), 'url' => '/academic_years', 'roles' => ['superadmin', 'it_manager']],
+                    ['icon' => 'bi-diagram-3', 'label' => __('teaching_types'), 'url' => '/teaching_types', 'roles' => ['superadmin', 'admin']],
+                    ['icon' => 'bi-bar-chart-steps', 'label' => __('levels') ?? 'Niveaux', 'url' => '/levels', 'roles' => ['superadmin', 'admin']],
+                    ['icon' => 'bi-layers', 'label' => __('academic_cycles'), 'url' => '/cycles', 'roles' => ['superadmin', 'admin']],
+                    ['icon' => 'bi-grid-3x3-gap', 'label' => __('academic_sections'), 'url' => '/sections', 'roles' => ['superadmin', 'admin']],
+                    ['icon' => 'bi-building', 'label' => __('departments'), 'url' => '/departments', 'roles' => ['superadmin', 'admin', 'it_manager']],
+                ]
+            ],
+            [
+                'title' => 'Système & Config',
+                'items' => [
+                    ['icon' => 'bi-gear', 'label' => __('settings'), 'url' => '/settings', 'roles' => ['superadmin', 'admin']],
+                    ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'roles' => ['superadmin', 'admin', 'it_manager']],
+                ]
+            ]
+        ]
+    ],
+    [
+        'id' => 'tab-rh',
+        'title' => __('ressources_humaines'),
+        'icon' => 'bi-people',
+        'groups' => [
+            [
+                'title' => 'Inscriptions & Élèves',
+                'items' => [
+                    ['icon' => 'bi-person-plus', 'label' => __('register_student_menu'), 'url' => '/students/create', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                    ['icon' => 'bi-people', 'label' => __('registered_students_menu'), 'url' => '/students', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                    ['icon' => 'bi-person-dash', 'label' => __('unregistered_students_menu'), 'url' => '/students/non-inscrits', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                    ['icon' => 'bi-person-check', 'label' => __('my_registrations_menu'), 'url' => '/students?only_mine=1', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                ]
+            ]
+        ]
+    ],
+    [
+        'id' => 'tab-users',
+        'title' => __('users_management_menu'),
+        'icon' => 'bi-person-gear',
+        'groups' => [
+            [
+                'title' => 'Personnel & Comptes',
+                'items' => [
+                    ['icon' => 'bi-people-fill', 'label' => __('users'), 'url' => '/users', 'roles' => ['superadmin', 'it_manager']],
+                    ['icon' => 'bi-person-plus-fill', 'label' => __('manage_cashiers_menu'), 'url' => '/users/caissiers', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                    ['icon' => 'bi-person-badge', 'label' => __('teachers'), 'url' => '/teachers', 'roles' => ['superadmin', 'admin', 'it_manager']],
+                ]
+            ]
+        ]
+    ],
+    [
+        'id' => 'tab-finances',
+        'title' => __('financial_management'),
+        'icon' => 'bi-wallet2',
+        'groups' => [
+            [
+                'title' => __('scolarite_menu'),
+                'items' => [
+                    ['icon' => 'bi-credit-card', 'label' => __('payments_menu'), 'url' => '/payments', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                    ['icon' => 'bi-table', 'label' => __('grille_title'), 'url' => '/school_fees/grille', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                    ['icon' => 'bi-diagram-2', 'label' => __('tranches_menu'), 'url' => '/school_fees/tranches', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                    ['icon' => 'bi-receipt-cutoff', 'label' => __('versements_menu'), 'url' => '/school_fees/versements', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                    ['icon' => 'bi-exclamation-triangle', 'label' => __('insolvent_title'), 'url' => '/school_fees/insolvables', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                ]
+            ],
+            [
+                'title' => __('discounts'),
+                'items' => [
+                    ['icon' => 'bi-percent', 'label' => __('discounts_granted'), 'url' => '/discounts', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                    ['icon' => 'bi-mortarboard', 'label' => __('scholarships'), 'url' => '/scholarships', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                    ['icon' => 'bi-tags', 'label' => __('discount_types_title'), 'url' => '/discount_types', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                ]
+            ],
+            [
+                'title' => __('expenses_menu'),
+                'items' => [
+                    ['icon' => 'bi-journal-text', 'label' => __('financial_history'), 'url' => '/financial-history', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                    ['icon' => 'bi-list-ul', 'label' => __('expenses_list'), 'url' => '/expenses', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                    ['icon' => 'bi-tags-fill', 'label' => __('expense_categories'), 'url' => '/expenses/categories', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                    ['icon' => 'bi-shield-check', 'label' => __('expense_audit'), 'url' => '/expenses/audit', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable']],
+                ]
+            ]
+        ]
+    ],
+    [
+        'id' => 'tab-notes',
+        'title' => __('gestion_des_notes'),
+        'icon' => 'bi-journal-check',
+        'groups' => [
+            [
+                'title' => 'Évaluations & Matières',
+                'items' => [
+                    ['icon' => 'bi-check2-square', 'label' => __('evaluations'), 'url' => '/sequences', 'roles' => ['superadmin', 'admin']],
+                    ['icon' => 'bi-pencil-square', 'label' => __('enter_marks'), 'url' => '/notes', 'roles' => ['superadmin', 'admin']],
+                    ['icon' => 'bi-door-open', 'label' => __('classes'), 'url' => '/classes', 'roles' => ['superadmin', 'admin']],
+                    ['icon' => 'bi-book', 'label' => __('subjects'), 'url' => '/subjects', 'roles' => ['superadmin', 'admin']],
+                    ['icon' => 'bi-collection', 'label' => __('subject_groups') ?? 'Groupe de Modules', 'url' => '/subject-groups', 'roles' => ['superadmin', 'admin']],
+                    ['icon' => 'bi-shield-check', 'label' => __('discipline_management'), 'url' => '/bulletins/discipline', 'roles' => ['superadmin', 'admin']],
+                ]
+            ]
+        ]
+    ],
+    [
+        'id' => 'tab-print',
+        'title' => __('print'),
+        'icon' => 'bi-printer',
+        'groups' => [
+            [
+                'title' => 'Édition & Documents',
+                'items' => [
+                    ['icon' => 'bi-file-earmark-pdf', 'label' => __('bulletins'), 'url' => '/bulletins', 'roles' => ['superadmin', 'admin']],
+                    ['icon' => 'bi-award', 'label' => __('honor_roll_title'), 'url' => '/honors', 'roles' => ['superadmin', 'admin']],
+                    ['icon' => 'bi-file-earmark-text', 'label' => __('proces_verbaux'), 'url' => '/proces-verbal', 'roles' => ['superadmin', 'admin']],
+                    ['icon' => 'bi-file-earmark-spreadsheet', 'label' => __('transcripts') ?? 'Relevé de Notes', 'url' => '/transcripts', 'roles' => ['superadmin', 'admin']],
+                ]
+            ]
+        ]
+    ]
+];
+
+// Calculate active Ribbon tab dynamically based on current URL route
+$active_tab_id = 'tab-home';
+foreach ($ribbon_structure as $tab) {
+    foreach ($tab['groups'] as $group) {
+        foreach ($group['items'] as $item) {
+            if (in_array($user_role, $item['roles']) && $isUrlActive($item['url'])) {
+                $active_tab_id = $tab['id'];
+                break 3;
+            }
+        }
+    }
+}
+
+// Flat authorized commands list for Command Palette JS
+$authorized_commands = [];
+foreach ($ribbon_structure as $tab) {
+    foreach ($tab['groups'] as $group) {
+        foreach ($group['items'] as $item) {
+            if (in_array($user_role, $item['roles'])) {
+                $authorized_commands[] = [
+                    'tab' => $tab['title'],
+                    'group' => $group['title'],
+                    'label' => $item['label'],
+                    'icon' => $item['icon'],
+                    'url' => $item['url']
+                ];
+            }
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="<?= $app_lang ?>" data-theme="light">
@@ -242,7 +273,8 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
             document.documentElement.setAttribute('data-theme', savedTheme);
         })();
 
-        // --- TRANSLATIONS FOR JAVASCRIPT ---
+        // --- TRANSLATIONS & COMMANDS FOR JAVASCRIPT ---
+        window.NM_COMMANDS = <?= json_encode($authorized_commands, JSON_UNESCAPED_UNICODE) ?>;
         window.NM_I18N = {
             'confirmation': "<?= addslashes((string) __('confirmation')) ?>",
             'confirm': "<?= addslashes((string) __('confirm')) ?>",
@@ -259,8 +291,7 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
     <title><?= (isset($title) ? $title . ' | ' : '') . __('app_name') ?> - <?= __('app_tagline') ?></title>
 
     <!-- SEO Meta Tags -->
-    <meta name="description"
-        content="<?= isset($meta_description) ? h($meta_description) : __('meta_description_default') ?>">
+    <meta name="description" content="<?= isset($meta_description) ? h($meta_description) : __('meta_description_default') ?>">
     <meta name="keywords" content="<?= isset($meta_keywords) ? h($meta_keywords) : __('meta_keywords_default') ?>">
     <link rel="canonical" href="https://copobimat.camertech.com<?= parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?>">
     <meta name="author" content="NoteMaster">
@@ -299,9 +330,7 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
     <!-- Google Fonts: Inter & Outfit -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- Bootstrap 5 & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -310,37 +339,30 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
     <?php
     $asset_version = file_exists(__DIR__ . '/../../../public/css/modern-dashboard.css')
         ? filemtime(__DIR__ . '/../../../public/css/modern-dashboard.css')
-        : '1.2.0';
+        : '2.1.0';
     ?>
     <link rel="stylesheet" href="/public/css/modern-dashboard.css?v=<?= $asset_version ?>">
     <link rel="stylesheet" href="/public/css/alerts-premium.css?v=<?= $asset_version ?>">
     <link rel="stylesheet" href="/public/css/ux-improvements.css?v=<?= $asset_version ?>">
 
-
     <style>
         :root {
-            --primary-color: #3b82f6;
-            --primary-rgb: 59, 130, 246;
+            --primary-color: #7c3aed;
+            --primary-rgb: 124, 58, 237;
         }
 
         body {
             font-family: 'Inter', sans-serif;
         }
 
-        h1,
-        h2,
-        h3,
-        h4,
-        h5,
-        h6,
-        .page-title,
-        .sidebar-brand {
+        h1, h2, h3, h4, h5, h6, .page-title, .ribbon-brand-text {
             font-family: 'Outfit', sans-serif;
         }
 
         /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 6px;
+            height: 6px;
         }
 
         ::-webkit-scrollbar-track {
@@ -354,31 +376,6 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
 
         ::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
-        }
-
-        .btn-logout {
-            color: #ef4444;
-            transition: all 0.2s;
-        }
-
-        .btn-logout:hover {
-            background: #fef2f2;
-            color: #b91c1c;
-        }
-
-        .nav-section {
-            padding: 1.5rem 1.5rem 0.5rem;
-            opacity: 0.8;
-        }
-
-        .nav-section-title {
-            font-size: 0.65rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
-            color: var(--primary-color);
-            border-bottom: 1px solid rgba(var(--primary-rgb), 0.1);
-            padding-bottom: 4px;
         }
 
         .dropdown-menu-modern {
@@ -417,27 +414,6 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
             background: rgba(255, 255, 255, 0.08);
         }
 
-        /* Dark Mode Support for Native Select Options */
-        [data-theme="dark"] select option {
-            background-color: #000000 !important;
-            color: #ffffff !important;
-        }
-
-        [data-theme="dark"] .form-select {
-            background-color: rgba(255, 255, 255, 0.05);
-            color: #ffffff;
-        }
-
-        /* Dark Mode Support for Topbar Elements */
-        .topbar-glass {
-            background: rgba(255, 255, 255, 0.95);
-        }
-
-        [data-theme="dark"] .topbar-glass {
-            background: rgba(15, 23, 42, 0.9) !important;
-            border-bottom-color: rgba(255, 255, 255, 0.08) !important;
-        }
-
         .btn-theme-soft {
             background: #f8fafc;
             color: #475569;
@@ -446,10 +422,6 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
         [data-theme="dark"] .btn-theme-soft {
             background: rgba(255, 255, 255, 0.1) !important;
             color: #f8fafc !important;
-        }
-
-        [data-theme="dark"] .btn-theme-soft:hover {
-            background: rgba(255, 255, 255, 0.15) !important;
         }
 
         .user-profile-pill {
@@ -461,308 +433,113 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
             background: rgba(255, 255, 255, 0.05) !important;
             border-color: rgba(255, 255, 255, 0.08) !important;
         }
-
-        /* Sidebar Overlay for Mobile */
-        .sidebar-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(4px);
-            z-index: 1040;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease-in-out;
-        }
-
-        .sidebar-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        /* Close Button Mobile */
-        .sidebar-close-btn {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            background: rgba(0, 0, 0, 0.05);
-            border: none;
-            color: var(--text-main);
-            transition: all 0.2s ease;
-            z-index: 10;
-        }
-
-        [data-theme="dark"] .sidebar-close-btn {
-            background: rgba(255, 255, 255, 0.1);
-            color: #ffffff;
-        }
     </style>
 </head>
 
 <body>
 
     <div class="dashboard-wrapper">
-        <!-- Sidebar Overlay (Mobile) -->
-        <div id="sidebarOverlay" class="sidebar-overlay d-xl-none"></div>
+        <!-- MICROSOFT WORD STYLE RIBBON UI NAVIGATION -->
+        <nav class="word-ribbon-container">
+            
+            <!-- 1. BARRE SUPÉRIEURE INDÉPENDANTE (Brand + QAT + Global Search + Utility Actions) -->
+            <div class="ribbon-top-bar">
+                <!-- Gauche : Mobile Button + Logo + Quick Access Toolbar (QAT) + Global Search Input -->
+                <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 750px;">
+                    <!-- Mobile Menu Button -->
+                    <?php if (\App\Core\Session::isLogged()): ?>
+                        <button class="btn btn-theme-soft p-1 me-1 d-lg-none border-0 rounded-circle flex-shrink-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileRibbonDrawer" title="Menu Mobile">
+                            <i class="bi bi-list fs-4 text-main-theme"></i>
+                        </button>
+                    <?php endif; ?>
 
-        <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
-            <!-- start logo head -->
-            <div class="sidebar-header d-flex justify-content-center position-relative">
-                <!-- Bouton de fermeture mobile -->
-                <button id="sidebarClose" class="sidebar-close-btn d-xl-none">
-                    <i class="bi bi-x-lg"></i>
-                </button>
-                <a href="/" class="sidebar-brand d-flex flex-column align-items-center text-center gap-2">
-                    <?php if ($logoData['has_logo'] && !empty($logoData['base64'])): ?>
-                        <div class="sidebar-logo-container">
-                            <img src="<?= htmlspecialchars($logoData['base64']) ?>" alt="Logo" class="sidebar-logo"
-                                style="width: 100%; height: 100%; object-fit: contain;">
-                        </div>
-                    <?php elseif ($logoData['has_logo'] && !empty($logoData['url'])): ?>
-                        <div class="sidebar-logo-container">
-                            <img src="<?= htmlspecialchars($logoData['url']) ?>" alt="Logo" class="sidebar-logo"
-                                style="width: 100%; height: 100%; object-fit: contain;">
-                        </div>
-                    <?php else: ?>
-                        <div class="logo-fallback-modern text-main-theme">
-                            <?= htmlspecialchars($logoData['fallback_letter']) ?>
+                    <!-- Brand / Logo -->
+                    <a href="/" class="ribbon-brand flex-shrink-0 me-2">
+                        <?php if ($logoData['has_logo'] && !empty($logoData['base64'])): ?>
+                            <div class="sidebar-logo-container" style="width: 32px; height: 32px;">
+                                <img src="<?= htmlspecialchars($logoData['base64']) ?>" alt="Logo" class="sidebar-logo">
+                            </div>
+                        <?php elseif ($logoData['has_logo'] && !empty($logoData['url'])): ?>
+                            <div class="sidebar-logo-container" style="width: 32px; height: 32px;">
+                                <img src="<?= htmlspecialchars($logoData['url']) ?>" alt="Logo" class="sidebar-logo">
+                            </div>
+                        <?php else: ?>
+                            <div class="logo-fallback-modern" style="width: 32px; height: 32px; font-size: 1.05rem;">
+                                <?= htmlspecialchars($logoData['fallback_letter']) ?>
+                            </div>
+                        <?php endif; ?>
+                        <span class="ribbon-brand-text d-none d-sm-inline"><?= htmlspecialchars((string) $school_identity) ?></span>
+                    </a>
+
+                    <!-- MS Word Quick Access Toolbar (QAT - Barre d'Accès Rapide) -->
+                    <?php if (\App\Core\Session::isLogged()): ?>
+                        <div class="ribbon-qat-container d-none d-md-flex me-2 flex-shrink-0">
+                            <a href="/" class="ribbon-qat-btn <?= $current_path === '/' ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="bottom" title="<?= __('dashboard') ?>">
+                                <i class="bi bi-house-door"></i>
+                            </a>
+                            <?php if (in_array($user_role, ['superadmin', 'admin', 'enseignant'])): ?>
+                                <a href="/notes" class="ribbon-qat-btn <?= strpos($current_path, '/notes') === 0 ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="bottom" title="<?= __('enter_marks') ?>">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                            <?php endif; ?>
+                            <?php if (in_array($user_role, ['superadmin', 'admin', 'caissier', 'comptable'])): ?>
+                                <a href="/payments" class="ribbon-qat-btn <?= strpos($current_path, '/payments') === 0 ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="bottom" title="<?= __('payments_menu') ?>">
+                                    <i class="bi bi-credit-card"></i>
+                                </a>
+                                <a href="/students/create" class="ribbon-qat-btn <?= strpos($current_path, '/students/create') === 0 ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="bottom" title="<?= __('register_student_menu') ?>">
+                                    <i class="bi bi-person-plus"></i>
+                                </a>
+                            <?php endif; ?>
+                            <?php if (in_array($user_role, ['superadmin', 'admin'])): ?>
+                                <a href="/bulletins" class="ribbon-qat-btn <?= strpos($current_path, '/bulletins') === 0 ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="bottom" title="<?= __('bulletins') ?>">
+                                    <i class="bi bi-printer"></i>
+                                </a>
+                            <?php endif; ?>
                         </div>
                     <?php endif; ?>
-                    <span class="brand-text fw-bold fs-5 mt-1 text-main-theme">
-                        <?= htmlspecialchars((string) $school_identity) ?>
-                    </span>
-                </a>
-            </div>
-            <!-- end logo head -->
 
-            <?php if (\App\Core\Session::isLogged()): ?>
-                <!-- Search Input for Menu filtering -->
-                <div class="px-3 pt-3 pb-1" id="sidebarSearchWrapper">
-                    <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-2 align-items-center" style="border: 1px solid var(--border-color) !important;">
-                        <span class="input-group-text border-0 bg-transparent text-primary p-1 ps-2">
-                            <i class="bi bi-search" style="font-size: 0.85rem;"></i>
-                        </span>
-                        <input type="text" id="sidebarNavSearch" class="form-control border-0 bg-transparent shadow-none py-1 text-main"
-                            placeholder="Rechercher... (Ctrl+K)" autocomplete="off" style="font-size: 0.8rem; height: 32px;">
-                        <span class="badge bg-secondary bg-opacity-10 text-muted border rounded-pill extra-small px-1-5 py-0-5 me-1 d-none d-md-inline" style="font-size: 0.65rem;">⌘K</span>
-                    </div>
-                </div>
-            <?php endif; ?>
-
-            <div class="sidebar-content">
-                <?php if (\App\Core\Session::isLogged()): ?>
-                    <?php foreach ($nav_items as $item): ?>
-                        <?php if (isset($item['section'])): ?>
-                            <?php if (in_array($user_role, $item['roles'])): ?>
-                                <?php
-                                $visible_children = [];
-                                if (isset($item['items'])) {
-                                    foreach ($item['items'] as $child) {
-                                        if (in_array($user_role, $child['roles'])) {
-                                            $visible_children[] = $child;
-                                        }
-                                    }
-                                }
-                                ?>
-                                <?php if (count($visible_children) > 0): ?>
-                                    <?php
-                                    $hasActiveChild = false;
-                                    foreach ($visible_children as $child) {
-                                        if (isset($child['submenu'])) {
-                                            foreach ($child['submenu'] as $subchild) {
-                                                if (in_array($user_role, $subchild['roles'])) {
-                                                    $isSubActive = $isUrlActive($subchild['url']);
-                                                    if ($isSubActive) {
-                                                        $hasActiveChild = true;
-                                                        break 2;
-                                                    }
-                                                }
-                                            }
-                                        } else {
-                                            $isChildActive = $isUrlActive($child['url']);
-                                            if ($isChildActive) {
-                                                $hasActiveChild = true;
-                                                break;
-                                            }
-                                        }
-                                    }
-                                    $section_id = 'submenu-' . strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $item['section']));
-                                    ?>
-                                    <div class="nav-item-dropdown sidebar-card <?= $hasActiveChild ? 'active-card' : '' ?>">
-                                        <a href="#" class="nav-link-custom dropdown-toggle-custom <?= $hasActiveChild ? 'active-parent' : '' ?>" data-target="<?= $section_id ?>" aria-expanded="<?= $hasActiveChild ? 'true' : 'false' ?>" data-title="<?= htmlspecialchars((string) $item['section']) ?>">
-                                            <i class="bi <?= $item['icon'] ?? 'bi-folder' ?>"></i>
-                                            <span><?= $item['section'] ?></span>
-                                            <i class="bi bi-chevron-down ms-auto arrow-icon"></i>
-                                        </a>
-                                        <div class="submenu-collapse <?= $hasActiveChild ? 'show' : '' ?>" id="<?= $section_id ?>">
-                                            <?php foreach ($visible_children as $child): ?>
-                                                <?php if (isset($child['submenu'])): ?>
-                                                    <?php
-                                                    $visible_subchildren = [];
-                                                    foreach ($child['submenu'] as $subchild) {
-                                                        if (in_array($user_role, $subchild['roles'])) {
-                                                            $visible_subchildren[] = $subchild;
-                                                        }
-                                                    }
-                                                    ?>
-                                                    <?php if (count($visible_subchildren) > 0): ?>
-                                                        <?php
-                                                        $hasActiveSubChild = false;
-                                                        foreach ($visible_subchildren as $subchild) {
-                                                            if ($isUrlActive($subchild['url'])) {
-                                                                $hasActiveSubChild = true;
-                                                                break;
-                                                            }
-                                                        }
-                                                        $nested_id = 'nested-' . strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $child['label']));
-                                                        ?>
-                                                        <div class="nested-dropdown">
-                                                            <a href="#" class="submenu-link dropdown-toggle-nested <?= $hasActiveSubChild ? 'active-parent-nested' : '' ?>" data-target="<?= $nested_id ?>" aria-expanded="<?= $hasActiveSubChild ? 'true' : 'false' ?>" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                                                                <span class="d-flex align-items-center gap-2">
-                                                                    <i class="bi <?= $child['icon'] ?? 'bi-percent' ?>"></i>
-                                                                    <span><?= $child['label'] ?></span>
-                                                                </span>
-                                                                <i class="bi bi-chevron-down ms-auto arrow-icon-nested" style="font-size: 0.7rem; transition: transform 0.2s ease;"></i>
-                                                            </a>
-                                                            <div class="nested-submenu-collapse <?= $hasActiveSubChild ? 'show' : '' ?>" id="<?= $nested_id ?>" style="overflow: hidden; max-height: 0; transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1); margin-left: 1.2rem; padding-left: 0.5rem; border-left: 1px dashed var(--border-color); display: flex; flex-direction: column; gap: 0.2rem;">
-                                                                <?php foreach ($visible_subchildren as $subchild): ?>
-                                                                    <?php $isSubActive = $isUrlActive($subchild['url']); ?>
-                                                                    <a href="<?= $subchild['url'] ?>" class="submenu-link <?= $isSubActive ? 'active' : '' ?>" style="font-size: 0.78rem; padding: 0.4rem 0.6rem; display: flex; align-items: center;">
-                                                                        <?php if (isset($subchild['icon'])): ?>
-                                                                            <i class="bi <?= $subchild['icon'] ?> me-2"></i>
-                                                                        <?php endif; ?>
-                                                                        <span><?= $subchild['label'] ?></span>
-                                                                    </a>
-                                                                <?php endforeach; ?>
-                                                            </div>
-                                                        </div>
-                                                    <?php endif; ?>
-                                                <?php else: ?>
-                                                    <?php $isChildActive = $isUrlActive($child['url']); ?>
-                                                    <a href="<?= $child['url'] ?>" class="submenu-link <?= $isChildActive ? 'active' : '' ?>">
-                                                        <i class="bi <?= $child['icon'] ?> me-2"></i>
-                                                        <span><?= $child['label'] ?></span>
-                                                    </a>
-                                                <?php endif; ?>
-                                            <?php endforeach; ?>
-                                        </div>
-                                    </div>
-                                <?php endif; ?>
-                            <?php endif; ?>
-                        <?php else: ?>
-                            <?php if (in_array($user_role, $item['roles'])): ?>
-                                <?php $isActive = $isUrlActive($item['url']); ?>
-                                <div class="sidebar-card <?= $isActive ? 'active-card' : '' ?>">
-                                    <a href="<?= $item['url'] ?>" class="nav-link-custom <?= $isActive ? 'active' : '' ?>" data-title="<?= htmlspecialchars((string) $item['label']) ?>">
-                                        <i class="bi <?= $item['icon'] ?>"></i>
-                                        <span><?= $item['label'] ?></span>
-                                    </a>
-                                </div>
-                            <?php endif; ?>
-                        <?php endif; ?>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <div class="px-3 py-4">
-                        <div class="alert alert-info border-0 rounded-4 small mb-4"
-                            style="background: rgba(59, 130, 246, 0.05); color: #3b82f6;">
-                            <i class="bi bi-info-circle me-2"></i>
-                            <?= __('access_space_instruction') ?>
+                    <!-- Global Search Trigger (Linear / VSCode Command Palette Trigger) -->
+                    <?php if (\App\Core\Session::isLogged()): ?>
+                        <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-2 align-items-center flex-grow-1 cursor-pointer" id="openCmdPaletteTrigger" style="border: 1px solid var(--border-color) !important; max-width: 340px; cursor: pointer;">
+                            <span class="input-group-text border-0 bg-transparent text-primary p-1 ps-1">
+                                <i class="bi bi-search" style="font-size: 0.82rem;"></i>
+                            </span>
+                            <input type="text" class="form-control border-0 bg-transparent shadow-none py-1 text-main cursor-pointer"
+                                placeholder="Rechercher une commande... (Ctrl+K)" readonly style="font-size: 0.78rem; height: 30px; cursor: pointer;">
+                            <span class="badge bg-secondary bg-opacity-10 text-muted border rounded-pill extra-small px-1 py-0 me-1 d-none d-md-inline" style="font-size: 0.62rem;">⌘K</span>
                         </div>
-                        <a href="/login" class="nav-link-custom mb-2" data-title="<?= htmlspecialchars((string) __('login')) ?>">
-                            <i class="bi bi-box-arrow-in-right"></i>
-                            <span><?= __('login') ?></span>
-                        </a>
-                        <a href="/register-teacher" class="nav-link-custom" data-title="<?= htmlspecialchars((string) __('register')) ?>">
-                            <i class="bi bi-person-plus"></i>
-                            <span><?= __('register') ?></span>
-                        </a>
-                    </div>
-                <?php endif; ?>
-            </div>
-
-            <!-- <?php if (\App\Core\Session::isLogged()): ?>
-                <div class="sidebar-footer">
-                    <a href="/logout" class="nav-link-custom text-danger">
-                        <i class="bi bi-box-arrow-right"></i>
-                        <span><?= __('logout') ?></span>
-                    </a>
-                </div>
-            <?php endif; ?> -->
-        </aside>
-
-        <!-- Main Area -->
-        <main class="main-area" id="mainArea">
-            <!-- Topbar (Premium & Responsive) -->
-            <header
-                class="topbar topbar-glass d-flex align-items-center justify-content-between px-3 px-md-4 py-2 py-md-3 shadow-sm border-bottom"
-                style="position: sticky; top: 0; z-index: 1000; backdrop-filter: blur(10px);">
-                <div class="d-flex align-items-center gap-2 gap-md-3" style="min-width: 0;">
-                    <!-- Menu Toggle (Mobile & Desktop) -->
-                    <button
-                        class="btn btn-theme-soft rounded-circle d-flex align-items-center justify-content-center p-0 border-0 shadow-sm hover-elevate transition-all"
-                        id="sidebarToggle" style="width: 40px; height: 40px; flex-shrink: 0;">
-                        <i class="bi bi-list fs-4 text-main-theme"></i>
-                    </button>
-
-                    <!-- Page Title & Breadcrumb -->
-                    <div class="page-info d-flex flex-column justify-content-center" style="min-width: 0;">
-                        <h1 class="page-title fs-5 fs-md-4 fw-bold text-main-theme mb-0 text-truncate lh-1"
-                            style="letter-spacing: -0.02em;">
-                            <?= $title ?? __('dashboard') ?>
-                        </h1>
-                        <nav aria-label="breadcrumb" class="d-none d-md-block mt-1">
-                            <ol class="breadcrumb mb-0" style="font-size: 0.75rem; font-weight: 500;">
-                                <li class="breadcrumb-item"><a href="/"
-                                        class="text-decoration-none text-muted hover-primary transition-all"><?= __('home') ?></a>
-                                </li>
-                                <li class="breadcrumb-item active text-primary" aria-current="page">
-                                    <?= $title ?? __('dashboard') ?>
-                                </li>
-                            </ol>
-                        </nav>
-                    </div>
+                    <?php endif; ?>
                 </div>
 
-                <!-- Actions Right -->
-                <div class="topbar-actions d-flex align-items-center gap-2 gap-md-3 flex-shrink-0">
-
+                <!-- Droite : Theme Switcher + Compact User Account Avatar -->
+                <div class="d-flex align-items-center gap-2 flex-shrink-0">
                     <!-- Theme Toggle -->
-                    <button
-                        class="theme-toggle-btn btn btn-theme-soft rounded-circle d-flex align-items-center justify-content-center p-0 border-0 shadow-sm hover-elevate transition-all"
-                        id="themeToggle" title="<?= __('change_theme') ?>" style="width: 40px; height: 40px;">
-                        <i class="bi bi-moon-stars fs-5 text-main-theme"></i>
+                    <button class="theme-toggle-btn btn btn-theme-soft rounded-circle d-flex align-items-center justify-content-center p-0 border-0 shadow-sm transition-all"
+                            id="themeToggle" title="<?= __('change_theme') ?>" style="width: 36px; height: 36px;">
+                        <i class="bi bi-moon-stars fs-6 text-main-theme"></i>
                     </button>
 
-                    <!-- User Actions -->
+                    <!-- Compact User Account Avatar Dropdown (Space-Saving) -->
                     <?php if (\App\Core\Session::isLogged()): ?>
                         <div class="dropdown">
                             <a href="#"
-                                class="user-profile user-profile-pill d-flex align-items-center gap-2 text-decoration-none p-1 pe-md-3 rounded-pill transition-all hover-elevate shadow-sm"
-                                data-bs-toggle="dropdown" aria-expanded="false">
-                                <div class="user-avatar bg-primary text-white d-flex align-items-center justify-content-center rounded-circle fw-bold shadow-sm"
-                                    style="width: 34px; height: 34px; font-size: 0.9rem;">
-                                    <?= $user_initials ?>
-                                </div>
-                                <div class="d-none d-md-flex flex-column justify-content-center text-start">
-                                    <span class="text-main-theme fw-bold lh-1"
-                                        style="font-size: 0.85rem;"><?= h($user_name) ?></span>
-                                    <span class="text-muted"
-                                        style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 3px;"><?= h(__($user_role)) ?></span>
-                                </div>
-                                <i class="bi bi-chevron-down text-muted small d-none d-md-block ms-1"></i>
+                                class="user-avatar-btn"
+                                data-bs-toggle="dropdown" aria-expanded="false"
+                                data-bs-placement="bottom" title="<?= h($user_name) ?> (<?= h(__($user_role)) ?>)">
+                                <?= $user_initials ?>
                             </a>
-                            <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2 mt-2">
+                            <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2 mt-2" style="min-width: 250px;">
                                 <li>
-                                    <h6 class="dropdown-header small text-uppercase fw-bold"><?= __('account') ?></h6>
+                                    <div class="user-dropdown-header-card d-flex align-items-center gap-2">
+                                        <div class="user-avatar bg-primary text-white d-flex align-items-center justify-content-center rounded-circle fw-bold shadow-sm"
+                                            style="width: 38px; height: 38px; font-size: 1rem;">
+                                            <?= $user_initials ?>
+                                        </div>
+                                        <div class="d-flex flex-column text-start overflow-hidden">
+                                            <span class="text-main-theme fw-bold text-truncate lh-1" style="font-size: 0.88rem;"><?= h($user_name) ?></span>
+                                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill mt-1 w-auto align-self-start extra-small"><?= h(__($user_role)) ?></span>
+                                        </div>
+                                    </div>
                                 </li>
                                 <li>
                                     <a class="dropdown-item dropdown-item-modern" href="/profile">
@@ -776,27 +553,21 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
                                         </a>
                                     </li>
                                 <?php endif; ?>
-                                <li>
-                                    <hr class="dropdown-divider">
-                                </li>
-                                <li>
-                                    <h6 class="dropdown-header small text-uppercase fw-bold"><?= __('language') ?></h6>
-                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><h6 class="dropdown-header small text-uppercase fw-bold"><?= __('language') ?></h6></li>
                                 <li>
                                     <a class="dropdown-item dropdown-item-modern <?= $app_lang === 'fr' ? 'active' : '' ?>"
                                         href="javascript:void(0)" onclick="UX.switchLanguage('fr')">
-                                        <span class="fs-5">🇫🇷</span> Français
+                                        <span class="fs-6">🇫🇷</span> Français
                                     </a>
                                 </li>
                                 <li>
                                     <a class="dropdown-item dropdown-item-modern <?= $app_lang === 'en' ? 'active' : '' ?>"
                                         href="javascript:void(0)" onclick="UX.switchLanguage('en')">
-                                        <span class="fs-5">🇺🇸</span> English
+                                        <span class="fs-6">🇺🇸</span> English
                                     </a>
                                 </li>
-                                <li>
-                                    <hr class="dropdown-divider">
-                                </li>
+                                <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item dropdown-item-modern text-danger" href="/logout">
                                         <i class="bi bi-box-arrow-right"></i> <?= __('logout') ?>
@@ -806,28 +577,188 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
                         </div>
                     <?php else: ?>
                         <div class="d-flex align-items-center gap-2">
-                            <a href="/login"
-                                class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm hover-scale d-none d-md-inline-block">
+                            <a href="/login" class="btn btn-primary rounded-pill px-3 py-1-5 btn-sm fw-bold shadow-sm">
                                 <?= __('login') ?>
                             </a>
-                            <div class="dropdown d-md-none">
-                                <button
-                                    class="btn btn-theme-soft rounded-circle d-flex align-items-center justify-content-center p-0 border-0 shadow-sm"
-                                    data-bs-toggle="dropdown">
-                                    <i class="bi bi-person-circle fs-5"></i>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2 mt-2">
-                                    <li><a class="dropdown-item dropdown-item-modern" href="/login"><?= __('login') ?></a>
-                                    </li>
-                                    <li><a class="dropdown-item dropdown-item-modern"
-                                            href="/register-teacher"><?= __('register') ?></a></li>
-                                </ul>
-                            </div>
                         </div>
                     <?php endif; ?>
                 </div>
-            </header>
-            <!-- Page Content -->
+            </div>
+
+            <!-- 2. BARRE D'ONGLETS RIBBON DÉDIÉE (Pleine Largeur - Exclusivité Menus Métier) -->
+            <?php if (\App\Core\Session::isLogged()): ?>
+                <div class="ribbon-tabs-bar border-bottom d-none d-lg-flex px-3">
+                    <div class="ribbon-tabs-wrapper flex-grow-1" id="ribbonTabsWrapper">
+                        <?php foreach ($ribbon_structure as $tab): ?>
+                            <?php
+                            $tab_accessible_count = 0;
+                            foreach ($tab['groups'] as $group) {
+                                foreach ($group['items'] as $item) {
+                                    if (in_array($user_role, $item['roles'])) {
+                                        $tab_accessible_count++;
+                                    }
+                                }
+                            }
+                            ?>
+                            <?php if ($tab_accessible_count > 0): ?>
+                                <button type="button" 
+                                        class="ribbon-tab-btn <?= $tab['id'] === $active_tab_id ? 'active' : '' ?>" 
+                                        data-tab-target="#<?= $tab['id'] ?>">
+                                    <i class="bi <?= $tab['icon'] ?>"></i>
+                                    <span><?= htmlspecialchars($tab['title']) ?></span>
+                                    <?php if ($tab_accessible_count > 10): ?>
+                                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill ms-1 extra-small"><?= $tab_accessible_count ?></span>
+                                    <?php endif; ?>
+                                </button>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+
+                <!-- 3. BARRE D'OUTILS COMMANDES DU RUBAN (DISSOLUTION DU DROPDOWN & ÉCLATEMENT VISUEL AU MÊME NIVEAU) -->
+                <div class="ribbon-toolbar-container d-none d-lg-flex" id="ribbonToolbarContainer">
+                    <div class="d-flex align-items-stretch flex-grow-1 overflow-x-auto" id="ribbonPanesWrapper" style="scrollbar-width: thin;">
+                        <?php foreach ($ribbon_structure as $tab): ?>
+                            <?php
+                            $tab_accessible_items = [];
+                            foreach ($tab['groups'] as $group) {
+                                foreach ($group['items'] as $item) {
+                                    if (in_array($user_role, $item['roles'])) {
+                                        $tab_accessible_items[] = $item;
+                                    }
+                                }
+                            }
+                            $total_tab_items = count($tab_accessible_items);
+                            ?>
+                            <?php if ($total_tab_items > 0): ?>
+                                <div class="ribbon-tab-pane <?= $tab['id'] === $active_tab_id ? 'active' : '' ?>" id="<?= $tab['id'] ?>">
+                                    <?php if ($total_tab_items <= 10): ?>
+                                        <!-- CAS 1 : <= 10 SOUS-MENUS -> AFFICHAGE DIRECT EN GROUPES RIBBON -->
+                                        <?php foreach ($tab['groups'] as $group): ?>
+                                            <?php
+                                            $group_visible_items = array_filter($group['items'], fn($i) => in_array($user_role, $i['roles']));
+                                            ?>
+                                            <?php if (count($group_visible_items) > 0): ?>
+                                                <div class="ribbon-group">
+                                                    <div class="ribbon-group-items">
+                                                        <?php foreach ($group_visible_items as $item): ?>
+                                                            <?php $isActive = $isUrlActive($item['url']); ?>
+                                                            <a href="<?= $item['url'] ?>" 
+                                                               class="ribbon-btn-large <?= $isActive ? 'active' : '' ?>" 
+                                                               title="<?= htmlspecialchars($item['label']) ?>">
+                                                                <i class="bi <?= $item['icon'] ?>"></i>
+                                                                <span><?= htmlspecialchars($item['label']) ?></span>
+                                                            </a>
+                                                        <?php endforeach; ?>
+                                                    </div>
+                                                    <div class="ribbon-group-title"><?= htmlspecialchars($group['title']) ?></div>
+                                                </div>
+                                            <?php endif; ?>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <!-- CAS 2 : > 10 SOUS-MENUS -> DISSOLUTION DE LA DROPDOWN CLASSIQUE & ÉCLATEMENT VISUEL AU MÊME NIVEAU (SUB-RIBBON SECTIONS) -->
+                                        <div class="d-flex align-items-stretch gap-2 flex-grow-1 overflow-x-auto" style="scrollbar-width: thin;">
+                                            <?php foreach ($tab['groups'] as $group): ?>
+                                                <?php
+                                                $group_visible_items = array_filter($group['items'], fn($i) => in_array($user_role, $i['roles']));
+                                                ?>
+                                                <?php if (count($group_visible_items) > 0): ?>
+                                                    <div class="ribbon-group-exploded">
+                                                        <div class="ribbon-group-items">
+                                                            <?php foreach ($group_visible_items as $item): ?>
+                                                                <?php $isActive = $isUrlActive($item['url']); ?>
+                                                                <a href="<?= $item['url'] ?>" 
+                                                                   class="ribbon-btn-large <?= $isActive ? 'active' : '' ?>" 
+                                                                   title="<?= htmlspecialchars($item['label']) ?>">
+                                                                    <i class="bi <?= $item['icon'] ?>"></i>
+                                                                    <span><?= htmlspecialchars($item['label']) ?></span>
+                                                                </a>
+                                                            <?php endforeach; ?>
+                                                        </div>
+                                                        <div class="d-flex align-items-center justify-content-between pt-1 border-top border-opacity-10 mt-1">
+                                                            <span class="ribbon-group-exploded-badge">
+                                                                <i class="bi bi-folder2-open"></i> <?= htmlspecialchars($group['title']) ?>
+                                                            </span>
+                                                            <span class="extra-small text-muted fw-bold"><?= count($group_visible_items) ?> actions</span>
+                                                        </div>
+                                                    </div>
+                                                <?php endif; ?>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <!-- Ribbon Collapse/Expand Pin Button (MS Word Style) -->
+                    <button type="button" class="ribbon-toggle-btn ms-2" id="ribbonCollapseToggle" title="Réduire/Étendre le Ruban">
+                        <i class="bi bi-chevron-up"></i>
+                    </button>
+                </div>
+            <?php endif; ?>
+        </nav>
+
+        <!-- Mobile Navigation Offcanvas Drawer -->
+        <?php if (\App\Core\Session::isLogged()): ?>
+            <div class="offcanvas offcanvas-start ribbon-mobile-drawer" tabindex="-1" id="mobileRibbonDrawer" aria-labelledby="mobileRibbonDrawerLabel">
+                <div class="offcanvas-header border-bottom">
+                    <h5 class="offcanvas-title fw-bold" id="mobileRibbonDrawerLabel"><?= htmlspecialchars((string) $school_identity) ?></h5>
+                    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                </div>
+                <div class="offcanvas-body">
+                    <?php foreach ($ribbon_structure as $tab): ?>
+                        <?php
+                        $tab_items = [];
+                        foreach ($tab['groups'] as $group) {
+                            foreach ($group['items'] as $item) {
+                                if (in_array($user_role, $item['roles'])) {
+                                    $tab_items[] = $item;
+                                }
+                            }
+                        }
+                        ?>
+                        <?php if (count($tab_items) > 0): ?>
+                            <div class="ribbon-mobile-section">
+                                <div class="ribbon-mobile-section-title">
+                                    <i class="bi <?= $tab['icon'] ?> me-1"></i> <?= htmlspecialchars($tab['title']) ?>
+                                </div>
+                                <?php foreach ($tab_items as $item): ?>
+                                    <?php $isActive = $isUrlActive($item['url']); ?>
+                                    <a href="<?= $item['url'] ?>" class="ribbon-mobile-link <?= $isActive ? 'active' : '' ?>">
+                                        <i class="bi <?= $item['icon'] ?>"></i>
+                                        <span><?= htmlspecialchars($item['label']) ?></span>
+                                    </a>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <!-- Main Content Area -->
+        <main class="main-area" id="mainArea">
+            <!-- Breadcrumb & Page Info Sub-Header -->
+            <div class="px-3 px-md-4 py-2 border-bottom bg-card bg-opacity-50 d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <h1 class="page-title fs-5 fw-bold text-main-theme mb-0 text-truncate lh-1">
+                        <?= $title ?? __('dashboard') ?>
+                    </h1>
+                </div>
+                <nav aria-label="breadcrumb" class="d-none d-md-block">
+                    <ol class="breadcrumb mb-0" style="font-size: 0.75rem; font-weight: 500;">
+                        <li class="breadcrumb-item">
+                            <a href="/" class="text-decoration-none text-muted hover-primary transition-all"><?= __('home') ?></a>
+                        </li>
+                        <li class="breadcrumb-item active text-primary" aria-current="page">
+                            <?= $title ?? __('dashboard') ?>
+                        </li>
+                    </ol>
+                </nav>
+            </div>
+
+            <!-- Page Content Inner -->
             <div class="content-inner">
                 <?= $content ?>
             </div>
@@ -835,17 +766,32 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
             <!-- Footer -->
             <footer class="footer mt-auto py-3 border-top bg-card shadow-sm">
                 <div class="container-fluid d-flex flex-wrap justify-content-between align-items-center gap-3">
-                    <span class="text-muted-theme small">&copy; <?= date('Y') ?> <strong><?= __('app_name') ?></strong>.
-                        <?= __('footer_made_with') ?></span>
+                    <span class="text-muted-theme small">&copy; <?= date('Y') ?> <strong><?= __('app_name') ?></strong>. <?= __('footer_made_with') ?></span>
                     <div class="d-flex gap-3">
-                        <a href="#"
-                            class="text-muted-theme text-decoration-none small hover-primary"><?= __('technical_support') ?></a>
-                        <a href="#"
-                            class="text-muted-theme text-decoration-none small hover-primary"><?= __('privacy_policy') ?></a>
+                        <a href="#" class="text-muted-theme text-decoration-none small hover-primary"><?= __('technical_support') ?></a>
+                        <a href="#" class="text-muted-theme text-decoration-none small hover-primary"><?= __('privacy_policy') ?></a>
                     </div>
                 </div>
             </footer>
         </main>
+    </div>
+
+    <!-- ULTRA-PREMIUM COMMAND PALETTE (CTRL+K / CMD+K) -->
+    <div class="command-palette-backdrop" id="commandPalette">
+        <div class="command-palette-box">
+            <div class="command-palette-header">
+                <i class="bi bi-search fs-5 text-primary"></i>
+                <input type="text" id="cmdPaletteInput" class="command-palette-input" placeholder="Rechercher une commande... (ex: Notes, Inscription, Tarifs)" autocomplete="off">
+                <span class="badge bg-secondary bg-opacity-10 text-muted border rounded px-2 py-1 extra-small">ESC</span>
+            </div>
+            <div class="command-palette-results" id="cmdPaletteResults">
+                <!-- Results dynamically populated in JS -->
+            </div>
+            <div class="command-palette-footer">
+                <span><i class="bi bi-arrow-down-up me-1"></i> Navigation Flèches</span>
+                <span><i class="bi bi-box-arrow-in-right me-1"></i> Entrée pour exécuter</span>
+            </div>
+        </div>
     </div>
 
     <!-- Scripts de base -->
@@ -855,77 +801,197 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
     <!-- Services Applicatifs -->
     <script src="/public/js/AlertService.js?v=<?= $asset_version ?>"></script>
     <script src="/public/js/ux-improvements.js?v=<?= $asset_version ?>"></script>
-    
-    <!-- Assistant IA (Convocore) -->
-    <!-- <div id="VG_OVERLAY_CONTAINER"></div>
-    <script>
-        (function() {
-            window.VG_CONFIG = {
-                ID: "uv55GM6Qo516C3uA0ymZ",
-                region: 'eu',
-                render: 'popup',
-                stylesheets: [
-                    "https://cdn.convocore.ai/vg_live_build/styles.css"
-                ]
-                <?php if (\App\Core\Session::isLogged()): ?>
-                ,
-                user: {
-                    name: '<?= addslashes(\App\Core\Session::get("user_prenom") . " " . \App\Core\Session::get("user_nom")) ?>'
-                },
-                userID: '<?= \App\Core\Session::get("user_id") ?>'
-                <?php endif; ?>
-            };
-            var VG_SCRIPT = document.createElement("script");
-            VG_SCRIPT.src = "https://cdn.convocore.ai/vg_live_build/vg_bundle.js";
-            document.body.appendChild(VG_SCRIPT);
-        })();
-    </script> -->
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Gestion du side-bar (mobile drawer et desktop collapse)
-            const sidebar = document.getElementById('sidebar');
-            const toggle = document.getElementById('sidebarToggle');
-            const closeBtn = document.getElementById('sidebarClose');
-            const overlay = document.getElementById('sidebarOverlay');
+            // --- DYNAMIC COMMAND PALETTE CONTROLLER (LINEAR / VS CODE STYLE) ---
+            const cmdPalette = document.getElementById('commandPalette');
+            const cmdPaletteInput = document.getElementById('cmdPaletteInput');
+            const cmdPaletteResults = document.getElementById('cmdPaletteResults');
+            const openTrigger = document.getElementById('openCmdPaletteTrigger');
+            let selectedIndex = 0;
+            let currentResults = [];
 
-            // Apply saved sidebar state on desktop
-            if (window.innerWidth >= 1200) {
-                const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
-                if (isCollapsed) {
-                    document.body.classList.add('sidebar-collapsed');
+            const renderResults = (items) => {
+                currentResults = items;
+                if (items.length === 0) {
+                    cmdPaletteResults.innerHTML = `
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-search fs-3 d-block mb-2 text-opacity-50"></i>
+                            <span class="small">Aucune commande trouvée</span>
+                        </div>`;
+                    return;
                 }
+
+                cmdPaletteResults.innerHTML = items.map((item, idx) => `
+                    <a href="${item.url}" class="command-palette-item ${idx === selectedIndex ? 'selected' : ''}" data-index="${idx}">
+                        <div class="d-flex align-items-center gap-3">
+                            <i class="bi ${item.icon} fs-5 text-primary"></i>
+                            <div>
+                                <div class="fw-bold">${item.label}</div>
+                                <div class="extra-small text-muted">${item.tab} &bull; ${item.group}</div>
+                            </div>
+                        </div>
+                        <span class="command-palette-badge">${item.tab}</span>
+                    </a>
+                `).join('');
+            };
+
+            const openCmdPalette = () => {
+                if (!cmdPalette) return;
+                cmdPalette.classList.add('active');
+                cmdPaletteInput.value = '';
+                selectedIndex = 0;
+                renderResults(window.NM_COMMANDS || []);
+                setTimeout(() => cmdPaletteInput.focus(), 50);
+            };
+
+            const closeCmdPalette = () => {
+                if (!cmdPalette) return;
+                cmdPalette.classList.remove('active');
+            };
+
+            if (openTrigger) {
+                openTrigger.addEventListener('click', openCmdPalette);
             }
 
-            function toggleSidebar() {
-                if (window.innerWidth >= 1200) {
-                    // Desktop: collapse / expand
-                    const isCollapsed = document.body.classList.toggle('sidebar-collapsed');
-                    localStorage.setItem('sidebar-collapsed', isCollapsed ? 'true' : 'false');
-                } else {
-                    // Mobile: drawer open / close
-                    const isOpen = sidebar.classList.toggle('mobile-open');
-                    if (overlay) {
-                        overlay.classList.toggle('active', isOpen);
+            if (cmdPaletteInput) {
+                cmdPaletteInput.addEventListener('input', function () {
+                    const q = this.value.trim().toLowerCase();
+                    selectedIndex = 0;
+                    if (q === '') {
+                        renderResults(window.NM_COMMANDS || []);
+                    } else {
+                        const filtered = (window.NM_COMMANDS || []).filter(item => 
+                            item.label.toLowerCase().includes(q) ||
+                            item.tab.toLowerCase().includes(q) ||
+                            item.group.toLowerCase().includes(q)
+                        );
+                        renderResults(filtered);
                     }
+                });
+
+                cmdPaletteInput.addEventListener('keydown', function (e) {
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        if (currentResults.length > 0) {
+                            selectedIndex = (selectedIndex + 1) % currentResults.length;
+                            renderResults(currentResults);
+                        }
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        if (currentResults.length > 0) {
+                            selectedIndex = (selectedIndex - 1 + currentResults.length) % currentResults.length;
+                            renderResults(currentResults);
+                        }
+                    } else if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (currentResults[selectedIndex]) {
+                            window.location.href = currentResults[selectedIndex].url;
+                        }
+                    } else if (e.key === 'Escape') {
+                        closeCmdPalette();
+                    }
+                });
+            }
+
+            document.addEventListener('keydown', function (e) {
+                if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+                    e.preventDefault();
+                    if (cmdPalette && cmdPalette.classList.contains('active')) {
+                        closeCmdPalette();
+                    } else {
+                        openCmdPalette();
+                    }
+                } else if (e.key === 'Escape' && cmdPalette && cmdPalette.classList.contains('active')) {
+                    closeCmdPalette();
+                }
+            });
+
+            if (cmdPalette) {
+                cmdPalette.addEventListener('click', function (e) {
+                    if (e.target === this) closeCmdPalette();
+                });
+            }
+
+            // --- RIBBON UI CONTROLLER (Microsoft Word Style) ---
+            const tabButtons = document.querySelectorAll('.ribbon-tab-btn');
+            const tabPanes = document.querySelectorAll('.ribbon-tab-pane');
+            const toolbarContainer = document.getElementById('ribbonToolbarContainer');
+            const collapseToggle = document.getElementById('ribbonCollapseToggle');
+
+            // Apply saved ribbon collapsed state (only if explicitly collapsed by user)
+            if (toolbarContainer && localStorage.getItem('ribbon-collapsed') === 'true') {
+                toolbarContainer.classList.add('collapsed');
+                if (collapseToggle) {
+                    const icon = collapseToggle.querySelector('i');
+                    if (icon) icon.className = 'bi bi-chevron-down';
                 }
             }
 
-            if (toggle) toggle.addEventListener('click', toggleSidebar);
-            if (closeBtn) closeBtn.addEventListener('click', toggleSidebar);
-            if (overlay) overlay.addEventListener('click', toggleSidebar);
+            // Tab Switching Handler
+            tabButtons.forEach((btn, index) => {
+                btn.addEventListener('click', function () {
+                    const targetSelector = this.getAttribute('data-tab-target');
+                    const targetPane = document.querySelector(targetSelector);
 
-            // Gestion du changement de thème
+                    if (!targetPane) return;
+
+                    // Deactivate all tabs and panes
+                    tabButtons.forEach(b => b.classList.remove('active'));
+                    tabPanes.forEach(p => p.classList.remove('active'));
+
+                    // Activate clicked tab and target pane
+                    this.classList.add('active');
+                    targetPane.classList.add('active');
+
+                    // If toolbar was collapsed, expand it when user explicitly clicks a tab
+                    if (toolbarContainer && toolbarContainer.classList.contains('collapsed')) {
+                        toolbarContainer.classList.remove('collapsed');
+                        localStorage.setItem('ribbon-collapsed', 'false');
+                        if (collapseToggle) {
+                            const icon = collapseToggle.querySelector('i');
+                            if (icon) icon.className = 'bi bi-chevron-up';
+                        }
+                    }
+                });
+
+                // Keyboard Arrow Key Navigation for Ribbon Tabs (MS Word Style)
+                btn.addEventListener('keydown', function (e) {
+                    if (e.key === 'ArrowRight') {
+                        e.preventDefault();
+                        const nextBtn = tabButtons[(index + 1) % tabButtons.length];
+                        if (nextBtn) { nextBtn.focus(); nextBtn.click(); }
+                    } else if (e.key === 'ArrowLeft') {
+                        e.preventDefault();
+                        const prevBtn = tabButtons[(index - 1 + tabButtons.length) % tabButtons.length];
+                        if (prevBtn) { prevBtn.focus(); prevBtn.click(); }
+                    }
+                });
+            });
+
+            // Pin / Collapse Toolbar Handler
+            if (collapseToggle && toolbarContainer) {
+                collapseToggle.addEventListener('click', function () {
+                    const isCollapsed = toolbarContainer.classList.toggle('collapsed');
+                    localStorage.setItem('ribbon-collapsed', isCollapsed ? 'true' : 'false');
+                    const icon = this.querySelector('i');
+                    if (icon) {
+                        icon.className = isCollapsed ? 'bi bi-chevron-down' : 'bi bi-chevron-up';
+                    }
+                });
+            }
+
+            // Theme Toggle Handler
             const themeToggle = document.getElementById('themeToggle');
             const themeIcon = themeToggle ? themeToggle.querySelector('i') : null;
 
-            const updateIcon = (theme) => {
+            const updateThemeIcon = (theme) => {
                 if (!themeIcon) return;
-                themeIcon.className = theme === 'dark' ? 'bi bi-sun' : 'bi bi-moon-stars';
+                themeIcon.className = theme === 'dark' ? 'bi bi-sun fs-6 text-main-theme' : 'bi bi-moon-stars fs-6 text-main-theme';
             };
 
-            // Init icon
-            updateIcon(document.documentElement.getAttribute('data-theme'));
+            updateThemeIcon(document.documentElement.getAttribute('data-theme'));
 
             if (themeToggle) {
                 themeToggle.addEventListener('click', () => {
@@ -934,7 +1000,7 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
 
                     document.documentElement.setAttribute('data-theme', newTheme);
                     localStorage.setItem('theme', newTheme);
-                    updateIcon(newTheme);
+                    updateThemeIcon(newTheme);
                 });
             }
 
@@ -968,183 +1034,8 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
                 });
             <?php endif; ?>
 
-            // Sidebar Collapsible Submenus Toggle
-            const dropdownToggles = document.querySelectorAll('.dropdown-toggle-custom');
-            dropdownToggles.forEach(toggle => {
-                toggle.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    const targetId = this.getAttribute('data-target');
-                    const submenu = document.getElementById(targetId);
-                    if (submenu) {
-                        const isExpanded = this.getAttribute('aria-expanded') === 'true';
-                        this.setAttribute('aria-expanded', isExpanded ? 'false' : 'true');
-                        if (isExpanded) {
-                            submenu.classList.remove('show');
-                        } else {
-                            submenu.classList.add('show');
-                        }
-                    }
-                });
-            });
-
-            // Sidebar Collapsible Nested Submenus Toggle
-            const nestedToggles = document.querySelectorAll('.dropdown-toggle-nested');
-            nestedToggles.forEach(toggle => {
-                toggle.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const targetId = this.getAttribute('data-target');
-                    const submenu = document.getElementById(targetId);
-                    if (submenu) {
-                        const isExpanded = this.getAttribute('aria-expanded') === 'true';
-                        this.setAttribute('aria-expanded', isExpanded ? 'false' : 'true');
-                        if (isExpanded) {
-                            submenu.classList.remove('show');
-                        } else {
-                            submenu.classList.add('show');
-                        }
-                    }
-                });
-            });
-
-            // Quick Nav Search (Command Filter)
-            const searchInput = document.getElementById('sidebarNavSearch');
-            if (searchInput) {
-                searchInput.addEventListener('input', function () {
-                    const query = this.value.trim().toLowerCase();
-                    const flatCards = [];
-                    const dropdownCards = [];
-                    
-                    // Separate flat items from dropdown accordions
-                    document.querySelectorAll('.sidebar-content > .sidebar-card').forEach(card => {
-                        const link = card.querySelector('a.nav-link-custom');
-                        if (link && !link.classList.contains('dropdown-toggle-custom')) {
-                            flatCards.push(card);
-                        } else {
-                            dropdownCards.push(card);
-                        }
-                    });
-
-                    // Also select any .nav-item-dropdown
-                    document.querySelectorAll('.nav-item-dropdown').forEach(card => {
-                        if (!dropdownCards.includes(card)) dropdownCards.push(card);
-                    });
-
-                    if (query === '') {
-                        // Reset all flat cards
-                        flatCards.forEach(card => card.style.display = '');
-                        
-                        // Reset all dropdown cards
-                        dropdownCards.forEach(card => {
-                            card.style.display = '';
-                            const toggle = card.querySelector('.dropdown-toggle-custom');
-                            const submenu = card.querySelector('.submenu-collapse');
-                            const isParentActive = toggle && toggle.classList.contains('active-parent');
-                            if (submenu && !isParentActive) {
-                                submenu.classList.remove('show');
-                                if (toggle) toggle.setAttribute('aria-expanded', 'false');
-                            }
-                            
-                            // Reset nested submenus
-                            card.querySelectorAll('.submenu-link').forEach(link => {
-                                link.style.display = '';
-                            });
-                            card.querySelectorAll('.nested-dropdown').forEach(nested => {
-                                nested.style.display = '';
-                                const nestedToggle = nested.querySelector('.dropdown-toggle-nested');
-                                const nestedSubmenu = nested.querySelector('.nested-submenu-collapse');
-                                const isNestedActive = nestedToggle && nestedToggle.classList.contains('active-parent-nested');
-                                if (nestedSubmenu && !isNestedActive) {
-                                    nestedSubmenu.style.maxHeight = '0';
-                                    if (nestedToggle) nestedToggle.setAttribute('aria-expanded', 'false');
-                                }
-                            });
-                        });
-                        return;
-                    }
-
-                    // 1. Process flat cards
-                    flatCards.forEach(card => {
-                        const text = card.textContent.toLowerCase();
-                        card.style.display = text.includes(query) ? '' : 'none';
-                    });
-
-                    // 2. Process dropdown cards
-                    dropdownCards.forEach(card => {
-                        const sectionToggle = card.querySelector('.dropdown-toggle-custom');
-                        const sectionTitle = sectionToggle ? (sectionToggle.getAttribute('data-title') || '').toLowerCase() : '';
-                        const submenuLinks = card.querySelectorAll('.submenu-link:not(.dropdown-toggle-nested)');
-                        const nestedDropdowns = card.querySelectorAll('.nested-dropdown');
-                        
-                        let hasMatchingChild = false;
-
-                        // Check simple submenu links
-                        submenuLinks.forEach(link => {
-                            if (link.closest('.nested-submenu-collapse')) return;
-
-                            const text = link.textContent.toLowerCase();
-                            const isMatch = text.includes(query) || sectionTitle.includes(query);
-                            link.style.display = isMatch ? '' : 'none';
-                            if (text.includes(query)) {
-                                hasMatchingChild = true;
-                            }
-                        });
-
-                        // Check nested dropdowns
-                        nestedDropdowns.forEach(nested => {
-                            const nestedToggle = nested.querySelector('.dropdown-toggle-nested');
-                            const nestedTitle = nestedToggle ? nestedToggle.textContent.toLowerCase() : '';
-                            const nestedLinks = nested.querySelectorAll('.nested-submenu-collapse .submenu-link');
-                            
-                            let hasMatchingNestedChild = false;
-
-                            nestedLinks.forEach(link => {
-                                const text = link.textContent.toLowerCase();
-                                const isMatch = text.includes(query) || nestedTitle.includes(query) || sectionTitle.includes(query);
-                                link.style.display = isMatch ? '' : 'none';
-                                if (text.includes(query)) {
-                                    hasMatchingNestedChild = true;
-                                    hasMatchingChild = true;
-                                }
-                            });
-
-                            if (hasMatchingNestedChild || nestedTitle.includes(query) || sectionTitle.includes(query)) {
-                                nested.style.display = '';
-                                const nestedSubmenu = nested.querySelector('.nested-submenu-collapse');
-                                if (nestedSubmenu) {
-                                    nestedSubmenu.style.maxHeight = '500px';
-                                    if (nestedToggle) nestedToggle.setAttribute('aria-expanded', 'true');
-                                }
-                            } else {
-                                nested.style.display = 'none';
-                            }
-                        });
-
-                        // Show/hide parent section accordion based on matches
-                        if (hasMatchingChild || sectionTitle.includes(query)) {
-                            card.style.display = '';
-                            const submenu = card.querySelector('.submenu-collapse');
-                            if (submenu) {
-                                submenu.classList.add('show');
-                                if (sectionToggle) sectionToggle.setAttribute('aria-expanded', 'true');
-                            }
-                        } else {
-                            card.style.display = 'none';
-                        }
-                    });
-                });
-
-                // Keyboard Shortcut Ctrl+K / Cmd+K
-                document.addEventListener('keydown', function (e) {
-                    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-                        e.preventDefault();
-                        searchInput.focus();
-                    }
-                });
-            }
-
-            // Initialisation des tooltips
-            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            // Initialisation des tooltips Bootstrap
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
             tooltipTriggerList.map(t => new bootstrap.Tooltip(t));
         });
     </script>
