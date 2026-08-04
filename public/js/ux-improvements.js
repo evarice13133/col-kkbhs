@@ -398,7 +398,21 @@ const UX = (function () {
                 });
             }
 
-            // 3. Fermeture automatique du drawer lors du clic sur un lien de navigation
+            // 3. Fermeture automatique des autres sous-menus lors de l'ouverture d'un nouveau (Accordéon Exclusif)
+            const mobileAccordion = document.getElementById('mobileRibbonAccordion');
+            if (mobileAccordion && typeof bootstrap !== 'undefined') {
+                mobileAccordion.addEventListener('show.bs.collapse', function (e) {
+                    const activeCollapses = mobileAccordion.querySelectorAll('.accordion-collapse.show');
+                    activeCollapses.forEach(collapseEl => {
+                        if (collapseEl !== e.target) {
+                            const bsCollapse = bootstrap.Collapse.getInstance(collapseEl);
+                            if (bsCollapse) bsCollapse.hide();
+                        }
+                    });
+                });
+            }
+
+            // 4. Fermeture automatique du drawer lors du clic sur un lien de navigation
             document.querySelectorAll('.mobile-drawer-link').forEach(link => {
                 link.addEventListener('click', function () {
                     const drawerEl = document.getElementById('mobileRibbonDrawer');
