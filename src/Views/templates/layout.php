@@ -142,6 +142,23 @@ $ribbon_structure = [
         ]
     ],
     [
+        'id' => 'tab-timetables',
+        'title' => __('timetables_menu'),
+        'icon' => 'bi-calendar3-week',
+        'groups' => [
+            [
+                'title' => __('timetables_menu'),
+                'items' => [
+                    ['icon' => 'bi-calendar3-week', 'label' => __('timetables_menu'), 'url' => '/timetables', 'permission' => 'view_timetables', 'roles' => ['superadmin', 'admin', 'it_manager', 'enseignant'], 'desc' => __('timetables_subtitle')],
+                    ['icon' => 'bi-magic', 'label' => __('timetables_wizard_menu'), 'url' => '/timetables/wizard', 'permission' => 'manage_timetables', 'roles' => ['superadmin', 'admin', 'it_manager'], 'desc' => __('timetables_wizard_desc')],
+                    ['icon' => 'bi-clock-history', 'label' => __('timetables_slots_menu'), 'url' => '/timetables/slots', 'permission' => 'manage_timetables', 'roles' => ['superadmin', 'admin', 'it_manager'], 'desc' => __('timetables_slots_desc')],
+                    ['icon' => 'bi-building', 'label' => __('timetables_rooms_menu'), 'url' => '/timetables/rooms', 'permission' => 'manage_timetables', 'roles' => ['superadmin', 'admin', 'it_manager'], 'desc' => __('timetables_rooms_desc')],
+                    ['icon' => 'bi-calendar-range', 'label' => __('timetables_weeks_menu'), 'url' => '/timetables/weeks', 'permission' => 'manage_timetables', 'roles' => ['superadmin', 'admin', 'it_manager'], 'desc' => __('timetables_weeks_desc')]
+                ]
+            ]
+        ]
+    ],
+    [
         'id' => 'tab-rh',
         'title' => __('ressources_humaines'),
         'icon' => 'bi-people',
@@ -494,6 +511,11 @@ foreach ($ribbon_structure as $tab) {
                             <?php if (\App\Core\PermissionManager::hasPermission('manage_marks')): ?>
                                 <a href="/notes" class="ribbon-qat-btn <?= strpos($current_path, '/notes') === 0 ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-html="true" title="<div class='tooltip-rich-title'><i class='bi bi-pencil-square'></i> Saisie des Notes</div><div class='tooltip-rich-desc'>Saisir et valider les notes d'évaluation par classe.</div>">
                                     <i class="bi bi-pencil-square"></i>
+                                </a>
+                            <?php endif; ?>
+                            <?php if (\App\Core\PermissionManager::hasPermission('view_timetables')): ?>
+                                <a href="/timetables" class="ribbon-qat-btn <?= strpos($current_path, '/timetables') === 0 ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-html="true" title="<div class='tooltip-rich-title'><i class='bi bi-calendar3-week'></i> Emplois du Temps</div><div class='tooltip-rich-desc'>Gestion et planification des emplois du temps.</div>">
+                                    <i class="bi bi-calendar3-week"></i>
                                 </a>
                             <?php endif; ?>
                             <?php if (\App\Core\PermissionManager::hasPermission('manage_payments')): ?>
@@ -1028,7 +1050,7 @@ foreach ($ribbon_structure as $tab) {
 
             <!-- Page Content Inner -->
             <div class="content-inner">
-                <?= $content ?>
+                <?= $content ?? '' ?>
             </div>
 
             <!-- Footer -->

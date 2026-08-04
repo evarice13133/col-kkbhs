@@ -40,6 +40,7 @@ use App\Controllers\AIAssistantController;
 use App\Controllers\SubjectGroupController;
 use App\Controllers\LevelController;
 use App\Controllers\TranscriptController;
+use App\Controllers\TimetableController;
 
 
 
@@ -126,6 +127,61 @@ if ($path === '/' || $path === '/index.php') {
     } else {
         $c = new LandingController();
         $c->index();
+    }
+}
+
+// ====== ROUTES: EMPLOIS DU TEMPS ======
+elseif (strpos($path, '/timetables') === 0) {
+    if (!Session::isLogged()) {
+        header('Location: /login');
+        exit;
+    }
+    $c = new TimetableController();
+
+    if ($path === '/timetables') {
+        $c->index();
+    } elseif ($path === '/timetables/slots') {
+        $c->slots();
+    } elseif ($path === '/timetables/slots/store' && $method === 'POST') {
+        $c->storeSlot();
+    } elseif ($path === '/timetables/slots/update' && $method === 'POST') {
+        $c->updateSlot();
+    } elseif ($path === '/timetables/slots/delete' && $method === 'POST') {
+        $c->deleteSlot();
+    } elseif ($path === '/timetables/rooms') {
+        $c->rooms();
+    } elseif ($path === '/timetables/rooms/store' && $method === 'POST') {
+        $c->storeRoom();
+    } elseif ($path === '/timetables/rooms/update' && $method === 'POST') {
+        $c->updateRoom();
+    } elseif ($path === '/timetables/rooms/delete' && $method === 'POST') {
+        $c->deleteRoom();
+    } elseif ($path === '/timetables/weeks') {
+        $c->weeks();
+    } elseif ($path === '/timetables/weeks/store' && $method === 'POST') {
+        $c->storeWeek();
+    } elseif ($path === '/timetables/weeks/update' && $method === 'POST') {
+        $c->updateWeek();
+    } elseif ($path === '/timetables/weeks/delete' && $method === 'POST') {
+        $c->deleteWeek();
+    } elseif ($path === '/timetables/wizard') {
+        $c->wizard();
+    } elseif ($path === '/timetables/create' && $method === 'POST') {
+        $c->createTimetable();
+    } elseif ($path === '/timetables/grid') {
+        $c->grid();
+    } elseif ($path === '/timetables/unlock' && $method === 'POST') {
+        $c->unlock();
+    } elseif ($path === '/timetables/pdf') {
+        $c->exportPdf();
+    } elseif ($path === '/timetables/api/wizard-data') {
+        $c->wizardStepData();
+    } elseif ($path === '/timetables/api/save-entry' && $method === 'POST') {
+        $c->saveGridEntry();
+    } elseif ($path === '/timetables/api/delete-entry' && $method === 'POST') {
+        $c->deleteGridEntry();
+    } elseif ($path === '/timetables/api/validate-conflict') {
+        $c->apiValidateConflict();
     }
 }
 
