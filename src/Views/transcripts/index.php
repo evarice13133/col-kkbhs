@@ -70,11 +70,11 @@ ob_start();
                     <!-- ÉTAPE : SÉLECTION DE L'ÉLÈVE -->
                     <div class="flow-step mb-4">
                         <div class="flow-step-number">1</div>
-                        <h5 class="fw-bold mb-3"><?= __('select_student') ?? 'Sélectionner un élève' ?></h5>
+                        <h5 class="fw-bold mb-3"><?= __('select_student') ?></h5>
                         <div class="row g-3 align-items-center">
                             <div class="col-md-8">
                                 <select name="student_id" class="form-select form-select-lg rounded-3 shadow-none fw-semibold">
-                                    <option value="0">-- <?= __('all_students') ?? 'Tous les élèves de la classe' ?> --</option>
+                                    <option value="0">-- <?= __('all_students') ?> --</option>
                                     <?php foreach ($students as $student): ?>
                                         <option value="<?= $student['id'] ?>">
                                             <?= htmlspecialchars((string) $student['nom'] . ' ' . $student['prenom']) ?>
@@ -85,7 +85,7 @@ ob_start();
                             <div class="col-md-4">
                                 <button type="submit" class="btn btn-primary btn-lg w-100 rounded-3 shadow-sm d-flex align-items-center justify-content-center gap-2">
                                     <i class="bi bi-file-earmark-spreadsheet fs-5"></i>
-                                    <span><?= __('generate_transcript') ?? 'Générer le Relevé' ?></span>
+                                    <span><?= __('generate_transcript') ?></span>
                                 </button>
                             </div>
                         </div>
@@ -107,10 +107,10 @@ ob_start();
     <?php else: ?>
         <div class="text-center py-5">
             <div class="empty-state-icon bg-light text-muted rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                <i class="bi bi-file-earmark-spreadsheet fs-1"></i>
+                <i class="bi bi-file-earmark-spreadsheet fs-1 text-primary opacity-75"></i>
             </div>
-            <h4 class="fw-bold"><?= __('select_class_to_continue') ?? 'Veuillez sélectionner une classe' ?></h4>
-            <p class="text-muted small"><?= __('select_class_desc') ?? 'Choisissez une classe dans la barre ci-dessus pour consulter et imprimer les relevés de notes.' ?></p>
+            <h4 class="fw-bold text-main-theme mb-2"><?= __('select_class_to_continue') ?></h4>
+            <p class="text-muted-theme small mb-0" style="max-width: 520px; margin: 0 auto;"><?= __('select_class_desc') ?></p>
         </div>
     <?php endif; ?>
 

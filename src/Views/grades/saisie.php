@@ -98,6 +98,93 @@ $appreciationLabels = [
         box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.2) !important;
     }
 
+    /* Grade & Appreciation Input Styling (Canva & MS 365 Premium Style) */
+    .input-grade-modern {
+        width: 105px !important;
+        height: 46px !important;
+        border-radius: 14px !important;
+        border: 2px solid var(--border-color) !important;
+        background: color-mix(in srgb, var(--bg-card) 95%, var(--primary-color)) !important;
+        color: var(--text-main) !important;
+        font-weight: 800 !important;
+        font-size: 1.15rem !important;
+        text-align: center !important;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.03) !important;
+        letter-spacing: 0.02em;
+    }
+
+    .input-grade-modern::placeholder {
+        color: var(--text-muted) !important;
+        opacity: 0.45 !important;
+        font-weight: 600 !important;
+        font-size: 1.05rem !important;
+    }
+
+    [data-theme="dark"] .input-grade-modern {
+        background: rgba(15, 23, 42, 0.7) !important;
+        border-color: rgba(255, 255, 255, 0.15) !important;
+    }
+
+    .input-grade-modern:hover {
+        border-color: rgba(124, 58, 237, 0.4) !important;
+        background: var(--bg-card) !important;
+        transform: translateY(-1px);
+    }
+
+    .input-grade-modern:focus {
+        border-color: #7c3aed !important;
+        background: var(--bg-card) !important;
+        box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.22), 0 4px 12px rgba(124, 58, 237, 0.15) !important;
+        transform: scale(1.06);
+        outline: none !important;
+    }
+
+    /* Live Feedback Colors for High / Low Grades */
+    .input-grade-modern.note-high {
+        border-color: #10b981 !important;
+        background: rgba(16, 185, 129, 0.08) !important;
+        color: #059669 !important;
+    }
+
+    [data-theme="dark"] .input-grade-modern.note-high {
+        background: rgba(16, 185, 129, 0.18) !important;
+        color: #34d399 !important;
+        border-color: rgba(52, 211, 153, 0.4) !important;
+    }
+
+    .input-grade-modern.note-low {
+        border-color: #f43f5e !important;
+        background: rgba(244, 63, 94, 0.08) !important;
+        color: #e11d48 !important;
+    }
+
+    [data-theme="dark"] .input-grade-modern.note-low {
+        background: rgba(244, 63, 94, 0.18) !important;
+        color: #fb7185 !important;
+        border-color: rgba(251, 113, 133, 0.4) !important;
+    }
+
+    /* Appreciation Input Field */
+    .input-appr-modern {
+        height: 46px !important;
+        border-radius: 14px !important;
+        border: 1.5px solid var(--border-color) !important;
+        background: color-mix(in srgb, var(--bg-card) 98%, var(--primary-color)) !important;
+        color: var(--text-main) !important;
+        font-weight: 600 !important;
+        font-size: 0.95rem !important;
+        padding: 0 1rem !important;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+
+    .input-appr-modern:focus {
+        border-color: #7c3aed !important;
+        background: var(--bg-card) !important;
+        box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15) !important;
+        outline: none !important;
+    }
+
     /* Floating Save Button (Canva CTA) */
     .floating-save {
         position: fixed;
@@ -177,21 +264,21 @@ $appreciationLabels = [
         <div class="d-flex justify-content-between align-items-start gap-3 position-relative" style="z-index: 2;">
             <div>
                 <div class="d-flex align-items-center gap-2 mb-2">
-                    <span class="badge bg-white bg-opacity-20 text-white rounded-pill px-3 py-1 extra-small fw-bold text-uppercase tracking-wider">
+                    <span class="badge rounded-pill px-3 py-1.5 extra-small fw-extrabold text-uppercase tracking-wider shadow-sm" style="background: rgba(255, 255, 255, 0.25) !important; color: #ffffff !important; backdrop-filter: blur(8px);">
                         <i class="bi bi-mortarboard-fill me-1"></i><?= __('class') ?>
                     </span>
                 </div>
-                <h2 class="fw-black mb-2 fs-3 text-white"><?= htmlspecialchars((string) $classInfo['nom']) ?></h2>
+                <h2 class="fw-black mb-2 fs-3" style="color: #ffffff !important;"><?= htmlspecialchars((string) $classInfo['nom']) ?></h2>
                 <div class="d-flex flex-wrap align-items-center gap-2">
-                    <span class="badge bg-white text-primary rounded-pill px-3 py-2 fw-bold shadow-sm">
+                    <span class="badge rounded-pill px-3 py-2 fw-bold shadow-sm" style="background: #ffffff !important; color: #4f46e5 !important;">
                         <i class="bi bi-book-half me-1"></i><?= htmlspecialchars((string) $subjectInfo['nom']) ?>
                     </span>
-                    <span class="badge bg-white bg-opacity-20 text-white rounded-pill px-3 py-2 fw-semibold">
-                        <i class="bi bi-star-fill small me-1"></i><?= __('coef') ?> <?= (int) $subjectInfo['coefficient'] ?>
+                    <span class="badge rounded-pill px-3 py-2 fw-bold shadow-sm" style="background: rgba(255, 255, 255, 0.25) !important; color: #ffffff !important; backdrop-filter: blur(8px);">
+                        <i class="bi bi-star-fill text-warning me-1"></i><?= __('coef') ?> <?= (int) $subjectInfo['coefficient'] ?>
                     </span>
                 </div>
             </div>
-            <a href="/notes" class="btn btn-outline-light rounded-pill px-3 py-2 fw-bold align-self-end align-self-md-start scale-on-hover shadow-sm">
+            <a href="/notes" class="btn rounded-pill px-3 py-2 fw-bold align-self-end align-self-md-start scale-on-hover shadow-sm" style="background: rgba(255, 255, 255, 0.2) !important; color: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.4) !important;">
                 <i class="bi bi-x-lg me-1"></i><?= __('cancel') ?>
             </a>
         </div>
@@ -256,7 +343,7 @@ $appreciationLabels = [
                                         class="input-grade-modern js-note-input" 
                                         data-student-id="<?= $st['student_id'] ?>"
                                         value="<?= isset($st['valeur']) ? htmlspecialchars((string) $st['valeur']) : '' ?>"
-                                        placeholder="--">
+                                        placeholder="12.5">
                                 </td>
                                 <td class="pe-4 bg-transparent">
                                     <input type="text" name="appreciations[<?= $st['student_id'] ?>]"
