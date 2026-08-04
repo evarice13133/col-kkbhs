@@ -31,125 +31,167 @@ $appreciationLabels = [
         padding-bottom: 100px;
     }
 
-    /* Info Bar */
+    /* Info Bar (Canva Workspace Style) */
     .info-header-card {
-        background: linear-gradient(135deg, #4361ee, #3a0ca3);
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #9333ea 100%);
         color: white;
-        border-radius: 20px;
-        padding: 30px;
-        margin-bottom: 30px;
-        box-shadow: 0 15px 35px rgba(67, 97, 238, 0.2);
+        border-radius: 24px;
+        padding: 28px 32px;
+        margin-bottom: 24px;
+        box-shadow: 0 16px 40px rgba(124, 58, 237, 0.25);
+        position: relative;
+        overflow: hidden;
     }
 
-    /* Sticky Toolbar */
+    .info-header-card::after {
+        content: "";
+        position: absolute;
+        top: -40%;
+        right: -10%;
+        width: 300px;
+        height: 300px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.12);
+        filter: blur(40px);
+        pointer-events: none;
+    }
+
+    /* Sticky Toolbar (MS 365 Command Bar) */
     .sticky-grade-toolbar {
         position: sticky;
-        top: 10px;
+        top: 15px;
         z-index: 100;
-        background: var(--bg-card);
-        backdrop-filter: blur(10px);
-        border-radius: 15px;
-        padding: 15px 25px;
-        margin-bottom: 25px;
-        border: 1px solid var(--border-color);
-        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        background: color-mix(in srgb, var(--bg-card) 92%, var(--primary-color));
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border-radius: 18px;
+        padding: 12px 20px;
+        margin-bottom: 24px;
+        border: 1px solid rgba(124, 58, 237, 0.18);
+        box-shadow: 0 12px 35px rgba(124, 58, 237, 0.12);
         display: flex;
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
-        gap: 15px;
+        gap: 12px;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    /* Saisie Table */
-    .saisie-card {
-        background: var(--bg-card);
-        border-radius: 24px;
-        overflow: hidden;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.04);
-        border: 1px solid var(--border-color);
+    [data-theme="dark"] .sticky-grade-toolbar {
+        background: rgba(15, 23, 42, 0.88);
+        border-color: rgba(255, 255, 255, 0.14);
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4);
     }
 
-    .student-avatar {
-        width: 38px;
-        height: 38px;
-        border-radius: 10px;
-        background: rgba(67, 97, 238, 0.1);
-        color: #4361ee;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 800;
-        font-size: 0.9rem;
+    .eval-select-pill {
+        border-radius: 12px !important;
+        border: 1px solid rgba(124, 58, 237, 0.25) !important;
+        background: var(--bg-card) !important;
+        color: var(--text-main) !important;
+        font-weight: 700 !important;
+        padding: 0.5rem 1rem !important;
+        transition: all 0.2s ease !important;
     }
 
-    /* Input Styling */
-    .input-grade-modern {
-        border-radius: 12px;
-        border: 2px solid var(--border-color);
-        background: var(--bg-body);
-        color: var(--text-main);
-        font-weight: 800;
-        text-align: center;
-        font-size: 1.1rem;
-        transition: var(--transition-fast);
-        padding: 10px;
-        width: 100px;
+    .eval-select-pill:focus {
+        border-color: #7c3aed !important;
+        box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.2) !important;
     }
 
-    .input-grade-modern:focus {
-        border-color: #4361ee;
-        box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.1);
-        transform: scale(1.05);
-        outline: none;
-    }
-
-    .input-appr-modern {
-        border-radius: 12px;
-        border: 2px solid var(--border-color);
-        background: var(--bg-body);
-        color: var(--text-main);
-        font-weight: 600;
-        transition: var(--transition-fast);
-        padding: 10px 15px;
-    }
-
-    /* Feedback Colors */
-    .row-success { background: rgba(76, 201, 240, 0.03); }
-    .row-danger { background: rgba(247, 37, 133, 0.03); }
-
-    .note-high { color: #2ecc71; }
-    .note-low { color: #e74c3c; }
-
-    /* Floating Save Button */
+    /* Floating Save Button (Canva CTA) */
     .floating-save {
         position: fixed;
         bottom: 30px;
         right: 30px;
         z-index: 1000;
-        box-shadow: 0 15px 30px rgba(67, 97, 238, 0.4);
-        padding: 15px 30px;
+        background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+        border: none;
+        color: #ffffff;
+        box-shadow: 0 14px 35px rgba(124, 58, 237, 0.4);
+        padding: 14px 28px;
         border-radius: 50px;
         font-weight: 800;
         letter-spacing: 0.5px;
         text-transform: uppercase;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .floating-save:hover {
+        transform: translateY(-3px) scale(1.03);
+        box-shadow: 0 18px 40px rgba(124, 58, 237, 0.5);
+    }
+
+    @media (max-width: 767.98px) {
+        .info-header-card {
+            padding: 1.25rem 1rem !important;
+            border-radius: 18px !important;
+            margin-bottom: 1rem !important;
+        }
+
+        .info-header-card .d-flex {
+            flex-direction: column !important;
+            gap: 0.75rem !important;
+        }
+
+        .sticky-grade-toolbar {
+            padding: 0.75rem 0.85rem !important;
+            border-radius: 14px !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 0.75rem !important;
+            top: 65px !important;
+        }
+
+        .sticky-grade-toolbar .eval-select-group {
+            width: 100% !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 0.35rem !important;
+        }
+
+        .sticky-grade-toolbar select {
+            width: 100% !important;
+            min-width: 100% !important;
+            min-height: 44px !important;
+        }
+
+        .floating-save {
+            bottom: 15px !important;
+            right: 15px !important;
+            left: 15px !important;
+            width: calc(100% - 30px) !important;
+            border-radius: 16px !important;
+            text-align: center !important;
+            justify-content: center !important;
+            min-height: 48px !important;
+            display: flex !important;
+            align-items: center !important;
+        }
     }
 </style>
 
 <div class="grade-saisie-page fade-in">
     
-    <!-- Header Info -->
+    <!-- Header Info (Canva Workspace Banner) -->
     <div class="info-header-card">
-        <div class="d-flex justify-content-between align-items-start">
+        <div class="d-flex justify-content-between align-items-start gap-3 position-relative" style="z-index: 2;">
             <div>
-                <h2 class="fw-extrabold mb-1"><?= htmlspecialchars((string) $classInfo['nom']) ?></h2>
-                <div class="d-flex align-items-center gap-2 opacity-90">
-                    <span class="badge bg-white text-primary rounded-pill px-3 py-2 fw-bold">
-                        <i class="bi bi-book me-1"></i><?= htmlspecialchars((string) $subjectInfo['nom']) ?>
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="badge bg-white bg-opacity-20 text-white rounded-pill px-3 py-1 extra-small fw-bold text-uppercase tracking-wider">
+                        <i class="bi bi-mortarboard-fill me-1"></i><?= __('class') ?>
                     </span>
-                    <span><i class="bi bi-star-fill small ms-2 me-1"></i><?= __('coef') ?> <?= (int) $subjectInfo['coefficient'] ?></span>
+                </div>
+                <h2 class="fw-black mb-2 fs-3 text-white"><?= htmlspecialchars((string) $classInfo['nom']) ?></h2>
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <span class="badge bg-white text-primary rounded-pill px-3 py-2 fw-bold shadow-sm">
+                        <i class="bi bi-book-half me-1"></i><?= htmlspecialchars((string) $subjectInfo['nom']) ?>
+                    </span>
+                    <span class="badge bg-white bg-opacity-20 text-white rounded-pill px-3 py-2 fw-semibold">
+                        <i class="bi bi-star-fill small me-1"></i><?= __('coef') ?> <?= (int) $subjectInfo['coefficient'] ?>
+                    </span>
                 </div>
             </div>
-            <a href="/notes" class="btn btn-link text-white text-decoration-none fw-bold">
+            <a href="/notes" class="btn btn-outline-light rounded-pill px-3 py-2 fw-bold align-self-end align-self-md-start scale-on-hover shadow-sm">
                 <i class="bi bi-x-lg me-1"></i><?= __('cancel') ?>
             </a>
         </div>
@@ -162,11 +204,14 @@ $appreciationLabels = [
         <input type="hidden" name="subject_id" value="<?= $subject_id ?>">
         <input type="hidden" name="periode" value="<?= htmlspecialchars((string) $periode) ?>">
 
-        <!-- Sticky Toolbar -->
+        <!-- Sticky Command Bar (MS 365 Style) -->
         <div class="sticky-grade-toolbar">
-            <div class="d-flex align-items-center gap-3">
-                <label class="fw-bold text-muted-theme small text-uppercase"><?= __('evaluation') ?></label>
-                <select class="form-select border-0 bg-theme-input text-main-theme fw-bold" style="border-radius: 10px; min-width: 250px;" 
+            <div class="d-flex align-items-center gap-2 gap-md-3 eval-select-group flex-grow-1">
+                <span class="badge bg-primary-subtle text-primary rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                    <i class="bi bi-calendar-event fs-6"></i>
+                </span>
+                <label class="fw-bold text-muted-theme small text-uppercase flex-shrink-0"><?= __('evaluation') ?></label>
+                <select class="form-select eval-select-pill shadow-none flex-grow-1" style="min-height: 44px;" 
                         onchange="window.location.href='/notes/saisie?class_id=<?= $class_id ?>&subject_id=<?= $subject_id ?>&periode=' + encodeURIComponent(this.value)">
                     <?php foreach ($periodes as $p): ?>
                         <option value="<?= htmlspecialchars((string) $p) ?>" <?= $periode === $p ? 'selected' : '' ?>>
@@ -176,11 +221,11 @@ $appreciationLabels = [
                 </select>
             </div>
 
-            <div class="d-flex align-items-center gap-2">
-                <a href="/notes/export?mode=report&format=pdf&class_id=<?= $class_id ?>&subject_id=<?= $subject_id ?>" 
-                   class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-bold d-flex align-items-center gap-2 shadow-sm border-2">
-                    <i class="bi bi-file-earmark-pdf-fill"></i>
-                    <span class="d-none d-md-inline"><?= __('grade_report_pdf') ?></span>
+            <div class="d-flex align-items-center justify-content-end gap-2">
+                <a href="/notes/export?mode=report&format=pdf&class_id=<?= $class_id ?>&subject_id=<?= $subject_id ?>" target="_blank"
+                   class="btn btn-light-theme text-danger rounded-pill px-3 py-2 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm border border-danger-subtle w-100 w-md-auto scale-on-hover" style="min-height: 44px;">
+                    <i class="bi bi-file-earmark-pdf-fill fs-6 text-danger"></i>
+                    <span class="d-inline"><?= __('grade_report_pdf') ?></span>
                 </a>
             </div>
         </div>

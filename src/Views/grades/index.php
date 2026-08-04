@@ -31,8 +31,8 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
 <div class="animate-fade-in grades-workspace py-3 px-md-4">
 
     <!-- EN-TÊTE DE PAGE : Style Glassmorphism Premium avec support Mode Sombre -->
-    <div class="dept-header-card mb-4 p-3 p-md-4 rounded-4 shadow-sm position-relative overflow-hidden">
-        <div class="dept-header-bg"></div>
+    <div class="dept-header-card mb-4 p-3 p-md-4 rounded-4 shadow-sm position-relative" style="z-index: 10;">
+        <div class="dept-header-bg rounded-4" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden; pointer-events: none; z-index: 1;"></div>
         <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between w-100 gap-3 position-relative" style="z-index: 2;">
             <div class="d-flex align-items-center gap-3">
                 <div class="dept-icon-wrapper rounded-4 d-flex align-items-center justify-content-center flex-shrink-0">
@@ -49,54 +49,74 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
             </div>
             
             <div class="d-flex flex-row w-100 w-md-auto justify-content-end ms-md-auto gap-2 mt-2 mt-md-0">
-                <!-- Export Panel (Compact Dropdown) -->
+                <!-- Export Panel (Premium Dropdown) -->
                 <div class="dropdown">
-                    <button class="btn btn-light-theme rounded-pill px-3 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 scale-on-hover" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-file-earmark-pdf text-danger fs-6"></i>
-                        <span><?= __('exports') ?? 'Exportations' ?></span>
-                        <i class="bi bi-chevron-down small opacity-75"></i>
+                    <button class="btn btn-primary rounded-pill px-3 py-2 fw-bold d-flex justify-content-center align-items-center gap-2 shadow-sm scale-on-hover" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="min-height: 44px;">
+                        <i class="bi bi-printer-fill fs-6"></i>
+                        <span><?= __('exports') ?? 'Impression & Exports' ?></span>
+                        <i class="bi bi-chevron-down small opacity-75 ms-1"></i>
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-4 p-2">
-                        <li><h6 class="dropdown-header extra-small text-uppercase fw-bold text-muted"><?= __('exports') ?? 'Exportations' ?></h6></li>
+                    <div class="dropdown-menu dropdown-menu-end export-dropdown-menu animate-slide-down">
+                        <div class="export-dropdown-header d-flex align-items-center justify-content-between">
+                            <span><i class="bi bi-printer me-1 text-primary"></i> <?= __('exports') ?? 'Options d\'impression' ?></span>
+                            <span class="badge bg-primary-subtle text-primary rounded-pill extra-small px-2">PDF & Sheets</span>
+                        </div>
                         <?php if ($canExportList): ?>
-                            <li>
-                                <a class="dropdown-item dropdown-item-modern" href="<?= htmlspecialchars($listExportUrl) ?>">
-                                    <i class="bi bi-file-pdf text-danger"></i> <?= __('grade_list_export') ?? 'Liste des notes (PDF)' ?>
-                                </a>
-                            </li>
+                            <a class="export-dropdown-item" href="<?= htmlspecialchars($listExportUrl) ?>" target="_blank">
+                                <div class="export-icon-box bg-danger-subtle text-danger">
+                                    <i class="bi bi-file-earmark-pdf-fill"></i>
+                                </div>
+                                <div class="d-flex flex-column">
+                                    <span class="fw-bold small lh-sm"><?= __('grade_list_export') ?? 'Liste globale des notes' ?></span>
+                                    <span class="extra-small text-muted"><?= __('export_list_desc') ?? 'Export PDF complet de la classe' ?></span>
+                                </div>
+                            </a>
                         <?php endif; ?>
                         <?php if ($canExportReport): ?>
-                            <li>
-                                <a class="dropdown-item dropdown-item-modern" href="<?= htmlspecialchars($reportExportUrl) ?>">
-                                    <i class="bi bi-printer-fill text-primary"></i> <?= __('grade_report_sheet') ?? 'Fiche de saisie' ?>
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item dropdown-item-modern" href="<?= htmlspecialchars($reportPdfUrl) ?>">
-                                    <i class="bi bi-file-earmark-pdf-fill text-danger"></i> <?= __('grade_report_pdf') ?? 'PV des notes (PDF)' ?>
-                                </a>
-                            </li>
+                            <a class="export-dropdown-item" href="<?= htmlspecialchars($reportExportUrl) ?>" target="_blank">
+                                <div class="export-icon-box bg-primary-subtle text-primary">
+                                    <i class="bi bi-file-earmark-spreadsheet-fill"></i>
+                                </div>
+                                <div class="d-flex flex-column">
+                                    <span class="fw-bold small lh-sm"><?= __('grade_report_sheet') ?? 'Fiche de saisie' ?></span>
+                                    <span class="extra-small text-muted"><?= __('export_sheet_desc') ?? 'Grille papier pour l\'enseignant' ?></span>
+                                </div>
+                            </a>
+                            <a class="export-dropdown-item" href="<?= htmlspecialchars($reportPdfUrl) ?>" target="_blank">
+                                <div class="export-icon-box" style="background-color: rgba(124, 58, 237, 0.12); color: #7c3aed;">
+                                    <i class="bi bi-award-fill"></i>
+                                </div>
+                                <div class="d-flex flex-column">
+                                    <span class="fw-bold small lh-sm"><?= __('grade_report_pdf') ?? 'PV d\'évaluation (PDF)' ?></span>
+                                    <span class="extra-small text-muted"><?= __('export_pv_desc') ?? 'Procès-verbal officiel par matière' ?></span>
+                                </div>
+                            </a>
                         <?php endif; ?>
                         <?php if (!$canExportList && !$canExportReport): ?>
-                            <li class="px-3 py-2 extra-small text-muted"><?= __('grade_export_hint') ?? 'Sélectionnez une classe et une matière pour exporter' ?></li>
+                            <div class="p-3 text-center rounded-3 bg-light bg-opacity-50 m-1 border border-dashed">
+                                <i class="bi bi-info-circle text-primary fs-5 d-block mb-1"></i>
+                                <span class="extra-small text-muted fw-medium d-block">
+                                    <?= __('grade_export_hint') ?? 'Sélectionnez une classe et une matière pour débloquer les options d\'impression.' ?>
+                                </span>
+                            </div>
                         <?php endif; ?>
-                    </ul>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <?php if (in_array(App\Core\Session::get('user_role'), ['admin', 'superadmin'])): ?>
-    <!-- BARRE DE FILTRES ET RECHERCHE INSTANTANÉE -->
+    <!-- BARRE DE FILTRES ET RECHERCHE INSTANTANÉE RESPONSIVE -->
     <div class="filter-island-container mb-4">
         <div class="filter-island p-3 rounded-4 shadow-sm">
             <form method="GET" action="/notes" class="filter-form w-100 m-0" id="filterForm">
-                <div class="d-flex flex-column flex-md-row gap-3 align-items-md-center justify-content-between">
+                <div class="d-flex flex-column flex-md-row gap-2 gap-md-3 align-items-center justify-content-between">
 
-                    <div class="d-flex flex-column flex-sm-row gap-2 flex-grow-1 flex-wrap">
+                    <div class="row g-2 flex-grow-1 w-100 m-0">
                         <!-- Type Enseignement -->
-                        <div class="dept-select-wrapper flex-grow-1" style="min-width: 150px; max-width: 200px;">
-                            <select name="teaching_type_id" id="filter_teaching_type" class="form-select dept-filter-select" onchange="this.form.submit()">
+                        <div class="col-12 col-sm-6 col-lg p-0 px-sm-1">
+                            <select name="teaching_type_id" id="filter_teaching_type" class="form-select search-pill rounded-pill bg-white bg-opacity-10 fw-bold text-main py-2 px-3 w-100" onchange="this.form.submit()">
                                 <option value=""><?= __('all_teaching_types') ?? 'Tous les types' ?></option>
                                 <?php foreach ($teachingTypes as $tt): ?>
                                     <option value="<?= $tt['id'] ?>" <?= (int) $filters['teaching_type_id'] === (int) $tt['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $tt['nom']) ?></option>
@@ -105,8 +125,8 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
                         </div>
 
                         <!-- Classe -->
-                        <div class="dept-select-wrapper flex-grow-1" style="min-width: 150px; max-width: 200px;">
-                            <select name="class_id" id="filter_class" class="form-select dept-filter-select" onchange="this.form.submit()">
+                        <div class="col-12 col-sm-6 col-lg p-0 px-sm-1">
+                            <select name="class_id" id="filter_class" class="form-select search-pill rounded-pill bg-white bg-opacity-10 fw-bold text-main py-2 px-3 w-100" onchange="this.form.submit()">
                                 <option value=""><?= __('all_classes') ?? 'Toutes les classes' ?></option>
                                 <?php foreach ($classes as $class): ?>
                                     <option value="<?= $class['id'] ?>" data-teaching-type="<?= $class['teaching_type_id'] ?? '' ?>" <?= (int) $filters['class_id'] === (int) $class['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $class['nom']) ?></option>
@@ -115,8 +135,8 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
                         </div>
 
                         <!-- Matière -->
-                        <div class="dept-select-wrapper flex-grow-1" style="min-width: 150px; max-width: 200px;">
-                            <select name="subject_id" id="filter_subject" class="form-select dept-filter-select" onchange="this.form.submit()">
+                        <div class="col-12 col-sm-6 col-lg p-0 px-sm-1">
+                            <select name="subject_id" id="filter_subject" class="form-select search-pill rounded-pill bg-white bg-opacity-10 fw-bold text-main py-2 px-3 w-100" onchange="this.form.submit()">
                                 <option value=""><?= __('all_subjects') ?? 'Toutes les matières' ?></option>
                                 <?php foreach ($subjects as $subject): ?>
                                     <option value="<?= $subject['id'] ?>" data-teaching-type="<?= $subject['teaching_type_id'] ?? '' ?>" <?= (int) $filters['subject_id'] === (int) $subject['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $subject['nom']) ?></option>
@@ -125,17 +145,21 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
                         </div>
 
                         <!-- Recherche Locale -->
-                        <div class="dept-search-pill flex-grow-1 position-relative" style="min-width: 180px;">
-                            <i class="bi bi-search search-icon"></i>
-                            <input type="text" id="subject-search" class="form-control dept-filter-input ps-5"
-                                placeholder="<?= __('search_placeholder_global') ?? 'Rechercher' ?>...">
+                        <div class="col-12 col-sm-6 col-lg p-0 px-sm-1">
+                            <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-3 py-1 w-100">
+                                <span class="input-group-text border-0 bg-transparent text-primary p-0 me-2">
+                                    <i class="bi bi-search"></i>
+                                </span>
+                                <input type="text" id="subject-search" class="form-control border-0 bg-transparent shadow-none fw-bold text-main"
+                                    placeholder="<?= __('search_placeholder_global') ?? 'Rechercher' ?>...">
+                            </div>
                         </div>
                     </div>
 
                     <!-- Actions Filtre -->
-                    <div class="d-flex gap-2 align-items-center justify-content-end">
-                        <a href="/notes" class="btn btn-light-theme rounded-circle p-2 d-flex align-items-center justify-content-center reset-btn scale-on-hover" style="width: 42px; height: 42px;" title="<?= __('reset') ?? 'Réinitialiser' ?>">
-                            <i class="bi bi-arrow-counterclockwise fs-5"></i>
+                    <div class="d-flex gap-2 align-items-center justify-content-center justify-content-md-end ps-md-2 pt-2 pt-md-0 border-top border-top-md-0 border-opacity-10 border-secondary flex-shrink-0">
+                        <a href="/notes" class="btn btn-light rounded-circle p-2 d-flex align-items-center justify-content-center reset-btn scale-on-hover shadow-sm" style="width: 44px; height: 44px;" title="<?= __('reset') ?? 'Réinitialiser' ?>">
+                            <i class="bi bi-arrow-counterclockwise fs-5 text-primary"></i>
                         </a>
                     </div>
 
@@ -144,14 +168,16 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
         </div>
     </div>
     <?php else: ?>
-    <!-- BARRE DE RECHERCHE ENSEIGNANT -->
+    <!-- BARRE DE RECHERCHE ENSEIGNANT RESPONSIVE -->
     <div class="filter-island-container mb-4">
-        <div class="filter-island p-3 rounded-4 shadow-sm" style="max-width: 600px; margin: 0 auto;">
+        <div class="filter-island p-3 rounded-4 shadow-sm w-100" style="max-width: 600px; margin: 0 auto;">
             <form class="filter-form w-100 m-0">
-                <div class="dept-search-pill position-relative w-100">
-                    <i class="bi bi-search search-icon"></i>
-                    <input type="text" id="subject-search" class="form-control dept-filter-input ps-5"
-                        placeholder="<?= __('search') ?? 'Rechercher' ?>...">
+                <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-3 py-1 w-100">
+                    <span class="input-group-text border-0 bg-transparent text-primary p-0 me-2">
+                        <i class="bi bi-search fs-5"></i>
+                    </span>
+                    <input type="text" id="subject-search" class="form-control border-0 bg-transparent shadow-none fw-bold text-main"
+                        placeholder="<?= __('search') ?? 'Rechercher' ?>..." style="min-height: 38px;">
                 </div>
             </form>
         </div>

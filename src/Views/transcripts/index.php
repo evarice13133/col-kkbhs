@@ -5,51 +5,55 @@ ob_start();
 
 <div class="animate-fade-in admin-analytics module-bureau-flow">
 
-    <!-- BARRE D'ACTIONS FLOATING ISLAND -->
-    <div class="d-flex justify-content-center mb-5">
-        <div class="filter-island px-3 py-2 shadow-lg animate-slide-down" style="min-width: 70%;">
+    <!-- BARRE D'ACTIONS FLOATING ISLAND RESPONSIVE -->
+    <div class="d-flex justify-content-center mb-4 mb-md-5">
+        <div class="filter-island px-3 py-2 shadow-lg animate-slide-down">
             <form method="GET" action="/transcripts"
-                class="d-flex align-items-center gap-3 flex-wrap flex-md-nowrap filter-form w-100">
+                class="d-flex align-items-center gap-2 gap-md-3 flex-wrap flex-md-nowrap filter-form w-100">
 
-                <div class="d-flex align-items-center gap-2 flex-grow-1">
-                    <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-3 py-1 flex-grow-1">
-                        <span class="input-group-text border-0 bg-transparent text-primary small fw-bold text-uppercase me-2">
-                            <?= __('academic_years') ?>
-                        </span>
-                        <select name="academic_year_id"
-                            class="form-select border-0 bg-transparent shadow-none fw-bold text-main"
-                            onchange="this.form.submit()">
-                            <?php foreach ($academicYears as $year): ?>
-                                <option value="<?= $year['id'] ?>" <?= $academicYearId === (int) $year['id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars((string) $year['nom']) ?>
-                                    <?= (int) $year['is_active'] === 1 ? '(' . __('active') . ')' : '' ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                <div class="row g-2 flex-grow-1 w-100 m-0">
+                    <div class="col-12 col-sm-6 col-lg flex-grow-1 p-0 px-sm-1">
+                        <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-3 py-1 w-100">
+                            <span class="input-group-text border-0 bg-transparent text-primary small fw-bold text-uppercase me-1">
+                                <?= __('academic_years') ?>
+                            </span>
+                            <select name="academic_year_id"
+                                class="form-select border-0 bg-transparent shadow-none fw-bold text-main"
+                                onchange="this.form.submit()">
+                                <?php foreach ($academicYears as $year): ?>
+                                    <option value="<?= $year['id'] ?>" <?= $academicYearId === (int) $year['id'] ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars((string) $year['nom']) ?>
+                                        <?= (int) $year['is_active'] === 1 ? '(' . __('active') . ')' : '' ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                     </div>
 
-                    <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-3 py-1 flex-grow-1">
-                        <span class="input-group-text border-0 bg-transparent text-primary small fw-bold text-uppercase me-2">
-                            <?= __('classes') ?>
-                        </span>
-                        <select name="class_id"
-                            class="form-select border-0 bg-transparent shadow-none fw-bold text-main"
-                            onchange="this.form.submit()">
-                            <option value=""><?= __('select_class') ?? 'Sélectionner une classe' ?></option>
-                            <?php foreach ($classes as $class): ?>
-                                <option value="<?= $class['id'] ?>" <?= $classId === (int) $class['id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars((string) $class['nom']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                    <div class="col-12 col-sm-6 col-lg flex-grow-1 p-0 px-sm-1">
+                        <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-3 py-1 w-100">
+                            <span class="input-group-text border-0 bg-transparent text-primary small fw-bold text-uppercase me-1">
+                                <?= __('classes') ?>
+                            </span>
+                            <select name="class_id"
+                                class="form-select border-0 bg-transparent shadow-none fw-bold text-main"
+                                onchange="this.form.submit()">
+                                <option value=""><?= __('select_class') ?? 'Sélectionner une classe' ?></option>
+                                <?php foreach ($classes as $class): ?>
+                                    <option value="<?= $class['id'] ?>" <?= $classId === (int) $class['id'] ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars((string) $class['nom']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
-                <div class="d-flex gap-2 align-items-center border-start border-opacity-10 border-secondary ps-3">
+                <div class="d-flex gap-2 align-items-center justify-content-center ps-md-2 pt-2 pt-md-0 border-top border-top-md-0 border-opacity-10 border-secondary flex-shrink-0">
                     <a href="/transcripts"
-                        class="btn btn-light rounded-circle p-2 d-flex align-items-center justify-content-center reset-btn"
-                        style="width: 40px; height: 40px;" title="<?= __('reset') ?>">
-                        <i class="bi bi-arrow-counterclockwise"></i>
+                        class="btn btn-light rounded-circle p-2 d-flex align-items-center justify-content-center reset-btn shadow-sm"
+                        style="width: 44px; height: 44px;" title="<?= __('reset') ?>">
+                        <i class="bi bi-arrow-counterclockwise fs-5 text-primary"></i>
                     </a>
                 </div>
             </form>

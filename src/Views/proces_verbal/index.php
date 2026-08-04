@@ -11,63 +11,69 @@ ob_start();
 <div class="animate-fade-in admin-analytics module-bureau-flow">
 
 
-    <!-- BARRE D'ACTIONS COMPLÈTE : Style Floating Island -->
-    <div class="d-flex justify-content-center mb-5">
-        <div class="filter-island px-3 py-2 shadow-lg animate-slide-down" style="min-width: 70%;">
-            <form method="GET" action="/proces-verbal" class="d-flex align-items-center gap-3 flex-wrap flex-md-nowrap filter-form w-100" id="contextForm">
+    <!-- BARRE D'ACTIONS COMPLÈTE : Style Floating Island Responsive -->
+    <div class="d-flex justify-content-center mb-4 mb-md-5">
+        <div class="filter-island px-3 py-2 shadow-lg animate-slide-down">
+            <form method="GET" action="/proces-verbal" class="d-flex align-items-center gap-2 gap-md-3 flex-wrap flex-md-nowrap filter-form w-100" id="contextForm">
                 
-                <div class="d-flex align-items-center gap-2 flex-grow-1">
-                    <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-3 py-1 flex-grow-1">
-                        <span class="input-group-text border-0 bg-transparent text-primary small fw-bold text-uppercase me-2">
-                            <?= __('year') ?>
-                        </span>
-                        <select name="academic_year_id" class="form-select border-0 bg-transparent shadow-none fw-bold text-main"
-                            onchange="this.form.submit()">
-                            <?php foreach ($anneesScolaires as $annee): ?>
-                                <option value="<?= $annee['id'] ?>" <?= $anneeId === (int) $annee['id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($annee['nom']) ?>
-                                    <?= (int) $annee['is_active'] === 1 ? '(' . __('active') . ')' : '' ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <?php if (!empty($teachingTypes)): ?>
-                        <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-3 py-1 flex-grow-1">
-                            <span class="input-group-text border-0 bg-transparent text-primary small fw-bold text-uppercase me-2">
-                                <?= __('Type d\'enseignement') ?>
+                <div class="row g-2 flex-grow-1 w-100 m-0">
+                    <div class="col-12 col-sm-6 col-lg flex-grow-1 p-0 px-sm-1">
+                        <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-3 py-1 w-100">
+                            <span class="input-group-text border-0 bg-transparent text-primary small fw-bold text-uppercase me-1">
+                                <?= __('year') ?>
                             </span>
-                            <select name="teaching_type_id" class="form-select border-0 bg-transparent shadow-none fw-bold text-main"
-                                onchange="this.form.class_id.value=''; this.form.submit();">
-                                <option value=""><?= __('Tous les types') ?></option>
-                                <?php foreach ($teachingTypes as $tt): ?>
-                                    <option value="<?= $tt['id'] ?>" <?= (int)$teachingTypeId === (int)$tt['id'] ? 'selected' : '' ?>>
-                                        <?= htmlspecialchars($tt['nom']) ?> (<?= htmlspecialchars($tt['code']) ?>)
+                            <select name="academic_year_id" class="form-select border-0 bg-transparent shadow-none fw-bold text-main"
+                                onchange="this.form.submit()">
+                                <?php foreach ($anneesScolaires as $annee): ?>
+                                    <option value="<?= $annee['id'] ?>" <?= $anneeId === (int) $annee['id'] ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($annee['nom']) ?>
+                                        <?= (int) $annee['is_active'] === 1 ? '(' . __('active') . ')' : '' ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
+                    </div>
+
+                    <?php if (!empty($teachingTypes)): ?>
+                        <div class="col-12 col-sm-6 col-lg flex-grow-1 p-0 px-sm-1">
+                            <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-3 py-1 w-100">
+                                <span class="input-group-text border-0 bg-transparent text-primary small fw-bold text-uppercase me-1">
+                                    <?= __('Type d\'enseignement') ?>
+                                </span>
+                                <select name="teaching_type_id" class="form-select border-0 bg-transparent shadow-none fw-bold text-main"
+                                    onchange="this.form.class_id.value=''; this.form.submit();">
+                                    <option value=""><?= __('Tous les types') ?></option>
+                                    <?php foreach ($teachingTypes as $tt): ?>
+                                        <option value="<?= $tt['id'] ?>" <?= (int)$teachingTypeId === (int)$tt['id'] ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($tt['nom']) ?> (<?= htmlspecialchars($tt['code']) ?>)
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
                     <?php endif; ?>
 
-                    <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-3 py-1 flex-grow-1">
-                        <span class="input-group-text border-0 bg-transparent text-primary small fw-bold text-uppercase me-2">
-                            <?= __('class') ?>
-                        </span>
-                        <select name="class_id" class="form-select border-0 bg-transparent shadow-none fw-bold text-main"
-                            onchange="this.form.submit()">
-                            <option value=""><?= __('choose_class') ?></option>
-                            <?php foreach ($classes as $classe): ?>
-                                <option value="<?= $classe['id'] ?>" <?= $classeId === (int) $classe['id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($classe['nom']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                    <div class="col-12 col-sm-6 col-lg flex-grow-1 p-0 px-sm-1">
+                        <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-3 py-1 w-100">
+                            <span class="input-group-text border-0 bg-transparent text-primary small fw-bold text-uppercase me-1">
+                                <?= __('class') ?>
+                            </span>
+                            <select name="class_id" class="form-select border-0 bg-transparent shadow-none fw-bold text-main"
+                                onchange="this.form.submit()">
+                                <option value=""><?= __('choose_class') ?></option>
+                                <?php foreach ($classes as $classe): ?>
+                                    <option value="<?= $classe['id'] ?>" <?= $classeId === (int) $classe['id'] ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($classe['nom']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
-                <div class="d-flex gap-2 align-items-center border-start border-opacity-10 border-secondary ps-3">
-                     <a href="/proces-verbal" class="btn btn-light rounded-circle p-2 d-flex align-items-center justify-content-center reset-btn" style="width: 40px; height: 40px;" title="<?= __('reset') ?>">
-                        <i class="bi bi-arrow-counterclockwise"></i>
+                <div class="d-flex gap-2 align-items-center justify-content-center ps-md-2 pt-2 pt-md-0 border-top border-top-md-0 border-opacity-10 border-secondary flex-shrink-0">
+                     <a href="/proces-verbal" class="btn btn-light rounded-circle p-2 d-flex align-items-center justify-content-center reset-btn shadow-sm" style="width: 44px; height: 44px;" title="<?= __('reset') ?>">
+                        <i class="bi bi-arrow-counterclockwise fs-5 text-primary"></i>
                     </a>
                 </div>
             </form>
