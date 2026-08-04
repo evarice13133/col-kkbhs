@@ -61,6 +61,9 @@ const UX = (function () {
             // 5. Initialise les filtres de structure (Enseignement, Section, Cycle) pour les classes
             this.initClassFilters();
 
+            // 6. Initialise les interactions de la navigation mobile (Search, Auto-close, Tables responsive)
+            this.initMobileNavigation();
+
             console.log('✅ Expérience Utilisateur (UX) synchronisée avec AlertService');
         },
 
@@ -332,6 +335,87 @@ const UX = (function () {
                         }
                     });
                     return;
+                }
+            });
+        },
+
+        /**
+         * Initialise la navigation mobile, le filtre temps réel de la sidebar mobile,
+         * et l'enveloppement automatique des tableaux responsifs.
+         */
+        initMobileNavigation() {
+            // 1. Bouton de recherche mobile -> Déclenche la Command Palette (Ctrl+K)
+            const mobileSearchBtn = document.getElementById('openCmdPaletteTriggerMobile');
+            if (mobileSearchBtn) {
+                mobileSearchBtn.addEventListener('click', function () {
+                    const cmdPalette = document.getElementById('commandPalette');
+                    const cmdInput = document.getElementById('cmdPaletteInput');
+                    if (cmdPalette) {
+                        cmdPalette.classList.add('active');
+                        if (cmdInput) {
+                            setTimeout(() => cmdInput.focus(), 150);
+                        }
+                    }
+                });
+            }
+
+            // 2. Filtre en temps réel des menus dans le drawer mobile
+            const drawerSearchInput = document.getElementById('mobileDrawerSearch');
+            if (drawerSearchInput) {
+                drawerSearchInput.addEventListener('input', function (e) {
+                    const query = e.target.value.toLowerCase().trim();
+                    const accordionItems = document.querySelectorAll('#mobileRibbonAccordion .mobile-nav-group-item');
+
+                    accordionItems.forEach(item => {
+                        let groupHasMatch = false;
+                        const itemLinks = item.querySelectorAll('.mobile-drawer-link');
+
+                        itemLinks.forEach(link => {
+                            const label = link.getAttribute('data-menu-label') || link.textContent.toLowerCase();
+                            if (!query || label.includes(query)) {
+                                link.style.display = 'flex';
+                                groupHasMatch = true;
+                            } else {
+                                link.style.display = 'none';
+                            }
+                        });
+
+                        const collapseEl = item.querySelector('.accordion-collapse');
+                        if (query) {
+                            if (groupHasMatch) {
+                                item.style.display = '';
+                                if (collapseEl && !collapseEl.classList.contains('show') && typeof bootstrap !== 'undefined') {
+                                    const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false });
+                                    bsCollapse.show();
+                                }
+                            } else {
+                                item.style.display = 'none';
+                            }
+                        } else {
+                            item.style.display = '';
+                        }
+                    });
+                });
+            }
+
+            // 3. Fermeture automatique du drawer lors du clic sur un lien de navigation
+            document.querySelectorAll('.mobile-drawer-link').forEach(link => {
+                link.addEventListener('click', function () {
+                    const drawerEl = document.getElementById('mobileRibbonDrawer');
+                    if (drawerEl && typeof bootstrap !== 'undefined') {
+                        const drawerInstance = bootstrap.Offcanvas.getInstance(drawerEl);
+                        if (drawerInstance) drawerInstance.hide();
+                    }
+                });
+            });
+
+            // 4. Enveloppement automatique des tableaux non-responsifs
+            document.querySelectorAll('table').forEach(table => {
+                if (!table.closest('.table-responsive') && !table.closest('.table-responsive-custom') && !table.classList.contains('no-responsive')) {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'table-responsive-custom shadow-sm my-2';
+                    table.parentNode.insertBefore(wrapper, table);
+                    wrapper.appendChild(table);
                 }
             });
         },

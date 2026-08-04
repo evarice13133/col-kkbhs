@@ -3579,10 +3579,236 @@ body {
     }
 }
 
+/* ==========================================================================
+   ADVANCED RESPONSIVE SAAS DESIGN SYSTEM (CANVA, NOTION & MS 365 STYLE)
+   ========================================================================== */
 
+/* 1. Global Touch & Overflow Safeguards */
+html, body {
+    overflow-x: hidden !important;
+    width: 100%;
+}
 
+.dashboard-wrapper {
+    overflow-x: hidden;
+    width: 100%;
+}
 
+/* 2. Premium Mobile Sidebar Drawer (Offcanvas Canva Style) */
+.ribbon-mobile-drawer {
+    background-color: var(--bg-card) !important;
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
 
+[data-theme="dark"] .ribbon-mobile-drawer {
+    background-color: #0b0f19 !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
 
+.canva-workspace-pill {
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 15px rgba(124, 58, 237, 0.08);
+}
+
+[data-theme="dark"] .canva-workspace-pill {
+    background: rgba(15, 23, 42, 0.75) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.mobile-drawer-link {
+    color: var(--text-main);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    border-left: 3px solid transparent;
+}
+
+.mobile-drawer-link:hover {
+    background-color: rgba(124, 58, 237, 0.07);
+    color: var(--primary-color);
+    transform: translateX(3px);
+}
+
+.mobile-drawer-link.active {
+    background-color: rgba(124, 58, 237, 0.12);
+    color: var(--primary-color);
+    font-weight: 600;
+    border-left-color: var(--primary-color);
+}
+
+[data-theme="dark"] .mobile-drawer-link {
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .mobile-drawer-link:hover {
+    background-color: rgba(124, 58, 237, 0.2);
+    color: #a78bfa;
+}
+
+[data-theme="dark"] .mobile-drawer-link.active {
+    background-color: rgba(124, 58, 237, 0.28);
+    color: #a78bfa;
+    border-left-color: #a78bfa;
+}
+
+.mobile-drawer-icon-box {
+    transition: transform 0.2s ease;
+}
+
+.mobile-drawer-link:hover .mobile-drawer-icon-box {
+    transform: scale(1.1);
+}
+
+/* 3. Responsive Top Bar Optimizations */
+.ribbon-top-bar {
+    min-height: 56px;
+    padding: 0.4rem 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    position: relative;
+}
+
+@media (max-width: 767.98px) {
+    .ribbon-top-bar {
+        padding: 0.35rem 0.5rem;
+    }
+
+    .ribbon-brand-text {
+        font-size: 0.9rem;
+        max-width: 140px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+@media (max-width: 480px) {
+    .ribbon-brand-text {
+        max-width: 100px;
+    }
+}
+
+/* 4. Responsive Tables with Smooth Touch Scroll & Indicators */
+.table-responsive-custom {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 12px;
+    position: relative;
+    scrollbar-width: thin;
+}
+
+.table-responsive-custom::-webkit-scrollbar {
+    height: 5px;
+}
+
+.table-responsive-custom::-webkit-scrollbar-thumb {
+    background: rgba(124, 58, 237, 0.25);
+    border-radius: 10px;
+}
+
+@media (max-width: 767.98px) {
+    .table-modern, .registry-table, .cva-table, .table {
+        min-width: 600px;
+    }
+
+    .table-modern th, .table-modern td,
+    .registry-table th, .registry-table td,
+    .cva-table th, .cva-table td {
+        padding: 0.65rem 0.75rem !important;
+        font-size: 0.82rem !important;
+    }
+}
+
+/* 5. Touch Friendly Controls (WCAG 44px Minimum Height on Mobile) */
+@media (max-width: 767.98px) {
+    .form-control, .form-select, .premium-input, .premium-select, .cva-input, .cva-select {
+        min-height: 44px !important;
+        font-size: 0.9rem !important;
+        border-radius: 10px !important;
+    }
+
+    .btn:not(.btn-sm):not(.ribbon-qat-btn):not(.btn-action-modern) {
+        min-height: 44px !important;
+        padding-top: 0.6rem !important;
+        padding-bottom: 0.6rem !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.88rem !important;
+    }
+
+    .btn-mobile-full {
+        width: 100% !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .cva-card, .registry-card, .kpi-card, .card {
+        padding: 1rem !important;
+        border-radius: 14px !important;
+    }
+
+    .page-title {
+        font-size: 1.15rem !important;
+    }
+
+    .content-inner {
+        padding: 0.75rem !important;
+    }
+}
+
+/* 6. Mobile Bottom Sheet Modals (< 576px) */
+@media (max-width: 575.98px) {
+    .modal-dialog:not(.modal-fullscreen) {
+        margin: 0 !important;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        max-width: 100% !important;
+        width: 100% !important;
+        transform: translateY(100%);
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+
+    .modal.show .modal-dialog:not(.modal-fullscreen) {
+        transform: translateY(0) !important;
+    }
+
+    .modal-dialog:not(.modal-fullscreen) .modal-content {
+        border-radius: 24px 24px 0 0 !important;
+        border: none !important;
+        box-shadow: 0 -10px 35px rgba(0, 0, 0, 0.25) !important;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .modal-dialog:not(.modal-fullscreen) .modal-header {
+        position: relative;
+        padding: 1.25rem 1.25rem 0.75rem !important;
+    }
+
+    .modal-dialog:not(.modal-fullscreen) .modal-header::before {
+        content: "";
+        position: absolute;
+        top: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 36px;
+        height: 4px;
+        border-radius: 10px;
+        background: rgba(0, 0, 0, 0.15);
+    }
+
+    [data-theme="dark"] .modal-dialog:not(.modal-fullscreen) .modal-header::before {
+        background: rgba(255, 255, 255, 0.2);
+    }
+}
 
 

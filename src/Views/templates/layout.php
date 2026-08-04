@@ -459,16 +459,16 @@ foreach ($ribbon_structure as $tab) {
             <!-- 1. BARRE SUPÉRIEURE INDÉPENDANTE (Brand + QAT + Global Search + Utility Actions) -->
             <div class="ribbon-top-bar" id="ribbonTopBar">
                 <!-- Gauche : Mobile Button + Logo + Quick Access Toolbar (QAT) + Global Search Input -->
-                <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 750px;">
-                    <!-- Mobile Menu Button -->
+                <div class="d-flex align-items-center gap-2 flex-grow-1 overflow-hidden" style="max-width: 750px;">
+                    <!-- Mobile Menu Button (WCAG 44x44px Touch Target) -->
                     <?php if (\App\Core\Session::isLogged()): ?>
-                        <button class="btn btn-theme-soft p-1 me-1 d-lg-none border-0 rounded-circle flex-shrink-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileRibbonDrawer" title="Menu Mobile">
-                            <i class="bi bi-list fs-4 text-main-theme"></i>
+                        <button class="btn btn-theme-soft p-0 d-lg-none border-0 rounded-circle flex-shrink-0 d-flex align-items-center justify-content-center" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileRibbonDrawer" title="Menu Mobile" style="width: 44px; height: 44px;">
+                            <i class="bi bi-list fs-3 text-main-theme"></i>
                         </button>
                     <?php endif; ?>
 
                     <!-- Brand / Logo -->
-                    <a href="/" class="ribbon-brand flex-shrink-0 me-2" id="tourBrandLogo">
+                    <a href="/" class="ribbon-brand flex-shrink-0 me-1 text-decoration-none" id="tourBrandLogo">
                         <?php if ($logoData['has_logo'] && !empty($logoData['base64'])): ?>
                             <div class="sidebar-logo-container" style="width: 32px; height: 32px;">
                                 <img src="<?= htmlspecialchars($logoData['base64']) ?>" alt="Logo" class="sidebar-logo">
@@ -482,7 +482,7 @@ foreach ($ribbon_structure as $tab) {
                                 <?= htmlspecialchars($logoData['fallback_letter']) ?>
                             </div>
                         <?php endif; ?>
-                        <span class="ribbon-brand-text d-none d-sm-inline"><?= htmlspecialchars((string) $school_identity) ?></span>
+                        <span class="ribbon-brand-text d-none d-sm-inline fw-bold"><?= htmlspecialchars((string) $school_identity) ?></span>
                     </a>
 
                     <!-- MS Word Quick Access Toolbar (QAT - Barre d'Accès Rapide) -->
@@ -516,22 +516,28 @@ foreach ($ribbon_structure as $tab) {
 
                     <!-- Global Search Trigger (Linear / VSCode Command Palette Trigger) -->
                     <?php if (\App\Core\Session::isLogged()): ?>
-                        <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-2 align-items-center flex-grow-1 cursor-pointer" id="openCmdPaletteTrigger" style="border: 1px solid var(--border-color) !important; max-width: 340px; cursor: pointer;">
+                        <!-- Desktop / Tablet Search Input Trigger -->
+                        <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-2 align-items-center flex-grow-1 cursor-pointer d-none d-sm-flex" id="openCmdPaletteTrigger" style="border: 1px solid var(--border-color) !important; max-width: 340px; min-height: 36px; cursor: pointer;">
                             <span class="input-group-text border-0 bg-transparent text-primary p-1 ps-1">
-                                <i class="bi bi-search" style="font-size: 0.82rem;"></i>
+                                <i class="bi bi-search" style="font-size: 0.85rem;"></i>
                             </span>
                             <input type="text" class="form-control border-0 bg-transparent shadow-none py-1 text-main cursor-pointer"
-                                placeholder="Rechercher une commande... (Ctrl+K)" readonly style="font-size: 0.78rem; height: 30px; cursor: pointer;">
-                            <span class="badge bg-secondary bg-opacity-10 text-muted border rounded-pill extra-small px-1 py-0 me-1 d-none d-md-inline" style="font-size: 0.62rem;">⌘K</span>
+                                placeholder="Rechercher... (Ctrl+K)" readonly style="font-size: 0.8rem; height: 32px; cursor: pointer;">
+                            <span class="badge bg-secondary bg-opacity-10 text-muted border rounded-pill extra-small px-1-5 py-0 me-1 d-none d-md-inline" style="font-size: 0.65rem;">⌘K</span>
                         </div>
+                        <!-- Mobile Search Icon Button (WCAG Touch Target 44x44px) -->
+                        <button type="button" class="btn btn-theme-soft rounded-circle d-flex d-sm-none align-items-center justify-content-center p-0 border-0 flex-shrink-0"
+                                id="openCmdPaletteTriggerMobile" title="Rechercher une commande (Ctrl+K)" style="width: 44px; height: 44px;">
+                            <i class="bi bi-search fs-5 text-primary"></i>
+                        </button>
                     <?php endif; ?>
                 </div>
 
                 <!-- Droite : Onboarding Progress Pill + Primary CTA + Notification Bell + Theme Switcher + User Account -->
-                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                <div class="d-flex align-items-center gap-1-5 gap-sm-2 flex-shrink-0">
                     <?php if (\App\Core\Session::isLogged()): ?>
-                        <!-- 1. Pill Badge Widget de Progression (Checklist Interactive Popover) -->
-                        <div class="dropdown me-1" id="onboardingProgressPillDropdown">
+                        <!-- 1. Pill Badge Widget de Progression (Checklist Interactive Popover) - Tablet/Desktop -->
+                        <div class="dropdown me-1 d-none d-md-block" id="onboardingProgressPillDropdown">
                             <div class="onboarding-pill-badge" data-bs-toggle="dropdown" aria-expanded="false" title="Progression de la configuration de votre espace">
                                 <span class="pill-sparkle">✨</span>
                                 <span id="onboardingPillText">⚡ 0% configuré</span>
@@ -557,15 +563,15 @@ foreach ($ribbon_structure as $tab) {
                         </div>
 
                         <!-- 2. Bouton CTA Dynamique Contextuel -->
-                        <a href="/settings" class="btn-onboarding-cta pulse-glow me-1 d-none d-sm-inline-flex" id="onboardingPrimaryCTA">
+                        <a href="/settings" class="btn-onboarding-cta pulse-glow me-1 d-none d-lg-inline-flex" id="onboardingPrimaryCTA">
                             <i class="bi bi-rocket-takeoff"></i> Configurer maintenant
                         </a>
 
-                        <!-- 3. Smart Notification Bell Dropdown -->
+                        <!-- 3. Smart Notification Bell Dropdown (44x44px Touch Target) -->
                         <div class="dropdown" id="onboardingBellDropdown">
                             <button type="button" class="btn btn-theme-soft notification-bell-btn rounded-circle d-flex align-items-center justify-content-center p-0 border-0 shadow-sm transition-all"
-                                    data-bs-toggle="dropdown" aria-expanded="false" title="Notifications & Conseils Onboarding" style="width: 36px; height: 36px;">
-                                <i class="bi bi-bell fs-6 text-main-theme"></i>
+                                    data-bs-toggle="dropdown" aria-expanded="false" title="Notifications & Conseils Onboarding" style="width: 44px; height: 44px;">
+                                <i class="bi bi-bell fs-5 text-main-theme"></i>
                                 <span class="notification-bell-badge" id="onboardingBellBadge"></span>
                             </button>
                             <div class="dropdown-menu dropdown-menu-end notification-drawer-menu shadow-lg border-0 p-3 mt-2">
@@ -601,78 +607,84 @@ foreach ($ribbon_structure as $tab) {
                             </div>
                         </div>
 
-                        <!-- 4. Interactive Guided Tour Button -->
-                        <button type="button" class="btn btn-theme-soft rounded-circle d-flex align-items-center justify-content-center p-0 border-0 shadow-sm transition-all"
-                                id="startGuidedTour" title="Découvrir la Navigation (Visite Guidée)" style="width: 36px; height: 36px;">
-                            <i class="bi bi-compass fs-6 text-primary"></i>
+                        <!-- 4. Interactive Guided Tour Button (44x44px Touch Target) -->
+                        <button type="button" class="btn btn-theme-soft rounded-circle d-none d-sm-flex align-items-center justify-content-center p-0 border-0 shadow-sm transition-all"
+                                id="startGuidedTour" title="Découvrir la Navigation (Visite Guidée)" style="width: 44px; height: 44px;">
+                            <i class="bi bi-compass fs-5 text-primary"></i>
                         </button>
                     <?php endif; ?>
 
-                    <!-- Theme Toggle -->
-                    <button class="theme-toggle-btn btn btn-theme-soft rounded-circle d-flex align-items-center justify-content-center p-0 border-0 shadow-sm transition-all"
-                            id="themeToggle" title="<?= __('change_theme') ?>" style="width: 36px; height: 36px;">
-                        <i class="bi bi-moon-stars fs-6 text-main-theme"></i>
+                    <!-- Theme Toggle (44x44px Touch Target - Hidden on mobile, managed in User Avatar Menu & Drawer) -->
+                    <button class="theme-toggle-btn btn btn-theme-soft rounded-circle d-none d-sm-flex align-items-center justify-content-center p-0 border-0 shadow-sm transition-all"
+                            id="themeToggle" title="<?= __('change_theme') ?>" style="width: 44px; height: 44px;">
+                        <i class="bi bi-moon-stars fs-5 text-main-theme"></i>
                     </button>
 
-                    <!-- Compact User Account Avatar Dropdown (Space-Saving) -->
+                    <!-- Compact User Account Avatar Dropdown (44x44px Touch Target - Single Source of Truth for User Preferences) -->
                     <?php if (\App\Core\Session::isLogged()): ?>
                         <div class="dropdown" id="tourUserAccount">
                             <a href="#"
-                                class="user-avatar-btn"
+                                class="user-avatar-btn d-flex align-items-center justify-content-center text-decoration-none"
                                 data-bs-toggle="dropdown" aria-expanded="false"
-                                data-bs-placement="bottom" title="<?= h($user_name) ?> (<?= h(__($user_role)) ?>)">
+                                data-bs-placement="bottom" title="<?= h($user_name) ?> (<?= h(__($user_role)) ?>)"
+                                style="width: 44px; height: 44px;">
                                 <?= $user_initials ?>
                             </a>
-                            <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2 mt-2" style="min-width: 250px;">
+                            <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2 mt-2" style="min-width: 260px;">
                                 <li>
-                                    <div class="user-dropdown-header-card d-flex align-items-center gap-2">
-                                        <div class="user-avatar bg-primary text-white d-flex align-items-center justify-content-center rounded-circle fw-bold shadow-sm"
-                                            style="width: 38px; height: 38px; font-size: 1rem;">
+                                    <div class="user-dropdown-header-card d-flex align-items-center gap-2 p-2 rounded-3 bg-card border mb-2">
+                                        <div class="user-avatar bg-primary text-white d-flex align-items-center justify-content-center rounded-circle fw-bold shadow-sm flex-shrink-0"
+                                            style="width: 40px; height: 40px; font-size: 1.1rem;">
                                             <?= $user_initials ?>
                                         </div>
                                         <div class="d-flex flex-column text-start overflow-hidden">
-                                            <span class="text-main-theme fw-bold text-truncate lh-1" style="font-size: 0.88rem;"><?= h($user_name) ?></span>
+                                            <span class="text-main-theme fw-bold text-truncate lh-1" style="font-size: 0.9rem;"><?= h($user_name) ?></span>
                                             <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill mt-1 w-auto align-self-start extra-small"><?= h(__($user_role)) ?></span>
                                         </div>
                                     </div>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item dropdown-item-modern" href="/profile">
-                                        <i class="bi bi-person text-primary"></i> <?= __('my_profile') ?>
+                                    <a class="dropdown-item dropdown-item-modern py-2" href="/profile">
+                                        <i class="bi bi-person text-primary fs-5 me-2"></i> <?= __('my_profile') ?>
                                     </a>
                                 </li>
-                                <?php if (in_array($user_role, ['superadmin'])): ?>
+                                <?php if (in_array($user_role, ['superadmin', 'admin'])): ?>
                                     <li>
-                                        <a class="dropdown-item dropdown-item-modern" href="/settings">
-                                            <i class="bi bi-gear text-secondary"></i> <?= __('settings') ?>
+                                        <a class="dropdown-item dropdown-item-modern py-2" href="/settings">
+                                            <i class="bi bi-gear text-secondary fs-5 me-2"></i> <?= __('settings') ?>
                                         </a>
                                     </li>
                                 <?php endif; ?>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><h6 class="dropdown-header small text-uppercase fw-bold"><?= __('language') ?></h6></li>
                                 <li>
-                                    <a class="dropdown-item dropdown-item-modern <?= $app_lang === 'fr' ? 'active' : '' ?>"
+                                    <a class="dropdown-item dropdown-item-modern py-2" href="javascript:void(0)" onclick="document.getElementById('themeToggle').click();">
+                                        <i class="bi bi-moon-stars text-warning fs-5 me-2"></i> <?= __('change_theme') ?>
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider my-1"></li>
+                                <li><h6 class="dropdown-header small text-uppercase fw-bold text-muted"><?= __('language') ?></h6></li>
+                                <li>
+                                    <a class="dropdown-item dropdown-item-modern py-2 <?= $app_lang === 'fr' ? 'active' : '' ?>"
                                         href="javascript:void(0)" onclick="UX.switchLanguage('fr')">
-                                        <span class="fs-6">🇫🇷</span> Français
+                                        <span class="fs-5 me-2">🇫🇷</span> Français
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item dropdown-item-modern <?= $app_lang === 'en' ? 'active' : '' ?>"
+                                    <a class="dropdown-item dropdown-item-modern py-2 <?= $app_lang === 'en' ? 'active' : '' ?>"
                                         href="javascript:void(0)" onclick="UX.switchLanguage('en')">
-                                        <span class="fs-6">🇺🇸</span> English
+                                        <span class="fs-5 me-2">🇺🇸</span> English
                                     </a>
                                 </li>
-                                <li><hr class="dropdown-divider"></li>
+                                <li><hr class="dropdown-divider my-1"></li>
                                 <li>
-                                    <a class="dropdown-item dropdown-item-modern text-danger" href="/logout">
-                                        <i class="bi bi-box-arrow-right"></i> <?= __('logout') ?>
+                                    <a class="dropdown-item dropdown-item-modern py-2 text-danger" href="/logout">
+                                        <i class="bi bi-box-arrow-right fs-5 me-2"></i> <?= __('logout') ?>
                                     </a>
                                 </li>
                             </ul>
                         </div>
                     <?php else: ?>
                         <div class="d-flex align-items-center gap-2">
-                            <a href="/login" class="btn btn-primary rounded-pill px-3 py-1-5 btn-sm fw-bold shadow-sm">
+                            <a href="/login" class="btn btn-primary rounded-pill px-3 py-2 btn-sm fw-bold shadow-sm">
                                 <?= __('login') ?>
                             </a>
                         </div>
@@ -818,40 +830,177 @@ foreach ($ribbon_structure as $tab) {
             <?php endif; ?>
         </nav>
 
-        <!-- Mobile Navigation Offcanvas Drawer -->
+        <!-- Mobile Navigation Offcanvas Drawer (Canva SaaS Inspired - Navigation Focus & One-Handed UX) -->
         <?php if (\App\Core\Session::isLogged()): ?>
-            <div class="offcanvas offcanvas-start ribbon-mobile-drawer" tabindex="-1" id="mobileRibbonDrawer" aria-labelledby="mobileRibbonDrawerLabel">
-                <div class="offcanvas-header border-bottom">
-                    <h5 class="offcanvas-title fw-bold" id="mobileRibbonDrawerLabel"><?= htmlspecialchars((string) $school_identity) ?></h5>
-                    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            <div class="offcanvas offcanvas-start ribbon-mobile-drawer shadow-lg border-0" tabindex="-1" id="mobileRibbonDrawer" aria-labelledby="mobileRibbonDrawerLabel" style="width: 320px; max-width: 88vw;">
+                <!-- Offcanvas Header: Canva Workspace Banner -->
+                <div class="offcanvas-header flex-column align-items-stretch border-bottom pb-3 pt-3 px-3 position-relative" style="background: linear-gradient(135deg, rgba(124, 58, 237, 0.12) 0%, rgba(59, 130, 246, 0.08) 100%);">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="d-flex align-items-center gap-2-5 overflow-hidden">
+                            <?php if ($logoData['has_logo'] && !empty($logoData['base64'])): ?>
+                                <img src="<?= htmlspecialchars($logoData['base64']) ?>" alt="Logo" style="width: 36px; height: 36px; object-fit: contain;" class="rounded-2 shadow-sm">
+                            <?php elseif ($logoData['has_logo'] && !empty($logoData['url'])): ?>
+                                <img src="<?= htmlspecialchars($logoData['url']) ?>" alt="Logo" style="width: 36px; height: 36px; object-fit: contain;" class="rounded-2 shadow-sm">
+                            <?php else: ?>
+                                <div class="logo-fallback-modern" style="width: 36px; height: 36px; font-size: 1.1rem;">
+                                    <?= htmlspecialchars($logoData['fallback_letter']) ?>
+                                </div>
+                            <?php endif; ?>
+                            <div class="d-flex flex-column text-start overflow-hidden">
+                                <h5 class="offcanvas-title fw-bold fs-6 text-main-theme m-0 text-truncate" id="mobileRibbonDrawerLabel"><?= htmlspecialchars((string) $school_identity) ?></h5>
+                                <span class="extra-small text-primary fw-semibold" style="font-size: 0.7rem;">Espace de gestion</span>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close text-reset p-2" data-bs-dismiss="offcanvas" aria-label="Fermer" style="width: 48px; height: 48px;"></button>
+                    </div>
+
+                    <!-- Canva Workspace Context Pill -->
+                    <div class="canva-workspace-pill p-2 rounded-3 d-flex align-items-center justify-content-between mt-1" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(124, 58, 237, 0.2);">
+                        <div class="d-flex align-items-center gap-2 overflow-hidden">
+                            <span class="fs-6">🎓</span>
+                            <span class="fw-semibold text-main-theme extra-small text-truncate"><?= h($user_name) ?></span>
+                        </div>
+                        <span class="badge bg-primary text-white rounded-pill px-2 py-1 extra-small" style="font-size: 0.65rem;"><?= h(__($user_role)) ?></span>
+                    </div>
                 </div>
-                <div class="offcanvas-body">
-                    <?php foreach ($ribbon_structure as $tab): ?>
-                        <?php
-                        $tab_items = [];
-                        foreach ($tab['groups'] as $group) {
-                            foreach ($group['items'] as $item) {
-                                if (in_array($user_role, $item['roles'])) {
-                                    $tab_items[] = $item;
+
+                <!-- Real-time Filter Search Box inside Drawer (Module Filter Only) -->
+                <div class="px-3 pt-3 pb-2 border-bottom bg-card">
+                    <div class="input-group input-group-sm rounded-pill border overflow-hidden bg-body" style="min-height: 40px;">
+                        <span class="input-group-text border-0 bg-transparent text-muted ps-3 pe-1">
+                            <i class="bi bi-search" style="font-size: 0.85rem;"></i>
+                        </span>
+                        <input type="text" id="mobileDrawerSearch" class="form-control border-0 shadow-none py-2 text-main bg-transparent" placeholder="Filtrer les modules..." style="font-size: 0.84rem;">
+                    </div>
+                </div>
+
+                <!-- Accordion Navigation Body (Main Modules) -->
+                <div class="offcanvas-body p-2" id="mobileDrawerNavBody" style="overflow-y: auto; scrollbar-width: thin;">
+                    <div class="accordion accordion-flush" id="mobileRibbonAccordion">
+                        <?php $tabIndex = 0; ?>
+                        <?php foreach ($ribbon_structure as $tab): ?>
+                            <?php
+                            $tab_items = [];
+                            foreach ($tab['groups'] as $group) {
+                                foreach ($group['items'] as $item) {
+                                    if ($isItemAllowed($item)) {
+                                        $tab_items[] = array_merge($item, ['group_title' => $group['title']]);
+                                    }
                                 }
                             }
-                        }
-                        ?>
-                        <?php if (count($tab_items) > 0): ?>
-                            <div class="ribbon-mobile-section">
-                                <div class="ribbon-mobile-section-title">
-                                    <i class="bi <?= $tab['icon'] ?> me-1"></i> <?= htmlspecialchars($tab['title']) ?>
+                            $hasActiveItem = false;
+                            foreach ($tab_items as $item) {
+                                if ($isUrlActive($item['url'])) {
+                                    $hasActiveItem = true;
+                                    break;
+                                }
+                            }
+                            $tabIndex++;
+                            $collapseId = "mobileTabCollapse_" . $tabIndex;
+                            $headingId = "mobileTabHeading_" . $tabIndex;
+                            ?>
+                            <?php if (count($tab_items) > 0): ?>
+                                <div class="accordion-item border-0 mb-1 rounded-3 overflow-hidden mobile-nav-group-item">
+                                    <h2 class="accordion-header" id="<?= $headingId ?>">
+                                        <button class="accordion-button <?= $hasActiveItem ? '' : 'collapsed' ?> py-2-5 px-3 rounded-3 fw-bold text-main-theme shadow-none bg-transparent" 
+                                                type="button" 
+                                                data-bs-toggle="collapse" 
+                                                data-bs-target="#<?= $collapseId ?>" 
+                                                aria-expanded="<?= $hasActiveItem ? 'true' : 'false' ?>" 
+                                                aria-controls="<?= $collapseId ?>"
+                                                style="font-size: 0.9rem; min-height: 48px;">
+                                            <i class="bi <?= $tab['icon'] ?> text-primary fs-5 me-2 flex-shrink-0"></i>
+                                            <span class="flex-grow-1 text-truncate"><?= htmlspecialchars($tab['title']) ?></span>
+                                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill me-2 extra-small"><?= count($tab_items) ?></span>
+                                        </button>
+                                    </h2>
+                                    <div id="<?= $collapseId ?>" 
+                                         class="accordion-collapse collapse <?= $hasActiveItem ? 'show' : '' ?>" 
+                                         aria-labelledby="<?= $headingId ?>" 
+                                         data-bs-parent="#mobileRibbonAccordion">
+                                        <div class="accordion-body p-1 ps-2">
+                                            <div class="d-flex flex-column gap-1">
+                                                <?php foreach ($tab_items as $item): ?>
+                                                    <?php $isActive = $isUrlActive($item['url']); ?>
+                                                    <a href="<?= $item['url'] ?>" 
+                                                       class="mobile-drawer-link <?= $isActive ? 'active' : '' ?> d-flex align-items-center justify-content-between p-2 rounded-3 text-decoration-none text-main transition-all"
+                                                       data-menu-label="<?= strtolower(htmlspecialchars($item['label'] . ' ' . $tab['title'])) ?>"
+                                                       style="min-height: 44px;">
+                                                        <div class="d-flex align-items-center gap-2-5 overflow-hidden">
+                                                            <div class="mobile-drawer-icon-box rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 <?= $isActive ? 'bg-primary text-white shadow-sm' : 'bg-primary bg-opacity-10 text-primary' ?>"
+                                                                 style="width: 34px; height: 34px; font-size: 0.9rem;">
+                                                                <i class="bi <?= $item['icon'] ?>"></i>
+                                                            </div>
+                                                            <span class="fw-medium text-truncate" style="font-size: 0.86rem;"><?= htmlspecialchars($item['label']) ?></span>
+                                                        </div>
+                                                        <?php if ($isActive): ?>
+                                                            <i class="bi bi-check-circle-fill text-primary fs-6 me-1 flex-shrink-0"></i>
+                                                        <?php else: ?>
+                                                            <i class="bi bi-chevron-right extra-small text-muted flex-shrink-0 opacity-50"></i>
+                                                        <?php endif; ?>
+                                                    </a>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <?php foreach ($tab_items as $item): ?>
-                                    <?php $isActive = $isUrlActive($item['url']); ?>
-                                    <a href="<?= $item['url'] ?>" class="ribbon-mobile-link <?= $isActive ? 'active' : '' ?>">
-                                        <i class="bi <?= $item['icon'] ?>"></i>
-                                        <span><?= htmlspecialchars($item['label']) ?></span>
-                                    </a>
-                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+
+                        <!-- Section "Plus..." (Raccourcis & Assistance Secondaires) -->
+                        <div class="accordion-item border-0 mt-2 rounded-3 overflow-hidden mobile-nav-group-item">
+                            <h2 class="accordion-header" id="mobileTabHeading_Plus">
+                                <button class="accordion-button collapsed py-2-5 px-3 rounded-3 fw-bold text-secondary shadow-none bg-transparent" 
+                                        type="button" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#mobileTabCollapse_Plus" 
+                                        aria-expanded="false" 
+                                        aria-controls="mobileTabCollapse_Plus"
+                                        style="font-size: 0.88rem; min-height: 48px;">
+                                    <i class="bi bi-three-dots text-secondary fs-5 me-2 flex-shrink-0"></i>
+                                    <span class="flex-grow-1 text-truncate">Plus & Assistance</span>
+                                </button>
+                            </h2>
+                            <div id="mobileTabCollapse_Plus" 
+                                 class="accordion-collapse collapse" 
+                                 aria-labelledby="mobileTabHeading_Plus" 
+                                 data-bs-parent="#mobileRibbonAccordion">
+                                <div class="accordion-body p-1 ps-2">
+                                    <div class="d-flex flex-column gap-1">
+                                        <a href="/documentation" 
+                                           class="mobile-drawer-link d-flex align-items-center justify-content-between p-2 rounded-3 text-decoration-none text-main transition-all"
+                                           data-menu-label="aide documentation guides" style="min-height: 44px;">
+                                            <div class="d-flex align-items-center gap-2-5 overflow-hidden">
+                                                <div class="mobile-drawer-icon-box rounded-circle bg-secondary bg-opacity-10 text-secondary d-flex align-items-center justify-content-center flex-shrink-0"
+                                                     style="width: 34px; height: 34px; font-size: 0.9rem;">
+                                                    <i class="bi bi-question-circle"></i>
+                                                </div>
+                                                <span class="fw-medium text-truncate" style="font-size: 0.86rem;"><?= __('help') ?> & Documentation</span>
+                                            </div>
+                                            <i class="bi bi-chevron-right extra-small text-muted flex-shrink-0 opacity-50"></i>
+                                        </a>
+                                        <a href="/profile" 
+                                           class="mobile-drawer-link d-flex align-items-center justify-content-between p-2 rounded-3 text-decoration-none text-main transition-all"
+                                           data-menu-label="mon profil compte" style="min-height: 44px;">
+                                            <div class="d-flex align-items-center gap-2-5 overflow-hidden">
+                                                <div class="mobile-drawer-icon-box rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center flex-shrink-0"
+                                                     style="width: 34px; height: 34px; font-size: 0.9rem;">
+                                                    <i class="bi bi-person-gear"></i>
+                                                </div>
+                                                <span class="fw-medium text-truncate" style="font-size: 0.86rem;"><?= __('my_profile') ?></span>
+                                            </div>
+                                            <i class="bi bi-chevron-right extra-small text-muted flex-shrink-0 opacity-50"></i>
+                                        </a>
+                                    </div>
+                                </div>
                             </div>
-                        <?php endif; ?>
-                    <?php endforeach; ?>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Clean Canva Drawer -->
+                <div class="offcanvas-footer border-top p-2-5 bg-card text-center">
+                    <span class="extra-small text-muted">&copy; <?= date('Y') ?> <?= htmlspecialchars((string) $school_identity) ?></span>
                 </div>
             </div>
         <?php endif; ?>
