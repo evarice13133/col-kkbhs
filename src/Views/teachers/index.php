@@ -5,19 +5,19 @@ ob_start(); ?>
 
 
 
-    <?php 
+    <?php
     $msg = App\Core\Session::getFlash('success_msg') ?: App\Core\Session::getFlash('success');
-    if ($msg): 
-    ?>
+    if ($msg):
+        ?>
         <div class="alert alert-success border-0 shadow-sm alert-dismissible fade show rounded-4 mb-4" role="alert">
             <i class="bi bi-check-circle-fill me-2"></i><?= htmlspecialchars((string) $msg) ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     <?php endif; ?>
-    <?php 
+    <?php
     $err = App\Core\Session::getFlash('error_msg') ?: App\Core\Session::getFlash('error');
-    if ($err): 
-    ?>
+    if ($err):
+        ?>
         <div class="alert alert-danger border-0 shadow-sm alert-dismissible fade show rounded-4 mb-4" role="alert">
             <i class="bi bi-exclamation-triangle-fill me-2"></i><?= htmlspecialchars((string) $err) ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -75,12 +75,11 @@ ob_start(); ?>
 
     <!-- TOGGLE AFFICHAGE NOMS ENSEIGNANTS SUR BULLETINS -->
     <div class="d-flex justify-content-end mb-3">
-        <div class="d-flex align-items-center gap-2 bg-white bg-opacity-10 px-4 py-2 rounded-pill shadow-sm" style="border: 1px solid rgba(var(--primary-rgb), 0.15);">
+        <div class="d-flex align-items-center gap-2 bg-white bg-opacity-10 px-4 py-2 rounded-pill shadow-sm"
+            style="border: 1px solid rgba(var(--primary-rgb), 0.15);">
             <span class="text-muted small fw-medium"><?= __('show_teacher_names_on_bulletins') ?></span>
             <label class="form-check form-switch mb-0" style="cursor: pointer;">
-                <input class="form-check-input" type="checkbox" id="toggleTeacherNames" 
-                    <?= $showTeacherNamesOnBulletins ? 'checked' : '' ?>
-                    onchange="toggleTeacherNamesOnBulletins(this)">
+                <input class="form-check-input" type="checkbox" id="toggleTeacherNames" <?= $showTeacherNamesOnBulletins ? 'checked' : '' ?> onchange="toggleTeacherNamesOnBulletins(this)">
                 <span class="form-check-label"></span>
             </label>
         </div>
@@ -90,13 +89,15 @@ ob_start(); ?>
     <div class="d-flex justify-content-center mb-5">
         <div class="filter-island px-3 py-2 shadow-lg animate-slide-down" style="min-width: 85%;">
             <form method="GET" class="d-flex align-items-center gap-2 flex-wrap flex-md-nowrap filter-form w-100">
-                
+
                 <!-- Boutons d'Action Principaux -->
                 <div class="d-flex gap-2 pe-3 border-end border-opacity-10 border-secondary me-2">
-                    <button type="button" class="btn btn-primary rounded-pill px-3 fw-bold shadow-sm text-nowrap" data-bs-toggle="modal" data-bs-target="#createTeacherModal">
+                    <button type="button" class="btn btn-primary rounded-pill px-3 fw-bold shadow-sm text-nowrap"
+                        data-bs-toggle="modal" data-bs-target="#createTeacherModal">
                         <i class="bi bi-person-plus me-1"></i> <?= __('add_teacher') ?>
                     </button>
-                    <button type="button" class="btn btn-outline-success rounded-pill px-3 fw-bold text-nowrap" data-bs-toggle="modal" data-bs-target="#importTeachersModal">
+                    <button type="button" class="btn btn-outline-success rounded-pill px-3 fw-bold text-nowrap"
+                        data-bs-toggle="modal" data-bs-target="#importTeachersModal">
                         <i class="bi bi-file-earmark-spreadsheet me-1"></i> <?= __('import_excel') ?>
                     </button>
                 </div>
@@ -107,7 +108,8 @@ ob_start(); ?>
                         <span class="input-group-text border-0 bg-transparent text-primary">
                             <i class="bi bi-search"></i>
                         </span>
-                        <input type="text" name="q" class="form-control border-0 bg-transparent shadow-none py-2 text-main"
+                        <input type="text" name="q"
+                            class="form-control border-0 bg-transparent shadow-none py-2 text-main"
                             value="<?= htmlspecialchars((string) $filters['q']) ?>"
                             placeholder="<?= __('search_placeholder') ?>..." style="min-width: 200px;">
                     </div>
@@ -115,8 +117,11 @@ ob_start(); ?>
 
                 <!-- Filtres et Utilitaires -->
                 <div class="d-flex gap-2 align-items-center ps-2">
-                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm"><?= __('filter') ?></button>
-                    <a href="/teachers" class="btn btn-light rounded-circle p-2 d-flex align-items-center justify-content-center reset-btn" style="width: 40px; height: 40px;" title="<?= __('reset') ?>">
+                    <button type="submit"
+                        class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm"><?= __('filter') ?></button>
+                    <a href="/teachers"
+                        class="btn btn-light rounded-circle p-2 d-flex align-items-center justify-content-center reset-btn"
+                        style="width: 40px; height: 40px;" title="<?= __('reset') ?>">
                         <i class="bi bi-arrow-counterclockwise"></i>
                     </a>
                     <div class="ms-2">
@@ -165,8 +170,8 @@ ob_start(); ?>
                                                 <div class="fw-bold text-main-theme">
                                                     <?= htmlspecialchars((string) $t['nom']) ?>
                                                 </div>
-                                                <div class="text-muted-theme opacity-75"
-                                                    style="font-size: 0.85rem;"><?= htmlspecialchars((string) $t['prenom']) ?>
+                                                <div class="text-muted-theme opacity-75" style="font-size: 0.85rem;">
+                                                    <?= htmlspecialchars((string) $t['prenom']) ?>
                                                 </div>
                                             </div>
                                         </div>
@@ -182,10 +187,11 @@ ob_start(); ?>
                                         </span>
                                     </td>
                                     <td>
-                                        <span class="text-muted small"><?= htmlspecialchars((string) ($t['classes_list'] ?: '-')) ?></span>
+                                        <span
+                                            class="text-muted small"><?= htmlspecialchars((string) ($t['classes_list'] ?: '-')) ?></span>
                                     </td>
                                     <td class="text-end pe-4">
-                                        <div class="d-flex justify-content-end gap-1">
+                                         <div class="d-flex justify-content-end gap-1 align-items-center table-row-actions">
                                             <?php if (!$assignContext): ?>
                                                 <a href="/teachers/edit?id=<?= $t['id'] ?>"
                                                     class="btn btn-sm btn-action-modern text-primary" title="<?= __('edit') ?>">
@@ -201,12 +207,13 @@ ob_start(); ?>
                                                     <i class="bi bi-check2-circle fs-5"></i>
                                                 </a>
                                             <?php endif; ?>
-                                            <a href="/teachers/delete?id=<?= $t['id'] ?>"
-                                                class="btn btn-sm btn-action-modern text-danger btn-confirm-delete"
-                                                data-confirm="<?= __('delete_teacher_confirm') ?>"
-                                                title="<?= __('delete') ?>">
-                                                <i class="bi bi-trash fs-5"></i>
-                                            </a>
+                                             <button type="button"
+                                                 class="btn btn-sm btn-action-modern text-danger"
+                                                 data-impact-delete="teacher"
+                                                 data-id="<?= $t['id'] ?>"
+                                                 title="<?= __('delete') ?>">
+                                                 <i class="bi bi-trash fs-5"></i>
+                                             </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -231,7 +238,9 @@ ob_start(); ?>
                     <ul class="pagination pagination-modern mb-0">
                         <?php if ($page > 1): ?>
                             <li class="page-item">
-                                <a class="page-link" href="?<?= http_build_query(array_merge($filters, ['page' => $page - 1])) ?>" aria-label="Previous">
+                                <a class="page-link"
+                                    href="?<?= http_build_query(array_merge($filters, ['page' => $page - 1])) ?>"
+                                    aria-label="Previous">
                                     <i class="bi bi-chevron-left"></i>
                                 </a>
                             </li>
@@ -241,24 +250,32 @@ ob_start(); ?>
                         $start = max(1, $page - 2);
                         $end = min($totalPages, $page + 2);
                         if ($start > 1): ?>
-                            <li class="page-item"><a class="page-link" href="?<?= http_build_query(array_merge($filters, ['page' => 1])) ?>">1</a></li>
-                            <?php if ($start > 2): ?><li class="page-item disabled"><span class="page-link">...</span></li><?php endif; ?>
+                            <li class="page-item"><a class="page-link"
+                                    href="?<?= http_build_query(array_merge($filters, ['page' => 1])) ?>">1</a></li>
+                            <?php if ($start > 2): ?>
+                                <li class="page-item disabled"><span class="page-link">...</span></li><?php endif; ?>
                         <?php endif; ?>
 
                         <?php for ($i = $start; $i <= $end; $i++): ?>
                             <li class="page-item <?= $i === $page ? 'active' : '' ?>">
-                                <a class="page-link" href="?<?= http_build_query(array_merge($filters, ['page' => $i])) ?>"><?= $i ?></a>
+                                <a class="page-link"
+                                    href="?<?= http_build_query(array_merge($filters, ['page' => $i])) ?>"><?= $i ?></a>
                             </li>
                         <?php endfor; ?>
 
                         <?php if ($end < $totalPages): ?>
-                            <?php if ($end < $totalPages - 1): ?><li class="page-item disabled"><span class="page-link">...</span></li><?php endif; ?>
-                            <li class="page-item"><a class="page-link" href="?<?= http_build_query(array_merge($filters, ['page' => $totalPages])) ?>"><?= $totalPages ?></a></li>
+                            <?php if ($end < $totalPages - 1): ?>
+                                <li class="page-item disabled"><span class="page-link">...</span></li><?php endif; ?>
+                            <li class="page-item"><a class="page-link"
+                                    href="?<?= http_build_query(array_merge($filters, ['page' => $totalPages])) ?>"><?= $totalPages ?></a>
+                            </li>
                         <?php endif; ?>
 
                         <?php if ($page < $totalPages): ?>
                             <li class="page-item">
-                                <a class="page-link" href="?<?= http_build_query(array_merge($filters, ['page' => $page + 1])) ?>" aria-label="Next">
+                                <a class="page-link"
+                                    href="?<?= http_build_query(array_merge($filters, ['page' => $page + 1])) ?>"
+                                    aria-label="Next">
                                     <i class="bi bi-chevron-right"></i>
                                 </a>
                             </li>
@@ -270,7 +287,8 @@ ob_start(); ?>
     </div>
 
     <!-- MODALE CRÉATION ENSEIGNANT -->
-    <div class="modal fade" id="createTeacherModal" tabindex="-1" aria-labelledby="createTeacherModalLabel" aria-hidden="true">
+    <div class="modal fade" id="createTeacherModal" tabindex="-1" aria-labelledby="createTeacherModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
                 <div class="modal-header border-bottom border-theme-light p-4 bg-primary bg-opacity-10">
@@ -280,436 +298,445 @@ ob_start(); ?>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
-                    <?php 
+                    <?php
                     $isModal = true;
-                    include __DIR__ . '/_form.php'; 
+                    include __DIR__ . '/_form.php';
                     ?>
                 </div>
             </div>
         </div>
-    <!-- MODALE IMPORT EXCEL ENSEIGNANTS -->
-    <div class="modal fade" id="importTeachersModal" tabindex="-1" aria-labelledby="importTeachersModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-centered">
-            <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
-                <div class="modal-header border-bottom border-theme-light p-4 bg-success bg-opacity-10">
-                    <h5 class="modal-title fw-black text-main-theme" id="importTeachersModalLabel">
-                        <i class="bi bi-file-earmark-spreadsheet-fill me-2 text-success"></i><?= __('import_teachers_title') ?>
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <?php include __DIR__ . '/_import_form.php'; ?>
+        <!-- MODALE IMPORT EXCEL ENSEIGNANTS -->
+        <div class="modal fade" id="importTeachersModal" tabindex="-1" aria-labelledby="importTeachersModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-centered">
+                <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+                    <div class="modal-header border-bottom border-theme-light p-4 bg-success bg-opacity-10">
+                        <h5 class="modal-title fw-black text-main-theme" id="importTeachersModalLabel">
+                            <i
+                                class="bi bi-file-earmark-spreadsheet-fill me-2 text-success"></i><?= __('import_teachers_title') ?>
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <?php include __DIR__ . '/_import_form.php'; ?>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<style>
-    /* Floating Island Filters */
-    .filter-island {
-        background: rgba(var(--bg-card-rgb), 0.7);
-        backdrop-filter: blur(20px) saturate(180%);
-        border: 1px solid rgba(var(--primary-rgb), 0.15);
-        border-radius: 100px;
-        min-width: 60%;
-        transition: all 0.3s ease;
-    }
-
-    [data-theme="dark"] .filter-island {
-        background: rgba(30, 30, 45, 0.6);
-        border-color: rgba(255, 255, 255, 0.08);
-    }
-
-    .filter-island:focus-within {
-        border-color: var(--primary-color);
-        box-shadow: 0 15px 35px -10px rgba(var(--primary-rgb), 0.25);
-        transform: translateY(-2px);
-    }
-
-    .btn-export-minimal {
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 12px;
-        background: var(--bg-card);
-        color: #f1c40f;
-        border: 1px solid rgba(241, 196, 15, 0.2);
-        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        text-decoration: none !important;
-    }
-
-    .btn-export-minimal:hover {
-        background: #f1c40f;
-        color: white !important;
-        transform: scale(1.1) rotate(8deg);
-        box-shadow: 0 8px 20px rgba(241, 196, 15, 0.3);
-    }
-
-    /* Animations */
-    .animate-slide-down {
-        animation: slideDown 0.6s cubic-bezier(0.23, 1, 0.32, 1);
-    }
-
-    @keyframes slideDown {
-        from { transform: translateY(-20px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-    }
-
-    /* Pagination Modern Style */
-    .pagination-modern {
-        gap: 8px;
-    }
-
-    .pagination-modern .page-item .page-link {
-        border: none;
-        border-radius: 12px;
-        color: var(--text-main);
-        background: var(--bg-card);
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        transition: all 0.2s;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
-    }
-
-    .pagination-modern .page-item.active .page-link {
-        background: var(--primary-color);
-        color: white;
-        box-shadow: 0 10px 15px -3px rgba(var(--primary-rgb), 0.3);
-    }
-
-    .pagination-modern .page-item .page-link:hover:not(.active) {
-        background: color-mix(in srgb, var(--primary-color) 10%, transparent);
-        color: var(--primary-color);
-        transform: translateY(-2px);
-    }
-
-    .subject-card-compact {
-        background: var(--bg-card);
-        border-radius: 28px;
-        border: 1px solid rgba(var(--primary-rgb), 0.08) !important;
-        display: block;
-        text-decoration: none !important;
-        transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
-        position: relative;
-        overflow: hidden;
-    }
-
-    [data-theme="dark"] .subject-card-compact {
-        background: rgba(255, 255, 255, 0.03);
-        backdrop-filter: blur(15px);
-        border-color: rgba(255, 255, 255, 0.06) !important;
-    }
-
-    .name-gradient {
-        background: linear-gradient(135deg, var(--text-main), var(--primary-color));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-
-    .subject-card-glow {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: radial-gradient(circle at top right, rgba(var(--primary-rgb), 0.2), transparent 70%);
-        opacity: 0;
-        transition: opacity 0.4s ease;
-    }
-
-    .subject-card-compact:hover {
-        transform: translateY(-12px) scale(1.03);
-        border-color: var(--primary-color) !important;
-        box-shadow: 0 30px 60px -12px rgba(var(--primary-rgb), 0.25);
-    }
-
-    .subject-card-compact:active {
-        transform: scale(0.96);
-    }
-
-    .subject-card-compact:hover .subject-card-glow {
-        opacity: 1;
-    }
-
-    @media (max-width: 767.98px) {
+    <style>
+        /* Floating Island Filters */
         .filter-island {
-            border-radius: 24px;
-            min-width: 100%;
-            padding: 1rem !important;
+            background: rgba(var(--bg-card-rgb), 0.7);
+            backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(var(--primary-rgb), 0.15);
+            border-radius: 100px;
+            min-width: 60%;
+            transition: all 0.3s ease;
         }
-    }
 
-    /* Thème sombre pour le tableau des enseignants */
-    [data-theme="dark"] .modern-card {
-        background: rgba(30, 30, 45, 0.6);
-        border-color: rgba(255, 255, 255, 0.08);
-    }
+        [data-theme="dark"] .filter-island {
+            background: rgba(30, 30, 45, 0.6);
+            border-color: rgba(255, 255, 255, 0.08);
+        }
 
-    [data-theme="dark"] .table-modern thead th {
-        background: rgba(255, 255, 255, 0.05);
-        color: #ffffff;
-        border-bottom-color: rgba(255, 255, 255, 0.1);
-    }
+        .filter-island:focus-within {
+            border-color: var(--primary-color);
+            box-shadow: 0 15px 35px -10px rgba(var(--primary-rgb), 0.25);
+            transform: translateY(-2px);
+        }
 
-    [data-theme="dark"] .table-modern tbody tr {
-        border-bottom-color: rgba(255, 255, 255, 0.05);
-    }
+        .btn-export-minimal {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            background: var(--bg-card);
+            color: #f1c40f;
+            border: 1px solid rgba(241, 196, 15, 0.2);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            text-decoration: none !important;
+        }
 
-    [data-theme="dark"] .table-modern tbody tr:hover {
-        background: rgba(255, 255, 255, 0.05);
-    }
+        .btn-export-minimal:hover {
+            background: #f1c40f;
+            color: white !important;
+            transform: scale(1.1) rotate(8deg);
+            box-shadow: 0 8px 20px rgba(241, 196, 15, 0.3);
+        }
 
-    [data-theme="dark"] .table-modern tbody td {
-        color: #e0e0e0;
-    }
+        /* Animations */
+        .animate-slide-down {
+            animation: slideDown 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+        }
 
-    [data-theme="dark"] .table-modern tbody td .fw-bold {
-        color: #ffffff;
-    }
-
-    [data-theme="dark"] .table-modern tbody td .text-muted-theme {
-        color: #a0a0a0;
-    }
-
-    [data-theme="dark"] .table-modern tbody td .text-muted {
-        color: #a0a0a0;
-    }
-
-    /* Toggle Switch Style */
-    .form-check-input:checked {
-        background-color: var(--primary-color);
-        border-color: var(--primary-color);
-    }
-
-    .form-check-input {
-        cursor: pointer;
-        width: 3em;
-        height: 1.5em;
-    }
-</style>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const modalEl = document.getElementById('createTeacherModal');
-    const teacherForm = document.getElementById('teacherCreateForm');
-
-    if (teacherForm) {
-        teacherForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            // Verification front-end : au moins un type d'enseignement doit être sélectionné
-            const checked = teacherForm.querySelectorAll('input[name="teaching_type_ids[]"]:checked');
-            if (checked.length === 0) {
-                const msg = "<?= htmlspecialchars(__('select_at_least_one_teaching_type'), ENT_QUOTES) ?>";
-                if (typeof AlertService !== 'undefined') {
-                    AlertService.toast('error', msg);
-                } else {
-                    alert(msg);
-                }
-                return;
+        @keyframes slideDown {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
             }
 
-            const formData = new FormData(teacherForm);
-            const submitBtn = teacherForm.querySelector('button[type="submit"]');
-            if (submitBtn) submitBtn.disabled = true;
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
 
-            fetch('/teachers/store', {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                },
-                body: formData
-            })
-            .then(async response => {
-                const data = await response.json();
-                return { ok: response.ok, data: data };
-            })
-            .then(({ ok, data }) => {
-                if (submitBtn) submitBtn.disabled = false;
+        /* Pagination Modern Style */
+        .pagination-modern {
+            gap: 8px;
+        }
 
-                if (ok && data.success) {
-                    // Fermeture de la modale Bootstrap 5
-                    if (modalEl) {
-                        const bsModal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-                        bsModal.hide();
+        .pagination-modern .page-item .page-link {
+            border: none;
+            border-radius: 12px;
+            color: var(--text-main);
+            background: var(--bg-card);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+        }
+
+        .pagination-modern .page-item.active .page-link {
+            background: var(--primary-color);
+            color: white;
+            box-shadow: 0 10px 15px -3px rgba(var(--primary-rgb), 0.3);
+        }
+
+        .pagination-modern .page-item .page-link:hover:not(.active) {
+            background: color-mix(in srgb, var(--primary-color) 10%, transparent);
+            color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .subject-card-compact {
+            background: var(--bg-card);
+            border-radius: 28px;
+            border: 1px solid rgba(var(--primary-rgb), 0.08) !important;
+            display: block;
+            text-decoration: none !important;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+            position: relative;
+            overflow: hidden;
+        }
+
+        [data-theme="dark"] .subject-card-compact {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(15px);
+            border-color: rgba(255, 255, 255, 0.06) !important;
+        }
+
+        .name-gradient {
+            background: linear-gradient(135deg, var(--text-main), var(--primary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subject-card-glow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at top right, rgba(var(--primary-rgb), 0.2), transparent 70%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .subject-card-compact:hover {
+            transform: translateY(-12px) scale(1.03);
+            border-color: var(--primary-color) !important;
+            box-shadow: 0 30px 60px -12px rgba(var(--primary-rgb), 0.25);
+        }
+
+        .subject-card-compact:active {
+            transform: scale(0.96);
+        }
+
+        .subject-card-compact:hover .subject-card-glow {
+            opacity: 1;
+        }
+
+        @media (max-width: 767.98px) {
+            .filter-island {
+                border-radius: 24px;
+                min-width: 100%;
+                padding: 1rem !important;
+            }
+        }
+
+        /* Thème sombre pour le tableau des enseignants */
+        [data-theme="dark"] .modern-card {
+            background: rgba(30, 30, 45, 0.6);
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        [data-theme="dark"] .table-modern thead th {
+            background: rgba(255, 255, 255, 0.05);
+            color: #ffffff;
+            border-bottom-color: rgba(255, 255, 255, 0.1);
+        }
+
+        [data-theme="dark"] .table-modern tbody tr {
+            border-bottom-color: rgba(255, 255, 255, 0.05);
+        }
+
+        [data-theme="dark"] .table-modern tbody tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        [data-theme="dark"] .table-modern tbody td {
+            color: #e0e0e0;
+        }
+
+        [data-theme="dark"] .table-modern tbody td .fw-bold {
+            color: #ffffff;
+        }
+
+        [data-theme="dark"] .table-modern tbody td .text-muted-theme {
+            color: #a0a0a0;
+        }
+
+        [data-theme="dark"] .table-modern tbody td .text-muted {
+            color: #a0a0a0;
+        }
+
+        /* Toggle Switch Style */
+        .form-check-input:checked {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .form-check-input {
+            cursor: pointer;
+            width: 3em;
+            height: 1.5em;
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const modalEl = document.getElementById('createTeacherModal');
+            const teacherForm = document.getElementById('teacherCreateForm');
+
+            if (teacherForm) {
+                teacherForm.addEventListener('submit', function (e) {
+                    e.preventDefault();
+
+                    // Verification front-end : au moins un type d'enseignement doit être sélectionné
+                    const checked = teacherForm.querySelectorAll('input[name="teaching_type_ids[]"]:checked');
+                    if (checked.length === 0) {
+                        const msg = "<?= htmlspecialchars(__('select_at_least_one_teaching_type'), ENT_QUOTES) ?>";
+                        if (typeof AlertService !== 'undefined') {
+                            AlertService.toast('error', msg);
+                        } else {
+                            alert(msg);
+                        }
+                        return;
                     }
-                    teacherForm.reset();
 
-                    // Notification de succès via le service centralisé
-                    if (typeof AlertService !== 'undefined') {
-                        AlertService.toast('success', data.message);
-                    }
+                    const formData = new FormData(teacherForm);
+                    const submitBtn = teacherForm.querySelector('button[type="submit"]');
+                    if (submitBtn) submitBtn.disabled = true;
 
-                    // Rafraîchissement automatique de la liste sans recharger la page
-                    refreshTeachersList();
-                } else {
-                    const errorMsg = data.message || "<?= addslashes((string) __('teacher_required_fields')) ?>";
-                    if (typeof AlertService !== 'undefined') {
-                        AlertService.error("<?= addslashes((string) __('error_title')) ?>", errorMsg);
-                    } else {
-                        alert(errorMsg);
-                    }
-                }
-            })
-            .catch(err => {
-                if (submitBtn) submitBtn.disabled = false;
-                console.error('Submit error:', err);
-                if (typeof AlertService !== 'undefined') {
-                    AlertService.toast('error', "<?= addslashes((string) __('communication_error')) ?>");
-                }
-            });
-        });
-    }
+                    fetch('/teachers/store', {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        },
+                        body: formData
+                    })
+                        .then(async response => {
+                            const data = await response.json();
+                            return { ok: response.ok, data: data };
+                        })
+                        .then(({ ok, data }) => {
+                            if (submitBtn) submitBtn.disabled = false;
 
-    // Gestion de l'importation Excel via AJAX
-    const importModalEl = document.getElementById('importTeachersModal');
-    const importForm = document.getElementById('teacherImportForm');
-    const importFileInput = document.getElementById('teacher-import-file');
-    const importSubmitBtn = document.getElementById('teacher-import-submit');
+                            if (ok && data.success) {
+                                // Fermeture de la modale Bootstrap 5
+                                if (modalEl) {
+                                    const bsModal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                                    bsModal.hide();
+                                }
+                                teacherForm.reset();
 
-    if (importFileInput && importSubmitBtn) {
-        importFileInput.addEventListener('change', function() {
-            importSubmitBtn.disabled = importFileInput.files.length === 0;
-        });
-    }
+                                // Notification de succès via le service centralisé
+                                if (typeof AlertService !== 'undefined') {
+                                    AlertService.toast('success', data.message);
+                                }
 
-    if (importForm) {
-        importForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            if (!importFileInput || importFileInput.files.length === 0) {
-                return;
+                                // Rafraîchissement automatique de la liste sans recharger la page
+                                refreshTeachersList();
+                            } else {
+                                const errorMsg = data.message || "<?= addslashes((string) __('teacher_required_fields')) ?>";
+                                if (typeof AlertService !== 'undefined') {
+                                    AlertService.error("<?= addslashes((string) __('error_title')) ?>", errorMsg);
+                                } else {
+                                    alert(errorMsg);
+                                }
+                            }
+                        })
+                        .catch(err => {
+                            if (submitBtn) submitBtn.disabled = false;
+                            console.error('Submit error:', err);
+                            if (typeof AlertService !== 'undefined') {
+                                AlertService.toast('error', "<?= addslashes((string) __('communication_error')) ?>");
+                            }
+                        });
+                });
             }
 
-            const formData = new FormData(importForm);
-            if (importSubmitBtn) importSubmitBtn.disabled = true;
+            // Gestion de l'importation Excel via AJAX
+            const importModalEl = document.getElementById('importTeachersModal');
+            const importForm = document.getElementById('teacherImportForm');
+            const importFileInput = document.getElementById('teacher-import-file');
+            const importSubmitBtn = document.getElementById('teacher-import-submit');
 
-            fetch('/teachers/upload', {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                },
-                body: formData
-            })
-            .then(async response => {
-                const data = await response.json();
-                return { ok: response.ok, data: data };
-            })
-            .then(({ ok, data }) => {
-                if (importSubmitBtn) importSubmitBtn.disabled = false;
+            if (importFileInput && importSubmitBtn) {
+                importFileInput.addEventListener('change', function () {
+                    importSubmitBtn.disabled = importFileInput.files.length === 0;
+                });
+            }
 
-                if (ok && data.success) {
-                    if (importModalEl) {
-                        const bsModal = bootstrap.Modal.getInstance(importModalEl) || new bootstrap.Modal(importModalEl);
-                        bsModal.hide();
+            if (importForm) {
+                importForm.addEventListener('submit', function (e) {
+                    e.preventDefault();
+
+                    if (!importFileInput || importFileInput.files.length === 0) {
+                        return;
                     }
-                    importForm.reset();
+
+                    const formData = new FormData(importForm);
                     if (importSubmitBtn) importSubmitBtn.disabled = true;
 
-                    if (typeof AlertService !== 'undefined') {
-                        AlertService.toast('success', data.message);
-                    }
+                    fetch('/teachers/upload', {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        },
+                        body: formData
+                    })
+                        .then(async response => {
+                            const data = await response.json();
+                            return { ok: response.ok, data: data };
+                        })
+                        .then(({ ok, data }) => {
+                            if (importSubmitBtn) importSubmitBtn.disabled = false;
 
-                    refreshTeachersList();
-                } else {
-                    const errorMsg = data.message || "<?= addslashes((string) __('error_occurred')) ?>";
-                    if (typeof AlertService !== 'undefined') {
-                        AlertService.error("<?= addslashes((string) __('error_title')) ?>", errorMsg);
-                    } else {
-                        alert(errorMsg);
+                            if (ok && data.success) {
+                                if (importModalEl) {
+                                    const bsModal = bootstrap.Modal.getInstance(importModalEl) || new bootstrap.Modal(importModalEl);
+                                    bsModal.hide();
+                                }
+                                importForm.reset();
+                                if (importSubmitBtn) importSubmitBtn.disabled = true;
+
+                                if (typeof AlertService !== 'undefined') {
+                                    AlertService.toast('success', data.message);
+                                }
+
+                                refreshTeachersList();
+                            } else {
+                                const errorMsg = data.message || "<?= addslashes((string) __('error_occurred')) ?>";
+                                if (typeof AlertService !== 'undefined') {
+                                    AlertService.error("<?= addslashes((string) __('error_title')) ?>", errorMsg);
+                                } else {
+                                    alert(errorMsg);
+                                }
+                            }
+                        })
+                        .catch(err => {
+                            if (importSubmitBtn) importSubmitBtn.disabled = false;
+                            console.error('Import submit error:', err);
+                            if (typeof AlertService !== 'undefined') {
+                                AlertService.toast('error', "<?= addslashes((string) __('communication_error')) ?>");
+                            }
+                        });
+                });
+            }
+
+            function refreshTeachersList() {
+                fetch(window.location.href, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
                     }
-                }
-            })
-            .catch(err => {
-                if (importSubmitBtn) importSubmitBtn.disabled = false;
-                console.error('Import submit error:', err);
-                if (typeof AlertService !== 'undefined') {
-                    AlertService.toast('error', "<?= addslashes((string) __('communication_error')) ?>");
-                }
-            });
+                })
+                    .then(res => res.text())
+                    .then(html => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const newContent = doc.getElementById('teachersListContainer');
+                        const currentContent = document.getElementById('teachersListContainer');
+                        if (newContent && currentContent) {
+                            currentContent.innerHTML = newContent.innerHTML;
+                        }
+                    })
+                    .catch(err => console.error('Error refreshing teachers list:', err));
+            }
         });
-    }
 
-    function refreshTeachersList() {
-        fetch(window.location.href, {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(res => res.text())
-        .then(html => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const newContent = doc.getElementById('teachersListContainer');
-            const currentContent = document.getElementById('teachersListContainer');
-            if (newContent && currentContent) {
-                currentContent.innerHTML = newContent.innerHTML;
-            }
-        })
-        .catch(err => console.error('Error refreshing teachers list:', err));
-    }
-});
+        function toggleTeacherNamesOnBulletins(checkbox) {
+            const newValue = checkbox.checked ? '1' : '0';
 
-function toggleTeacherNamesOnBulletins(checkbox) {
-    const newValue = checkbox.checked ? '1' : '0';
-    
-    fetch('/teachers/toggle-teacher-names', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: 'show=' + newValue
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Show success message
-            const alertDiv = document.createElement('div');
-            alertDiv.className = 'alert alert-success border-0 shadow-sm alert-dismissible fade show rounded-4 mb-4';
-            alertDiv.innerHTML = `
+            fetch('/teachers/toggle-teacher-names', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'show=' + newValue
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show success message
+                        const alertDiv = document.createElement('div');
+                        alertDiv.className = 'alert alert-success border-0 shadow-sm alert-dismissible fade show rounded-4 mb-4';
+                        alertDiv.innerHTML = `
                 <i class="bi bi-check-circle-fill me-2"></i>${data.message}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             `;
-            const container = document.querySelector('.container-fluid');
-            container.insertBefore(alertDiv, container.firstChild);
-            
-            // Auto-remove after 3 seconds
-            setTimeout(() => {
-                alertDiv.remove();
-            }, 3000);
-        } else {
-            // Show error message
-            const alertDiv = document.createElement('div');
-            alertDiv.className = 'alert alert-danger border-0 shadow-sm alert-dismissible fade show rounded-4 mb-4';
-            alertDiv.innerHTML = `
+                        const container = document.querySelector('.container-fluid');
+                        container.insertBefore(alertDiv, container.firstChild);
+
+                        // Auto-remove after 3 seconds
+                        setTimeout(() => {
+                            alertDiv.remove();
+                        }, 3000);
+                    } else {
+                        // Show error message
+                        const alertDiv = document.createElement('div');
+                        alertDiv.className = 'alert alert-danger border-0 shadow-sm alert-dismissible fade show rounded-4 mb-4';
+                        alertDiv.innerHTML = `
                 <i class="bi bi-exclamation-triangle-fill me-2"></i>${data.message}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             `;
-            const container = document.querySelector('.container-fluid');
-            container.insertBefore(alertDiv, container.firstChild);
-            
-            // Revert checkbox on error
-            checkbox.checked = !checkbox.checked;
+                        const container = document.querySelector('.container-fluid');
+                        container.insertBefore(alertDiv, container.firstChild);
+
+                        // Revert checkbox on error
+                        checkbox.checked = !checkbox.checked;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    // Revert checkbox on error
+                    checkbox.checked = !checkbox.checked;
+                });
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        // Revert checkbox on error
-        checkbox.checked = !checkbox.checked;
-    });
-}
-</script>
+    </script>
 
-<?php $content = ob_get_clean(); ?>
+    <?php $content = ob_get_clean(); ?>
 
-<?php include __DIR__ . '/../templates/layout.php'; ?>
+    <?php include __DIR__ . '/../templates/layout.php'; ?>

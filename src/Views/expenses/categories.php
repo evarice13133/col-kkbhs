@@ -58,7 +58,7 @@ ob_start();
                                     <?php endif; ?>
                                 </td>
                                 <td class="pe-4 text-center">
-                                    <div class="d-flex gap-2 justify-content-center">
+                                    <div class="d-flex gap-2 justify-content-center table-row-actions">
                                         <button type="button" class="btn btn-sm btn-action-modern text-primary edit-cat-btn"
                                             data-id="<?= $cat['id'] ?>"
                                             data-name="<?= h($cat['name']) ?>"

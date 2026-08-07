@@ -31,8 +31,7 @@ class TranscriptController
 
         if (!PermissionManager::hasPermission('manage_transcripts') && 
             !PermissionManager::hasPermission('view_transcripts') && 
-            !PermissionManager::hasPermission('manage_bulletins') && 
-            !PermissionManager::hasRole(['superadmin', 'admin'])) {
+            !PermissionManager::hasPermission('manage_bulletins')) {
             PermissionManager::requirePermission('manage_transcripts');
         }
     }
@@ -58,7 +57,7 @@ class TranscriptController
             $classesQuery .= " AND c.section_id = ?";
             $classesParams[] = $sectionId;
         }
-        if (!PermissionManager::hasRole(['superadmin', 'admin'])) {
+        if (!PermissionManager::hasPermission('manage_transcripts') && !PermissionManager::hasPermission('manage_bulletins')) {
             $classesQuery .= " AND EXISTS (SELECT 1 FROM teacher_assignments ta WHERE ta.class_id = c.id AND ta.user_id = ? AND ta.academic_year_id = ?)";
             $classesParams[] = (int) Session::get('user_id');
             $classesParams[] = $academicYearId;

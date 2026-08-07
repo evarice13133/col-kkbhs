@@ -78,7 +78,7 @@
                 <?php endif; ?>
             </td>
             <!-- Actions -->
-            <?php if (in_array(App\Core\Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])): ?>
+            <?php if (\App\Core\PermissionManager::hasPermission('manage_students')): ?>
             <td class="text-end pe-4">
                 <div class="d-flex justify-content-end align-items-center gap-2">
                     <?php if ($s['status'] === 'Non inscrit'): ?>

@@ -126,7 +126,7 @@ ob_start(); ?>
                         <th><?= __('section') ?></th>
                         <th>Type Ensg.</th>
                         <th><?= __('department') ?></th>
-                        <?php if (in_array(App\Core\Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])): ?>
+                        <?php if (\App\Core\PermissionManager::hasPermission('manage_students')): ?>
                         <th class="text-end"><?= __('actions') ?></th>
                         <?php endif; ?>
                     </tr>

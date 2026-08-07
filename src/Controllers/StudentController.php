@@ -42,15 +42,15 @@ class StudentController
         $this->academicYearService = new AcademicYearService($this->db);
 
         if (!Session::isLogged()) {
-
             header("Location: /login");
-
             exit;
+        }
 
+        if (!\App\Core\PermissionManager::hasPermission('view_students') && !\App\Core\PermissionManager::hasPermission('manage_students')) {
+            \App\Core\PermissionManager::requirePermission('view_students');
         }
 
         $this->ensureStudentProfileSchema();
-
     }
 
 
@@ -538,13 +538,7 @@ class StudentController
     public function create()
     {
 
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
-
-            header("Location: /students");
-
-            exit;
-
-        }
+        \App\Core\PermissionManager::requirePermission('manage_students');
 
         // Classes are now shared across years, no year filtering
         $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id, teaching_type_id, frais_inscription, frais_inscription_reinscription, frais_scolarite_brut FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -617,10 +611,7 @@ class StudentController
 
     public function import()
     {
-        if (!in_array(\App\Core\Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
-            header("Location: /students");
-            exit;
-        }
+        \App\Core\PermissionManager::requirePermission('manage_students');
 
         // Classes are now shared across years, no year filtering
         $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -708,10 +699,7 @@ class StudentController
 
     public function upload()
     {
-        if (!in_array(\App\Core\Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
-            header("Location: /students");
-            exit;
-        }
+        \App\Core\PermissionManager::requirePermission('manage_students');
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['import_file'])) {
             if (!\App\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
@@ -1169,10 +1157,7 @@ class StudentController
     public function update($id)
     {
 
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
-            header("Location: /students");
-            exit;
-        }
+        \App\Core\PermissionManager::requirePermission('view_students');
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
@@ -1236,7 +1221,7 @@ class StudentController
 
             $newEmail = trim($_POST['email'] ?? '');
 
-            $allowEmailChange = in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable']);
+            $allowEmailChange = \App\Core\PermissionManager::hasPermission('manage_students');
 
 
 
@@ -1451,10 +1436,7 @@ class StudentController
 
     public function withdraw($id)
     {
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
-            header("Location: /students");
-            exit;
-        }
+        \App\Core\PermissionManager::requirePermission('manage_students');
 
         if (!Session::verifyCsrfToken($_GET['csrf_token'] ?? '')) {
             Session::setFlash('error', __('unauthorized_action'));
@@ -1494,10 +1476,7 @@ class StudentController
 
     public function restore($id)
     {
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
-            header("Location: /students");
-            exit;
-        }
+        \App\Core\PermissionManager::requirePermission('manage_students');
 
         if (!Session::verifyCsrfToken($_GET['csrf_token'] ?? '')) {
             Session::setFlash('error', __('unauthorized_action'));

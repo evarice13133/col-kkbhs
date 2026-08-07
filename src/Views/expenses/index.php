@@ -199,7 +199,7 @@ ob_start();
                                     <?php endif; ?>
                                 </td>
                                 <td class="pe-4 text-center">
-                                    <div class="d-flex gap-1 justify-content-center">
+                                    <div class="d-flex gap-1 justify-content-center table-row-actions">
                                         <?php if (!$isCancelled): ?>
                                             <button type="button" class="btn btn-sm btn-action-modern text-primary edit-expense-btn" 
                                                 data-id="<?= $e['id'] ?>"

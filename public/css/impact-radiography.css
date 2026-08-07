@@ -1,0 +1,237 @@
+/* CSS Radiographie d'Impact & Suppression Intelligente */
+
+:root {
+    --ir-border-radius: 16px;
+    --ir-bg-modal: #ffffff;
+    --ir-text-primary: #0f172a;
+    --ir-text-secondary: #475569;
+    --ir-card-bg: #f8fafc;
+    --ir-card-border: #e2e8f0;
+    
+    /* Risk Levels */
+    --ir-risk-low: #10b981;
+    --ir-risk-low-bg: rgba(16, 185, 129, 0.12);
+    --ir-risk-medium: #f59e0b;
+    --ir-risk-medium-bg: rgba(245, 158, 11, 0.12);
+    --ir-risk-high: #f97316;
+    --ir-risk-high-bg: rgba(249, 115, 22, 0.12);
+    --ir-risk-critical: #ef4444;
+    --ir-risk-critical-bg: rgba(239, 68, 68, 0.12);
+}
+
+[data-bs-theme="dark"] {
+    --ir-bg-modal: #1e293b;
+    --ir-text-primary: #f8fafc;
+    --ir-text-secondary: #94a3b8;
+    --ir-card-bg: #0f172a;
+    --ir-card-border: #334155;
+}
+
+.modal-impact-radiography .modal-content {
+    border-radius: var(--ir-border-radius);
+    background-color: var(--ir-bg-modal);
+    border: 1px solid var(--ir-card-border);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+}
+
+.modal-impact-header {
+    padding: 1.5rem;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(37, 99, 235, 0.1) 100%);
+    border-bottom: 1px solid var(--ir-card-border);
+    position: relative;
+}
+
+.modal-impact-header .risk-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 6px 14px;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.risk-badge.risk-low {
+    background-color: var(--ir-risk-low-bg);
+    color: var(--ir-risk-low);
+    border: 1px solid var(--ir-risk-low);
+}
+
+.risk-badge.risk-medium {
+    background-color: var(--ir-risk-medium-bg);
+    color: var(--ir-risk-medium);
+    border: 1px solid var(--ir-risk-medium);
+}
+
+.risk-badge.risk-high {
+    background-color: var(--ir-risk-high-bg);
+    color: var(--ir-risk-high);
+    border: 1px solid var(--ir-risk-high);
+}
+
+.risk-badge.risk-critical {
+    background-color: var(--ir-risk-critical-bg);
+    color: var(--ir-risk-critical);
+    border: 1px solid var(--ir-risk-critical);
+    animation: pulse-danger 2s infinite;
+}
+
+@keyframes pulse-danger {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+    50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+}
+
+.modal-impact-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--ir-text-primary);
+    margin-top: 8px;
+    margin-bottom: 4px;
+}
+
+.modal-impact-subtitle {
+    font-size: 0.875rem;
+    color: var(--ir-text-secondary);
+}
+
+/* Stats Cards Grid */
+.impact-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 1.5rem;
+}
+
+.impact-stat-card {
+    background: var(--ir-card-bg);
+    border: 1px solid var(--ir-card-border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.impact-stat-card:hover {
+    transform: translateY(-2px);
+    border-color: #3b82f6;
+}
+
+.impact-stat-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+}
+
+.impact-stat-card.severity-danger .impact-stat-icon {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.impact-stat-card.severity-warning .impact-stat-icon {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+}
+
+.impact-stat-card.severity-success .impact-stat-icon {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+.impact-stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.impact-stat-count {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--ir-text-primary);
+    line-height: 1.2;
+}
+
+.impact-stat-label {
+    font-size: 0.75rem;
+    color: var(--ir-text-secondary);
+    font-weight: 500;
+}
+
+/* Nav Tabs UX */
+.impact-nav-tabs {
+    border-bottom: 1px solid var(--ir-card-border);
+    gap: 8px;
+}
+
+.impact-nav-tabs .nav-link {
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--ir-text-secondary);
+    font-weight: 600;
+    padding: 10px 16px;
+    font-size: 0.9rem;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.impact-nav-tabs .nav-link.active {
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.impact-nav-tabs .nav-link.nav-direct.active {
+    color: #ef4444;
+    border-bottom-color: #ef4444;
+    background: rgba(239, 68, 68, 0.05);
+}
+
+/* Summary Box */
+.impact-summary-box {
+    background: var(--ir-card-bg);
+    border: 1px solid var(--ir-card-border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 1.25rem;
+}
+
+.impact-summary-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 0.875rem;
+    color: var(--ir-text-primary);
+}
+
+.impact-summary-item:last-child {
+    margin-bottom: 0;
+}
+
+.impact-summary-item i {
+    margin-top: 3px;
+    width: 18px;
+}
+
+/* Skeleton Loading State */
+.impact-skeleton {
+    animation: skeleton-loading 1.2s infinite ease-in-out;
+    background: linear-gradient(90deg, var(--ir-card-bg) 25%, var(--ir-card-border) 50%, var(--ir-card-bg) 75%);
+    background-size: 200% 100%;
+    border-radius: 8px;
+}
+
+@keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}

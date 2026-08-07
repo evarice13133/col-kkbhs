@@ -195,7 +195,7 @@ ob_start();
                                             <?php endif; ?>
                                         </td>
                                         <td class="pe-4 text-center">
-                                            <div class="d-flex gap-1 justify-content-center">
+                                            <div class="d-flex gap-1 justify-content-center table-row-actions">
                                                 <a href="/scholarships/toggle?id=<?= $ss['id'] ?>&scope=student" class="btn btn-sm btn-action-modern btn-confirm-toggle <?= $ss['status'] === 'active' ? 'text-warning' : 'text-success' ?>" data-confirm="<?= __('confirm_toggle_scholarship') ?>" title="<?= $ss['status'] === 'active' ? __('inactive') : __('active') ?>">
                                                     <i class="bi bi-power fs-5"></i>
                                                 </a>
@@ -269,7 +269,7 @@ ob_start();
                                             <?php endif; ?>
                                         </td>
                                         <td class="pe-4 text-center">
-                                            <div class="d-flex gap-1 justify-content-center">
+                                            <div class="d-flex gap-1 justify-content-center table-row-actions">
                                                 <a href="/scholarships/toggle?id=<?= $cs['id'] ?>&scope=class" class="btn btn-sm btn-action-modern btn-confirm-toggle <?= $cs['status'] === 'active' ? 'text-warning' : 'text-success' ?>" data-confirm="<?= __('confirm_toggle_coll_scholarship') ?>" title="<?= $cs['status'] === 'active' ? __('inactive') : __('active') ?>">
                                                     <i class="bi bi-power fs-5"></i>
                                                 </a>

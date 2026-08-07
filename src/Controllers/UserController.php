@@ -17,15 +17,7 @@ class UserController
         //connexion a la base de donnee
         $this->db = Database::getInstance()->getConnection();
         
-        $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-        if ($path === '/users/create-caissier' || $path === '/users/store-caissier' || $path === '/users/caissiers' || $path === '/users/toggle-status') {
-            if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
-                header("Location: /");
-                exit;
-            }
-        } else {
-            \App\Core\PermissionManager::requirePermission('manage_users');
-        }
+        \App\Core\PermissionManager::requirePermission('manage_users');
     }
 
     public function index()

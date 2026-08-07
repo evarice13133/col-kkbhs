@@ -38,7 +38,12 @@ $timetablesByClass = $gridData['timetablesByClass'];
                 </p>
             </div>
 
-            <div class="d-flex flex-wrap gap-2">
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                <?php if ($canEdit): ?>
+                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-2 fw-bold shadow-sm" onclick="toggleQuickAssignPalette()">
+                        <i class="bi bi-layout-sidebar-reverse me-1"></i>Palette d'affectation (Glisser-Déposer)
+                    </button>
+                <?php endif; ?>
                 <a href="/timetables/wizard" class="btn btn-sm btn-primary rounded-pill px-3 py-2 fw-bold shadow-sm">
                     <i class="bi bi-plus-circle me-1"></i><?= __('timetables_new_wizard') ?>
                 </a>
@@ -46,9 +51,9 @@ $timetablesByClass = $gridData['timetablesByClass'];
                     <i class="bi bi-arrow-left me-1"></i><?= __('back') ?? 'Retour' ?>
                 </a>
 
-                <a href="/timetables/pdf?cycle_id=<?= $cycleId ?>&level_id=<?= $levelId ?>&week_id=<?= $weekId ?>&mode=print" target="_blank" class="btn btn-sm btn-action-modern text-primary border px-3" title="<?= __('print') ?? 'Imprimer' ?>">
+                <button type="button" onclick="window.print()" class="btn btn-sm btn-action-modern text-primary border px-3 rounded-pill fw-semibold" title="<?= __('print') ?? 'Imprimer' ?>">
                     <i class="bi bi-printer-fill me-1"></i><?= __('print') ?? 'Imprimer' ?>
-                </a>
+                </button>
                 <a href="/timetables/pdf?cycle_id=<?= $cycleId ?>&level_id=<?= $levelId ?>&week_id=<?= $weekId ?>&mode=download" class="btn btn-sm btn-danger rounded-pill px-3 py-2 fw-bold shadow-sm">
                     <i class="bi bi-file-earmark-pdf-fill me-1"></i><?= __('timetables_pdf_export') ?>
                 </a>
@@ -65,6 +70,43 @@ $timetablesByClass = $gridData['timetablesByClass'];
                 <div class="small">
                     Des enseignants ou des salles sont affectés simultanément à des matières différentes au même créneau. (Remarque : Un cours identique au même créneau pour plusieurs classes est autorisé en cours mutualisé/tronc commun).
                 </div>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <!-- Volet d'Affectation Rapide (Palette Glisser-Déposer Escamotable) -->
+    <?php if ($canEdit): ?>
+        <div id="quickAssignPalette" class="modern-card border-0 shadow-sm p-3 mb-4 d-none">
+            <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="avatar-init bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                        <i class="bi bi-hand-index-thumb-fill"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold text-main-theme mb-0">Palette d'Affectation Rapide (Glisser-Déposer)</h6>
+                        <span class="text-muted extra-small">Glissez une matière directement dans la cellule souhaitée pour programmer le cours</span>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <input type="text" id="searchPaletteSubject" class="form-control form-control-sm rounded-pill px-3" placeholder="Rechercher une matière..." onkeyup="filterPaletteSubjects(this.value)">
+                    <button type="button" class="btn-close" onclick="toggleQuickAssignPalette()"></button>
+                </div>
+            </div>
+            
+            <div class="d-flex flex-wrap gap-2 overflow-auto py-1" id="paletteSubjectsContainer" style="max-height: 120px;">
+                <?php foreach ($gridData['subjects'] as $sub): ?>
+                    <?php $sColor = !empty($sub['couleur_hex']) ? $sub['couleur_hex'] : '#3b82f6'; ?>
+                    <div class="palette-subject-chip badge px-3 py-2 rounded-pill d-flex align-items-center gap-2 cursor-grab shadow-xs text-start transition-all"
+                         style="background-color: <?= $sColor ?>1a; color: <?= $sColor ?>; border: 1.5px solid <?= $sColor ?>50;"
+                         draggable="true"
+                         ondragstart="handlePaletteDragStart(event, <?= json_encode(['id' => $sub['id'], 'nom' => $sub['nom'], 'code' => $sub['code'] ?? '', 'color' => $sColor]) ?>)">
+                        <i class="bi bi-grip-vertical opacity-50"></i>
+                        <div>
+                            <span class="fw-bold d-block text-truncate" style="max-width: 160px;"><?= h($sub['nom']) ?></span>
+                            <span class="extra-small font-normal opacity-75"><?= h($sub['code'] ?? 'UV') ?></span>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
             </div>
         </div>
     <?php endif; ?>
@@ -167,7 +209,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
                                         $subjectColor = !empty($entry['couleur_hex']) ? $entry['couleur_hex'] : '#3b82f6';
                                         ?>
                                         
-                                        <td class="p-2 grid-cell <?= $hasConflict ? 'conflict-cell' : '' ?>"
+                                         <td class="p-2 grid-cell <?= $hasConflict ? 'conflict-cell' : '' ?>"
                                             data-day="<?= $day ?>"
                                             data-slot-id="<?= $slot['id'] ?>"
                                             data-class-id="<?= $classId ?>"
@@ -177,48 +219,56 @@ $timetablesByClass = $gridData['timetablesByClass'];
                                             aria-label="<?= $entry ? h($entry['subject_name']) . ' avec ' . h($entry['teacher_name']) . ' en ' . h($entry['room_name']) : 'Créneau libre pour ' . h($cls['nom']) ?>"
                                             <?php if ($canEdit): ?>
                                                 onclick="openAssignModal(<?= $slot['id'] ?>, '<?= $day ?>', <?= $classId ?>, '<?= h($cls['nom']) ?>', <?= json_encode($entry) ?>, <?= $timetableId ?>)"
+                                                ondragover="handleCellDragOver(event)"
+                                                ondragleave="handleCellDragLeave(event)"
+                                                ondrop="handleCellDrop(event, '<?= $day ?>', <?= $slot['id'] ?>, <?= $classId ?>, '<?= h($cls['nom']) ?>', <?= $timetableId ?>)"
                                             <?php endif; ?>>
 
                                             <?php if ($entry): ?>
-                                                <!-- Carte de cours Modern SaaS Component (Bordure 4 côtés fine + Accents couleur) -->
-                                                <div class="course-card p-2.5 rounded-3 text-start transition-all border h-100 w-100 d-flex flex-column justify-content-between position-relative">
+                                                <!-- Carte de cours Modern Canva/M365 SaaS Component -->
+                                                <div class="course-card p-2.5 rounded-3 text-start transition-all border h-100 w-100 d-flex flex-column justify-content-between position-relative"
+                                                     style="--subject-color: <?= $subjectColor ?>;"
+                                                     <?php if ($canEdit): ?>
+                                                         draggable="true"
+                                                         ondragstart="handleCardDragStart(event, <?= json_encode(['timetable_id' => $timetableId, 'slot_id' => $slot['id'], 'day' => $day, 'class_id' => $classId, 'entry' => $entry]) ?>)"
+                                                     <?php endif; ?>>
                                                     
-                                                    <!-- Badge Type / Accent + Actions -->
+                                                    <!-- Badge Type / Accent Bar + Actions -->
                                                     <div class="d-flex align-items-center justify-content-between gap-1 mb-1.5">
-                                                        <span class="badge rounded-pill fw-bold text-truncate extra-small px-2 py-0.5" 
-                                                              style="background-color: <?= $subjectColor ?>18; color: <?= $subjectColor ?>; border: 1px solid <?= $subjectColor ?>35;">
-                                                            <i class="bi bi-circle-fill me-1" style="font-size: 0.45rem; vertical-align: middle; color: <?= $subjectColor ?>;"></i>COURS
+                                                        <span class="course-type-badge badge rounded-pill fw-bold text-truncate extra-small px-2 py-0.5" 
+                                                              style="background-color: <?= $subjectColor ?>1f; color: <?= $subjectColor ?>; border: 1px solid <?= $subjectColor ?>40;">
+                                                            <i class="bi bi-journal-bookmark-fill me-1" style="font-size: 0.6rem; vertical-align: middle; color: <?= $subjectColor ?>;"></i><?= h($entry['subject_code'] ?? 'COURS') ?>
                                                         </span>
                                                         
                                                         <div class="d-flex align-items-center gap-1">
                                                             <?php if ($hasConflict): ?>
-                                                                <span class="badge bg-danger text-white rounded-circle p-1" title="<?= h(implode(' | ', $conflictMsgs)) ?>" data-bs-toggle="tooltip">
+                                                                <span class="badge bg-danger text-white rounded-circle p-1 shadow-sm" title="<?= h(implode(' | ', $conflictMsgs)) ?>" data-bs-toggle="tooltip">
                                                                     <i class="bi bi-exclamation-triangle-fill"></i>
                                                                 </span>
                                                             <?php endif; ?>
 
                                                             <?php if ($canEdit): ?>
-                                                                <button type="button" class="btn btn-link text-secondary text-danger-hover p-0 opacity-75 flex-shrink-0 border-0 bg-transparent" onclick="event.stopPropagation(); deleteEntry(<?= $timetableId ?>, <?= $slot['id'] ?>, '<?= $day ?>')" title="Libérer ce créneau">
-                                                                    <i class="bi bi-x-circle-fill fs-6"></i>
+                                                                <button type="button" class="btn-delete-course btn btn-link p-0 flex-shrink-0 border-0 bg-transparent" onclick="event.stopPropagation(); deleteEntry(<?= $timetableId ?>, <?= $slot['id'] ?>, '<?= $day ?>')" title="Libérer ce créneau">
+                                                                    <i class="bi bi-x-circle-fill"></i>
                                                                 </button>
                                                             <?php endif; ?>
                                                         </div>
                                                     </div>
 
                                                     <!-- Matière (Titre principal) -->
-                                                    <div class="fw-bold text-main-theme lh-sm mb-2" style="font-size: 0.86rem; word-break: break-word;">
+                                                    <div class="course-title fw-extrabold lh-sm mb-2" title="<?= h($entry['subject_name']) ?>">
                                                         <?= h($entry['subject_name']) ?>
                                                     </div>
 
                                                     <!-- Métadonnées (Enseignant & Salle) -->
-                                                    <div class="d-flex flex-column gap-1 pt-1.5 border-top border-secondary border-opacity-10">
-                                                        <div class="d-flex align-items-center gap-1.5 text-muted" style="font-size: 0.76rem;" title="Enseignant: <?= h($entry['teacher_name']) ?>">
-                                                            <i class="bi bi-person-badge-fill text-primary opacity-85"></i>
-                                                            <span class="fw-semibold text-truncate text-secondary"><?= h($entry['teacher_name']) ?></span>
+                                                    <div class="course-meta d-flex flex-column gap-1 pt-1.5 border-top">
+                                                        <div class="d-flex align-items-center gap-1.5 teacher-info" title="Enseignant: <?= h($entry['teacher_name']) ?>">
+                                                            <i class="bi bi-person-circle text-primary flex-shrink-0"></i>
+                                                            <span class="teacher-name text-truncate"><?= h($entry['teacher_name']) ?></span>
                                                         </div>
-                                                        <div class="d-flex align-items-center gap-1.5 text-muted" style="font-size: 0.75rem;" title="Salle: <?= h($entry['room_name']) ?>">
-                                                            <i class="bi bi-geo-alt-fill text-danger opacity-85"></i>
-                                                            <span class="badge bg-body-tertiary text-main-theme border border-secondary border-opacity-20 fw-bold px-1.5 py-0.5 rounded-2 text-truncate">
+                                                        <div class="d-flex align-items-center gap-1.5 room-info" title="Salle: <?= h($entry['room_name']) ?>">
+                                                            <i class="bi bi-geo-alt-fill text-danger flex-shrink-0"></i>
+                                                            <span class="room-badge badge rounded-2 text-truncate">
                                                                 <?= h($entry['room_name']) ?>
                                                             </span>
                                                         </div>
@@ -227,12 +277,12 @@ $timetablesByClass = $gridData['timetablesByClass'];
                                             <?php else: ?>
                                                 <!-- Slot Libre -->
                                                 <?php if ($canEdit): ?>
-                                                    <div class="empty-slot-placeholder p-2 text-center rounded-3 transition-all border border-dashed border-secondary border-opacity-25 h-100 w-100 d-flex flex-column align-items-center justify-content-center">
-                                                        <i class="bi bi-plus-circle text-primary opacity-60 fs-5 mb-1"></i>
-                                                        <span class="extra-small text-muted fw-bold">Affecter</span>
+                                                    <div class="empty-slot-placeholder p-2 text-center rounded-3 transition-all border border-dashed h-100 w-100 d-flex flex-column align-items-center justify-content-center">
+                                                        <i class="bi bi-plus-circle-dotted text-primary fs-5 mb-1 opacity-75"></i>
+                                                        <span class="extra-small fw-bold text-muted-theme">Affecter</span>
                                                     </div>
                                                 <?php else: ?>
-                                                    <div class="text-muted extra-small py-2 opacity-50">- Libre -</div>
+                                                    <div class="text-muted extra-small py-2 opacity-50 fw-semibold">- Libre -</div>
                                                 <?php endif; ?>
                                             <?php endif; ?>
                                         </td>
@@ -469,12 +519,151 @@ $timetablesByClass = $gridData['timetablesByClass'];
 <?php endif; ?>
 
 <script>
-const allGridClasses = <?= json_encode(array_map(fn($c) => ['id' => (int)$c['id'], 'nom' => $c['nom']], $classes)) ?>;
+// Hydratation de l'état local du Frontend pour zéro latence
+window.TIMETABLE_DATA = {
+    classes: <?= json_encode($classes) ?>,
+    subjects: <?= json_encode($gridData['subjects']) ?>,
+    teachers: <?= json_encode($gridData['teachers']) ?>,
+    rooms: <?= json_encode($gridData['rooms']) ?>,
+    slots: <?= json_encode($slots) ?>,
+    matrix: <?= json_encode($matrix) ?>,
+    timetablesByClass: <?= json_encode($timetablesByClass) ?>,
+    canEdit: <?= $canEdit ? 'true' : 'false' ?>,
+    weekId: <?= $weekId ?>,
+    cycleId: <?= $cycleId ?>,
+    levelId: <?= $levelId ?>
+};
+
+const allGridClasses = window.TIMETABLE_DATA.classes.map(c => ({ id: parseInt(c.id), nom: c.nom }));
 let currentAssignTarget = null;
 let currentEntryData = null;
 let selectedClasses = [];
 let initialClassIds = [];
 let classToRemoveTemp = null;
+let draggedData = null;
+let clipboardEntry = null;
+
+// Palette & Drag-and-Drop Functions
+function toggleQuickAssignPalette() {
+    const palette = document.getElementById('quickAssignPalette');
+    if (palette) {
+        palette.classList.toggle('d-none');
+    }
+}
+
+function filterPaletteSubjects(query) {
+    const q = query.toLowerCase().trim();
+    document.querySelectorAll('.palette-subject-chip').forEach(chip => {
+        const text = chip.textContent.toLowerCase();
+        if (text.includes(q)) {
+            chip.classList.remove('d-none');
+        } else {
+            chip.classList.add('d-none');
+        }
+    });
+}
+
+function handlePaletteDragStart(e, subjectObj) {
+    draggedData = { type: 'PALETTE_SUBJECT', subject: subjectObj };
+    e.dataTransfer.setData('text/plain', JSON.stringify(draggedData));
+    e.dataTransfer.effectAllowed = 'copy';
+}
+
+function handleCardDragStart(e, cardObj) {
+    e.stopPropagation();
+    draggedData = { type: 'EXISTING_CARD', card: cardObj };
+    e.dataTransfer.setData('text/plain', JSON.stringify(draggedData));
+    e.dataTransfer.effectAllowed = 'move';
+}
+
+function handleCellDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    e.currentTarget.classList.add('bg-primary', 'bg-opacity-10', 'border-primary');
+}
+
+function handleCellDragLeave(e) {
+    e.currentTarget.classList.remove('bg-primary', 'bg-opacity-10', 'border-primary');
+}
+
+function handleCellDrop(e, targetDay, targetSlotId, targetClassId, targetClassName, targetTimetableId) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('bg-primary', 'bg-opacity-10', 'border-primary');
+
+    if (!draggedData) return;
+
+    if (draggedData.type === 'PALETTE_SUBJECT') {
+        const sub = draggedData.subject;
+        openAssignModal(targetSlotId, targetDay, targetClassId, targetClassName, null, targetTimetableId);
+        
+        setTimeout(() => {
+            const subSelect = document.getElementById('assign_subject_id');
+            if (subSelect) {
+                subSelect.value = sub.id;
+                onSubjectChange();
+            }
+        }, 50);
+
+    } else if (draggedData.type === 'EXISTING_CARD') {
+        const source = draggedData.card;
+        if (source.day === targetDay && source.slot_id === targetSlotId && source.class_id === targetClassId) return;
+
+        // Déplacer l'entrée existante vers le nouveau créneau
+        const entry = source.entry;
+        const payload = {
+            timetable_id: targetTimetableId,
+            week_id: window.TIMETABLE_DATA.weekId,
+            class_id: targetClassId,
+            class_ids: [targetClassId],
+            slot_id: targetSlotId,
+            day_of_week: targetDay,
+            subject_id: entry.subject_id,
+            teacher_id: entry.teacher_id,
+            room_id: entry.room_id,
+            couleur_hex: entry.couleur_hex || '#3b82f6'
+        };
+
+        // Sauvegarder sur la destination puis libérer la source
+        fetch('/timetables/api/grid/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success) {
+                // Supprimer l'ancienne position
+                fetch('/timetables/api/grid/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        timetable_id: source.timetable_id,
+                        slot_id: source.slot_id,
+                        day_of_week: source.day
+                    })
+                }).then(() => location.reload());
+            } else {
+                alert(res.message || 'Erreur lors du déplacement.');
+            }
+        });
+    }
+
+    draggedData = null;
+}
+
+// Support des Raccourcis Clavier
+document.addEventListener('keydown', function(e) {
+    // Si un input ou modal est ouvert, ne pas exécuter les raccourcis globaux
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
+
+    if (e.key === 'Escape') {
+        const openModal = document.querySelector('.modal.show');
+        if (openModal) {
+            const bModal = bootstrap.Modal.getInstance(openModal);
+            if (bModal) bModal.hide();
+        }
+    }
+});
 
 function renderSelectedClassesUI() {
     const container = document.getElementById('selectedClassesContainer');
@@ -584,7 +773,8 @@ function openAssignModal(slotId, day, classId, className, entry, timetableId) {
 
     selectedClasses = [{ id: classId, nom: className }];
 
-    if (entry && typeof matrix !== 'undefined') {
+    if (entry && typeof window.TIMETABLE_DATA !== 'undefined' && window.TIMETABLE_DATA.matrix) {
+        const matrix = window.TIMETABLE_DATA.matrix;
         allGridClasses.forEach(cls => {
             if (cls.id !== classId) {
                 const cellEntry = matrix && matrix[day] && matrix[day][slotId] ? matrix[day][slotId][cls.id] : null;
@@ -606,32 +796,25 @@ function openAssignModal(slotId, day, classId, className, entry, timetableId) {
     const autoNotice = document.getElementById('teacherAutoAssignNotice');
     if (autoNotice) autoNotice.classList.add('d-none');
 
-    // Charger les matières de cette classe
-    fetch(`/timetables/api/class-subjects?class_id=${classId}`)
-        .then(r => r.json())
-        .then(res => {
-            const subSelect = document.getElementById('assign_subject_id');
-            subSelect.innerHTML = '<option value="">-- Choisir une matière --</option>';
-            if (res.success && res.subjects) {
-                res.subjects.forEach(s => {
-                    const sel = (entry && entry.subject_id == s.id) ? 'selected' : '';
-                    const isAttached = (s.is_attached == 1);
-                    const badge = isAttached ? '' : ' [Non rattachée]';
-                    subSelect.innerHTML += `<option value="${s.id}" data-is-attached="${isAttached ? 1 : 0}" data-color="${s.couleur_hex || '#3b82f6'}" data-coef="${s.coefficient || 1}" ${sel}>${s.nom} (${s.code || 'UV'})${badge}</option>`;
-                });
-            }
+    // Remplissage ultra-rapide depuis TIMETABLE_DATA en mémoire local
+    const subSelect = document.getElementById('assign_subject_id');
+    subSelect.innerHTML = '<option value="">-- Choisir une matière --</option>';
 
-            if (entry && entry.subject_id) {
-                subSelect.value = entry.subject_id;
-                onSubjectChange(entry.teacher_id);
-            } else {
-                document.getElementById('assign_teacher_id').innerHTML = '<option value="">-- Sélectionnez d\'abord une matière --</option>';
-            }
-        })
-        .catch(err => {
-            console.error('Erreur chargement matières:', err);
-            document.getElementById('assign_subject_id').innerHTML = '<option value="">-- Erreur chargement matières --</option>';
+    if (window.TIMETABLE_DATA && window.TIMETABLE_DATA.subjects) {
+        window.TIMETABLE_DATA.subjects.forEach(s => {
+            const sel = (entry && entry.subject_id == s.id) ? 'selected' : '';
+            const isAttached = (s.is_attached == 1 || typeof s.is_attached === 'undefined');
+            const badge = isAttached ? '' : ' [Non rattachée]';
+            subSelect.innerHTML += `<option value="${s.id}" data-is-attached="${isAttached ? 1 : 0}" data-color="${s.couleur_hex || '#3b82f6'}" data-coef="${s.coefficient || 1}" ${sel}>${s.nom} (${s.code || 'UV'})${badge}</option>`;
         });
+    }
+
+    if (entry && entry.subject_id) {
+        subSelect.value = entry.subject_id;
+        onSubjectChange(entry.teacher_id);
+    } else {
+        document.getElementById('assign_teacher_id').innerHTML = '<option value="">-- Sélectionnez d\'abord une matière --</option>';
+    }
 
     if (entry) {
         document.getElementById('assign_room_id').value = entry.room_id || '';
@@ -666,36 +849,26 @@ function onSubjectChange(targetTeacherId = null) {
         return;
     }
 
-    teacherSelect.innerHTML = '<option value="">Chargement des enseignants...</option>';
+    // Chargement instantané des enseignants depuis la mémoire local TIMETABLE_DATA
+    let optionsHtml = '<option value="">-- Choisir un enseignant --</option>';
 
-    fetch(`/timetables/api/subject-teachers?subject_id=${subjectId}&class_id=${classId}`)
-        .then(r => r.json())
-        .then(res => {
-            let optionsHtml = '<option value="">-- Choisir un enseignant --</option>';
-
-            if (res.success && res.teachers && res.teachers.length > 0) {
-                res.teachers.forEach(t => {
-                    const isAssigned = (t.is_assigned == 1);
-                    const badge = isAssigned ? ' (Habilité)' : ' (Non affecté - Affectation auto)';
-                    optionsHtml += `<option value="${t.id}" data-is-assigned="${isAssigned ? 1 : 0}">${t.nom_complet}${badge}</option>`;
-                });
-            } else {
-                optionsHtml = '<option value="">-- Aucun enseignant disponible --</option>';
-            }
-
-            optionsHtml += '<option value="NEW_TEACHER" class="fw-bold text-primary">+ Nouvel enseignant...</option>';
-            teacherSelect.innerHTML = optionsHtml;
-
-            if (targetTeacherId) {
-                teacherSelect.value = targetTeacherId;
-            }
-
-            onTeacherChange();
-        })
-        .catch(err => {
-            console.error('Erreur chargement enseignants:', err);
-            teacherSelect.innerHTML = '<option value="">-- Erreur de chargement --</option><option value="NEW_TEACHER" class="fw-bold text-primary">+ Nouvel enseignant...</option>';
+    if (window.TIMETABLE_DATA && window.TIMETABLE_DATA.teachers) {
+        window.TIMETABLE_DATA.teachers.forEach(t => {
+            const isAssigned = (t.is_assigned == 1 || typeof t.is_assigned === 'undefined');
+            const badge = isAssigned ? ' (Habilité)' : ' (Non affecté - Affectation auto)';
+            const sel = (targetTeacherId && targetTeacherId == t.id) ? 'selected' : '';
+            optionsHtml += `<option value="${t.id}" data-is-assigned="${isAssigned ? 1 : 0}" ${sel}>${t.nom_complet}${badge}</option>`;
         });
+    }
+
+    optionsHtml += '<option value="NEW_TEACHER" class="fw-bold text-primary">+ Nouvel enseignant...</option>';
+    teacherSelect.innerHTML = optionsHtml;
+
+    if (targetTeacherId) {
+        teacherSelect.value = targetTeacherId;
+    }
+
+    onTeacherChange();
 }
 
 function onTeacherChange() {
@@ -764,6 +937,8 @@ function executeQuickTeacherCreation() {
     .then(res => {
         if (res.success && res.teacher) {
             const t = res.teacher;
+            window.TIMETABLE_DATA.teachers.push({ id: t.id, nom_complet: t.nom_complet, role: t.role, is_assigned: 1 });
+            
             const teacherSelect = document.getElementById('assign_teacher_id');
             const newOpt = new Option(t.nom_complet + ' (Nouvellement créé)', t.id, true, true);
             teacherSelect.add(newOpt, teacherSelect.options[1]);
@@ -1000,8 +1175,8 @@ function deleteEntry(timetableId, slotId, day) {
     }
 
     .grid-cell {
-        min-height: 110px;
-        height: 115px;
+        min-height: 120px;
+        height: 125px;
         cursor: pointer;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
@@ -1014,17 +1189,62 @@ function deleteEntry(timetableId, slotId, day) {
         outline: none;
     }
 
+    /* Modern Canva & Microsoft 365 Course Card Design System */
     .course-card {
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         border-radius: 10px;
         border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        border-left: 4px solid var(--subject-color, #3b82f6) !important;
         background: var(--bg-card, #ffffff);
-        box-shadow: 0 1.5px 4px rgba(0, 0, 0, 0.03);
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
     }
     .course-card:hover {
         transform: translateY(-2px);
-        border-color: rgba(37, 99, 235, 0.35) !important;
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08) !important;
+        border-color: rgba(37, 99, 235, 0.3) !important;
+        border-left-color: var(--subject-color, #3b82f6) !important;
+        box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.12) !important;
+    }
+
+    .course-title {
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: #0f172a;
+        word-break: break-word;
+        letter-spacing: -0.01em;
+        line-height: 1.25;
+    }
+
+    .course-meta {
+        border-top-color: rgba(0, 0, 0, 0.07) !important;
+    }
+
+    .teacher-info {
+        font-size: 0.77rem;
+    }
+    .teacher-name {
+        font-weight: 600;
+        color: #475569;
+    }
+
+    .room-info {
+        font-size: 0.75rem;
+    }
+    .room-badge {
+        background-color: #f1f5f9;
+        color: #1e293b;
+        border: 1px solid #cbd5e1;
+        font-weight: 700;
+        padding: 0.2em 0.5em;
+    }
+
+    .btn-delete-course {
+        color: #94a3b8;
+        font-size: 0.95rem;
+        transition: color 0.15s ease, transform 0.15s ease;
+    }
+    .btn-delete-course:hover {
+        color: #ef4444 !important;
+        transform: scale(1.15);
     }
 
     /* Pause Row Styling */
@@ -1036,7 +1256,8 @@ function deleteEntry(timetableId, slotId, day) {
 
     .empty-slot-placeholder {
         transition: all 0.2s ease;
-        background-color: rgba(0, 0, 0, 0.01);
+        background-color: rgba(248, 250, 252, 0.6);
+        border-color: rgba(203, 213, 225, 0.7) !important;
     }
     .empty-slot-placeholder:hover {
         border-color: var(--primary-color, #2563eb) !important;
@@ -1087,15 +1308,67 @@ function deleteEntry(timetableId, slotId, day) {
     [data-theme="dark"] .course-card {
         background: #1e293b !important;
         border-color: rgba(255, 255, 255, 0.12) !important;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+        border-left-color: var(--subject-color, #3b82f6) !important;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
     }
     [data-theme="dark"] .course-card:hover {
-        border-color: rgba(59, 130, 246, 0.45) !important;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5) !important;
+        border-color: rgba(96, 165, 250, 0.45) !important;
+        border-left-color: var(--subject-color, #3b82f6) !important;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+    }
+    [data-theme="dark"] .course-title {
+        color: #f8fafc !important;
+    }
+    [data-theme="dark"] .teacher-name {
+        color: #cbd5e1 !important;
+    }
+    [data-theme="dark"] .course-meta {
+        border-top-color: rgba(255, 255, 255, 0.1) !important;
+    }
+    [data-theme="dark"] .room-badge {
+        background-color: #334155 !important;
+        color: #f1f5f9 !important;
+        border-color: #475569 !important;
+    }
+    [data-theme="dark"] .empty-slot-placeholder {
+        background-color: rgba(30, 41, 59, 0.5);
+        border-color: rgba(255, 255, 255, 0.12) !important;
     }
     [data-theme="dark"] .cell-pause-full {
         background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.28) 100%) !important;
         border-color: rgba(52, 211, 153, 0.3) !important;
+    }
+
+    /* Print Stylesheet for Instant Browser Printing */
+    @media print {
+        @page {
+            size: A4 landscape;
+            margin: 5mm;
+        }
+        body {
+            background: #ffffff !important;
+            color: #000000 !important;
+        }
+        .btn, button, nav, header, sidebar, footer, .modal, #quickAssignPalette, .btn-delete-course {
+            display: none !important;
+        }
+        .timetable-grid-wrapper {
+            max-height: none !important;
+            overflow: visible !important;
+        }
+        .grid-table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+        }
+        .grid-table th, .grid-table td {
+            border: 1px solid #64748b !important;
+            box-shadow: none !important;
+        }
+        .course-card {
+            border: 1px solid #475569 !important;
+            box-shadow: none !important;
+            background: #f8fafc !important;
+        }
     }
 </style>
 

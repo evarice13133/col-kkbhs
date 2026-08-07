@@ -2,7 +2,7 @@
 $title = __('teaching_types') ?? 'Types d\'Enseignement'; 
 ob_start(); 
 
-$canManage = \App\Core\PermissionManager::hasRole(['superadmin', 'admin']);
+$canManage = \App\Core\PermissionManager::hasPermission('manage_teaching_types');
 $filters = [
     'q' => $q ?? '',
     'status' => $status ?? ''

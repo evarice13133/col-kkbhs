@@ -30,41 +30,41 @@ ob_start();
                 </span>
                 <?= __('centre_financier') ?>
             </h1>
-            <p class="text-muted-theme mb-0">Centre de Pilotage • Vue détaillée et analyse financière de l'établissement</p>
+            <p class="text-muted-theme mb-0"><?= __('financial_dashboard_subtitle') ?></p>
         </div>
     </div>
 
     <!-- Section 1: Encaissements par période -->
     <div class="mb-4">
         <div class="kpi-section-title text-primary mb-3">
-            <i class="bi bi-calendar-range me-2"></i>Encaissements par période
+            <i class="bi bi-calendar-range me-2"></i><?= __('collections_by_period') ?>
         </div>
         <div class="row g-4">
             <!-- Jour -->
             <div class="col-6 col-md-3">
                 <div class="modern-card hover-card p-3 shadow-sm h-100 border-info">
-                    <span class="text-muted-theme small fw-bold d-block mb-1">Aujourd'hui</span>
+                    <span class="text-muted-theme small fw-bold d-block mb-1"><?= __('today_label') ?></span>
                     <span class="h4 fw-black text-main-theme"><?= number_format($dailyCollections, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 11px;">FCFA</span></span>
                 </div>
             </div>
             <!-- Semaine -->
             <div class="col-6 col-md-3">
                 <div class="modern-card hover-card p-3 shadow-sm h-100 border-primary">
-                    <span class="text-muted-theme small fw-bold d-block mb-1">Cette semaine</span>
+                    <span class="text-muted-theme small fw-bold d-block mb-1"><?= __('this_week_label') ?></span>
                     <span class="h4 fw-black text-main-theme"><?= number_format($weeklyCollections, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 11px;">FCFA</span></span>
                 </div>
             </div>
             <!-- Mois -->
             <div class="col-6 col-md-3">
                 <div class="modern-card hover-card p-3 shadow-sm h-100 border-success">
-                    <span class="text-muted-theme small fw-bold d-block mb-1">Ce mois</span>
+                    <span class="text-muted-theme small fw-bold d-block mb-1"><?= __('this_month_label') ?></span>
                     <span class="h4 fw-black text-main-theme"><?= number_format($monthlyCollections, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 11px;">FCFA</span></span>
                 </div>
             </div>
             <!-- Année -->
             <div class="col-6 col-md-3">
                 <div class="modern-card hover-card p-3 shadow-sm h-100 border-warning">
-                    <span class="text-muted-theme small fw-bold d-block mb-1">Année Scolaire</span>
+                    <span class="text-muted-theme small fw-bold d-block mb-1"><?= __('school_year_label') ?></span>
                     <span class="h4 fw-black text-main-theme"><?= number_format($annualCollections, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 11px;">FCFA</span></span>
                 </div>
             </div>
@@ -74,34 +74,34 @@ ob_start();
     <!-- Section 1b: Dépenses par période & Solde Réel -->
     <div class="mb-4 animate-fade-in">
         <div class="kpi-section-title text-danger mb-3">
-            <i class="bi bi-wallet2 me-2"></i>Dépenses par période & Solde Réel
+            <i class="bi bi-wallet2 me-2"></i><?= __('expenses_and_balance') ?>
         </div>
         <div class="row g-4">
             <!-- Jour -->
             <div class="col-6 col-md-3">
                 <div class="modern-card hover-card p-3 shadow-sm h-100 border-warning">
-                    <span class="text-muted-theme small fw-bold d-block mb-1">Dépenses Aujourd'hui</span>
+                    <span class="text-muted-theme small fw-bold d-block mb-1"><?= __('expenses_today') ?></span>
                     <span class="h4 fw-black text-main-theme"><?= number_format($dailyExpenses, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 11px;">FCFA</span></span>
                 </div>
             </div>
             <!-- Semaine -->
             <div class="col-6 col-md-3">
                 <div class="modern-card hover-card p-3 shadow-sm h-100 border-primary">
-                    <span class="text-muted-theme small fw-bold d-block mb-1">Dépenses Cette semaine</span>
+                    <span class="text-muted-theme small fw-bold d-block mb-1"><?= __('expenses_this_week') ?></span>
                     <span class="h4 fw-black text-main-theme"><?= number_format($weeklyExpenses, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 11px;">FCFA</span></span>
                 </div>
             </div>
             <!-- Mois -->
             <div class="col-6 col-md-3">
                 <div class="modern-card hover-card p-3 shadow-sm h-100 border-danger">
-                    <span class="text-muted-theme small fw-bold d-block mb-1">Dépenses Ce mois</span>
+                    <span class="text-muted-theme small fw-bold d-block mb-1"><?= __('expenses_this_month') ?></span>
                     <span class="h4 fw-black text-main-theme"><?= number_format($monthlyExpenses, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 11px;">FCFA</span></span>
                 </div>
             </div>
             <!-- Solde Réel -->
             <div class="col-6 col-md-3">
                 <div class="modern-card hover-card p-3 shadow-sm h-100 <?= $netBalance >= 0 ? 'border-success' : 'border-danger' ?>">
-                    <span class="text-muted-theme small fw-bold d-block mb-1">Solde Réel (Recettes - Dépenses)</span>
+                    <span class="text-muted-theme small fw-bold d-block mb-1"><?= __('net_cash_balance') ?></span>
                     <span class="h4 fw-black text-main-theme"><?= number_format($netBalance, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 11px;">FCFA</span></span>
                 </div>
             </div>

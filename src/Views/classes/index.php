@@ -2,7 +2,7 @@
 $title = __('classes') ?? 'Salles de classe';
 ob_start(); 
 
-$canManage = in_array(App\Core\Session::get('user_role'), ['superadmin', 'admin']);
+$canManage = \App\Core\PermissionManager::hasPermission('manage_classes_structure');
 ?>
 
 <div class="animate-fade-in container-fluid py-3 px-md-4">
@@ -174,12 +174,12 @@ $canManage = in_array(App\Core\Session::get('user_role'), ['superadmin', 'admin'
                                             <?php endif; ?>
                                             <?php if (in_array(App\Core\Session::get('user_role'), ['superadmin', 'admin'])): ?>
                                             <li>
-                                                <a class="dropdown-item dropdown-item-modern text-danger border-0 bg-transparent text-start w-100 btn-confirm-delete"
-                                                   href="/classes/delete?id=<?= $c['id'] ?>&csrf_token=<?= \App\Core\Session::generateCsrfToken() ?>"
-                                                   data-student-count="<?= $c['student_count'] ?? 0 ?>"
-                                                   data-confirm="<?= __('confirm_delete_text') ?? 'Voulez-vous supprimer cette classe ?' ?>">
+                                                <button type="button"
+                                                    class="dropdown-item dropdown-item-modern text-danger border-0 bg-transparent text-start w-100"
+                                                    data-impact-delete="class"
+                                                    data-id="<?= $c['id'] ?>">
                                                     <i class="bi bi-trash text-danger"></i> <?= __('delete') ?? 'Supprimer' ?>
-                                                </a>
+                                                </button>
                                             </li>
                                             <?php endif; ?>
                                         </ul>

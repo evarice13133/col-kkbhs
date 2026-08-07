@@ -224,10 +224,7 @@ class SubjectController
 
     public function edit($id)
     {
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
-            header("Location: /subjects");
-            exit;
-        }
+        \App\Core\PermissionManager::requirePermission('manage_subjects');
 
         $stmt = $this->db->prepare("SELECT * FROM subjects WHERE id = ?");
         $stmt->execute([$id]);
@@ -261,10 +258,7 @@ class SubjectController
 
     public function update($id)
     {
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
-            header("Location: /subjects");
-            exit;
-        }
+        \App\Core\PermissionManager::requirePermission('manage_subjects');
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $nom = trim($_POST['nom'] ?? '');
             $coeff = (int) ($_POST['coefficient'] ?? 1);
@@ -397,10 +391,7 @@ class SubjectController
 
     public function delete($id)
     {
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
-            header("Location: /subjects");
-            exit;
-        }
+        \App\Core\PermissionManager::requirePermission('manage_subjects');
         $stmt = $this->db->prepare("DELETE FROM subjects WHERE id = ?");
         if ($stmt->execute([$id])) {
             Session::setFlash('success', __('subject_deleted_success'));

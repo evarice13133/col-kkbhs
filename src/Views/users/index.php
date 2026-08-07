@@ -93,13 +93,14 @@
                                             <i class="bi bi-pencil-fill"></i>
                                         </a>
                                         <?php if (App\Core\Session::get('user_id') != $user['id']): ?>
-                                            <a href="/users/delete?id=<?= $user['id'] ?>&csrf_token=<?= \App\Core\Session::generateCsrfToken() ?>"
-                                                class="btn-icon-action text-danger position-relative btn-confirm-delete"
+                                            <button type="button"
+                                                class="btn-icon-action text-danger position-relative"
                                                 style="z-index: 10; width: 28px; height: 28px; font-size: 0.8rem;"
-                                                data-confirm="<?= __('delete_user_confirm') ?>"
+                                                data-impact-delete="user"
+                                                data-id="<?= $user['id'] ?>"
                                                 title="<?= __('delete') ?>">
                                                 <i class="bi bi-trash-fill"></i>
-                                            </a>
+                                            </button>
                                         <?php endif; ?>
                                     </div>
                                 </div>
