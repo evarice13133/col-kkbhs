@@ -317,6 +317,9 @@
                                 <?php if ($entry): ?>
                                     <td>
                                         <div class="course-box">
+                                            <?php if (!empty($entry['subject_code'])): ?>
+                                                <div class="subject-code" style="font-size: 6.5px; font-weight: bold; color: #2563eb; text-transform: uppercase; margin-bottom: 0.5px;"><?= h($entry['subject_code']) ?></div>
+                                            <?php endif; ?>
                                             <div class="subject-name"><?= h($entry['subject_name']) ?></div>
                                             <div class="teacher-name"><?= h($entry['teacher_name']) ?></div>
                                             <div class="room-name"><?= __('timetables_room_prefix') ?> <?= h($entry['room_name']) ?></div>

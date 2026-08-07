@@ -2152,6 +2152,7 @@ return [
 
     // ── Module Emplois du Temps ─────────────────────────────────────────
     'timetables_menu' => 'Gestion des Emplois du Temps',
+    'my_timetables' => 'Mes Emplois du Temps',
     'timetables_subtitle' => 'Planifiez, consultez, verrouillez et exportez les emplois du temps de l\'établissement.',
     'timetables_slots_menu' => 'Créneaux Horaires',
     'timetables_slots_desc' => 'Configuration des créneaux de cours et des pauses.',

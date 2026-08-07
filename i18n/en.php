@@ -2082,6 +2082,7 @@ return [
 
     // ── Timetable Management Module ───────────────────────────────────
     'timetables_menu' => 'Timetable Management',
+    'my_timetables' => 'My Timetables',
     'timetables_subtitle' => 'Schedule, view, lock, and export school timetables.',
     'timetables_slots_menu' => 'Time Slots',
     'timetables_slots_desc' => 'Configure course time slots and break periods.',

@@ -152,7 +152,7 @@ $ribbon_structure = [
             [
                 'title' => __('timetables_menu'),
                 'items' => [
-                    ['icon' => 'bi-calendar3-week', 'label' => __('timetables_menu'), 'url' => '/timetables', 'permission' => 'view_timetables', 'roles' => ['superadmin', 'admin', 'it_manager', 'enseignant'], 'desc' => __('timetables_subtitle')],
+                    ['icon' => 'bi-calendar3-week', 'label' => __('my_timetables'), 'url' => '/timetables', 'permission' => 'view_timetables', 'desc' => __('timetables_subtitle')],
                     ['icon' => 'bi-magic', 'label' => __('timetables_wizard_menu'), 'url' => '/timetables/wizard', 'permission' => 'manage_timetables', 'roles' => ['superadmin', 'admin', 'it_manager'], 'desc' => __('timetables_wizard_desc')],
                     ['icon' => 'bi-clock-history', 'label' => __('timetables_slots_menu'), 'url' => '/timetables/slots', 'permission' => 'manage_timetables', 'roles' => ['superadmin', 'admin', 'it_manager'], 'desc' => __('timetables_slots_desc')],
                     ['icon' => 'bi-building', 'label' => __('timetables_rooms_menu'), 'url' => '/timetables/rooms', 'permission' => 'manage_timetables', 'roles' => ['superadmin', 'admin', 'it_manager'], 'desc' => __('timetables_rooms_desc')],

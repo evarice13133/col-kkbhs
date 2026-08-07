@@ -246,6 +246,10 @@ elseif (strpos($path, '/timetables') === 0) {
         $c->apiGetSubjectTeachers();
     } elseif ($path === '/timetables/api/quick-create-teacher' && $method === 'POST') {
         $c->apiQuickCreateTeacher();
+    } elseif ($path === '/timetables/api/bulk-validate' && $method === 'POST') {
+        $c->apiBulkValidate();
+    } elseif ($path === '/timetables/api/bulk-save' && $method === 'POST') {
+        $c->apiBulkSave();
     }
 
 
