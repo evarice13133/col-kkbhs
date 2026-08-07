@@ -73,17 +73,13 @@ ob_start();
                                 </span>
                             </td>
                             <td class="pe-4 text-end">
-                                <div class="d-flex align-items-center justify-content-end gap-1">
+                                <div class="d-flex align-items-center justify-content-end gap-1 table-row-actions">
                                     <button class="btn btn-sm btn-action-modern text-primary" onclick='editRoom(<?= json_encode($room) ?>)' title="<?= __('edit') ?>">
                                         <i class="bi bi-pencil-fill fs-5"></i>
                                     </button>
-                                    <form method="POST" action="/timetables/rooms/delete" class="d-inline" onsubmit="return confirm('<?= __('confirm') ?> ?');">
-                                        <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
-                                        <input type="hidden" name="id" value="<?= $room['id'] ?>">
-                                        <button type="submit" class="btn btn-sm btn-action-modern text-danger" title="<?= __('delete') ?>">
-                                            <i class="bi bi-trash-fill fs-5"></i>
-                                        </button>
-                                    </form>
+                                    <button type="button" class="btn btn-sm btn-action-modern text-danger" data-impact-delete="room" data-id="<?= $room['id'] ?>" title="<?= __('delete') ?>">
+                                        <i class="bi bi-trash-fill fs-5"></i>
+                                    </button>
                                 </div>
                             </td>
                         </tr>

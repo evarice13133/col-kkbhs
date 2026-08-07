@@ -62,7 +62,7 @@ class BulletinController
             $classesQuery .= " AND c.section_id = ?";
             $classesParams[] = $sectionId;
         }
-        if (!PermissionManager::hasRole(['superadmin', 'admin'])) {
+        if (!PermissionManager::hasPermission('manage_bulletins')) {
             $academicYearId = $this->getActiveAcademicYear()['id'] ?? 0;
             $classesQuery .= " AND EXISTS (SELECT 1 FROM teacher_assignments ta WHERE ta.class_id = c.id AND ta.user_id = ? AND ta.academic_year_id = {$academicYearId})";
             $classesParams[] = (int) Session::get('user_id');

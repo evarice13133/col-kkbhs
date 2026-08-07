@@ -14,11 +14,7 @@ class DiscountTypeController {
     private DiscountType $model;
 
     public function __construct() {
-        // Sécurité : Accès restreint aux administrateurs, caissiers et comptables
-        if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
-            header("Location: /");
-            exit;
-        }
+        \App\Core\PermissionManager::requirePermission('manage_discounts');
         $this->model = new DiscountType();
     }
 

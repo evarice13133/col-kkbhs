@@ -2,7 +2,7 @@
 $title = __('academic_sections') ?? 'Sections d\'Enseignement'; 
 ob_start(); 
 
-$canManage = \App\Core\PermissionManager::hasPermission('manage_sections') || in_array(App\Core\Session::get('user_role'), ['superadmin', 'admin']);
+$canManage = \App\Core\PermissionManager::hasPermission('manage_sections');
 $filters = [
     'q' => $q ?? '',
     'status' => $status ?? ''

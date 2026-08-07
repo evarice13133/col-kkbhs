@@ -18,11 +18,7 @@ class VerificationAdminController
         $this->db = Database::getInstance()->getConnection();
         $this->academicYearService = new AcademicYearService($this->db);
         
-        // Sécurité RBAC : Accès réservé aux administrateurs ou comptables
-        if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin', 'comptable'])) {
-            header('Location: /');
-            exit;
-        }
+        \App\Core\PermissionManager::requirePermission('manage_payments');
     }
 
     public function index()

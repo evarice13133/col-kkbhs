@@ -70,35 +70,65 @@ class TimetableWizardService
      */
     public function getLevelsByCycle(int $cycleId): array
     {
-        $stmt = $this->db->prepare("
-            SELECT DISTINCT l.id, COALESCE(NULLIF(l.libelle_fr, ''), NULLIF(l.libelle_en, ''), l.code) as nom, l.code
-            FROM levels l
-            JOIN classes c ON c.level_id = l.id
-            WHERE c.cycle_id = ? AND l.status = 1
-            ORDER BY l.id ASC
-        ");
-        $stmt->execute([$cycleId]);
-        $levels = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        if (empty($levels)) {
-            // Fallback sur tous les niveaux actifs LMD
-            $stmt = $this->db->query("
-                SELECT id, COALESCE(NULLIF(libelle_fr, ''), NULLIF(libelle_en, ''), code) as nom, code
-                FROM levels 
-                WHERE status = 1 AND teaching_type_id = 9
-                ORDER BY id ASC
+        // 1. Récupération prioritaire via la table pivot cycle_levels si un cycleId est fourni
+        if ($cycleId > 0) {
+            $stmt = $this->db->prepare("
+                SELECT l.id, 
+                       COALESCE(NULLIF(l.libelle_fr, ''), NULLIF(l.libelle_en, ''), CONCAT('Niveau ', l.code)) as nom, 
+                       l.code, l.libelle_fr, l.libelle_en
+                FROM levels l
+                JOIN cycle_levels cl ON cl.level_id = l.id
+                WHERE cl.cycle_id = ? AND l.status = 1
+                ORDER BY l.id ASC
             ");
+            $stmt->execute([$cycleId]);
             $levels = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (!empty($levels)) {
+                foreach ($levels as &$l) {
+                    $displayName = !empty($l['libelle_fr']) ? $l['libelle_fr'] : (!empty($l['libelle_en']) ? $l['libelle_en'] : $l['nom']);
+                    if (is_numeric($displayName)) {
+                        $displayName = "Niveau " . $displayName;
+                    }
+                    $l['nom'] = $displayName;
+                }
+                return $levels;
+            }
         }
 
+        // 2. Fallback via les classes rattachées au cycle
+        $stmt = $this->db->prepare("
+            SELECT DISTINCT l.id, 
+                   COALESCE(NULLIF(l.libelle_fr, ''), NULLIF(l.libelle_en, ''), CONCAT('Niveau ', l.code)) as nom, 
+                   l.code, l.libelle_fr, l.libelle_en
+            FROM levels l
+            JOIN classes c ON c.level_id = l.id
+            WHERE (c.cycle_id = ? OR ? = 0) AND l.status = 1
+            ORDER BY l.id ASC
+        ");
+        $stmt->execute([$cycleId, $cycleId]);
+        $levels = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // 3. Fallback général : tous les niveaux actifs
         if (empty($levels)) {
             $stmt = $this->db->query("
-                SELECT id, COALESCE(NULLIF(libelle_fr, ''), NULLIF(libelle_en, ''), code) as nom, code
+                SELECT id, 
+                       COALESCE(NULLIF(libelle_fr, ''), NULLIF(libelle_en, ''), CONCAT('Niveau ', code)) as nom, 
+                       code, libelle_fr, libelle_en
                 FROM levels 
                 WHERE status = 1
                 ORDER BY id ASC
             ");
             $levels = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+
+        // Formater proprement le champ nom pour la lisibilité
+        foreach ($levels as &$l) {
+            $displayName = !empty($l['libelle_fr']) ? $l['libelle_fr'] : (!empty($l['libelle_en']) ? $l['libelle_en'] : $l['nom']);
+            if (is_numeric($displayName)) {
+                $displayName = "Niveau " . $displayName;
+            }
+            $l['nom'] = $displayName;
         }
 
         return $levels;
@@ -191,14 +221,18 @@ class TimetableWizardService
             $subjects = [];
         }
 
-        if (empty($subjects)) {
-            $subjects = $this->db->query("
-                SELECT id, nom, COALESCE(code_uv, code_ue, '') as code, '#3b82f6' as couleur_hex 
-                FROM subjects 
-                WHERE (teaching_type_id = 9 OR teaching_type_id IS NULL)
-                ORDER BY nom ASC LIMIT 30
-            ")->fetchAll(PDO::FETCH_ASSOC);
+        // Générer des couleurs pastels distinctes et harmonieuses pour chaque matière
+        $pastelColors = [
+            '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', 
+            '#06b6d4', '#84cc16', '#6366f1', '#d97706', '#0284c7', 
+            '#059669', '#7c3aed', '#db2777', '#0891b2', '#65a30d'
+        ];
+        foreach ($subjects as $idx => &$sub) {
+            if (empty($sub['couleur_hex']) || $sub['couleur_hex'] === '#3b82f6') {
+                $sub['couleur_hex'] = $pastelColors[$idx % count($pastelColors)];
+            }
         }
+        unset($sub);
 
         // 3. Enseignants disponibles (Supérieur LMD via user_teaching_types)
         $stmtTeachers = $this->db->query("

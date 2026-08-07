@@ -2,7 +2,7 @@
 $title = __('academic_levels') ?? 'Niveaux d\'Enseignement'; 
 ob_start(); 
 
-$canManage = \App\Core\PermissionManager::hasRole(['superadmin', 'admin']);
+$canManage = \App\Core\PermissionManager::hasPermission('manage_levels');
 $filters = [
     'q' => $q ?? '',
     'teaching_type_id' => $teaching_type_id ?? '',
@@ -150,11 +150,12 @@ $filters = [
                                         </li>
                                         <?php if (\App\Core\Session::get('user_role') === 'superadmin'): ?>
                                         <li>
-                                            <a class="dropdown-item dropdown-item-modern text-danger border-0 bg-transparent text-start w-100 btn-confirm-delete"
-                                               href="/levels/delete?id=<?= $lvl['id'] ?>&csrf_token=<?= \App\Core\Session::generateCsrfToken() ?>"
-                                               data-confirm="<?= __('confirm_delete_text') ?? 'Voulez-vous supprimer ce niveau ?' ?>">
+                                            <button type="button"
+                                                class="dropdown-item dropdown-item-modern text-danger border-0 bg-transparent text-start w-100"
+                                                data-impact-delete="level"
+                                                data-id="<?= $lvl['id'] ?>">
                                                 <i class="bi bi-trash text-danger"></i> <?= __('delete') ?? 'Supprimer' ?>
-                                            </a>
+                                            </button>
                                         </li>
                                         <?php endif; ?>
                                     </ul>

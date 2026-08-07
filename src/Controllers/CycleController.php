@@ -63,7 +63,22 @@ class CycleController
         $stmt->execute($params);
         $cycles = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+        // Récupérer les niveaux rattachés à chaque cycle
+        foreach ($cycles as &$c) {
+            $stmtLvl = $this->db->prepare("
+                SELECT l.id, COALESCE(NULLIF(l.libelle_fr, ''), NULLIF(l.libelle_en, ''), CONCAT('Niveau ', l.code)) as nom, l.code
+                FROM levels l
+                JOIN cycle_levels cl ON cl.level_id = l.id
+                WHERE cl.cycle_id = ? AND l.status = 1
+                ORDER BY l.id ASC
+            ");
+            $stmtLvl->execute([$c['id']]);
+            $c['levels'] = $stmtLvl->fetchAll(PDO::FETCH_ASSOC);
+            $c['level_ids'] = array_column($c['levels'], 'id');
+        }
+
         $teachingTypes = $this->db->query("SELECT * FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $allLevels = $this->db->query("SELECT id, COALESCE(NULLIF(libelle_fr, ''), NULLIF(libelle_en, ''), CONCAT('Niveau ', code)) as nom, code FROM levels WHERE status = 1 ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         $filters = [
             'q' => $q,
@@ -79,6 +94,7 @@ class CycleController
     public function create()
     {
         $teachingTypes = $this->db->query("SELECT * FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $allLevels = $this->db->query("SELECT id, COALESCE(NULLIF(libelle_fr, ''), NULLIF(libelle_en, ''), CONCAT('Niveau ', code)) as nom, code FROM levels WHERE status = 1 ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
         include __DIR__ . '/../Views/cycles/create.php';
     }
 
@@ -90,10 +106,12 @@ class CycleController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $nom = trim((string) ($_POST['nom'] ?? ''));
             $teaching_type_id = !empty($_POST['teaching_type_id']) ? (int) $_POST['teaching_type_id'] : null;
+            $level_ids = isset($_POST['level_ids']) && is_array($_POST['level_ids']) ? array_map('intval', $_POST['level_ids']) : [];
 
             if ($nom === '' || !$teaching_type_id) {
                 $error = __('required');
                 $teachingTypes = $this->db->query("SELECT * FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $allLevels = $this->db->query("SELECT id, COALESCE(NULLIF(libelle_fr, ''), NULLIF(libelle_en, ''), CONCAT('Niveau ', code)) as nom, code FROM levels WHERE status = 1 ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/cycles/create.php';
                 return;
             }
@@ -102,6 +120,15 @@ class CycleController
                 $stmt = $this->db->prepare("INSERT INTO cycles (nom, teaching_type_id) VALUES (?, ?)");
                 $stmt->execute([$nom, $teaching_type_id]);
                 $newCycleId = (int)$this->db->lastInsertId();
+
+                // Enregistrer les niveaux associés
+                if (!empty($level_ids)) {
+                    $insertLvl = $this->db->prepare("INSERT IGNORE INTO cycle_levels (cycle_id, level_id) VALUES (?, ?)");
+                    foreach ($level_ids as $lvlId) {
+                        $insertLvl->execute([$newCycleId, $lvlId]);
+                    }
+                }
+
                 $threshold = trim((string) ($_POST['honor_roll_threshold'] ?? ''));
                 if ($threshold !== '') {
                     $this->settingsStore->set('honor_roll_threshold_cycle_' . $newCycleId, $threshold);
@@ -113,6 +140,7 @@ class CycleController
             } catch (\PDOException $e) {
                 $error = __('error_generic');
                 $teachingTypes = $this->db->query("SELECT * FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $allLevels = $this->db->query("SELECT id, COALESCE(NULLIF(libelle_fr, ''), NULLIF(libelle_en, ''), CONCAT('Niveau ', code)) as nom, code FROM levels WHERE status = 1 ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/cycles/create.php';
             }
         }
@@ -132,8 +160,13 @@ class CycleController
             exit;
         }
 
+        $stmtLvl = $this->db->prepare("SELECT level_id FROM cycle_levels WHERE cycle_id = ?");
+        $stmtLvl->execute([(int)$id]);
+        $cycle['level_ids'] = $stmtLvl->fetchAll(PDO::FETCH_COLUMN);
+
         $cycle['honor_roll_threshold'] = $this->settingsStore->get('honor_roll_threshold_cycle_' . $cycle['id'], '');
         $teachingTypes = $this->db->query("SELECT * FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $allLevels = $this->db->query("SELECT id, COALESCE(NULLIF(libelle_fr, ''), NULLIF(libelle_en, ''), CONCAT('Niveau ', code)) as nom, code FROM levels WHERE status = 1 ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         include __DIR__ . '/../Views/cycles/edit.php';
     }
@@ -146,11 +179,13 @@ class CycleController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $nom = trim((string) ($_POST['nom'] ?? ''));
             $teaching_type_id = !empty($_POST['teaching_type_id']) ? (int) $_POST['teaching_type_id'] : null;
+            $level_ids = isset($_POST['level_ids']) && is_array($_POST['level_ids']) ? array_map('intval', $_POST['level_ids']) : [];
 
             if ($nom === '' || !$teaching_type_id) {
                 $error = __('required');
-                $cycle = ['id' => $id, 'nom' => $nom, 'teaching_type_id' => $teaching_type_id];
+                $cycle = ['id' => $id, 'nom' => $nom, 'teaching_type_id' => $teaching_type_id, 'level_ids' => $level_ids];
                 $teachingTypes = $this->db->query("SELECT * FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $allLevels = $this->db->query("SELECT id, COALESCE(NULLIF(libelle_fr, ''), NULLIF(libelle_en, ''), CONCAT('Niveau ', code)) as nom, code FROM levels WHERE status = 1 ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/cycles/edit.php';
                 return;
             }
@@ -158,6 +193,16 @@ class CycleController
             try {
                 $stmt = $this->db->prepare("UPDATE cycles SET nom = ?, teaching_type_id = ? WHERE id = ?");
                 $stmt->execute([$nom, $teaching_type_id, (int)$id]);
+
+                // Synchronisation des niveaux associés dans cycle_levels
+                $this->db->prepare("DELETE FROM cycle_levels WHERE cycle_id = ?")->execute([(int)$id]);
+                if (!empty($level_ids)) {
+                    $insertLvl = $this->db->prepare("INSERT INTO cycle_levels (cycle_id, level_id) VALUES (?, ?)");
+                    foreach ($level_ids as $lvlId) {
+                        $insertLvl->execute([(int)$id, $lvlId]);
+                    }
+                }
+
                 $threshold = trim((string) ($_POST['honor_roll_threshold'] ?? ''));
                 $this->settingsStore->set('honor_roll_threshold_cycle_' . $id, $threshold);
                 
@@ -166,8 +211,9 @@ class CycleController
                 exit;
             } catch (\PDOException $e) {
                 $error = __('error_generic');
-                $cycle = ['id' => $id, 'nom' => $nom, 'teaching_type_id' => $teaching_type_id];
+                $cycle = ['id' => $id, 'nom' => $nom, 'teaching_type_id' => $teaching_type_id, 'level_ids' => $level_ids];
                 $teachingTypes = $this->db->query("SELECT * FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $allLevels = $this->db->query("SELECT id, COALESCE(NULLIF(libelle_fr, ''), NULLIF(libelle_en, ''), CONCAT('Niveau ', code)) as nom, code FROM levels WHERE status = 1 ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/cycles/edit.php';
             }
         }

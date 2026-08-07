@@ -66,17 +66,42 @@ class TimetableController
         $selectedClass = (int)($_GET['class_id'] ?? 0);
         $selectedWeek = (int)($_GET['week_id'] ?? 0);
 
-        $timetables = $this->timetableModel->getAllFiltered(
+        $timetables = $this->timetableModel->getAllGrouped(
             $selectedYear ?: null,
             $selectedClass ?: null,
             $selectedWeek ?: null
         );
 
-        // Mettre à jour les statuts de verrouillage 168h
+        // Mettre à jour les statuts de verrouillage et la conciliation des états
         foreach ($timetables as &$t) {
-            $t['is_locked_calc'] = $this->lockService->checkAutoLock((int)$t['id']);
-            $t['can_edit'] = $this->lockService->canModify($t);
+            $ids = !empty($t['timetable_ids']) ? explode(',', $t['timetable_ids']) : [$t['primary_id']];
+            $isLocked = false;
+            $canEdit = true;
+            
+            foreach ($ids as $ttId) {
+                if ($this->lockService->checkAutoLock((int)$ttId)) {
+                    $isLocked = true;
+                }
+                $ttRow = $this->timetableModel->find((int)$ttId);
+                if ($ttRow && !$this->lockService->canModify($ttRow)) {
+                    $canEdit = false;
+                }
+            }
+
+            $statuts = !empty($t['statuts']) ? explode(',', $t['statuts']) : ['brouillon'];
+            if (in_array('publie', $statuts, true) && count(array_unique($statuts)) === 1) {
+                $t['statut'] = 'publie';
+            } elseif (in_array('verrouille', $statuts, true) || $isLocked) {
+                $t['statut'] = 'verrouille';
+            } else {
+                $t['statut'] = 'brouillon';
+            }
+
+            $t['is_locked_calc'] = $isLocked;
+            $t['can_edit'] = $canEdit;
+            $t['id'] = $t['primary_id'];
         }
+        unset($t);
 
         $years = $this->db->query("SELECT id, nom as libelle FROM academic_years ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
         $classes = $this->db->query("
@@ -933,20 +958,25 @@ class TimetableController
             exit;
         }
 
-        $id = (int)($_POST['timetable_id'] ?? $_POST['id'] ?? 0);
-        $timetable = $this->timetableModel->find($id);
+        $rawIds = $_POST['timetable_ids'] ?? $_POST['timetable_id'] ?? $_POST['id'] ?? '';
+        $ids = array_filter(array_map('intval', explode(',', (string)$rawIds)));
 
-        if (!$timetable) {
+        if (empty($ids)) {
             Session::setFlash('error', 'Emploi du temps introuvable.');
             header('Location: /timetables');
             exit;
         }
 
-        $deleted = $this->timetableModel->delete($id);
+        $deletedCount = 0;
+        foreach ($ids as $id) {
+            if ($this->timetableModel->delete($id)) {
+                $deletedCount++;
+            }
+        }
 
-        if ($deleted) {
-            Security::log("Suppression de l'emploi du temps #{$id} ({$timetable['titre']}) par Super Administrateur.");
-            Session::setFlash('success', 'L\'emploi du temps a été supprimé avec succès.');
+        if ($deletedCount > 0) {
+            Security::log("Suppression de {$deletedCount} grille(s) d'emploi du temps par Super Administrateur.");
+            Session::setFlash('success', 'L\'emploi du temps regroupé a été supprimé avec succès.');
         } else {
             Session::setFlash('error', 'Échec de la suppression de l\'emploi du temps.');
         }

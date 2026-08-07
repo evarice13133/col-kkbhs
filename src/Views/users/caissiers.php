@@ -121,7 +121,7 @@
                                     <?php endif; ?>
                                 </td>
                                 <td class="pe-4 text-center">
-                                    <div class="d-flex justify-content-center gap-2">
+                                    <div class="d-flex justify-content-center gap-2 table-row-actions">
                                         <a href="/users/edit?id=<?= $c['id'] ?>" class="btn-icon-modern text-primary" title="<?= __('edit') ?>">
                                             <i class="bi bi-pencil-fill"></i>
                                         </a>

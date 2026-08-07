@@ -2,7 +2,7 @@
 $title = __('academic_cycles') ?? 'Cycles Académiques'; 
 ob_start(); 
 
-$canManage = in_array(App\Core\Session::get('user_role'), ['superadmin', 'admin']);
+$canManage = \App\Core\PermissionManager::hasPermission('manage_cycles');
 $filters = [
     'q' => $q ?? '',
     'teaching_type_id' => $filters['teaching_type_id'] ?? ($teaching_type_id ?? ''),
@@ -121,6 +121,15 @@ $filters = [
                                                 </span>
                                             <?php endif; ?>
                                         </div>
+                                        <?php if (!empty($cycle['levels'])): ?>
+                                            <div class="d-flex align-items-center gap-1 mt-2 flex-wrap">
+                                                <?php foreach ($cycle['levels'] as $lvl): ?>
+                                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-10 extra-small fw-bold px-2 py-0.5 rounded-pill">
+                                                        <i class="bi bi-layers me-1"></i><?= htmlspecialchars((string)$lvl['nom']) ?>
+                                                    </span>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                                 
@@ -134,7 +143,8 @@ $filters = [
                                             <button type="button" class="dropdown-item dropdown-item-modern border-0 bg-transparent text-start w-100" onclick="openEditCycleModal(<?= htmlspecialchars(json_encode([
                                                 'id' => (int)$cycle['id'],
                                                 'nom' => $cycle['nom'],
-                                                'teaching_type_id' => (int)($cycle['teaching_type_id'] ?? 0)
+                                                'teaching_type_id' => (int)($cycle['teaching_type_id'] ?? 0),
+                                                'level_ids' => $cycle['level_ids'] ?? []
                                             ]), ENT_QUOTES, 'UTF-8') ?>)">
                                                 <i class="bi bi-pencil text-primary"></i> <?= __('edit') ?? 'Modifier' ?>
                                             </button>
@@ -147,11 +157,12 @@ $filters = [
                                         </li>
                                         <?php if (App\Core\Session::get('user_role') === 'superadmin'): ?>
                                         <li>
-                                            <a class="dropdown-item dropdown-item-modern text-danger border-0 bg-transparent text-start w-100 btn-confirm-delete"
-                                               href="/cycles/delete?id=<?= $cycle['id'] ?>&csrf_token=<?= \App\Core\Session::generateCsrfToken() ?>"
-                                               data-confirm="<?= __('confirm_delete_text') ?? 'Voulez-vous supprimer ce cycle ?' ?>">
-                                                <i class="bi bi-trash text-danger"></i> <?= __('delete') ?? 'Supprimer' ?>
-                                            </a>
+                                            <button type="button"
+                                                class="dropdown-item dropdown-item-modern text-danger border-0 bg-transparent text-start w-100"
+                                                data-impact-delete="cycle"
+                                                data-id="<?= $cycle['id'] ?>">
+                                                 <i class="bi bi-trash text-danger"></i> <?= __('delete') ?? 'Supprimer' ?>
+                                            </button>
                                         </li>
                                         <?php endif; ?>
                                     </ul>
@@ -245,6 +256,27 @@ $filters = [
                             </select>
                         </div>
                     </div>
+
+                    <!-- Niveaux associés (Multi-sélection) -->
+                    <?php if (!empty($allLevels)): ?>
+                    <div class="mb-4">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-2">
+                            <i class="bi bi-layers me-1 text-primary"></i> Niveaux d'études associés
+                        </label>
+                        <div class="row g-2 p-3 rounded-4 bg-light bg-opacity-50 border">
+                            <?php foreach ($allLevels as $lvl): ?>
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input cycle-level-checkbox" type="checkbox" name="level_ids[]" value="<?= $lvl['id'] ?>" id="level_chk_<?= $lvl['id'] ?>">
+                                        <label class="form-check-label small fw-semibold text-main-theme cursor-pointer" for="level_chk_<?= $lvl['id'] ?>">
+                                            <?= htmlspecialchars((string)$lvl['nom']) ?>
+                                        </label>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
                 </div>
 
                 <div class="modal-footer border-top-0 pt-0 px-4 pb-4 gap-2">
@@ -602,6 +634,8 @@ function openCreateCycleModal() {
     document.getElementById('cycle_nom').value = '';
     document.getElementById('cycle_teaching_type_id').value = '';
 
+    document.querySelectorAll('.cycle-level-checkbox').forEach(chk => chk.checked = false);
+
     const modal = new bootstrap.Modal(document.getElementById('cycleModal'));
     modal.show();
 }
@@ -616,6 +650,11 @@ function openEditCycleModal(cy) {
     document.getElementById('cycleModalIcon').innerHTML = '<i class="bi bi-pencil-square fs-4"></i>';
     document.getElementById('cycle_nom').value = cy.nom || '';
     document.getElementById('cycle_teaching_type_id').value = cy.teaching_type_id || '';
+
+    const selectedLevelIds = (cy.level_ids || []).map(id => String(id));
+    document.querySelectorAll('.cycle-level-checkbox').forEach(chk => {
+        chk.checked = selectedLevelIds.includes(String(chk.value));
+    });
 
     const modal = new bootstrap.Modal(document.getElementById('cycleModal'));
     modal.show();

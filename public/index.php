@@ -44,6 +44,8 @@ use App\Controllers\TimetableController;
 
 
 
+use App\Controllers\RbacController;
+
 Security::applyHeaders();
 
 // 1. Initialise la session via le module Core
@@ -116,6 +118,60 @@ if ($path === '/notifications/toggle-archive') {
 if ($path === '/notifications/delete') {
     $c = new LandingController();
     $c->deleteNotification();
+    exit;
+}
+
+// ====== ROUTES: RADIOGRAPHIE D'IMPACT & SMART DELETE ======
+if ($path === '/api/impact-analysis' && $method === 'GET') {
+    (new \App\Controllers\ImpactAnalysisController())->getAnalysis();
+    exit;
+}
+if ($path === '/api/smart-delete' && $method === 'POST') {
+    (new \App\Controllers\ImpactAnalysisController())->executeDelete();
+    exit;
+}
+
+// ====== ROUTES: GESTION DES PERMISSIONS (RBAC) ======
+if (strpos($path, '/pilotage/rbac') === 0 || strpos($path, '/api/rbac') === 0) {
+    if (!Session::isLogged()) {
+        header('Location: /login');
+        exit;
+    }
+    $c = new RbacController();
+
+    if ($path === '/pilotage/rbac') {
+        $c->index();
+    } elseif ($path === '/api/rbac/permissions' && $method === 'GET') {
+        $c->getPermissions();
+    } elseif ($path === '/api/rbac/roles' && $method === 'GET') {
+        $c->getRoles();
+    } elseif ($path === '/api/rbac/roles/permissions' && $method === 'GET') {
+        $c->getRolePermissions();
+    } elseif ($path === '/api/rbac/roles/permissions' && $method === 'POST') {
+        $c->saveRolePermissions();
+    } elseif ($path === '/api/rbac/roles/copy' && $method === 'POST') {
+        $c->copyRolePermissions();
+    } elseif ($path === '/api/rbac/roles/compare' && $method === 'GET') {
+        $c->compareRoles();
+    } elseif ($path === '/api/rbac/roles/reset' && $method === 'POST') {
+        $c->resetRolePermissions();
+    } elseif ($path === '/api/rbac/users' && $method === 'GET') {
+        $c->searchUsers();
+    } elseif ($path === '/api/rbac/users/permissions' && $method === 'GET') {
+        $c->getUserPermissions();
+    } elseif ($path === '/api/rbac/users/permissions' && $method === 'POST') {
+        $c->saveUserPermissions();
+    } elseif ($path === '/api/rbac/scan' && $method === 'POST') {
+        $c->runScan();
+    } elseif ($path === '/api/rbac/audit' && $method === 'GET') {
+        $c->getAuditLogs();
+    } elseif ($path === '/api/rbac/backups' && $method === 'GET') {
+        $c->getBackups();
+    } elseif ($path === '/api/rbac/backups/create' && $method === 'POST') {
+        $c->createBackup();
+    } elseif ($path === '/api/rbac/backups/restore' && $method === 'POST') {
+        $c->restoreBackup();
+    }
     exit;
 }
 

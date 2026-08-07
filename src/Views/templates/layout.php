@@ -75,12 +75,9 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
     return true;
 };
 
-$isItemAllowed = function ($item) use ($user_role) {
+$isItemAllowed = function ($item) {
     if (isset($item['permission']) && !empty($item['permission'])) {
         return \App\Core\PermissionManager::hasPermission($item['permission']);
-    }
-    if (isset($item['roles']) && is_array($item['roles'])) {
-        return in_array($user_role, $item['roles'], true);
     }
     return true;
 };
@@ -95,23 +92,23 @@ $ribbon_structure = [
             [
                 'title' => __('pilotage') ?? 'Pilotage',
                 'items' => [
-                    ['icon' => 'bi-speedometer2', 'label' => __('dashboard'), 'url' => '/', 'roles' => ['superadmin', 'admin', 'enseignant', 'caissier', 'comptable', 'it_manager'], 'desc' => 'Vue globale des indicateurs clés et statistiques de l\'établissement.']
+                    ['icon' => 'bi-speedometer2', 'label' => __('dashboard'), 'url' => '/', 'permission' => 'view_pilotage', 'desc' => 'Vue globale des indicateurs clés et statistiques de l\'établissement.']
                 ]
             ],
             [
                 'title' => __('enseignant') ?? 'Enseignant',
                 'items' => [
-                    ['icon' => 'bi-pencil-square', 'label' => __('enter_marks'), 'url' => '/notes', 'permission' => 'manage_marks', 'roles' => ['enseignant'], 'desc' => 'Saisie et validation des notes d\'évaluation par classe et matière.'],
-                    ['icon' => 'bi-people', 'label' => __('my_students'), 'url' => '/students', 'permission' => 'view_students', 'roles' => ['enseignant'], 'desc' => 'Consulter la liste et le suivi individuel de vos élèves.'],
-                    ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'roles' => ['enseignant'], 'desc' => 'Guides d\'utilisation et centre d\'assistance.'],
+                    ['icon' => 'bi-pencil-square', 'label' => __('enter_marks'), 'url' => '/notes', 'permission' => 'manage_marks', 'desc' => 'Saisie et validation des notes d\'évaluation par classe et matière.'],
+                    ['icon' => 'bi-people', 'label' => __('my_students'), 'url' => '/students', 'permission' => 'view_students', 'desc' => 'Consulter la liste et le suivi individuel de vos élèves.'],
+                    ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'permission' => 'view_pilotage', 'desc' => 'Guides d\'utilisation et centre d\'assistance.'],
                 ]
             ],
             [
                 'title' => __('caisse') ?? 'Caisse',
                 'items' => [
-                    ['icon' => 'bi-credit-card', 'label' => __('payments_menu'), 'url' => '/payments', 'permission' => 'manage_payments', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Enregistrement des versements de scolarité et impression des reçus.'],
-                    ['icon' => 'bi-exclamation-triangle', 'label' => __('insolvent_title'), 'url' => '/school_fees/insolvables', 'permission' => 'view_financial_reports', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Rapport des élèves en retard de paiement.'],
-                    ['icon' => 'bi-door-open', 'label' => __('classes'), 'url' => '/classes', 'permission' => 'view_classes', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Gestion et état d\'avancement des paiements par classe.']
+                    ['icon' => 'bi-credit-card', 'label' => __('payments_menu'), 'url' => '/payments', 'permission' => 'manage_payments', 'desc' => 'Enregistrement des versements de scolarité et impression des reçus.'],
+                    ['icon' => 'bi-exclamation-triangle', 'label' => __('insolvent_title'), 'url' => '/school_fees/insolvables', 'permission' => 'view_financial_reports', 'desc' => 'Rapport des élèves en retard de paiement.'],
+                    ['icon' => 'bi-door-open', 'label' => __('classes'), 'url' => '/classes', 'permission' => 'view_classes', 'desc' => 'Gestion et état d\'avancement des paiements par classe.']
                 ]
             ]
         ]
@@ -121,6 +118,12 @@ $ribbon_structure = [
         'title' => __('centre_de_pilotage'),
         'icon' => 'bi-sliders2',
         'groups' => [
+            [
+                'title' => 'Sécurité & Droits',
+                'items' => [
+                    ['icon' => 'bi-shield-lock-fill', 'label' => 'Gestion des Permissions', 'url' => '/pilotage/rbac', 'permission' => 'manage_rbac', 'roles' => ['superadmin', 'admin', 'it_manager'], 'desc' => 'Centre de contrôle des privilèges, rôles et exceptions utilisateurs.'],
+                ]
+            ],
             [
                 'title' => 'Structure Académique',
                 'items' => [
@@ -431,6 +434,32 @@ foreach ($ribbon_structure as $tab) {
             background: #f1f5f9;
         }
 
+        /* --- Global Table Row Actions (Affichage dynamique au survol de la ligne) --- */
+        .table-row-actions {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out, transform 0.2s ease-in-out;
+            transform: translateX(4px);
+        }
+
+        tr:hover .table-row-actions,
+        tr:focus-within .table-row-actions,
+        .table-row-actions:focus-within,
+        .table-row-actions.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+        }
+
+        /* Survol tactile & mobile : Toujours visible pour garantir l'accessibilité */
+        @media (hover: none) {
+            .table-row-actions {
+                opacity: 1;
+                visibility: visible;
+                transform: none;
+            }
+        }
+
         /* Dark Mode Support for Dropdowns, Modals, Forms & Components */
         [data-theme="dark"] .dropdown-menu-modern {
             background-color: #1e293b;
@@ -570,6 +599,7 @@ foreach ($ribbon_structure as $tab) {
             border-color: rgba(255, 255, 255, 0.08) !important;
         }
     </style>
+    <link rel="stylesheet" href="/public/css/impact-radiography.css?v=<?= $asset_version ?? '1.0' ?>">
 </head>
 
 <body>
@@ -636,6 +666,11 @@ foreach ($ribbon_structure as $tab) {
                             <?php if (\App\Core\PermissionManager::hasPermission('manage_bulletins')): ?>
                                 <a href="/bulletins" class="ribbon-qat-btn <?= strpos($current_path, '/bulletins') === 0 ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-html="true" title="<div class='tooltip-rich-title'><i class='bi bi-printer'></i> Impression Bulletins</div><div class='tooltip-rich-desc'>Générer les bulletins de notes périodiques officiels.</div>">
                                     <i class="bi bi-printer"></i>
+                                </a>
+                            <?php endif; ?>
+                            <?php if (\App\Core\PermissionManager::hasPermission('manage_rbac')): ?>
+                                <a href="/pilotage/rbac" class="ribbon-qat-btn <?= strpos($current_path, '/pilotage/rbac') === 0 ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-html="true" title="<div class='tooltip-rich-title'><i class='bi bi-shield-lock-fill'></i> Gestion des Permissions</div><div class='tooltip-rich-desc'>Centre de contrôle des privilèges, rôles et exceptions.</div>">
+                                    <i class="bi bi-shield-lock-fill text-primary"></i>
                                 </a>
                             <?php endif; ?>
                         </div>
@@ -775,6 +810,13 @@ foreach ($ribbon_structure as $tab) {
                                         <i class="bi bi-person text-primary fs-5 me-2"></i> <?= __('my_profile') ?>
                                     </a>
                                 </li>
+                                <?php if (\App\Core\PermissionManager::hasPermission('manage_rbac')): ?>
+                                    <li>
+                                        <a class="dropdown-item dropdown-item-modern py-2" href="/pilotage/rbac">
+                                            <i class="bi bi-shield-lock-fill text-primary fs-5 me-2"></i> Gestion des Permissions
+                                        </a>
+                                    </li>
+                                <?php endif; ?>
                                 <?php if (in_array($user_role, ['superadmin', 'admin'])): ?>
                                     <li>
                                         <a class="dropdown-item dropdown-item-modern py-2" href="/settings">
@@ -1588,6 +1630,8 @@ foreach ($ribbon_structure as $tab) {
             tooltipTriggerList.map(t => new bootstrap.Tooltip(t));
         });
     </script>
+    <?php include __DIR__ . '/impact_modal.php'; ?>
+    <script src="/public/js/impact-radiography.js?v=<?= $asset_version ?? '1.0' ?>"></script>
     <script src="/public/js/topbar-onboarding.js?v=<?= $asset_version ?>"></script>
 </body>
 

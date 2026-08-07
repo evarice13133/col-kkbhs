@@ -40,6 +40,12 @@ ob_start();
             </h1>
             <p class="text-muted-theme mb-0">Centre de Pilotage • Pilotage global de l'établissement</p>
         </div>
+        <?php if (\App\Core\PermissionManager::hasPermission('manage_rbac')): ?>
+            <a href="/pilotage/rbac" class="btn btn-primary rounded-3 px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2 shadow-sm">
+                <i class="bi bi-shield-lock-fill"></i>
+                <span>Gestion des Permissions</span>
+            </a>
+        <?php endif; ?>
     </div>
 
     <!-- MAIN GRID -->

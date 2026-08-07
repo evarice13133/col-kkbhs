@@ -6,6 +6,79 @@ use PDO;
 
 class Timetable extends BaseModel
 {
+    public function getAllGrouped(?int $yearId = null, ?int $classId = null, ?int $weekId = null): array
+    {
+        $sql = "
+            SELECT 
+                t.cycle_id,
+                COALESCE(cl.level_id, 0) as level_id,
+                t.week_id,
+                t.academic_year_id,
+                t.teaching_type_id,
+                MIN(t.id) as primary_id,
+                GROUP_CONCAT(DISTINCT t.id ORDER BY t.id ASC SEPARATOR ',') as timetable_ids,
+                ay.nom as academic_year_name,
+                tt.nom as teaching_type_name,
+                c.nom as cycle_name,
+                COALESCE(NULLIF(l.libelle_fr, ''), NULLIF(l.libelle_en, ''), IF(l.code IS NOT NULL AND l.code != '', CONCAT('Niveau ', l.code), NULL), 'Niveau Général') as level_name,
+                w.libelle as week_libelle,
+                w.date_debut as week_start,
+                w.date_fin as week_end,
+                GROUP_CONCAT(DISTINCT cl.nom ORDER BY cl.nom ASC SEPARATOR ' • ') as classes_list,
+                GROUP_CONCAT(DISTINCT CONCAT(cl.id, ':', cl.nom) ORDER BY cl.nom ASC SEPARATOR '||') as classes_data,
+                GROUP_CONCAT(t.statut SEPARATOR ',') as statuts,
+                MAX(t.created_at) as created_at
+            FROM timetables t
+            LEFT JOIN academic_years ay ON t.academic_year_id = ay.id
+            LEFT JOIN teaching_types tt ON t.teaching_type_id = tt.id
+            LEFT JOIN cycles c ON t.cycle_id = c.id
+            LEFT JOIN classes cl ON t.class_id = cl.id
+            LEFT JOIN levels l ON cl.level_id = l.id
+            LEFT JOIN timetable_weeks w ON t.week_id = w.id
+            WHERE (tt.code = 'LMD' OR tt.nom LIKE '%Supérieur%' OR tt.nom LIKE '%LMD%' OR t.teaching_type_id = 9 OR cl.teaching_type_id = 9 OR t.teaching_type_id IS NULL)
+        ";
+        $params = [];
+
+        if ($yearId) {
+            $sql .= " AND t.academic_year_id = ?";
+            $params[] = $yearId;
+        }
+        if ($classId) {
+            $sql .= " AND t.class_id = ?";
+            $params[] = $classId;
+        }
+        if ($weekId) {
+            $sql .= " AND t.week_id = ?";
+            $params[] = $weekId;
+        }
+
+        $sql .= " GROUP BY t.cycle_id, COALESCE(cl.level_id, 0), t.week_id, t.academic_year_id, t.teaching_type_id";
+        $sql .= " ORDER BY MAX(t.created_at) DESC";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($rows as &$row) {
+            $classes = [];
+            if (!empty($row['classes_data'])) {
+                $items = explode('||', $row['classes_data']);
+                foreach ($items as $item) {
+                    $parts = explode(':', $item, 2);
+                    if (count($parts) === 2) {
+                        $classes[] = [
+                            'id' => (int)$parts[0],
+                            'nom' => $parts[1]
+                        ];
+                    }
+                }
+            }
+            $row['classes'] = $classes;
+        }
+
+        return $rows;
+    }
+
     public function getAllFiltered(?int $yearId = null, ?int $classId = null, ?int $weekId = null): array
     {
         $sql = "

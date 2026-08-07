@@ -60,7 +60,7 @@
                                                 <i class="bi bi-play-circle fs-5"></i>
                                             </a>
                                         <?php endif; ?>
-                                        <?php if (in_array(App\Core\Session::get('user_role'), ['superadmin', 'admin'])): ?>
+                                        <?php if (\App\Core\PermissionManager::hasPermission('manage_academic_years')): ?>
                                             <button type="button" class="btn btn-sm btn-action-modern text-primary edit-academic-year-btn" 
                                                     data-id="<?= $year['id'] ?>" 
                                                     data-nom="<?= htmlspecialchars((string) $year['nom'], ENT_QUOTES) ?>" 

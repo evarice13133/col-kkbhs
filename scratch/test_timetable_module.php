@@ -38,7 +38,7 @@ try {
     $entries = $entryModel->getByTimetable(1);
     echo "[TEST 4] TimetableEntry->getByTimetable(1) exécuté avec succès : " . count($entries) . " entrées de cours trouvées.\n";
 
-    // 5. Test Wizard Service
+    // 5. Test Wizard Service & Pivot Table cycle_levels
     $wizardService = new TimetableWizardService($db);
     $types = $wizardService->getTeachingTypes();
     echo "[TEST 5.1] Wizard getTeachingTypes() : " . count($types) . " types d'enseignement trouvés.\n";
@@ -48,11 +48,15 @@ try {
     echo "[TEST 5.2] Wizard getCyclesByTeachingType($firstTypeId) : " . count($cycles) . " cycles trouvés.\n";
 
     $firstCycleId = !empty($cycles) ? $cycles[0]['id'] : 1;
-    $classes = $wizardService->getClassesByCycle($firstCycleId);
-    echo "[TEST 5.3] Wizard getClassesByCycle($firstCycleId) : " . count($classes) . " classes trouvées.\n";
+    $levels = $wizardService->getLevelsByCycle($firstCycleId);
+    echo "[TEST 5.3] Wizard getLevelsByCycle($firstCycleId) via cycle_levels : " . count($levels) . " niveaux rattachés trouvés.\n";
 
-    $gridData = $wizardService->getGridDataForClass(1);
-    echo "[TEST 5.4] Wizard getGridDataForClass(1) : " . count($gridData['subjects']) . " matières, " . count($gridData['teachers']) . " enseignants, " . count($gridData['rooms']) . " salles.\n";
+    $firstLevelId = !empty($levels) ? $levels[0]['id'] : 1;
+    $classes = $wizardService->getClassesByLevel($firstCycleId, $firstLevelId);
+    echo "[TEST 5.4] Wizard getClassesByLevel($firstCycleId, $firstLevelId) : " . count($classes) . " classes trouvées.\n";
+
+    $gridData = $wizardService->getMultiClassGridData($firstCycleId, $firstLevelId, 1);
+    echo "[TEST 5.5] Wizard getMultiClassGridData() : " . count($gridData['subjects']) . " matières, " . count($gridData['teachers']) . " enseignants, " . count($gridData['rooms']) . " salles.\n";
 
     // 6. Test Conflict Service
     $conflictService = new TimetableConflictService($db);
