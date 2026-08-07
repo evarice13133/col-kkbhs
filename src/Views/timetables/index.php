@@ -40,7 +40,7 @@ ob_start();
             </div>
         </div>
         <div class="col-6 col-md-4">
-            <div class="modern-card kpi-card border-0 shadow-sm border-start border-4 border-success">
+            <div class="modern-card kpi-card shadow-sm border-success">
                 <div class="kpi-icon-wrapper bg-success bg-opacity-10 text-success">
                     <i class="bi bi-check-circle"></i>
                 </div>
@@ -51,7 +51,7 @@ ob_start();
             </div>
         </div>
         <div class="col-12 col-md-4">
-            <div class="modern-card kpi-card border-0 shadow-sm border-start border-4 border-warning">
+            <div class="modern-card kpi-card shadow-sm border-warning">
                 <div class="kpi-icon-wrapper bg-warning bg-opacity-10 text-warning">
                     <i class="bi bi-lock-fill"></i>
                 </div>
@@ -208,6 +208,16 @@ ob_start();
                                         <a href="/timetables/pdf?id=<?= $t['id'] ?>&mode=download" class="btn btn-sm btn-action-modern text-danger" title="PDF">
                                             <i class="bi bi-file-earmark-pdf-fill fs-5"></i>
                                         </a>
+                                        <?php if (\App\Core\Session::get('user_role') === 'superadmin'): ?>
+                                            <button type="button" class="btn btn-sm btn-action-modern text-danger hover-scale" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#deleteTimetableModal" 
+                                                    data-timetable-id="<?= $t['id'] ?>" 
+                                                    data-timetable-title="<?= h($t['titre']) ?>" 
+                                                    title="Supprimer cet emploi du temps">
+                                                <i class="bi bi-trash3-fill fs-5"></i>
+                                            </button>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>
@@ -220,19 +230,14 @@ ob_start();
 </div>
 
 <style>
-    /* Floating Island Filters */
+    /* Canva & MS 365 Inspired Filter Island & Tables */
     .filter-island {
-        background: rgba(var(--bg-card-rgb), 0.7);
+        background: rgba(255, 255, 255, 0.85);
         backdrop-filter: blur(20px) saturate(180%);
         border: 1px solid rgba(var(--primary-rgb), 0.15);
         border-radius: 100px;
         min-width: 65%;
-        transition: all 0.3s ease;
-    }
-
-    [data-theme="dark"] .filter-island {
-        background: rgba(30, 30, 45, 0.6);
-        border-color: rgba(255, 255, 255, 0.08);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .filter-island:focus-within {
@@ -241,26 +246,111 @@ ob_start();
         transform: translateY(-2px);
     }
 
-    /* Thème sombre pour le tableau */
+    .kpi-card {
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08) !important;
+    }
+
+    /* Dark Mode Specific Overrides */
+    [data-theme="dark"] .filter-island {
+        background: #1e293b !important;
+        border-color: rgba(255, 255, 255, 0.15) !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
+    }
+
+    [data-theme="dark"] .filter-island select option {
+        background-color: #1e293b !important;
+        color: #f8fafc !important;
+    }
+
     [data-theme="dark"] .modern-card {
-        background: rgba(30, 30, 45, 0.6);
-        border-color: rgba(255, 255, 255, 0.08);
+        background: #1e293b !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+        color: #f8fafc !important;
     }
 
     [data-theme="dark"] .table-modern thead th {
-        background: rgba(255, 255, 255, 0.05);
-        color: #ffffff;
-        border-bottom-color: rgba(255, 255, 255, 0.1);
+        background: #0f172a !important;
+        color: #f8fafc !important;
+        border-bottom-color: rgba(255, 255, 255, 0.12) !important;
     }
 
     [data-theme="dark"] .table-modern tbody tr {
-        border-bottom-color: rgba(255, 255, 255, 0.05);
+        border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+    }
+
+    [data-theme="dark"] .table-modern tbody tr:hover {
+        background: rgba(255, 255, 255, 0.04) !important;
     }
 
     [data-theme="dark"] .table-modern tbody td {
-        color: #e0e0e0;
+        color: #cbd5e1 !important;
+    }
+
+    [data-theme="dark"] .btn-action-modern {
+        background: rgba(255, 255, 255, 0.05);
+        color: #94a3b8;
+    }
+    [data-theme="dark"] .btn-action-modern:hover {
+        background: rgba(255, 255, 255, 0.12);
+        color: #ffffff;
     }
 </style>
+
+<?php if (\App\Core\Session::get('user_role') === 'superadmin'): ?>
+<!-- Modal de Confirmation Suppression Emploi du Temps -->
+<div class="modal fade" id="deleteTimetableModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header border-0 bg-danger bg-opacity-10 py-3">
+                <h5 class="modal-title fw-bold text-danger d-flex align-items-center gap-2 mb-0">
+                    <i class="bi bi-exclamation-triangle-fill"></i> Supprimer l'emploi du temps
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <form method="POST" action="/timetables/delete">
+                <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
+                <input type="hidden" name="timetable_id" id="delete_timetable_id" value="">
+                <div class="modal-body py-4 px-4">
+                    <p class="mb-2 text-main-theme fw-semibold" style="font-size: 1rem;">Êtes-vous sûr de vouloir supprimer définitivement cet emploi du temps ?</p>
+                    <div class="alert alert-danger border-0 rounded-3 small mb-0 d-flex gap-2 align-items-start">
+                        <i class="bi bi-shield-alert fs-5 flex-shrink-0 mt-0.5"></i>
+                        <div>
+                            <strong>Attention :</strong> Cette action est irréversible. Tous les créneaux positionnés et le journal d'audit associés à cet emploi du temps (<strong id="delete_timetable_title"></strong>) seront supprimés.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0 pb-4 px-4 gap-2">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-bold shadow-sm">
+                        <i class="bi bi-trash3-fill me-1"></i> Supprimer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const deleteModal = document.getElementById('deleteTimetableModal');
+    if (deleteModal) {
+        deleteModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const timetableId = button.getAttribute('data-timetable-id');
+            const timetableTitle = button.getAttribute('data-timetable-title');
+            
+            document.getElementById('delete_timetable_id').value = timetableId;
+            document.getElementById('delete_timetable_title').textContent = timetableTitle || '';
+        });
+    }
+});
+</script>
+<?php endif; ?>
 
 <?php
 $content = ob_get_clean();

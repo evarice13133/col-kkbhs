@@ -37,7 +37,7 @@ ob_start();
     <?php endif; ?>
 
     <?php if ($suggestion): ?>
-        <div class="modern-card border-start border-4 border-primary p-3 mb-4 shadow-sm">
+        <div class="modern-card border-primary p-3 mb-4 shadow-sm">
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                 <div>
                     <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2.5 py-1 rounded-pill fw-bold mb-1"><i class="bi bi-magic me-1"></i><?= __('timetables_smart_suggestion') ?></span>
@@ -222,24 +222,29 @@ function editWeek(week) {
 </script>
 
 <style>
-    /* Thème sombre pour le tableau */
+    /* Canva & MS 365 Inspired Weeks Table & Dark Mode */
     [data-theme="dark"] .modern-card {
-        background: rgba(30, 30, 45, 0.6);
-        border-color: rgba(255, 255, 255, 0.08);
+        background: #1e293b !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+        color: #f8fafc !important;
     }
 
     [data-theme="dark"] .table-modern thead th {
-        background: rgba(255, 255, 255, 0.05);
-        color: #ffffff;
-        border-bottom-color: rgba(255, 255, 255, 0.1);
+        background: #0f172a !important;
+        color: #f8fafc !important;
+        border-bottom-color: rgba(255, 255, 255, 0.12) !important;
     }
 
     [data-theme="dark"] .table-modern tbody tr {
-        border-bottom-color: rgba(255, 255, 255, 0.05);
+        border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+    }
+
+    [data-theme="dark"] .table-modern tbody tr:hover {
+        background: rgba(255, 255, 255, 0.04) !important;
     }
 
     [data-theme="dark"] .table-modern tbody td {
-        color: #e0e0e0;
+        color: #cbd5e1 !important;
     }
 </style>
 

@@ -195,24 +195,29 @@ function editSlot(slot) {
 </script>
 
 <style>
-    /* Thème sombre pour le tableau */
+    /* Canva & MS 365 Inspired Slots Table & Dark Mode */
     [data-theme="dark"] .modern-card {
-        background: rgba(30, 30, 45, 0.6);
-        border-color: rgba(255, 255, 255, 0.08);
+        background: #1e293b !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+        color: #f8fafc !important;
     }
 
     [data-theme="dark"] .table-modern thead th {
-        background: rgba(255, 255, 255, 0.05);
-        color: #ffffff;
-        border-bottom-color: rgba(255, 255, 255, 0.1);
+        background: #0f172a !important;
+        color: #f8fafc !important;
+        border-bottom-color: rgba(255, 255, 255, 0.12) !important;
     }
 
     [data-theme="dark"] .table-modern tbody tr {
-        border-bottom-color: rgba(255, 255, 255, 0.05);
+        border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+    }
+
+    [data-theme="dark"] .table-modern tbody tr:hover {
+        background: rgba(255, 255, 255, 0.04) !important;
     }
 
     [data-theme="dark"] .table-modern tbody td {
-        color: #e0e0e0;
+        color: #cbd5e1 !important;
     }
 </style>
 

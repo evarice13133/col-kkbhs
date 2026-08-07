@@ -1,168 +1,336 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="<?= __('lang') ?>">
 <head>
     <meta charset="UTF-8">
-    <title><?= h($timetable['titre']) ?></title>
+    <title><?= __('timetables_menu') ?> - <?= h(($levelRow['libelle_' . __('lang')] ?? $levelRow['libelle_fr'] ?? 'Niveau')) ?> - <?= h($weekRow['libelle'] ?? '') ?></title>
     <style>
         @page {
             size: A4 landscape;
-            margin: 10mm;
+            margin: 3mm 5mm;
         }
-        body {
+        * {
+            box-sizing: border-box;
+        }
+        html, body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            color: #1e293b;
+            color: #0f172a;
             margin: 0;
             padding: 0;
-            font-size: 10px;
+            font-size: 7.5px;
             background: #ffffff;
+            line-height: 1.1;
         }
+
+        /* En-tête Institutionnel Centré (Compact 1 Page) */
         .header-table {
             width: 100%;
-            border-bottom: 2px solid #3b82f6;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
+            border-collapse: collapse;
+            border-bottom: 1.5px solid #1e3a8a;
+            padding-bottom: 2px;
+            margin-bottom: 2px;
         }
-        .school-title {
-            font-size: 18px;
-            font-weight: bold;
-            color: #1e3a8a;
+        .logo-container {
+            width: 14%;
+            vertical-align: middle;
+            text-align: left;
+        }
+        .logo-img {
+            max-height: 36px;
+            max-width: 90px;
+        }
+        .logo-fallback {
+            background-color: #1e3a8a;
+            color: #ffffff;
+            font-weight: 900;
+            font-size: 10px;
+            padding: 4px 6px;
+            border-radius: 4px;
+            text-align: center;
+            letter-spacing: 1px;
+            display: inline-block;
+        }
+        .institution-container {
+            width: 72%;
+            vertical-align: middle;
+            text-align: center;
+            padding: 0 4px;
+        }
+        .school-name {
+            font-size: 12px;
+            font-weight: 800;
+            color: #0f172a;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: center;
         }
-        .timetable-title {
-            font-size: 14px;
-            font-weight: bold;
-            color: #3b82f6;
-            margin-top: 5px;
+        .school-decree {
+            font-size: 8px;
+            font-style: italic;
+            color: #475569;
+            margin-top: 1px;
+            margin-bottom: 2px;
+            text-align: center;
+            line-height: 1.1;
         }
-        .meta-text {
-            font-size: 9px;
+        .doc-ref-number {
+            font-size: 11px;
+            font-weight: 800;
+            color: #0f172a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: center;
+            margin-top: 1px;
+            margin-bottom: 2px;
+        }
+        .doc-title {
+            font-size: 13px;
+            font-weight: 800;
+            color: #2563eb;
+            margin-top: 1px;
+            text-transform: uppercase;
+            text-align: center;
+            text-decoration: underline;
+        }
+        .meta-bar {
+            font-size: 7.5px;
+            color: #334155;
+            margin-top: 2px;
+            text-align: center;
+            font-weight: 500;
+        }
+        .week-highlight {
+            display: inline-block;
+            background-color: #1e3a8a;
+            color: #ffffff;
+            font-weight: 800;
+            padding: 1px 5px;
+            border-radius: 3px;
+        }
+        .cert-container {
+            width: 14%;
+            vertical-align: middle;
+            text-align: right;
+        }
+        .partner-logo-img {
+            max-height: 36px;
+            max-width: 90px;
+            object-fit: contain;
+        }
+        .partner-logo-fallback {
+            background-color: #0f172a;
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 8px;
+            padding: 4px 6px;
+            border-radius: 4px;
+            text-align: center;
+            display: inline-block;
+            letter-spacing: 0.5px;
+        }
+        .cert-time {
+            font-size: 6px;
             color: #64748b;
+            margin-top: 1px;
+            font-weight: 500;
         }
+
+        /* Grille Tableau Pro & Épurée (Anti-Débordement Strict 1 Page) */
         .grid-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
+            table-layout: fixed;
+            margin-top: 2px;
+            page-break-inside: avoid;
         }
         .grid-table th {
             background-color: #1e293b;
             color: #ffffff;
-            font-weight: bold;
+            font-weight: 800;
             text-transform: uppercase;
-            padding: 8px 4px;
-            font-size: 9px;
-            border: 1px solid #0f172a;
+            padding: 3px 2px;
+            font-size: 7.5px;
+            border: 1px solid #1e293b;
             text-align: center;
+            vertical-align: middle;
         }
         .grid-table td {
             border: 1px solid #cbd5e1;
-            padding: 5px;
+            padding: 1.5px 1px;
             vertical-align: middle;
             text-align: center;
-            height: 45px;
+            height: 28px;
+            word-wrap: break-word;
+            overflow: hidden;
+        }
+
+        /* Cellules Spéciales Centrées */
+        .day-cell {
+            background-color: #f1f5f9;
+            font-weight: 800;
+            color: #1e293b;
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: center;
+            vertical-align: middle;
+            border: 1px solid #cbd5e1 !important;
         }
         .time-cell {
             background-color: #f8fafc;
-            font-weight: bold;
+            font-weight: 700;
             color: #334155;
-            width: 90px;
+            font-size: 7px;
+            font-family: monospace;
+            text-align: center;
+            vertical-align: middle;
         }
-        .pause-cell {
-            background-color: #fef08a;
-            color: #854d0e;
-            font-weight: bold;
-            font-size: 9px;
+        .pause-row-cell {
+            background-color: #e6f4ea !important;
+            color: #137333 !important;
+            font-weight: 800;
+            font-size: 7px !important;
+            text-align: center;
+            vertical-align: middle;
+            border: 1px solid #cbd5e1 !important;
+            height: 13px !important;
+            padding: 0px 2px !important;
         }
+
+        /* Contenu des Cours Centré & Sobres */
         .course-box {
-            background-color: #f0f9ff;
-            border-left: 3px solid #3b82f6;
-            padding: 4px;
-            border-radius: 4px;
-            text-align: left;
+            text-align: center;
+            vertical-align: middle;
+            padding: 1px;
         }
         .subject-name {
-            font-size: 10px;
-            font-weight: bold;
-            color: #1e40af;
+            font-size: 9px;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.1;
+            margin-bottom: 1px;
+            text-align: center;
         }
         .teacher-name {
-            font-size: 8px;
-            color: #475569;
+            font-size: 7px;
+            color: #334155;
+            font-weight: 500;
+            text-align: center;
         }
         .room-name {
-            font-size: 8px;
+            font-size: 6.5px;
             color: #dc2626;
-            font-weight: bold;
-        }
-        .footer-table {
-            width: 100%;
-            margin-top: 15px;
-            font-size: 8px;
-            color: #94a3b8;
-            border-top: 1px solid #e2e8f0;
-            padding-top: 5px;
+            font-weight: 800;
+            text-align: center;
+            margin-top: 1px;
         }
     </style>
 </head>
 <body>
+    <!-- En-tête Institutionnel Officiel -->
     <table class="header-table">
         <tr>
-            <td>
-                <div class="school-title"><?= h($school_name) ?></div>
-                <div class="timetable-title"><?= h($timetable['titre']) ?></div>
-                <div class="meta-text">
-                    <strong>Classe :</strong> <?= h($timetable['class_name']) ?> | 
-                    <strong>Semaine :</strong> <?= h($timetable['week_libelle']) ?> (du <?= date('d/m/Y', strtotime($timetable['week_start'])) ?> au <?= date('d/m/Y', strtotime($timetable['week_end'])) ?>)
-                </div>
+            <td class="logo-container">
+                <?php if (!empty($school_logo) && file_exists($_SERVER['DOCUMENT_ROOT'] . $school_logo)): ?>
+                    <img src="<?= $school_logo ?>" class="logo-img" alt="Logo">
+                <?php else: ?>
+                    <div class="logo-fallback"><?= h($school_code ?? 'ACADEMIE') ?></div>
+                <?php endif; ?>
             </td>
-            <td style="text-align: right;">
-                <div class="meta-text">Généré le <?= date('d/m/Y à H:i') ?></div>
-                <div class="meta-text">Système NoteMaster - Pilotage Scolaire</div>
+            <td class="institution-container">
+                <div class="school-name"><?= h($school_name) ?></div>
+                <?php if (!empty($creation_decree)): ?>
+                    <div class="school-decree"><?= \App\Core\Helpers::formatCreationDecree((string) $creation_decree) ?></div>
+                <?php endif; ?>
+            </td>
+            <td class="cert-container">
+                <?php if (!empty($partner_logo) && file_exists($_SERVER['DOCUMENT_ROOT'] . $partner_logo)): ?>
+                    <img src="<?= $partner_logo ?>" class="partner-logo-img" alt="Partenaire">
+                <?php else: ?>
+                    <div class="partner-logo-fallback">PARTENAIRE</div>
+                <?php endif; ?>
+                <div class="cert-time">Édité le <?= date('d/m/Y H:i') ?></div>
             </td>
         </tr>
     </table>
 
+    <!-- Titre et Métadonnées de l'Emploi du Temps (Sous l'en-tête) -->
+    <div class="doc-header-banner" style="text-align: center; margin-top: 3px; margin-bottom: 5px;">
+        <div class="doc-ref-number">
+            EMPLOI DU TEMPS N° ...................../<?= h($activeYear['nom'] ?? date('Y')) ?>/<?= h($school_code ?? 'ISTEC') ?>/DIR/DAAC/SG-BWADIBO
+        </div>
+        <div class="doc-title"><?= __('timetables_pdf_global_title') ?> <?= h($levelRow['libelle_' . __('lang')] ?? $levelRow['libelle_fr'] ?? $levelRow['code'] ?? '') ?></div>
+        <div class="meta-bar">
+            Type : Supérieur LMD &nbsp;|&nbsp;
+            Cycle : <?= h($cycleRow['nom'] ?? '') ?> &nbsp;|&nbsp;
+            Année Académique : <?= h($activeYear['nom'] ?? date('Y')) ?> &nbsp;|&nbsp;
+            <span class="week-highlight">
+                <?php
+                $wName = h($weekRow['libelle'] ?? '');
+                $dDebut = date('d/m/Y', strtotime($weekRow['date_debut']));
+                $dFin = date('d/m/Y', strtotime($weekRow['date_fin']));
+                if (str_ireplace('Semaine du', '', $wName) !== $wName) {
+                    echo $wName . ' au ' . $dFin;
+                } else {
+                    echo 'Semaine du ' . $dDebut . ' au ' . $dFin;
+                }
+                ?>
+            </span>
+        </div>
+    </div>
+
+    <!-- Grille de l'Emploi du Temps -->
     <table class="grid-table">
         <thead>
             <tr>
-                <th>Horaire</th>
-                <?php foreach ($gridData['days'] as $day): ?>
-                    <th><?= $day ?></th>
+                <th style="width: 7%;"><?= __('timetables_day_header') ?></th>
+                <th style="width: 11%;"><?= __('timetables_schedule_header') ?></th>
+                <?php foreach ($gridData['classes'] as $cls): ?>
+                    <th><?= h($cls['nom']) ?></th>
                 <?php endforeach; ?>
             </tr>
         </thead>
         <tbody>
-            <?php foreach ($gridData['slots'] as $slot): ?>
-                <?php $isPause = ($slot['type_creneau'] === 'pause'); ?>
-                <tr>
-                    <td class="time-cell">
-                        <?= substr($slot['heure_debut'], 0, 5) ?> - <?= substr($slot['heure_fin'], 0, 5) ?>
-                    </td>
-                    <?php foreach ($gridData['days'] as $day): ?>
-                        <?php $entry = $matrix[$slot['id']][$day] ?? null; ?>
+            <?php foreach ($gridData['days'] as $dayIndex => $day): ?>
+                <?php foreach ($gridData['slots'] as $slotIndex => $slot): ?>
+                    <?php $isPause = ($slot['type_creneau'] === 'pause'); ?>
+                    <tr>
+                        <?php if ($slotIndex === 0): ?>
+                            <td rowspan="<?= count($gridData['slots']) ?>" class="day-cell">
+                                <?= $day ?>
+                            </td>
+                        <?php endif; ?>
+
+                        <td class="time-cell">
+                            <?= substr($slot['heure_debut'], 0, 5) ?> - <?= substr($slot['heure_fin'], 0, 5) ?>
+                        </td>
+
                         <?php if ($isPause): ?>
-                            <td class="pause-cell">PAUSE</td>
-                        <?php elseif ($entry): ?>
-                            <td>
-                                <div class="course-box" style="border-left-color: <?= h($entry['couleur_hex']) ?>;">
-                                    <div class="subject-name"><?= h($entry['subject_name']) ?></div>
-                                    <div class="teacher-name">Ens: <?= h($entry['teacher_name']) ?></div>
-                                    <div class="room-name">Salle: <?= h($entry['room_name']) ?></div>
-                                </div>
+                            <td colspan="<?= count($gridData['classes']) ?>" class="pause-row-cell">
+                                [ PAUSE & INTERVALLE ] &nbsp; (<?= substr($slot['heure_debut'], 0, 5) ?> - <?= substr($slot['heure_fin'], 0, 5) ?>)
                             </td>
                         <?php else: ?>
-                            <td style="color: #cbd5e1;">-</td>
+                            <?php foreach ($gridData['classes'] as $cls): ?>
+                                <?php 
+                                $classId = (int)$cls['id'];
+                                $entry = $gridData['matrix'][$day][$slot['id']][$classId] ?? null;
+                                ?>
+                                <?php if ($entry): ?>
+                                    <td>
+                                        <div class="course-box">
+                                            <div class="subject-name"><?= h($entry['subject_name']) ?></div>
+                                            <div class="teacher-name"><?= h($entry['teacher_name']) ?></div>
+                                            <div class="room-name"><?= __('timetables_room_prefix') ?> <?= h($entry['room_name']) ?></div>
+                                        </div>
+                                    </td>
+                                <?php else: ?>
+                                    <td style="color: #cbd5e1; font-size: 7.5px;">-</td>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
                         <?php endif; ?>
-                    <?php endforeach; ?>
-                </tr>
+                    </tr>
+                <?php endforeach; ?>
             <?php endforeach; ?>
         </tbody>
-    </table>
-
-    <table class="footer-table">
-        <tr>
-            <td>NoteMaster &copy; <?= date('Y') ?> - Tous droits réservés. Document officiel d'emploi du temps.</td>
-            <td style="text-align: right;">Page 1 / 1</td>
-        </tr>
     </table>
 
     <?php if (isset($_GET['mode']) && $_GET['mode'] === 'print'): ?>

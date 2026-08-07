@@ -42,28 +42,28 @@ ob_start();
         <div class="row g-4">
             <!-- Jour -->
             <div class="col-6 col-md-3">
-                <div class="modern-card hover-card p-3 shadow-sm h-100 border-start border-4 border-info">
+                <div class="modern-card hover-card p-3 shadow-sm h-100 border-info">
                     <span class="text-muted-theme small fw-bold d-block mb-1">Aujourd'hui</span>
                     <span class="h4 fw-black text-main-theme"><?= number_format($dailyCollections, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 11px;">FCFA</span></span>
                 </div>
             </div>
             <!-- Semaine -->
             <div class="col-6 col-md-3">
-                <div class="modern-card hover-card p-3 shadow-sm h-100 border-start border-4 border-primary">
+                <div class="modern-card hover-card p-3 shadow-sm h-100 border-primary">
                     <span class="text-muted-theme small fw-bold d-block mb-1">Cette semaine</span>
                     <span class="h4 fw-black text-main-theme"><?= number_format($weeklyCollections, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 11px;">FCFA</span></span>
                 </div>
             </div>
             <!-- Mois -->
             <div class="col-6 col-md-3">
-                <div class="modern-card hover-card p-3 shadow-sm h-100 border-start border-4 border-success">
+                <div class="modern-card hover-card p-3 shadow-sm h-100 border-success">
                     <span class="text-muted-theme small fw-bold d-block mb-1">Ce mois</span>
                     <span class="h4 fw-black text-main-theme"><?= number_format($monthlyCollections, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 11px;">FCFA</span></span>
                 </div>
             </div>
             <!-- Année -->
             <div class="col-6 col-md-3">
-                <div class="modern-card hover-card p-3 shadow-sm h-100 border-start border-4 border-warning">
+                <div class="modern-card hover-card p-3 shadow-sm h-100 border-warning">
                     <span class="text-muted-theme small fw-bold d-block mb-1">Année Scolaire</span>
                     <span class="h4 fw-black text-main-theme"><?= number_format($annualCollections, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 11px;">FCFA</span></span>
                 </div>
@@ -79,28 +79,28 @@ ob_start();
         <div class="row g-4">
             <!-- Jour -->
             <div class="col-6 col-md-3">
-                <div class="modern-card hover-card p-3 shadow-sm h-100 border-start border-4 border-warning">
+                <div class="modern-card hover-card p-3 shadow-sm h-100 border-warning">
                     <span class="text-muted-theme small fw-bold d-block mb-1">Dépenses Aujourd'hui</span>
                     <span class="h4 fw-black text-main-theme"><?= number_format($dailyExpenses, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 11px;">FCFA</span></span>
                 </div>
             </div>
             <!-- Semaine -->
             <div class="col-6 col-md-3">
-                <div class="modern-card hover-card p-3 shadow-sm h-100 border-start border-4 border-primary">
+                <div class="modern-card hover-card p-3 shadow-sm h-100 border-primary">
                     <span class="text-muted-theme small fw-bold d-block mb-1">Dépenses Cette semaine</span>
                     <span class="h4 fw-black text-main-theme"><?= number_format($weeklyExpenses, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 11px;">FCFA</span></span>
                 </div>
             </div>
             <!-- Mois -->
             <div class="col-6 col-md-3">
-                <div class="modern-card hover-card p-3 shadow-sm h-100 border-start border-4 border-danger">
+                <div class="modern-card hover-card p-3 shadow-sm h-100 border-danger">
                     <span class="text-muted-theme small fw-bold d-block mb-1">Dépenses Ce mois</span>
                     <span class="h4 fw-black text-main-theme"><?= number_format($monthlyExpenses, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 11px;">FCFA</span></span>
                 </div>
             </div>
             <!-- Solde Réel -->
             <div class="col-6 col-md-3">
-                <div class="modern-card hover-card p-3 shadow-sm h-100 border-start border-4 <?= $netBalance >= 0 ? 'border-success' : 'border-danger' ?>">
+                <div class="modern-card hover-card p-3 shadow-sm h-100 <?= $netBalance >= 0 ? 'border-success' : 'border-danger' ?>">
                     <span class="text-muted-theme small fw-bold d-block mb-1">Solde Réel (Recettes - Dépenses)</span>
                     <span class="h4 fw-black text-main-theme"><?= number_format($netBalance, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 11px;">FCFA</span></span>
                 </div>

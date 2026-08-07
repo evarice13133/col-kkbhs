@@ -52,7 +52,7 @@ $contact = implode(' - ', $contactParts);
             align-items: center;
             justify-content: space-between;
             padding: 10px 20px;
-            background: #0f172a;
+            background: #1b6e26;
             color: #ffffff;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
@@ -75,8 +75,8 @@ $contact = implode(' - ', $contactParts);
             align-items: center;
             gap: 6px;
         }
-        .btn-print { background: #2563eb; color: #ffffff; }
-        .btn-print:hover { background: #1d4ed8; }
+        .btn-print { background: #2e7d32; color: #ffffff; }
+        .btn-print:hover { background: #1b6e26; }
         .btn-back { background: #475569; color: #ffffff; }
         .btn-back:hover { background: #334155; }
 
@@ -95,14 +95,14 @@ $contact = implode(' - ', $contactParts);
         .transcript-page:last-child { page-break-after: auto; }
 
         /* En-tête officiel compact */
-        .header-wrapper { width: 100%; margin-bottom: 4px; border-bottom: 1.5px solid #000; padding-bottom: 3px; }
+        .header-wrapper { width: 100%; margin-bottom: 4px; border-bottom: 1.5px solid #1b6e26; padding-bottom: 3px; }
         .header-left { float: left; width: 41%; text-align: center; }
         .header-center { float: left; width: 18%; text-align: center; }
         .header-right { float: right; width: 41%; text-align: center; }
         .header-side-content { width: 100%; padding: 0 2px; }
         .school-name-row { clear: both; width: 100%; text-align: center; padding-top: 2px; }
-        .school-name-display { font-weight: 900; font-size: 11.5px; text-transform: uppercase; line-height: 1.1; }
-        .academic-year-display { font-weight: 800; font-size: 9.5px; text-transform: uppercase; margin-top: 1px; }
+        .school-name-display { font-weight: 900; font-size: 11.5px; text-transform: uppercase; line-height: 1.1; color: #1b6e26; }
+        .academic-year-display { font-weight: 800; font-size: 9.5px; text-transform: uppercase; margin-top: 1px; color: #2e7d32; }
         .header-line { font-size: 8px; font-weight: 800; margin: 0; text-transform: uppercase; line-height: 1.15; }
         .header-contact { font-size: 7.5px; margin: 0; opacity: 0.9; text-transform: uppercase; font-weight: 600; }
         .logo-box { width: 52px; height: 52px; margin: 0 auto; display: flex; align-items: center; justify-content: center; }
@@ -111,9 +111,9 @@ $contact = implode(' - ', $contactParts);
         /* Carte d'identité compacte (2 lignes) */
         .student-card {
             width: 100%;
-            border: 1.5px solid #000;
+            border: 1.5px solid #1b6e26;
             margin-bottom: 5px;
-            background: #fafafa;
+            background: #f4fbf5;
         }
         .student-card-table {
             width: 100%;
@@ -122,9 +122,9 @@ $contact = implode(' - ', $contactParts);
         .student-card-table td {
             padding: 3px 6px;
             font-size: 9.5px;
-            border: 1px solid #cbd5e1;
+            border: 1px solid #c8e6c9;
         }
-        .info-label { font-weight: 800; color: #0f172a; text-transform: uppercase; font-size: 8.5px; margin-right: 2px; }
+        .info-label { font-weight: 800; color: #1b6e26; text-transform: uppercase; font-size: 8.5px; margin-right: 2px; }
         .info-value { font-weight: 800; color: #000; text-transform: uppercase; font-size: 9px; }
 
         /* Titre du tableau du Jury */
@@ -134,8 +134,9 @@ $contact = implode(' - ', $contactParts);
             font-weight: 900;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            background: #e2e8f0;
-            border: 1.5px solid #000;
+            background: #e8f5e9;
+            color: #1b6e26;
+            border: 1.5px solid #1b6e26;
             padding: 3px 4px;
             margin-bottom: 5px;
         }
@@ -147,21 +148,21 @@ $contact = implode(' - ', $contactParts);
             margin-bottom: 5px;
         }
         .main-table th, .main-table td {
-            border: 1px solid #000;
+            border: 1px solid #1b6e26;
             padding: 2.5px 4px;
             font-size: 9px;
             text-align: center;
             line-height: 1.15;
         }
         .main-table th {
-            background-color: #0f172a;
+            background-color: #1b6e26;
             color: #ffffff;
             font-weight: 800;
             text-transform: uppercase;
             font-size: 8.5px;
         }
         .semester-divider-row td {
-            background-color: #1e293b !important;
+            background-color: #2e7d32 !important;
             color: #ffffff !important;
             font-weight: 900;
             font-size: 9.5px;
@@ -170,16 +171,16 @@ $contact = implode(' - ', $contactParts);
             padding: 3px;
         }
         .group-header-row td {
-            background-color: #f1f5f9;
+            background: linear-gradient(180deg, #e8f5e9 0%, #c8e6c9 100%);
             font-weight: 800;
             text-align: left;
             padding-left: 6px;
             font-size: 8.5px;
-            color: #0f172a;
+            color: #1b6e26;
             text-transform: uppercase;
         }
         .summary-row td {
-            background-color: #f8fafc;
+            background-color: #f4fbf5;
             font-weight: 800;
             font-size: 8.5px;
             padding: 3px;
@@ -188,8 +189,8 @@ $contact = implode(' - ', $contactParts);
         /* Clôture Générale & Récapitulatif compact (1 ligne) */
         .closure-box {
             width: 100%;
-            border: 1.5px solid #000;
-            background: #f8fafc;
+            border: 1.5px solid #1b6e26;
+            background: #f4fbf5;
             padding: 4px 8px;
             margin-top: 4px;
             margin-bottom: 6px;
@@ -205,10 +206,10 @@ $contact = implode(' - ', $contactParts);
         .closure-item {
             flex: 1;
             padding: 2px 4px;
-            border-right: 1px dashed #cbd5e1;
+            border-right: 1px dashed #a5d6a7;
         }
         .closure-item:last-child { border-right: none; }
-        .closure-label { font-size: 8px; color: #475569; text-transform: uppercase; display: block; }
+        .closure-label { font-size: 8px; color: #2e7d32; text-transform: uppercase; display: block; }
         .closure-val { font-size: 10.5px; color: #000; font-weight: 900; margin-top: 1px; }
         .valide-tag { color: #15803d; font-weight: 900; }
         .non-valide-tag { color: #b91c1c; font-weight: 900; }
@@ -413,7 +414,7 @@ $contact = implode(' - ', $contactParts);
                     </div>
                     <div class="closure-item">
                         <span class="closure-label"><?= __('moyenne_generale') ?></span>
-                        <div class="closure-val" style="font-size: 11.5px; color: #0f172a;"><?= number_format($summary['general_average'], 2) ?> / 20</div>
+                        <div class="closure-val" style="font-size: 11.5px; color: #1b6e26;"><?= number_format($summary['general_average'], 2) ?> / 20</div>
                     </div>
                     <div class="closure-item">
                         <span class="closure-label"><?= __('decision_finale') ?> & <?= __('mention_generale') ?></span>

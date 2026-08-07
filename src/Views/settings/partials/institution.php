@@ -27,6 +27,17 @@
                     <input type="text" name="creation_decree" class="form-control premium-input" 
                         placeholder="<?= __('creation_decree_placeholder') ?>"
                         value="<?= htmlspecialchars((string) ($settings['creation_decree'] ?? '')) ?>">
+                    <div class="form-text extra-small text-muted-theme mt-1">
+                        <i class="bi bi-info-circle me-1"></i><?= __('creation_decree_help_text') ?>
+                    </div>
+                    <?php if (!empty($settings['creation_decree'])): ?>
+                        <div class="mt-2 p-2.5 rounded-3 bg-light-theme border border-theme-light extra-small">
+                            <div class="fw-bold text-primary mb-1"><i class="bi bi-eye-fill me-1"></i>Aperçu de l'affichage sur les documents officiels :</div>
+                            <div class="text-main-theme lh-sm ps-2 border-start border-2 border-primary">
+                                <?= \App\Core\Helpers::formatCreationDecree((string) $settings['creation_decree']) ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
 

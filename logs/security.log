@@ -2,3 +2,24 @@
 [2026-08-02 04:48:01] [IP: ::1] [UID: 40] Connexion réussie pour l'utilisateur : admin
 [2026-08-04 03:44:41] [IP: ::1] [UID: GUEST] Session expirée pour inactivité prolongée.
 [2026-08-04 03:44:53] [IP: ::1] [UID: 40] Connexion réussie pour l'utilisateur : admin
+[2026-08-06 01:36:29] [IP: ::1] [UID: GUEST] Session expirée pour inactivité prolongée.
+[2026-08-06 01:36:38] [IP: ::1] [UID: 40] Connexion réussie pour l'utilisateur : admin
+[2026-08-06 03:35:27] [IP: ::1] [UID: 42] Connexion réussie pour l'utilisateur : sup
+[2026-08-06 04:09:29] [IP: ::1] [UID: 42] Suppression de l'emploi du temps #2 (Emploi du Temps - BAT 1 (Semaine du 06/08/2026)) par Super Administrateur.
+[2026-08-06 04:09:34] [IP: ::1] [UID: 42] Suppression de l'emploi du temps #1 (Emploi du Temps - Génie Logiciel (Semaine du 06/08/2026)) par Super Administrateur.
+[2026-08-06 04:14:52] [IP: ::1] [UID: 42] Suppression de l'emploi du temps #3 (Emploi du Temps - BAT 1 (Semaine du 06/08/2026)) par Super Administrateur.
+[2026-08-06 04:15:06] [IP: ::1] [UID: 42] Suppression de l'emploi du temps #7 (Emploi du Temps - RS 1 (Semaine du 06/08/2026)) par Super Administrateur.
+[2026-08-06 04:15:10] [IP: ::1] [UID: 42] Suppression de l'emploi du temps #6 (Emploi du Temps - MSI 1 (Semaine du 06/08/2026)) par Super Administrateur.
+[2026-08-06 04:15:14] [IP: ::1] [UID: 42] Suppression de l'emploi du temps #5 (Emploi du Temps - IGL 1 (Semaine du 06/08/2026)) par Super Administrateur.
+[2026-08-06 04:15:17] [IP: ::1] [UID: 42] Suppression de l'emploi du temps #4 (Emploi du Temps - GSI 1 (Semaine du 06/08/2026)) par Super Administrateur.
+[2026-08-06 04:15:20] [IP: ::1] [UID: 42] Suppression de l'emploi du temps #8 (Emploi du Temps - TLecom 1 (Semaine du 06/08/2026)) par Super Administrateur.
+[2026-08-06 04:18:06] [IP: ::1] [UID: 42] Suppression de l'emploi du temps #14 (Emploi du Temps - TLecom 1 (Semaine du 06/08/2026)) par Super Administrateur.
+[2026-08-06 04:39:07] [IP: ::1] [UID: 42] Association automatique Classe 'GSI 1' <-> Matière 'Mathematique Avancé' créée lors de la planification d'un cours par l'utilisateur #42.
+[2026-08-06 04:40:08] [IP: ::1] [UID: 42] Association automatique Classe 'MSI 1' <-> Matière 'Mathematique Avancé' créée lors de la planification d'un cours par l'utilisateur #42.
+[2026-08-06 04:40:27] [IP: ::1] [UID: 42] Association automatique Classe 'RS 1' <-> Matière 'Mathematique Avancé' créée lors de la planification d'un cours par l'utilisateur #42.
+[2026-08-06 04:40:48] [IP: ::1] [UID: 42] Association automatique Classe 'TLecom 1' <-> Matière 'Mathematique Avancé' créée lors de la planification d'un cours par l'utilisateur #42.
+[2026-08-06 04:49:11] [IP: ::1] [UID: 42] Suppression de l'emploi du temps #15 (Emploi du Temps - TLecom 1 (Semaine du 06/08/2026)) par Super Administrateur.
+[2026-08-06 07:08:54] [IP: ::1] [UID: 42] Association automatique Classe 'GSI 1' <-> Matière 'Algorithme de base' créée lors de la planification par l'utilisateur #42.
+[2026-08-06 07:08:54] [IP: ::1] [UID: 42] Association automatique Classe 'MSI 1' <-> Matière 'Algorithme de base' créée lors de la planification par l'utilisateur #42.
+[2026-08-06 07:08:54] [IP: ::1] [UID: 42] Association automatique Classe 'RS 1' <-> Matière 'Algorithme de base' créée lors de la planification par l'utilisateur #42.
+[2026-08-06 07:08:55] [IP: ::1] [UID: 42] Association automatique Classe 'TLecom 1' <-> Matière 'Algorithme de base' créée lors de la planification par l'utilisateur #42.
