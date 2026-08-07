@@ -1143,6 +1143,89 @@ small {
     box-shadow: var(--card-shadow);
 }
 
+/* --- Premium Course Cards for Timetable Grid --- */
+.course-card {
+    background: linear-gradient(135deg, var(--bg-card) 0%, color-mix(in srgb, var(--bg-card) 96%, rgba(124, 58, 237, 0.03)) 100%);
+    border: 1.5px solid var(--border-color);
+    border-top: 1.5px solid var(--border-color);
+    border-left: 1.5px solid var(--border-color);
+    border-bottom: 1.5px solid var(--border-color);
+    border-right: 1.5px solid var(--border-color);
+    border-radius: 14px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.02);
+    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+}
+
+.course-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.04);
+    border-color: color-mix(in srgb, var(--primary-color) 25%, var(--border-color));
+    border-top-color: color-mix(in srgb, var(--primary-color) 25%, var(--border-color));
+    border-left-color: color-mix(in srgb, var(--primary-color) 25%, var(--border-color));
+    border-bottom-color: color-mix(in srgb, var(--primary-color) 25%, var(--border-color));
+    border-right-color: color-mix(in srgb, var(--primary-color) 25%, var(--border-color));
+}
+
+[data-theme="dark"] .course-card {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.6) 0%, rgba(30, 41, 59, 0.4) 100%);
+    border-color: rgba(255, 255, 255, 0.15);
+    border-top-color: rgba(255, 255, 255, 0.15);
+    border-left-color: rgba(255, 255, 255, 0.15);
+    border-bottom-color: rgba(255, 255, 255, 0.15);
+    border-right-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .course-card:hover {
+    border-color: rgba(124, 58, 237, 0.5);
+    border-top-color: rgba(124, 58, 237, 0.5);
+    border-left-color: rgba(124, 58, 237, 0.5);
+    border-bottom-color: rgba(124, 58, 237, 0.5);
+    border-right-color: rgba(124, 58, 237, 0.5);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(124, 58, 237, 0.15);
+}
+
+.course-card .badge {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.course-card .btn-link {
+    transition: all 0.2s ease;
+}
+
+.course-card .btn-link:hover {
+    transform: scale(1.15);
+}
+
+/* Empty slot placeholder */
+.empty-slot-placeholder {
+    background: color-mix(in srgb, var(--bg-card) 70%, transparent);
+    border: 2px dashed var(--border-color);
+    border-radius: 14px;
+    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.empty-slot-placeholder:hover {
+    background: color-mix(in srgb, var(--primary-soft) 40%, var(--bg-card));
+    border-color: var(--primary-color);
+    border-style: solid;
+    transform: scale(1.02);
+}
+
+[data-theme="dark"] .empty-slot-placeholder {
+    background: rgba(30, 41, 59, 0.3);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .empty-slot-placeholder:hover {
+    background: rgba(124, 58, 237, 0.15);
+    border-color: var(--primary-color);
+}
+
 .module-pv .pv-card-header {
     background: var(--pv-grad);
     border-radius: 20px 20px 0 0;
@@ -2183,217 +2266,237 @@ small {
     }
 }
 
-/* ========================================== */
-/*   PREMIUM FOLDED CARD DESIGN SYSTEM        */
-/* ========================================== */
+/* ==========================================================================
+   UNIFIED MINIMALIST SAAS CARD DESIGN SYSTEM (Canva, Notion, M365 Inspired)
+   ========================================================================== */
 
 .modern-card,
-.erp-stat-card {
+.erp-stat-card,
+.stat-card,
+.stats-card,
+.kpi-card,
+.kpi-stat-card,
+.hero-stat-card,
+.select-card,
+.subject-card-compact,
+.filter-card,
+.section-card,
+.nm-card,
+.metric-card,
+.notification-item-card,
+.card-theme {
     position: relative !important;
-    background: rgba(255, 255, 255, 0.8) !important;
-    backdrop-filter: blur(16px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
-    border-top-left-radius: var(--radius-lg) !important;
-    border-bottom-left-radius: var(--radius-lg) !important;
-    border-bottom-right-radius: var(--radius-lg) !important;
-    border-top-right-radius: 0px !important;
-    border: 1.5px solid rgba(226, 232, 240, 0.8) !important;
-    box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02) !important;
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
-    overflow: visible !important;
-    /* Ensure the fold is never clipped */
+    border-radius: var(--radius-lg, 14px) !important;
+    border-top-left-radius: var(--radius-lg, 14px) !important;
+    border-bottom-left-radius: var(--radius-lg, 14px) !important;
+    border-bottom-right-radius: var(--radius-lg, 14px) !important;
+    border-top-right-radius: var(--radius-lg, 14px) !important;
+    border: 1px solid var(--border-color, rgba(226, 232, 240, 0.8)) !important;
+    border-style: solid !important;
+    box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.04), 0 2px 4px -1px rgba(15, 23, 42, 0.02) !important;
+    background: var(--bg-card, #ffffff) !important;
+    backdrop-filter: blur(12px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 0.3s ease,
+                border-style 0.3s ease,
+                background-color 0.3s ease !important;
+    overflow: hidden !important;
 }
 
-[data-theme="dark"] .modern-card,
-[data-theme="dark"] .erp-stat-card {
-    background: rgba(1, 4, 19, 0.75) !important;
-    border: 1.5px solid rgba(30, 41, 59, 0.7) !important;
-    box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.5) !important;
+/* Neutralize asymmetric Bootstrap border utilities on cards */
+.modern-card.border-start,
+.modern-card.border-top,
+.modern-card.border-end,
+.modern-card.border-bottom,
+.modern-card.border-4,
+.modern-card.border-3,
+.modern-card.border-2,
+.modern-card.border-0,
+.card.border-start,
+.card.border-top,
+.card.border-4,
+.erp-stat-card.border-start,
+.stat-card.border-start,
+.kpi-card.border-start {
+    border-top-width: 1px !important;
+    border-right-width: 1px !important;
+    border-bottom-width: 1px !important;
+    border-left-width: 1px !important;
+    border-width: 1px !important;
 }
 
-.modern-card:hover,
-.erp-stat-card:hover {
-    transform: translateY(-4px) scale(1.005) !important;
-}
-
-/* The visual cut-off mask (uses the page background color to hide the top-right corner) */
+/* Completely eliminate folded corners, cut-off masks, pseudo-elements and ribbon flaps */
 .modern-card::before,
-.erp-stat-card::before {
-    content: "" !important;
-    position: absolute !important;
-    top: -2px !important;
-    /* cover the border outline */
-    right: -2px !important;
-    width: 38px !important;
-    height: 38px !important;
-    background: var(--bg-body) !important;
-    z-index: 2 !important;
-    clip-path: polygon(0 0, 100% 0, 100% 100%) !important;
-    pointer-events: none !important;
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
-}
-
-/* The folded paper flap pointing inwards with 3D crease borders */
 .modern-card::after,
-.erp-stat-card::after {
-    content: "" !important;
-    position: absolute !important;
-    top: -2px !important;
-    right: -2px !important;
-    width: 38px !important;
-    height: 38px !important;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(240, 240, 240, 0.9) 50%, rgba(0, 0, 0, 0.15) 51%, rgba(0, 0, 0, 0.08) 100%) !important;
-    z-index: 3 !important;
-    clip-path: polygon(0 0, 100% 100%, 0 100%) !important;
-    border-bottom-left-radius: 6px !important;
-    border-left: 1px solid rgba(255, 255, 255, 0.5) !important;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.15) !important;
-    filter: drop-shadow(-3px 3px 4px rgba(0, 0, 0, 0.18)) !important;
-    pointer-events: none !important;
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+.erp-stat-card::before,
+.erp-stat-card::after,
+.select-card::before,
+.select-card::after,
+.subject-card-glow {
+    display: none !important;
+    content: none !important;
 }
 
-[data-theme="dark"] .modern-card::after,
-[data-theme="dark"] .erp-stat-card::after {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(0, 0, 0, 0.5) 51%, rgba(0, 0, 0, 0.6) 100%) !important;
-    border-left: 1px solid rgba(255, 255, 255, 0.12) !important;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.5) !important;
+/* Dark mode styling at rest */
+[data-theme="dark"] .modern-card,
+[data-theme="dark"] .erp-stat-card,
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .stats-card,
+[data-theme="dark"] .kpi-card,
+[data-theme="dark"] .kpi-stat-card,
+[data-theme="dark"] .hero-stat-card,
+[data-theme="dark"] .select-card,
+[data-theme="dark"] .subject-card-compact,
+[data-theme="dark"] .filter-card,
+[data-theme="dark"] .section-card,
+[data-theme="dark"] .nm-card,
+[data-theme="dark"] .metric-card,
+[data-theme="dark"] .notification-item-card,
+[data-theme="dark"] .card-theme {
+    background: var(--bg-card, #0f172a) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
 }
 
-/* On hover, add a subtle fold flap zoom for realism */
-.modern-card:hover::after,
-.erp-stat-card:hover::after {
-    width: 44px !important;
-    height: 44px !important;
-    filter: drop-shadow(-4px 4px 6px rgba(0, 0, 0, 0.25)) !important;
+/* Interactive Hover State: Full 4-Sided Dashed Border + Elevation + Module Color Transition */
+.modern-card:hover,
+.erp-stat-card:hover,
+.stat-card:hover,
+.stats-card:hover,
+.kpi-card:hover,
+.kpi-stat-card:hover,
+.hero-stat-card:hover,
+.select-card:hover,
+.subject-card-compact:hover,
+.filter-card:hover,
+.section-card:hover,
+.nm-card:hover,
+.metric-card:hover,
+.notification-item-card:hover,
+.card-theme:hover {
+    transform: translateY(-3px) !important;
+    border-style: dashed !important;
+    border-width: 1.5px !important;
+    border-color: var(--primary-color, #7c3aed) !important;
+    box-shadow: 0 14px 28px -6px rgba(124, 58, 237, 0.15), 0 4px 12px -2px rgba(15, 23, 42, 0.04) !important;
 }
 
-.modern-card:hover::before,
-.erp-stat-card:hover::before {
-    width: 44px !important;
-    height: 44px !important;
+[data-theme="dark"] .modern-card:hover,
+[data-theme="dark"] .erp-stat-card:hover,
+[data-theme="dark"] .stat-card:hover,
+[data-theme="dark"] .stats-card:hover,
+[data-theme="dark"] .kpi-card:hover,
+[data-theme="dark"] .kpi-stat-card:hover,
+[data-theme="dark"] .hero-stat-card:hover,
+[data-theme="dark"] .select-card:hover,
+[data-theme="dark"] .subject-card-compact:hover,
+[data-theme="dark"] .filter-card:hover,
+[data-theme="dark"] .section-card:hover,
+[data-theme="dark"] .nm-card:hover,
+[data-theme="dark"] .metric-card:hover,
+[data-theme="dark"] .notification-item-card:hover,
+[data-theme="dark"] .card-theme:hover {
+    box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.6), 0 0 15px rgba(124, 58, 237, 0.25) !important;
 }
 
-/* Ensure child headers and footers match the rounded card corners since overflow:hidden is disabled */
+/* Module Specific Animated Hover Colors */
+/* Primary Module / Default */
+.modern-card.border-primary:hover,
+.modern-card.border-start-primary:hover,
+.modern-card.border-start.border-primary:hover,
+.erp-stat-card.card-primary:hover,
+.card.border-primary:hover {
+    border-color: var(--primary-color, #7c3aed) !important;
+    box-shadow: 0 14px 28px -6px rgba(124, 58, 237, 0.18) !important;
+}
+
+/* Success / Green */
+.modern-card.border-success:hover,
+.modern-card.border-start-success:hover,
+.modern-card.border-start.border-success:hover,
+.erp-stat-card.card-success:hover,
+.card.border-success:hover {
+    border-color: #10b981 !important;
+    box-shadow: 0 14px 28px -6px rgba(16, 185, 129, 0.18) !important;
+}
+
+/* Warning / Amber */
+.modern-card.border-warning:hover,
+.modern-card.border-start-warning:hover,
+.modern-card.border-start.border-warning:hover,
+.erp-stat-card.card-warning:hover,
+.card.border-warning:hover {
+    border-color: #f59e0b !important;
+    box-shadow: 0 14px 28px -6px rgba(245, 158, 11, 0.18) !important;
+}
+
+/* Danger / Red */
+.modern-card.border-danger:hover,
+.modern-card.border-start-danger:hover,
+.modern-card.border-start.border-danger:hover,
+.erp-stat-card.card-danger:hover,
+.card.border-danger:hover {
+    border-color: #ef4444 !important;
+    box-shadow: 0 14px 28px -6px rgba(239, 68, 68, 0.18) !important;
+}
+
+/* Info / Cyan */
+.modern-card.border-info:hover,
+.modern-card.border-start-info:hover,
+.modern-card.border-start.border-info:hover,
+.erp-stat-card.card-info:hover,
+.card.border-info:hover {
+    border-color: #0ea5e9 !important;
+    box-shadow: 0 14px 28px -6px rgba(14, 165, 233, 0.18) !important;
+}
+
+/* Accent / Gold */
+.modern-card.border-accent:hover,
+.card.border-accent:hover {
+    border-color: #f4b942 !important;
+    box-shadow: 0 14px 28px -6px rgba(244, 185, 66, 0.18) !important;
+}
+
+/* Ensure child headers and footers match the rounded card corners cleanly */
 .modern-card .card-header,
 .modern-card .modern-card-header {
     background: transparent !important;
-    border-top-left-radius: var(--radius-lg) !important;
-    border-top-right-radius: 0px !important;
+    border-top-left-radius: var(--radius-lg, 14px) !important;
+    border-top-right-radius: var(--radius-lg, 14px) !important;
     border-bottom: 1px solid var(--border-color) !important;
 }
 
 .modern-card .card-footer,
 .modern-card .modern-card-footer {
     background: transparent !important;
-    border-bottom-left-radius: var(--radius-lg) !important;
-    border-bottom-right-radius: var(--radius-lg) !important;
+    border-bottom-left-radius: var(--radius-lg, 14px) !important;
+    border-bottom-right-radius: var(--radius-lg, 14px) !important;
 }
 
-/* Themed full-borders & Glowing Radial backgrounds */
-.modern-card.border-primary,
-.modern-card.border-start.border-primary,
-.modern-card.border-top.border-primary,
-.modern-card.border-start-primary,
-.erp-stat-card.card-primary,
-.erp-stat-card.card-info {
-    border: 2px solid rgba(124, 58, 237, 0.8) !important;
-    background: radial-gradient(circle at 100% 0%, rgba(124, 58, 237, 0.06), transparent 45%), var(--bg-card) !important;
-}
-
-.modern-card.border-primary:hover,
-.modern-card.border-start.border-primary:hover,
-.modern-card.border-top.border-primary:hover,
-.erp-stat-card.card-primary:hover,
-.erp-stat-card.card-info:hover {
-    box-shadow: 0 20px 40px -10px rgba(124, 58, 237, 0.24), 0 4px 12px rgba(124, 58, 237, 0.08) !important;
-}
-
-.modern-card.border-success,
-.modern-card.border-start.border-success,
-.modern-card.border-top.border-success,
-.modern-card.border-start-success,
-.erp-stat-card.card-success {
-    border: 2px solid rgba(16, 185, 129, 0.8) !important;
-    background: radial-gradient(circle at 100% 0%, rgba(16, 185, 129, 0.06), transparent 45%), var(--bg-card) !important;
-}
-
-.modern-card.border-success:hover,
-.modern-card.border-start.border-success:hover,
-.modern-card.border-top.border-success:hover,
-.erp-stat-card.card-success:hover {
-    box-shadow: 0 20px 40px -10px rgba(16, 185, 129, 0.24), 0 4px 12px rgba(16, 185, 129, 0.08) !important;
-}
-
-.modern-card.border-warning,
-.modern-card.border-start.border-warning,
-.modern-card.border-top.border-warning,
-.modern-card.border-start-warning,
-.erp-stat-card.card-warning {
-    border: 2px solid rgba(245, 158, 11, 0.8) !important;
-    background: radial-gradient(circle at 100% 0%, rgba(245, 158, 11, 0.06), transparent 45%), var(--bg-card) !important;
-}
-
-.modern-card.border-warning:hover,
-.modern-card.border-start.border-warning:hover,
-.modern-card.border-top.border-warning:hover,
-.erp-stat-card.card-warning:hover {
-    box-shadow: 0 20px 40px -10px rgba(245, 158, 11, 0.24), 0 4px 12px rgba(245, 158, 11, 0.08) !important;
-}
-
-.modern-card.border-danger,
-.modern-card.border-start.border-danger,
-.modern-card.border-top.border-danger,
-.modern-card.border-start-danger,
-.erp-stat-card.card-danger {
-    border: 2px solid rgba(239, 68, 68, 0.8) !important;
-    background: radial-gradient(circle at 100% 0%, rgba(239, 68, 68, 0.06), transparent 45%), var(--bg-card) !important;
-}
-
-.modern-card.border-danger:hover,
-.modern-card.border-start.border-danger:hover,
-.modern-card.border-top.border-danger:hover,
-.erp-stat-card.card-danger:hover {
-    box-shadow: 0 20px 40px -10px rgba(239, 68, 68, 0.24), 0 4px 12px rgba(239, 68, 68, 0.08) !important;
-}
-
-/* Position card icons inside the folded corner */
+/* Icon layout inside cards */
 .modern-card .kpi-icon-wrapper,
 .modern-card .erp-icon-box,
 .erp-stat-card .kpi-icon-wrapper,
 .erp-stat-card .erp-icon-box {
-    position: absolute !important;
-    top: 6px !important;
-    right: 6px !important;
-    width: 26px !important;
-    height: 26px !important;
-    margin: 0 !important;
-    z-index: 10 !important;
-    background: transparent !important;
-    /* Transparent background to sit on the fold */
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    display: flex !important;
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 10px !important;
+    display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    transition: transform 0.3s ease !important;
 }
 
-.modern-card .kpi-icon-wrapper i,
-.modern-card .erp-icon-box i,
-.erp-stat-card .kpi-icon-wrapper i,
-.erp-stat-card .erp-icon-box i {
-    font-size: 0.95rem !important;
-    /* Fits perfectly in the fold */
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
-}
-
-/* Hover rotation on the icon */
-.modern-card:hover .kpi-icon-wrapper i,
-.modern-card:hover .erp-icon-box i,
-.erp-stat-card:hover .kpi-icon-wrapper i,
-.erp-stat-card:hover .erp-icon-box i {
-    transform: scale(1.2) rotate(8deg) !important;
+.modern-card:hover .kpi-icon-wrapper,
+.modern-card:hover .erp-icon-box,
+.erp-stat-card:hover .kpi-icon-wrapper,
+.erp-stat-card:hover .erp-icon-box {
+    transform: scale(1.1) rotate(4deg) !important;
 }
 
 /* ==========================================================================
@@ -3953,4 +4056,4 @@ html, body {
     transform: scale(1.1);
 }
 
-
+

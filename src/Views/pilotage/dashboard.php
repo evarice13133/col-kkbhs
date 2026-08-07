@@ -47,7 +47,7 @@ ob_start();
         
         <!-- SECTION 1: ACADÉMIQUE -->
         <div class="col-12 col-lg-4">
-            <div class="modern-card border-0 shadow-sm p-4 h-100 border-top border-4 border-primary">
+            <div class="modern-card shadow-sm p-4 h-100 border-primary">
                 <div class="kpi-section-title text-primary mb-4 d-flex align-items-center justify-content-between">
                     <span><i class="bi bi-mortarboard-fill me-2"></i>Académique</span>
                     <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill"><?= $stats_students ?> Élèves</span>
@@ -132,7 +132,7 @@ ob_start();
 
         <!-- SECTION 2: FINANCIER -->
         <div class="col-12 col-lg-5">
-            <div class="modern-card border-0 shadow-sm p-4 h-100 border-top border-4 border-success">
+            <div class="modern-card shadow-sm p-4 h-100 border-success">
                 <div class="kpi-section-title text-success mb-4 d-flex align-items-center justify-content-between">
                     <span><i class="bi bi-wallet2 me-2"></i>Financier</span>
                     <span class="badge bg-success bg-opacity-10 text-success rounded-pill">Taux Recouvrement: <?= $collectionRate ?>%</span>
@@ -210,7 +210,7 @@ ob_start();
 
         <!-- SECTION 3: RESSOURCES HUMAINES -->
         <div class="col-12 col-lg-3">
-            <div class="modern-card border-0 shadow-sm p-4 h-100 border-top border-4 border-warning">
+            <div class="modern-card shadow-sm p-4 h-100 border-warning">
                 <div class="kpi-section-title text-warning mb-4 d-flex align-items-center justify-content-between">
                     <span><i class="bi bi-people-fill me-2"></i>Ressources Humaines</span>
                     <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill"><?= $personnelTotal ?> Effectifs</span>

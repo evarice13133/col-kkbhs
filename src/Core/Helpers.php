@@ -41,4 +41,32 @@ class Helpers
         
         return '<img src="' . htmlspecialchars($normalizedPath) . '"' . $altAttr . $classAttr . '>';
     }
+
+    /**
+     * Format creation decree text by splitting on semicolons and converting to line breaks
+     *
+     * @param string|null $decree Raw text from database
+     * @param string $separator Glue between lines (default: '<br>')
+     * @param bool $escapeHtml Whether to htmlspecialchars each line (default: true)
+     * @return string Formatted HTML string with clean line breaks
+     */
+    public static function formatCreationDecree(?string $decree, string $separator = '<br>', bool $escapeHtml = true): string
+    {
+        if ($decree === null || trim($decree) === '') {
+            return '';
+        }
+
+        // Séparation sur les points-virgules (;) ainsi que sur les retours à la ligne (\r\n / \n)
+        $parts = preg_split('/[;\r\n]+/', $decree);
+        $cleaned = [];
+
+        foreach ($parts as $part) {
+            $trimmed = trim($part);
+            if ($trimmed !== '') {
+                $cleaned[] = $escapeHtml ? htmlspecialchars($trimmed, ENT_QUOTES, 'UTF-8') : $trimmed;
+            }
+        }
+
+        return implode($separator, $cleaned);
+    }
 }

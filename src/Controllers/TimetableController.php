@@ -79,7 +79,13 @@ class TimetableController
         }
 
         $years = $this->db->query("SELECT id, nom as libelle FROM academic_years ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
-        $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $classes = $this->db->query("
+            SELECT c.id, c.nom 
+            FROM classes c
+            LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id
+            WHERE tt.code = 'LMD' OR tt.nom LIKE '%Supérieur%' OR tt.nom LIKE '%LMD%' OR c.teaching_type_id = 9
+            ORDER BY c.nom ASC
+        ")->fetchAll(PDO::FETCH_ASSOC);
         $weeks = $selectedYear ? $this->weekModel->getByAcademicYear($selectedYear) : $this->weekModel->getAll();
 
         require __DIR__ . '/../Views/timetables/index.php';
@@ -434,15 +440,33 @@ class TimetableController
         header('Content-Type: application/json');
         $step = $_GET['step'] ?? '';
 
+        $requestPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        if (empty($step) && strpos($requestPath, '/timetables/api/wizard/') === 0) {
+            $step = basename($requestPath);
+        }
+
+
         if ($step === 'cycles') {
-            $typeId = (int)($_GET['teaching_type_id'] ?? 0);
+            $typeId = (int)($_GET['teaching_type_id'] ?? 9);
             $cycles = $this->wizardService->getCyclesByTeachingType($typeId);
             echo json_encode(['success' => true, 'cycles' => $cycles]);
             exit;
+        } elseif ($step === 'levels') {
+            $cycleId = (int)($_GET['cycle_id'] ?? 0);
+            $levels = $this->wizardService->getLevelsByCycle($cycleId);
+            echo json_encode(['success' => true, 'levels' => $levels]);
+            exit;
         } elseif ($step === 'classes') {
             $cycleId = (int)($_GET['cycle_id'] ?? 0);
-            $classes = $this->wizardService->getClassesByCycle($cycleId);
+            $levelId = (int)($_GET['level_id'] ?? 0);
+            $classes = $this->wizardService->getClassesByLevel($cycleId, $levelId);
             echo json_encode(['success' => true, 'classes' => $classes]);
+            exit;
+        } elseif ($step === 'weeks') {
+            $activeYear = $this->academicYearService->getActiveYear();
+            $activeYearId = $activeYear ? (int)$activeYear['id'] : 0;
+            $weeks = $this->wizardService->getWeeksByAcademicYear($activeYearId);
+            echo json_encode(['success' => true, 'weeks' => $weeks]);
             exit;
         }
 
@@ -465,73 +489,97 @@ class TimetableController
         $activeYear = $this->academicYearService->getActiveYear();
         $activeYearId = $activeYear ? (int)$activeYear['id'] : 0;
 
-        $typeId = (int)($_POST['teaching_type_id'] ?? 0);
+        $typeId = (int)($_POST['teaching_type_id'] ?? 9);
         $cycleId = (int)($_POST['cycle_id'] ?? 0);
-        $classId = (int)($_POST['class_id'] ?? 0);
+        $levelId = (int)($_POST['level_id'] ?? 0);
         $weekId = (int)($_POST['week_id'] ?? 0);
 
-        if (!$activeYearId || !$typeId || !$cycleId || !$classId || !$weekId) {
-            Session::setFlash('error', 'Veuillez compléter toutes les étapes de l\'assistant.');
+        if (!$activeYearId || !$cycleId || !$weekId) {
+            Session::setFlash('error', 'Veuillez sélectionner au moins le cycle et la semaine.');
             header('Location: /timetables/wizard');
             exit;
         }
 
-        // Vérifier si un emploi existe déjà pour cette classe et cette semaine
-        $existing = $this->timetableModel->findByClassAndWeek($classId, $weekId);
-        if ($existing) {
-            header('Location: /timetables/grid?id=' . $existing['id']);
-            exit;
+        // Récupérer les classes du niveau
+        $classes = $this->wizardService->getClassesByLevel($cycleId, $levelId);
+
+        // Assurer l'existence d'une entrée dans 'timetables' pour chaque classe du niveau
+        foreach ($classes as $cls) {
+            $classId = (int)$cls['id'];
+            $existing = $this->timetableModel->findByClassAndWeek($classId, $weekId);
+            if (!$existing) {
+                $weekRow = $this->db->query("SELECT libelle FROM timetable_weeks WHERE id = $weekId")->fetch(PDO::FETCH_ASSOC);
+                $titre = "Emploi du Temps - " . $cls['nom'] . " (" . ($weekRow['libelle'] ?? 'Semaine') . ")";
+                $this->timetableModel->create([
+                    'academic_year_id' => $activeYearId,
+                    'teaching_type_id' => $typeId,
+                    'cycle_id' => $cycleId,
+                    'class_id' => $classId,
+                    'week_id' => $weekId,
+                    'titre' => $titre,
+                    'statut' => 'brouillon',
+                    'created_by' => Session::get('user_id')
+                ]);
+            }
         }
 
-        // Récupérer les noms pour former le titre
-        $classRow = $this->db->query("SELECT nom FROM classes WHERE id = $classId")->fetch(PDO::FETCH_ASSOC);
-        $weekRow = $this->db->query("SELECT libelle FROM timetable_weeks WHERE id = $weekId")->fetch(PDO::FETCH_ASSOC);
-
-        $titre = "Emploi du Temps - " . ($classRow['nom'] ?? 'Classe') . " (" . ($weekRow['libelle'] ?? 'Semaine') . ")";
-
-        $timetableId = $this->timetableModel->create([
-            'academic_year_id' => $activeYearId,
-            'teaching_type_id' => $typeId,
-            'cycle_id' => $cycleId,
-            'class_id' => $classId,
-            'week_id' => $weekId,
-            'titre' => $titre,
-            'statut' => 'brouillon',
-            'created_by' => Session::get('user_id')
-        ]);
-
-        header('Location: /timetables/grid?id=' . $timetableId);
+        header("Location: /timetables/grid?cycle_id={$cycleId}&level_id={$levelId}&week_id={$weekId}");
         exit;
     }
 
     /**
-     * Grille de planification interactive (Étape 5 / Mode Édition).
+     * Grille de planification interactive (Étape 5 / Vue Multi-classes par Niveau).
      */
     public function grid()
     {
+        $cycleId = (int)($_GET['cycle_id'] ?? 0);
+        $levelId = (int)($_GET['level_id'] ?? 0);
+        $weekId = (int)($_GET['week_id'] ?? 0);
         $id = (int)($_GET['id'] ?? 0);
-        $timetable = $this->timetableModel->find($id);
 
-        if (!$timetable) {
-            Session::setFlash('error', 'Emploi du temps introuvable.');
+        if ($id > 0 && (!$cycleId || !$weekId)) {
+            $timetable = $this->timetableModel->find($id);
+            if ($timetable) {
+                $cycleId = (int)$timetable['cycle_id'];
+                $weekId = (int)$timetable['week_id'];
+                $clsRow = $this->db->query("SELECT level_id FROM classes WHERE id = " . (int)$timetable['class_id'])->fetch(PDO::FETCH_ASSOC);
+                $levelId = $clsRow['level_id'] ? (int)$clsRow['level_id'] : $levelId;
+            }
+        }
+
+        if (!$cycleId || !$weekId) {
+            Session::setFlash('error', 'Semaine et cycle obligatoires pour afficher la grille.');
             header('Location: /timetables');
             exit;
         }
 
-        // Vérification automatique du verrouillage 168h
-        $isLocked = $this->lockService->checkAutoLock($id);
-        $canEdit = $this->lockService->canModify($timetable);
+        // Charger les métadonnées de la semaine
+        $weekRow = $this->db->query("SELECT * FROM timetable_weeks WHERE id = $weekId")->fetch(PDO::FETCH_ASSOC);
+        $cycleRow = $this->db->query("SELECT * FROM cycles WHERE id = $cycleId")->fetch(PDO::FETCH_ASSOC);
+        $levelRow = $levelId ? $this->db->query("SELECT * FROM levels WHERE id = $levelId")->fetch(PDO::FETCH_ASSOC) : null;
+        $activeYear = $this->academicYearService->getActiveYear();
 
-        $entries = $this->entryModel->getByTimetable($id);
-        $gridData = $this->wizardService->getGridDataForClass((int)$timetable['class_id']);
+        // Récupérer la grille multi-classes
+        $gridData = $this->wizardService->getMultiClassGridData($cycleId, $levelId, $weekId);
+        $classIds = array_column($gridData['classes'], 'id');
 
-        // Indexer les entrées par slot_id et day_of_week
-        $matrix = [];
-        foreach ($entries as $e) {
-            $matrix[$e['slot_id']][$e['day_of_week']] = $e;
+        // Récupérer les conflits visuels sur la grille
+        $gridConflicts = $this->conflictService->getGridConflictsForWeek($weekId, $classIds);
+
+        // Déterminer le statut de verrouillage global
+        $isLocked = false;
+        $canEdit = true;
+        foreach ($gridData['timetablesByClass'] as $tt) {
+            if ($this->lockService->checkAutoLock((int)$tt['id'])) {
+                $isLocked = true;
+            }
+            if (!$this->lockService->canModify($tt)) {
+                $canEdit = false;
+            }
         }
 
-        $auditLogs = $this->auditLogModel->getLogsByTimetable($id);
+        $school_name = $this->settingsStore->get('school_name', 'NoteMaster School');
+        $school_code = $this->settingsStore->get('school_code', 'NMS');
 
         require __DIR__ . '/../Views/timetables/grid.php';
     }
@@ -542,66 +590,245 @@ class TimetableController
     public function saveGridEntry()
     {
         header('Content-Type: application/json');
-        if (!Session::isLogged()) {
-            echo json_encode(['success' => false, 'message' => 'Non authentifié']);
-            exit;
-        }
+        PermissionManager::requirePermission('manage_timetables');
 
         $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
 
-        $timetableId = (int)($input['timetable_id'] ?? 0);
+        $classIds = !empty($input['class_ids']) ? array_map('intval', (array)$input['class_ids']) : [];
+        if (empty($classIds) && !empty($input['class_id'])) {
+            $classIds = [(int)$input['class_id']];
+        }
+        $removedClassIds = !empty($input['removed_class_ids']) ? array_map('intval', (array)$input['removed_class_ids']) : [];
+
+        $weekId = (int)($input['week_id'] ?? 0);
         $slotId = (int)($input['slot_id'] ?? 0);
         $dayOfWeek = trim($input['day_of_week'] ?? '');
         $subjectId = (int)($input['subject_id'] ?? 0);
         $teacherId = (int)($input['teacher_id'] ?? 0);
         $roomId = (int)($input['room_id'] ?? 0);
         $color = trim($input['couleur_hex'] ?? '#3b82f6');
+        $userId = (int)Session::get('user_id');
 
-        $timetable = $this->timetableModel->find($timetableId);
-        if (!$timetable) {
-            echo json_encode(['success' => false, 'message' => 'Emploi du temps inexistant']);
+        if (empty($classIds) || !$weekId || !$slotId || !$subjectId || !$teacherId || !$roomId) {
+            echo json_encode(['success' => false, 'message' => 'Paramètres invalides. Veuillez vous assurer d\'avoir sélectionné au moins une classe.']);
             exit;
         }
 
-        if (!$this->lockService->canModify($timetable)) {
-            echo json_encode(['success' => false, 'message' => 'Cet emploi du temps est verrouillé (délai de 168h dépassé). Seul un Super Administrateur peut le modifier.']);
-            exit;
+        // 1. Libérer le créneau uniquement pour les classes expressément retirées du modal
+        foreach ($removedClassIds as $remClassId) {
+            $remTt = $this->timetableModel->findByClassAndWeek($remClassId, $weekId);
+            if ($remTt && $this->lockService->canModify($remTt)) {
+                $this->entryModel->deleteEntry((int)$remTt['id'], $slotId, $dayOfWeek);
+            }
         }
 
-        // Vérification des conflits en temps réel
-        $check = $this->conflictService->checkConflict(
-            $timetableId,
-            (int)$timetable['week_id'],
-            $slotId,
-            $dayOfWeek,
-            (int)$timetable['class_id'],
-            $teacherId,
-            $roomId
-        );
+        $savedCount = 0;
+        $errorMessages = [];
 
-        if ($check['has_conflict']) {
-            echo json_encode([
-                'success' => false,
-                'message' => implode(' | ', $check['messages']),
-                'conflicts' => $check['messages']
+        // 2. Traiter l'enregistrement de l'affectation pour chaque classe conservée/sélectionnée
+        foreach ($classIds as $classId) {
+            $timetable = $this->timetableModel->findByClassAndWeek($classId, $weekId);
+            $timetableId = $timetable ? (int)$timetable['id'] : 0;
+
+            if (!$timetableId) {
+                $activeYear = $this->academicYearService->getActiveYear();
+                $activeYearId = $activeYear ? (int)$activeYear['id'] : 0;
+                $classRow = $this->db->query("SELECT nom, cycle_id, teaching_type_id FROM classes WHERE id = $classId")->fetch(PDO::FETCH_ASSOC);
+                $weekRow = $this->db->query("SELECT libelle FROM timetable_weeks WHERE id = $weekId")->fetch(PDO::FETCH_ASSOC);
+
+                $timetableId = $this->timetableModel->create([
+                    'academic_year_id' => $activeYearId,
+                    'teaching_type_id' => $classRow['teaching_type_id'] ?? 9,
+                    'cycle_id' => $classRow['cycle_id'] ?? 1,
+                    'class_id' => $classId,
+                    'week_id' => $weekId,
+                    'titre' => "Emploi du Temps - " . ($classRow['nom'] ?? 'Classe') . " (" . ($weekRow['libelle'] ?? 'Semaine') . ")",
+                    'statut' => 'brouillon',
+                    'created_by' => $userId
+                ]);
+                $timetable = $this->timetableModel->find($timetableId);
+            }
+
+            if (!$timetable || !$this->lockService->canModify($timetable)) {
+                $errorMessages[] = "L'emploi du temps de la classe #{$classId} est verrouillé.";
+                continue;
+            }
+
+            // Validation des conflits
+            $check = $this->conflictService->checkConflict(
+                $timetableId,
+                $weekId,
+                $slotId,
+                $dayOfWeek,
+                $classId,
+                $teacherId,
+                $roomId,
+                null,
+                $subjectId
+            );
+
+            if ($check['has_conflict']) {
+                $errorMessages[] = implode(' | ', $check['messages']);
+                continue;
+            }
+
+            $saved = $this->entryModel->upsertEntry([
+                'timetable_id' => $timetableId,
+                'slot_id' => $slotId,
+                'day_of_week' => $dayOfWeek,
+                'subject_id' => $subjectId,
+                'teacher_id' => $teacherId,
+                'room_id' => $roomId,
+                'couleur_hex' => $color
             ]);
+
+            if ($saved) {
+                $savedCount++;
+                $activeYear = $this->academicYearService->getActiveYear();
+                $activeYearId = $activeYear ? (int)$activeYear['id'] : 0;
+
+                // Association Matière-Classe si non existante (avec journalisation)
+                try {
+                    $stmtCheckSubClass = $this->db->prepare("SELECT 1 FROM subject_classes WHERE class_id = ? AND subject_id = ?");
+                    $stmtCheckSubClass->execute([$classId, $subjectId]);
+                    if (!$stmtCheckSubClass->fetchColumn()) {
+                        $stmtInsSubClass = $this->db->prepare("
+                            INSERT INTO subject_classes (subject_id, class_id, academic_year_id)
+                            VALUES (?, ?, ?)
+                            ON DUPLICATE KEY UPDATE subject_id = VALUES(subject_id)
+                        ");
+                        $stmtInsSubClass->execute([$subjectId, $classId, $activeYearId]);
+
+                        $subRow = $this->db->query("SELECT nom FROM subjects WHERE id = $subjectId")->fetch(PDO::FETCH_ASSOC);
+                        $clsRow = $this->db->query("SELECT nom FROM classes WHERE id = $classId")->fetch(PDO::FETCH_ASSOC);
+                        $subName = $subRow['nom'] ?? "Matière #$subjectId";
+                        $clsName = $clsRow['nom'] ?? "Classe #$classId";
+
+                        Security::log("Association automatique Classe '{$clsName}' <-> Matière '{$subName}' créée lors de la planification par l'utilisateur #{$userId}.");
+                        $this->auditLogModel->logAction(
+                            $timetableId,
+                            $userId,
+                            'ATTACH_SUBJECT',
+                            "Rattachement automatique de la matière '{$subName}' à la classe '{$clsName}'.",
+                            $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'
+                        );
+                    }
+                } catch (\Throwable $e) {}
+
+                // Affectation Enseignant-Matière
+                try {
+                    $stmtAssig = $this->db->prepare("
+                        INSERT INTO teacher_assignments (user_id, subject_id, class_id, academic_year_id)
+                        VALUES (?, ?, ?, ?)
+                        ON DUPLICATE KEY UPDATE user_id = VALUES(user_id)
+                    ");
+                    $stmtAssig->execute([$teacherId, $subjectId, $classId ?: null, $activeYearId]);
+                } catch (\Throwable $e) {}
+            }
+        }
+
+        if ($savedCount > 0) {
+            echo json_encode(['success' => true, 'message' => "Créneau affecté avec succès pour $savedCount classe(s)."]);
+        } else {
+            echo json_encode(['success' => false, 'message' => !empty($errorMessages) ? implode(' | ', $errorMessages) : 'Échec de l\'enregistrement.']);
+        }
+        exit;
+    }
+
+
+    /**
+     * API AJAX : Récupérer les matières associées à une classe.
+     */
+    public function apiGetClassSubjects()
+    {
+        header('Content-Type: application/json');
+        $classId = (int)($_GET['class_id'] ?? 0);
+        $subjects = $this->wizardService->getSubjectsByClass($classId);
+        echo json_encode(['success' => true, 'subjects' => $subjects]);
+        exit;
+    }
+
+    /**
+     * API AJAX : Récupérer les enseignants affectés à une matière (ou fallback LMD).
+     */
+    public function apiGetSubjectTeachers()
+    {
+        header('Content-Type: application/json');
+        $subjectId = (int)($_GET['subject_id'] ?? 0);
+        $classId = (int)($_GET['class_id'] ?? 0);
+
+        $teachers = $this->wizardService->getTeachersBySubject($subjectId, $classId);
+        echo json_encode(['success' => true, 'teachers' => $teachers]);
+        exit;
+    }
+
+    /**
+     * API AJAX : Création rapide d'un nouvel enseignant et affectation immédiate de la matière.
+     */
+    public function apiQuickCreateTeacher()
+    {
+        header('Content-Type: application/json');
+        PermissionManager::requirePermission('manage_timetables');
+
+        $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
+        $name = trim($input['nom_complet'] ?? '');
+        $subjectId = (int)($input['subject_id'] ?? 0);
+        $classId = (int)($input['class_id'] ?? 0);
+
+        if (empty($name) || !$subjectId) {
+            echo json_encode(['success' => false, 'message' => 'Veuillez saisir le nom de l\'enseignant et sélectionner une matière.']);
             exit;
         }
 
-        $saved = $this->entryModel->upsertEntry([
-            'timetable_id' => $timetableId,
-            'slot_id' => $slotId,
-            'day_of_week' => $dayOfWeek,
-            'subject_id' => $subjectId,
-            'teacher_id' => $teacherId,
-            'room_id' => $roomId,
-            'couleur_hex' => $color
-        ]);
+        // Séparer nom et prénom
+        $parts = explode(' ', $name, 2);
+        $nom = $parts[0];
+        $prenom = $parts[1] ?? '';
 
-        if ($saved) {
-            echo json_encode(['success' => true, 'message' => 'Créneau affecté avec succès.']);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Erreur lors de l\'enregistrement.']);
+        // Générer un email factice / fonctionnel unique
+        $emailSlug = strtolower(preg_replace('/[^a-z0-9]/', '', $nom . $prenom)) . '_' . time() . '@institution.local';
+        $username = strtolower(preg_replace('/[^a-z0-9]/', '', $nom . $prenom)) . '_' . rand(100, 999);
+        $passwordHash = password_hash('Enseignant' . rand(1000, 9999), PASSWORD_DEFAULT);
+
+        try {
+            // 1. Création de l'utilisateur enseignant
+            $stmt = $this->db->prepare("
+                INSERT INTO users (nom, prenom, email, username, password, role, status, created_at)
+                VALUES (?, ?, ?, ?, ?, 'enseignant', 1, NOW())
+            ");
+            $stmt->execute([$nom, $prenom, $emailSlug, $username, $passwordHash]);
+            $teacherId = (int)$this->db->lastInsertId();
+
+
+            // Rattaché au Supérieur LMD via user_teaching_types
+            $this->db->exec("INSERT INTO user_teaching_types (user_id, teaching_type_id) VALUES ($teacherId, 9) ON DUPLICATE KEY UPDATE teaching_type_id = 9");
+
+
+            // 2. Affectation à la matière
+            $activeYear = $this->academicYearService->getActiveYear();
+            $activeYearId = $activeYear ? (int)$activeYear['id'] : 0;
+
+            $stmtAssig = $this->db->prepare("
+                INSERT INTO teacher_assignments (user_id, subject_id, class_id, academic_year_id)
+                VALUES (?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE user_id = VALUES(user_id)
+            ");
+            $stmtAssig->execute([$teacherId, $subjectId, $classId ?: null, $activeYearId]);
+
+            $fullName = trim($nom . ' ' . $prenom);
+
+            echo json_encode([
+                'success' => true,
+                'message' => "L'enseignant $fullName a été créé et affecté avec succès à la matière.",
+                'teacher' => [
+                    'id' => $teacherId,
+                    'nom_complet' => $fullName,
+                    'role' => 'enseignant',
+                    'is_unassigned_fallback' => 0
+                ]
+            ]);
+        } catch (\Throwable $e) {
+            echo json_encode(['success' => false, 'message' => 'Erreur lors de la création : ' . $e->getMessage()]);
         }
         exit;
     }
@@ -636,30 +863,36 @@ class TimetableController
     {
         header('Content-Type: application/json');
         $timetableId = (int)($_GET['timetable_id'] ?? 0);
+        $weekId = (int)($_GET['week_id'] ?? 0);
+        $classId = (int)($_GET['class_id'] ?? 0);
         $slotId = (int)($_GET['slot_id'] ?? 0);
         $dayOfWeek = trim($_GET['day_of_week'] ?? '');
+        $subjectId = (int)($_GET['subject_id'] ?? 0);
         $teacherId = (int)($_GET['teacher_id'] ?? 0);
         $roomId = (int)($_GET['room_id'] ?? 0);
 
-        $timetable = $this->timetableModel->find($timetableId);
-        if (!$timetable) {
-            echo json_encode(['has_conflict' => false]);
-            exit;
+        if (!$weekId && $timetableId) {
+            $tt = $this->timetableModel->find($timetableId);
+            $weekId = $tt ? (int)$tt['week_id'] : 0;
+            $classId = $tt ? (int)$tt['class_id'] : $classId;
         }
 
         $check = $this->conflictService->checkConflict(
             $timetableId,
-            (int)$timetable['week_id'],
+            $weekId,
             $slotId,
             $dayOfWeek,
-            (int)$timetable['class_id'],
+            $classId,
             $teacherId,
-            $roomId
+            $roomId,
+            null,
+            $subjectId
         );
 
         echo json_encode($check);
         exit;
     }
+
 
     /**
      * Déverrouillage manuel par le Super Administrateur.
@@ -679,7 +912,7 @@ class TimetableController
         $unlocked = $this->lockService->unlockBySuperAdmin($id, $reason);
 
         if ($unlocked) {
-            Session::setFlash('success', 'L\'emploi du temps a été déverrouillé avec succès. L\'action a été consignée dans le journal d\'audit.');
+            Session::setFlash('success', 'L\'emploi du temps a été déverrouillé avec succès.');
         } else {
             Session::setFlash('error', 'Échec du déverrouillage.');
         }
@@ -689,30 +922,90 @@ class TimetableController
     }
 
     /**
-     * Export PDF / Vue Impression d'un emploi du temps.
+     * Suppression définitive d'un emploi du temps (Réservé au Super Administrateur).
      */
-    public function exportPdf()
+    public function deleteTimetable()
     {
-        $id = (int)($_GET['id'] ?? 0);
-        $mode = $_GET['mode'] ?? 'download'; // 'download' ou 'print'
+        PermissionManager::requireRole('superadmin');
+        if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+            Session::setFlash('error', 'Jeton CSRF invalide.');
+            header('Location: /timetables');
+            exit;
+        }
 
+        $id = (int)($_POST['timetable_id'] ?? $_POST['id'] ?? 0);
         $timetable = $this->timetableModel->find($id);
+
         if (!$timetable) {
             Session::setFlash('error', 'Emploi du temps introuvable.');
             header('Location: /timetables');
             exit;
         }
 
-        $entries = $this->entryModel->getByTimetable($id);
-        $gridData = $this->wizardService->getGridDataForClass((int)$timetable['class_id']);
+        $deleted = $this->timetableModel->delete($id);
 
-        $matrix = [];
-        foreach ($entries as $e) {
-            $matrix[$e['slot_id']][$e['day_of_week']] = $e;
+        if ($deleted) {
+            Security::log("Suppression de l'emploi du temps #{$id} ({$timetable['titre']}) par Super Administrateur.");
+            Session::setFlash('success', 'L\'emploi du temps a été supprimé avec succès.');
+        } else {
+            Session::setFlash('error', 'Échec de la suppression de l\'emploi du temps.');
+        }
+
+        header('Location: /timetables');
+        exit;
+    }
+
+    /**
+     * Export PDF / Vue Impression d'un emploi du temps multi-classes par niveau.
+     */
+    public function exportPdf()
+    {
+        $cycleId = (int)($_GET['cycle_id'] ?? 0);
+        $levelId = (int)($_GET['level_id'] ?? 0);
+        $weekId = (int)($_GET['week_id'] ?? 0);
+        $id = (int)($_GET['id'] ?? 0);
+        $mode = $_GET['mode'] ?? 'download'; // 'download' ou 'print'
+
+        if ($id > 0 && (!$cycleId || !$weekId)) {
+            $timetable = $this->timetableModel->find($id);
+            if ($timetable) {
+                $cycleId = (int)$timetable['cycle_id'];
+                $weekId = (int)$timetable['week_id'];
+                $clsRow = $this->db->query("SELECT level_id FROM classes WHERE id = " . (int)$timetable['class_id'])->fetch(PDO::FETCH_ASSOC);
+                $levelId = $clsRow['level_id'] ? (int)$clsRow['level_id'] : $levelId;
+            }
+        }
+
+        if (!$cycleId || !$weekId) {
+            Session::setFlash('error', 'Paramètres manquants pour l\'export PDF.');
+            header('Location: /timetables');
+            exit;
+        }
+
+        // Charger les métadonnées de la semaine
+        $weekRow = $this->db->query("SELECT * FROM timetable_weeks WHERE id = $weekId")->fetch(PDO::FETCH_ASSOC);
+        $cycleRow = $this->db->query("SELECT * FROM cycles WHERE id = $cycleId")->fetch(PDO::FETCH_ASSOC);
+        $levelRow = $levelId ? $this->db->query("SELECT * FROM levels WHERE id = $levelId")->fetch(PDO::FETCH_ASSOC) : null;
+        $activeYear = $this->academicYearService->getActiveYear();
+
+        $gridData = $this->wizardService->getMultiClassGridData($cycleId, $levelId, $weekId);
+
+        if (!empty($cycleRow['teaching_type_id'])) {
+            $this->settingsStore->setTeachingTypeId((int)$cycleRow['teaching_type_id']);
         }
 
         $school_name = $this->settingsStore->get('school_name', 'NoteMaster School');
         $school_code = $this->settingsStore->get('school_code', 'NMS');
+        $school_logo = $this->settingsStore->get('school_logo', '/public/assets/images/logo.png');
+        $creation_decree = $this->settingsStore->get('creation_decree', '');
+        if (empty($creation_decree)) {
+            $stmtDecree = $this->db->query("SELECT setting_value FROM settings WHERE setting_key = 'creation_decree' AND setting_value IS NOT NULL AND TRIM(setting_value) != '' ORDER BY id DESC LIMIT 1");
+            $creation_decree = $stmtDecree ? (string)$stmtDecree->fetchColumn() : '';
+        }
+        $partner_logo = $this->settingsStore->get('partner_logo', $this->settingsStore->get('academic_partner_logo', ''));
+        if (empty($partner_logo) && file_exists($_SERVER['DOCUMENT_ROOT'] . '/public/uploads/1785328229_logo-camertech.png')) {
+            $partner_logo = '/public/uploads/1785328229_logo-camertech.png';
+        }
 
         if ($mode === 'print') {
             require __DIR__ . '/../Views/timetables/pdf.php';
@@ -733,8 +1026,8 @@ class TimetableController
         $dompdf->setPaper('A4', 'landscape');
         $dompdf->render();
 
-        $filename = 'Emploi_du_Temps_' . str_replace(' ', '_', $timetable['class_name']) . '_' . str_replace(' ', '_', $timetable['week_libelle']) . '.pdf';
+        $filename = 'Emploi_du_Temps_' . str_replace(' ', '_', $cycleRow['nom'] ?? 'Cycle') . '_' . str_replace(' ', '_', $weekRow['libelle'] ?? 'Semaine') . '.pdf';
         $dompdf->stream($filename, ['Attachment' => 1]);
-        exit;
     }
 }
+

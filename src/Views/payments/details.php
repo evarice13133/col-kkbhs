@@ -71,7 +71,7 @@ ob_start();
             </div>
         </div>
         <div class="col-md-3">
-            <div class="modern-card kpi-card border-0 shadow-sm border-start border-4 border-success">
+            <div class="modern-card kpi-card shadow-sm border-success">
                 <div class="kpi-icon-wrapper bg-success bg-opacity-10 text-success">
                     <i class="bi bi-check-circle"></i>
                 </div>
@@ -80,7 +80,7 @@ ob_start();
             </div>
         </div>
         <div class="col-md-3">
-            <div class="modern-card kpi-card border-0 shadow-sm border-start border-4 border-danger">
+            <div class="modern-card kpi-card shadow-sm border-danger">
                 <div class="kpi-icon-wrapper bg-danger bg-opacity-10 text-danger">
                     <i class="bi bi-exclamation-triangle"></i>
                 </div>

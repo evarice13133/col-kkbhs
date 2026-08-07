@@ -364,7 +364,7 @@ $lang = \App\Core\Locale::get();
                     <div style="font-size: 7px; font-style: italic;"><?= htmlspecialchars($contexte['institution']['school_ministry'] ?? 'MINISTERE DE L\'ENSEIGNEMENT SUPERIEUR') ?></div>
                     <div class="school-title"><?= htmlspecialchars($contexte['institution']['school_name'] ?? 'NotesMaster') ?></div>
                     <?php if (!empty($contexte['institution']['creation_decree'])): ?>
-                        <div class="decree-text"><?= htmlspecialchars($contexte['institution']['creation_decree']) ?></div>
+                        <div class="decree-text"><?= \App\Core\Helpers::formatCreationDecree((string) $contexte['institution']['creation_decree']) ?></div>
                     <?php endif; ?>
                     <div class="contact-info">
                         <?php 
@@ -401,7 +401,7 @@ $lang = \App\Core\Locale::get();
                     <div style="font-size: 7px; font-style: italic;"><?= htmlspecialchars($contexte['institution']['school_ministry_en'] ?? 'MINISTRY OF HIGHER EDUCATION') ?></div>
                     <div class="school-title"><?= htmlspecialchars($contexte['institution']['school_name'] ?? 'NotesMaster') ?></div>
                     <?php if (!empty($contexte['institution']['creation_decree'])): ?>
-                        <div class="decree-text"><?= htmlspecialchars($contexte['institution']['creation_decree']) ?></div>
+                        <div class="decree-text"><?= \App\Core\Helpers::formatCreationDecree((string) $contexte['institution']['creation_decree']) ?></div>
                     <?php endif; ?>
                     <div class="contact-info">
                         <?php 

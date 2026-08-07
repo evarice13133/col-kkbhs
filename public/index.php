@@ -166,23 +166,33 @@ elseif (strpos($path, '/timetables') === 0) {
         $c->deleteWeek();
     } elseif ($path === '/timetables/wizard') {
         $c->wizard();
-    } elseif ($path === '/timetables/create' && $method === 'POST') {
+    } elseif (($path === '/timetables/wizard/generate' || $path === '/timetables/create') && $method === 'POST') {
         $c->createTimetable();
     } elseif ($path === '/timetables/grid') {
         $c->grid();
     } elseif ($path === '/timetables/unlock' && $method === 'POST') {
         $c->unlock();
+    } elseif ($path === '/timetables/delete' && $method === 'POST') {
+        $c->deleteTimetable();
     } elseif ($path === '/timetables/pdf') {
         $c->exportPdf();
-    } elseif ($path === '/timetables/api/wizard-data') {
+    } elseif ($path === '/timetables/api/wizard-data' || strpos($path, '/timetables/api/wizard/') === 0) {
         $c->wizardStepData();
-    } elseif ($path === '/timetables/api/save-entry' && $method === 'POST') {
+    } elseif (($path === '/timetables/api/save-entry' || $path === '/timetables/api/grid/save') && $method === 'POST') {
         $c->saveGridEntry();
-    } elseif ($path === '/timetables/api/delete-entry' && $method === 'POST') {
+    } elseif (($path === '/timetables/api/delete-entry' || $path === '/timetables/api/grid/delete') && $method === 'POST') {
         $c->deleteGridEntry();
     } elseif ($path === '/timetables/api/validate-conflict') {
         $c->apiValidateConflict();
+    } elseif ($path === '/timetables/api/class-subjects') {
+        $c->apiGetClassSubjects();
+    } elseif ($path === '/timetables/api/subject-teachers') {
+        $c->apiGetSubjectTeachers();
+    } elseif ($path === '/timetables/api/quick-create-teacher' && $method === 'POST') {
+        $c->apiQuickCreateTeacher();
     }
+
+
 }
 
 // ====== ROUTES: UTILISATEURS ======

@@ -431,10 +431,10 @@ foreach ($ribbon_structure as $tab) {
             background: #f1f5f9;
         }
 
-        /* Dark Mode Support for Dropdowns */
+        /* Dark Mode Support for Dropdowns, Modals, Forms & Components */
         [data-theme="dark"] .dropdown-menu-modern {
-            background-color: #000000;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background-color: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.12);
         }
 
         [data-theme="dark"] .dropdown-item-modern {
@@ -443,6 +443,111 @@ foreach ($ribbon_structure as $tab) {
 
         [data-theme="dark"] .dropdown-item-modern:hover {
             background: rgba(255, 255, 255, 0.08);
+        }
+
+        /* Global Dark Mode Contrast & Components Fixes */
+        [data-theme="dark"] select,
+        [data-theme="dark"] .form-select,
+        [data-theme="dark"] .form-control {
+            background-color: #1e293b !important;
+            color: #f8fafc !important;
+            border-color: rgba(255, 255, 255, 0.15) !important;
+        }
+
+        [data-theme="dark"] select option,
+        [data-theme="dark"] .form-select option {
+            background-color: #1e293b !important;
+            color: #f8fafc !important;
+        }
+
+        [data-theme="dark"] select option:hover,
+        [data-theme="dark"] select option:focus,
+        [data-theme="dark"] select option:checked,
+        [data-theme="dark"] .form-select option:hover,
+        [data-theme="dark"] .form-select option:focus,
+        [data-theme="dark"] .form-select option:checked {
+            background-color: #3b82f6 !important;
+            color: #ffffff !important;
+        }
+
+        [data-theme="dark"] .dropdown-menu {
+            background-color: #1e293b !important;
+            border-color: rgba(255, 255, 255, 0.12) !important;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5) !important;
+        }
+
+        [data-theme="dark"] .dropdown-item {
+            color: #e2e8f0 !important;
+        }
+
+        [data-theme="dark"] .dropdown-item:hover,
+        [data-theme="dark"] .dropdown-item:focus {
+            background-color: rgba(255, 255, 255, 0.08) !important;
+            color: #ffffff !important;
+        }
+
+        [data-theme="dark"] .modal-content {
+            background-color: #0f172a !important;
+            color: #f8fafc !important;
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6) !important;
+        }
+
+        [data-theme="dark"] .modal-header {
+            border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        [data-theme="dark"] .modal-footer {
+            border-top-color: rgba(255, 255, 255, 0.1) !important;
+            background-color: rgba(15, 23, 42, 0.95) !important;
+        }
+
+        [data-theme="dark"] .btn-close {
+            filter: invert(1) grayscale(100%) brightness(200%);
+        }
+
+        [data-theme="dark"] .card-theme,
+        [data-theme="dark"] .modern-card {
+            background-color: #1e293b !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+            color: #f8fafc !important;
+        }
+
+        [data-theme="dark"] .text-muted-theme,
+        [data-theme="dark"] .text-muted {
+            color: #94a3b8 !important;
+        }
+
+        [data-theme="dark"] .text-main-theme {
+            color: #f8fafc !important;
+        }
+
+        /* Select2 Dark Mode Fixes */
+        [data-theme="dark"] .select2-container--default .select2-selection--single,
+        [data-theme="dark"] .select2-container--default .select2-selection--multiple {
+            background-color: #1e293b !important;
+            border-color: rgba(255, 255, 255, 0.15) !important;
+            color: #f8fafc !important;
+        }
+
+        [data-theme="dark"] .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: #f8fafc !important;
+        }
+
+        [data-theme="dark"] .select2-dropdown {
+            background-color: #1e293b !important;
+            border-color: rgba(255, 255, 255, 0.15) !important;
+            color: #f8fafc !important;
+        }
+
+        [data-theme="dark"] .select2-results__option {
+            background-color: #1e293b !important;
+            color: #f8fafc !important;
+        }
+
+        [data-theme="dark"] .select2-results__option--highlighted[aria-selected] {
+            background-color: #3b82f6 !important;
+            color: #ffffff !important;
         }
 
         .btn-theme-soft {

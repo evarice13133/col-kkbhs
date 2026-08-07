@@ -160,7 +160,7 @@ ob_start();
                             <?php foreach ($landing_notifications as $notif): 
                                 $isArchived = $notif['archived'] ?? false;
                             ?>
-                                <div class="modern-card p-3 shadow-sm border-start border-4 <?= $isArchived ? 'border-secondary opacity-75' : 'border-accent' ?> flex-shrink-0" id="notif-<?= h($notif['id']) ?>" style="min-width: 300px; max-width: 350px; background: <?= $isArchived ? 'rgba(0,0,0,0.02)' : 'rgba(var(--primary-rgb), 0.02)' ?>;">
+                                <div class="modern-card p-3 shadow-sm <?= $isArchived ? 'border-secondary opacity-75' : 'border-accent' ?> flex-shrink-0" id="notif-<?= h($notif['id']) ?>" style="min-width: 300px; max-width: 350px; background: <?= $isArchived ? 'rgba(0,0,0,0.02)' : 'rgba(var(--primary-rgb), 0.02)' ?>;">
                                     <div class="d-flex justify-content-between align-items-start mb-2">
                                         <div class="fw-bold text-main-theme small d-flex align-items-center gap-2">
                                             <?= h($notif['name']) ?>
@@ -1685,7 +1685,7 @@ ob_start();
     <div class="row g-3 mb-4 kpi-row" data-views="rh">
         <!-- Total Users -->
         <div class="col-sm-6 col-xl-3 stats-col">
-            <div class="modern-card kpi-card border-0 shadow-sm stats-card kpi-stat-card border-start border-4 border-primary" style="min-height: 140px;">
+            <div class="modern-card kpi-card shadow-sm stats-card kpi-stat-card border-primary" style="min-height: 140px;">
                 <div class="kpi-icon-wrapper bg-primary bg-opacity-10 text-primary">
                     <i class="bi bi-people-fill"></i>
                 </div>
@@ -1695,7 +1695,7 @@ ob_start();
         </div>
         <!-- Active Teachers -->
         <div class="col-sm-6 col-xl-3 stats-col">
-            <div class="modern-card kpi-card border-0 shadow-sm stats-card kpi-stat-card border-start border-4 border-success" style="min-height: 140px;">
+            <div class="modern-card kpi-card shadow-sm stats-card kpi-stat-card border-success" style="min-height: 140px;">
                 <div class="kpi-icon-wrapper bg-success bg-opacity-10 text-success">
                     <i class="bi bi-person-badge-fill"></i>
                 </div>
@@ -1705,7 +1705,7 @@ ob_start();
         </div>
         <!-- Administrative Personnel -->
         <div class="col-sm-6 col-xl-3 stats-col">
-            <div class="modern-card kpi-card border-0 shadow-sm stats-card kpi-stat-card border-start border-4 border-warning" style="min-height: 140px;">
+            <div class="modern-card kpi-card shadow-sm stats-card kpi-stat-card border-warning" style="min-height: 140px;">
                 <div class="kpi-icon-wrapper bg-warning bg-opacity-10 text-warning">
                     <i class="bi bi-shield-lock-fill"></i>
                 </div>
@@ -1715,7 +1715,7 @@ ob_start();
         </div>
         <!-- Teachers without assignments -->
         <div class="col-sm-6 col-xl-3 stats-col">
-            <div class="modern-card kpi-card border-0 shadow-sm stats-card kpi-stat-card border-start border-4 border-danger" style="min-height: 140px;">
+            <div class="modern-card kpi-card shadow-sm stats-card kpi-stat-card border-danger" style="min-height: 140px;">
                 <div class="kpi-icon-wrapper bg-danger bg-opacity-10 text-danger">
                     <i class="bi bi-person-x-fill"></i>
                 </div>

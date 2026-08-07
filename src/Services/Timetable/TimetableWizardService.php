@@ -15,22 +15,37 @@ class TimetableWizardService
     }
 
     /**
-     * Étape 1 : Récupère les types d'enseignement actifs avec indication du type LMD par défaut.
+     * Étape 1 : Récupère uniquement le type d'enseignement « Supérieur LMD ».
      */
     public function getTeachingTypes(): array
     {
-        $stmt = $this->db->query("SELECT id, nom, code FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC");
+        $stmt = $this->db->query("
+            SELECT id, nom, code 
+            FROM teaching_types 
+            WHERE actif = 1 AND (code = 'LMD' OR nom LIKE '%Supérieur%' OR nom LIKE '%LMD%')
+            ORDER BY id DESC
+            LIMIT 1
+        ");
         $types = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Si aucun type trouvé, ou pour identifier le supérieur LMD
+        if (empty($types)) {
+            // Fallback si pas encore configuré
+            $types = [[
+                'id' => 9,
+                'nom' => 'Supérieur LMD',
+                'code' => 'LMD'
+            ]];
+        }
+
         foreach ($types as &$t) {
-            $t['is_default'] = (stripos($t['nom'], 'LMD') !== false || stripos($t['nom'], 'Supérieur') !== false);
+            $t['is_default'] = true;
+            $t['nom'] = 'Supérieur LMD';
         }
         return $types;
     }
 
     /**
-     * Étape 2 : Récupère les cycles académiques actifs rattachés au type d'enseignement choisi.
+     * Étape 2 : Récupère les cycles académiques actifs du type Supérieur LMD.
      */
     public function getCyclesByTeachingType(int $teachingTypeId): array
     {
@@ -38,27 +53,87 @@ class TimetableWizardService
             SELECT id, nom 
             FROM cycles 
             WHERE status = 1 
-              AND (teaching_type_id = ? OR teaching_type_id IS NULL)
+              AND (teaching_type_id = ? OR teaching_type_id IS NULL OR teaching_type_id = 9)
             ORDER BY nom ASC
         ");
         $stmt->execute([$teachingTypeId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $cycles = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($cycles)) {
+            $cycles = $this->db->query("SELECT id, nom FROM cycles WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        }
+        return $cycles;
     }
 
     /**
-     * Étape 3 : Récupère les classes appartenant au cycle choisi.
+     * Étape 3a : Récupère les niveaux (Level 1, Level 2, L1, L2, L3...) rattachés au cycle ou généraux.
      */
-    public function getClassesByCycle(int $cycleId): array
+    public function getLevelsByCycle(int $cycleId): array
     {
         $stmt = $this->db->prepare("
-            SELECT c.id, c.nom,
-                   (SELECT COUNT(*) FROM students s WHERE s.class_id = c.id AND s.is_withdrawn = 0 AND s.actif = 1) as effectif
-            FROM classes c
-            WHERE c.cycle_id = ?
-            ORDER BY c.nom ASC
+            SELECT DISTINCT l.id, COALESCE(NULLIF(l.libelle_fr, ''), NULLIF(l.libelle_en, ''), l.code) as nom, l.code
+            FROM levels l
+            JOIN classes c ON c.level_id = l.id
+            WHERE c.cycle_id = ? AND l.status = 1
+            ORDER BY l.id ASC
         ");
         $stmt->execute([$cycleId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $levels = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($levels)) {
+            // Fallback sur tous les niveaux actifs LMD
+            $stmt = $this->db->query("
+                SELECT id, COALESCE(NULLIF(libelle_fr, ''), NULLIF(libelle_en, ''), code) as nom, code
+                FROM levels 
+                WHERE status = 1 AND teaching_type_id = 9
+                ORDER BY id ASC
+            ");
+            $levels = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+
+        if (empty($levels)) {
+            $stmt = $this->db->query("
+                SELECT id, COALESCE(NULLIF(libelle_fr, ''), NULLIF(libelle_en, ''), code) as nom, code
+                FROM levels 
+                WHERE status = 1
+                ORDER BY id ASC
+            ");
+            $levels = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+
+        return $levels;
+    }
+
+    /**
+     * Étape 3b : Récupère les classes appartenant au cycle et au niveau.
+     */
+    public function getClassesByLevel(int $cycleId, int $levelId): array
+    {
+        $stmt = $this->db->prepare("
+            SELECT c.id, c.nom, c.level_id, c.cycle_id,
+                   (SELECT COUNT(*) FROM students s WHERE s.class_id = c.id AND s.is_withdrawn = 0 AND s.actif = 1) as effectif
+            FROM classes c
+            WHERE (c.cycle_id = ? OR ? = 0)
+              AND (c.level_id = ? OR ? = 0)
+            ORDER BY c.nom ASC
+        ");
+        $stmt->execute([$cycleId, $cycleId, $levelId, $levelId]);
+        $classes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($classes) && $cycleId > 0) {
+            // Si pas de niveau restreint
+            $stmt = $this->db->prepare("
+                SELECT c.id, c.nom, c.level_id, c.cycle_id,
+                       (SELECT COUNT(*) FROM students s WHERE s.class_id = c.id AND s.is_withdrawn = 0 AND s.actif = 1) as effectif
+                FROM classes c
+                WHERE c.cycle_id = ?
+                ORDER BY c.nom ASC
+            ");
+            $stmt->execute([$cycleId]);
+            $classes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+
+        return $classes;
     }
 
     /**
@@ -73,53 +148,166 @@ class TimetableWizardService
             ORDER BY date_debut ASC
         ");
         $stmt->execute([$academicYearId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $weeks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($weeks)) {
+            $weeks = $this->db->query("SELECT id, libelle, date_debut, date_fin FROM timetable_weeks ORDER BY date_debut ASC")->fetchAll(PDO::FETCH_ASSOC);
+        }
+
+        return $weeks;
     }
 
     /**
-     * Étape 5 : Récupère toutes les données nécessaires à la grille d'emploi du temps pour la classe.
+     * Récupère la matrice complète pour une grille multi-classes par niveau / cycle / semaine.
      */
-    public function getGridDataForClass(int $classId): array
+    public function getMultiClassGridData(int $cycleId, int $levelId, int $weekId): array
     {
-        // 1. Matières de la classe
-        $stmtSub = $this->db->prepare("
-            SELECT DISTINCT s.id, s.nom, COALESCE(s.code_uv, s.code_ue, '') as code, '#3b82f6' as couleur_hex
-            FROM subject_classes sc
-            JOIN subjects s ON sc.subject_id = s.id
-            WHERE sc.class_id = ?
-            ORDER BY s.nom ASC
-        ");
-        $stmtSub->execute([$classId]);
-        $subjects = $stmtSub->fetchAll(PDO::FETCH_ASSOC);
+        // 1. Classes du niveau
+        $classes = $this->getClassesByLevel($cycleId, $levelId);
 
-        // Fallback si pas de subject_classes explicite
-        if (empty($subjects)) {
-            $subjects = $this->db->query("SELECT id, nom, COALESCE(code_uv, code_ue, '') as code, '#3b82f6' as couleur_hex FROM subjects ORDER BY nom ASC LIMIT 20")->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($classes)) {
+            // S'il n'y a aucune classe rattachée au niveau, récupérer toutes les classes du cycle
+            $stmt = $this->db->prepare("SELECT id, nom FROM classes WHERE cycle_id = ? ORDER BY nom ASC");
+            $stmt->execute([$cycleId]);
+            $classes = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
-        // 2. Enseignants disponibles
+        $classIds = array_column($classes, 'id');
+
+        // 2. Matières (de l'ensemble des classes du niveau - Filtre Supérieur LMD)
+        if (!empty($classIds)) {
+            $inClause = implode(',', array_map('intval', $classIds));
+            $stmtSub = $this->db->query("
+                SELECT DISTINCT s.id, s.nom, COALESCE(s.code_uv, s.code_ue, '') as code, '#3b82f6' as couleur_hex
+                FROM subject_classes sc
+                JOIN subjects s ON sc.subject_id = s.id
+                LEFT JOIN classes c ON sc.class_id = c.id
+                WHERE sc.class_id IN ($inClause)
+                  AND (s.teaching_type_id = 9 OR s.teaching_type_id IS NULL OR c.teaching_type_id = 9 OR c.teaching_type_id IS NULL)
+                ORDER BY s.nom ASC
+            ");
+            $subjects = $stmtSub->fetchAll(PDO::FETCH_ASSOC);
+        } else {
+            $subjects = [];
+        }
+
+        if (empty($subjects)) {
+            $subjects = $this->db->query("
+                SELECT id, nom, COALESCE(code_uv, code_ue, '') as code, '#3b82f6' as couleur_hex 
+                FROM subjects 
+                WHERE (teaching_type_id = 9 OR teaching_type_id IS NULL)
+                ORDER BY nom ASC LIMIT 30
+            ")->fetchAll(PDO::FETCH_ASSOC);
+        }
+
+        // 3. Enseignants disponibles (Supérieur LMD via user_teaching_types)
         $stmtTeachers = $this->db->query("
-            SELECT id, TRIM(CONCAT(COALESCE(nom, ''), ' ', COALESCE(prenom, ''))) as nom_complet, role 
-            FROM users 
-            WHERE role IN ('enseignant', 'admin', 'it_manager', 'superadmin')
-            ORDER BY nom ASC, prenom ASC
+            SELECT DISTINCT u.id, TRIM(CONCAT(COALESCE(u.nom, ''), ' ', COALESCE(u.prenom, ''))) as nom_complet, u.role 
+            FROM users u
+            LEFT JOIN user_teaching_types utt ON u.id = utt.user_id
+            WHERE u.role IN ('enseignant', 'admin', 'it_manager', 'superadmin')
+              AND (utt.teaching_type_id = 9 OR utt.teaching_type_id IS NULL)
+            ORDER BY u.nom ASC, u.prenom ASC
         ");
         $teachers = $stmtTeachers->fetchAll(PDO::FETCH_ASSOC);
 
-        // 3. Salles de classe
+        // 4. Salles de classe
         $stmtRooms = $this->db->query("SELECT id, nom, code, capacite FROM class_rooms WHERE status = 1 ORDER BY nom ASC");
         $rooms = $stmtRooms->fetchAll(PDO::FETCH_ASSOC);
 
-        // 4. Créneaux horaires
+        // 5. Créneaux horaires
         $stmtSlots = $this->db->query("SELECT * FROM timetable_time_slots ORDER BY ordre_affichage ASC, heure_debut ASC");
         $slots = $stmtSlots->fetchAll(PDO::FETCH_ASSOC);
 
+        // 6. Indexer toutes les entrées existantes d'emploi du temps pour ces classes à cette semaine
+        $matrix = []; // [day_of_week][slot_id][class_id] => entry array
+        $timetablesByClass = []; // class_id => timetable record
+
+        if (!empty($classIds) && $weekId > 0) {
+            $inClause = implode(',', array_map('intval', $classIds));
+            $stmtTt = $this->db->query("
+                SELECT id, class_id, titre, is_locked, statut
+                FROM timetables 
+                WHERE class_id IN ($inClause) AND week_id = $weekId
+            ");
+            $timetablesList = $stmtTt->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($timetablesList as $tt) {
+                $timetablesByClass[$tt['class_id']] = $tt;
+            }
+
+            $ttIds = array_column($timetablesList, 'id');
+            if (!empty($ttIds)) {
+                $inTtClause = implode(',', array_map('intval', $ttIds));
+                $stmtEntries = $this->db->query("
+                    SELECT te.*, s.nom as subject_name, s.code_uv as subject_code,
+                           TRIM(CONCAT(COALESCE(u.nom, ''), ' ', COALESCE(u.prenom, ''))) as teacher_name,
+                           r.nom as room_name, r.code as room_code,
+                           t.class_id
+                    FROM timetable_entries te
+                    JOIN timetables t ON te.timetable_id = t.id
+                    JOIN subjects s ON te.subject_id = s.id
+                    JOIN users u ON te.teacher_id = u.id
+                    JOIN class_rooms r ON te.room_id = r.id
+                    WHERE te.timetable_id IN ($inTtClause)
+                ");
+                $entries = $stmtEntries->fetchAll(PDO::FETCH_ASSOC);
+
+                foreach ($entries as $e) {
+                    $matrix[$e['day_of_week']][$e['slot_id']][$e['class_id']] = $e;
+                }
+            }
+        }
+
         return [
+            'classes' => $classes,
             'subjects' => $subjects,
             'teachers' => $teachers,
             'rooms' => $rooms,
             'slots' => $slots,
-            'days' => ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
+            'days' => ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'],
+            'matrix' => $matrix,
+            'timetablesByClass' => $timetablesByClass
         ];
     }
+
+    /**
+     * Récupère uniquement les matières associées officiellement à une classe du Supérieur LMD.
+     */
+    public function getSubjectsByClass(int $classId): array
+    {
+        $stmt = $this->db->prepare("
+            SELECT DISTINCT s.id, s.nom, COALESCE(s.code_uv, s.code_ue, '') as code, '#3b82f6' as couleur_hex,
+                   COALESCE(s.coefficient, 1) as coefficient,
+                   IF(sc.subject_id IS NOT NULL, 1, 0) as is_attached
+            FROM subjects s
+            LEFT JOIN subject_classes sc ON sc.subject_id = s.id AND sc.class_id = ?
+            WHERE (s.teaching_type_id = 9 OR s.teaching_type_id IS NULL)
+            ORDER BY is_attached DESC, s.nom ASC
+        ");
+        $stmt->execute([$classId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Récupère TOUS les enseignants du Supérieur LMD.
+     * Indique pour chaque enseignant s'il est déjà officiellement affecté à cette matière (is_assigned = 1 ou 0).
+     */
+    public function getTeachersBySubject(int $subjectId, int $classId = 0): array
+    {
+        $stmt = $this->db->prepare("
+            SELECT DISTINCT u.id, TRIM(CONCAT(COALESCE(u.nom, ''), ' ', COALESCE(u.prenom, ''))) as nom_complet, u.role,
+                   IF(ta.user_id IS NOT NULL, 1, 0) as is_assigned
+            FROM users u
+            LEFT JOIN user_teaching_types utt ON u.id = utt.user_id
+            LEFT JOIN teacher_assignments ta ON ta.user_id = u.id AND ta.subject_id = ?
+            WHERE u.role IN ('enseignant', 'admin', 'it_manager', 'superadmin')
+              AND u.status = 1
+              AND (utt.teaching_type_id = 9 OR utt.teaching_type_id IS NULL)
+            ORDER BY is_assigned DESC, u.nom ASC, u.prenom ASC
+        ");
+        $stmt->execute([$subjectId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
 }

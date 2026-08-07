@@ -25,7 +25,7 @@ class Timetable extends BaseModel
             LEFT JOIN classes cl ON t.class_id = cl.id
             LEFT JOIN timetable_weeks w ON t.week_id = w.id
             LEFT JOIN users u ON t.created_by = u.id
-            WHERE 1=1
+            WHERE (tt.code = 'LMD' OR tt.nom LIKE '%Supérieur%' OR tt.nom LIKE '%LMD%' OR t.teaching_type_id = 9 OR cl.teaching_type_id = 9 OR t.teaching_type_id IS NULL)
         ";
         $params = [];
 
@@ -110,7 +110,25 @@ class Timetable extends BaseModel
 
     public function delete(int $id): bool
     {
-        $stmt = $this->db->prepare("DELETE FROM timetables WHERE id = ?");
-        return $stmt->execute([$id]);
+        try {
+            $this->db->beginTransaction();
+
+            $stmtEntries = $this->db->prepare("DELETE FROM timetable_entries WHERE timetable_id = ?");
+            $stmtEntries->execute([$id]);
+
+            $stmtLogs = $this->db->prepare("DELETE FROM timetable_audit_logs WHERE timetable_id = ?");
+            $stmtLogs->execute([$id]);
+
+            $stmt = $this->db->prepare("DELETE FROM timetables WHERE id = ?");
+            $res = $stmt->execute([$id]);
+
+            $this->db->commit();
+            return $res;
+        } catch (\Exception $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            return false;
+        }
     }
 }

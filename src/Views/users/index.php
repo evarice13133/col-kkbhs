@@ -192,41 +192,35 @@
 
     .subject-card-compact {
         background: var(--bg-card);
-        border-radius: 28px;
-        border: 1px solid rgba(var(--primary-rgb), 0.08) !important;
+        border-radius: 14px !important;
+        border: 1px solid var(--border-color, rgba(226, 232, 240, 0.8)) !important;
         display: block;
         text-decoration: none !important;
-        transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                    box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                    border-color 0.3s ease,
+                    border-style 0.3s ease;
+        box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.04);
         position: relative;
         overflow: hidden;
     }
 
     [data-theme="dark"] .subject-card-compact {
-        background: rgba(255, 255, 255, 0.03);
+        background: var(--bg-card, #0f172a);
         backdrop-filter: blur(15px);
-        border-color: rgba(255, 255, 255, 0.06) !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
     }
 
     .subject-card-glow {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: radial-gradient(circle at top right, rgba(var(--primary-rgb), 0.2), transparent 70%);
-        opacity: 0;
-        transition: opacity 0.4s ease;
+        display: none !important;
     }
 
     .subject-card-compact:hover {
-        transform: translateY(-12px) scale(1.03);
-        border-color: var(--primary-color) !important;
-        box-shadow: 0 30px 60px -12px rgba(var(--primary-rgb), 0.25);
-    }
-
-    .subject-card-compact:hover .subject-card-glow {
-        opacity: 1;
+        transform: translateY(-3px) !important;
+        border-style: dashed !important;
+        border-width: 1.5px !important;
+        border-color: var(--primary-color, #7c3aed) !important;
+        box-shadow: 0 14px 28px -6px rgba(124, 58, 237, 0.15) !important;
     }
 
     .btn-icon-action {
