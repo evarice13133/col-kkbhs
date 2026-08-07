@@ -14,6 +14,7 @@ use App\Models\TimetableEntry;
 use App\Models\TimetableSlot;
 use App\Services\AcademicYearService;
 use App\Services\SettingsStore;
+use App\Services\Timetable\BulkSchedulingService;
 use App\Services\Timetable\TimetableConflictService;
 use App\Services\Timetable\TimetableLockService;
 use App\Services\Timetable\TimetableWizardService;
@@ -35,6 +36,7 @@ class TimetableController
     private TimetableConflictService $conflictService;
     private TimetableLockService $lockService;
     private TimetableWizardService $wizardService;
+    private BulkSchedulingService $bulkService;
 
     public function __construct()
     {
@@ -52,6 +54,7 @@ class TimetableController
         $this->conflictService = new TimetableConflictService($this->db);
         $this->lockService = new TimetableLockService($this->db);
         $this->wizardService = new TimetableWizardService($this->db);
+        $this->bulkService = new BulkSchedulingService($this->db);
     }
 
     /**
@@ -915,6 +918,39 @@ class TimetableController
         );
 
         echo json_encode($check);
+        exit;
+    }
+
+    /**
+     * API AJAX : Pré-validation de la planification en masse des cours.
+     */
+    public function apiBulkValidate()
+    {
+        header('Content-Type: application/json');
+        PermissionManager::requirePermission('manage_timetables');
+
+        $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
+        $result = $this->bulkService->validateBulkSchedule($input);
+
+        echo json_encode($result);
+        exit;
+    }
+
+    /**
+     * API AJAX : Enregistrement transactionnel en masse des cours.
+     */
+    public function apiBulkSave()
+    {
+        header('Content-Type: application/json');
+        PermissionManager::requirePermission('manage_timetables');
+
+        $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
+        $schedules = $input['schedules'] ?? [];
+        $userId = (int)Session::get('user_id');
+
+        $result = $this->bulkService->saveBulkSchedule($schedules, $userId);
+
+        echo json_encode($result);
         exit;
     }
 
