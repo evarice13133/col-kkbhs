@@ -782,7 +782,7 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                     <?php endif; ?>
 
                     <!-- Theme Toggle -->
-                    <button class="theme-toggle-btn btn btn-theme-soft rounded-circle d-none d-sm-flex align-items-center justify-content-center p-0 border-0 shadow-sm transition-all"
+                    <button class="theme-toggle-btn btn btn-theme-soft rounded-circle d-flex align-items-center justify-content-center p-0 border-0 shadow-sm transition-all"
                             id="themeToggle" title="<?= __('change_theme') ?>" style="width: 44px; height: 44px;">
                         <i class="bi bi-moon-stars fs-5 text-main-theme"></i>
                     </button>
@@ -976,7 +976,7 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                     </div>
 
                     <!-- Canva Workspace Context Pill -->
-                    <div class="canva-workspace-pill p-2 rounded-3 d-flex align-items-center justify-content-between mt-1" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(124, 58, 237, 0.2);">
+                    <div class="canva-workspace-pill p-2 rounded-3 d-flex align-items-center justify-content-between mt-1">
                         <div class="d-flex align-items-center gap-2 overflow-hidden">
                             <span class="fs-6">🎓</span>
                             <span class="fw-semibold text-main-theme extra-small text-truncate"><?= h($user_name) ?></span>
@@ -986,8 +986,8 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                 </div>
 
                 <!-- Real-time Filter Search Box inside Drawer (Module Filter Only) -->
-                <div class="px-3 pt-3 pb-2 border-bottom bg-card">
-                    <div class="input-group input-group-sm rounded-pill border overflow-hidden bg-body" style="min-height: 40px;">
+                <div class="mobile-drawer-search-container px-3 pt-3 pb-2 border-bottom">
+                    <div class="input-group input-group-sm rounded-pill border overflow-hidden mobile-drawer-search-group" style="min-height: 40px;">
                         <span class="input-group-text border-0 bg-transparent text-muted ps-3 pe-1">
                             <i class="bi bi-search" style="font-size: 0.85rem;"></i>
                         </span>
@@ -1109,6 +1109,18 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                                                     <i class="bi bi-person-gear"></i>
                                                 </div>
                                                 <span class="fw-medium text-truncate" style="font-size: 0.86rem;"><?= __('my_profile') ?></span>
+                                            </div>
+                                            <i class="bi bi-chevron-right extra-small text-muted flex-shrink-0 opacity-50"></i>
+                                        </a>
+                                        <a href="javascript:void(0)" onclick="document.getElementById('themeToggle').click();" 
+                                           class="mobile-drawer-link d-flex align-items-center justify-content-between p-2 rounded-3 text-decoration-none text-main transition-all"
+                                           data-menu-label="thème sombre clair mode apparence" style="min-height: 44px;">
+                                            <div class="d-flex align-items-center gap-2-5 overflow-hidden">
+                                                <div class="mobile-drawer-icon-box rounded-circle bg-warning bg-opacity-10 text-warning d-flex align-items-center justify-content-center flex-shrink-0"
+                                                     style="width: 34px; height: 34px; font-size: 0.9rem;">
+                                                    <i class="bi bi-moon-stars"></i>
+                                                </div>
+                                                <span class="fw-medium text-truncate" style="font-size: 0.86rem;"><?= __('change_theme') ?></span>
                                             </div>
                                             <i class="bi bi-chevron-right extra-small text-muted flex-shrink-0 opacity-50"></i>
                                         </a>
