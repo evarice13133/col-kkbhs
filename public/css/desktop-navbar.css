@@ -381,3 +381,323 @@
         white-space: nowrap;
     }
 }
+
+/* ==========================================================================
+   MOBILE NAVBAR & OFFCANVAS DRAWER THEME ENGINE (LIGHT & DARK MODES)
+   ========================================================================== */
+
+/* 1. Topbar Theme Soft Utility Buttons */
+.btn-theme-soft {
+    background-color: #f8fafc;
+    color: #475569;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-theme-soft:hover {
+    background-color: #f1f5f9;
+    color: #0f172a;
+    border-color: #cbd5e1;
+}
+
+.btn-theme-soft:focus-visible,
+.btn-theme-soft:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.25);
+}
+
+.btn-theme-soft:active {
+    background-color: rgba(124, 58, 237, 0.1);
+    color: var(--primary-color, #7c3aed);
+}
+
+.btn-theme-soft:disabled,
+.btn-theme-soft.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+[data-theme="dark"] .btn-theme-soft {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    color: #f8fafc !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+[data-theme="dark"] .btn-theme-soft:hover {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+[data-theme="dark"] .btn-theme-soft:focus-visible,
+[data-theme="dark"] .btn-theme-soft:focus {
+    box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.3) !important;
+}
+
+[data-theme="dark"] .btn-theme-soft:active {
+    background-color: rgba(167, 139, 250, 0.2) !important;
+    color: #a78bfa !important;
+}
+
+/* 2. Mobile Offcanvas Drawer Container */
+.ribbon-mobile-drawer {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border-right: 1px solid #e2e8f0 !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
+
+[data-theme="dark"] .ribbon-mobile-drawer {
+    background-color: #0f172a !important;
+    color: #f8fafc !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* 3. Offcanvas Drawer Header & Branding */
+.ribbon-mobile-drawer .offcanvas-header {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.08) 0%, rgba(59, 130, 246, 0.05) 100%) !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="dark"] .ribbon-mobile-drawer .offcanvas-header {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.22) 0%, rgba(15, 23, 42, 0.95) 100%) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+#mobileRibbonDrawerLabel {
+    color: #0f172a !important;
+}
+
+[data-theme="dark"] #mobileRibbonDrawerLabel {
+    color: #f8fafc !important;
+}
+
+.ribbon-mobile-drawer .btn-close {
+    transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .ribbon-mobile-drawer .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%) !important;
+    opacity: 0.8;
+}
+
+[data-theme="dark"] .ribbon-mobile-drawer .btn-close:hover {
+    opacity: 1;
+}
+
+/* 4. Canva Workspace Context Pill */
+.canva-workspace-pill {
+    background: rgba(255, 255, 255, 0.8) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(124, 58, 237, 0.2) !important;
+    color: #0f172a !important;
+    transition: all 0.25s ease;
+}
+
+[data-theme="dark"] .canva-workspace-pill {
+    background: rgba(30, 41, 59, 0.85) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #f8fafc !important;
+}
+
+/* 5. Mobile Search Container & Input inside Drawer */
+.mobile-drawer-search-container {
+    background-color: #ffffff !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="dark"] .mobile-drawer-search-container {
+    background-color: #0f172a !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.mobile-drawer-search-group {
+    background-color: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mobile-drawer-search-group:focus-within {
+    border-color: var(--primary-color, #7c3aed) !important;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15) !important;
+}
+
+[data-theme="dark"] .mobile-drawer-search-group {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+}
+
+[data-theme="dark"] .mobile-drawer-search-group:focus-within {
+    border-color: #a78bfa !important;
+    box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.25) !important;
+}
+
+#mobileDrawerSearch {
+    color: #0f172a !important;
+}
+
+#mobileDrawerSearch::placeholder {
+    color: #94a3b8 !important;
+}
+
+[data-theme="dark"] #mobileDrawerSearch {
+    color: #f8fafc !important;
+}
+
+[data-theme="dark"] #mobileDrawerSearch::placeholder {
+    color: #64748b !important;
+}
+
+/* 6. Accordion Navigation Structure inside Mobile Drawer */
+#mobileRibbonAccordion .mobile-nav-group-item {
+    background-color: #ffffff !important;
+    border: 1px solid rgba(226, 232, 240, 0.8) !important;
+    transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+
+[data-theme="dark"] #mobileRibbonAccordion .mobile-nav-group-item {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+#mobileRibbonAccordion .accordion-button {
+    color: #1e293b !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    transition: all 0.2s ease-in-out;
+}
+
+#mobileRibbonAccordion .accordion-button:hover {
+    background-color: rgba(124, 58, 237, 0.05) !important;
+    color: var(--primary-color, #7c3aed) !important;
+}
+
+#mobileRibbonAccordion .accordion-button:not(.collapsed) {
+    background-color: rgba(124, 58, 237, 0.08) !important;
+    color: var(--primary-color, #7c3aed) !important;
+}
+
+[data-theme="dark"] #mobileRibbonAccordion .accordion-button {
+    color: #f8fafc !important;
+}
+
+[data-theme="dark"] #mobileRibbonAccordion .accordion-button:hover {
+    background-color: rgba(255, 255, 255, 0.06) !important;
+    color: #a78bfa !important;
+}
+
+[data-theme="dark"] #mobileRibbonAccordion .accordion-button:not(.collapsed) {
+    background-color: rgba(167, 139, 250, 0.14) !important;
+    color: #a78bfa !important;
+}
+
+[data-theme="dark"] #mobileRibbonAccordion .accordion-button::after {
+    filter: invert(0.85) hue-rotate(180deg) brightness(200%) !important;
+}
+
+/* Accordion Header Badges */
+#mobileRibbonAccordion .accordion-button .badge {
+    background-color: rgba(124, 58, 237, 0.1) !important;
+    color: var(--primary-color, #7c3aed) !important;
+    border: 1px solid rgba(124, 58, 237, 0.25) !important;
+}
+
+[data-theme="dark"] #mobileRibbonAccordion .accordion-button .badge {
+    background-color: rgba(167, 139, 250, 0.18) !important;
+    color: #a78bfa !important;
+    border: 1px solid rgba(167, 139, 250, 0.3) !important;
+}
+
+/* 7. Drawer Navigation Links & Submenus */
+.mobile-drawer-link {
+    color: #334155 !important;
+    background-color: transparent;
+    border: 1px solid transparent !important;
+    border-radius: 12px;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mobile-drawer-link:hover {
+    background-color: rgba(124, 58, 237, 0.07) !important;
+    color: var(--primary-color, #7c3aed) !important;
+    border-color: rgba(124, 58, 237, 0.15) !important;
+    transform: translateX(3px);
+}
+
+.mobile-drawer-link:focus-visible,
+.mobile-drawer-link:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.3) !important;
+}
+
+.mobile-drawer-link.active {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.14) 0%, rgba(124, 58, 237, 0.05) 100%) !important;
+    color: var(--primary-color, #7c3aed) !important;
+    font-weight: 700 !important;
+    border: 1px solid rgba(124, 58, 237, 0.28) !important;
+    box-shadow: 0 4px 14px rgba(124, 58, 237, 0.12) !important;
+    transform: translateX(3px);
+}
+
+.mobile-drawer-link.disabled,
+.mobile-drawer-link[aria-disabled="true"] {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+[data-theme="dark"] .mobile-drawer-link {
+    color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .mobile-drawer-link:hover {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    color: #a78bfa !important;
+    border-color: rgba(167, 139, 250, 0.25) !important;
+}
+
+[data-theme="dark"] .mobile-drawer-link.active {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.32) 0%, rgba(124, 58, 237, 0.15) 100%) !important;
+    color: #a78bfa !important;
+    border: 1px solid rgba(167, 139, 250, 0.4) !important;
+    box-shadow: 0 4px 16px rgba(124, 58, 237, 0.3) !important;
+}
+
+/* Drawer Icon Boxes */
+.mobile-drawer-icon-box {
+    background-color: rgba(124, 58, 237, 0.1) !important;
+    color: var(--primary-color, #7c3aed) !important;
+    transition: all 0.2s ease-in-out;
+}
+
+[data-theme="dark"] .mobile-drawer-link:not(.active) .mobile-drawer-icon-box {
+    background-color: rgba(167, 139, 250, 0.16) !important;
+    color: #a78bfa !important;
+}
+
+.mobile-drawer-link.active .mobile-drawer-icon-box {
+    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 10px rgba(124, 58, 237, 0.35) !important;
+}
+
+[data-theme="dark"] .mobile-drawer-link.active .mobile-drawer-icon-box {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.45) !important;
+}
+
+/* 8. Mobile Offcanvas Footer */
+.ribbon-mobile-drawer .offcanvas-footer {
+    background-color: #f8fafc !important;
+    border-top: 1px solid #e2e8f0 !important;
+    color: #64748b !important;
+}
+
+[data-theme="dark"] .ribbon-mobile-drawer .offcanvas-footer {
+    background-color: #0f172a !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: #94a3b8 !important;
+}
+
