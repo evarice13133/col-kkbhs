@@ -6,7 +6,7 @@
     <style>
         @page {
             size: A4 landscape;
-            margin: 3mm 5mm;
+            margin: 2mm 4mm;
         }
         * {
             box-sizing: border-box;
@@ -16,47 +16,47 @@
             color: #0f172a;
             margin: 0;
             padding: 0;
-            font-size: 7.5px;
+            font-size: 7px;
             background: #ffffff;
-            line-height: 1.1;
+            line-height: 1.05;
         }
 
-        /* En-tête Institutionnel Centré (Compact 1 Page) */
+        /* En-tête Institutionnel Centré Ultra-Compact (1 Page Stricte) */
         .header-table {
             width: 100%;
             border-collapse: collapse;
             border-bottom: 1.5px solid #1e3a8a;
-            padding-bottom: 2px;
-            margin-bottom: 2px;
+            padding-bottom: 1px;
+            margin-bottom: 1px;
         }
         .logo-container {
-            width: 14%;
+            width: 12%;
             vertical-align: middle;
             text-align: left;
         }
         .logo-img {
-            max-height: 36px;
-            max-width: 90px;
+            max-height: 26px;
+            max-width: 75px;
         }
         .logo-fallback {
             background-color: #1e3a8a;
             color: #ffffff;
             font-weight: 900;
-            font-size: 10px;
-            padding: 4px 6px;
-            border-radius: 4px;
+            font-size: 9px;
+            padding: 3px 5px;
+            border-radius: 3px;
             text-align: center;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
             display: inline-block;
         }
         .institution-container {
-            width: 72%;
+            width: 76%;
             vertical-align: middle;
             text-align: center;
-            padding: 0 4px;
+            padding: 0 2px;
         }
         .school-name {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 800;
             color: #0f172a;
             text-transform: uppercase;
@@ -64,37 +64,37 @@
             text-align: center;
         }
         .school-decree {
-            font-size: 8px;
+            font-size: 7px;
             font-style: italic;
             color: #475569;
-            margin-top: 1px;
-            margin-bottom: 2px;
+            margin-top: 0px;
+            margin-bottom: 1px;
             text-align: center;
-            line-height: 1.1;
+            line-height: 1.05;
         }
         .doc-ref-number {
-            font-size: 11px;
+            font-size: 9.5px;
             font-weight: 800;
             color: #0f172a;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             text-align: center;
-            margin-top: 1px;
-            margin-bottom: 2px;
+            margin-top: 0px;
+            margin-bottom: 1px;
         }
         .doc-title {
-            font-size: 13px;
+            font-size: 11px;
             font-weight: 800;
             color: #2563eb;
-            margin-top: 1px;
+            margin-top: 0px;
             text-transform: uppercase;
             text-align: center;
             text-decoration: underline;
         }
         .meta-bar {
-            font-size: 7.5px;
+            font-size: 7px;
             color: #334155;
-            margin-top: 2px;
+            margin-top: 1px;
             text-align: center;
             font-weight: 500;
         }
@@ -103,43 +103,43 @@
             background-color: #1e3a8a;
             color: #ffffff;
             font-weight: 800;
-            padding: 1px 5px;
-            border-radius: 3px;
+            padding: 0px 4px;
+            border-radius: 2px;
         }
         .cert-container {
-            width: 14%;
+            width: 12%;
             vertical-align: middle;
             text-align: right;
         }
         .partner-logo-img {
-            max-height: 36px;
-            max-width: 90px;
+            max-height: 26px;
+            max-width: 75px;
             object-fit: contain;
         }
         .partner-logo-fallback {
             background-color: #0f172a;
             color: #ffffff;
             font-weight: 800;
-            font-size: 8px;
-            padding: 4px 6px;
-            border-radius: 4px;
+            font-size: 7.5px;
+            padding: 3px 5px;
+            border-radius: 3px;
             text-align: center;
             display: inline-block;
             letter-spacing: 0.5px;
         }
         .cert-time {
-            font-size: 6px;
+            font-size: 5.5px;
             color: #64748b;
-            margin-top: 1px;
+            margin-top: 0px;
             font-weight: 500;
         }
 
-        /* Grille Tableau Pro & Épurée (Anti-Débordement Strict 1 Page) */
+        /* Grille Tableau Pro (Ultra-Compacte 1 Page Stricte) */
         .grid-table {
             width: 100%;
             border-collapse: collapse;
             table-layout: fixed;
-            margin-top: 2px;
+            margin-top: 1px;
             page-break-inside: avoid;
         }
         .grid-table th {
@@ -147,18 +147,21 @@
             color: #ffffff;
             font-weight: 800;
             text-transform: uppercase;
-            padding: 3px 2px;
-            font-size: 7.5px;
+            padding: 2px 1px;
+            font-size: 7px;
             border: 1px solid #1e293b;
             text-align: center;
             vertical-align: middle;
         }
+        .grid-table tr {
+            page-break-inside: avoid;
+        }
         .grid-table td {
             border: 1px solid #cbd5e1;
-            padding: 1.5px 1px;
+            padding: 1px 0.5px;
             vertical-align: middle;
             text-align: center;
-            height: 28px;
+            height: 20px;
             word-wrap: break-word;
             overflow: hidden;
         }
@@ -168,7 +171,7 @@
             background-color: #f1f5f9;
             font-weight: 800;
             color: #1e293b;
-            font-size: 8px;
+            font-size: 7.5px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             text-align: center;
@@ -179,7 +182,7 @@
             background-color: #f8fafc;
             font-weight: 700;
             color: #334155;
-            font-size: 7px;
+            font-size: 6.5px;
             font-family: monospace;
             text-align: center;
             vertical-align: middle;
@@ -188,40 +191,40 @@
             background-color: #e6f4ea !important;
             color: #137333 !important;
             font-weight: 800;
-            font-size: 7px !important;
+            font-size: 6.5px !important;
             text-align: center;
             vertical-align: middle;
             border: 1px solid #cbd5e1 !important;
-            height: 13px !important;
-            padding: 0px 2px !important;
+            height: 10px !important;
+            padding: 0px 1px !important;
         }
 
-        /* Contenu des Cours Centré & Sobres */
+        /* Contenu des Cours Centré */
         .course-box {
             text-align: center;
             vertical-align: middle;
-            padding: 1px;
+            padding: 0.5px;
         }
         .subject-name {
-            font-size: 9px;
+            font-size: 7.5px;
             font-weight: 800;
             color: #0f172a;
-            line-height: 1.1;
-            margin-bottom: 1px;
+            line-height: 1.05;
+            margin-bottom: 0px;
             text-align: center;
         }
         .teacher-name {
-            font-size: 7px;
+            font-size: 6.5px;
             color: #334155;
             font-weight: 500;
             text-align: center;
         }
         .room-name {
-            font-size: 6.5px;
+            font-size: 6px;
             color: #dc2626;
             font-weight: 800;
             text-align: center;
-            margin-top: 1px;
+            margin-top: 0px;
         }
     </style>
 </head>
