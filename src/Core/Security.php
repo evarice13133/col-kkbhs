@@ -14,8 +14,8 @@ class Security {
      * Applique les en-têtes HTTP de sécurité.
      */
     public static function applyHeaders() {
-        // Anti-Clickjacking
-        header('X-Frame-Options: DENY');
+        // Anti-Clickjacking (SAMEORIGIN permet l'intégration d'iframes sur le même domaine pour la prévisualisation d'impression)
+        header('X-Frame-Options: SAMEORIGIN');
         
         // Anti-MIME-Sniffing
         header('X-Content-Type-Options: nosniff');

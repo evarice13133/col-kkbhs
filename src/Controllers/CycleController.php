@@ -40,10 +40,18 @@ class CycleController
         $q = trim((string) ($_GET['q'] ?? ''));
         $teaching_type_id = !empty($_GET['teaching_type_id']) ? (int) $_GET['teaching_type_id'] : null;
 
+        // Recherche du type d'enseignement Supérieur LMD
+        $lmdStmt = $this->db->query("SELECT id FROM teaching_types WHERE code = 'LMD' OR LOWER(nom) LIKE '%lmd%' OR LOWER(nom) LIKE '%supérieur%' ORDER BY id ASC LIMIT 1");
+        $lmdId = $lmdStmt ? (int) $lmdStmt->fetchColumn() : 0;
+
+        if ($teaching_type_id === null && $lmdId > 0) {
+            $teaching_type_id = $lmdId;
+        }
+
         $conditions = [];
         $params = [];
 
-        // Ne sélectionner que les cycles rattachés à un type d'enseignement actif (ou sans type)
+        // Ne sélectionner que les cycles rattachés au type d'enseignement LMD
         $conditions[] = "(t.actif = 1 OR c.teaching_type_id IS NULL)";
 
         if ($q !== '') {
@@ -107,6 +115,11 @@ class CycleController
             $nom = trim((string) ($_POST['nom'] ?? ''));
             $teaching_type_id = !empty($_POST['teaching_type_id']) ? (int) $_POST['teaching_type_id'] : null;
             $level_ids = isset($_POST['level_ids']) && is_array($_POST['level_ids']) ? array_map('intval', $_POST['level_ids']) : [];
+
+            if (!$teaching_type_id) {
+                $lmdStmt = $this->db->query("SELECT id FROM teaching_types WHERE code = 'LMD' OR LOWER(nom) LIKE '%lmd%' OR LOWER(nom) LIKE '%supérieur%' ORDER BY id ASC LIMIT 1");
+                $teaching_type_id = $lmdStmt ? (int) $lmdStmt->fetchColumn() : null;
+            }
 
             if ($nom === '' || !$teaching_type_id) {
                 $error = __('required');

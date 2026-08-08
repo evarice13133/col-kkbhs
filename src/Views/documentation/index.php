@@ -10,6 +10,10 @@ ob_start(); ?>
             <p class="text-muted small mb-0"><?= __('documentation_intro_text') ?></p>
         </div>
         <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary px-3 fw-bold shadow-sm rounded-3"
+                onclick="window.TopBarOnboarding ? window.TopBarOnboarding.relaunch() : (location.href='/')">
+                <i class="bi bi-compass text-primary me-1"></i> Relancer le guide d'onboarding
+            </button>
             <a href="/documentation/download" class="btn btn-outline-primary px-4 fw-bold shadow-sm rounded-3">
                 <i class="bi bi-file-earmark-pdf me-1"></i> <?= __('download_pdf') ?>
             </a>
