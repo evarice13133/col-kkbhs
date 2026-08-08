@@ -528,6 +528,25 @@ class TimetableController
             exit;
         }
 
+        // Validation backend stricte anti-injection de cycle secondaire
+        $validCycleStmt = $this->db->prepare("
+            SELECT c.id 
+            FROM cycles c 
+            LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id 
+            WHERE c.id = :cycle_id 
+              AND (c.teaching_type_id = 9 OR tt.code = 'LMD' OR LOWER(tt.nom) LIKE '%lmd%' OR LOWER(tt.nom) LIKE '%supérieur%' OR c.teaching_type_id IS NULL)
+              AND (tt.code IS NULL OR (tt.code != 'SEC00' AND LOWER(tt.nom) NOT LIKE '%secondaire%'))
+              AND LOWER(c.nom) NOT LIKE '%1ere cycle%' 
+              AND LOWER(c.nom) NOT LIKE '%2nd cycle%' 
+              AND LOWER(c.nom) NOT LIKE '%secondaire%'
+        ");
+        $validCycleStmt->execute(['cycle_id' => $cycleId]);
+        if (!$validCycleStmt->fetch()) {
+            Session::setFlash('error', 'Le cycle sélectionné n\'est pas valide pour le Supérieur LMD.');
+            header('Location: /timetables/wizard');
+            exit;
+        }
+
         // Récupérer les classes du niveau
         $classes = $this->wizardService->getClassesByLevel($cycleId, $levelId);
 
@@ -1042,8 +1061,18 @@ class TimetableController
             }
         }
 
+        if (!$cycleId) {
+            $firstCycle = $this->db->query("SELECT id FROM cycles ORDER BY nom ASC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+            $cycleId = $firstCycle ? (int)$firstCycle['id'] : 0;
+        }
+
+        if (!$weekId) {
+            $firstWeek = $this->db->query("SELECT id FROM timetable_weeks ORDER BY id ASC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+            $weekId = $firstWeek ? (int)$firstWeek['id'] : 0;
+        }
+
         if (!$cycleId || !$weekId) {
-            Session::setFlash('error', 'Paramètres manquants pour l\'export PDF.');
+            Session::setFlash('error', 'Aucun emploi du temps disponible pour la prévisualisation.');
             header('Location: /timetables');
             exit;
         }
@@ -1073,7 +1102,7 @@ class TimetableController
             $partner_logo = '/public/uploads/1785328229_logo-camertech.png';
         }
 
-        if ($mode === 'print') {
+        if ($mode === 'print' || $mode === 'preview') {
             require __DIR__ . '/../Views/timetables/pdf.php';
             exit;
         }
@@ -1094,6 +1123,38 @@ class TimetableController
 
         $filename = 'Emploi_du_Temps_' . str_replace(' ', '_', $cycleRow['nom'] ?? 'Cycle') . '_' . str_replace(' ', '_', $weekRow['libelle'] ?? 'Semaine') . '.pdf';
         $dompdf->stream($filename, ['Attachment' => 1]);
+    }
+
+    /**
+     * Page d'impression dédiée des emplois du temps (Menu Imprimer).
+     * Reprend le design d'île flottante et le parcours unifié NoteMaster.
+     */
+    public function printIndex()
+    {
+        PermissionManager::requirePermission('view_timetables');
+
+        $activeYear = $this->academicYearService->getActiveYear();
+        $activeYearId = $activeYear ? (int)$activeYear['id'] : 0;
+
+        $academicYears = $this->academicYearService->getAllYears();
+        $selectedYearId = (int)($_GET['academic_year_id'] ?? $activeYearId);
+
+        // Récupération des cycles (Supérieur LMD uniquement)
+        $cycles = $this->wizardService->getCyclesByTeachingType(9);
+        $selectedCycleId = (int)($_GET['cycle_id'] ?? ($cycles[0]['id'] ?? 0));
+
+        // Récupération des niveaux pour le cycle sélectionné via la table pivot ou le wizard service
+        $levels = [];
+        if ($selectedCycleId > 0) {
+            $levels = $this->wizardService->getLevelsByCycle($selectedCycleId);
+        }
+        $selectedLevelId = (int)($_GET['level_id'] ?? 0);
+
+        // Récupération des semaines de cours disponibles
+        $weeks = $this->weekModel->getAll();
+        $selectedWeekId = (int)($_GET['week_id'] ?? ($weeks[0]['id'] ?? 0));
+
+        require __DIR__ . '/../Views/timetables/print.php';
     }
 }
 

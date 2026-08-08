@@ -230,6 +230,8 @@ elseif (strpos($path, '/timetables') === 0) {
         $c->unlock();
     } elseif ($path === '/timetables/delete' && $method === 'POST') {
         $c->deleteTimetable();
+    } elseif ($path === '/timetables/print') {
+        $c->printIndex();
     } elseif ($path === '/timetables/pdf') {
         $c->exportPdf();
     } elseif ($path === '/timetables/api/wizard-data' || strpos($path, '/timetables/api/wizard/') === 0) {

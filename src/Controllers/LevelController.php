@@ -37,6 +37,14 @@ class LevelController
         $teaching_type_id = !empty($_GET['teaching_type_id']) ? (int) $_GET['teaching_type_id'] : null;
         $status = isset($_GET['status']) && $_GET['status'] !== '' ? (int) $_GET['status'] : null;
 
+        // Recherche du type d'enseignement Supérieur LMD
+        $lmdStmt = $this->db->query("SELECT id FROM teaching_types WHERE code = 'LMD' OR LOWER(nom) LIKE '%lmd%' OR LOWER(nom) LIKE '%supérieur%' ORDER BY id ASC LIMIT 1");
+        $lmdId = $lmdStmt ? (int) $lmdStmt->fetchColumn() : 0;
+
+        if ($teaching_type_id === null && $lmdId > 0) {
+            $teaching_type_id = $lmdId;
+        }
+
         $conditions = [];
         $params = [];
 

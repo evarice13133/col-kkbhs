@@ -129,8 +129,8 @@ $ribbon_structure = [
                 'items' => [
                     ['icon' => 'bi-calendar-event', 'label' => __('academic_years'), 'url' => '/academic_years', 'permission' => 'manage_academic_years', 'roles' => ['superadmin', 'it_manager'], 'desc' => 'Configuration des années scolaires et périodes académiques.'],
                     ['icon' => 'bi-diagram-3', 'label' => __('teaching_types'), 'url' => '/teaching_types', 'permission' => 'manage_teaching_types', 'roles' => ['superadmin', 'admin'], 'desc' => 'Définition des types d\'enseignement (Général, Technique, etc.).'],
-                    ['icon' => 'bi-bar-chart-steps', 'label' => __('levels') ?? 'Niveaux', 'url' => '/levels', 'permission' => 'manage_classes_structure', 'roles' => ['superadmin', 'admin'], 'desc' => 'Gestion des niveaux scolaires et coefficients.'],
-                    ['icon' => 'bi-layers', 'label' => __('academic_cycles'), 'url' => '/cycles', 'permission' => 'manage_cycles', 'roles' => ['superadmin', 'admin'], 'desc' => 'Cycles d\'études (Premier cycle, Second cycle).'],
+                    ['icon' => 'bi-bar-chart-steps', 'label' => 'Niveaux (LMD)', 'url' => '/levels', 'permission' => 'manage_classes_structure', 'roles' => ['superadmin', 'admin'], 'desc' => 'Gestion des niveaux d\'études spécifiques au Supérieur LMD (Licence 1, 2, 3...).'],
+                    ['icon' => 'bi-layers', 'label' => 'Cycles Académiques (LMD)', 'url' => '/cycles', 'permission' => 'manage_cycles', 'roles' => ['superadmin', 'admin'], 'desc' => 'Cycles d\'études spécifiques au Supérieur LMD (Licence, Master, Doctorat).'],
                     ['icon' => 'bi-grid-3x3-gap', 'label' => __('academic_sections'), 'url' => '/sections', 'permission' => 'manage_sections', 'roles' => ['superadmin', 'admin'], 'desc' => 'Sections francophones, anglophones et spécialités.'],
                     ['icon' => 'bi-building', 'label' => __('departments'), 'url' => '/departments', 'permission' => 'manage_departments', 'roles' => ['superadmin', 'admin', 'it_manager'], 'desc' => 'Organisation des départements académiques.'],
                 ]
@@ -253,6 +253,7 @@ $ribbon_structure = [
                 'title' => 'Édition & Documents',
                 'items' => [
                     ['icon' => 'bi-file-earmark-pdf', 'label' => __('bulletins'), 'url' => '/bulletins', 'permission' => 'manage_bulletins', 'roles' => ['superadmin', 'admin'], 'desc' => 'Génération et impression des bulletins de notes périodiques.'],
+                    ['icon' => 'bi-calendar3-week', 'label' => 'Emplois du Temps', 'url' => '/timetables/print', 'permission' => 'view_timetables', 'desc' => 'Impression et export PDF des emplois du temps par cycle académique et niveau.'],
                     ['icon' => 'bi-award', 'label' => __('honor_roll_title'), 'url' => '/honors', 'permission' => 'manage_bulletins', 'roles' => ['superadmin', 'admin'], 'desc' => 'Impression des tableaux d\'honneur et félicitations.'],
                     ['icon' => 'bi-file-earmark-text', 'label' => __('proces_verbaux'), 'url' => '/proces-verbal', 'permission' => 'manage_bulletins', 'roles' => ['superadmin', 'admin'], 'desc' => 'Édition des procès-verbaux de récapitulation annuelle.'],
                     ['icon' => 'bi-file-earmark-spreadsheet', 'label' => __('transcripts') ?? 'Relevé de Notes', 'url' => '/transcripts', 'permission' => 'view_transcripts', 'roles' => ['superadmin', 'admin'], 'desc' => 'Génération des relevés de notes consolidés.'],
@@ -293,6 +294,11 @@ foreach ($ribbon_structure as $tab) {
         }
     }
 }
+
+// Evaluation réelle et sécurisée de l'onboarding pour l'utilisateur
+$user_id = (int) \App\Core\Session::get('user_id', 0);
+$onboardingService = new \App\Services\OnboardingService($db);
+$onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $user_role);
 ?>
 <!DOCTYPE html>
 <html lang="<?= $app_lang ?>" data-theme="light">
@@ -306,7 +312,8 @@ foreach ($ribbon_structure as $tab) {
             document.documentElement.setAttribute('data-theme', savedTheme);
         })();
 
-        // --- TRANSLATIONS & COMMANDS FOR JAVASCRIPT ---
+        // --- TRANSLATIONS, COMMANDS & ONBOARDING DATA FOR JAVASCRIPT ---
+        window.NM_ONBOARDING_DATA = <?= json_encode($onboarding_data, JSON_UNESCAPED_UNICODE) ?>;
         window.NM_COMMANDS = <?= json_encode($authorized_commands, JSON_UNESCAPED_UNICODE) ?>;
         window.NM_I18N = {
             'confirmation': "<?= addslashes((string) __('confirmation')) ?>",
@@ -378,6 +385,7 @@ foreach ($ribbon_structure as $tab) {
     <link rel="stylesheet" href="/public/css/alerts-premium.css?v=<?= $asset_version ?>">
     <link rel="stylesheet" href="/public/css/ux-improvements.css?v=<?= $asset_version ?>">
     <link rel="stylesheet" href="/public/css/topbar-onboarding.css?v=<?= $asset_version ?>">
+    <link rel="stylesheet" href="/public/css/desktop-navbar.css?v=<?= $asset_version ?>">
 
     <style>
         :root {
@@ -605,11 +613,10 @@ foreach ($ribbon_structure as $tab) {
 <body>
 
     <div class="dashboard-wrapper">
-        <!-- MICROSOFT WORD STYLE RIBBON UI NAVIGATION -->
-        <nav class="word-ribbon-container" id="ribbonNavContainer">
+        <!-- DESKTOP NAVBAR STREAMLINED NAVIGATION (SAAS STYLE WITH INDEPENDENT DROPDOWNS) -->
+        <nav class="desktop-navbar-container" id="desktopNavbarContainer">
             
-            <!-- 1. BARRE SUPÉRIEURE INDÉPENDANTE (Brand + QAT + Global Search + Utility Actions) -->
-            <div class="ribbon-top-bar" id="ribbonTopBar">
+            <div class="navbar-top-row" id="ribbonTopBar">
                 <!-- Gauche : Mobile Button + Logo + Quick Access Toolbar (QAT) + Global Search Input -->
                 <div class="d-flex align-items-center gap-2 flex-grow-1 overflow-hidden" style="max-width: 750px;">
                     <!-- Mobile Menu Button (WCAG 44x44px Touch Target) -->
@@ -637,7 +644,7 @@ foreach ($ribbon_structure as $tab) {
                         <span class="ribbon-brand-text d-none d-sm-inline fw-bold"><?= htmlspecialchars((string) $school_identity) ?></span>
                     </a>
 
-                    <!-- MS Word Quick Access Toolbar (QAT - Barre d'Accès Rapide) -->
+                    <!-- Quick Access Toolbar (QAT) -->
                     <?php if (\App\Core\Session::isLogged()): ?>
                         <div class="ribbon-qat-container d-none d-md-flex me-2 flex-shrink-0" id="tourQAT">
                             <a href="/" class="ribbon-qat-btn <?= $current_path === '/' ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-html="true" title="<div class='tooltip-rich-title'><i class='bi bi-house-door'></i> Tableau de bord</div><div class='tooltip-rich-desc'>Vue d'ensemble et statistiques générales de l'école.</div>">
@@ -676,9 +683,8 @@ foreach ($ribbon_structure as $tab) {
                         </div>
                     <?php endif; ?>
 
-                    <!-- Global Search Trigger (Linear / VSCode Command Palette Trigger) -->
+                    <!-- Global Search Trigger (Ctrl+K) -->
                     <?php if (\App\Core\Session::isLogged()): ?>
-                        <!-- Desktop / Tablet Search Input Trigger -->
                         <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-2 align-items-center flex-grow-1 cursor-pointer d-none d-sm-flex" id="openCmdPaletteTrigger" style="border: 1px solid var(--border-color) !important; max-width: 340px; min-height: 36px; cursor: pointer;">
                             <span class="input-group-text border-0 bg-transparent text-primary p-1 ps-1">
                                 <i class="bi bi-search" style="font-size: 0.85rem;"></i>
@@ -687,7 +693,6 @@ foreach ($ribbon_structure as $tab) {
                                 placeholder="Rechercher... (Ctrl+K)" readonly style="font-size: 0.8rem; height: 32px; cursor: pointer;">
                             <span class="badge bg-secondary bg-opacity-10 text-muted border rounded-pill extra-small px-1-5 py-0 me-1 d-none d-md-inline" style="font-size: 0.65rem;">⌘K</span>
                         </div>
-                        <!-- Mobile Search Icon Button (WCAG Touch Target 44x44px) -->
                         <button type="button" class="btn btn-theme-soft rounded-circle d-flex d-sm-none align-items-center justify-content-center p-0 border-0 flex-shrink-0"
                                 id="openCmdPaletteTriggerMobile" title="Rechercher une commande (Ctrl+K)" style="width: 44px; height: 44px;">
                             <i class="bi bi-search fs-5 text-primary"></i>
@@ -695,10 +700,10 @@ foreach ($ribbon_structure as $tab) {
                     <?php endif; ?>
                 </div>
 
-                <!-- Droite : Onboarding Progress Pill + Primary CTA + Notification Bell + Theme Switcher + User Account -->
+                <!-- Droite : Actions Utilitaire + Profil -->
                 <div class="d-flex align-items-center gap-1-5 gap-sm-2 flex-shrink-0">
                     <?php if (\App\Core\Session::isLogged()): ?>
-                        <!-- 1. Pill Badge Widget de Progression (Checklist Interactive Popover) - Tablet/Desktop -->
+                        <!-- 1. Pill Badge Widget de Progression -->
                         <div class="dropdown me-1 d-none d-md-block" id="onboardingProgressPillDropdown">
                             <div class="onboarding-pill-badge" data-bs-toggle="dropdown" aria-expanded="false" title="Progression de la configuration de votre espace">
                                 <span class="pill-sparkle">✨</span>
@@ -729,7 +734,7 @@ foreach ($ribbon_structure as $tab) {
                             <i class="bi bi-rocket-takeoff"></i> Configurer maintenant
                         </a>
 
-                        <!-- 3. Smart Notification Bell Dropdown (44x44px Touch Target) -->
+                        <!-- 3. Smart Notification Bell Dropdown -->
                         <div class="dropdown" id="onboardingBellDropdown">
                             <button type="button" class="btn btn-theme-soft notification-bell-btn rounded-circle d-flex align-items-center justify-content-center p-0 border-0 shadow-sm transition-all"
                                     data-bs-toggle="dropdown" aria-expanded="false" title="Notifications & Conseils Onboarding" style="width: 44px; height: 44px;">
@@ -769,20 +774,20 @@ foreach ($ribbon_structure as $tab) {
                             </div>
                         </div>
 
-                        <!-- 4. Interactive Guided Tour Button (44x44px Touch Target) -->
+                        <!-- 4. Interactive Guided Tour Button -->
                         <button type="button" class="btn btn-theme-soft rounded-circle d-none d-sm-flex align-items-center justify-content-center p-0 border-0 shadow-sm transition-all"
                                 id="startGuidedTour" title="Découvrir la Navigation (Visite Guidée)" style="width: 44px; height: 44px;">
                             <i class="bi bi-compass fs-5 text-primary"></i>
                         </button>
                     <?php endif; ?>
 
-                    <!-- Theme Toggle (44x44px Touch Target - Hidden on mobile, managed in User Avatar Menu & Drawer) -->
+                    <!-- Theme Toggle -->
                     <button class="theme-toggle-btn btn btn-theme-soft rounded-circle d-none d-sm-flex align-items-center justify-content-center p-0 border-0 shadow-sm transition-all"
                             id="themeToggle" title="<?= __('change_theme') ?>" style="width: 44px; height: 44px;">
                         <i class="bi bi-moon-stars fs-5 text-main-theme"></i>
                     </button>
 
-                    <!-- Compact User Account Avatar Dropdown (44x44px Touch Target - Single Source of Truth for User Preferences) -->
+                    <!-- Compact User Account Avatar Dropdown -->
                     <?php if (\App\Core\Session::isLogged()): ?>
                         <div class="dropdown" id="tourUserAccount">
                             <a href="#"
@@ -825,6 +830,11 @@ foreach ($ribbon_structure as $tab) {
                                     </li>
                                 <?php endif; ?>
                                 <li>
+                                    <a class="dropdown-item dropdown-item-modern py-2" href="javascript:void(0)" onclick="window.TopBarOnboarding.relaunch();">
+                                        <i class="bi bi-compass text-primary fs-5 me-2"></i> Relancer le guide d'onboarding
+                                    </a>
+                                </li>
+                                <li>
                                     <a class="dropdown-item dropdown-item-modern py-2" href="javascript:void(0)" onclick="document.getElementById('themeToggle').click();">
                                         <i class="bi bi-moon-stars text-warning fs-5 me-2"></i> <?= __('change_theme') ?>
                                     </a>
@@ -859,142 +869,84 @@ foreach ($ribbon_structure as $tab) {
                         </div>
                     <?php endif; ?>
                 </div>
-
-                <!-- Bottom Micro Progress Line -->
-                <?php if (\App\Core\Session::isLogged()): ?>
-                    <div class="topbar-progress-container" title="Progression de la configuration de votre espace">
-                        <div class="topbar-progress-line" id="topbarProgressLine" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                <?php endif; ?>
             </div>
 
-            <!-- Onboarding Contextual Banner -->
+            <!-- 2. DESKTOP NAVIGATION BAR (SAAS DROPDOWNS AUTONOMES) -->
             <?php if (\App\Core\Session::isLogged()): ?>
-                <div class="onboarding-context-banner" id="onboardingContextBanner" style="display: none;">
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="fs-5">✨</span>
-                        <span id="onboardingBannerText">Bienvenue 👋 Commençons la configuration de votre espace.</span>
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <button type="button" class="banner-dismiss-btn" id="dismissOnboardingBanner" title="Masquer cette bannière">
-                            <i class="bi bi-x-lg"></i>
-                        </button>
-                    </div>
-                </div>
-            <?php endif; ?>
-
-            <!-- 2. BARRE D'ONGLETS RIBBON DÉDIÉE (Pleine Largeur - Exclusivité Menus Métier) -->
-            <?php if (\App\Core\Session::isLogged()): ?>
-                <div class="ribbon-tabs-bar border-bottom d-none d-lg-flex px-3" id="tourRibbonTabs">
-                    <div class="ribbon-tabs-wrapper flex-grow-1" id="ribbonTabsWrapper">
+                <div class="desktop-nav-menu-bar d-none d-lg-flex px-3" id="tourRibbonTabs">
+                    <div class="desktop-nav-items-wrapper flex-grow-1" id="desktopNavItems">
                         <?php foreach ($ribbon_structure as $tab): ?>
                             <?php
-                            $tab_accessible_count = 0;
+                            $tab_accessible_groups = [];
+                            $total_items_in_tab = 0;
                             foreach ($tab['groups'] as $group) {
-                                foreach ($group['items'] as $item) {
-                                    if ($isItemAllowed($item)) {
-                                        $tab_accessible_count++;
-                                    }
+                                $visible_items = array_filter($group['items'], fn($item) => $isItemAllowed($item));
+                                if (!empty($visible_items)) {
+                                    $tab_accessible_groups[] = [
+                                        'title' => $group['title'],
+                                        'items' => array_values($visible_items)
+                                    ];
+                                    $total_items_in_tab += count($visible_items);
                                 }
                             }
                             ?>
-                            <?php if ($tab_accessible_count > 0): ?>
-                                <button type="button" 
-                                        class="ribbon-tab-btn <?= $tab['id'] === $active_tab_id ? 'active' : '' ?>" 
-                                        data-tab-target="#<?= $tab['id'] ?>">
-                                    <i class="bi <?= $tab['icon'] ?>"></i>
-                                    <span><?= htmlspecialchars($tab['title']) ?></span>
-                                    <?php if ($tab_accessible_count > 10): ?>
-                                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill ms-1 extra-small"><?= $tab_accessible_count ?></span>
-                                    <?php endif; ?>
-                                </button>
-                            <?php endif; ?>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
+                            <?php if ($total_items_in_tab > 0): ?>
+                                <?php $isTabActive = ($tab['id'] === $active_tab_id); ?>
+                                <div class="nav-dropdown-wrapper">
+                                    <button type="button" 
+                                            class="nav-item-btn nav-dropdown-trigger <?= $isTabActive ? 'active' : '' ?>" 
+                                            id="nav-trigger-<?= $tab['id'] ?>"
+                                            aria-expanded="false" 
+                                            aria-haspopup="true"
+                                            aria-controls="nav-menu-<?= $tab['id'] ?>"
+                                            data-nav-target="nav-menu-<?= $tab['id'] ?>">
+                                        <i class="bi <?= $tab['icon'] ?>"></i>
+                                        <span><?= htmlspecialchars($tab['title']) ?></span>
+                                        <i class="bi bi-chevron-down dropdown-arrow"></i>
+                                    </button>
 
-                <!-- 3. BARRE D'OUTILS COMMANDES DU RUBAN (DISSOLUTION DU DROPDOWN & ÉCLATEMENT VISUEL AU MÊME NIVEAU) -->
-                <div class="ribbon-toolbar-container d-none d-lg-flex" id="ribbonToolbarContainer">
-                    <div class="d-flex align-items-stretch flex-grow-1 overflow-x-auto" id="ribbonPanesWrapper" style="scrollbar-width: thin;">
-                        <?php foreach ($ribbon_structure as $tab): ?>
-                            <?php
-                            $tab_accessible_items = [];
-                            foreach ($tab['groups'] as $group) {
-                                foreach ($group['items'] as $item) {
-                                    if ($isItemAllowed($item)) {
-                                        $tab_accessible_items[] = $item;
-                                    }
-                                }
-                            }
-                            $total_tab_items = count($tab_accessible_items);
-                            ?>
-                            <?php if ($total_tab_items > 0): ?>
-                                <div class="ribbon-tab-pane <?= $tab['id'] === $active_tab_id ? 'active' : '' ?>" id="<?= $tab['id'] ?>">
-                                    <?php if ($total_tab_items <= 15): ?>
-                                        <!-- CAS 1 : <= 15 SOUS-MENUS -> AFFICHAGE HARMONISÉ EN GROUPES RIBBON DIRECTS -->
-                                        <?php foreach ($tab['groups'] as $group): ?>
-                                            <?php
-                                            $group_visible_items = array_filter($group['items'], fn($i) => $isItemAllowed($i));
-                                            ?>
-                                            <?php if (count($group_visible_items) > 0): ?>
-                                                <div class="ribbon-group">
-                                                    <div class="ribbon-group-items">
-                                                        <?php foreach ($group_visible_items as $item): ?>
-                                                            <?php $isActive = $isUrlActive($item['url']); ?>
+                                    <!-- Independent Popover Dropdown Menu -->
+                                    <div class="nav-dropdown-menu <?= count($tab_accessible_groups) > 1 || $total_items_in_tab > 6 ? 'multi-column' : '' ?>" 
+                                         id="nav-menu-<?= $tab['id'] ?>" 
+                                         aria-labelledby="nav-trigger-<?= $tab['id'] ?>" 
+                                         role="menu">
+                                        <div class="dropdown-content-grid">
+                                            <?php foreach ($tab_accessible_groups as $group): ?>
+                                                <div class="dropdown-group-section">
+                                                    <div class="dropdown-group-header">
+                                                        <i class="bi bi-folder2-open me-1"></i> <?= htmlspecialchars($group['title']) ?>
+                                                    </div>
+                                                    <div class="dropdown-group-links">
+                                                        <?php foreach ($group['items'] as $item): ?>
+                                                            <?php $itemActive = $isUrlActive($item['url']); ?>
                                                             <a href="<?= $item['url'] ?>" 
-                                                               class="ribbon-btn-large <?= $isActive ? 'active' : '' ?>" 
-                                                               data-bs-toggle="tooltip" data-bs-html="true"
-                                                               title="<div class='tooltip-rich-title'><i class='bi <?= $item['icon'] ?>'></i> <?= htmlspecialchars($item['label']) ?></div><div class='tooltip-rich-desc'><?= htmlspecialchars($item['desc'] ?? '') ?></div>">
-                                                                <i class="bi <?= $item['icon'] ?>"></i>
-                                                                <span><?= htmlspecialchars($item['label']) ?></span>
+                                                               class="dropdown-nav-link <?= $itemActive ? 'active' : '' ?>"
+                                                               role="menuitem">
+                                                                <div class="link-icon-box">
+                                                                    <i class="bi <?= $item['icon'] ?>"></i>
+                                                                </div>
+                                                                <div class="link-text-content">
+                                                                    <div class="link-title-row">
+                                                                        <span class="link-title"><?= htmlspecialchars($item['label']) ?></span>
+                                                                        <?php if ($itemActive): ?>
+                                                                            <span class="active-dot"></span>
+                                                                        <?php endif; ?>
+                                                                    </div>
+                                                                    <?php if (!empty($item['desc'])): ?>
+                                                                        <span class="link-desc"><?= htmlspecialchars($item['desc']) ?></span>
+                                                                    <?php endif; ?>
+                                                                </div>
                                                             </a>
                                                         <?php endforeach; ?>
                                                     </div>
-                                                    <div class="ribbon-group-title"><?= htmlspecialchars($group['title']) ?></div>
                                                 </div>
-                                            <?php endif; ?>
-                                        <?php endforeach; ?>
-                                    <?php else: ?>
-                                        <!-- CAS 2 : > 15 SOUS-MENUS -> ÉCLATEMENT VISUEL AU MÊME NIVEAU -->
-                                        <div class="d-flex align-items-stretch gap-2 flex-grow-1 overflow-x-auto" style="scrollbar-width: thin;">
-                                            <?php foreach ($tab['groups'] as $group): ?>
-                                                <?php
-                                                $group_visible_items = array_filter($group['items'], fn($i) => $isItemAllowed($i));
-                                                ?>
-                                                <?php if (count($group_visible_items) > 0): ?>
-                                                    <div class="ribbon-group-exploded">
-                                                        <div class="ribbon-group-items">
-                                                            <?php foreach ($group_visible_items as $item): ?>
-                                                                <?php $isActive = $isUrlActive($item['url']); ?>
-                                                                <a href="<?= $item['url'] ?>" 
-                                                                   class="ribbon-btn-large <?= $isActive ? 'active' : '' ?>" 
-                                                                   data-bs-toggle="tooltip" data-bs-html="true"
-                                                                   title="<div class='tooltip-rich-title'><i class='bi <?= $item['icon'] ?>'></i> <?= htmlspecialchars($item['label']) ?></div><div class='tooltip-rich-desc'><?= htmlspecialchars($item['desc'] ?? '') ?></div>">
-                                                                    <i class="bi <?= $item['icon'] ?>"></i>
-                                                                    <span><?= htmlspecialchars($item['label']) ?></span>
-                                                                </a>
-                                                            <?php endforeach; ?>
-                                                        </div>
-                                                        <div class="d-flex align-items-center justify-content-between pt-1 border-top border-opacity-10 mt-1">
-                                                            <span class="ribbon-group-exploded-badge">
-                                                                <i class="bi bi-folder2-open"></i> <?= htmlspecialchars($group['title']) ?>
-                                                            </span>
-                                                            <span class="extra-small text-muted fw-bold"><?= count($group_visible_items) ?> actions</span>
-                                                        </div>
-                                                    </div>
-                                                <?php endif; ?>
                                             <?php endforeach; ?>
                                         </div>
-                                    <?php endif; ?>
+                                    </div>
                                 </div>
                             <?php endif; ?>
                         <?php endforeach; ?>
                     </div>
-
-                    <!-- Ribbon Collapse/Expand Pin Button (MS Word Style) -->
-                    <button type="button" class="ribbon-toggle-btn ms-2" id="ribbonCollapseToggle" title="Réduire/Étendre le Ruban">
-                        <i class="bi bi-chevron-up"></i>
-                    </button>
                 </div>
             <?php endif; ?>
         </nav>
@@ -1273,9 +1225,9 @@ foreach ($ribbon_structure as $tab) {
                     body: "Recherchez n'importe quel module ou commande au clavier grâce à la combinaison Ctrl+K ou ⌘K."
                 },
                 {
-                    target: '#tourRibbonTabs',
-                    title: "Onglets Métier du Ruban",
-                    body: "Naviguez entre les grands pôles de gestion (Pilotage, RH, Finances, Notes, Impression). Utilisez les flèches du clavier ← → pour basculer rapidement."
+                    target: '#desktopNavItems',
+                    title: "Navigation Principale SaaS",
+                    body: "Explorez vos espaces de gestion (Pilotage, RH, Finances, Notes, Impression). Cliquez sur un menu pour ouvrir son dropdown d'actions autonomes."
                 },
                 {
                     target: '#tourUserAccount',
@@ -1479,94 +1431,10 @@ foreach ($ribbon_structure as $tab) {
                 });
             }
 
-            // --- RIBBON UI CONTROLLER (Microsoft Word Style Expand/Collapse Toggle Rules) ---
-            const tabButtons = document.querySelectorAll('.ribbon-tab-btn');
-            const tabPanes = document.querySelectorAll('.ribbon-tab-pane');
-            const toolbarContainer = document.getElementById('ribbonToolbarContainer');
-            const collapseToggle = document.getElementById('ribbonCollapseToggle');
-
-            // Apply saved ribbon collapsed state (only if explicitly collapsed by user)
-            if (toolbarContainer && localStorage.getItem('ribbon-collapsed') === 'true') {
-                toolbarContainer.classList.add('collapsed');
-                if (collapseToggle) {
-                    const icon = collapseToggle.querySelector('i');
-                    if (icon) icon.className = 'bi bi-chevron-down';
-                }
-            }
-
-            // Tab Toggle & Switching Handler (MS Word Style Expand/Collapse Rules)
-            tabButtons.forEach((btn, index) => {
-                btn.addEventListener('click', function (e) {
-                    const targetSelector = this.getAttribute('data-tab-target');
-                    const targetPane = document.querySelector(targetSelector);
-
-                    if (!targetPane) return;
-
-                    const isCurrentlyActive = this.classList.contains('active');
-                    const isToolbarCollapsed = toolbarContainer ? toolbarContainer.classList.contains('collapsed') : false;
-
-                    // RULE 2: If clicking the ALREADY ACTIVE tab and toolbar is OPEN -> Collapse it!
-                    if (isCurrentlyActive && !isToolbarCollapsed) {
-                        if (toolbarContainer) {
-                            toolbarContainer.classList.add('collapsed');
-                            localStorage.setItem('ribbon-collapsed', 'true');
-                        }
-                        this.classList.remove('active');
-                        if (collapseToggle) {
-                            const icon = collapseToggle.querySelector('i');
-                            if (icon) icon.className = 'bi bi-chevron-down';
-                        }
-                        return;
-                    }
-
-                    // RULE 1 & 3: Click on a closed tab OR a different tab -> Deactivate others and open/expand!
-                    tabButtons.forEach(b => b.classList.remove('active'));
-                    tabPanes.forEach(p => p.classList.remove('active'));
-
-                    this.classList.add('active');
-                    targetPane.classList.add('active');
-
-                    if (toolbarContainer) {
-                        toolbarContainer.classList.remove('collapsed');
-                        localStorage.setItem('ribbon-collapsed', 'false');
-                        if (collapseToggle) {
-                            const icon = collapseToggle.querySelector('i');
-                            if (icon) icon.className = 'bi bi-chevron-up';
-                        }
-                    }
-                });
-
-                // Keyboard Arrow Key Navigation for Ribbon Tabs (MS Word Style)
-                btn.addEventListener('keydown', function (e) {
-                    if (e.key === 'ArrowRight') {
-                        e.preventDefault();
-                        const nextBtn = tabButtons[(index + 1) % tabButtons.length];
-                        if (nextBtn) { nextBtn.focus(); nextBtn.click(); }
-                    } else if (e.key === 'ArrowLeft') {
-                        e.preventDefault();
-                        const prevBtn = tabButtons[(index - 1 + tabButtons.length) % tabButtons.length];
-                        if (prevBtn) { prevBtn.focus(); prevBtn.click(); }
-                    }
-                });
-            });
-
-            // Pin / Collapse Toolbar Handler
-            if (collapseToggle && toolbarContainer) {
-                collapseToggle.addEventListener('click', function () {
-                    const isCollapsed = toolbarContainer.classList.toggle('collapsed');
-                    localStorage.setItem('ribbon-collapsed', isCollapsed ? 'true' : 'false');
-                    const icon = this.querySelector('i');
-                    if (icon) {
-                        icon.className = isCollapsed ? 'bi bi-chevron-down' : 'bi bi-chevron-up';
-                    }
-                });
-            }
-
-            // Outside Click Handler to close floating elements / tour if clicked outside ribbon
+            // Outside Click Handler to close tour if active and user clicks outside
             document.addEventListener('click', function (e) {
-                const ribbonNav = document.getElementById('ribbonNavContainer');
-                if (ribbonNav && !ribbonNav.contains(e.target)) {
-                    // Close tour if active and user clicks outside
+                const navbarContainer = document.getElementById('desktopNavbarContainer');
+                if (navbarContainer && !navbarContainer.contains(e.target)) {
                     if (card && card.style.display === 'block' && !card.contains(e.target) && e.target.id !== 'startGuidedTour') {
                         endTour();
                     }
@@ -1630,6 +1498,7 @@ foreach ($ribbon_structure as $tab) {
             tooltipTriggerList.map(t => new bootstrap.Tooltip(t));
         });
     </script>
+    <script src="/public/js/desktop-navbar.js?v=<?= $asset_version ?>"></script>
     <?php include __DIR__ . '/impact_modal.php'; ?>
     <script src="/public/js/impact-radiography.js?v=<?= $asset_version ?? '1.0' ?>"></script>
     <script src="/public/js/topbar-onboarding.js?v=<?= $asset_version ?>"></script>

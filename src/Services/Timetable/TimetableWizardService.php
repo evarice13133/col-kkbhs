@@ -50,19 +50,27 @@ class TimetableWizardService
     public function getCyclesByTeachingType(int $teachingTypeId): array
     {
         $stmt = $this->db->prepare("
-            SELECT id, nom 
-            FROM cycles 
-            WHERE status = 1 
-              AND (teaching_type_id = ? OR teaching_type_id IS NULL OR teaching_type_id = 9)
-            ORDER BY nom ASC
+            SELECT c.id, c.nom 
+            FROM cycles c
+            LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id
+            WHERE c.status = 1 
+              AND (
+                  c.teaching_type_id = :type_id 
+                  OR c.teaching_type_id = 9 
+                  OR tt.code = 'LMD' 
+                  OR LOWER(tt.nom) LIKE '%lmd%' 
+                  OR LOWER(tt.nom) LIKE '%supérieur%'
+              )
+              AND (tt.code IS NULL OR (tt.code != 'SEC00' AND LOWER(tt.nom) NOT LIKE '%secondaire%'))
+              AND LOWER(c.nom) NOT LIKE '%premier cycle%' 
+              AND LOWER(c.nom) NOT LIKE '%second cycle%' 
+              AND LOWER(c.nom) NOT LIKE '%1ere cycle%' 
+              AND LOWER(c.nom) NOT LIKE '%2nd cycle%' 
+              AND LOWER(c.nom) NOT LIKE '%secondaire%'
+            ORDER BY c.nom ASC
         ");
-        $stmt->execute([$teachingTypeId]);
-        $cycles = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        if (empty($cycles)) {
-            $cycles = $this->db->query("SELECT id, nom FROM cycles WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        }
-        return $cycles;
+        $stmt->execute(['type_id' => $teachingTypeId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**

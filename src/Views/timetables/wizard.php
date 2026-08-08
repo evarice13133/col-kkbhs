@@ -457,7 +457,7 @@ function loadCycles(typeId) {
                     `;
                 });
             } else {
-                container.innerHTML = '<div class="col-12"><div class="alert alert-info rounded-4 border-0 shadow-xs"><i class="bi bi-info-circle me-2"></i>Aucun cycle trouvé pour ce type d\'enseignement.</div></div>';
+                container.innerHTML = '<div class="col-12"><div class="alert alert-warning rounded-4 border-0 shadow-sm p-4 text-center"><i class="bi bi-exclamation-triangle-fill fs-2 text-warning mb-2 d-block"></i><h6 class="fw-bold text-main-theme">Aucun cycle LMD disponible</h6><p class="text-muted small mb-0">Aucun cycle académique rattaché au Supérieur LMD n\'est disponible dans le système.</p></div></div>';
             }
         })
         .catch(err => {
