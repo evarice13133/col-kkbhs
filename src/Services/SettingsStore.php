@@ -106,6 +106,11 @@ class SettingsStore
         return $this;
     }
 
+    public function getDbConnection(): PDO
+    {
+        return $this->db;
+    }
+
     public function getTeachingTypeId(): int
     {
         if ($this->teachingTypeId === null || $this->teachingTypeId <= 0) {

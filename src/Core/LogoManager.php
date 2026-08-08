@@ -32,6 +32,12 @@ class LogoManager
     private function loadLogo(): void
     {
         $this->logoPath = $this->settingsStore->get('school_logo', '');
+
+        // Fallback vers les paramètres par défaut (teaching_type_id = NULL / 0) si vide
+        if (empty($this->logoPath)) {
+            $defaultStore = new SettingsStore($this->settingsStore->getDbConnection(), 0);
+            $this->logoPath = $defaultStore->get('school_logo', '');
+        }
         
         if (empty($this->logoPath)) {
             $this->logoExists = false;
@@ -74,22 +80,7 @@ class LogoManager
 
     private function getFullFileSystemPath(): string
     {
-        if (empty($this->logoPath)) {
-            return '';
-        }
-        
-        $baseDir = realpath(__DIR__ . '/../../');
-        if (!$baseDir) return '';
-
-        $cleanPath = ltrim(str_replace('\\', '/', $this->logoPath), '/');
-
-        if (str_starts_with($cleanPath, 'public/')) {
-             $fullPath = $baseDir . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $cleanPath);
-        } else {
-             $fullPath = $baseDir . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $cleanPath);
-        }
-
-        return $fullPath;
+        return $this->resolveFullPath($this->logoPath);
     }
 
     public function hasLogo(): bool
@@ -136,10 +127,105 @@ class LogoManager
         }
 
         $fullPath = $this->getFullFileSystemPath();
-        $imageData = file_get_contents($fullPath);
-        $mimeType = mime_content_type($fullPath);
+        if (empty($fullPath) || !file_exists($fullPath)) {
+            return '';
+        }
+        $imageData = @file_get_contents($fullPath);
+        if ($imageData === false) {
+            return '';
+        }
+        $mimeType = @mime_content_type($fullPath) ?: 'image/png';
         
         return 'data:' . $mimeType . ';base64,' . base64_encode($imageData);
+    }
+
+    public function getTutelageLogoPath(): string
+    {
+        $path = $this->settingsStore->get('tutelage_logo', '');
+        if (empty($path)) {
+            $defaultStore = new SettingsStore($this->settingsStore->getDbConnection(), 0);
+            $path = $defaultStore->get('tutelage_logo', '');
+        }
+        return $path;
+    }
+
+    public function hasTutelageLogo(): bool
+    {
+        $path = $this->getTutelageLogoPath();
+        if (empty($path)) {
+            return false;
+        }
+        $fullPath = $this->resolveFullPath($path);
+        return !empty($fullPath) && file_exists($fullPath);
+    }
+
+    public function getTutelageLogoUrl(): string
+    {
+        $path = $this->getTutelageLogoPath();
+        if (empty($path)) {
+            return '';
+        }
+        return $this->normalizeLogoPath($path);
+    }
+
+    public function getTutelageLogoBase64(): string
+    {
+        $path = $this->getTutelageLogoPath();
+        if (empty($path)) {
+            return '';
+        }
+        $fullPath = $this->resolveFullPath($path);
+        if (empty($fullPath) || !file_exists($fullPath)) {
+            return '';
+        }
+        $imageData = file_get_contents($fullPath);
+        $mimeType = @mime_content_type($fullPath) ?: 'image/png';
+        return 'data:' . $mimeType . ';base64,' . base64_encode($imageData);
+    }
+
+    public function updateTutelageLogo(string $newPath, ?int $teachingTypeId = null): bool
+    {
+        $this->settingsStore->set('tutelage_logo', $newPath, $teachingTypeId);
+        return $this->hasTutelageLogo();
+    }
+
+    public function deleteTutelageLogo(?int $teachingTypeId = null): bool
+    {
+        $path = $this->getTutelageLogoPath();
+        if (!empty($path)) {
+            $fullPath = $this->resolveFullPath($path);
+            if (!empty($fullPath) && file_exists($fullPath)) {
+                @unlink($fullPath);
+            }
+        }
+        $this->settingsStore->set('tutelage_logo', '', $teachingTypeId);
+        return true;
+    }
+
+    private function resolveFullPath(string $path): string
+    {
+        if (empty($path)) return '';
+        $baseDir = realpath(__DIR__ . '/../../');
+        $cleanPath = ltrim(str_replace('\\', '/', $path), '/');
+
+        $candidates = [];
+        if ($baseDir) {
+            $candidates[] = $baseDir . '/' . $cleanPath;
+            $candidates[] = $baseDir . '/public/' . ltrim($cleanPath, 'public/');
+        }
+        if (!empty($_SERVER['DOCUMENT_ROOT'])) {
+            $candidates[] = rtrim($_SERVER['DOCUMENT_ROOT'], '/\\') . '/' . $cleanPath;
+            $candidates[] = rtrim($_SERVER['DOCUMENT_ROOT'], '/\\') . '/public/' . ltrim($cleanPath, 'public/');
+        }
+
+        foreach ($candidates as $cand) {
+            $normalized = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $cand);
+            if (file_exists($normalized) && is_file($normalized)) {
+                return $normalized;
+            }
+        }
+
+        return $baseDir ? $baseDir . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $cleanPath) : '';
     }
 
     public function updateLogo(string $newPath, ?int $teachingTypeId = null): bool
@@ -154,7 +240,7 @@ class LogoManager
         if ($this->hasLogo()) {
             $fullPath = $this->getFullFileSystemPath();
             if (file_exists($fullPath)) {
-                unlink($fullPath);
+                @unlink($fullPath);
             }
         }
         

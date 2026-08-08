@@ -154,8 +154,20 @@ class SettingController
             }
 
             $this->settingsStore->setMany($updates, $teachingTypeId);
-            $this->handleImageUpload('school_logo', $teachingTypeId);
-            $this->handleImageUpload('tutelage_logo', $teachingTypeId);
+
+            $logoManager = LogoManager::getInstance($this->db, $teachingTypeId);
+            if (!empty($_POST['delete_school_logo'])) {
+                $logoManager->deleteLogo($teachingTypeId);
+            } else {
+                $this->handleImageUpload('school_logo', $teachingTypeId);
+            }
+
+            if (!empty($_POST['delete_tutelage_logo'])) {
+                $logoManager->deleteTutelageLogo($teachingTypeId);
+            } else {
+                $this->handleImageUpload('tutelage_logo', $teachingTypeId);
+            }
+
             $this->handleImageUpload('principal_signature', $teachingTypeId);
             $this->handleImageUpload('school_stamp', $teachingTypeId);
             (new ActivityTracker($this->db))->recordSettingsUpdate();
@@ -276,6 +288,9 @@ class SettingController
                 if ($fieldName === 'school_logo') {
                     $logoManager = LogoManager::getInstance($this->db, $teachingTypeId);
                     $logoManager->updateLogo($webPath, $teachingTypeId);
+                } elseif ($fieldName === 'tutelage_logo') {
+                    $logoManager = LogoManager::getInstance($this->db, $teachingTypeId);
+                    $logoManager->updateTutelageLogo($webPath, $teachingTypeId);
                 } else {
                     $this->settingsStore->set($fieldName, $webPath, $teachingTypeId);
                 }

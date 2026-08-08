@@ -43,61 +43,126 @@
 
             <div class="col-md-5 mt-md-0">
                 <div class="row g-3">
+                    <!-- LOGO ÉTABLISSEMENT -->
                     <div class="col-12">
                         <div class="p-3 border-theme-dynamic rounded-4 bg-soft-light text-center d-flex flex-column justify-content-center align-items-center">
                             <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-2 d-block"><?= __('institution_logo') ?></label>
+                            
+                            <?php 
+                            $db = \App\Core\Database::getInstance()->getConnection();
+                            $currentTtId = $currentTeachingTypeId ?? null;
+                            $logoManager = \App\Core\LogoManager::getInstance($db, $currentTtId);
+                            $hasSchoolLogo = $logoManager->hasLogo();
+                            ?>
+                            
                             <div class="position-relative mb-2 group-hover">
-                                <?php 
-                                $db = \App\Core\Database::getInstance()->getConnection();
-                                $currentTtId = $currentTeachingTypeId ?? null;
-                                $logoManager = \App\Core\LogoManager::getInstance($db, $currentTtId);
-                                ?>
-                                <?php if ($logoManager->hasLogo()): ?>
-                                    <img src="<?= $logoManager->getLogoBase64() ?>" alt="Logo" class="img-fluid rounded-4 shadow-sm border border-theme-light" style="max-height: 80px; min-width: 80px; object-fit: contain;">
+                                <div id="school_logo_container">
+                                    <?php if ($hasSchoolLogo): ?>
+                                        <img id="school_logo_img" src="<?= $logoManager->getLogoBase64() ?>" alt="Logo" class="img-fluid rounded-4 shadow-sm border border-theme-light" style="max-height: 80px; min-width: 80px; object-fit: contain;">
+                                    <?php else: ?>
+                                        <div id="school_logo_placeholder" class="avatar-init bg-soft-primary text-primary rounded-4 d-flex align-items-center justify-content-center shadow-sm" style="width: 80px; height: 80px; margin: 0 auto;">
+                                            <i class="bi bi-image fs-1 opacity-25"></i>
+                                        </div>
+                                        <img id="school_logo_img" src="" alt="Logo" class="img-fluid rounded-4 shadow-sm border border-theme-light d-none" style="max-height: 80px; min-width: 80px; object-fit: contain;">
+                                    <?php endif; ?>
+                                </div>
+                                
+                                <input type="hidden" name="delete_school_logo" id="delete_school_logo" value="0">
+                            </div>
+
+                            <div class="d-flex align-items-center gap-2 w-100 mt-1">
+                                <input type="file" name="school_logo" id="school_logo_input" class="form-control premium-input-sm border-theme-light shadow-none" accept="image/*" onchange="previewImage(this, 'school_logo_img', 'school_logo_placeholder', 'school_logo_del_btn')">
+                                <?php if ($hasSchoolLogo): ?>
+                                    <button type="button" id="school_logo_del_btn" class="btn btn-outline-danger btn-sm rounded-3 px-2 py-1" onclick="markDeleteLogo('school_logo', 'delete_school_logo', 'school_logo_img', 'school_logo_placeholder', 'school_logo_del_btn')" title="Supprimer le logo">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 <?php else: ?>
-                                    <div class="avatar-init bg-soft-primary text-primary rounded-4 d-flex align-items-center justify-content-center shadow-sm" style="width: 80px; height: 80px;">
-                                        <i class="bi bi-image fs-1 opacity-25"></i>
-                                    </div>
+                                    <button type="button" id="school_logo_del_btn" class="btn btn-outline-danger btn-sm rounded-3 px-2 py-1 d-none" onclick="markDeleteLogo('school_logo', 'delete_school_logo', 'school_logo_img', 'school_logo_placeholder', 'school_logo_del_btn')" title="Supprimer le logo">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 <?php endif; ?>
                             </div>
-                            <input type="file" name="school_logo" class="form-control premium-input-sm border-theme-light shadow-none" accept="image/*">
                         </div>
                     </div>
 
-                    <?php 
-                    // Vérifier si le type d'enseignement actif est Supérieur LMD (ou code LMD)
-                    $isLmdTt = false;
-                    if (!empty($teachingTypes) && !empty($currentTeachingTypeId)) {
-                        foreach ($teachingTypes as $tt) {
-                            if ((int)$tt['id'] === (int)$currentTeachingTypeId && ($tt['code'] === 'LMD' || strpos(strtolower($tt['nom']), 'lmd') !== false)) {
-                                $isLmdTt = true;
-                                break;
-                            }
-                        }
-                    }
-                    ?>
-                    <?php if ($isLmdTt): ?>
+                    <!-- LOGO TUTELLE (LMD & tous types d'enseignement) -->
                     <div class="col-12">
                         <div class="p-3 border-theme-dynamic rounded-4 bg-soft-light text-center d-flex flex-column justify-content-center align-items-center">
                             <label class="form-label text-primary fw-bold extra-small text-uppercase mb-2 d-block">
                                 <i class="bi bi-patch-check me-1"></i> <?= __('tutelage_logo') ?>
                             </label>
+
+                            <?php 
+                            $hasTutelageLogo = $logoManager->hasTutelageLogo();
+                            $tutelageBase64 = $logoManager->getTutelageLogoBase64();
+                            ?>
+
                             <div class="position-relative mb-2 group-hover">
-                                <?php $tutelageLogo = $settings['tutelage_logo'] ?? ''; ?>
-                                <?php if (!empty($tutelageLogo)): ?>
-                                    <img src="<?= htmlspecialchars($tutelageLogo) ?>" alt="Logo Tutelle" class="img-fluid rounded-4 shadow-sm border border-theme-light" style="max-height: 80px; min-width: 80px; object-fit: contain;">
+                                <div id="tutelage_logo_container">
+                                    <?php if ($hasTutelageLogo): ?>
+                                        <img id="tutelage_logo_img" src="<?= $tutelageBase64 ?>" alt="Logo Tutelle" class="img-fluid rounded-4 shadow-sm border border-theme-light" style="max-height: 80px; min-width: 80px; object-fit: contain;">
+                                    <?php else: ?>
+                                        <div id="tutelage_logo_placeholder" class="avatar-init bg-soft-info text-info rounded-4 d-flex align-items-center justify-content-center shadow-sm" style="width: 80px; height: 80px; margin: 0 auto;">
+                                            <i class="bi bi-building fs-1 opacity-25"></i>
+                                        </div>
+                                        <img id="tutelage_logo_img" src="" alt="Logo Tutelle" class="img-fluid rounded-4 shadow-sm border border-theme-light d-none" style="max-height: 80px; min-width: 80px; object-fit: contain;">
+                                    <?php endif; ?>
+                                </div>
+
+                                <input type="hidden" name="delete_tutelage_logo" id="delete_tutelage_logo" value="0">
+                            </div>
+
+                            <div class="d-flex align-items-center gap-2 w-100 mt-1">
+                                <input type="file" name="tutelage_logo" id="tutelage_logo_input" class="form-control premium-input-sm border-theme-light shadow-none" accept="image/*" onchange="previewImage(this, 'tutelage_logo_img', 'tutelage_logo_placeholder', 'tutelage_logo_del_btn')">
+                                <?php if ($hasTutelageLogo): ?>
+                                    <button type="button" id="tutelage_logo_del_btn" class="btn btn-outline-danger btn-sm rounded-3 px-2 py-1" onclick="markDeleteLogo('tutelage_logo', 'delete_tutelage_logo', 'tutelage_logo_img', 'tutelage_logo_placeholder', 'tutelage_logo_del_btn')" title="Supprimer le logo de tutelle">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 <?php else: ?>
-                                    <div class="avatar-init bg-soft-info text-info rounded-4 d-flex align-items-center justify-content-center shadow-sm" style="width: 80px; height: 80px;">
-                                        <i class="bi bi-building fs-1 opacity-25"></i>
-                                    </div>
+                                    <button type="button" id="tutelage_logo_del_btn" class="btn btn-outline-danger btn-sm rounded-3 px-2 py-1 d-none" onclick="markDeleteLogo('tutelage_logo', 'delete_tutelage_logo', 'tutelage_logo_img', 'tutelage_logo_placeholder', 'tutelage_logo_del_btn')" title="Supprimer le logo de tutelle">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 <?php endif; ?>
                             </div>
-                            <input type="file" name="tutelage_logo" class="form-control premium-input-sm border-theme-light shadow-none" accept="image/*">
                         </div>
                     </div>
-                    <?php endif; ?>
                 </div>
             </div>
+
+            <script>
+            function previewImage(input, imgId, placeholderId, delBtnId) {
+                if (input.files && input.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const img = document.getElementById(imgId);
+                        const placeholder = document.getElementById(placeholderId);
+                        const delBtn = document.getElementById(delBtnId);
+                        
+                        img.src = e.target.result;
+                        img.classList.remove('d-none');
+                        if (placeholder) placeholder.classList.add('d-none');
+                        if (delBtn) delBtn.classList.remove('d-none');
+                    };
+                    reader.readAsDataURL(input.files[0]);
+                }
+            }
+
+            function markDeleteLogo(fieldPrefix, deleteInputId, imgId, placeholderId, delBtnId) {
+                document.getElementById(deleteInputId).value = "1";
+                const img = document.getElementById(imgId);
+                const placeholder = document.getElementById(placeholderId);
+                const delBtn = document.getElementById(delBtnId);
+                const fileInput = document.getElementById(fieldPrefix + '_input');
+
+                if (fileInput) fileInput.value = "";
+                if (img) {
+                    img.src = "";
+                    img.classList.add('d-none');
+                }
+                if (placeholder) placeholder.classList.remove('d-none');
+                if (delBtn) delBtn.classList.add('d-none');
+            }
+            </script>
 
             <!-- Administration & Localization -->
             <div class="col-md-12 border-bottom border-theme-light pb-2 mb-2 mt-5">

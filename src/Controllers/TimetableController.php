@@ -1085,22 +1085,91 @@ class TimetableController
 
         $gridData = $this->wizardService->getMultiClassGridData($cycleId, $levelId, $weekId);
 
-        if (!empty($cycleRow['teaching_type_id'])) {
-            $this->settingsStore->setTeachingTypeId((int)$cycleRow['teaching_type_id']);
+        $teachingTypeId = !empty($cycleRow['teaching_type_id']) ? (int)$cycleRow['teaching_type_id'] : null;
+        if (!$teachingTypeId && !empty($gridData['classes'][0]['teaching_type_id'])) {
+            $teachingTypeId = (int)$gridData['classes'][0]['teaching_type_id'];
         }
 
+        if ($teachingTypeId) {
+            $this->settingsStore->setTeachingTypeId($teachingTypeId);
+        }
+
+        $logoManager = \App\Core\LogoManager::getInstance($this->db, $teachingTypeId);
+        $school_logo = $this->settingsStore->get('school_logo', '/public/assets/images/logo.png');
         $school_name = $this->settingsStore->get('school_name', 'NoteMaster School');
         $school_code = $this->settingsStore->get('school_code', 'NMS');
-        $school_logo = $this->settingsStore->get('school_logo', '/public/assets/images/logo.png');
+        $school_city = $this->settingsStore->get('school_city', $this->settingsStore->get('city', 'Douala'));
         $creation_decree = $this->settingsStore->get('creation_decree', '');
+
         if (empty($creation_decree)) {
             $stmtDecree = $this->db->query("SELECT setting_value FROM settings WHERE setting_key = 'creation_decree' AND setting_value IS NOT NULL AND TRIM(setting_value) != '' ORDER BY id DESC LIMIT 1");
             $creation_decree = $stmtDecree ? (string)$stmtDecree->fetchColumn() : '';
         }
-        $partner_logo = $this->settingsStore->get('partner_logo', $this->settingsStore->get('academic_partner_logo', ''));
-        if (empty($partner_logo) && file_exists($_SERVER['DOCUMENT_ROOT'] . '/public/uploads/1785328229_logo-camertech.png')) {
-            $partner_logo = '/public/uploads/1785328229_logo-camertech.png';
+
+        $logoBase64 = $logoManager->hasLogo() ? $logoManager->getLogoBase64() : '';
+
+        // Robustification de la récupération Base64 du logo établissement
+        if (empty($logoBase64) && !empty($school_logo)) {
+            $baseDir = realpath(__DIR__ . '/../../');
+            $cleanLogoPath = ltrim(str_replace('\\', '/', $school_logo), '/');
+            $possiblePaths = [
+                $baseDir . '/' . $cleanLogoPath,
+                $baseDir . '/public/' . ltrim($cleanLogoPath, 'public/'),
+                $_SERVER['DOCUMENT_ROOT'] . '/' . $cleanLogoPath,
+                $_SERVER['DOCUMENT_ROOT'] . '/public/' . ltrim($cleanLogoPath, 'public/')
+            ];
+            foreach ($possiblePaths as $pPath) {
+                if (!empty($pPath) && file_exists($pPath) && is_file($pPath)) {
+                    $logoData = @file_get_contents($pPath);
+                    if ($logoData) {
+                        $ext = pathinfo($pPath, PATHINFO_EXTENSION) ?: 'png';
+                        $mime = ($ext === 'svg') ? 'image/svg+xml' : (($ext === 'jpg' || $ext === 'jpeg') ? 'image/jpeg' : 'image/' . $ext);
+                        $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode($logoData);
+                        break;
+                    }
+                }
+            }
         }
+
+        // Récupération dynamique du Logo Tutelle / Partenaire via LogoManager
+        $partnerLogoBase64 = $logoManager->hasTutelageLogo() ? $logoManager->getTutelageLogoBase64() : '';
+        $partner_logo = $logoManager->getTutelageLogoUrl();
+
+        if (empty($partnerLogoBase64)) {
+            $rawPartnerLogo = $this->settingsStore->get('tutelage_logo', $this->settingsStore->get('partner_logo', ''));
+            if (!empty($rawPartnerLogo)) {
+                $baseDir = realpath(__DIR__ . '/../../');
+                $cleanPartnerPath = ltrim(str_replace('\\', '/', $rawPartnerLogo), '/');
+                $possiblePartnerPaths = [
+                    $baseDir . '/' . $cleanPartnerPath,
+                    $baseDir . '/public/' . ltrim($cleanPartnerPath, 'public/'),
+                    $_SERVER['DOCUMENT_ROOT'] . '/' . $cleanPartnerPath,
+                    $_SERVER['DOCUMENT_ROOT'] . '/public/' . ltrim($cleanPartnerPath, 'public/')
+                ];
+                foreach ($possiblePartnerPaths as $pPath) {
+                    if (!empty($pPath) && file_exists($pPath) && is_file($pPath)) {
+                        $pData = @file_get_contents($pPath);
+                        if ($pData) {
+                            $ext = pathinfo($pPath, PATHINFO_EXTENSION) ?: 'png';
+                            $mime = ($ext === 'svg') ? 'image/svg+xml' : (($ext === 'jpg' || $ext === 'jpeg') ? 'image/jpeg' : 'image/' . $ext);
+                            $partnerLogoBase64 = 'data:' . $mime . ';base64,' . base64_encode($pData);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Numéro d'incrémentation séquentiel (ex: 00001)
+        $docId = $id;
+        if ($docId <= 0) {
+            $stmtId = $this->db->query("SELECT id FROM timetables WHERE cycle_id = $cycleId AND week_id = $weekId ORDER BY id ASC LIMIT 1");
+            $docId = $stmtId ? (int)$stmtId->fetchColumn() : 1;
+            if ($docId <= 0) {
+                $docId = 1;
+            }
+        }
+        $timetableNum = str_pad((string)$docId, 5, '0', STR_PAD_LEFT);
 
         if ($mode === 'print' || $mode === 'preview') {
             require __DIR__ . '/../Views/timetables/pdf.php';
