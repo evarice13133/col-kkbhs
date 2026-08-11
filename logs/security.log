@@ -42,3 +42,24 @@
 [2026-08-07 19:28:53] [IP: 0.0.0.0] [UID: GUEST] Planification en masse exécutée par l'utilisateur #1 : 2 cours créés.
 [2026-08-08 05:22:47] [IP: ::1] [UID: GUEST] Session expirée pour inactivité prolongée.
 [2026-08-08 05:23:16] [IP: ::1] [UID: 40] Connexion réussie pour l'utilisateur : ADMIN
+[2026-08-10 03:18:16] [IP: ::1] [UID: 40] Connexion réussie pour l'utilisateur : admin
+[2026-08-10 03:51:28] [IP: ::1] [UID: 40] Connexion réussie pour l'utilisateur : admin
+[2026-08-10 03:54:02] [IP: ::1] [UID: 40] Connexion réussie pour l'utilisateur : admin
+[2026-08-10 03:54:35] [IP: ::1] [UID: 40] Connexion réussie pour l'utilisateur : admin
+[2026-08-10 04:15:38] [IP: 127.0.0.1] [UID: 40] Connexion réussie pour l'utilisateur : admin
+[2026-08-10 04:45:59] [IP: 127.0.0.1] [UID: 40] Association automatique Classe 'BAT 2' <-> Matière 'Mathematique Avancé' créée lors de la planification par l'utilisateur #40.
+[2026-08-10 04:46:00] [IP: 127.0.0.1] [UID: 40] Association automatique Classe 'SWE 2' <-> Matière 'Mathematique Avancé' créée lors de la planification par l'utilisateur #40.
+[2026-08-11 03:40:10] [IP: ::1] [UID: GUEST] Session expirée pour inactivité prolongée.
+[2026-08-11 03:46:27] [IP: ::1] [UID: GUEST] Échec de connexion pour l'utilisateur : admin
+[2026-08-11 03:46:34] [IP: ::1] [UID: GUEST] Échec de connexion pour l'utilisateur : admin
+[2026-08-11 03:46:56] [IP: ::1] [UID: GUEST] Échec de connexion pour l'utilisateur : admin
+[2026-08-11 03:47:26] [IP: ::1] [UID: GUEST] Échec de connexion pour l'utilisateur : admin
+[2026-08-11 03:47:37] [IP: ::1] [UID: 42] Connexion réussie pour l'utilisateur : sup
+[2026-08-11 04:07:20] [IP: ::1] [UID: 41] Connexion réussie pour l'utilisateur : eva
+[2026-08-11 04:08:44] [IP: ::1] [UID: 40] Connexion réussie pour l'utilisateur : admin
+[2026-08-11 04:11:54] [IP: ::1] [UID: 41] Accès refusé pour la permission 'manage_timetables' - Utilisateur: INCONNU (Rôle: enseignant)
+[2026-08-11 04:36:21] [IP: ::1] [UID: 42] Connexion réussie pour l'utilisateur : sup
+[2026-08-11 06:01:33] [IP: ::1] [UID: 42] Dépublication de 3 emploi(s) du temps par l'utilisateur #42.
+[2026-08-11 06:02:25] [IP: ::1] [UID: 42] Publication de 3 emploi(s) du temps par l'utilisateur #42.
+[2026-08-11 06:26:32] [IP: ::1] [UID: 67] Connexion réussie pour l'utilisateur : daac
+[2026-08-11 06:32:45] [IP: 0.0.0.0] [UID: GUEST] Accès refusé pour la permission 'manage_teachers' - Utilisateur: INCONNU (Rôle: INVITE)

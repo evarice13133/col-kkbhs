@@ -301,16 +301,69 @@ class TimetableWizardService
             }
         }
 
+        $days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+        if ($weekId > 0) {
+            $stmtW = $this->db->prepare("SELECT date_debut, date_fin FROM timetable_weeks WHERE id = ?");
+            $stmtW->execute([$weekId]);
+            $wRow = $stmtW->fetch(PDO::FETCH_ASSOC);
+            if ($wRow && !empty($wRow['date_debut']) && !empty($wRow['date_fin'])) {
+                $days = $this->generateDaysFromDates($wRow['date_debut'], $wRow['date_fin']);
+            }
+        }
+
         return [
             'classes' => $classes,
             'subjects' => $subjects,
             'teachers' => $teachers,
             'rooms' => $rooms,
             'slots' => $slots,
-            'days' => ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'],
+            'days' => $days,
             'matrix' => $matrix,
             'timetablesByClass' => $timetablesByClass
         ];
+    }
+
+    /**
+     * Génère la liste dynamique des noms de jours en français entre deux dates (max 7 jours).
+     */
+    public function generateDaysFromDates(string $startDateStr, string $endDateStr): array
+    {
+        if (empty($startDateStr) || empty($endDateStr)) {
+            return ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+        }
+
+        try {
+            $start = new \DateTime($startDateStr);
+            $end = new \DateTime($endDateStr);
+        } catch (\Throwable $e) {
+            return ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+        }
+
+        if ($end < $start) {
+            return [];
+        }
+
+        $frenchDays = [
+            1 => 'Lundi',
+            2 => 'Mardi',
+            3 => 'Mercredi',
+            4 => 'Jeudi',
+            5 => 'Vendredi',
+            6 => 'Samedi',
+            7 => 'Dimanche'
+        ];
+
+        $days = [];
+        $curr = clone $start;
+        $count = 0;
+        while ($curr <= $end && $count < 7) {
+            $dayNum = (int)$curr->format('N');
+            $days[] = $frenchDays[$dayNum];
+            $curr->modify('+1 day');
+            $count++;
+        }
+
+        return !empty($days) ? $days : ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
     }
 
     /**

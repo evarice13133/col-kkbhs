@@ -126,7 +126,7 @@ class CourseWeek extends BaseModel
         }
 
         $nextEnd = clone $nextStart;
-        $nextEnd->modify('+5 days'); // Samedi par défaut
+        $nextEnd->modify('+6 days'); // 7ᵉ jour (semaine de 7 jours)
 
         return [
             'suggested_start' => $nextStart->format('Y-m-d'),

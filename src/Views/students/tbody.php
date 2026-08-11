@@ -52,7 +52,10 @@
                     <i class="bi bi-building me-1"></i><?= htmlspecialchars((string) ($s['department_nom'] ?: '-')) ?>
                 </span>
             </td>
-            <?php if (\App\Core\PermissionManager::hasPermission('manage_students')): ?>
+            <?php 
+            $isEnseignant = (\App\Core\Session::get('user_role') === 'enseignant');
+            if (\App\Core\PermissionManager::hasPermission('manage_students') && !$isEnseignant): 
+            ?>
                 <td class="text-end pe-4">
                     <div class="d-flex justify-content-end gap-1 align-items-center table-row-actions">
                         <a href="/students/edit?id=<?= $s['id'] ?>" class="btn btn-sm btn-action-modern text-primary"
@@ -84,4 +87,4 @@
             <?php endif; ?>
         </tr>
     <?php endforeach; ?>
-<?php endif; ?>
+<?php endif; ?>

@@ -181,6 +181,19 @@ class Timetable extends BaseModel
         return $stmt->execute([$statut, $isLocked ? 1 : 0, $id]);
     }
 
+    public function updateStatutGroup(array $ids, string $statut): bool
+    {
+        $ids = array_filter(array_map('intval', $ids));
+        if (empty($ids)) {
+            return false;
+        }
+        $in = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->db->prepare("UPDATE timetables SET statut = ? WHERE id IN ($in)");
+        $params = array_merge([$statut], $ids);
+        return $stmt->execute($params);
+    }
+
+
     public function delete(int $id): bool
     {
         try {

@@ -76,6 +76,7 @@
                                 <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('user_role_label') ?></label>
                                 <select name="role" class="form-select premium-select">
                                     <option value="enseignant" <?= $user['role'] === 'enseignant' ? 'selected' : '' ?>><?= __('teacher_classic') ?></option>
+                                    <option value="direction_academique" <?= $user['role'] === 'direction_academique' ? 'selected' : '' ?>><?= __('direction_academique_role_label') ?></option>
                                     <option value="caissier" <?= $user['role'] === 'caissier' ? 'selected' : '' ?>><?= __('role_caissier_option') ?></option>
                                     <option value="comptable" <?= $user['role'] === 'comptable' ? 'selected' : '' ?>><?= __('role_comptable_option') ?></option>
                                     <option value="admin" <?= $user['role'] === 'admin' ? 'selected' : '' ?>><?= __('admin_restricted') ?></option>

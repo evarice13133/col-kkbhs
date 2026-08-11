@@ -75,12 +75,24 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
     return true;
 };
 
-$isItemAllowed = function ($item) {
+$isItemAllowed = function ($item) use ($user_role) {
+    if ($user_role === 'enseignant') {
+        $restrictedUrls = ['/students/create', '/students/non-inscrits', '/classes', '/sequences', '/subjects', '/subject-groups', '/bulletins/discipline', '/users', '/users/caissiers', '/teachers', '/payments', '/discounts', '/scholarships', '/discount_types', '/financial-history', '/expenses', '/expenses/categories', '/expenses/audit', '/bulletins', '/honors', '/proces-verbal', '/transcripts', '/pilotage/rbac', '/academic_years', '/teaching_types', '/levels', '/cycles', '/sections', '/departments', '/settings'];
+        if (isset($item['url']) && in_array($item['url'], $restrictedUrls, true)) {
+            return false;
+        }
+    }
     if (isset($item['permission']) && !empty($item['permission'])) {
         return \App\Core\PermissionManager::hasPermission($item['permission']);
     }
+    if (isset($item['roles']) && is_array($item['roles'])) {
+        if (!in_array($user_role, $item['roles'], true)) {
+            return false;
+        }
+    }
     return true;
 };
+
 
 // Ribbon UI Definition (Inspired by Microsoft Word 365 with Rich Contextual Descriptions)
 $ribbon_structure = [
@@ -92,7 +104,8 @@ $ribbon_structure = [
             [
                 'title' => __('pilotage') ?? 'Pilotage',
                 'items' => [
-                    ['icon' => 'bi-speedometer2', 'label' => __('dashboard'), 'url' => '/', 'permission' => 'view_pilotage', 'desc' => 'Vue globale des indicateurs clés et statistiques de l\'établissement.']
+                    ['icon' => 'bi-speedometer2', 'label' => __('dashboard'), 'url' => '/', 'desc' => 'Vue globale des indicateurs clés et statistiques de l\'établissement.']
+
                 ]
             ],
             [
@@ -100,7 +113,9 @@ $ribbon_structure = [
                 'items' => [
                     ['icon' => 'bi-pencil-square', 'label' => __('enter_marks'), 'url' => '/notes', 'permission' => 'manage_marks', 'desc' => 'Saisie et validation des notes d\'évaluation par classe et matière.'],
                     ['icon' => 'bi-people', 'label' => __('my_students'), 'url' => '/students', 'permission' => 'view_students', 'desc' => 'Consulter la liste et le suivi individuel de vos élèves.'],
-                    ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'permission' => 'view_pilotage', 'desc' => 'Guides d\'utilisation et centre d\'assistance.'],
+                    ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'desc' => 'Guides d\'utilisation et centre d\'assistance.'],
+
+
                 ]
             ],
             [
@@ -128,18 +143,18 @@ $ribbon_structure = [
                 'title' => 'Structure Académique',
                 'items' => [
                     ['icon' => 'bi-calendar-event', 'label' => __('academic_years'), 'url' => '/academic_years', 'permission' => 'manage_academic_years', 'roles' => ['superadmin', 'it_manager'], 'desc' => 'Configuration des années scolaires et périodes académiques.'],
-                    ['icon' => 'bi-diagram-3', 'label' => __('teaching_types'), 'url' => '/teaching_types', 'permission' => 'manage_teaching_types', 'roles' => ['superadmin', 'admin'], 'desc' => 'Définition des types d\'enseignement (Général, Technique, etc.).'],
-                    ['icon' => 'bi-bar-chart-steps', 'label' => 'Niveaux (LMD)', 'url' => '/levels', 'permission' => 'manage_classes_structure', 'roles' => ['superadmin', 'admin'], 'desc' => 'Gestion des niveaux d\'études spécifiques au Supérieur LMD (Licence 1, 2, 3...).'],
-                    ['icon' => 'bi-layers', 'label' => 'Cycles Académiques (LMD)', 'url' => '/cycles', 'permission' => 'manage_cycles', 'roles' => ['superadmin', 'admin'], 'desc' => 'Cycles d\'études spécifiques au Supérieur LMD (Licence, Master, Doctorat).'],
-                    ['icon' => 'bi-grid-3x3-gap', 'label' => __('academic_sections'), 'url' => '/sections', 'permission' => 'manage_sections', 'roles' => ['superadmin', 'admin'], 'desc' => 'Sections francophones, anglophones et spécialités.'],
-                    ['icon' => 'bi-building', 'label' => __('departments'), 'url' => '/departments', 'permission' => 'manage_departments', 'roles' => ['superadmin', 'admin', 'it_manager'], 'desc' => 'Organisation des départements académiques.'],
+                    ['icon' => 'bi-diagram-3', 'label' => __('teaching_types'), 'url' => '/teaching_types', 'permission' => 'manage_teaching_types', 'roles' => ['superadmin', 'admin', 'direction_academique'], 'desc' => 'Définition des types d\'enseignement (Général, Technique, etc.).'],
+                    ['icon' => 'bi-bar-chart-steps', 'label' => 'Niveaux (LMD)', 'url' => '/levels', 'permission' => 'manage_classes_structure', 'roles' => ['superadmin', 'admin', 'direction_academique'], 'desc' => 'Gestion des niveaux d\'études spécifiques au Supérieur LMD (Licence 1, 2, 3...).'],
+                    ['icon' => 'bi-layers', 'label' => 'Cycles Académiques (LMD)', 'url' => '/cycles', 'permission' => 'manage_cycles', 'roles' => ['superadmin', 'admin', 'direction_academique'], 'desc' => 'Cycles d\'études spécifiques au Supérieur LMD (Licence, Master, Doctorat).'],
+                    ['icon' => 'bi-grid-3x3-gap', 'label' => __('academic_sections'), 'url' => '/sections', 'permission' => 'manage_sections', 'roles' => ['superadmin', 'admin', 'direction_academique'], 'desc' => 'Sections francophones, anglophones et spécialités.'],
+                    ['icon' => 'bi-building', 'label' => __('departments'), 'url' => '/departments', 'permission' => 'manage_departments', 'roles' => ['superadmin', 'admin', 'it_manager', 'direction_academique'], 'desc' => 'Organisation des départements académiques.'],
                 ]
             ],
             [
                 'title' => 'Système & Config',
                 'items' => [
-                    ['icon' => 'bi-gear', 'label' => __('settings'), 'url' => '/settings', 'permission' => 'manage_settings', 'roles' => ['superadmin', 'admin'], 'desc' => 'Identité de l\'école, logos, documents officiels et paramètres généraux.'],
-                    ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'roles' => ['superadmin', 'admin', 'it_manager'], 'desc' => 'Documentation technique et manuels utilisateur.'],
+                    ['icon' => 'bi-gear', 'label' => __('settings'), 'url' => '/settings', 'permission' => 'manage_settings', 'roles' => ['superadmin', 'admin', 'direction_academique'], 'desc' => 'Identité de l\'école, logos, documents officiels et paramètres généraux.'],
+                    ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'roles' => ['superadmin', 'admin', 'it_manager', 'direction_academique'], 'desc' => 'Documentation technique et manuels utilisateur.'],
                 ]
             ]
         ]
@@ -150,8 +165,9 @@ $ribbon_structure = [
         'icon' => 'bi-calendar3-week',
         'groups' => [
             [
-                'title' => __('timetables_menu'),
+                'title' => 'Emplois du temps',
                 'items' => [
+
                     ['icon' => 'bi-calendar3-week', 'label' => __('my_timetables'), 'url' => '/timetables', 'permission' => 'view_timetables', 'desc' => __('timetables_subtitle')],
                     ['icon' => 'bi-magic', 'label' => __('timetables_wizard_menu'), 'url' => '/timetables/wizard', 'permission' => 'manage_timetables', 'roles' => ['superadmin', 'admin', 'it_manager'], 'desc' => __('timetables_wizard_desc')],
                     ['icon' => 'bi-clock-history', 'label' => __('timetables_slots_menu'), 'url' => '/timetables/slots', 'permission' => 'manage_timetables', 'roles' => ['superadmin', 'admin', 'it_manager'], 'desc' => __('timetables_slots_desc')],
@@ -187,7 +203,7 @@ $ribbon_structure = [
                 'items' => [
                     ['icon' => 'bi-people-fill', 'label' => __('users'), 'url' => '/users', 'permission' => 'manage_users', 'roles' => ['superadmin', 'it_manager'], 'desc' => 'Création des comptes administrateurs, enseignants et gestionnaires.'],
                     ['icon' => 'bi-person-plus-fill', 'label' => __('manage_cashiers_menu'), 'url' => '/users/caissiers', 'permission' => 'manage_users', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Gestion spécifique des caissiers et agents de saisie.'],
-                    ['icon' => 'bi-person-badge', 'label' => __('teachers'), 'url' => '/teachers', 'permission' => 'manage_teachers', 'roles' => ['superadmin', 'admin', 'it_manager'], 'desc' => 'Attribution des matières et des classes au corps enseignant.'],
+                    ['icon' => 'bi-person-badge', 'label' => __('teachers'), 'url' => '/teachers', 'permission' => 'manage_teachers', 'roles' => ['superadmin', 'admin', 'it_manager', 'direction_academique'], 'desc' => 'Attribution des matières et des classes au corps enseignant.'],
                 ]
             ]
         ]

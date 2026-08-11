@@ -29,12 +29,13 @@
                     <select name="role" class="form-select border-0 bg-white bg-opacity-10 shadow-none py-2 text-main rounded-pill px-3" style="max-width: 180px;">
                         <option value=""><?= __('all_roles') ?></option>
                         <?php foreach ([
-                            'superadmin'  => __('role_superadmin'),
-                            'admin'       => __('role_admin'),
-                            'enseignant'  => __('role_enseignant'),
-                            'caissier'    => __('role_caissier'),
-                            'comptable'   => __('role_comptable'),
-                            'it_manager'  => __('role_it_manager'),
+                            'superadmin'           => __('role_superadmin'),
+                            'admin'                => __('role_admin'),
+                            'direction_academique' => __('role_direction_academique'),
+                            'enseignant'           => __('role_enseignant'),
+                            'caissier'             => __('role_caissier'),
+                            'comptable'            => __('role_comptable'),
+                            'it_manager'           => __('role_it_manager'),
                         ] as $roleValue => $roleLabel): ?>
                             <option value="<?= $roleValue ?>" <?= $filters['role'] === $roleValue ? 'selected' : '' ?>><?= $roleLabel ?></option>
                         <?php endforeach; ?>

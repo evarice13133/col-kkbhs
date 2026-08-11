@@ -228,8 +228,13 @@ elseif (strpos($path, '/timetables') === 0) {
         $c->grid();
     } elseif ($path === '/timetables/unlock' && $method === 'POST') {
         $c->unlock();
+    } elseif ($path === '/timetables/publish' && $method === 'POST') {
+        $c->publish();
+    } elseif ($path === '/timetables/unpublish' && $method === 'POST') {
+        $c->unpublish();
     } elseif ($path === '/timetables/delete' && $method === 'POST') {
         $c->deleteTimetable();
+
     } elseif ($path === '/timetables/print') {
         $c->printIndex();
     } elseif ($path === '/timetables/pdf') {
@@ -335,7 +340,7 @@ elseif (strpos($path, '/students') === 0) {
 // ====== ROUTES: AUTRES PARAMETRES ======
 // Vérifie si l'URL commence par "/cycles"
 elseif (strpos($path, '/cycles') === 0) {
-    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+    if (!Session::isLogged() || (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'direction_academique'], true) && !\App\Core\PermissionManager::hasPermission('manage_cycles'))) {
         header('Location: /');
         exit;
     }
@@ -359,7 +364,7 @@ elseif (strpos($path, '/cycles') === 0) {
     elseif ($path === '/cycles/delete')
         $c->delete($_GET['id'] ?? 0); // Suppression
 } elseif (strpos($path, '/sections') === 0) {
-    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+    if (!Session::isLogged() || (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'direction_academique'], true) && !\App\Core\PermissionManager::hasPermission('manage_sections'))) {
         header('Location: /');
         exit;
     }
@@ -396,7 +401,7 @@ elseif (strpos($path, '/cycles') === 0) {
     elseif ($path === '/departments/delete')
         $c->delete($_GET['id'] ?? 0);
 } elseif (strpos($path, '/classes') === 0) {
-    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier'])) {
+    if (!Session::isLogged() || (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'direction_academique'], true) && !\App\Core\PermissionManager::hasPermission('view_classes'))) {
         header('Location: /');
         exit;
     }
@@ -426,7 +431,7 @@ elseif (strpos($path, '/cycles') === 0) {
     elseif ($path === '/classes/set-main-teacher' && $method === 'POST')
         $c->setMainTeacher($_GET['id'] ?? 0);
 } elseif (strpos($path, '/sequences') === 0) {
-    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+    if (!Session::isLogged() || (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'direction_academique'], true) && !\App\Core\PermissionManager::hasPermission('manage_sequences'))) {
         header('Location: /');
         exit;
     }
@@ -446,7 +451,7 @@ elseif (strpos($path, '/cycles') === 0) {
     elseif ($path === '/sequences/toggle')
         $c->toggle($_GET['id'] ?? 0);
 } elseif (strpos($path, '/teaching_types') === 0) {
-    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+    if (!Session::isLogged() || (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'direction_academique'], true) && !\App\Core\PermissionManager::hasPermission('manage_teaching_types'))) {
         header('Location: /');
         exit;
     }
@@ -468,7 +473,7 @@ elseif (strpos($path, '/cycles') === 0) {
         exit;
     }
 } elseif (strpos($path, '/subject-groups') === 0) {
-    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+    if (!Session::isLogged() || (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'direction_academique'], true) && !\App\Core\PermissionManager::hasPermission('manage_subjects'))) {
         header('Location: /');
         exit;
     }
@@ -482,7 +487,7 @@ elseif (strpos($path, '/cycles') === 0) {
     elseif ($path === '/subject-groups/toggle')
         $c->toggle($_GET['id'] ?? 0);
 } elseif (strpos($path, '/levels') === 0) {
-    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+    if (!Session::isLogged() || (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'direction_academique'], true) && !\App\Core\PermissionManager::hasPermission('manage_classes_structure'))) {
         header('Location: /');
         exit;
     }
@@ -509,7 +514,7 @@ elseif (strpos($path, '/cycles') === 0) {
 
 // ====== ROUTES: CORPS ENSEIGNANT ======
 elseif (strpos($path, '/teachers') === 0) {
-    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+    if (!Session::isLogged() || (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'direction_academique'], true) && !\App\Core\PermissionManager::hasPermission('manage_teachers'))) {
         header('Location: /');
         exit;
     }
@@ -540,6 +545,10 @@ elseif (strpos($path, '/teachers') === 0) {
         $c->directAssign();
     elseif ($path === '/teachers/store_assignment' && $method === 'POST')
         $c->storeAssignment($_GET['id'] ?? 0);
+    elseif ($path === '/teachers/remove_assignment' && $method === 'POST')
+        $c->removeAssignment();
+    elseif ($path === '/teachers/transfer_course' && $method === 'POST')
+        $c->transferCourse();
     elseif ($path === '/teachers/toggle-teacher-names' && $method === 'POST')
         $c->toggleTeacherNames();
 } elseif (strpos($path, '/bulletins') === 0) {
@@ -876,7 +885,7 @@ elseif (strpos($path, '/expenses') === 0) {
 
 // ====== ROUTES: CENTRE DE PILOTAGE ======
 elseif (strpos($path, '/pilotage') === 0) {
-    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
+    if (!Session::isLogged() || (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable', 'direction_academique'], true) && !\App\Core\PermissionManager::hasPermission('view_pilotage'))) {
         header('Location: /');
         exit;
     }
@@ -893,7 +902,7 @@ elseif (strpos($path, '/pilotage') === 0) {
 
 // ====== ROUTES: CONFIGURATIONS GLOBALES ======
 elseif (strpos($path, '/settings') === 0) {
-    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin'])) {
+    if (!Session::isLogged() || (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'direction_academique'], true) && !\App\Core\PermissionManager::hasPermission('manage_settings'))) {
         header('Location: /');
         exit;
     }

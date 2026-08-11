@@ -54,11 +54,11 @@ $timetablesByClass = $gridData['timetablesByClass'];
                         onclick="openBulkScheduleModal()" style="background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); color: white; border: none;">
                         <i class="bi bi-layers-half me-1"></i>Planification en Masse
                     </button>
-                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-2 fw-bold shadow-sm"
+                    <!-- <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-2 fw-bold shadow-sm"
                         data-bs-toggle="offcanvas" data-bs-target="#quickAssignPaletteOffcanvas"
                         onclick="toggleQuickAssignPalette()">
                         <i class="bi bi-layout-sidebar-reverse me-1"></i>Palette d'affectation (Glisser-Déposer)
-                    </button>
+                    </button> -->
                 <?php endif; ?>
                 <a href="/timetables/wizard" class="btn btn-sm btn-primary rounded-pill px-3 py-2 fw-bold shadow-sm">
                     <i class="bi bi-plus-circle me-1"></i><?= __('timetables_new_wizard') ?>
@@ -68,7 +68,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
                     <i class="bi bi-arrow-left me-1"></i><?= __('back') ?? 'Retour' ?>
                 </a>
 
-                <button type="button" onclick="triggerPrintModel(<?= $cycleId ?>, <?= $levelId ?>, <?= $weekId ?>)"
+                <button type="button" onclick="triggerPrintModel(<?= (int)$cycleId ?>, <?= (int)$levelId ?>, <?= (int)$weekId ?>)"
                     class="btn btn-sm btn-action-modern text-primary border px-3 rounded-pill fw-semibold"
                     title="<?= __('print') ?? 'Imprimer' ?>">
                     <i class="bi bi-printer-fill me-1"></i><?= __('print') ?? 'Imprimer' ?>
@@ -263,7 +263,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
                                         </div>
                                         <?php if ($isPause): ?>
                                             <span
-                                                class="badge bg-success bg-opacity-15 text-success border border-success border-opacity-25 rounded-pill extra-small fw-bold mt-1 px-2 py-0.5">
+                                                class="badge pause-badge rounded-pill extra-small fw-bold mt-1 px-2 py-0.5">
                                                 <i class="bi bi-cup-hot-fill me-1"></i>PAUSE
                                             </span>
                                         <?php else: ?>
@@ -284,10 +284,10 @@ $timetablesByClass = $gridData['timetablesByClass'];
                                                 <i class="bi bi-cup-hot-fill fs-6"></i>
                                             </div>
                                             <div class="text-center">
-                                                <span class="fw-black text-uppercase tracking-wider fs-6 text-success me-2">PAUSE &
+                                                <span class="fw-black text-uppercase tracking-wider fs-6 pause-text-emerald me-2">PAUSE &
                                                     INTERVALLE</span>
                                                 <span
-                                                    class="badge bg-success bg-opacity-20 text-success border border-success border-opacity-30 rounded-pill font-monospace fw-bold">
+                                                    class="badge pause-badge rounded-pill font-monospace fw-bold px-2.5 py-1">
                                                     <?= substr($slot['heure_debut'], 0, 5) ?> -
                                                     <?= substr($slot['heure_fin'], 0, 5) ?> (<?= (int) $slot['duree_minutes'] ?> min)
                                                 </span>
@@ -308,16 +308,20 @@ $timetablesByClass = $gridData['timetablesByClass'];
                                         $subjectColor = !empty($entry['couleur_hex']) ? $entry['couleur_hex'] : '#3b82f6';
                                         ?>
 
-                                        <td class="p-2 grid-cell <?= $hasConflict ? 'conflict-cell' : '' ?>" data-day="<?= $day ?>"
-                                            data-slot-id="<?= $slot['id'] ?>" data-class-id="<?= $classId ?>"
-                                            data-timetable-id="<?= $timetableId ?>" tabindex="0" role="button"
+                                        <td class="p-2 grid-cell <?= $hasConflict ? 'conflict-cell' : '' ?>"
+                                            data-day="<?= h($day) ?>"
+                                            data-slot-id="<?= (int)$slot['id'] ?>"
+                                            data-class-id="<?= (int)$classId ?>"
+                                            data-class-name="<?= h($cls['nom']) ?>"
+                                            data-timetable-id="<?= (int)$timetableId ?>"
+                                            tabindex="0" role="button"
                                             aria-label="<?= $entry ? h($entry['subject_name']) . ' avec ' . h($entry['teacher_name']) . ' en ' . h($entry['room_name']) : 'Créneau libre pour ' . h($cls['nom']) ?>"
                                             <?php if ($canEdit): ?>
-                                                onclick="openAssignModal(<?= $slot['id'] ?>, '<?= $day ?>', <?= $classId ?>, '<?= h($cls['nom']) ?>', <?= json_encode($entry) ?>, <?= $timetableId ?>)"
-                                                ondragover="handleCellDragOver(event, '<?= $day ?>', <?= $slot['id'] ?>, <?= $classId ?>)"
-                                                ondragenter="handleCellDragEnter(event, '<?= $day ?>', <?= $slot['id'] ?>, <?= $classId ?>)"
+                                                onclick="handleCellClick(this)"
+                                                ondragover="handleCellDragOver(event, '<?= h($day) ?>', <?= (int)$slot['id'] ?>, <?= (int)$classId ?>)"
+                                                ondragenter="handleCellDragEnter(event, '<?= h($day) ?>', <?= (int)$slot['id'] ?>, <?= (int)$classId ?>)"
                                                 ondragleave="handleCellDragLeave(event)"
-                                                ondrop="handleCellDrop(event, '<?= $day ?>', <?= $slot['id'] ?>, <?= $classId ?>, '<?= h($cls['nom']) ?>', <?= $timetableId ?>)"
+                                                ondrop="handleCellDrop(event, '<?= h($day) ?>', <?= (int)$slot['id'] ?>, <?= (int)$classId ?>, '<?= h($cls['nom']) ?>', <?= (int)$timetableId ?>)"
                                             <?php endif; ?>>
 
                                             <?php if ($entry): ?>
@@ -414,7 +418,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
                         </h5>
                         <div id="modalTargetClassHeader" class="small opacity-90 fw-semibold mt-1"></div>
                     </div>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="closeAssignModal()"></button>
                 </div>
                 <div class="modal-body p-4">
                     <form id="assignForm">
@@ -539,7 +543,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
                     </form>
                 </div>
                 <div class="modal-footer border-top p-3" style="background: var(--bg-card);">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal" onclick="closeAssignModal()">Annuler</button>
                     <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm"
                         onclick="saveAssignment()">Enregistrer</button>
                 </div>
@@ -548,7 +552,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
     </div>
 
     <!-- Modal Pop-Up de Confirmation Ajout Rapide d'Enseignant -->
-    <div class="modal fade" id="confirmNewTeacherModal" tabindex="-1" style="z-index: 1060;">
+    <div class="modal fade" id="confirmNewTeacherModal" tabindex="-1" style="z-index: 1085;">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden" style="background: var(--bg-card);">
                 <div class="modal-header bg-warning text-dark p-4">
@@ -667,13 +671,36 @@ $timetablesByClass = $gridData['timetablesByClass'];
 
 <script>
     function triggerPrintModel(cycleId, levelId, weekId) {
-        const url = `/timetables/pdf?cycle_id=${cycleId}&level_id=${levelId}&week_id=${weekId}&mode=print`;
-        window.open(url, '_blank');
+        const cId = cycleId || 0;
+        const lId = levelId || 0;
+        const wId = weekId || 0;
+        const url = `/timetables/pdf?cycle_id=${cId}&level_id=${lId}&week_id=${wId}&mode=print`;
+        const newWin = window.open(url, '_blank');
+        if (!newWin || newWin.closed || typeof newWin.closed === 'undefined') {
+            window.location.href = url;
+        }
+    }
+
+    function handleCellClick(tdEl) {
+        if (!tdEl) return;
+        const slotId = parseInt(tdEl.dataset.slotId) || 0;
+        const day = tdEl.dataset.day || '';
+        const classId = parseInt(tdEl.dataset.classId) || 0;
+        const className = tdEl.dataset.className || '';
+        const timetableId = parseInt(tdEl.dataset.timetableId) || 0;
+
+        let entry = null;
+        if (window.TIMETABLE_DATA && window.TIMETABLE_DATA.matrix && window.TIMETABLE_DATA.matrix[day] && window.TIMETABLE_DATA.matrix[day][slotId]) {
+            entry = window.TIMETABLE_DATA.matrix[day][slotId][classId] || null;
+        }
+
+        openAssignModal(slotId, day, classId, className, entry, timetableId);
     }
 
     // Hydratation de l'état local du Frontend pour zéro latence
     window.TIMETABLE_DATA = {
         classes: <?= json_encode($classes) ?>,
+        days: <?= json_encode($days) ?>,
         subjects: <?= json_encode($gridData['subjects']) ?>,
         teachers: <?= json_encode($gridData['teachers']) ?>,
         rooms: <?= json_encode($gridData['rooms']) ?>,
@@ -917,50 +944,6 @@ $timetablesByClass = $gridData['timetablesByClass'];
 
         if (!draggedData && e.dataTransfer) {
             try {
-                const raw = e.dataTransfer.getData('text/plain');
-                if (raw) draggedData = JSON.parse(raw);
-            } catch (err) {}
-        }
-
-        if (!draggedData) return;
-
-    function getFreeRoomId(day, slotId) {
-        const usedRoomIds = new Set();
-        if (window.TIMETABLE_DATA && window.TIMETABLE_DATA.matrix && window.TIMETABLE_DATA.matrix[day] && window.TIMETABLE_DATA.matrix[day][slotId]) {
-            Object.values(window.TIMETABLE_DATA.matrix[day][slotId]).forEach(entry => {
-                if (entry && entry.room_id) {
-                    usedRoomIds.add(parseInt(entry.room_id));
-                }
-            });
-        }
-        if (window.TIMETABLE_DATA && window.TIMETABLE_DATA.rooms) {
-            const freeRoom = window.TIMETABLE_DATA.rooms.find(r => !usedRoomIds.has(parseInt(r.id)));
-            if (freeRoom) return freeRoom.id;
-        }
-        return null;
-    }
-
-    function getHabilitatedTeacherId(subjectId) {
-        if (window.TIMETABLE_DATA && window.TIMETABLE_DATA.teachers) {
-            const assigned = window.TIMETABLE_DATA.teachers.find(t => (t.subject_id == subjectId || t.is_assigned == 1));
-            if (assigned) return assigned.id;
-            if (window.TIMETABLE_DATA.teachers.length > 0) return window.TIMETABLE_DATA.teachers[0].id;
-        }
-        return null;
-    }
-
-    function handleCellDrop(e, targetDay, targetSlotId, targetClassId, targetClassName, targetTimetableId) {
-        e.preventDefault();
-        handleDragEnd(e);
-
-        const isPause = e.currentTarget.parentElement && e.currentTarget.parentElement.classList.contains('bg-pause-row');
-        if (isPause) {
-            showGridToast('danger', 'Déplacement Bloqué', 'Ce créneau horaire est une PAUSE. Aucun cours ne peut y être planifié.');
-            return;
-        }
-
-        if (!draggedData && e.dataTransfer) {
-            try {
                 const raw = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('application/json');
                 if (raw) draggedData = JSON.parse(raw);
             } catch (err) {}
@@ -1187,88 +1170,188 @@ $timetablesByClass = $gridData['timetablesByClass'];
         showGridToast('info', 'Matière Sélectionnée', `Matière "${subjectObj.nom}" sélectionnée. Cliquez sur n'importe quel créneau libre de la grille pour planifier !`);
     }
 
-    function openAssignModal(slotId, day, classId, className, entry, timetableId) {
-        document.getElementById('assign_slot_id').value = slotId;
-        document.getElementById('assign_day').value = day;
-        document.getElementById('assign_class_id').value = classId;
-        document.getElementById('assign_timetable_id').value = timetableId || 0;
-        currentEntryData = entry;
+    function getHabilitatedTeacherId(subjectId) {
+        if (!window.TIMETABLE_DATA || !window.TIMETABLE_DATA.teachers) return null;
+        const teachers = window.TIMETABLE_DATA.teachers;
+        const assigned = teachers.find(t => t.is_assigned == 1);
+        if (assigned) return assigned.id;
+        return teachers.length > 0 ? teachers[0].id : null;
+    }
 
-        selectedClasses = [{ id: classId, nom: className }];
-
-        if (entry && typeof window.TIMETABLE_DATA !== 'undefined' && window.TIMETABLE_DATA.matrix) {
-            const matrix = window.TIMETABLE_DATA.matrix;
-            allGridClasses.forEach(cls => {
-                if (cls.id !== classId) {
-                    const cellEntry = matrix && matrix[day] && matrix[day][slotId] ? matrix[day][slotId][cls.id] : null;
-                    if (cellEntry && cellEntry.subject_id == entry.subject_id && cellEntry.teacher_id == entry.teacher_id && cellEntry.room_id == entry.room_id) {
-                        selectedClasses.push({ id: cls.id, nom: cls.nom });
+    function getFreeRoomId(day, slotId) {
+        if (!window.TIMETABLE_DATA || !window.TIMETABLE_DATA.rooms) return null;
+        const rooms = window.TIMETABLE_DATA.rooms;
+        if (!rooms || rooms.length === 0) return null;
+        const matrix = (window.TIMETABLE_DATA && window.TIMETABLE_DATA.matrix) ? window.TIMETABLE_DATA.matrix : {};
+        
+        for (let r of rooms) {
+            let isOccupied = false;
+            if (matrix[day] && matrix[day][slotId]) {
+                for (let cId in matrix[day][slotId]) {
+                    if (matrix[day][slotId][cId] && matrix[day][slotId][cId].room_id == r.id) {
+                        isOccupied = true;
+                        break;
                     }
                 }
-            });
+            }
+            if (!isOccupied) return r.id;
         }
+        return rooms[0].id;
+    }
 
-        initialClassIds = selectedClasses.map(c => c.id);
-        renderSelectedClassesUI();
-
-        document.getElementById('modalTargetClassHeader').innerText = `Jour : ${day}`;
-        document.getElementById('modalConflictFeedback').classList.add('d-none');
-
-        document.getElementById('modalConflictFeedback').innerHTML = '';
-        document.getElementById('quickTeacherContainer').classList.add('d-none');
-        const autoNotice = document.getElementById('teacherAutoAssignNotice');
-        if (autoNotice) autoNotice.classList.add('d-none');
-
-        // Remplissage ultra-rapide depuis TIMETABLE_DATA en mémoire local
-        const subSelect = document.getElementById('assign_subject_id');
-        subSelect.innerHTML = '<option value="">-- Choisir une matière --</option>';
-
-        if (window.TIMETABLE_DATA && window.TIMETABLE_DATA.subjects) {
-            window.TIMETABLE_DATA.subjects.forEach(s => {
-                const sel = (entry && entry.subject_id == s.id) ? 'selected' : '';
-                const isAttached = (s.is_attached == 1 || typeof s.is_attached === 'undefined');
-                const badge = isAttached ? '' : ' [Non rattachée]';
-                subSelect.innerHTML += `<option value="${s.id}" data-is-attached="${isAttached ? 1 : 0}" data-color="${s.couleur_hex || '#3b82f6'}" data-coef="${s.coefficient || 1}" ${sel}>${s.nom} (${s.code || 'UV'})${badge}</option>`;
-            });
+    function closeAssignModal() {
+        const modalEl = document.getElementById('assignModal');
+        if (!modalEl) return;
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            const modalObj = bootstrap.Modal.getInstance(modalEl);
+            if (modalObj) modalObj.hide();
         }
+        modalEl.classList.remove('show');
+        modalEl.style.display = 'none';
+        modalEl.setAttribute('aria-hidden', 'true');
+        modalEl.removeAttribute('aria-modal');
+        document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+    }
 
-        if (entry && entry.subject_id) {
-            subSelect.value = entry.subject_id;
-            onSubjectChange(entry.teacher_id);
-        } else if (window.selectedPaletteSubject) {
-            const activeSub = window.selectedPaletteSubject;
-            subSelect.value = activeSub.id;
-            onSubjectChange();
-
-            const autoTeacherId = getHabilitatedTeacherId(activeSub.id);
-            if (autoTeacherId) {
-                document.getElementById('assign_teacher_id').value = autoTeacherId;
-                onTeacherChange();
+    function openAssignModal(slotId, day, classId, className, entry, timetableId) {
+        try {
+            let modalEl = document.getElementById('assignModal');
+            if (!modalEl) {
+                console.error("Élément #assignModal introuvable dans le DOM.");
+                return;
             }
 
-            const freeRoomId = getFreeRoomId(day, slotId);
-            if (freeRoomId) {
-                document.getElementById('assign_room_id').value = freeRoomId;
+            // Déplacer la modale à la racine de document.body pour éviter l'occlusion par stacking context (.animate-fade-in)
+            if (modalEl.parentNode !== document.body) {
+                document.body.appendChild(modalEl);
+            }
+            modalEl.style.zIndex = '1065';
+
+            const slotIn = document.getElementById('assign_slot_id');
+            const dayIn = document.getElementById('assign_day');
+            const classIn = document.getElementById('assign_class_id');
+            const ttIn = document.getElementById('assign_timetable_id');
+
+            if (slotIn) slotIn.value = slotId;
+            if (dayIn) dayIn.value = day;
+            if (classIn) classIn.value = classId;
+            if (ttIn) ttIn.value = timetableId || 0;
+            currentEntryData = entry;
+
+            selectedClasses = [{ id: classId, nom: className }];
+
+            if (entry && typeof window.TIMETABLE_DATA !== 'undefined' && window.TIMETABLE_DATA.matrix) {
+                const matrix = window.TIMETABLE_DATA.matrix;
+                if (typeof allGridClasses !== 'undefined' && Array.isArray(allGridClasses)) {
+                    allGridClasses.forEach(cls => {
+                        if (cls.id !== classId) {
+                            const cellEntry = matrix && matrix[day] && matrix[day][slotId] ? matrix[day][slotId][cls.id] : null;
+                            if (cellEntry && cellEntry.subject_id == entry.subject_id && cellEntry.teacher_id == entry.teacher_id && cellEntry.room_id == entry.room_id) {
+                                selectedClasses.push({ id: cls.id, nom: cls.nom });
+                            }
+                        }
+                    });
+                }
             }
 
-            checkRealtimeConflict();
-            showGridToast('success', 'Matière Positionnée', `Matière ${activeSub.nom} pré-sélectionnée pour ${className}.`);
-            window.selectedPaletteSubject = null;
-            document.querySelectorAll('.palette-subject-chip').forEach(c => c.classList.remove('border-primary', 'shadow-md', 'border-2'));
-        } else {
-            document.getElementById('assign_teacher_id').innerHTML = '<option value="">-- Sélectionnez d\'abord une matière --</option>';
-        }
+            initialClassIds = selectedClasses.map(c => c.id);
+            renderSelectedClassesUI();
 
-        if (entry) {
-            document.getElementById('assign_room_id').value = entry.room_id || '';
-            document.getElementById('assign_color').value = entry.couleur_hex || '#3b82f6';
-        } else if (!window.selectedPaletteSubject) {
-            document.getElementById('assign_room_id').value = '';
-            document.getElementById('assign_color').value = '#3b82f6';
-        }
+            const headerEl = document.getElementById('modalTargetClassHeader');
+            if (headerEl) headerEl.innerText = `Jour : ${day}`;
 
-        const modal = new bootstrap.Modal(document.getElementById('assignModal'));
-        modal.show();
+            const feedbackEl = document.getElementById('modalConflictFeedback');
+            if (feedbackEl) {
+                feedbackEl.classList.add('d-none');
+                feedbackEl.innerHTML = '';
+            }
+
+            const quickTeacherEl = document.getElementById('quickTeacherContainer');
+            if (quickTeacherEl) quickTeacherEl.classList.add('d-none');
+
+            const autoNoticeEl = document.getElementById('teacherAutoAssignNotice');
+            if (autoNoticeEl) autoNoticeEl.classList.add('d-none');
+
+            const subSelect = document.getElementById('assign_subject_id');
+            if (subSelect) {
+                subSelect.innerHTML = '<option value="">-- Choisir une matière --</option>';
+
+                if (window.TIMETABLE_DATA && window.TIMETABLE_DATA.subjects) {
+                    window.TIMETABLE_DATA.subjects.forEach(s => {
+                        const sel = (entry && entry.subject_id == s.id) ? 'selected' : '';
+                        const isAttached = (s.is_attached == 1 || typeof s.is_attached === 'undefined');
+                        const badge = isAttached ? '' : ' [Non rattachée]';
+                        subSelect.innerHTML += `<option value="${s.id}" data-is-attached="${isAttached ? 1 : 0}" data-color="${s.couleur_hex || '#3b82f6'}" data-coef="${s.coefficient || 1}" ${sel}>${escapeHtml(s.nom)} (${escapeHtml(s.code || 'UV')})${badge}</option>`;
+                    });
+                }
+
+                if (entry && entry.subject_id) {
+                    subSelect.value = entry.subject_id;
+                    onSubjectChange(entry.teacher_id);
+                } else if (window.selectedPaletteSubject) {
+                    const activeSub = window.selectedPaletteSubject;
+                    subSelect.value = activeSub.id;
+                    onSubjectChange();
+
+                    const autoTeacherId = getHabilitatedTeacherId(activeSub.id);
+                    if (autoTeacherId) {
+                        const tSel = document.getElementById('assign_teacher_id');
+                        if (tSel) tSel.value = autoTeacherId;
+                        onTeacherChange();
+                    }
+
+                    const freeRoomId = getFreeRoomId(day, slotId);
+                    if (freeRoomId) {
+                        const rSel = document.getElementById('assign_room_id');
+                        if (rSel) rSel.value = freeRoomId;
+                    }
+
+                    checkRealtimeConflict();
+                    showGridToast('success', 'Matière Positionnée', `Matière ${activeSub.nom} pré-sélectionnée pour ${className}.`);
+                    window.selectedPaletteSubject = null;
+                    document.querySelectorAll('.palette-subject-chip').forEach(c => c.classList.remove('border-primary', 'shadow-md', 'border-2'));
+                } else {
+                    const tSel = document.getElementById('assign_teacher_id');
+                    if (tSel) tSel.innerHTML = '<option value="">-- Sélectionnez d\'abord une matière --</option>';
+                }
+            }
+
+            const roomSel = document.getElementById('assign_room_id');
+            const colorSel = document.getElementById('assign_color');
+
+            if (entry) {
+                if (roomSel) roomSel.value = entry.room_id || '';
+                if (colorSel) colorSel.value = entry.couleur_hex || '#3b82f6';
+            } else if (!window.selectedPaletteSubject) {
+                if (roomSel) roomSel.value = '';
+                if (colorSel) colorSel.value = '#3b82f6';
+            }
+
+            document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+
+            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                const modalObj = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modalObj.show();
+            }
+            
+            modalEl.classList.add('show');
+            modalEl.style.display = 'block';
+            modalEl.removeAttribute('aria-hidden');
+            modalEl.setAttribute('aria-modal', 'true');
+        } catch (err) {
+            console.error("Erreur lors de l'ouverture de la modale d'affectation:", err);
+            const modalEl = document.getElementById('assignModal');
+            if (modalEl) {
+                if (modalEl.parentNode !== document.body) document.body.appendChild(modalEl);
+                modalEl.classList.add('show');
+                modalEl.style.display = 'block';
+                modalEl.style.zIndex = '1065';
+            }
+        }
     }
 
     function onSubjectChange(targetTeacherId = null) {
@@ -1362,14 +1445,36 @@ $timetablesByClass = $gridData['timetablesByClass'];
         document.getElementById('confirmTeacherNameText').innerText = name;
         document.getElementById('confirmSubjectNameText').innerText = subjectName;
 
-        const confirmModal = new bootstrap.Modal(document.getElementById('confirmNewTeacherModal'));
+        const confirmModalEl = document.getElementById('confirmNewTeacherModal');
+        if (confirmModalEl.parentNode !== document.body) {
+            document.body.appendChild(confirmModalEl);
+        }
+        confirmModalEl.style.zIndex = '1085';
+
+        const confirmModal = new bootstrap.Modal(confirmModalEl);
+        confirmModalEl.addEventListener('shown.bs.modal', function () {
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            if (backdrops.length > 1) {
+                backdrops[backdrops.length - 1].style.zIndex = '1080';
+            }
+        }, { once: true });
         confirmModal.show();
     }
 
     function executeQuickTeacherCreation() {
-        const name = document.getElementById('quick_teacher_name').value.trim();
-        const subjectId = document.getElementById('assign_subject_id').value;
-        const classId = document.getElementById('assign_class_id').value;
+        const nameInput = document.getElementById('quick_teacher_name');
+        const name = nameInput ? nameInput.value.trim() : '';
+        const subjectSelect = document.getElementById('assign_subject_id');
+        const subjectId = subjectSelect ? subjectSelect.value : 0;
+        
+        let classId = 0;
+        if (typeof selectedClasses !== 'undefined' && selectedClasses.length > 0) {
+            classId = selectedClasses[0].id;
+        } else if (document.getElementById('assign_class_id')) {
+            classId = document.getElementById('assign_class_id').value;
+        } else if (window.TIMETABLE_DATA && window.TIMETABLE_DATA.class_id) {
+            classId = window.TIMETABLE_DATA.class_id;
+        }
 
         fetch('/timetables/api/quick-create-teacher', {
             method: 'POST',
@@ -1380,19 +1485,33 @@ $timetablesByClass = $gridData['timetablesByClass'];
             .then(res => {
                 if (res.success && res.teacher) {
                     const t = res.teacher;
-                    window.TIMETABLE_DATA.teachers.push({ id: t.id, nom_complet: t.nom_complet, role: t.role, is_assigned: 1 });
+                    if (window.TIMETABLE_DATA && window.TIMETABLE_DATA.teachers) {
+                        const existsInArray = window.TIMETABLE_DATA.teachers.some(existing => existing.id == t.id);
+                        if (!existsInArray) {
+                            window.TIMETABLE_DATA.teachers.push({ id: t.id, nom_complet: t.nom_complet, role: t.role, is_assigned: 1 });
+                        }
+                    }
 
                     const teacherSelect = document.getElementById('assign_teacher_id');
-                    const newOpt = new Option(t.nom_complet + ' (Nouvellement créé)', t.id, true, true);
-                    teacherSelect.add(newOpt, teacherSelect.options[1]);
-                    teacherSelect.value = t.id;
+                    if (teacherSelect) {
+                        let existingOpt = Array.from(teacherSelect.options).find(opt => opt.value == t.id);
+                        if (!existingOpt) {
+                            const label = t.nom_complet + (res.already_existed ? '' : ' (Nouvellement créé)');
+                            existingOpt = new Option(label, t.id, true, true);
+                            teacherSelect.add(existingOpt, teacherSelect.options[1] || null);
+                        }
+                        teacherSelect.value = t.id;
+                    }
 
-                    document.getElementById('quickTeacherContainer').classList.add('d-none');
-                    document.getElementById('quick_teacher_name').value = '';
+                    const quickContainer = document.getElementById('quickTeacherContainer');
+                    if (quickContainer) quickContainer.classList.add('d-none');
+                    if (nameInput) nameInput.value = '';
 
                     const confirmModalEl = document.getElementById('confirmNewTeacherModal');
-                    const modalObj = bootstrap.Modal.getInstance(confirmModalEl);
-                    if (modalObj) modalObj.hide();
+                    if (confirmModalEl) {
+                        const modalObj = bootstrap.Modal.getInstance(confirmModalEl);
+                        if (modalObj) modalObj.hide();
+                    }
 
                     checkRealtimeConflict();
                 } else {
@@ -1556,6 +1675,18 @@ $timetablesByClass = $gridData['timetablesByClass'];
     }
 
     body.is-dragging-active .grid-cell * {
+        pointer-events: none !important;
+    }
+
+    .grid-cell {
+        cursor: pointer !important;
+    }
+
+    .empty-slot-placeholder {
+        cursor: pointer !important;
+    }
+
+    .empty-slot-placeholder * {
         pointer-events: none !important;
     }
 
@@ -1783,6 +1914,16 @@ $timetablesByClass = $gridData['timetablesByClass'];
         border-bottom: 1px dashed rgba(16, 185, 129, 0.3) !important;
     }
 
+    .pause-text-emerald {
+        color: #047857 !important;
+    }
+
+    .pause-badge {
+        background-color: rgba(16, 185, 129, 0.18) !important;
+        color: #047857 !important;
+        border: 1px solid rgba(16, 185, 129, 0.35) !important;
+    }
+
     .empty-slot-placeholder {
         transition: all 0.2s ease;
         background-color: rgba(248, 250, 252, 0.6);
@@ -1890,6 +2031,16 @@ $timetablesByClass = $gridData['timetablesByClass'];
     [data-theme="dark"] .cell-pause-full {
         background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.28) 100%) !important;
         border-color: rgba(52, 211, 153, 0.3) !important;
+    }
+
+    [data-theme="dark"] .pause-text-emerald {
+        color: #34d399 !important;
+    }
+
+    [data-theme="dark"] .pause-badge {
+        background-color: rgba(16, 185, 129, 0.3) !important;
+        color: #34d399 !important;
+        border: 1px solid rgba(52, 211, 153, 0.4) !important;
     }
 
     /* Print Stylesheet for Instant Browser Printing */

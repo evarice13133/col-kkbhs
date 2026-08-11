@@ -380,6 +380,21 @@ class DashboardController
             $es['level_label'] = $this->getLevelLabel($es['progress_percent']);
         }
 
+        // Vérifier si l'enseignant intervient dans des classes du type d'enseignement "Supérieur LMD"
+        $has_lmd_classes = false;
+        if (!empty($classIds)) {
+            $placeholders = implode(',', array_fill(0, count($classIds), '?'));
+            $stmtLmd = $this->db->prepare("
+                SELECT COUNT(*) 
+                FROM classes c
+                JOIN teaching_types tt ON c.teaching_type_id = tt.id
+                WHERE c.id IN ($placeholders)
+                  AND (tt.id = 9 OR tt.nom LIKE '%LMD%' OR tt.nom LIKE '%Supérieur%')
+            ");
+            $stmtLmd->execute($classIds);
+            $has_lmd_classes = ((int) $stmtLmd->fetchColumn() > 0);
+        }
+
         return [
             'stats_classes' => $stats_classes,
             'stats_subjects' => $stats_subjects,
@@ -390,9 +405,13 @@ class DashboardController
             'stats_progress' => $stats_expected > 0 ? round(($stats_filled / $stats_expected) * 100) : 0,
             'classProgress' => array_values($classProgress),
             'evaluationStats' => array_values($evaluationStats),
-            'activeEvaluations' => $activeEvaluations
+            'activeEvaluations' => $activeEvaluations,
+            'has_lmd_classes' => $has_lmd_classes,
+            'teacherAssignments' => $assignments
         ];
     }
+
+
 
     /**
      * Construit les données pour l'administrateur de manière optimisée.
@@ -951,14 +970,17 @@ class DashboardController
 
     private function getTeacherAssignments($teacherId)
     {
-        $stmt = $this->db->prepare("SELECT ta.class_id, ta.subject_id, c.nom AS class_nom 
+        $activeYearId = $this->getActiveAcademicYearId();
+        $stmt = $this->db->prepare("SELECT ta.class_id, ta.subject_id, c.nom AS class_nom, s.nom AS subject_nom 
                                     FROM teacher_assignments ta 
                                     JOIN classes c ON c.id = ta.class_id
                                     JOIN subjects s ON s.id = ta.subject_id
-                                    WHERE ta.user_id = ? AND s.status = 1 ORDER BY c.nom ASC");
-        $stmt->execute([$teacherId]);
+                                    WHERE ta.user_id = ? AND ta.academic_year_id = ? AND s.status = 1 ORDER BY c.nom ASC, s.nom ASC");
+        $stmt->execute([$teacherId, $activeYearId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+
 
     private function getActiveAcademicYearId()
     {
@@ -996,7 +1018,8 @@ class DashboardController
             'stats_progress' => 0,
             'classProgress' => [],
             'evaluationStats' => array_map(fn($e) => ['label' => $e, 'expected_count' => 0, 'filled_count' => 0, 'progress_percent' => 0], $evals),
-            'activeEvaluations' => $evals
+            'activeEvaluations' => $evals,
+            'has_lmd_classes' => false
         ];
     }
 

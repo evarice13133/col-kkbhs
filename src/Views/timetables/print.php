@@ -74,81 +74,94 @@ ob_start();
 
     <!-- CARTE DE SÉLECTION & PRÉVISUALISATION -->
     <?php if ($selectedCycleId > 0): ?>
-        <div class="row g-4 mb-5">
-            
-            <!-- ÉTAPE 1 & 2 : Formulaire de configuration d'impression (Compensé et réduit de moitié) -->
-            <div class="col-xl-3 col-lg-4">
-                <div class="modern-card border-0 shadow-sm h-100 p-3 p-lg-4">
-                    <h5 class="fw-bold mb-4 text-main-theme d-flex align-items-center gap-2 fs-6">
-                        <i class="bi bi-sliders text-primary"></i> Options d'Édition
-                    </h5>
+        <?php if (empty($weeks)): ?>
+            <div class="modern-card border-0 shadow-sm p-5 text-center my-4">
+                <div class="mb-3 text-muted opacity-50">
+                    <i class="bi bi-calendar-x display-1"></i>
+                </div>
+                <h5 class="fw-bold text-main-theme">Aucun emploi du temps publié à afficher</h5>
+                <p class="text-muted small max-w-md mx-auto mb-0">
+                    Il n'y a actuellement aucun emploi du temps officiel publié disponible pour la prévisualisation et l'impression.
+                </p>
+            </div>
+        <?php else: ?>
+            <div class="row g-4 mb-5">
+                
+                <!-- ÉTAPE 1 & 2 : Formulaire de configuration d'impression -->
+                <div class="col-xl-3 col-lg-4">
+                    <div class="modern-card border-0 shadow-sm h-100 p-3 p-lg-4">
+                        <h5 class="fw-bold mb-4 text-main-theme d-flex align-items-center gap-2 fs-6">
+                            <i class="bi bi-sliders text-primary"></i> Options d'Édition
+                        </h5>
 
-                    <!-- Semaine de cours -->
-                    <div class="flow-step mb-4">
-                        <div class="flow-step-number">1</div>
-                        <h6 class="fw-bold mb-2 text-main-theme extra-small text-uppercase">Semaine d'enseignement</h6>
-                        <select id="selectWeekInput" class="form-select form-select-md rounded-4 shadow-sm" onchange="updatePreviewUrl()">
-                            <?php foreach ($weeks as $week): ?>
-                                <option value="<?= $week['id'] ?>" <?= $selectedWeekId === (int)$week['id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars((string)$week['libelle']) ?>
-                                    <?php if (!empty($week['date_debut'])): ?>
-                                        (du <?= date('d/m/Y', strtotime($week['date_debut'])) ?> au <?= date('d/m/Y', strtotime($week['date_fin'])) ?>)
-                                    <?php endif; ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <!-- Boutons d'Action & Format d'impression -->
-                    <div class="flow-step mb-4">
-                        <div class="flow-step-number">2</div>
-                        <h6 class="fw-bold mb-2 text-main-theme extra-small text-uppercase">Format & Actions</h6>
-                        <div class="p-3 bg-main-theme bg-opacity-5 rounded-4 border mb-3">
-                            <div class="d-flex align-items-center justify-content-between mb-2">
-                                <span class="fw-semibold extra-small text-muted">Format :</span>
-                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2.5 py-1 extra-small fw-bold">A4 Paysage</span>
-                            </div>
-                            <div class="d-flex align-items-center justify-content-between">
-                                <span class="fw-semibold extra-small text-muted">Mise en page :</span>
-                                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1 extra-small fw-bold">Grille horaire</span>
-                            </div>
+                        <!-- Semaine de cours -->
+                        <div class="flow-step mb-4">
+                            <div class="flow-step-number">1</div>
+                            <h6 class="fw-bold mb-2 text-main-theme extra-small text-uppercase">Semaine d'enseignement</h6>
+                            <select id="selectWeekInput" class="form-select form-select-md rounded-4 shadow-sm" onchange="updatePreviewUrl()">
+                                <?php foreach ($weeks as $week): ?>
+                                    <option value="<?= $week['id'] ?>" <?= $selectedWeekId === (int)$week['id'] ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars((string)$week['libelle']) ?>
+                                        <?php if (!empty($week['date_debut'])): ?>
+                                            (du <?= date('d/m/Y', strtotime($week['date_debut'])) ?> au <?= date('d/m/Y', strtotime($week['date_fin'])) ?>)
+                                        <?php endif; ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
 
-                        <div class="d-flex flex-column gap-2">
-                            <a id="btnDirectPrint" href="#" target="_blank" class="btn btn-primary btn-md rounded-pill shadow-sm fw-bold d-flex align-items-center justify-content-center gap-2">
-                                <i class="bi bi-printer-fill fs-6"></i> Imprimer
-                            </a>
+                        <!-- Boutons d'Action & Format d'impression -->
+                        <div class="flow-step mb-4">
+                            <div class="flow-step-number">2</div>
+                            <h6 class="fw-bold mb-2 text-main-theme extra-small text-uppercase">Format & Actions</h6>
+                            <div class="p-3 bg-main-theme bg-opacity-5 rounded-4 border mb-3">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <span class="fw-semibold extra-small text-muted">Format :</span>
+                                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2.5 py-1 extra-small fw-bold">A4 Paysage</span>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <span class="fw-semibold extra-small text-muted">Mise en page :</span>
+                                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1 extra-small fw-bold">Grille horaire</span>
+                                </div>
+                            </div>
 
-                            <a id="btnDownloadPdf" href="#" class="btn btn-outline-primary btn-md rounded-pill shadow-sm fw-bold d-flex align-items-center justify-content-center gap-2">
-                                <i class="bi bi-file-earmark-pdf-fill fs-6"></i> Télécharger PDF
-                            </a>
+                            <div class="d-flex flex-column gap-2">
+                                <a id="btnDirectPrint" href="#" target="_blank" class="btn btn-primary btn-md rounded-pill shadow-sm fw-bold d-flex align-items-center justify-content-center gap-2">
+                                    <i class="bi bi-printer-fill fs-6"></i> Imprimer
+                                </a>
+
+                                <a id="btnDownloadPdf" href="#" class="btn btn-outline-primary btn-md rounded-pill shadow-sm fw-bold d-flex align-items-center justify-content-center gap-2">
+                                    <i class="bi bi-file-earmark-pdf-fill fs-6"></i> Télécharger PDF
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- ZONE DE PRÉVISUALISATION DIRECTE (IFRAME ÉLARGIE À 75%) -->
-            <div class="col-xl-9 col-lg-8">
-                <div class="modern-card border-0 shadow-sm h-100 overflow-hidden d-flex flex-column">
-                    <div class="modern-card-header p-3 px-4 border-bottom bg-transparent d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="p-2 bg-primary bg-opacity-10 rounded-3 text-primary">
-                                <i class="bi bi-eye"></i>
+                <!-- ZONE DE PRÉVISUALISATION DIRECTE (IFRAME ÉLARGIE À 75%) -->
+                <div class="col-xl-9 col-lg-8">
+                    <div class="modern-card border-0 shadow-sm h-100 overflow-hidden d-flex flex-column">
+                        <div class="modern-card-header p-3 px-4 border-bottom bg-transparent d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="p-2 bg-primary bg-opacity-10 rounded-3 text-primary">
+                                    <i class="bi bi-eye"></i>
+                                </div>
+                                <h6 class="fw-bold m-0 text-main-theme">Prévisualisation A4 Paysage</h6>
                             </div>
-                            <h6 class="fw-bold m-0 text-main-theme">Prévisualisation A4 Paysage</h6>
+                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="reloadPreviewIframe()">
+                                <i class="bi bi-arrow-clockwise me-1"></i> Actualiser
+                            </button>
                         </div>
-                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="reloadPreviewIframe()">
-                            <i class="bi bi-arrow-clockwise me-1"></i> Actualiser
-                        </button>
-                    </div>
-                    <div class="modern-card-body p-0 flex-grow-1 bg-secondary bg-opacity-10 position-relative" style="min-height: 520px;">
-                        <iframe id="previewIframe" src="about:blank" class="w-100 h-100 border-0" style="min-height: 520px;"></iframe>
+                        <div class="modern-card-body p-0 flex-grow-1 bg-secondary bg-opacity-10 position-relative" style="min-height: 520px;">
+                            <iframe id="previewIframe" src="about:blank" class="w-100 h-100 border-0" style="min-height: 520px;"></iframe>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-        </div>
+            </div>
+        <?php endif; ?>
     <?php endif; ?>
+
 
 </div>
 

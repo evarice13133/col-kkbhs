@@ -32,8 +32,15 @@ class ClassController
         $this->settingsStore = new SettingsStore($this->db);
         $this->academicYearService = new AcademicYearService($this->db);
         
+        if (Session::get('user_role') === 'enseignant') {
+            Session::setFlash('error', __('action_forbidden') ?? 'Accès non autorisé.');
+            header("Location: /");
+            exit;
+        }
+
         \App\Core\PermissionManager::requirePermission('view_classes');
     }
+
 
     /**
      * Affiche la liste filtrée des classes de l'établissement.

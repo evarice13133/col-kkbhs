@@ -1156,10 +1156,16 @@ class StudentController
 
     public function update($id)
     {
+        if (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
+            Session::setFlash('error', __('action_forbidden') ?? 'Accès non autorisé.');
+            header("Location: /students");
+            exit;
+        }
 
         \App\Core\PermissionManager::requirePermission('view_students');
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
 
             if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
 

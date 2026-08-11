@@ -98,8 +98,11 @@ class SmartDeleteService
                 $transferredDetails['timetable_entries'] = $stmtTT->rowCount();
 
                 // Suppression physique ou désactivation de l'enseignant source
-                $this->db->prepare("DELETE FROM users WHERE id = ? AND role = 'enseignant'")->execute([$sourceId]);
-                $this->db->prepare("DELETE FROM teachers WHERE id = ?")->execute([$sourceId]);
+                $this->db->prepare("DELETE FROM users WHERE id = ? AND (role = 'enseignant' OR role = 'teacher')")->execute([$sourceId]);
+                $stmtHasTeachersTable = $this->db->query("SHOW TABLES LIKE 'teachers'");
+                if ($stmtHasTeachersTable->fetch()) {
+                    $this->db->prepare("DELETE FROM teachers WHERE id = ?")->execute([$sourceId]);
+                }
                 break;
 
             case 'class':
@@ -171,8 +174,8 @@ class SmartDeleteService
     private function handleDeactivateOrArchive(string $type, int $id, string $action): array
     {
         $tableMap = [
-            'teacher' => 'teachers', 'teachers' => 'teachers',
-            'student' => 'students', 'students' => 'students',
+            'teacher' => 'users', 'teachers' => 'users', 'enseignant' => 'users',
+            'student' => 'students', 'students' => 'students', 'eleve' => 'students',
             'user' => 'users', 'users' => 'users',
             'academic_year' => 'academic_years', 'academic_years' => 'academic_years',
             'class' => 'classes', 'classes' => 'classes',
@@ -222,10 +225,21 @@ class SmartDeleteService
             case 'enseignant':
                 // Nettoyage soft des clés étrangères avant delete si nécessaire
                 $this->db->prepare("UPDATE classes SET main_teacher_id = NULL WHERE main_teacher_id = ?")->execute([$id]);
-                $this->db->prepare("DELETE FROM subject_teacher WHERE teacher_id = ?")->execute([$id]);
+                $stmtHasTA = $this->db->query("SHOW TABLES LIKE 'teacher_assignments'");
+                if ($stmtHasTA->fetch()) {
+                    $this->db->prepare("DELETE FROM teacher_assignments WHERE user_id = ?")->execute([$id]);
+                }
+                $stmtHasST = $this->db->query("SHOW TABLES LIKE 'subject_teacher'");
+                if ($stmtHasST->fetch()) {
+                    $this->db->prepare("DELETE FROM subject_teacher WHERE teacher_id = ?")->execute([$id]);
+                }
                 $this->db->prepare("DELETE FROM timetable_entries WHERE teacher_id = ?")->execute([$id]);
-                $stmt = $this->db->prepare("DELETE FROM teachers WHERE id = ?");
+                $stmt = $this->db->prepare("DELETE FROM users WHERE id = ? AND (role = 'enseignant' OR role = 'teacher')");
                 $stmt->execute([$id]);
+                $stmtHasTeachersTable = $this->db->query("SHOW TABLES LIKE 'teachers'");
+                if ($stmtHasTeachersTable->fetch()) {
+                    $this->db->prepare("DELETE FROM teachers WHERE id = ?")->execute([$id]);
+                }
                 break;
 
             case 'student':
@@ -281,10 +295,25 @@ class SmartDeleteService
 
             case 'timetable':
             case 'timetables':
-                $this->db->prepare("DELETE FROM timetable_entries WHERE timetable_id = ?")->execute([$id]);
-                $stmt = $this->db->prepare("DELETE FROM timetables WHERE id = ?");
-                $stmt->execute([$id]);
+                // Récupérer le groupe lié à cet emploi du temps (cycle + week)
+                $stmtTt = $this->db->prepare("SELECT cycle_id, week_id FROM timetables WHERE id = ?");
+                $stmtTt->execute([$id]);
+                $ttInfo = $stmtTt->fetch(PDO::FETCH_ASSOC);
+
+                $idsToDelete = [$id];
+                if ($ttInfo) {
+                    $stmtGrp = $this->db->prepare("SELECT id FROM timetables WHERE cycle_id <=> ? AND week_id <=> ?");
+                    $stmtGrp->execute([$ttInfo['cycle_id'], $ttInfo['week_id']]);
+                    $idsToDelete = $stmtGrp->fetchAll(PDO::FETCH_COLUMN) ?: [$id];
+                }
+
+                foreach ($idsToDelete as $tId) {
+                    $this->db->prepare("DELETE FROM timetable_entries WHERE timetable_id = ?")->execute([$tId]);
+                    $this->db->prepare("DELETE FROM timetable_audit_logs WHERE timetable_id = ?")->execute([$tId]);
+                    $this->db->prepare("DELETE FROM timetables WHERE id = ?")->execute([$tId]);
+                }
                 break;
+
 
             case 'timetable_slot':
             case 'slot':

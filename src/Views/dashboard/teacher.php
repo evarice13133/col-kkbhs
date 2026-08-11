@@ -43,20 +43,35 @@ ob_start();
 
 <div class="animate-fade-in teacher-analytics container-fluid py-4">
 
-    <!-- Header with Action Button -->
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
-        <div>
-            <h5 class="fw-black text-main-theme m-0" style="font-family: 'Outfit', sans-serif; letter-spacing: -0.02em; font-size: 1.4rem;">Espace Enseignant</h5>
-            <p class="text-muted-theme small mb-0">Suivi des notes, des classes et des disciplines</p>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-            <a href="/notes"
-                class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm scale-on-hover d-flex align-items-center gap-2">
-                <i class="bi bi-pencil-square"></i> <?= __('enter_marks') ?>
-            </a>
-            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 fw-bold small">
-                <i class="bi bi-person-badge me-1"></i> Portail Enseignant
-            </span>
+    <!-- Header & Quick Actions Banner -->
+    <div class="modern-card border-0 shadow-sm p-4 mb-4" style="background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.06) 0%, rgba(var(--primary-rgb), 0.02) 100%); border-radius: 16px;">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-circle shadow-sm">
+                    <i class="bi bi-person-workspace fs-3"></i>
+                </div>
+                <div>
+                    <h4 class="fw-black text-main-theme m-0" style="font-family: 'Outfit', sans-serif; letter-spacing: -0.02em;">Espace Pédagogique Enseignant</h4>
+                    <p class="text-muted-theme small mb-0">Bienvenue sur votre portail de suivi et de saisie des évaluations.</p>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <?php if (!empty($has_lmd_classes)): ?>
+                    <a href="/timetables"
+                        class="btn btn-outline-info rounded-pill px-3 py-2 fw-bold shadow-sm scale-on-hover d-flex align-items-center gap-2"
+                        title="Consulter l'emploi du temps des classes du Supérieur LMD">
+                        <i class="bi bi-calendar3-week"></i> Mon Emploi du Temps
+                    </a>
+                <?php endif; ?>
+                <a href="/students"
+                    class="btn btn-outline-primary rounded-pill px-3 py-2 fw-bold shadow-sm scale-on-hover d-flex align-items-center gap-2">
+                    <i class="bi bi-people"></i> <?= __('my_students') ?? 'Mes Élèves' ?>
+                </a>
+                <a href="/notes"
+                    class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm scale-on-hover d-flex align-items-center gap-2">
+                    <i class="bi bi-pencil-square"></i> <?= __('enter_marks') ?>
+                </a>
+            </div>
         </div>
     </div>
 
@@ -64,67 +79,107 @@ ob_start();
     <div class="row g-3 g-md-4 mb-4">
         <!-- Classes Affectées -->
         <div class="col-6 col-md-3">
-            <div class="erp-stat-card card-primary">
-                <div>
-                    <div class="erp-icon-box">
-                        <i class="bi bi-door-open-fill"></i>
+            <div class="erp-stat-card card-primary shadow-sm rounded-4 p-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="kpi-value fs-2 fw-black" data-count-up="<?= (int) $stats_classes ?>"><?= $stats_classes ?></div>
+                        <div class="kpi-label text-muted extra-small text-uppercase fw-bold mt-1"><?= __('assigned_classes_count') ?></div>
                     </div>
-                    <div class="kpi-value" data-count-up="<?= (int) $stats_classes ?>"><?= $stats_classes ?></div>
-                    <div class="kpi-label"><?= __('assigned_classes_count') ?></div>
+                    <div class="erp-icon-box p-3 rounded-3 bg-primary bg-opacity-10 text-primary">
+                        <i class="bi bi-door-open-fill fs-4"></i>
+                    </div>
                 </div>
             </div>
         </div>
         <!-- Disciplines Enseignées -->
         <div class="col-6 col-md-3">
-            <div class="erp-stat-card card-info">
-                <div>
-                    <div class="erp-icon-box">
-                        <i class="bi bi-journal-check"></i>
+            <div class="erp-stat-card card-info shadow-sm rounded-4 p-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="kpi-value fs-2 fw-black text-info" data-count-up="<?= (int) $stats_subjects ?>"><?= $stats_subjects ?></div>
+                        <div class="kpi-label text-muted extra-small text-uppercase fw-bold mt-1"><?= __('disciplines_taught') ?></div>
                     </div>
-                    <div class="kpi-value" data-count-up="<?= (int) $stats_subjects ?>"><?= $stats_subjects ?></div>
-                    <div class="kpi-label"><?= __('disciplines_taught') ?></div>
+                    <div class="erp-icon-box p-3 rounded-3 bg-info bg-opacity-10 text-info">
+                        <i class="bi bi-journal-check fs-4"></i>
+                    </div>
                 </div>
             </div>
         </div>
         <!-- Saisies Confirmées -->
         <div class="col-6 col-md-3">
-            <div class="erp-stat-card card-success">
-                <div>
-                    <div class="erp-icon-box">
-                        <i class="bi bi-check-all"></i>
+            <div class="erp-stat-card card-success shadow-sm rounded-4 p-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="kpi-value fs-2 fw-black text-success" data-count-up="<?= (int) $stats_filled ?>"><?= $stats_filled ?></div>
+                        <div class="kpi-label text-muted extra-small text-uppercase fw-bold mt-1"><?= __('confirmed_entries') ?></div>
                     </div>
-                    <div class="kpi-value" data-count-up="<?= (int) $stats_filled ?>"><?= $stats_filled ?></div>
-                    <div class="kpi-label"><?= __('confirmed_entries') ?></div>
+                    <div class="erp-icon-box p-3 rounded-3 bg-success bg-opacity-10 text-success">
+                        <i class="bi bi-check-all fs-4"></i>
+                    </div>
                 </div>
             </div>
         </div>
         <!-- Progression Globale -->
         <div class="col-6 col-md-3">
-            <div class="erp-stat-card card-warning">
-                <div>
-                    <div class="erp-icon-box">
-                        <i class="bi bi-lightning-charge-fill"></i>
+            <div class="erp-stat-card card-warning shadow-sm rounded-4 p-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="kpi-value fs-2 fw-black text-warning" data-count-up="<?= (int) $stats_progress ?>" data-suffix="%"><?= $stats_progress ?>%</div>
+                        <div class="kpi-label text-muted extra-small text-uppercase fw-bold mt-1"><?= __('global_progress') ?></div>
                     </div>
-                    <div class="kpi-value" data-count-up="<?= (int) $stats_progress ?>" data-suffix="%"><?= $stats_progress ?>%</div>
-                    <div class="kpi-label"><?= __('global_progress') ?></div>
+                    <div class="erp-icon-box p-3 rounded-3 bg-warning bg-opacity-10 text-warning">
+                        <i class="bi bi-lightning-charge-fill fs-4"></i>
+                    </div>
                 </div>
-                <div class="progress mt-2" style="height: 4px; border-radius: 10px; background: rgba(var(--primary-rgb), 0.08);">
+                <div class="progress mt-2" style="height: 5px; border-radius: 10px; background: rgba(var(--primary-rgb), 0.08);">
                     <div class="progress-bar bg-warning shadow-sm" style="width: <?= $stats_progress ?>%"></div>
                 </div>
             </div>
         </div>
     </div>
 
-
+    <!-- Section Principale : Mes Affectations et Accès Rapides -->
+    <?php if (!empty($teacherAssignments)): ?>
+        <div class="modern-card border-0 shadow-sm rounded-4 mb-4 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold m-0 text-main-theme d-flex align-items-center gap-2 fs-6">
+                    <i class="bi bi-briefcase text-primary"></i> Mes Affectations & Accès Rapide Saisie
+                </h5>
+                <a href="/notes" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold">
+                    Toutes mes saisies →
+                </a>
+            </div>
+            <div class="row g-3">
+                <?php foreach ($teacherAssignments as $assign): ?>
+                    <div class="col-md-6 col-lg-4">
+                        <div class="p-3 border rounded-3 bg-white bg-opacity-5 d-flex align-items-center justify-content-between gap-2 shadow-xs hover-shadow transition-all">
+                            <div>
+                                <div class="fw-bold text-main-theme" style="font-size: 0.9rem;"><?= htmlspecialchars($assign['subject_nom'] ?? 'Matière') ?></div>
+                                <div class="extra-small text-muted d-flex align-items-center gap-1 mt-1">
+                                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2 py-0-5 extra-small">
+                                        <i class="bi bi-door-open me-1"></i><?= htmlspecialchars($assign['class_nom']) ?>
+                                    </span>
+                                </div>
+                            </div>
+                            <a href="/notes/saisie?class_id=<?= $assign['class_id'] ?>&subject_id=<?= $assign['subject_id'] ?>" 
+                               class="btn btn-sm btn-primary rounded-pill px-3 shadow-xs scale-on-hover flex-shrink-0 d-flex align-items-center gap-1">
+                                <i class="bi bi-pencil-square"></i> Saisir
+                            </a>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    <?php endif; ?>
 
     <!-- Pédagogie : Séquences (7/12) + Progression par Classe (5/12) -->
     <div class="row g-4 mb-5">
         <div class="col-xl-7">
-            <div class="registry-card h-100 border-0 shadow-sm">
+            <div class="registry-card h-100 border-0 shadow-sm rounded-4">
                 <div class="p-4 border-bottom border-light border-opacity-10">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="fw-bold m-0 text-main"><?= __('active_sequences_state') ?></h5>
-                        <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 fw-bold small">
+                        <h5 class="fw-bold m-0 text-main fs-6"><?= __('active_sequences_state') ?></h5>
+                        <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1-5 fw-bold extra-small">
                             <?= count($evaluationStats) ?> <?= __('sequences') ?>
                         </span>
                     </div>
@@ -139,13 +194,13 @@ ob_start();
                         <?php else: ?>
                             <?php foreach ($evaluationStats as $ev): ?>
                                 <div class="col-12 col-sm-6">
-                                    <div class="p-2 p-md-4 border border-light border-opacity-10 rounded-4 bg-transparent transition-base h-100 scale-on-hover shadow-sm">
-                                        <div class="d-flex justify-content-between align-items-center mb-2 mb-md-3">
+                                    <div class="p-3 border border-light border-opacity-10 rounded-4 bg-transparent transition-base h-100 scale-on-hover shadow-xs">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
                                             <span class="fw-bold text-main small text-truncate"><?= h($ev['label']) ?></span>
                                             <span class="level-badge <?= nm_level_class($ev['level_label'] ?? '') ?> d-none d-md-inline-block"><?= __($ev['level_label'] ?? 'A demarrer') ?></span>
                                         </div>
                                         <div class="d-flex align-items-end justify-content-between mb-2">
-                                            <div class="fs-4 fs-md-2 fw-black text-primary lh-1" data-count-up="<?= (int) $ev['progress_percent'] ?>" data-suffix="%">
+                                            <div class="fs-3 fw-black text-primary lh-1" data-count-up="<?= (int) $ev['progress_percent'] ?>" data-suffix="%">
                                                 <?= $ev['progress_percent'] ?>%</div>
                                             <div class="extra-small registry-text-muted fw-semibold text-muted d-none d-md-block">
                                                 <?= $ev['filled_count'] ?> / <?= $ev['expected_count'] ?></div>
@@ -164,30 +219,30 @@ ob_start();
 
         <!-- Progression par Classe : Utilisation de registry-table -->
         <div class="col-xl-5">
-            <div class="registry-card h-100 border-0 shadow-sm overflow-hidden">
+            <div class="registry-card h-100 border-0 shadow-sm overflow-hidden rounded-4">
                 <div class="p-4 border-bottom border-light border-opacity-10">
-                    <h5 class="fw-bold m-0 text-main"><?= __('progress_by_class') ?></h5>
+                    <h5 class="fw-bold m-0 text-main fs-6"><?= __('progress_by_class') ?></h5>
                 </div>
                 <div class="table-responsive">
                     <table class="registry-table mb-0">
                         <thead>
                             <tr class="bg-transparent">
-                                <th class="ps-4 py-3 text-muted"><?= __('class') ?></th>
-                                <th class="text-end pe-4 py-3 text-muted"><?= __('progress') ?></th>
+                                <th class="ps-4 py-3 text-muted extra-small text-uppercase"><?= __('class') ?></th>
+                                <th class="text-end pe-4 py-3 text-muted extra-small text-uppercase"><?= __('progress') ?></th>
                             </tr>
                         </thead>
                         <tbody class="bg-transparent">
                             <?php foreach ($classProgress as $cp): ?>
                                 <tr class="bg-transparent border-bottom border-light border-opacity-10">
                                     <td class="ps-4 py-3 bg-transparent">
-                                        <div class="fw-bold text-main text-muted"><?= h($cp['class_nom']) ?></div>
-                                        <div class="small registry-text-muted text-muted"><?= $cp['student_count'] ?> <?= __('students_short') ?></div>
+                                        <div class="fw-bold text-main-theme" style="font-size: 0.88rem;"><?= h($cp['class_nom']) ?></div>
+                                        <div class="extra-small text-muted"><?= $cp['student_count'] ?> <?= __('students_short') ?></div>
                                     </td>
                                     <td class="text-end pe-4 bg-transparent">
                                         <div class="d-flex align-items-center justify-content-end gap-3">
-                                            <div class="text-end" style="min-width: 100px;">
-                                                <div class="fw-bold text-primary mb-1"><?= $cp['progress_percent'] ?>%</div>
-                                                <div class="progress ms-auto" style="height: 4px; width: 80px; border-radius: 10px; background: var(--border-color);">
+                                            <div class="text-end" style="min-width: 90px;">
+                                                <div class="fw-bold text-primary mb-1 extra-small"><?= $cp['progress_percent'] ?>%</div>
+                                                <div class="progress ms-auto" style="height: 4px; width: 70px; border-radius: 10px; background: var(--border-color);">
                                                     <div class="progress-bar bg-primary shadow-sm" style="width: <?= $cp['progress_percent'] ?>%"></div>
                                                 </div>
                                             </div>
@@ -199,12 +254,12 @@ ob_start();
                         </tbody>
                     </table>
                 </div>
-            </div>
         </div>
     </div>
 </div>
 
 <!-- Support WhatsApp Floating Widget -->
+
 <div id="whatsapp-support" class="wa-float-container">
     <button class="wa-close-toggle" onclick="dismissSupport()" title="Masquer l'assistance">
         <i class="bi bi-x"></i>
