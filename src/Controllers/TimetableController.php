@@ -76,10 +76,11 @@ class TimetableController
         );
 
         // Mettre à jour les statuts de verrouillage et la conciliation des états
+        $hasManagePerm = \App\Core\PermissionManager::hasPermission('manage_timetables');
         foreach ($timetables as &$t) {
             $ids = !empty($t['timetable_ids']) ? explode(',', $t['timetable_ids']) : [$t['primary_id']];
             $isLocked = false;
-            $canEdit = true;
+            $canEdit = $hasManagePerm;
             
             foreach ($ids as $ttId) {
                 if ($this->lockService->checkAutoLock((int)$ttId)) {
@@ -668,7 +669,7 @@ class TimetableController
 
         // Déterminer le statut de verrouillage global
         $isLocked = false;
-        $canEdit = true;
+        $canEdit = \App\Core\PermissionManager::hasPermission('manage_timetables');
         foreach ($gridData['timetablesByClass'] as $tt) {
             if ($this->lockService->checkAutoLock((int)$tt['id'])) {
                 $isLocked = true;

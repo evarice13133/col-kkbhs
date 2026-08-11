@@ -54,15 +54,10 @@ $timetablesByClass = $gridData['timetablesByClass'];
                         onclick="openBulkScheduleModal()" style="background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); color: white; border: none;">
                         <i class="bi bi-layers-half me-1"></i>Planification en Masse
                     </button>
-                    <!-- <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-2 fw-bold shadow-sm"
-                        data-bs-toggle="offcanvas" data-bs-target="#quickAssignPaletteOffcanvas"
-                        onclick="toggleQuickAssignPalette()">
-                        <i class="bi bi-layout-sidebar-reverse me-1"></i>Palette d'affectation (Glisser-Déposer)
-                    </button> -->
+                    <a href="/timetables/wizard" class="btn btn-sm btn-primary rounded-pill px-3 py-2 fw-bold shadow-sm">
+                        <i class="bi bi-plus-circle me-1"></i><?= __('timetables_new_wizard') ?>
+                    </a>
                 <?php endif; ?>
-                <a href="/timetables/wizard" class="btn btn-sm btn-primary rounded-pill px-3 py-2 fw-bold shadow-sm">
-                    <i class="bi bi-plus-circle me-1"></i><?= __('timetables_new_wizard') ?>
-                </a>
                 <a href="/timetables"
                     class="btn btn-sm btn-light-theme rounded-pill px-3 py-2 fw-semibold border-theme-light shadow-sm">
                     <i class="bi bi-arrow-left me-1"></i><?= __('back') ?? 'Retour' ?>
@@ -314,9 +309,9 @@ $timetablesByClass = $gridData['timetablesByClass'];
                                             data-class-id="<?= (int)$classId ?>"
                                             data-class-name="<?= h($cls['nom']) ?>"
                                             data-timetable-id="<?= (int)$timetableId ?>"
-                                            tabindex="0" role="button"
                                             aria-label="<?= $entry ? h($entry['subject_name']) . ' avec ' . h($entry['teacher_name']) . ' en ' . h($entry['room_name']) : 'Créneau libre pour ' . h($cls['nom']) ?>"
                                             <?php if ($canEdit): ?>
+                                                tabindex="0" role="button"
                                                 onclick="handleCellClick(this)"
                                                 ondragover="handleCellDragOver(event, '<?= h($day) ?>', <?= (int)$slot['id'] ?>, <?= (int)$classId ?>)"
                                                 ondragenter="handleCellDragEnter(event, '<?= h($day) ?>', <?= (int)$slot['id'] ?>, <?= (int)$classId ?>)"
