@@ -12,15 +12,32 @@ try {
     echo "=== MIGRATION RBAC : MISE À JOUR DU RÔLE DIRECTION ACADÉMIQUE (PILOTAGE COMPLET) ===\n";
 
     // 1. Récupération de l'ID du rôle direction_academique
+    $roleColumns = $db->query("SHOW COLUMNS FROM roles")->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('is_system', $roleColumns, true)) {
+        try {
+            $db->exec("ALTER TABLE roles ADD COLUMN is_system TINYINT(1) NOT NULL DEFAULT 1 AFTER description");
+            $roleColumns[] = 'is_system';
+        } catch (\Throwable $e) {
+            // Ignorer si la colonne ne peut pas être ajoutée immédiatement
+        }
+    }
+
     $stmt = $db->prepare("SELECT id FROM roles WHERE role_code = 'direction_academique'");
     $stmt->execute();
     $roleId = $stmt->fetchColumn();
 
     if (!$roleId) {
-        $stmtInsertRole = $db->prepare("
-            INSERT INTO roles (role_code, role_name, description, is_system) 
-            VALUES ('direction_academique', 'Direction Académique', 'Gestionnaire académique autonome (Emplois du temps, Enseignants, Notes, Pilotage)', 1)
-        ");
+        if (in_array('is_system', $roleColumns, true)) {
+            $stmtInsertRole = $db->prepare("
+                INSERT INTO roles (role_code, role_name, description, is_system) 
+                VALUES ('direction_academique', 'Direction Académique', 'Gestionnaire académique autonome (Emplois du temps, Enseignants, Notes, Pilotage)', 1)
+            ");
+        } else {
+            $stmtInsertRole = $db->prepare("
+                INSERT INTO roles (role_code, role_name, description) 
+                VALUES ('direction_academique', 'Direction Académique', 'Gestionnaire académique autonome (Emplois du temps, Enseignants, Notes, Pilotage)')
+            ");
+        }
         $stmtInsertRole->execute();
         $roleId = $db->lastInsertId();
         echo "- Rôle 'direction_academique' créé avec succès (ID: {$roleId}).\n";
