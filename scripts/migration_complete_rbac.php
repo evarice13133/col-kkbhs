@@ -152,6 +152,7 @@ try {
         ['role_code' => 'it_manager', 'role_name' => 'IT Manager', 'description' => 'Responsable de la configuration technique et pédagogique.', 'is_system' => 1],
         ['role_code' => 'caissier', 'role_name' => 'Caissier', 'description' => 'Gestionnaire des encaissements et versements quotidiens.', 'is_system' => 1],
         ['role_code' => 'comptable', 'role_name' => 'Comptable', 'description' => 'Responsable financier, des tarifs, bourses et bilans.', 'is_system' => 1],
+        ['role_code' => 'direction_academique', 'role_name' => 'Direction Académique', 'description' => 'Gestionnaire académique autonome (Emplois du temps, Enseignants, Notes, Pilotage).', 'is_system' => 1],
         ['role_code' => 'enseignant', 'role_name' => 'Enseignant', 'description' => 'Enseignant accédant aux notes, absences et livrets.', 'is_system' => 1],
     ];
 
@@ -260,6 +261,17 @@ try {
         ],
         'enseignant' => [
             'view_classes', 'view_students', 'manage_marks', 'manage_absences'
+        ],
+        'direction_academique' => [
+            'view_timetables', 'manage_timetables',
+            'manage_teachers', 'manage_contracts', 'manage_staff',
+            'manage_marks', 'manage_sequences', 'manage_bulletins',
+            'manage_transcripts', 'view_transcripts', 'manage_absences',
+            'manage_subjects', 'manage_subject_groups', 'view_classes',
+            'manage_classes_structure', 'view_pilotage',
+            'dashboard_executiveDashboard', 'dashboard_index',
+            'manage_teaching_types', 'manage_levels', 'manage_cycles',
+            'manage_sections', 'manage_departments', 'manage_settings'
         ],
         'admin' => [
             'manage_users', 'manage_settings', 'view_system_logs', 'view_pilotage',
