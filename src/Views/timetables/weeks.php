@@ -133,15 +133,18 @@ ob_start();
                     </div>
                     <div class="col-md-12">
                         <label class="form-label fw-bold text-main-theme small"><?= __('timetables_col_week_label') ?> *</label>
-                        <input type="text" name="libelle" id="add_libelle" class="form-control rounded-3" placeholder="EX: Semaine 12" required>
+                        <input type="text" name="libelle" id="add_libelle" class="form-control rounded-3" placeholder="EX: Semaine 12" value="<?= $suggestion ? h($suggestion['suggested_libelle']) : '' ?>" required>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-bold text-main-theme small"><?= __('timetables_col_start_date') ?> *</label>
-                        <input type="date" name="date_debut" id="add_date_debut" class="form-control rounded-3" required>
+                        <input type="date" name="date_debut" id="add_date_debut" class="form-control rounded-3" value="<?= $suggestion ? $suggestion['suggested_start'] : '' ?>" required>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-bold text-main-theme small"><?= __('timetables_col_end_date') ?> *</label>
-                        <input type="date" name="date_fin" id="add_date_fin" class="form-control rounded-3" required>
+                        <input type="date" name="date_fin" id="add_date_fin" class="form-control rounded-3" value="<?= $suggestion ? $suggestion['suggested_end'] : '' ?>" required>
+                    </div>
+                    <div class="col-12">
+                        <div id="add_date_alert" class="alert alert-danger rounded-3 small p-2 mb-0 d-none"></div>
                     </div>
                 </div>
             </div>
@@ -185,6 +188,9 @@ ob_start();
                         <label class="form-label fw-bold text-main-theme small"><?= __('timetables_col_end_date') ?> *</label>
                         <input type="date" name="date_fin" id="edit_date_fin" class="form-control rounded-3" required>
                     </div>
+                    <div class="col-12">
+                        <div id="edit_date_alert" class="alert alert-danger rounded-3 small p-2 mb-0 d-none"></div>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer border-top p-3" style="background: var(--bg-card);">
@@ -196,6 +202,61 @@ ob_start();
 </div>
 
 <script>
+function handleStartDateChange(startInputId, endInputId, alertId) {
+    const startInput = document.getElementById(startInputId);
+    const endInput = document.getElementById(endInputId);
+    if (!startInput.value) return;
+
+    const startDate = new Date(startInput.value + 'T00:00:00');
+    if (isNaN(startDate.getTime())) return;
+
+    const maxEndDate = new Date(startDate);
+    maxEndDate.setDate(startDate.getDate() + 6);
+
+    const year = maxEndDate.getFullYear();
+    const month = String(maxEndDate.getMonth() + 1).padStart(2, '0');
+    const day = String(maxEndDate.getDate()).padStart(2, '0');
+    const maxEndDateStr = `${year}-${month}-${day}`;
+
+    endInput.value = maxEndDateStr;
+    endInput.min = startInput.value;
+    endInput.max = maxEndDateStr;
+
+    validateDates(startInputId, endInputId, alertId);
+}
+
+function validateDates(startInputId, endInputId, alertId) {
+    const startInput = document.getElementById(startInputId);
+    const endInput = document.getElementById(endInputId);
+    const alertEl = document.getElementById(alertId);
+    if (!alertEl) return true;
+
+    alertEl.classList.add('d-none');
+    alertEl.innerText = '';
+
+    if (!startInput.value || !endInput.value) return true;
+
+    const startDate = new Date(startInput.value + 'T00:00:00');
+    const endDate = new Date(endInput.value + 'T00:00:00');
+
+    if (endDate < startDate) {
+        alertEl.innerText = 'La date de fin ne peut pas être antérieure à la date de début.';
+        alertEl.classList.remove('d-none');
+        return false;
+    }
+
+    const diffTime = endDate - startDate;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+    if (diffDays > 7) {
+        alertEl.innerText = 'La période ne peut pas dépasser 7 jours (actuellement ' + diffDays + ' jours).';
+        alertEl.classList.remove('d-none');
+        return false;
+    }
+
+    return true;
+}
+
 function applySuggestion(libelle, start, end) {
     document.getElementById('add_libelle').value = libelle;
     document.getElementById('add_date_debut').value = start;
@@ -203,6 +264,7 @@ function applySuggestion(libelle, start, end) {
 
     var addModal = new bootstrap.Modal(document.getElementById('addWeekModal'));
     addModal.show();
+    validateDates('add_date_debut', 'add_date_fin', 'add_date_alert');
 }
 
 function editWeek(week) {
@@ -214,7 +276,34 @@ function editWeek(week) {
 
     var editModal = new bootstrap.Modal(document.getElementById('editWeekModal'));
     editModal.show();
+    validateDates('edit_date_debut', 'edit_date_fin', 'edit_date_alert');
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    ['add', 'edit'].forEach(prefix => {
+        const startInput = document.getElementById(`${prefix}_date_debut`);
+        const endInput = document.getElementById(`${prefix}_date_fin`);
+        const form = startInput ? startInput.closest('form') : null;
+
+        if (startInput) {
+            startInput.addEventListener('change', function() {
+                handleStartDateChange(`${prefix}_date_debut`, `${prefix}_date_fin`, `${prefix}_date_alert`);
+            });
+        }
+        if (endInput) {
+            endInput.addEventListener('change', function() {
+                validateDates(`${prefix}_date_debut`, `${prefix}_date_fin`, `${prefix}_date_alert`);
+            });
+        }
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                if (!validateDates(`${prefix}_date_debut`, `${prefix}_date_fin`, `${prefix}_date_alert`)) {
+                    e.preventDefault();
+                }
+            });
+        }
+    });
+});
 </script>
 
 <style>

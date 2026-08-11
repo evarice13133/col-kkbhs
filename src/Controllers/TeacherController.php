@@ -332,22 +332,40 @@ class TeacherController
         $ttCondition = "";
         if (!empty($teacherTeachingTypes)) {
             $inTypes = implode(',', array_map('intval', $teacherTeachingTypes));
-            $ttCondition = " AND s.teaching_type_id IN ($inTypes)";
+            $ttCondition = " AND (s.teaching_type_id IN ($inTypes) OR s.teaching_type_id IS NULL OR EXISTS (SELECT 1 FROM teacher_assignments ta_chk WHERE ta_chk.subject_id = s.id AND ta_chk.user_id = {$id}) OR EXISTS (SELECT 1 FROM timetable_entries te_chk WHERE te_chk.subject_id = s.id AND te_chk.teacher_id = {$id}))";
         }
 
         // Pour l'interface d'affectation, on utilise toujours l'année active
         // Le sélecteur sert uniquement à consulter l'historique
         $subjectsRaw = $this->db->query("
             SELECT s.id as subject_id, s.nom as subject_nom, c.id as class_id, c.nom as class_nom,
-                   u.id as teacher_id, u.nom as teacher_nom, u.prenom as teacher_prenom
+                   COALESCE(
+                       (SELECT ta.user_id FROM teacher_assignments ta WHERE ta.subject_id = s.id AND (ta.class_id = c.id OR ta.class_id IS NULL) AND ta.user_id = {$id} AND (ta.academic_year_id = {$activeYearId} OR ta.academic_year_id IS NULL) LIMIT 1),
+                       (SELECT te.teacher_id FROM timetable_entries te JOIN timetables t ON te.timetable_id = t.id WHERE te.subject_id = s.id AND t.class_id = c.id AND te.teacher_id = {$id} AND (t.academic_year_id = {$activeYearId} OR t.academic_year_id IS NULL) LIMIT 1),
+                       (SELECT ta.user_id FROM teacher_assignments ta WHERE ta.subject_id = s.id AND (ta.class_id = c.id OR ta.class_id IS NULL) AND (ta.academic_year_id = {$activeYearId} OR ta.academic_year_id IS NULL) LIMIT 1),
+                       (SELECT te.teacher_id FROM timetable_entries te JOIN timetables t ON te.timetable_id = t.id WHERE te.subject_id = s.id AND t.class_id = c.id AND (t.academic_year_id = {$activeYearId} OR t.academic_year_id IS NULL) LIMIT 1)
+                   ) as teacher_id,
+                   u.nom as teacher_nom, u.prenom as teacher_prenom
             FROM subjects s
-            JOIN teaching_types tt ON s.teaching_type_id = tt.id
+            LEFT JOIN teaching_types tt ON s.teaching_type_id = tt.id
             JOIN subject_classes sc ON s.id = sc.subject_id
             JOIN classes c ON sc.class_id = c.id
-            LEFT JOIN teacher_assignments ta ON (s.id = ta.subject_id AND c.id = ta.class_id AND ta.academic_year_id = {$activeYearId})
-            LEFT JOIN users u ON ta.user_id = u.id
-            WHERE s.status = 1 AND tt.actif = 1 {$ttCondition}
+            LEFT JOIN users u ON u.id = COALESCE(
+                       (SELECT ta.user_id FROM teacher_assignments ta WHERE ta.subject_id = s.id AND (ta.class_id = c.id OR ta.class_id IS NULL) AND ta.user_id = {$id} AND (ta.academic_year_id = {$activeYearId} OR ta.academic_year_id IS NULL) LIMIT 1),
+                       (SELECT te.teacher_id FROM timetable_entries te JOIN timetables t ON te.timetable_id = t.id WHERE te.subject_id = s.id AND t.class_id = c.id AND te.teacher_id = {$id} AND (t.academic_year_id = {$activeYearId} OR t.academic_year_id IS NULL) LIMIT 1),
+                       (SELECT ta.user_id FROM teacher_assignments ta WHERE ta.subject_id = s.id AND (ta.class_id = c.id OR ta.class_id IS NULL) AND (ta.academic_year_id = {$activeYearId} OR ta.academic_year_id IS NULL) LIMIT 1),
+                       (SELECT te.teacher_id FROM timetable_entries te JOIN timetables t ON te.timetable_id = t.id WHERE te.subject_id = s.id AND t.class_id = c.id AND (t.academic_year_id = {$activeYearId} OR t.academic_year_id IS NULL) LIMIT 1)
+                   )
+            WHERE s.status = 1 AND (tt.actif = 1 OR s.teaching_type_id IS NULL) {$ttCondition}
             ORDER BY s.nom ASC, c.nom ASC
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
+        // Récupérer tous les enseignants pour le modal de transfert
+        $allTeachers = $this->db->query("
+            SELECT id, nom, prenom, username 
+            FROM users 
+            WHERE role = 'enseignant' AND status = 1 
+            ORDER BY nom ASC, prenom ASC
         ")->fetchAll(PDO::FETCH_ASSOC);
 
         $assignedSubjectsMap = [];
@@ -361,7 +379,8 @@ class TeacherController
             $classData = [
                 'id' => $cid,
                 'nom' => $row['class_nom'],
-                'other_teacher' => ($tid !== 0 && $tid !== (int) $id) ? $row['teacher_nom'] . ' ' . $row['teacher_prenom'] : null
+                'other_teacher' => ($tid !== 0 && $tid !== (int) $id) ? $row['teacher_nom'] . ' ' . $row['teacher_prenom'] : null,
+                'other_teacher_id' => ($tid !== 0 && $tid !== (int) $id) ? $tid : null
             ];
 
             if ($tid === (int) $id) {
@@ -467,7 +486,7 @@ class TeacherController
                     }
 
                     $stmtCheck = $this->db->prepare("
-                        SELECT u.nom, u.prenom, s.nom as subject_name, c.nom as class_name 
+                        SELECT u.id as user_id, u.nom, u.prenom, s.nom as subject_name, c.nom as class_name 
                         FROM teacher_assignments ta
                         JOIN users u ON ta.user_id = u.id
                         JOIN subjects s ON ta.subject_id = s.id
@@ -479,8 +498,16 @@ class TeacherController
                     $conflict = $stmtCheck->fetch(PDO::FETCH_ASSOC);
 
                     if ($conflict) {
-                        // Un collègue a été plus rapide ? On bloque et on informe.
                         $this->db->rollBack();
+                        Session::setFlash('assignment_conflict', [
+                            'subject_id' => (int) $subj_id,
+                            'class_id' => (int) $cls_id,
+                            'subject_name' => $conflict['subject_name'],
+                            'class_name' => $conflict['class_name'],
+                            'source_teacher_id' => (int) $conflict['user_id'],
+                            'source_teacher_name' => $conflict['nom'] . ' ' . $conflict['prenom'],
+                            'target_teacher_id' => (int) $id
+                        ]);
                         Session::setFlash('error', __('assignment_already_taken', [
                             'teacher' => $conflict['nom'] . ' ' . $conflict['prenom'],
                             'subject' => $conflict['subject_name'],
@@ -525,6 +552,176 @@ class TeacherController
                     exit;
                 }
                 die("Erreur critique d'affectation : " . $e->getMessage());
+            }
+        }
+    }
+
+    /**
+     * Annule/Retire une affectation spécifique (Matière - Classe) pour un enseignant.
+     */
+    public function removeAssignment()
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $teacherId = (int)($_POST['teacher_id'] ?? 0);
+            if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+                Session::setFlash('error', __('session_expired_retry') ?? 'Session expirée, veuillez réessayer.');
+                header("Location: /teachers/assign?id=" . $teacherId);
+                exit;
+            }
+
+            $subjectId = (int)($_POST['subject_id'] ?? 0);
+            $classId = (int)($_POST['class_id'] ?? 0);
+            $academicYearId = $this->academicYearService->getActiveYearId();
+
+            if (!$teacherId || !$subjectId || !$classId) {
+                Session::setFlash('error', __('incomplete_assignment_data') ?? 'Données d\'affectation incomplètes.');
+                header("Location: /teachers/assign?id=" . $teacherId);
+                exit;
+            }
+
+            try {
+                // Supprimer l'affectation dans teacher_assignments
+                $stmtDel = $this->db->prepare("
+                    DELETE FROM teacher_assignments 
+                    WHERE user_id = ? AND subject_id = ? AND (class_id = ? OR class_id IS NULL) 
+                      AND (academic_year_id = ? OR academic_year_id IS NULL)
+                ");
+                $stmtDel->execute([$teacherId, $subjectId, $classId, $academicYearId]);
+
+                Session::setFlash('success', __('assignment_removed_success') ?? 'L\'affectation a été annulée avec succès.');
+            } catch (\Exception $e) {
+                Session::setFlash('error', __('assignment_error') . " : " . $e->getMessage());
+            }
+
+            header("Location: /teachers/assign?id=" . $teacherId);
+            exit;
+        }
+    }
+
+    /**
+     * Effectue le transfert d'un cours (Matière - Classe) d'un enseignant source vers un nouvel enseignant (cible).
+     * Peut également créer à la volée un nouvel enseignant pour recevoir ce cours.
+     */
+    public function transferCourse()
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $redirectTeacherId = (int)($_POST['redirect_teacher_id'] ?? $_POST['target_teacher_id'] ?? 0);
+            if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+                Session::setFlash('error', __('session_expired_retry') ?? 'Session expirée, veuillez réessayer.');
+                header("Location: /teachers/assign?id=" . $redirectTeacherId);
+                exit;
+            }
+
+            $subjectId = (int)($_POST['subject_id'] ?? 0);
+            $classId = (int)($_POST['class_id'] ?? 0);
+            $sourceTeacherId = (int)($_POST['source_teacher_id'] ?? 0);
+            $targetTeacherId = (int)($_POST['target_teacher_id'] ?? 0);
+            $createNewTeacher = !empty($_POST['create_new_teacher']);
+            $newTeacherName = trim($_POST['new_teacher_name'] ?? '');
+
+            $academicYearId = $this->academicYearService->getActiveYearId();
+
+            if (!$subjectId || !$classId) {
+                Session::setFlash('error', __('incomplete_assignment_data') ?? 'Données d\'affectation incomplètes.');
+                header("Location: /teachers/assign?id=" . $redirectTeacherId);
+                exit;
+            }
+
+            try {
+                $this->db->beginTransaction();
+
+                // 1. Création à la volée du nouvel enseignant si demandé
+                if ($createNewTeacher || $targetTeacherId === -1) {
+                    if (empty($newTeacherName)) {
+                        throw new \Exception("Veuillez saisir le nom et prénom du nouvel enseignant à créer.");
+                    }
+
+                    $parts = explode(' ', $newTeacherName, 2);
+                    $nom = trim($parts[0]);
+                    $prenom = trim($parts[1] ?? '');
+
+                    $emailSlug = strtolower(preg_replace('/[^a-z0-9]/', '', $nom . $prenom)) . '_' . time() . '@institution.local';
+                    $username = strtolower(preg_replace('/[^a-z0-9]/', '', $nom . $prenom)) . '_' . rand(100, 999);
+                    $passwordHash = password_hash('Enseignant' . rand(1000, 9999), PASSWORD_DEFAULT);
+
+                    $stmtIns = $this->db->prepare("
+                        INSERT INTO users (nom, prenom, email, username, password, role, status, created_at)
+                        VALUES (?, ?, ?, ?, ?, 'enseignant', 1, NOW())
+                    ");
+                    $stmtIns->execute([$nom, $prenom, $emailSlug, $username, $passwordHash]);
+                    $targetTeacherId = (int)$this->db->lastInsertId();
+
+                    // Raccorder le type d'enseignement de la matière
+                    $stmtSubTt = $this->db->prepare("SELECT teaching_type_id FROM subjects WHERE id = ?");
+                    $stmtSubTt->execute([$subjectId]);
+                    $subTtId = (int)$stmtSubTt->fetchColumn();
+                    if ($subTtId > 0) {
+                        $this->db->prepare("
+                            INSERT INTO user_teaching_types (user_id, teaching_type_id) 
+                            VALUES (?, ?) 
+                            ON DUPLICATE KEY UPDATE teaching_type_id = VALUES(teaching_type_id)
+                        ")->execute([$targetTeacherId, $subTtId]);
+                    }
+                }
+
+                if (!$targetTeacherId) {
+                    throw new \Exception("Veuillez sélectionner un enseignant destinataire ou en créer un nouveau.");
+                }
+
+                // 2. Transférer / Réaffecter l'entrée dans teacher_assignments
+                $stmtDelOld = $this->db->prepare("
+                    DELETE FROM teacher_assignments 
+                    WHERE subject_id = ? AND (class_id = ? OR class_id IS NULL) 
+                      AND (academic_year_id = ? OR academic_year_id IS NULL)
+                ");
+                $stmtDelOld->execute([$subjectId, $classId, $academicYearId]);
+
+                $stmtInsAssig = $this->db->prepare("
+                    INSERT INTO teacher_assignments (user_id, subject_id, class_id, academic_year_id)
+                    VALUES (?, ?, ?, ?)
+                ");
+                $stmtInsAssig->execute([$targetTeacherId, $subjectId, $classId, $academicYearId]);
+
+                // 3. Transférer les créneaux dans emplois du temps publiés (timetable_entries)
+                if ($sourceTeacherId > 0) {
+                    $stmtTT = $this->db->prepare("
+                        UPDATE timetable_entries te
+                        JOIN timetables t ON te.timetable_id = t.id
+                        SET te.teacher_id = ?
+                        WHERE te.teacher_id = ? AND te.subject_id = ? AND t.class_id = ?
+                          AND t.statut = 'publie'
+                          AND (t.academic_year_id = ? OR t.academic_year_id IS NULL)
+                    ");
+                    $stmtTT->execute([$targetTeacherId, $sourceTeacherId, $subjectId, $classId, $academicYearId]);
+
+
+                    // 4. Transférer les notes éventuellement déjà saisies par l'ancien enseignant
+                    $stmtGrades = $this->db->prepare("
+                        UPDATE grades 
+                        SET teacher_id = ? 
+                        WHERE teacher_id = ? AND subject_id = ? AND class_id = ?
+                    ");
+                    $stmtGrades->execute([$targetTeacherId, $sourceTeacherId, $subjectId, $classId]);
+                }
+
+                $this->db->commit();
+
+                $stmtTargetUser = $this->db->prepare("SELECT nom, prenom FROM users WHERE id = ?");
+                $stmtTargetUser->execute([$targetTeacherId]);
+                $targetUser = $stmtTargetUser->fetch(PDO::FETCH_ASSOC);
+                $targetName = $targetUser ? trim($targetUser['nom'] . ' ' . $targetUser['prenom']) : "Enseignant #$targetTeacherId";
+
+                Session::setFlash('success', "Le cours et ses données ont été transférés avec succès à l'enseignant $targetName.");
+                header("Location: /teachers/assign?id=" . $targetTeacherId);
+                exit;
+
+            } catch (\Exception $e) {
+                if ($this->db->inTransaction()) {
+                    $this->db->rollBack();
+                }
+                Session::setFlash('error', "Échec du transfert de cours : " . $e->getMessage());
+                header("Location: /teachers/assign?id=" . $redirectTeacherId);
+                exit;
             }
         }
     }
@@ -759,21 +956,58 @@ class TeacherController
         // 2. Récupérer les données avec limite
         $sql = "SELECT u.*,
                 (SELECT GROUP_CONCAT(DISTINCT s.nom ORDER BY s.nom SEPARATOR ', ')
-                    FROM teacher_assignments ta
-                    JOIN subjects s ON ta.subject_id = s.id
-                    JOIN teaching_types tt ON s.teaching_type_id = tt.id
-                    WHERE ta.user_id = u.id AND ta.academic_year_id = {$academicYearId} AND tt.actif = 1) as subjects_list,
+                 FROM subjects s
+                 LEFT JOIN teaching_types tt ON s.teaching_type_id = tt.id
+                 WHERE (tt.actif = 1 OR s.teaching_type_id IS NULL)
+                   AND (
+                       EXISTS (
+                           SELECT 1 FROM teacher_assignments ta 
+                           WHERE ta.subject_id = s.id AND ta.user_id = u.id AND (ta.academic_year_id = {$academicYearId} OR ta.academic_year_id IS NULL)
+                       )
+                       OR EXISTS (
+                           SELECT 1 FROM timetable_entries te 
+                           JOIN timetables t ON te.timetable_id = t.id 
+                           WHERE te.subject_id = s.id AND te.teacher_id = u.id AND (t.academic_year_id = {$academicYearId} OR t.academic_year_id IS NULL)
+                       )
+                   )
+                ) as subjects_list,
                 (SELECT GROUP_CONCAT(DISTINCT c.nom ORDER BY c.nom SEPARATOR ', ')
-                    FROM teacher_assignments ta
-                    JOIN classes c ON ta.class_id = c.id
-                    JOIN subjects s ON ta.subject_id = s.id
-                    JOIN teaching_types tt ON s.teaching_type_id = tt.id
-                    WHERE ta.user_id = u.id AND ta.academic_year_id = {$academicYearId} AND tt.actif = 1) as classes_list,
-                (SELECT COUNT(DISTINCT ta.subject_id)
-                    FROM teacher_assignments ta
-                    JOIN subjects s ON ta.subject_id = s.id
-                    JOIN teaching_types tt ON s.teaching_type_id = tt.id
-                    WHERE ta.user_id = u.id AND ta.academic_year_id = {$academicYearId} AND tt.actif = 1) as subjects_count
+                 FROM classes c
+                 WHERE EXISTS (
+                     SELECT 1 FROM teacher_assignments ta
+                     JOIN subjects s ON ta.subject_id = s.id
+                     LEFT JOIN teaching_types tt ON s.teaching_type_id = tt.id
+                     WHERE ta.user_id = u.id 
+                       AND (ta.class_id = c.id OR (ta.class_id IS NULL AND EXISTS (SELECT 1 FROM subject_classes sc WHERE sc.subject_id = ta.subject_id AND sc.class_id = c.id)))
+                       AND (ta.academic_year_id = {$academicYearId} OR ta.academic_year_id IS NULL) 
+                       AND (tt.actif = 1 OR s.teaching_type_id IS NULL)
+                 ) OR EXISTS (
+                     SELECT 1 FROM timetable_entries te
+                     JOIN timetables t ON te.timetable_id = t.id
+                     JOIN subjects s ON te.subject_id = s.id
+                     LEFT JOIN teaching_types tt ON s.teaching_type_id = tt.id
+                     WHERE te.teacher_id = u.id 
+                       AND t.class_id = c.id 
+                       AND (t.academic_year_id = {$academicYearId} OR t.academic_year_id IS NULL) 
+                       AND (tt.actif = 1 OR s.teaching_type_id IS NULL)
+                 )
+                ) as classes_list,
+                (SELECT COUNT(DISTINCT s.id)
+                 FROM subjects s
+                 LEFT JOIN teaching_types tt ON s.teaching_type_id = tt.id
+                 WHERE (tt.actif = 1 OR s.teaching_type_id IS NULL)
+                   AND (
+                       EXISTS (
+                           SELECT 1 FROM teacher_assignments ta 
+                           WHERE ta.subject_id = s.id AND ta.user_id = u.id AND (ta.academic_year_id = {$academicYearId} OR ta.academic_year_id IS NULL)
+                       )
+                       OR EXISTS (
+                           SELECT 1 FROM timetable_entries te 
+                           JOIN timetables t ON te.timetable_id = t.id 
+                           WHERE te.subject_id = s.id AND te.teacher_id = u.id AND (t.academic_year_id = {$academicYearId} OR t.academic_year_id IS NULL)
+                       )
+                   )
+                ) as subjects_count
                 FROM users u
                 WHERE u.role = 'enseignant'";
 

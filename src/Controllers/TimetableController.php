@@ -106,6 +106,15 @@ class TimetableController
         }
         unset($t);
 
+        // Si l'utilisateur connecté est un enseignant, masquer tous les emplois du temps non publiés (brouillons)
+        $userRole = Session::get('user_role');
+        if ($userRole === 'enseignant') {
+            $timetables = array_values(array_filter($timetables, function($t) {
+                return ($t['statut'] ?? '') === 'publie';
+            }));
+        }
+
+
         $years = $this->db->query("SELECT id, nom as libelle FROM academic_years ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
         $classes = $this->db->query("
             SELECT c.id, c.nom 
@@ -354,8 +363,24 @@ class TimetableController
             exit;
         }
 
-        if (strtotime($end) < strtotime($start)) {
+        try {
+            $startDateObj = new \DateTime($start);
+            $endDateObj = new \DateTime($end);
+        } catch (\Throwable $e) {
+            Session::setFlash('error', 'Format de date invalide.');
+            header('Location: /timetables/weeks');
+            exit;
+        }
+
+        if ($endDateObj < $startDateObj) {
             Session::setFlash('error', 'La date de fin ne peut pas être antérieure à la date de début.');
+            header('Location: /timetables/weeks');
+            exit;
+        }
+
+        $daysCount = $startDateObj->diff($endDateObj)->days + 1;
+        if ($daysCount > 7) {
+            Session::setFlash('error', 'Une semaine de cours ne peut pas contenir plus de 7 jours (période maximale de 7 jours).');
             header('Location: /timetables/weeks');
             exit;
         }
@@ -396,6 +421,34 @@ class TimetableController
         $libelle = trim($_POST['libelle'] ?? '');
         $start = trim($_POST['date_debut'] ?? '');
         $end = trim($_POST['date_fin'] ?? '');
+
+        if (empty($libelle) || empty($start) || empty($end) || !$yearId) {
+            Session::setFlash('error', 'Tous les champs sont requis.');
+            header('Location: /timetables/weeks');
+            exit;
+        }
+
+        try {
+            $startDateObj = new \DateTime($start);
+            $endDateObj = new \DateTime($end);
+        } catch (\Throwable $e) {
+            Session::setFlash('error', 'Format de date invalide.');
+            header('Location: /timetables/weeks');
+            exit;
+        }
+
+        if ($endDateObj < $startDateObj) {
+            Session::setFlash('error', 'La date de fin ne peut pas être antérieure à la date de début.');
+            header('Location: /timetables/weeks');
+            exit;
+        }
+
+        $daysCount = $startDateObj->diff($endDateObj)->days + 1;
+        if ($daysCount > 7) {
+            Session::setFlash('error', 'Une semaine de cours ne peut pas contenir plus de 7 jours (période maximale de 7 jours).');
+            header('Location: /timetables/weeks');
+            exit;
+        }
 
         if ($this->weekModel->hasOverlap($yearId, $start, $end, $id)) {
             Session::setFlash('error', 'Chevauchement de dates détecté lors de la modification de la semaine.');
@@ -764,12 +817,24 @@ class TimetableController
 
                 // Affectation Enseignant-Matière
                 try {
+                    $stmtSubTt = $this->db->prepare("SELECT teaching_type_id FROM subjects WHERE id = ?");
+                    $stmtSubTt->execute([$subjectId]);
+                    $subTtId = (int)$stmtSubTt->fetchColumn();
+
+                    if ($subTtId > 0 && $teacherId > 0) {
+                        $this->db->prepare("
+                            INSERT INTO user_teaching_types (user_id, teaching_type_id) 
+                            VALUES (?, ?) 
+                            ON DUPLICATE KEY UPDATE teaching_type_id = VALUES(teaching_type_id)
+                        ")->execute([$teacherId, $subTtId]);
+                    }
+
                     $stmtAssig = $this->db->prepare("
-                        INSERT INTO teacher_assignments (user_id, subject_id, class_id, academic_year_id)
-                        VALUES (?, ?, ?, ?)
+                        INSERT INTO teacher_assignments (user_id, subject_id, class_id, academic_year_id, teaching_type_id)
+                        VALUES (?, ?, ?, ?, ?)
                         ON DUPLICATE KEY UPDATE user_id = VALUES(user_id)
                     ");
-                    $stmtAssig->execute([$teacherId, $subjectId, $classId ?: null, $activeYearId]);
+                    $stmtAssig->execute([$teacherId, $subjectId, $classId ?: null, $activeYearId, $subTtId ?: 9]);
                 } catch (\Throwable $e) {}
             }
         }
@@ -829,44 +894,116 @@ class TimetableController
 
         // Séparer nom et prénom
         $parts = explode(' ', $name, 2);
-        $nom = $parts[0];
-        $prenom = $parts[1] ?? '';
-
-        // Générer un email factice / fonctionnel unique
-        $emailSlug = strtolower(preg_replace('/[^a-z0-9]/', '', $nom . $prenom)) . '_' . time() . '@institution.local';
-        $username = strtolower(preg_replace('/[^a-z0-9]/', '', $nom . $prenom)) . '_' . rand(100, 999);
-        $passwordHash = password_hash('Enseignant' . rand(1000, 9999), PASSWORD_DEFAULT);
+        $nom = trim($parts[0]);
+        $prenom = trim($parts[1] ?? '');
 
         try {
-            // 1. Création de l'utilisateur enseignant
-            $stmt = $this->db->prepare("
-                INSERT INTO users (nom, prenom, email, username, password, role, status, created_at)
-                VALUES (?, ?, ?, ?, ?, 'enseignant', 1, NOW())
+            $alreadyExisted = false;
+
+            // 1. Vérifier si un enseignant avec le même nom/prénom existe déjà (éviter les doublons d'enseignant)
+            $stmtChk = $this->db->prepare("
+                SELECT id, nom, prenom FROM users 
+                WHERE role = 'enseignant' 
+                  AND (
+                      LOWER(TRIM(CONCAT(nom, ' ', prenom))) = LOWER(?)
+                      OR (LOWER(TRIM(nom)) = LOWER(?) AND LOWER(TRIM(prenom)) = LOWER(?))
+                  )
+                LIMIT 1
             ");
-            $stmt->execute([$nom, $prenom, $emailSlug, $username, $passwordHash]);
-            $teacherId = (int)$this->db->lastInsertId();
+            $stmtChk->execute([$name, $nom, $prenom]);
+            $existingUser = $stmtChk->fetch(PDO::FETCH_ASSOC);
 
+            if ($existingUser) {
+                $teacherId = (int)$existingUser['id'];
+                $nom = $existingUser['nom'];
+                $prenom = $existingUser['prenom'];
+                $alreadyExisted = true;
+            } else {
+                // Générer un email factice / fonctionnel unique
+                $emailSlug = strtolower(preg_replace('/[^a-z0-9]/', '', $nom . $prenom)) . '_' . time() . '@institution.local';
+                $username = strtolower(preg_replace('/[^a-z0-9]/', '', $nom . $prenom)) . '_' . rand(100, 999);
+                $passwordHash = password_hash('Enseignant' . rand(1000, 9999), PASSWORD_DEFAULT);
 
-            // Rattaché au Supérieur LMD via user_teaching_types
-            $this->db->exec("INSERT INTO user_teaching_types (user_id, teaching_type_id) VALUES ($teacherId, 9) ON DUPLICATE KEY UPDATE teaching_type_id = 9");
+                $stmt = $this->db->prepare("
+                    INSERT INTO users (nom, prenom, email, username, password, role, status, created_at)
+                    VALUES (?, ?, ?, ?, ?, 'enseignant', 1, NOW())
+                ");
+                $stmt->execute([$nom, $prenom, $emailSlug, $username, $passwordHash]);
+                $teacherId = (int)$this->db->lastInsertId();
+            }
 
+            // 2. Traitement des types d'enseignement
+            $stmtSubTt = $this->db->prepare("SELECT teaching_type_id FROM subjects WHERE id = ?");
+            $stmtSubTt->execute([$subjectId]);
+            $subTtId = (int)$stmtSubTt->fetchColumn();
 
-            // 2. Affectation à la matière
-            $activeYear = $this->academicYearService->getActiveYear();
-            $activeYearId = $activeYear ? (int)$activeYear['id'] : 0;
+            $lmdTtId = 9;
+            $stmtLmd = $this->db->query("SELECT id FROM teaching_types WHERE code = 'LMD' OR nom LIKE '%Supérieur%' LIMIT 1");
+            if ($rowLmd = $stmtLmd->fetch(PDO::FETCH_ASSOC)) {
+                $lmdTtId = (int)$rowLmd['id'];
+            }
+
+            $typesToAttach = array_unique(array_filter([$subTtId, $lmdTtId]));
+            $stmtPivot = $this->db->prepare("
+                INSERT INTO user_teaching_types (user_id, teaching_type_id) 
+                VALUES (?, ?) 
+                ON DUPLICATE KEY UPDATE teaching_type_id = VALUES(teaching_type_id)
+            ");
+            foreach ($typesToAttach as $ttId) {
+                if ($ttId > 0) {
+                    $stmtPivot->execute([$teacherId, $ttId]);
+                }
+            }
+
+            $activeYearId = $this->academicYearService->getActiveYearId();
+
+            // 3. Association dans subject_classes si la classe est fournie
+            if ($classId > 0) {
+                $stmtCheckSubClass = $this->db->prepare("SELECT 1 FROM subject_classes WHERE class_id = ? AND subject_id = ?");
+                $stmtCheckSubClass->execute([$classId, $subjectId]);
+                if (!$stmtCheckSubClass->fetchColumn()) {
+                    $stmtInsSubClass = $this->db->prepare("
+                        INSERT INTO subject_classes (subject_id, class_id, academic_year_id)
+                        VALUES (?, ?, ?)
+                        ON DUPLICATE KEY UPDATE subject_id = VALUES(subject_id)
+                    ");
+                    $stmtInsSubClass->execute([$subjectId, $classId, $activeYearId]);
+                }
+            }
+
+            // 4. Affectation Enseignant-Matière dans teacher_assignments
+            $targetClasses = [];
+            if ($classId > 0) {
+                $targetClasses[] = $classId;
+            } else {
+                $stmtCls = $this->db->prepare("SELECT class_id FROM subject_classes WHERE subject_id = ?");
+                $stmtCls->execute([$subjectId]);
+                $targetClasses = $stmtCls->fetchAll(PDO::FETCH_COLUMN);
+            }
 
             $stmtAssig = $this->db->prepare("
-                INSERT INTO teacher_assignments (user_id, subject_id, class_id, academic_year_id)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO teacher_assignments (user_id, subject_id, class_id, academic_year_id, teaching_type_id)
+                VALUES (?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE user_id = VALUES(user_id)
             ");
-            $stmtAssig->execute([$teacherId, $subjectId, $classId ?: null, $activeYearId]);
+
+            if (!empty($targetClasses)) {
+                foreach ($targetClasses as $targetClassId) {
+                    $stmtAssig->execute([$teacherId, $subjectId, (int)$targetClassId, $activeYearId, $subTtId ?: $lmdTtId]);
+                }
+            } else {
+                $stmtAssig->execute([$teacherId, $subjectId, null, $activeYearId, $subTtId ?: $lmdTtId]);
+            }
 
             $fullName = trim($nom . ' ' . $prenom);
+            $msg = $alreadyExisted
+                ? "L'enseignant $fullName existait déjà. Il a été affecté à la matière sélectionnée."
+                : "L'enseignant $fullName a été créé et affecté avec succès à la matière.";
 
             echo json_encode([
                 'success' => true,
-                'message' => "L'enseignant $fullName a été créé et affecté avec succès à la matière.",
+                'message' => $msg,
+                'already_existed' => $alreadyExisted,
                 'teacher' => [
                     'id' => $teacherId,
                     'nom_complet' => $fullName,
@@ -1002,11 +1139,87 @@ class TimetableController
     }
 
     /**
-     * Suppression définitive d'un emploi du temps (Réservé au Super Administrateur).
+     * Publication officielle d'un emploi du temps (Admin & Superadmin).
+     */
+    public function publish()
+    {
+        PermissionManager::requirePermission('manage_timetables');
+        if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+            Session::setFlash('error', 'Jeton CSRF invalide.');
+            header('Location: /timetables');
+            exit;
+        }
+
+        $rawIds = $_POST['timetable_ids'] ?? $_POST['timetable_id'] ?? $_POST['id'] ?? '';
+        $ids = array_filter(array_map('intval', explode(',', (string)$rawIds)));
+
+        if (empty($ids)) {
+            Session::setFlash('error', 'Emploi du temps introuvable.');
+            header('Location: /timetables');
+            exit;
+        }
+
+        $success = $this->timetableModel->updateStatutGroup($ids, 'publie');
+        if ($success) {
+            $userId = (int)Session::get('user_id');
+            $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+            foreach ($ids as $ttId) {
+                $this->auditLogModel->logAction($ttId, $userId, 'publie', 'Publication officielle de l\'emploi du temps.', $ip);
+            }
+            Security::log("Publication de " . count($ids) . " emploi(s) du temps par l'utilisateur #{$userId}.");
+            Session::setFlash('success', 'L\'emploi du temps a été publié avec succès et est désormais actif sur les dashboards enseignants.');
+        } else {
+            Session::setFlash('error', 'Échec de la publication de l\'emploi du temps.');
+        }
+
+        header('Location: /timetables');
+        exit;
+    }
+
+    /**
+     * Dépublication (remise en brouillon) d'un emploi du temps (Admin & Superadmin).
+     */
+    public function unpublish()
+    {
+        PermissionManager::requirePermission('manage_timetables');
+        if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+            Session::setFlash('error', 'Jeton CSRF invalide.');
+            header('Location: /timetables');
+            exit;
+        }
+
+        $rawIds = $_POST['timetable_ids'] ?? $_POST['timetable_id'] ?? $_POST['id'] ?? '';
+        $ids = array_filter(array_map('intval', explode(',', (string)$rawIds)));
+
+        if (empty($ids)) {
+            Session::setFlash('error', 'Emploi du temps introuvable.');
+            header('Location: /timetables');
+            exit;
+        }
+
+        $success = $this->timetableModel->updateStatutGroup($ids, 'brouillon');
+        if ($success) {
+            $userId = (int)Session::get('user_id');
+            $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+            foreach ($ids as $ttId) {
+                $this->auditLogModel->logAction($ttId, $userId, 'unpublie', 'Dépublication de l\'emploi du temps (remise en brouillon).', $ip);
+            }
+            Security::log("Dépublication de " . count($ids) . " emploi(s) du temps par l'utilisateur #{$userId}.");
+            Session::setFlash('success', 'L\'emploi du temps a été dépublié. Il n\'est plus visible sur les dashboards enseignants.');
+        } else {
+            Session::setFlash('error', 'Échec de la dépublication de l\'emploi du temps.');
+        }
+
+        header('Location: /timetables');
+        exit;
+    }
+
+    /**
+     * Suppression définitive d'un emploi du temps (Autorisé pour Admin & Superadmin).
      */
     public function deleteTimetable()
     {
-        PermissionManager::requireRole('superadmin');
+        PermissionManager::requirePermission('manage_timetables');
         if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
             Session::setFlash('error', 'Jeton CSRF invalide.');
             header('Location: /timetables');
@@ -1023,14 +1236,21 @@ class TimetableController
         }
 
         $deletedCount = 0;
+        $userId = (int)Session::get('user_id');
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+
         foreach ($ids as $id) {
+            // Journaliser dans l'audit avant suppression
+            $this->auditLogModel->logAction($id, $userId, 'suppression', 'Suppression définitive de la grille d\'emploi du temps.', $ip);
+
             if ($this->timetableModel->delete($id)) {
                 $deletedCount++;
             }
         }
 
+
         if ($deletedCount > 0) {
-            Security::log("Suppression de {$deletedCount} grille(s) d'emploi du temps par Super Administrateur.");
+            Security::log("Suppression de {$deletedCount} grille(s) d'emploi du temps par l'utilisateur #{$userId}.");
             Session::setFlash('success', 'L\'emploi du temps regroupé a été supprimé avec succès.');
         } else {
             Session::setFlash('error', 'Échec de la suppression de l\'emploi du temps.');
@@ -1039,6 +1259,7 @@ class TimetableController
         header('Location: /timetables');
         exit;
     }
+
 
     /**
      * Export PDF / Vue Impression d'un emploi du temps multi-classes par niveau.
@@ -1076,6 +1297,18 @@ class TimetableController
             header('Location: /timetables');
             exit;
         }
+
+        // Vérification de sécurité : un enseignant ne peut ni imprimer ni télécharger un emploi du temps non publié (brouillon)
+        if (Session::get('user_role') === 'enseignant') {
+            $stmtPubCheck = $this->db->prepare("SELECT COUNT(*) FROM timetables WHERE cycle_id <=> ? AND week_id <=> ? AND statut = 'publie'");
+            $stmtPubCheck->execute([$cycleId, $weekId]);
+            if ((int)$stmtPubCheck->fetchColumn() === 0) {
+                Session::setFlash('error', 'Accès refusé : Cet emploi du temps n\'a pas encore été publié.');
+                header('Location: /timetables');
+                exit;
+            }
+        }
+
 
         // Charger les métadonnées de la semaine
         $weekRow = $this->db->query("SELECT * FROM timetable_weeks WHERE id = $weekId")->fetch(PDO::FETCH_ASSOC);
@@ -1219,11 +1452,18 @@ class TimetableController
         }
         $selectedLevelId = (int)($_GET['level_id'] ?? 0);
 
-        // Récupération des semaines de cours disponibles
+        // Récupération des semaines de cours disponibles (pour l'enseignant, uniquement celles avec un emploi du temps publié)
         $weeks = $this->weekModel->getAll();
+        if (Session::get('user_role') === 'enseignant') {
+            $publishedWeekIds = $this->db->query("SELECT DISTINCT week_id FROM timetables WHERE statut = 'publie'")->fetchAll(PDO::FETCH_COLUMN) ?: [];
+            $weeks = array_values(array_filter($weeks, function($w) use ($publishedWeekIds) {
+                return in_array((int)$w['id'], array_map('intval', $publishedWeekIds), true);
+            }));
+        }
         $selectedWeekId = (int)($_GET['week_id'] ?? ($weeks[0]['id'] ?? 0));
 
         require __DIR__ . '/../Views/timetables/print.php';
     }
 }
+
 

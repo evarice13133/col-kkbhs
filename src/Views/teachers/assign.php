@@ -69,6 +69,13 @@
     </div>
     <?php endif; ?>
 
+    <?php if ($success = App\Core\Session::getFlash('success') ?: App\Core\Session::getFlash('success_msg')): ?>
+        <div class="alert alert-success border-0 shadow-sm alert-dismissible fade show mb-4 mx-2 rounded-4" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i><?= htmlspecialchars((string) $success) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <?php endif; ?>
+
     <?php if ($err = App\Core\Session::get('error_msg')): ?>
         <div class="alert alert-danger border-0 shadow-sm alert-dismissible fade show mb-4 mx-2 rounded-4" role="alert">
             <i class="bi bi-exclamation-triangle-fill me-2"></i><?= htmlspecialchars((string) $err) ?>
@@ -125,11 +132,22 @@
                                             <?php foreach ($data['classes'] as $cls):
                                                 $pair_key = $sub_id . '_' . $cls['id'];
                                             ?>
-                                                <label class="class-item selected" for="asg_current_<?= $pair_key ?>">
-                                                    <input class="form-check-input group-current-<?= $sub_id ?> d-none js-asg-checkbox" type="checkbox" name="assignments[]" value="<?= $pair_key ?>" id="asg_current_<?= $pair_key ?>" checked>
-                                                    <div class="checkbox-custom"></div>
-                                                    <span class="small fw-bold text-main-theme"><?= htmlspecialchars($cls['nom']) ?></span>
-                                                </label>
+                                                <div class="d-flex align-items-center justify-content-between gap-2 p-1">
+                                                    <label class="class-item selected flex-grow-1 mb-0" for="asg_current_<?= $pair_key ?>">
+                                                        <input class="form-check-input group-current-<?= $sub_id ?> d-none js-asg-checkbox" type="checkbox" name="assignments[]" value="<?= $pair_key ?>" id="asg_current_<?= $pair_key ?>" checked>
+                                                        <div class="checkbox-custom"></div>
+                                                        <span class="small fw-bold text-main-theme"><?= htmlspecialchars($cls['nom']) ?></span>
+                                                    </label>
+                                                    <?php if (!$isHistoricalView): ?>
+                                                        <button type="button" 
+                                                                class="btn btn-sm btn-outline-danger border-0 rounded-circle p-1 d-flex align-items-center justify-content-center" 
+                                                                style="width: 28px; height: 28px;"
+                                                                title="<?= __('cancel_assignment') ?? 'Annuler cette affectation' ?>" 
+                                                                onclick="confirmCancelAssignment(event, '<?= (int)$teacher['id'] ?>', '<?= (int)$sub_id ?>', '<?= (int)$cls['id'] ?>', '<?= htmlspecialchars($data['nom'], ENT_QUOTES) ?>', '<?= htmlspecialchars($cls['nom'], ENT_QUOTES) ?>')">
+                                                            <i class="bi bi-trash fs-6"></i>
+                                                        </button>
+                                                    <?php endif; ?>
+                                                </div>
                                             <?php endforeach; ?>
                                         </div>
                                     </div>
@@ -176,9 +194,12 @@
                                                     <?php endif; ?>
                                                     <span class="small fw-bold text-main-theme"><?= htmlspecialchars($cls['nom']) ?></span>
                                                     <?php if($is_taken): ?>
-                                                        <span class="ms-auto" data-bs-toggle="tooltip" title="<?= htmlspecialchars($cls['other_teacher']) ?>">
-                                                            <i class="bi bi-person-x-fill text-danger"></i>
-                                                        </span>
+                                                        <button type="button" 
+                                                                class="btn btn-xs btn-outline-warning rounded-pill ms-auto px-2 py-1 extra-small fw-bold border-1 shadow-sm" 
+                                                                title="<?= htmlspecialchars($cls['other_teacher']) ?>"
+                                                                onclick="openCourseTransferModal(<?= (int)$sub_id ?>, <?= (int)$cls['id'] ?>, '<?= htmlspecialchars($data['nom'], ENT_QUOTES) ?>', '<?= htmlspecialchars($cls['nom'], ENT_QUOTES) ?>', '<?= htmlspecialchars($cls['other_teacher'], ENT_QUOTES) ?>', <?= (int)($cls['other_teacher_id'] ?? 0) ?>, <?= (int)$teacher['id'] ?>)">
+                                                            <i class="bi bi-arrow-left-right me-1"></i> Transférer / Réaffecter
+                                                        </button>
                                                     <?php endif; ?>
                                                 </label>
                                             <?php endforeach; ?>
@@ -432,7 +453,186 @@ document.addEventListener('DOMContentLoaded', function () {
         return new bootstrap.Tooltip(tooltipTriggerEl)
     });
 });
+
+window.confirmCancelAssignment = function(e, teacherId, subjectId, classId, subjectName, className) {
+    if (e) {
+        e.stopPropagation();
+        e.preventDefault();
+    }
+
+    AlertService.confirm({
+        title: <?= json_encode(__('cancel_assignment') ?? 'Annuler l\'affectation', JSON_UNESCAPED_UNICODE) ?>,
+        html: `Voulez-vous vraiment annuler l'affectation de la matière <strong>${subjectName}</strong> pour la classe <strong>${className}</strong> ?`,
+        icon: 'warning',
+        confirmText: <?= json_encode(__('confirm') ?? 'Oui, annuler', JSON_UNESCAPED_UNICODE) ?>,
+        cancelText: <?= json_encode(__('cancel') ?? 'Annuler', JSON_UNESCAPED_UNICODE) ?>,
+        customClass: {
+            confirmButton: 'btn btn-danger btn-sm rounded-pill px-4 me-2',
+            cancelButton: 'btn btn-light btn-sm rounded-pill px-4'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('cancel_teacher_id').value = teacherId;
+            document.getElementById('cancel_subject_id').value = subjectId;
+            document.getElementById('cancel_class_id').value = classId;
+            AlertService.loading(<?= json_encode(__('processing') ?? 'Traitement...', JSON_UNESCAPED_UNICODE) ?>);
+            document.getElementById('cancelAssignmentForm').submit();
+        }
+    });
+};
+
+window.openCourseTransferModal = function(subjectId, classId, subjectName, className, sourceTeacherName, sourceTeacherId, targetTeacherId) {
+    document.getElementById('tr_subject_id').value = subjectId;
+    document.getElementById('tr_class_id').value = classId;
+    document.getElementById('tr_source_teacher_id').value = sourceTeacherId || 0;
+
+    document.getElementById('tr_subject_name_text').innerText = subjectName;
+    document.getElementById('tr_class_name_text').innerText = className;
+    document.getElementById('tr_source_teacher_text').innerText = sourceTeacherName || 'Non spécifié';
+
+    const targetSelect = document.getElementById('tr_target_teacher_id');
+    if (targetSelect) {
+        if (targetTeacherId) targetSelect.value = targetTeacherId;
+        targetSelect.disabled = false;
+    }
+
+    const checkNew = document.getElementById('create_new_teacher');
+    if (checkNew) {
+        checkNew.checked = false;
+        toggleNewTeacherFields(checkNew);
+    }
+
+    const modalEl = document.getElementById('transferCourseModal');
+    if (modalEl.parentNode !== document.body) {
+        document.body.appendChild(modalEl);
+    }
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+};
+
+window.toggleNewTeacherFields = function(checkbox) {
+    const container = document.getElementById('newTeacherInputContainer');
+    const targetSelect = document.getElementById('tr_target_teacher_id');
+    if (container) {
+        container.classList.toggle('d-none', !checkbox.checked);
+    }
+    if (targetSelect) {
+        targetSelect.disabled = checkbox.checked;
+    }
+};
 </script>
+
+<!-- Modal Pop-Up de Conflit & Transfert de Cours -->
+<div class="modal fade" id="transferCourseModal" tabindex="-1" aria-labelledby="transferCourseModalLabel" aria-hidden="true" style="z-index: 1085;">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden" style="background: var(--bg-card);">
+            <div class="modal-header bg-warning text-dark p-4">
+                <h5 class="modal-title fw-black" id="transferCourseModalLabel">
+                    <i class="bi bi-arrow-left-right me-2"></i>Conflit d'affectation : Réaffectation & Transfert
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="transferCourseForm" action="/teachers/transfer_course" method="POST">
+                <input type="hidden" name="csrf_token" value="<?= App\Core\Session::generateCsrfToken() ?>">
+                <input type="hidden" name="redirect_teacher_id" value="<?= (int)$teacher['id'] ?>">
+                <input type="hidden" name="subject_id" id="tr_subject_id">
+                <input type="hidden" name="class_id" id="tr_class_id">
+                <input type="hidden" name="source_teacher_id" id="tr_source_teacher_id">
+
+                <div class="modal-body p-4">
+                    <div class="alert alert-warning border-0 rounded-3 p-3 mb-4">
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi bi-exclamation-triangle-fill fs-5 text-warning flex-shrink-0"></i>
+                            <div>
+                                <h6 class="fw-bold mb-1">Un même cours ne peut pas être affecté à deux enseignants simultanément.</h6>
+                                <p class="small mb-0 opacity-85">
+                                    Ce cours est déjà attribué à un autre enseignant. Pour lui attribuer un nouveau titulaire, vous devez effectuer le transfert des données et de l'affectation.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Récapitulatif du cours en conflit -->
+                    <div class="card border border-warning border-opacity-30 rounded-3 p-3 mb-4 bg-warning bg-opacity-10">
+                        <div class="row g-3 text-main-theme">
+                            <div class="col-md-4">
+                                <span class="text-muted extra-small d-block text-uppercase fw-bold">Matière concernée</span>
+                                <strong id="tr_subject_name_text" class="text-primary fs-6"></strong>
+                            </div>
+                            <div class="col-md-4">
+                                <span class="text-muted extra-small d-block text-uppercase fw-bold">Classe concernée</span>
+                                <strong id="tr_class_name_text" class="text-main-theme fs-6"></strong>
+                            </div>
+                            <div class="col-md-4">
+                                <span class="text-muted extra-small d-block text-uppercase fw-bold">Enseignant Actuel</span>
+                                <strong id="tr_source_teacher_text" class="text-danger fs-6"></strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sélection du nouveau titulaire -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-main-theme small">
+                            <i class="bi bi-person-check-fill me-1 text-primary"></i>Choisir le nouveau titulaire du cours :
+                        </label>
+                        <select id="tr_target_teacher_id" name="target_teacher_id" class="form-select rounded-3">
+                            <option value="">-- Sélectionner un enseignant destinataire --</option>
+                            <?php foreach ($allTeachers as $t_opt): ?>
+                                <option value="<?= $t_opt['id'] ?>" <?= $t_opt['id'] == $teacher['id'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($t_opt['nom'] . ' ' . $t_opt['prenom']) ?> (<?= htmlspecialchars($t_opt['username']) ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <!-- Création rapide d'un nouvel enseignant -->
+                    <div class="p-3 rounded-3 border bg-light-theme mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input cursor-pointer" type="checkbox" id="create_new_teacher" name="create_new_teacher" value="1" onchange="toggleNewTeacherFields(this)">
+                            <label class="form-check-label fw-bold text-main-theme small cursor-pointer" for="create_new_teacher">
+                                <i class="bi bi-person-plus-fill me-1 text-success"></i>Créer directement un nouvel enseignant et lui transférer ce cours
+                            </label>
+                        </div>
+                        <div id="newTeacherInputContainer" class="mt-3 d-none">
+                            <label class="form-label fw-bold extra-small text-main-theme mb-1">Nom et Prénom du nouvel enseignant *</label>
+                            <input type="text" name="new_teacher_name" id="tr_new_teacher_name" class="form-control rounded-3" placeholder="Ex: Dr. Martin KAMGA">
+                        </div>
+                    </div>
+
+                </div>
+                <div class="modal-footer border-top p-3" style="background: var(--bg-card);">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-warning rounded-pill px-4 fw-bold shadow-sm text-dark">
+                        <i class="bi bi-arrow-left-right me-1"></i>Transférer les données & Affecter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<?php if ($conflictData = App\Core\Session::getFlash('assignment_conflict')): ?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    openCourseTransferModal(
+        <?= (int)$conflictData['subject_id'] ?>,
+        <?= (int)$conflictData['class_id'] ?>,
+        <?= json_encode($conflictData['subject_name']) ?>,
+        <?= json_encode($conflictData['class_name']) ?>,
+        <?= json_encode($conflictData['source_teacher_name']) ?>,
+        <?= (int)$conflictData['source_teacher_id'] ?>,
+        <?= (int)$conflictData['target_teacher_id'] ?>
+    );
+});
+</script>
+<?php endif; ?>
+
+<form id="cancelAssignmentForm" action="/teachers/remove_assignment" method="POST" class="d-none">
+    <input type="hidden" name="csrf_token" value="<?= App\Core\Session::generateCsrfToken() ?>">
+    <input type="hidden" name="teacher_id" id="cancel_teacher_id">
+    <input type="hidden" name="subject_id" id="cancel_subject_id">
+    <input type="hidden" name="class_id" id="cancel_class_id">
+</form>
 
 <?php
 $content = ob_get_clean();

@@ -1,7 +1,11 @@
 <?php
 $title = __('timetables_menu') . " - " . __('app_name');
+$userRole = \App\Core\Session::get('user_role');
+$canManage = in_array($userRole, ['admin', 'superadmin'], true) || \App\Core\PermissionManager::hasPermission('manage_timetables');
+$csrfToken = \App\Core\Session::generateCsrfToken();
 ob_start();
 ?>
+
 
 <div class="animate-fade-in container-fluid py-3 px-md-4 google-material-scope">
     <!-- Header -->
@@ -18,6 +22,7 @@ ob_start();
             </div>
             <p class="text-muted-theme small mb-0 font-google"><?= __('timetables_subtitle') ?></p>
         </div>
+        <?php if ($canManage ?? true): ?>
         <div class="d-flex flex-wrap gap-2">
             <a href="/timetables/slots"
                 class="btn btn-sm btn-light-theme rounded-pill px-3 py-2 fw-semibold d-flex align-items-center gap-1.5 border-theme-light shadow-xs hover-lift transition-all">
@@ -36,7 +41,9 @@ ob_start();
                 <i class="bi bi-plus-circle-fill"></i> <?= __('timetables_new_wizard') ?>
             </a>
         </div>
+        <?php endif; ?>
     </div>
+
 
     <!-- KPI Summary Row -->
     <div class="row g-3 mb-4 animate-fade-in">
@@ -163,53 +170,58 @@ ob_start();
             <table class="table table-modern align-middle mb-0" id="timetablesTable">
                 <thead>
                     <tr>
-                        <th class="ps-4 py-3"><?= __('timetables_col_week') ?></th>
+                        <th class="ps-4 py-3"><?= __('timetables_col_status') ?></th>
                         <th class="py-3"><?= __('cycle') ?? 'Cycle' ?></th>
                         <th class="py-3"><?= __('level') ?? 'Niveau' ?></th>
+                        <th class="py-3"><?= __('timetables_col_week') ?></th>
                         <th class="py-3">Classes concernées</th>
-                        <th class="text-center py-3"><?= __('timetables_col_status') ?></th>
-                        <th class="text-center py-3"><?= __('timetables_col_lock') ?></th>
                         <th class="pe-4 text-end py-3"><?= __('timetables_col_actions') ?></th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($timetables)): ?>
                         <tr>
-                            <td colspan="7" class="text-center py-5 text-muted-theme">
+                            <td colspan="6" class="text-center py-5 text-muted-theme">
                                 <div class="py-4">
                                     <i class="bi bi-calendar-x fs-1 d-block mb-3 text-secondary opacity-50"></i>
                                     <h6 class="fw-bold text-main-theme mb-1"><?= __('timetables_no_found') ?></h6>
-                                    <p class="small text-muted-theme mb-3">Aucun emploi du temps ne correspond à vos
-                                        filtres.</p>
-                                    <a href="/timetables/wizard"
-                                        class="btn btn-sm btn-primary rounded-pill px-3 py-2 fw-bold shadow-sm">
-                                        <i class="bi bi-magic me-1"></i>Créer une grille
-                                    </a>
+                                    <p class="small text-muted-theme mb-3">Aucun emploi du temps ne correspond à vos filtres.</p>
+                                    <?php if ($canManage): ?>
+                                        <a href="/timetables/wizard"
+                                            class="btn btn-sm btn-primary rounded-pill px-3 py-2 fw-bold shadow-sm">
+                                            <i class="bi bi-magic me-1"></i>Créer une grille
+                                        </a>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>
+
                     <?php else: ?>
+                        <?php 
+                        $userRole = \App\Core\Session::get('user_role');
+                        $canManage = in_array($userRole, ['admin', 'superadmin'], true) || \App\Core\PermissionManager::hasPermission('manage_timetables');
+                        $csrfToken = \App\Core\Session::generateCsrfToken();
+                        ?>
                         <?php foreach ($timetables as $t): ?>
                             <tr class="table-row-hover transition-all">
-                                <!-- Semaine -->
+                                <!-- Statut -->
                                 <td class="ps-4 py-3">
-                                    <div class="d-flex align-items-center gap-3">
-                                        <div class="avatar-init bg-primary bg-opacity-10 text-primary fw-bold rounded-circle d-flex align-items-center justify-content-center shadow-xs icon-pop"
-                                            style="width: 40px; height: 40px; font-size: 1rem; border: 1px solid rgba(var(--primary-rgb), 0.2);">
-                                            <i class="bi bi-calendar3-range"></i>
-                                        </div>
-                                        <div>
-                                            <div class="fw-bold text-main-theme" style="font-size: 0.92rem;">
-                                                <?= h($t['week_libelle'] ?? 'Semaine sans nom') ?>
-                                            </div>
-                                            <div class="text-muted-theme opacity-75 extra-small">
-                                                <i class="bi bi-clock me-1"></i>
-                                                <?= !empty($t['week_start']) ? date('d/m/Y', strtotime($t['week_start'])) : '-' ?>
-                                                au
-                                                <?= !empty($t['week_end']) ? date('d/m/Y', strtotime($t['week_end'])) : '-' ?>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <?php if ($t['statut'] === 'publie'): ?>
+                                        <span
+                                            class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2.5 py-1 rounded-pill fw-bold shadow-xs">
+                                            <i class="bi bi-check-circle-fill me-1"></i><?= __('timetables_status_published') ?>
+                                        </span>
+                                    <?php elseif ($t['statut'] === 'verrouille' || $t['is_locked_calc']): ?>
+                                        <span
+                                            class="badge bg-secondary bg-opacity-15 text-main-theme border border-secondary border-opacity-25 px-2.5 py-1 rounded-pill fw-bold shadow-xs">
+                                            <i class="bi bi-lock-fill me-1"></i><?= __('timetables_status_locked') ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span
+                                            class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2.5 py-1 rounded-pill fw-bold shadow-xs">
+                                            <i class="bi bi-pencil-fill me-1"></i><?= __('timetables_status_draft') ?>
+                                        </span>
+                                    <?php endif; ?>
                                 </td>
 
                                 <!-- Cycle -->
@@ -227,9 +239,28 @@ ob_start();
                                         <?= h($t['level_name'] ?? 'Général') ?>
                                     </span>
                                     <?php if (!empty($t['teaching_type_name'])): ?>
-                                        <div class="extra-small text-muted-theme opacity-75"><?= h($t['teaching_type_name']) ?>
-                                        </div>
+                                        <div class="extra-small text-muted-theme opacity-75"><?= h($t['teaching_type_name']) ?></div>
                                     <?php endif; ?>
+                                </td>
+
+                                <!-- Semaine -->
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="avatar-init bg-primary bg-opacity-10 text-primary fw-bold rounded-circle d-flex align-items-center justify-content-center shadow-xs"
+                                            style="width: 32px; height: 32px; font-size: 0.85rem;">
+                                            <i class="bi bi-calendar3-range"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-main-theme" style="font-size: 0.88rem;">
+                                                <?= h($t['week_libelle'] ?? 'Semaine sans nom') ?>
+                                            </div>
+                                            <div class="text-muted-theme opacity-75 extra-small">
+                                                <?= !empty($t['week_start']) ? date('d/m/Y', strtotime($t['week_start'])) : '-' ?>
+                                                au
+                                                <?= !empty($t['week_end']) ? date('d/m/Y', strtotime($t['week_end'])) : '-' ?>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </td>
 
                                 <!-- Classes concernées -->
@@ -254,41 +285,6 @@ ob_start();
                                     </div>
                                 </td>
 
-                                <!-- Statut -->
-                                <td class="text-center">
-                                    <?php if ($t['statut'] === 'publie'): ?>
-                                        <span
-                                            class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2.5 py-1 rounded-pill fw-bold shadow-xs">
-                                            <i class="bi bi-check-circle-fill me-1"></i><?= __('timetables_status_published') ?>
-                                        </span>
-                                    <?php elseif ($t['statut'] === 'verrouille' || $t['is_locked_calc']): ?>
-                                        <span
-                                            class="badge bg-secondary bg-opacity-15 text-main-theme border border-secondary border-opacity-25 px-2.5 py-1 rounded-pill fw-bold shadow-xs">
-                                            <i class="bi bi-lock-fill me-1"></i><?= __('timetables_status_locked') ?>
-                                        </span>
-                                    <?php else: ?>
-                                        <span
-                                            class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2.5 py-1 rounded-pill fw-bold shadow-xs">
-                                            <i class="bi bi-pencil-fill me-1"></i><?= __('timetables_status_draft') ?>
-                                        </span>
-                                    <?php endif; ?>
-                                </td>
-
-                                <!-- Verrouillage -->
-                                <td class="text-center">
-                                    <?php if ($t['is_locked_calc']): ?>
-                                        <span
-                                            class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2.5 py-1 rounded-pill extra-small fw-bold">
-                                            <i class="bi bi-shield-lock-fill me-1"></i> <?= __('timetables_lock_closed') ?>
-                                        </span>
-                                    <?php else: ?>
-                                        <span
-                                            class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2.5 py-1 rounded-pill extra-small fw-bold">
-                                            <i class="bi bi-unlock-fill me-1"></i> <?= __('timetables_lock_editable') ?>
-                                        </span>
-                                    <?php endif; ?>
-                                </td>
-
                                 <!-- Actions -->
                                 <td class="pe-4 text-end">
                                     <div class="d-flex align-items-center justify-content-end gap-1 table-row-actions">
@@ -297,6 +293,31 @@ ob_start();
                                             title="Consulter et planifier la grille">
                                             <i class="bi bi-grid-3x3-gap-fill fs-5"></i>
                                         </a>
+
+                                        <?php if ($canManage): ?>
+                                            <?php if ($t['statut'] === 'publie'): ?>
+                                                <!-- Bouton Dépublier -->
+                                                <form method="POST" action="/timetables/unpublish" class="d-inline m-0">
+                                                    <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
+                                                    <input type="hidden" name="timetable_ids" value="<?= $t['timetable_ids'] ?>">
+                                                    <button type="submit" class="btn btn-sm btn-action-modern text-warning hover-scale transition-all"
+                                                        title="Dépublier (remettre en brouillon)">
+                                                        <i class="bi bi-arrow-counterclockwise fs-5"></i>
+                                                    </button>
+                                                </form>
+                                            <?php else: ?>
+                                                <!-- Bouton Publier -->
+                                                <form method="POST" action="/timetables/publish" class="d-inline m-0">
+                                                    <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
+                                                    <input type="hidden" name="timetable_ids" value="<?= $t['timetable_ids'] ?>">
+                                                    <button type="submit" class="btn btn-sm btn-action-modern text-success hover-scale transition-all"
+                                                        title="Publier officiellement l'emploi du temps">
+                                                        <i class="bi bi-check-circle-fill fs-5"></i>
+                                                    </button>
+                                                </form>
+                                            <?php endif; ?>
+                                        <?php endif; ?>
+
                                         <a href="/timetables/pdf?cycle_id=<?= $t['cycle_id'] ?>&level_id=<?= $t['level_id'] ?>&week_id=<?= $t['week_id'] ?>&mode=print"
                                             target="_blank"
                                             class="btn btn-sm btn-action-modern text-secondary hover-scale transition-all"
@@ -308,7 +329,8 @@ ob_start();
                                             title="Télécharger l'emploi du temps en PDF">
                                             <i class="bi bi-file-earmark-pdf-fill fs-5"></i>
                                         </a>
-                                        <?php if (\App\Core\Session::get('user_role') === 'superadmin'): ?>
+
+                                        <?php if ($canManage): ?>
                                             <button type="button"
                                                 class="btn btn-sm btn-action-modern text-danger hover-scale transition-all"
                                                 data-impact-delete="timetable"
@@ -323,6 +345,7 @@ ob_start();
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </tbody>
+
             </table>
         </div>
     </div>

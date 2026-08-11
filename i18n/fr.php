@@ -98,6 +98,8 @@ return [
     'user_updated_success' => 'Utilisateur mis à jour avec succès.',
     'subject_deleted_success' => 'La matière a été supprimée avec succès.',
     'assignment_error' => 'Erreur lors de l\'affectation',
+    'cancel_assignment' => 'Annuler l\'affectation',
+    'assignment_removed_success' => 'L\'affectation du cours a été retirée avec succès pour cet enseignant.',
     'workload_saved_success' => 'La charge de travail a été enregistrée avec succès.',
     'integrity_error_already_assigned' => 'Ce cours est déjà attribué à un autre enseignant.',
     'grades_saved_success' => 'Les notes ont été enregistrées avec succès.',
@@ -1798,6 +1800,9 @@ return [
     // ── RBAC Roles & Dashboards ────────────────────────────────────────
     'role_superadmin'          => 'Super Administrateur',
     'role_admin'               => 'Administrateur',
+    'role_direction_academique' => 'Direction Académique',
+    'direction_academique'     => 'Direction Académique',
+    'direction_academique_role_label' => 'Direction Académique (Pédagogie & Pilotage)',
     'role_enseignant'          => 'Enseignant',
     'role_caissier'            => 'Caissier',
     'role_comptable'           => 'Comptable',

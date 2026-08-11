@@ -109,9 +109,12 @@ class ImpactAnalysisService
         $teacher = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$teacher) {
-            $stmtAlt = $this->db->prepare("SELECT id, nom, prenom, matricule, email FROM teachers WHERE id = ?");
-            $stmtAlt->execute([$id]);
-            $teacher = $stmtAlt->fetch(PDO::FETCH_ASSOC);
+            $stmtHasTeachersTable = $this->db->query("SHOW TABLES LIKE 'teachers'");
+            if ($stmtHasTeachersTable->fetch()) {
+                $stmtAlt = $this->db->prepare("SELECT id, nom, prenom, matricule, email FROM teachers WHERE id = ?");
+                $stmtAlt->execute([$id]);
+                $teacher = $stmtAlt->fetch(PDO::FETCH_ASSOC);
+            }
         }
 
         if (!$teacher) {
@@ -579,10 +582,11 @@ class ImpactAnalysisService
     private function analyzeTimetable(int $id): array
     {
         $stmt = $this->db->prepare("
-            SELECT t.id, c.nom as class_name, cy.nom as cycle_name
+            SELECT t.id, t.cycle_id, t.class_id, t.week_id, c.nom as class_name, cy.nom as cycle_name, w.libelle as week_name
             FROM timetables t
             LEFT JOIN classes c ON t.class_id = c.id
             LEFT JOIN cycles cy ON t.cycle_id = cy.id
+            LEFT JOIN timetable_weeks w ON t.week_id = w.id
             WHERE t.id = ?
         ");
         $stmt->execute([$id]);
@@ -590,11 +594,34 @@ class ImpactAnalysisService
 
         if (!$tt) return $this->notFoundResponse('timetable', $id);
 
-        $stmtEntries = $this->db->prepare("SELECT COUNT(*) FROM timetable_entries WHERE timetable_id = ?");
-        $stmtEntries->execute([$id]);
+        // Si cet emploi du temps fait partie d'un groupe (cycle + week), on compte sur le groupe d'IDs
+        $stmtGroup = $this->db->prepare("SELECT id FROM timetables WHERE cycle_id <=> ? AND week_id <=> ?");
+        $stmtGroup->execute([$tt['cycle_id'], $tt['week_id']]);
+        $groupTimetableIds = $stmtGroup->fetchAll(PDO::FETCH_COLUMN) ?: [$id];
+        
+        $in = implode(',', array_fill(0, count($groupTimetableIds), '?'));
+
+        // 1. Séances programmées
+        $stmtEntries = $this->db->prepare("SELECT COUNT(*) FROM timetable_entries WHERE timetable_id IN ($in)");
+        $stmtEntries->execute($groupTimetableIds);
         $entriesCount = (int)$stmtEntries->fetchColumn();
 
-        $name = "Emploi du temps #" . $id . " (" . ($tt['class_name'] ?: $tt['cycle_name'] ?: 'Général') . ")";
+        // 2. Enseignants concernés
+        $stmtTeachers = $this->db->prepare("SELECT COUNT(DISTINCT teacher_id) FROM timetable_entries WHERE timetable_id IN ($in) AND teacher_id IS NOT NULL AND teacher_id > 0");
+        $stmtTeachers->execute($groupTimetableIds);
+        $teachersCount = (int)$stmtTeachers->fetchColumn();
+
+        // 3. Salles concernées
+        $stmtRooms = $this->db->prepare("SELECT COUNT(DISTINCT room_id) FROM timetable_entries WHERE timetable_id IN ($in) AND room_id IS NOT NULL AND room_id > 0");
+        $stmtRooms->execute($groupTimetableIds);
+        $roomsCount = (int)$stmtRooms->fetchColumn();
+
+        // 4. Classes concernées
+        $stmtClasses = $this->db->prepare("SELECT COUNT(DISTINCT class_id) FROM timetables WHERE id IN ($in) AND class_id IS NOT NULL AND class_id > 0");
+        $stmtClasses->execute($groupTimetableIds);
+        $classesCount = (int)$stmtClasses->fetchColumn();
+
+        $name = "Emploi du temps (" . ($tt['cycle_name'] ?: 'Cycle') . " - " . ($tt['week_name'] ?: 'Semaine') . ")";
 
         return [
             'entity' => ['type' => 'timetable', 'type_label' => 'Emploi du temps', 'id' => $id, 'name' => $name],
@@ -602,16 +629,20 @@ class ImpactAnalysisService
             'recommended_action' => 'delete',
             'can_direct_delete' => true,
             'stats' => [
-                ['label' => 'Séances / Cours planifiés', 'count' => $entriesCount, 'icon' => 'fas fa-calendar-day', 'severity' => $entriesCount > 0 ? 'warning' : 'neutral']
+                ['label' => 'Séances / Programmations', 'count' => $entriesCount, 'icon' => 'fas fa-calendar-day', 'severity' => $entriesCount > 0 ? 'warning' : 'neutral'],
+                ['label' => 'Enseignants impactés', 'count' => $teachersCount, 'icon' => 'fas fa-chalkboard-teacher', 'severity' => $teachersCount > 0 ? 'warning' : 'neutral'],
+                ['label' => 'Classes concernées', 'count' => $classesCount, 'icon' => 'fas fa-school', 'severity' => $classesCount > 0 ? 'warning' : 'neutral'],
+                ['label' => 'Salles occupées', 'count' => $roomsCount, 'icon' => 'fas fa-building', 'severity' => $roomsCount > 0 ? 'warning' : 'neutral'],
             ],
             'impact_summary' => [
-                'direct_deletion' => "La grille d'emploi du temps $name.",
-                'dependencies' => "$entriesCount séances de cours programmées dans la grille.",
-                'historical_data' => "Historique de modifications.",
-                'invalid_references' => "Aucune."
+                'direct_deletion' => "L'emploi du temps $name.",
+                'dependencies' => "$entriesCount programmations de cours, $teachersCount enseignants, $classesCount classes et $roomsCount salles affectées.",
+                'historical_data' => "Historique des affectations de créneaux.",
+                'invalid_references' => "Aucune (les séances seront retirées des planning enseignants)."
             ]
         ];
     }
+
 
     private function analyzeTimetableSlot(int $id): array
     {

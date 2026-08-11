@@ -99,6 +99,8 @@ return [
     'subject_created_success' => 'Subject created successfully.',
     'subject_updated_success' => 'Subject updated successfully.',
     'assignment_error' => 'Assignment error',
+    'cancel_assignment' => 'Cancel assignment',
+    'assignment_removed_success' => 'The course assignment has been successfully removed for this teacher.',
     'workload_saved_success' => 'Workload saved successfully.',
     'integrity_error_already_assigned' => 'This course is already assigned to another teacher.',
     'grades_saved_success' => 'Grades saved successfully.',
@@ -1728,6 +1730,9 @@ return [
     // ── RBAC Roles & Dashboards ────────────────────────────────────────
     'role_superadmin'          => 'Super Administrator',
     'role_admin'               => 'Administrator',
+    'role_direction_academique' => 'Academic Directorate',
+    'direction_academique'     => 'Academic Directorate',
+    'direction_academique_role_label' => 'Academic Directorate (Pedagogy & Oversight)',
     'role_enseignant'          => 'Teacher',
     'role_caissier'            => 'Cashier',
     'role_comptable'           => 'Accountant',
