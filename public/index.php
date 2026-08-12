@@ -652,6 +652,8 @@ elseif (strpos($path, '/subjects') === 0) {
         $c->index();
     elseif ($path === '/subjects/export')
         $c->export();
+    elseif ($path === '/subjects/exportExcel' || $path === '/subjects/export-excel')
+        $c->exportExcel();
     elseif ($path === '/subjects/create')
         $c->create();
     elseif ($path === '/subjects/import')

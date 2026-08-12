@@ -64,7 +64,7 @@ ob_start();
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="col-md-8">
+                    <div class="col-md-4">
                         <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('subject_group') ?></label>
                         <select name="subject_group_id" id="subject_group_id" class="form-select premium-input">
                             <option value="">Sélectionner un groupe de modules...</option>
@@ -79,6 +79,29 @@ ob_start();
                         <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('base_coefficient') ?></label>
                         <input type="number" name="coefficient" class="form-control premium-input text-center"
                             value="<?= h($subject['coefficient'] ?? 1) ?>" min="1" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">VHm (Vol. Ministériel)</label>
+                        <input type="number" name="vhm" class="form-control premium-input text-center"
+                            value="<?= h($subject['vhm'] ?? '') ?>" min="0" step="any" placeholder="Ex: 60">
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">VHp (Vol. Proposé)</label>
+                        <input type="number" name="vhp" class="form-control premium-input text-center"
+                            value="<?= h($subject['vhp'] ?? '') ?>" min="0" step="any" placeholder="Ex: 54">
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">TH(Max) (Taux Max)</label>
+                        <input type="number" name="th_max" class="form-control premium-input text-center"
+                            value="<?= h($subject['th_max'] ?? '') ?>" min="0" step="any" placeholder="Ex: 30">
+                    </div>
+
+                    <div class="col-12 col-md-3">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Observations</label>
+                        <input type="text" name="observations" class="form-control premium-input"
+                            value="<?= h($subject['observations'] ?? '') ?>" placeholder="Remarques ou détails...">
                     </div>
 
                     <!-- Dynamic LMD Fields (Code UV / Code UE) -->

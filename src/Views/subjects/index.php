@@ -27,11 +27,17 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_subjects');
             </div>
 
             <div class="d-flex flex-row w-100 w-md-auto justify-content-end ms-md-auto gap-2 mt-2 mt-md-0">
-                <a href="/subjects/export?<?= http_build_query($filters) ?>"
+                <a id="btn-export-pdf" href="/subjects/export?<?= http_build_query($filters) ?>"
                     class="btn btn-light-theme rounded-pill px-3 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 scale-on-hover"
                     title="<?= __('export_list') ?? 'Exporter PDF' ?>">
                     <i class="bi bi-file-earmark-pdf text-danger fs-6"></i>
-                    <span class="d-none d-sm-inline"><?= __('export') ?? 'Exporter' ?></span>
+                    <span class="d-none d-sm-inline"><?= __('export') ?? 'Exporter PDF' ?></span>
+                </a>
+                <a id="btn-export-excel" href="/subjects/exportExcel?<?= http_build_query($filters) ?>"
+                    class="btn btn-success rounded-pill px-3 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 scale-on-hover"
+                    title="Exporter au format Excel (.xlsx)">
+                    <i class="bi bi-file-earmark-excel fs-6"></i>
+                    <span class="d-none d-sm-inline">Exporter Excel</span>
                 </a>
                 <?php if ($canManage): ?>
                     <button type="button"
@@ -180,6 +186,26 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_subjects');
                                         <span class="badge bg-primary bg-opacity-10 text-primary fw-bold px-3 py-1 rounded-3">
                                             <?= __('coef') ?>: <?= (int) $s['coefficient'] ?>
                                         </span>
+                                        <?php if (isset($s['vhm']) && $s['vhm'] !== null && $s['vhm'] !== ''): ?>
+                                            <span class="badge bg-info bg-opacity-10 text-info fw-bold px-2 py-1 rounded-3 ms-1" title="Volume Horaire Ministériel">
+                                                VHm: <?= (float) $s['vhm'] ?>h
+                                            </span>
+                                        <?php endif; ?>
+                                        <?php if (isset($s['vhp']) && $s['vhp'] !== null && $s['vhp'] !== ''): ?>
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary fw-bold px-2 py-1 rounded-3 ms-1" title="Volume Horaire Proposé">
+                                                VHp: <?= (float) $s['vhp'] ?>h
+                                            </span>
+                                        <?php endif; ?>
+                                        <?php if (isset($s['th_max']) && $s['th_max'] !== null && $s['th_max'] !== ''): ?>
+                                            <span class="badge bg-warning bg-opacity-10 text-dark fw-bold px-2 py-1 rounded-3 ms-1" title="Taux Horaire Maximal">
+                                                TH(Max): <?= (float) $s['th_max'] ?>h
+                                            </span>
+                                        <?php endif; ?>
+                                        <?php if (!empty($s['observations'])): ?>
+                                            <div class="mt-1 text-muted extra-small fst-italic">
+                                                <i class="bi bi-info-circle me-1"></i><?= htmlspecialchars((string)$s['observations']) ?>
+                                            </div>
+                                        <?php endif; ?>
                                         <?php if (!empty($s['teaching_type_nom'])): ?>
                                             <div class="mt-1 d-flex gap-1 flex-wrap align-items-center">
                                                 <span
@@ -644,9 +670,32 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_subjects');
                 if (currentClassId && !classValid) {
                     filterClass.value = '';
                 }
+
+                updateExportLinks();
+            }
+
+            function updateExportLinks() {
+                const searchInput = document.getElementById('search-input');
+                const btnPdf = document.getElementById('btn-export-pdf');
+                const btnExcel = document.getElementById('btn-export-excel');
+                
+                const params = new URLSearchParams();
+                if (searchInput && searchInput.value.trim() !== '') params.set('q', searchInput.value.trim());
+                if (filterTT && filterTT.value) params.set('teaching_type_id', filterTT.value);
+                if (filterDept && filterDept.value) params.set('department_id', filterDept.value);
+                if (filterClass && filterClass.value) params.set('class_id', filterClass.value);
+
+                const queryString = params.toString() ? `?${params.toString()}` : '';
+                if (btnPdf) btnPdf.setAttribute('href', `/subjects/export${queryString}`);
+                if (btnExcel) btnExcel.setAttribute('href', `/subjects/exportExcel${queryString}`);
             }
 
             filterTT.addEventListener('change', updateDependentFilters);
+            if (filterDept) filterDept.addEventListener('change', updateExportLinks);
+            if (filterClass) filterClass.addEventListener('change', updateExportLinks);
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) searchInput.addEventListener('input', updateExportLinks);
+
             updateDependentFilters();
 
             // Gestion de l'importation Excel Matières via AJAX

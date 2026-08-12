@@ -77,6 +77,161 @@ class SubjectController
 
         $this->streamPdf($html, "Registre_Matieres_" . date('Y-m-d') . ".pdf");
     }
+    public function exportExcel()
+    {
+        PermissionManager::requirePermission('manage_subjects');
+
+        [$subjects] = $this->fetchSubjectsFromFilters();
+
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        ini_set('memory_limit', '512M');
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Matières');
+
+        $headers = [
+            'A1' => 'Matière',
+            'B1' => 'Coef',
+            'C1' => 'Groupe',
+            'D1' => 'Classes concernées',
+            'E1' => 'VHm',
+            'F1' => 'VHp',
+            'G1' => 'TH(Max)',
+            'H1' => 'Observations'
+        ];
+
+        foreach ($headers as $cell => $value) {
+            $sheet->setCellValue($cell, $value);
+        }
+
+        $headerStyle = [
+            'font' => [
+                'bold' => true,
+                'color' => ['rgb' => 'FFFFFF'],
+                'size' => 11
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '1F4E78']
+            ],
+            'alignment' => [
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT
+            ]
+        ];
+        $sheet->getStyle('A1:H1')->applyFromArray($headerStyle);
+        $sheet->getStyle('B1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT);
+        $sheet->getStyle('E1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT);
+        $sheet->getStyle('F1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT);
+        $sheet->getStyle('G1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT);
+        $sheet->getRowDimension(1)->setRowHeight(26);
+
+        $row = 2;
+        foreach ($subjects as $s) {
+            $nom = $s['nom'] ?? '';
+            $coef = is_numeric($s['coefficient']) ? (float)$s['coefficient'] : 1;
+            
+            $groupe = !empty($s['subject_group_libelle']) 
+                ? $s['subject_group_libelle'] 
+                : (!empty($s['groupe']) ? $s['groupe'] : '-');
+                
+            $classes = !empty($s['classes_list']) ? $s['classes_list'] : '-';
+            $vhm = ($s['vhm'] !== null && $s['vhm'] !== '') ? (float)$s['vhm'] : null;
+            $vhp = ($s['vhp'] !== null && $s['vhp'] !== '') ? (float)$s['vhp'] : null;
+            $thMax = ($s['th_max'] !== null && $s['th_max'] !== '') ? (float)$s['th_max'] : null;
+            $observations = !empty($s['observations']) ? $s['observations'] : '';
+
+            $sheet->setCellValue("A{$row}", $nom);
+            $sheet->setCellValue("B{$row}", $coef);
+            $sheet->setCellValue("C{$row}", $groupe);
+            $sheet->setCellValue("D{$row}", $classes);
+
+            if ($vhm !== null) {
+                $sheet->setCellValue("E{$row}", $vhm);
+                $sheet->getStyle("E{$row}")->getNumberFormat()->setFormatCode('#,##0');
+            } else {
+                $sheet->setCellValue("E{$row}", '');
+            }
+
+            if ($vhp !== null) {
+                $sheet->setCellValue("F{$row}", $vhp);
+                $sheet->getStyle("F{$row}")->getNumberFormat()->setFormatCode('#,##0');
+            } else {
+                $sheet->setCellValue("F{$row}", '');
+            }
+
+            if ($thMax !== null) {
+                $sheet->setCellValue("G{$row}", $thMax);
+                $sheet->getStyle("G{$row}")->getNumberFormat()->setFormatCode('#,##0');
+            } else {
+                $sheet->setCellValue("G{$row}", '');
+            }
+
+            $sheet->setCellValue("H{$row}", $observations);
+
+            $sheet->getStyle("B{$row}")->getNumberFormat()->setFormatCode('#,##0');
+            $sheet->getStyle("B{$row}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT);
+            $sheet->getStyle("E{$row}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT);
+            $sheet->getStyle("F{$row}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT);
+            $sheet->getStyle("G{$row}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT);
+
+            $sheet->getStyle("D{$row}")->getAlignment()->setWrapText(true);
+            $sheet->getStyle("H{$row}")->getAlignment()->setWrapText(true);
+
+            $row++;
+        }
+
+        $lastDataRow = $row - 1;
+
+        // Ligne du Total VHm
+        $sheet->setCellValue("A{$row}", 'TOTAL VHm');
+        if ($lastDataRow >= 2) {
+            $sheet->setCellValue("E{$row}", "=SUM(E2:E{$lastDataRow})");
+        } else {
+            $sheet->setCellValue("E{$row}", 0);
+        }
+
+        $totalStyle = [
+            'font' => [
+                'bold' => true,
+                'size' => 11
+            ],
+            'borders' => [
+                'top' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN],
+                'bottom' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_DOUBLE]
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => 'F2F4F7']
+            ]
+        ];
+        $sheet->getStyle("A{$row}:H{$row}")->applyFromArray($totalStyle);
+        $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
+        $sheet->getStyle("E{$row}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT);
+        $sheet->getStyle("E{$row}")->getNumberFormat()->setFormatCode('#,##0');
+
+        if ($lastDataRow >= 2) {
+            $sheet->setAutoFilter("A1:H{$lastDataRow}");
+        }
+        $sheet->freezePane('A2');
+
+        foreach (range('A', 'H') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $filename = "matieres_etablissement_" . date('Y-m-d') . ".xlsx";
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $writer->save('php://output');
+        exit;
+    }
 
     protected function streamPdf(string $html, string $filename)
     {
@@ -124,6 +279,10 @@ class SubjectController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $nom = trim($_POST['nom'] ?? '');
             $coeff = (int) ($_POST['coefficient'] ?? 1);
+            $vhm = (isset($_POST['vhm']) && $_POST['vhm'] !== '' && is_numeric($_POST['vhm'])) ? (float) $_POST['vhm'] : null;
+            $vhp = (isset($_POST['vhp']) && $_POST['vhp'] !== '' && is_numeric($_POST['vhp'])) ? (float) $_POST['vhp'] : null;
+            $th_max = (isset($_POST['th_max']) && $_POST['th_max'] !== '' && is_numeric($_POST['th_max'])) ? (float) $_POST['th_max'] : null;
+            $observations = (isset($_POST['observations']) && trim($_POST['observations']) !== '') ? trim($_POST['observations']) : null;
             $subject_group_id = !empty($_POST['subject_group_id']) ? (int) $_POST['subject_group_id'] : null;
             $groupe = trim($_POST['groupe'] ?? 'Groupe 1');
             $teaching_type_id = !empty($_POST['teaching_type_id']) ? (int) $_POST['teaching_type_id'] : null;
@@ -196,8 +355,8 @@ class SubjectController
             try {
                 $this->db->beginTransaction();
 
-                $stmt = $this->db->prepare("INSERT INTO subjects (nom, coefficient, groupe, subject_group_id, teaching_type_id, department_id, code_uv, code_ue) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$nom, $coeff, $groupe, $subject_group_id, $teaching_type_id, $department_id, $code_uv, $code_ue]);
+                $stmt = $this->db->prepare("INSERT INTO subjects (nom, coefficient, groupe, subject_group_id, teaching_type_id, department_id, code_uv, code_ue, vhm, vhp, th_max, observations) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$nom, $coeff, $groupe, $subject_group_id, $teaching_type_id, $department_id, $code_uv, $code_ue, $vhm, $vhp, $th_max, $observations]);
                 $subject_id = $this->db->lastInsertId();
 
                 $academicYearId = $this->academicYearService->getActiveYearId();
@@ -262,6 +421,10 @@ class SubjectController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $nom = trim($_POST['nom'] ?? '');
             $coeff = (int) ($_POST['coefficient'] ?? 1);
+            $vhm = (isset($_POST['vhm']) && $_POST['vhm'] !== '' && is_numeric($_POST['vhm'])) ? (float) $_POST['vhm'] : null;
+            $vhp = (isset($_POST['vhp']) && $_POST['vhp'] !== '' && is_numeric($_POST['vhp'])) ? (float) $_POST['vhp'] : null;
+            $th_max = (isset($_POST['th_max']) && $_POST['th_max'] !== '' && is_numeric($_POST['th_max'])) ? (float) $_POST['th_max'] : null;
+            $observations = (isset($_POST['observations']) && trim($_POST['observations']) !== '') ? trim($_POST['observations']) : null;
             $subject_group_id = !empty($_POST['subject_group_id']) ? (int) $_POST['subject_group_id'] : null;
             $groupe = trim($_POST['groupe'] ?? 'Groupe 1');
             $teaching_type_id = !empty($_POST['teaching_type_id']) ? (int) $_POST['teaching_type_id'] : null;
@@ -293,7 +456,7 @@ class SubjectController
 
             if (empty($nom) || empty($classes_ids)) {
                 $error = \__('subject_name_and_one_class_required');
-                $subject = ['id' => $id, 'nom' => $nom, 'coefficient' => $coeff, 'groupe' => $groupe, 'subject_group_id' => $subject_group_id, 'teaching_type_id' => $teaching_type_id, 'department_id' => $department_id, 'code_uv' => $code_uv, 'code_ue' => $code_ue];
+                $subject = ['id' => $id, 'nom' => $nom, 'coefficient' => $coeff, 'groupe' => $groupe, 'subject_group_id' => $subject_group_id, 'teaching_type_id' => $teaching_type_id, 'department_id' => $department_id, 'code_uv' => $code_uv, 'code_ue' => $code_ue, 'vhm' => $vhm, 'vhp' => $vhp, 'th_max' => $th_max, 'observations' => $observations];
                 $assigned_classes = $classes_ids;
                 $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $teachingTypes = $this->db->query("SELECT id, nom, code FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -312,7 +475,7 @@ class SubjectController
                 $deptTeachingTypeId = $deptStmt->fetchColumn();
                 if ($deptTeachingTypeId && $deptTeachingTypeId != $teaching_type_id) {
                     $error = __('department_teaching_type_mismatch') ?? 'Le type d\'enseignement de la matière doit correspondre à celui du département.';
-                    $subject = ['id' => $id, 'nom' => $nom, 'coefficient' => $coeff, 'groupe' => $groupe, 'subject_group_id' => $subject_group_id, 'teaching_type_id' => $teaching_type_id, 'department_id' => $department_id, 'code_uv' => $code_uv, 'code_ue' => $code_ue];
+                    $subject = ['id' => $id, 'nom' => $nom, 'coefficient' => $coeff, 'groupe' => $groupe, 'subject_group_id' => $subject_group_id, 'teaching_type_id' => $teaching_type_id, 'department_id' => $department_id, 'code_uv' => $code_uv, 'code_ue' => $code_ue, 'vhm' => $vhm, 'vhp' => $vhp, 'th_max' => $th_max, 'observations' => $observations];
                     $assigned_classes = $classes_ids;
                     $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                     $teachingTypes = $this->db->query("SELECT id, nom, code FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -328,7 +491,7 @@ class SubjectController
             $duplicateClasses = $this->findDuplicateClassesForSubjectName($nom, $classes_ids, (int) $id);
             if (!empty($duplicateClasses)) {
                 $error = \__('subject_already_exists_in_classes', ['classes' => implode(', ', $duplicateClasses)]);
-                $subject = ['id' => $id, 'nom' => $nom, 'coefficient' => $coeff, 'groupe' => $groupe, 'subject_group_id' => $subject_group_id, 'teaching_type_id' => $teaching_type_id, 'department_id' => $department_id, 'code_uv' => $code_uv, 'code_ue' => $code_ue];
+                $subject = ['id' => $id, 'nom' => $nom, 'coefficient' => $coeff, 'groupe' => $groupe, 'subject_group_id' => $subject_group_id, 'teaching_type_id' => $teaching_type_id, 'department_id' => $department_id, 'code_uv' => $code_uv, 'code_ue' => $code_ue, 'vhm' => $vhm, 'vhp' => $vhp, 'th_max' => $th_max, 'observations' => $observations];
                 $assigned_classes = $classes_ids;
                 $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $teachingTypes = $this->db->query("SELECT id, nom, code FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -343,8 +506,8 @@ class SubjectController
             try {
                 $this->db->beginTransaction();
 
-                $stmt = $this->db->prepare("UPDATE subjects SET nom = ?, coefficient = ?, groupe = ?, subject_group_id = ?, teaching_type_id = ?, department_id = ?, code_uv = ?, code_ue = ? WHERE id = ?");
-                $stmt->execute([$nom, $coeff, $groupe, $subject_group_id, $teaching_type_id, $department_id, $code_uv, $code_ue, $id]);
+                $stmt = $this->db->prepare("UPDATE subjects SET nom = ?, coefficient = ?, groupe = ?, subject_group_id = ?, teaching_type_id = ?, department_id = ?, code_uv = ?, code_ue = ?, vhm = ?, vhp = ?, th_max = ?, observations = ? WHERE id = ?");
+                $stmt->execute([$nom, $coeff, $groupe, $subject_group_id, $teaching_type_id, $department_id, $code_uv, $code_ue, $vhm, $vhp, $th_max, $observations, $id]);
 
                 $stmt_del = $this->db->prepare("DELETE FROM subject_classes WHERE subject_id = ? AND academic_year_id = ?");
                 $stmt_del->execute([$id, $academicYearId]);
@@ -361,7 +524,7 @@ class SubjectController
             } catch (\PDOException $e) {
                 $this->db->rollBack();
                 $error = \__('server_error_subject_update');
-                $subject = ['id' => $id, 'nom' => $nom, 'coefficient' => $coeff, 'groupe' => $groupe, 'teaching_type_id' => $teaching_type_id];
+                $subject = ['id' => $id, 'nom' => $nom, 'coefficient' => $coeff, 'groupe' => $groupe, 'teaching_type_id' => $teaching_type_id, 'vhm' => $vhm, 'vhp' => $vhp, 'th_max' => $th_max, 'observations' => $observations];
                 $assigned_classes = $classes_ids;
                 $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
