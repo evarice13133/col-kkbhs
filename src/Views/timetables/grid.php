@@ -21,7 +21,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
                     <span
                         class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2.5 py-1 rounded-pill fw-medium"
                         style="font-size: 0.75rem;">
-                        <i class="bi bi-mortarboard-fill me-1"></i><?= __('timetables_type') ?> Supérieur LMD
+                        <i class="bi bi-mortarboard-fill me-1"></i><?= __('timetables_type') ?> <?= h($cycleRow['teaching_type_name'] ?? 'Enseignement') ?>
                     </span>
                     <span
                         class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2.5 py-1 rounded-pill fw-medium"

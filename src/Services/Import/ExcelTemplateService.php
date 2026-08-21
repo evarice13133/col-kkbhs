@@ -222,9 +222,9 @@ class ExcelTemplateService
         $validation->setShowInputMessage(true);
         $validation->setShowErrorMessage(true);
         $validation->setShowDropDown(true);
-        $validation->setErrorTitle(__('input_error') ?? 'Erreur de saisie');
+        $validation->setErrorTitle(function_exists('\__') ? \__('input_error') : 'Erreur de saisie');
         $validation->setError($hint);
-        $validation->setPromptTitle(__('select_option') ?? 'Choisir une option');
+        $validation->setPromptTitle(function_exists('\__') ? \__('select_option') : 'Choisir une option');
         $validation->setFormula1($range);
         return $validation;
     }
@@ -373,41 +373,27 @@ class ExcelTemplateService
             $sheet = $spreadsheet->createSheet();
             $sheet->setTitle(substr($ttNom, 0, 31));
 
-            // En-têtes de colonnes
+            // En-têtes de colonnes alignés sur l'export
             $headers = $lang === 'fr'
                 ? [
-                    'A1' => 'Matiere', 
-                    'B1' => 'Cycle', 
-                    'C1' => 'Departement', 
-                    'D1' => 'Coefficient', 
-                    'E1' => 'Groupe', 
-                    'F1' => 'Classe 1', 
-                    'G1' => 'Classe 2', 
-                    'H1' => 'Classe 3', 
-                    'I1' => 'Classe 4', 
-                    'J1' => 'Classe 5', 
-                    'K1' => 'Classe 6', 
-                    'L1' => 'Classe 7', 
-                    'M1' => 'Classe 8', 
-                    'N1' => 'Classe 9', 
-                    'O1' => 'Classe 10'
+                    'A1' => 'Matière', 
+                    'B1' => 'Coef', 
+                    'C1' => 'Groupe', 
+                    'D1' => 'Classes concernées', 
+                    'E1' => 'VHm', 
+                    'F1' => 'VHp', 
+                    'G1' => 'TH(Max)', 
+                    'H1' => 'Observations'
                 ]
                 : [
                     'A1' => 'Subject', 
-                    'B1' => 'Cycle', 
-                    'C1' => 'Department', 
-                    'D1' => 'Coefficient', 
-                    'E1' => 'Group', 
-                    'F1' => 'Class 1', 
-                    'G1' => 'Class 2', 
-                    'H1' => 'Class 3', 
-                    'I1' => 'Class 4', 
-                    'J1' => 'Class 5', 
-                    'K1' => 'Class 6', 
-                    'L1' => 'Class 7', 
-                    'M1' => 'Class 8', 
-                    'N1' => 'Class 9', 
-                    'O1' => 'Class 10'
+                    'B1' => 'Coef', 
+                    'C1' => 'Group', 
+                    'D1' => 'Classes concerned', 
+                    'E1' => 'VHm', 
+                    'F1' => 'VHp', 
+                    'G1' => 'TH(Max)', 
+                    'H1' => 'Observations'
                 ];
 
             foreach ($headers as $cell => $value) {
@@ -417,88 +403,47 @@ class ExcelTemplateService
             // Appliquer le style aux en-têtes
             $styleArray = [
                 'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-                'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
+                'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
                 'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]],
-                'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '2563EB']]
+                'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '1F4E78']]
             ];
-            $sheet->getStyle('A1:O1')->applyFromArray($styleArray);
+            $sheet->getStyle('A1:H1')->applyFromArray($styleArray);
+            $sheet->getRowDimension(1)->setRowHeight(26);
 
-            $cycleCount = count($cycleList);
-            $deptCount = count($deptList);
             $groupCount = count($groupList);
-            $classCount = count($classList);
 
-            // Validations sur 1000 lignes
-            // Validation Cycle
-            if ($cycleCount > 0) {
-                $validationCycle = $this->createDropdown(
-                    "SUBJECT_DATASOURCES!\${$colCycle}\$1:\${$colCycle}\$" . $cycleCount,
-                    $lang === 'fr' ? 'Choisir un Cycle' : 'Choose a Cycle'
-                );
-                for ($row = 2; $row <= 1000; $row++) {
-                    $sheet->getCell('B' . $row)->setDataValidation(clone $validationCycle);
-                }
-            }
-
-            // Validation Département
-            if ($deptCount > 0) {
-                $validationDept = $this->createDropdown(
-                    "SUBJECT_DATASOURCES!\${$colDept}\$1:\${$colDept}\$" . $deptCount,
-                    $lang === 'fr' ? 'Choisir un Département' : 'Choose a Department'
-                );
-                for ($row = 2; $row <= 1000; $row++) {
-                    $sheet->getCell('C' . $row)->setDataValidation(clone $validationDept);
-                }
-            }
-
-            // Validation Groupe
+            // Validation Groupe (Colonne C)
             if ($groupCount > 0) {
                 $validationGroup = $this->createDropdown(
                     "SUBJECT_DATASOURCES!\${$colGroup}\$1:\${$colGroup}\$" . $groupCount,
                     $lang === 'fr' ? 'Choisir un Groupe' : 'Choose a Group'
                 );
                 for ($row = 2; $row <= 1000; $row++) {
-                    $sheet->getCell('E' . $row)->setDataValidation(clone $validationGroup);
+                    $sheet->getCell('C' . $row)->setDataValidation(clone $validationGroup);
                 }
             }
 
-            // Validation Classes (colonnes F à O)
-            if ($classCount > 0) {
-                $validationClasse = $this->createDropdown(
-                    "SUBJECT_DATASOURCES!\${$colClass}\$1:\${$colClass}\$" . $classCount,
-                    $lang === 'fr' ? 'Choisir une Classe' : 'Choose a Class'
-                );
-                for ($row = 2; $row <= 1000; $row++) {
-                    foreach (range('F', 'O') as $colLetter) {
-                        $sheet->getCell($colLetter . $row)->setDataValidation(clone $validationClasse);
-                    }
-                }
+            // Lignes d'exemple
+            $exampleGroup = (string) ($groupList[0] ?? ($lang === 'fr' ? 'Informatique' : 'Computer Science'));
+            $exampleClasses = count($classList) >= 2 
+                ? implode(', ', array_slice($classList, 0, 2)) 
+                : (count($classList) === 1 ? (string)$classList[0] : 'IGL 1, IGL 2');
+
+            $sheet->setCellValue('A2', $lang === 'fr' ? 'Algorithmique' : 'Algorithms');
+            $sheet->setCellValue('B2', 3);
+            $sheet->setCellValue('C2', $exampleGroup);
+            $sheet->setCellValue('D2', $exampleClasses);
+            $sheet->setCellValue('E2', 60);
+            $sheet->setCellValue('F2', 54);
+            $sheet->setCellValue('G2', 30);
+            $sheet->setCellValue('H2', $lang === 'fr' ? 'Cours renforcé' : 'Advanced course');
+
+            $sheet->getStyle('B2:G2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT);
+            $sheet->getStyle('A2:H2')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+
+            foreach (range('A', 'H') as $col) {
+                $sheet->getColumnDimension($col)->setAutoSize(true);
             }
-
-            // Ligne d'exemple
-            $exampleCycle = (string) ($cycleList[0] ?? ($lang === 'fr' ? '1er Cycle' : '1st Cycle'));
-            $exampleDept = (string) ($deptList[0] ?? ($lang === 'fr' ? 'Sciences' : 'Sciences'));
-            $exampleGroup = (string) ($groupList[0] ?? ($lang === 'fr' ? 'Groupe 1' : 'Group 1'));
-            $exampleClass1 = (string) ($classList[0] ?? ($lang === 'fr' ? '6eme A' : 'Grade 6 A'));
-            $exampleClass2 = (string) ($classList[1] ?? ($lang === 'fr' ? '5eme A' : 'Grade 7 A'));
-
-            $sheet->setCellValue('A2', $lang === 'fr' ? 'Mathematiques' : 'Mathematics');
-            $sheet->setCellValue('B2', $exampleCycle);
-            $sheet->setCellValue('C2', $exampleDept);
-            $sheet->setCellValue('D2', 4);
-            $sheet->setCellValue('E2', $exampleGroup);
-            $sheet->setCellValue('F2', $exampleClass1);
-            if ($classCount > 1) {
-                $sheet->setCellValue('G2', $exampleClass2);
-            }
-
-            $sheet->getStyle('A2:O2')->getFont()->setItalic(true);
-            $sheet->getStyle('A2:O2')->getFont()->getColor()->setRGB('6B7280');
-
-            foreach (range('A', 'O') as $colLetter) {
-                $sheet->getColumnDimension($colLetter)->setAutoSize(true);
-            }
-
             $i++;
         }
 

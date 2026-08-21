@@ -32,12 +32,22 @@ class SubjectController
             FOREIGN KEY (academic_year_id) REFERENCES academic_years(id) ON UPDATE CASCADE
         )");
 
-        // Ensure 'groupe' column exists in subjects table
+        // Ensure optional columns exist in subjects table
         try {
             $this->db->exec("ALTER TABLE subjects ADD COLUMN groupe VARCHAR(50) DEFAULT 'Groupe 1'");
-        } catch (\PDOException $e) {
-            // Column probably already exists, ignore
-        }
+        } catch (\PDOException $e) {}
+        try {
+            $this->db->exec("ALTER TABLE subjects ADD COLUMN vhm DECIMAL(8,2) DEFAULT NULL");
+        } catch (\PDOException $e) {}
+        try {
+            $this->db->exec("ALTER TABLE subjects ADD COLUMN vhp DECIMAL(8,2) DEFAULT NULL");
+        } catch (\PDOException $e) {}
+        try {
+            $this->db->exec("ALTER TABLE subjects ADD COLUMN th_max DECIMAL(8,2) DEFAULT NULL");
+        } catch (\PDOException $e) {}
+        try {
+            $this->db->exec("ALTER TABLE subjects ADD COLUMN observations TEXT DEFAULT NULL");
+        } catch (\PDOException $e) {}
     }
 
     public function index()
@@ -139,9 +149,9 @@ class SubjectController
                 : (!empty($s['groupe']) ? $s['groupe'] : '-');
                 
             $classes = !empty($s['classes_list']) ? $s['classes_list'] : '-';
-            $vhm = ($s['vhm'] !== null && $s['vhm'] !== '') ? (float)$s['vhm'] : null;
-            $vhp = ($s['vhp'] !== null && $s['vhp'] !== '') ? (float)$s['vhp'] : null;
-            $thMax = ($s['th_max'] !== null && $s['th_max'] !== '') ? (float)$s['th_max'] : null;
+            $vhm = (!empty($s['vhm']) || (isset($s['vhm']) && is_numeric($s['vhm']))) ? (float)$s['vhm'] : null;
+            $vhp = (!empty($s['vhp']) || (isset($s['vhp']) && is_numeric($s['vhp']))) ? (float)$s['vhp'] : null;
+            $thMax = (!empty($s['th_max']) || (isset($s['th_max']) && is_numeric($s['th_max']))) ? (float)$s['th_max'] : null;
             $observations = !empty($s['observations']) ? $s['observations'] : '';
 
             $sheet->setCellValue("A{$row}", $nom);

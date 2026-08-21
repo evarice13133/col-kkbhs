@@ -62,10 +62,27 @@ ob_start();
 
             <form id="expressForm" method="POST" action="/timetables/wizard/generate" class="row g-3 align-items-end">
                 <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
-                <input type="hidden" name="teaching_type_id" value="<?= $defaultType['id'] ?? 9 ?>">
+
+                <!-- ÉTAPE 0: Type d'enseignement -->
+                <div class="col-md-3">
+                    <div class="d-flex align-items-center justify-content-between mb-1.5">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="google-step-badge bg-primary text-white shadow-xs transition-all">0</span>
+                            <label class="form-label font-google fw-bold text-google-dark small mb-0">Type d'enseignement *</label>
+                        </div>
+                        <span class="badge bg-primary text-white rounded-pill extra-small font-google fw-bold shadow-xs transition-all">Filtrage</span>
+                    </div>
+                    <div class="position-relative">
+                        <select name="teaching_type_id" id="express_teaching_type_id" class="form-select form-select-lg rounded-pill border-2 font-google fw-bold text-google-dark shadow-xs google-input-glow" required onchange="onExpressTeachingTypeChange(this.value)">
+                            <?php foreach ($teachingTypes as $tt): ?>
+                                <option value="<?= $tt['id'] ?>" <?= ($defaultType && $defaultType['id'] == $tt['id']) ? 'selected' : '' ?>><?= h($tt['nom']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
 
                 <!-- ÉTAPE 1: Cycle (Toujours actif au départ) -->
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="d-flex align-items-center justify-content-between mb-1.5">
                         <div class="d-flex align-items-center gap-2">
                             <span class="google-step-badge bg-google-blue shadow-xs transition-all" id="badgeStep1">1</span>
@@ -85,7 +102,7 @@ ob_start();
                 </div>
 
                 <!-- ÉTAPE 2: Niveau (Désactivé jusqu'au choix du Cycle) -->
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="d-flex align-items-center justify-content-between mb-1.5">
                         <div class="d-flex align-items-center gap-2">
                             <span class="google-step-badge bg-secondary opacity-50 transition-all" id="badgeStep2">2</span>
@@ -102,7 +119,7 @@ ob_start();
                 </div>
 
                 <!-- ÉTAPE 3: Semaine (Désactivé jusqu'au choix du Niveau) -->
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="d-flex align-items-center justify-content-between mb-1.5">
                         <div class="d-flex align-items-center gap-2">
                             <span class="google-step-badge bg-secondary opacity-50 transition-all" id="badgeStep3">3</span>
@@ -160,43 +177,42 @@ ob_start();
             <form id="wizardForm" method="POST" action="/timetables/wizard/generate">
                 <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
 
-                <!-- Étape 1 : Type d'enseignement (Unique: Supérieur LMD, Verrouillé) -->
+                <!-- Étape 1 : Type d'enseignement -->
                 <div class="wizard-tab-content" id="tab-step-1">
                     <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
                         <div>
                             <h5 class="fw-black text-main-theme mb-1 d-flex align-items-center gap-2">
                                 <i class="bi bi-mortarboard-fill text-primary"></i><?= __('timetables_step_1') ?>
                             </h5>
-                            <p class="text-muted small mb-0"><?= __('timetables_wizard_step1_desc') ?></p>
+                            <p class="text-muted small mb-0">Sélectionnez le type d'enseignement pour lequel générer l'emploi du temps</p>
                         </div>
-                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1.5 font-google extra-small fw-bold">
-                            <i class="bi bi-check-circle-fill me-1"></i>Pré-sélectionné
-                        </span>
                     </div>
 
-                    <div class="row g-3">
-                        <?php foreach ($teachingTypes as $tt): ?>
+                    <div class="row g-3" id="teachingTypesContainer">
+                        <?php foreach ($teachingTypes as $tt): 
+                            $isSel = ($defaultType && $defaultType['id'] == $tt['id']);
+                        ?>
                             <div class="col-md-6">
-                                <div class="card card-theme h-100 border-2 border-primary shadow-sm select-card p-3 rounded-4 bg-primary bg-opacity-10 cursor-not-allowed">
+                                <div class="card card-theme h-100 border-2 <?= $isSel ? 'border-primary shadow-sm bg-primary bg-opacity-10' : '' ?> select-card p-3 rounded-4 cursor-pointer transition-all hover-lift" onclick="selectTeachingType(<?= $tt['id'] ?>, '<?= addslashes($tt['nom']) ?>', this)">
                                     <div class="d-flex align-items-center justify-content-between">
                                         <div class="d-flex align-items-center">
                                             <div class="avatar-init bg-primary text-white me-3 rounded-circle d-flex align-items-center justify-content-center shadow-xs" style="width: 48px; height: 48px;">
                                                 <i class="bi bi-mortarboard-fill fs-4"></i>
                                             </div>
                                             <div>
-                                                <h6 class="fw-bold mb-1 text-main-theme">Supérieur LMD</h6>
-                                                <span class="badge bg-primary text-white border border-primary px-2.5 py-1 rounded-pill small fw-semibold">Code: LMD</span>
+                                                <h6 class="fw-bold mb-1 text-main-theme"><?= h($tt['nom']) ?></h6>
+                                                <span class="badge bg-primary text-white border border-primary px-2.5 py-1 rounded-pill small fw-semibold">Code: <?= h($tt['code'] ?? 'GENERAL') ?></span>
                                             </div>
                                         </div>
                                         <div class="text-primary fs-3">
-                                            <i class="bi bi-check-circle-fill"></i>
+                                            <i class="bi <?= $isSel ? 'bi-check-circle-fill' : 'bi-circle text-muted' ?> select-check-icon transition-all"></i>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         <?php endforeach; ?>
                     </div>
-                    <input type="hidden" name="teaching_type_id" id="input_teaching_type_id" value="<?= $defaultType['id'] ?? 9 ?>" required>
+                    <input type="hidden" name="teaching_type_id" id="input_teaching_type_id" value="<?= $defaultType['id'] ?? 0 ?>" required>
                 </div>
 
                 <!-- Étape 2 : Cycle -->
@@ -425,6 +441,69 @@ function updateStepperNav() {
     }
 }
 
+function selectTeachingType(id, name, el) {
+    document.querySelectorAll('#tab-step-1 .select-card').forEach(c => {
+        c.classList.remove('border-primary', 'shadow-sm', 'bg-primary', 'bg-opacity-10');
+        const icon = c.querySelector('.select-check-icon');
+        if (icon) {
+            icon.className = 'bi bi-circle text-muted fs-4 select-check-icon transition-all';
+        }
+    });
+    if (el) {
+        el.classList.add('border-primary', 'shadow-sm', 'bg-primary', 'bg-opacity-10');
+        const selIcon = el.querySelector('.select-check-icon');
+        if (selIcon) {
+            selIcon.className = 'bi bi-check-circle-fill text-primary fs-4 select-check-icon transition-all';
+        }
+    }
+
+    selectedData.teachingTypeId = id;
+    selectedData.teachingTypeName = name;
+    selectedData.cycleId = null;
+    selectedData.cycleName = '';
+    selectedData.levelId = null;
+    selectedData.levelName = '';
+    document.getElementById('input_teaching_type_id').value = id;
+    document.getElementById('input_cycle_id').value = '';
+    document.getElementById('input_level_id').value = '';
+
+    loadCycles(id);
+}
+
+function onExpressTeachingTypeChange(typeId) {
+    const cycleSelect = document.getElementById('express_cycle_id');
+    const levelSelect = document.getElementById('express_level_id');
+    const weekSelect = document.getElementById('express_week_id');
+    const cycleLoader = document.getElementById('expressCycleLoader');
+
+    levelSelect.disabled = true;
+    levelSelect.classList.add('opacity-50');
+    levelSelect.innerHTML = '<option value="">-- 2. Choisir d\'abord un cycle --</option>';
+
+    weekSelect.disabled = true;
+    weekSelect.classList.add('opacity-50');
+
+    if (cycleLoader) cycleLoader.classList.remove('d-none');
+
+    fetch(`/timetables/api/wizard/cycles?teaching_type_id=${typeId}`)
+        .then(r => r.json())
+        .then(data => {
+            if (cycleLoader) cycleLoader.classList.add('d-none');
+            const cycles = data.cycles || (Array.isArray(data) ? data : []);
+            let options = '<option value="">-- 1. Sélectionner un cycle --</option>';
+            cycles.forEach(c => {
+                options += `<option value="${c.id}">${escapeHtml(c.nom)}</option>`;
+            });
+            cycleSelect.innerHTML = options;
+            showGoogleToast(`Cycles chargés pour le type sélectionné (${cycles.length})`, 'bi-diagram-3-fill');
+        })
+        .catch(err => {
+            if (cycleLoader) cycleLoader.classList.add('d-none');
+            console.error('Erreur chargement cycles express:', err);
+            showGoogleToast('Erreur lors du chargement des cycles', 'bi-exclamation-triangle-fill');
+        });
+}
+
 function loadCycles(typeId) {
     renderSkeletons('cyclesContainer', 4);
     fetch(`/timetables/api/wizard/cycles?teaching_type_id=${typeId}`)
@@ -457,7 +536,7 @@ function loadCycles(typeId) {
                     `;
                 });
             } else {
-                container.innerHTML = '<div class="col-12"><div class="alert alert-warning rounded-4 border-0 shadow-sm p-4 text-center"><i class="bi bi-exclamation-triangle-fill fs-2 text-warning mb-2 d-block"></i><h6 class="fw-bold text-main-theme">Aucun cycle LMD disponible</h6><p class="text-muted small mb-0">Aucun cycle académique rattaché au Supérieur LMD n\'est disponible dans le système.</p></div></div>';
+                container.innerHTML = '<div class="col-12"><div class="alert alert-warning rounded-4 border-0 shadow-sm p-4 text-center"><i class="bi bi-exclamation-triangle-fill fs-2 text-warning mb-2 d-block"></i><h6 class="fw-bold text-main-theme">Aucun cycle disponible</h6><p class="text-muted small mb-0">Aucun cycle académique n\'est rattaché à ce type d\'enseignement.</p></div></div>';
             }
         })
         .catch(err => {

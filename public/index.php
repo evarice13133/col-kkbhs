@@ -560,7 +560,7 @@ elseif (strpos($path, '/teachers') === 0) {
     if ($path === '/bulletins')
         $c->index();
     elseif ($path === '/bulletins/classes-json')
-        $c->getClassesBySectionJson();
+        $c->getClassesByTeachingTypeJson();
     elseif ($path === '/bulletins/sequence')
         $c->sequence();
     elseif ($path === '/bulletins/sequence/class')

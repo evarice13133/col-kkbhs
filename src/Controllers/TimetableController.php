@@ -120,8 +120,6 @@ class TimetableController
         $classes = $this->db->query("
             SELECT c.id, c.nom 
             FROM classes c
-            LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id
-            WHERE tt.code = 'LMD' OR tt.nom LIKE '%Supérieur%' OR tt.nom LIKE '%LMD%' OR c.teaching_type_id = 9
             ORDER BY c.nom ASC
         ")->fetchAll(PDO::FETCH_ASSOC);
         $weeks = $selectedYear ? $this->weekModel->getByAcademicYear($selectedYear) : $this->weekModel->getAll();
@@ -582,21 +580,15 @@ class TimetableController
             exit;
         }
 
-        // Validation backend stricte anti-injection de cycle secondaire
+        // Validation backend de l'existence du cycle
         $validCycleStmt = $this->db->prepare("
             SELECT c.id 
             FROM cycles c 
-            LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id 
-            WHERE c.id = :cycle_id 
-              AND (c.teaching_type_id = 9 OR tt.code = 'LMD' OR LOWER(tt.nom) LIKE '%lmd%' OR LOWER(tt.nom) LIKE '%supérieur%' OR c.teaching_type_id IS NULL)
-              AND (tt.code IS NULL OR (tt.code != 'SEC00' AND LOWER(tt.nom) NOT LIKE '%secondaire%'))
-              AND LOWER(c.nom) NOT LIKE '%1ere cycle%' 
-              AND LOWER(c.nom) NOT LIKE '%2nd cycle%' 
-              AND LOWER(c.nom) NOT LIKE '%secondaire%'
+            WHERE c.id = :cycle_id AND c.status = 1
         ");
         $validCycleStmt->execute(['cycle_id' => $cycleId]);
         if (!$validCycleStmt->fetch()) {
-            Session::setFlash('error', 'Le cycle sélectionné n\'est pas valide pour le Supérieur LMD.');
+            Session::setFlash('error', 'Le cycle sélectionné n\'est pas valide.');
             header('Location: /timetables/wizard');
             exit;
         }
@@ -654,9 +646,14 @@ class TimetableController
             exit;
         }
 
-        // Charger les métadonnées de la semaine
+        // Charger les métadonnées de la semaine et du cycle (avec type d'enseignement)
         $weekRow = $this->db->query("SELECT * FROM timetable_weeks WHERE id = $weekId")->fetch(PDO::FETCH_ASSOC);
-        $cycleRow = $this->db->query("SELECT * FROM cycles WHERE id = $cycleId")->fetch(PDO::FETCH_ASSOC);
+        $cycleRow = $this->db->query("
+            SELECT c.*, tt.nom as teaching_type_name 
+            FROM cycles c 
+            LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id 
+            WHERE c.id = $cycleId
+        ")->fetch(PDO::FETCH_ASSOC);
         $levelRow = $levelId ? $this->db->query("SELECT * FROM levels WHERE id = $levelId")->fetch(PDO::FETCH_ASSOC) : null;
         $activeYear = $this->academicYearService->getActiveYear();
 
@@ -1442,8 +1439,8 @@ class TimetableController
         $academicYears = $this->academicYearService->getAllYears();
         $selectedYearId = (int)($_GET['academic_year_id'] ?? $activeYearId);
 
-        // Récupération des cycles (Supérieur LMD uniquement)
-        $cycles = $this->wizardService->getCyclesByTeachingType(9);
+        // Récupération des cycles (Tous types d'enseignement)
+        $cycles = $this->wizardService->getCyclesByTeachingType(0);
         $selectedCycleId = (int)($_GET['cycle_id'] ?? ($cycles[0]['id'] ?? 0));
 
         // Récupération des niveaux pour le cycle sélectionné via la table pivot ou le wizard service

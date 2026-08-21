@@ -8,16 +8,16 @@ ob_start();
     <!-- BARRE D'ACTIONS COMPLÈTE : Style Floating Island Responsive -->
     <div class="d-flex justify-content-center mb-4 mb-md-5">
         <div class="filter-island px-3 py-2 shadow-lg animate-slide-down">
-            <form method="GET" action="/honors" class="d-flex align-items-center gap-2 gap-md-3 flex-wrap flex-md-nowrap filter-form w-100">
+            <form method="GET" action="/honors" id="honorFilterForm" class="d-flex align-items-center gap-2 gap-md-3 flex-wrap flex-md-nowrap filter-form w-100">
                 
                 <div class="row g-2 flex-grow-1 w-100 m-0">
-                    <div class="col-12 col-sm-6 col-lg flex-grow-1 p-0 px-sm-1">
+                    <!-- 1. ANNÉE ACADÉMIQUE -->
+                    <div class="col-12 col-sm-4 flex-grow-1 p-0 px-sm-1">
                         <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-3 py-1 w-100">
                             <span class="input-group-text border-0 bg-transparent text-primary small fw-bold text-uppercase me-1">
-                                <?= __('year') ?>
+                                <i class="bi bi-calendar-event me-1"></i><?= __('year') ?>
                             </span>
-                            <select name="academic_year_id" class="form-select border-0 bg-transparent shadow-none fw-bold text-main"
-                                onchange="this.form.submit()">
+                            <select name="academic_year_id" id="academic_year_id_select" class="form-select border-0 bg-transparent shadow-none fw-bold text-main">
                                 <?php foreach ($academicYears as $year): ?>
                                     <option value="<?= $year['id'] ?>" <?= $academicYearId === (int) $year['id'] ? 'selected' : '' ?>>
                                         <?= htmlspecialchars((string) $year['nom']) ?>
@@ -28,13 +28,31 @@ ob_start();
                         </div>
                     </div>
 
-                    <div class="col-12 col-sm-6 col-lg flex-grow-1 p-0 px-sm-1">
+                    <!-- 2. TYPE D'ENSEIGNEMENT -->
+                    <div class="col-12 col-sm-4 flex-grow-1 p-0 px-sm-1">
                         <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-3 py-1 w-100">
                             <span class="input-group-text border-0 bg-transparent text-primary small fw-bold text-uppercase me-1">
-                                <?= __('class') ?>
+                                <i class="bi bi-diagram-3 me-1"></i><?= __('teaching_type') ?? 'Type' ?>
                             </span>
-                            <select name="class_id" class="form-select border-0 bg-transparent shadow-none fw-bold text-main"
-                                onchange="this.form.submit()">
+                            <select name="teaching_type_id" id="teaching_type_id_select"
+                                class="form-select border-0 bg-transparent shadow-none fw-bold text-main">
+                                <?php foreach ($teachingTypes as $type): ?>
+                                    <option value="<?= $type['id'] ?>" <?= $teachingTypeId === (int) $type['id'] ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars((string) $type['nom']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 3. CLASSE -->
+                    <div class="col-12 col-sm-4 flex-grow-1 p-0 px-sm-1">
+                        <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-3 py-1 w-100 position-relative">
+                            <span class="input-group-text border-0 bg-transparent text-primary small fw-bold text-uppercase me-1">
+                                <i class="bi bi-mortarboard me-1"></i><?= __('class') ?>
+                            </span>
+                            <select name="class_id" id="class_id_select" class="form-select border-0 bg-transparent shadow-none fw-bold text-main pe-4"
+                                onchange="document.getElementById('honorFilterForm').submit()">
                                 <option value=""><?= __('choose_class') ?></option>
                                 <?php foreach ($classes as $class): ?>
                                     <option value="<?= $class['id'] ?>" <?= $classId === (int) $class['id'] ? 'selected' : '' ?>>
@@ -42,6 +60,9 @@ ob_start();
                                     </option>
                                 <?php endforeach; ?>
                             </select>
+                            <div id="class_loader_spinner" class="spinner-border spinner-border-sm text-primary position-absolute end-0 top-50 translate-middle-y me-3 d-none" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -62,6 +83,7 @@ ob_start();
                     <div class="modern-card-body p-4 p-lg-5">
                         <form id="unifiedForm" target="_blank" action="#" method="GET">
                             <input type="hidden" name="academic_year_id" value="<?= (int) $academicYearId ?>">
+                            <input type="hidden" name="teaching_type_id" value="<?= (int) $teachingTypeId ?>">
                             <input type="hidden" name="class_id" value="<?= $classId ?>">
 
                             <!-- Step 1: Type Selection -->
@@ -162,6 +184,59 @@ ob_start();
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        const yearSelect = document.getElementById('academic_year_id_select');
+        const teachingTypeSelect = document.getElementById('teaching_type_id_select');
+        const classSelect = document.getElementById('class_id_select');
+        const classLoader = document.getElementById('class_loader_spinner');
+        const filterForm = document.getElementById('honorFilterForm');
+
+        function fetchClassesForFilter(resetAndSubmit = true) {
+            const yearId = yearSelect ? yearSelect.value : '';
+            const typeId = teachingTypeSelect ? teachingTypeSelect.value : '';
+
+            if (!typeId) return;
+
+            if (classLoader) classLoader.classList.remove('d-none');
+            if (classSelect) classSelect.disabled = true;
+
+            fetch(`/bulletins/classes-json?teaching_type_id=${typeId}&academic_year_id=${yearId}`)
+                .then(res => res.json())
+                .then(classes => {
+                    if (classSelect) {
+                        classSelect.innerHTML = `<option value=""><?= __('choose_class') ?></option>`;
+                        classes.forEach(c => {
+                            const opt = document.createElement('option');
+                            opt.value = c.id;
+                            opt.textContent = c.nom;
+                            classSelect.appendChild(opt);
+                        });
+                        classSelect.disabled = false;
+                        if (resetAndSubmit) {
+                            classSelect.value = '';
+                        }
+                    }
+                })
+                .catch(err => console.error('Error fetching classes:', err))
+                .finally(() => {
+                    if (classLoader) classLoader.classList.add('d-none');
+                    if (resetAndSubmit && filterForm) {
+                        filterForm.submit();
+                    }
+                });
+        }
+
+        if (teachingTypeSelect) {
+            teachingTypeSelect.addEventListener('change', function () {
+                fetchClassesForFilter(true);
+            });
+        }
+
+        if (yearSelect) {
+            yearSelect.addEventListener('change', function () {
+                fetchClassesForFilter(true);
+            });
+        }
+
         const form = document.getElementById('unifiedForm');
         if (!form) return;
 

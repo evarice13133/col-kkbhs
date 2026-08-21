@@ -48,27 +48,34 @@ class TranscriptController
             $academicYearId = (int) ($activeYear['id'] ?? 0);
         }
 
-        $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $sectionId = (int) ($_GET['section_id'] ?? 0);
+        // Récupérer uniquement les types d'enseignement actifs
+        $teachingTypes = $this->db->query("SELECT id, code, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
-        $classesQuery = "SELECT c.id, c.nom FROM classes c WHERE 1=1";
-        $classesParams = [];
-        if ($sectionId > 0) {
-            $classesQuery .= " AND c.section_id = ?";
-            $classesParams[] = $sectionId;
-        }
-        if (!PermissionManager::hasPermission('manage_transcripts') && !PermissionManager::hasPermission('manage_bulletins')) {
-            $classesQuery .= " AND EXISTS (SELECT 1 FROM teacher_assignments ta WHERE ta.class_id = c.id AND ta.user_id = ? AND ta.academic_year_id = ?)";
-            $classesParams[] = (int) Session::get('user_id');
-            $classesParams[] = $academicYearId;
-        }
-        $classesQuery .= " ORDER BY c.nom ASC";
-
-        $stmt = $this->db->prepare($classesQuery);
-        $stmt->execute($classesParams);
-        $classes = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
+        $teachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
         $classId = (int) ($_GET['class_id'] ?? 0);
+
+        // Si une classe est sélectionnée sans teaching_type_id spécifié, le retrouver
+        if ($classId > 0 && $teachingTypeId <= 0) {
+            $stmtTt = $this->db->prepare("SELECT teaching_type_id FROM classes WHERE id = ?");
+            $stmtTt->execute([$classId]);
+            $teachingTypeId = (int) ($stmtTt->fetchColumn() ?: 0);
+        }
+
+        // Pré-sélectionner le premier type actif par défaut si aucun n'est spécifié
+        if ($teachingTypeId <= 0 && !empty($teachingTypes)) {
+            $teachingTypeId = (int) $teachingTypes[0]['id'];
+        }
+
+        $classes = $this->getClassesByTeachingType($teachingTypeId, $academicYearId);
+
+        // Sécurité & Cohérence : vérifier si la classe sélectionnée appartient aux classes autorisées du type
+        if ($classId > 0) {
+            $validClassIds = array_column($classes, 'id');
+            if (!in_array($classId, array_map('intval', $validClassIds), true)) {
+                $classId = 0;
+            }
+        }
+
         $students = $classId > 0 ? $this->getStudentsByClass($classId, $academicYearId) : [];
 
         include __DIR__ . '/../Views/transcripts/index.php';
@@ -82,6 +89,7 @@ class TranscriptController
         $studentId = (int) ($_GET['student_id'] ?? 0);
         $classId = (int) ($_GET['class_id'] ?? 0);
         $academicYearId = (int) ($_GET['academic_year_id'] ?? 0);
+        $reqTeachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
 
         if ($academicYearId <= 0) {
             $activeYear = $this->getActiveAcademicYear();
@@ -89,8 +97,23 @@ class TranscriptController
         }
 
         if ($studentId > 0) {
+            // Récupérer la classe de l'élève pour vérifier l'accès et la cohérence avec le type d'enseignement
+            $stmtCls = $this->db->prepare("SELECT class_id FROM students WHERE id = ?");
+            $stmtCls->execute([$studentId]);
+            $stClassId = (int) ($stmtCls->fetchColumn() ?: 0);
+
+            if (!$this->canAccessClass($stClassId, $reqTeachingTypeId)) {
+                header('Location: /transcripts');
+                exit;
+            }
+
             $studentsData = [$this->getTranscriptDataForStudent($studentId, $academicYearId)];
         } elseif ($classId > 0) {
+            if (!$this->canAccessClass($classId, $reqTeachingTypeId)) {
+                header('Location: /transcripts');
+                exit;
+            }
+
             $students = $this->getStudentsByClass($classId, $academicYearId);
             $studentsData = [];
             foreach ($students as $st) {
@@ -385,5 +408,83 @@ class TranscriptController
         if ($note >= 12.0) return 'Assez Bien';
         if ($note >= 10.0) return 'Passable';
         return 'Ajourné';
+    }
+
+    public function getClassesByTeachingType(int $teachingTypeId, int $academicYearId = 0): array
+    {
+        if ($academicYearId <= 0) {
+            $academicYearId = (int) ($this->getActiveAcademicYear()['id'] ?? 0);
+        }
+
+        $classesQuery = "SELECT DISTINCT c.id, c.nom, c.teaching_type_id 
+                         FROM classes c
+                         LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id
+                         LEFT JOIN cycles cy ON c.cycle_id = cy.id
+                         LEFT JOIN sections sec ON c.section_id = sec.id
+                         LEFT JOIN departments d ON c.department_id = d.id
+                         WHERE (c.teaching_type_id IS NULL OR tt.actif = 1)
+                           AND (c.cycle_id IS NULL OR cy.status = 1)
+                           AND (c.section_id IS NULL OR sec.status = 1)
+                           AND (c.department_id IS NULL OR d.status = 1)";
+        $params = [];
+
+        if ($teachingTypeId > 0) {
+            $classesQuery .= " AND c.teaching_type_id = ?";
+            $params[] = $teachingTypeId;
+        }
+
+        if (!PermissionManager::hasPermission('manage_transcripts') && !PermissionManager::hasPermission('manage_bulletins')) {
+            $classesQuery .= " AND EXISTS (SELECT 1 FROM teacher_assignments ta WHERE ta.class_id = c.id AND ta.user_id = ? AND ta.academic_year_id = ?)";
+            $params[] = (int) Session::get('user_id');
+            $params[] = $academicYearId;
+        }
+
+        $classesQuery .= " ORDER BY c.nom ASC";
+
+        $stmt = $this->db->prepare($classesQuery);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    protected function canAccessClass(int $classId, ?int $requestedTeachingTypeId = null): bool
+    {
+        if ($classId <= 0) {
+            return false;
+        }
+
+        $stmt = $this->db->prepare("
+            SELECT c.id, c.teaching_type_id, tt.actif AS type_actif
+            FROM classes c
+            LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id
+            LEFT JOIN cycles cy ON c.cycle_id = cy.id
+            LEFT JOIN sections sec ON c.section_id = sec.id
+            LEFT JOIN departments d ON c.department_id = d.id
+            WHERE c.id = ?
+              AND (c.teaching_type_id IS NULL OR tt.actif = 1)
+              AND (c.cycle_id IS NULL OR cy.status = 1)
+              AND (c.section_id IS NULL OR sec.status = 1)
+              AND (c.department_id IS NULL OR d.status = 1)
+        ");
+        $stmt->execute([$classId]);
+        $classData = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$classData) {
+            return false;
+        }
+
+        if ($requestedTeachingTypeId !== null && $requestedTeachingTypeId > 0) {
+            if ((int) ($classData['teaching_type_id'] ?? 0) !== $requestedTeachingTypeId) {
+                return false;
+            }
+        }
+
+        if (PermissionManager::hasPermission('manage_transcripts') || PermissionManager::hasPermission('manage_bulletins') || in_array(Session::get('user_role'), ['superadmin', 'admin'], true)) {
+            return true;
+        }
+
+        $academicYearId = (int) ($this->getActiveAcademicYear()['id'] ?? 0);
+        $stmtTa = $this->db->prepare("SELECT 1 FROM teacher_assignments WHERE user_id = ? AND class_id = ? AND academic_year_id = ?");
+        $stmtTa->execute([(int) Session::get('user_id'), $classId, $academicYearId]);
+        return (bool) $stmtTa->fetchColumn();
     }
 }

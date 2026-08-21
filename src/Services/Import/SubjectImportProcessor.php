@@ -42,31 +42,26 @@ class SubjectImportProcessor
                 }
 
                 $sheetName = $sheet->getTitle();
-                $teachingTypeId = $this->resolveTeachingTypeIdBySheetName($sheetName);
-                if (!$teachingTypeId) {
-                    continue; // Ignorer les feuilles qui ne correspondent pas à un type d'enseignement actif
-                }
-
                 $rows = $sheet->toArray(null, true, true, true);
                 if (count($rows) < 2) {
-                    continue; // Sauter les feuilles vides ou avec seulement des en-têtes
+                    continue; // Sauter les feuilles vides
                 }
 
                 $headers = array_shift($rows);
-                try {
-                    $this->validateHeaders($headers);
-                } catch (Exception $e) {
-                    $this->errors[] = "Feuille '{$sheetName}' : " . $e->getMessage();
+                $colMap = $this->analyzeHeaders($headers, $sheetName);
+                if ($colMap === null) {
                     continue;
                 }
 
+                $teachingTypeId = $this->resolveTeachingTypeIdBySheetName($sheetName);
+
                 foreach ($rows as $idx => $row) {
                     $line = $idx + 2;
-                    if (!$this->rowHasData($row)) {
+                    if (!$this->rowHasData($row, $colMap)) {
                         continue;
                     }
                     $hasData = true;
-                    $this->processRow($row, $line, $teachingTypeId, $sheetName);
+                    $this->processRow($row, $line, $teachingTypeId, $sheetName, $colMap);
                 }
             }
 
@@ -98,9 +93,87 @@ class SubjectImportProcessor
         }
     }
 
-    private function rowHasData(array $row): bool
+    private function analyzeHeaders(array $headers, string $sheetName): ?array
     {
-        foreach (['A', 'B', 'C', 'D', 'E'] as $col) {
+        $map = [
+            'subject' => null,
+            'coef' => null,
+            'group' => null,
+            'classes' => null,
+            'vhm' => null,
+            'vhp' => null,
+            'th_max' => null,
+            'observations' => null,
+            'cycle' => null,
+            'department' => null,
+            'is_legacy' => false,
+        ];
+
+        foreach ($headers as $col => $val) {
+            $headerText = mb_strtolower(trim((string) $val));
+            if ($headerText === '') continue;
+
+            if (str_contains($headerText, 'mati') || str_contains($headerText, 'subject')) {
+                $map['subject'] = $col;
+            } elseif (str_contains($headerText, 'coef')) {
+                $map['coef'] = $col;
+            } elseif (str_contains($headerText, 'group')) {
+                $map['group'] = $col;
+            } elseif (str_contains($headerText, 'concern') || str_contains($headerText, 'impact') || $headerText === 'classes' || $headerText === 'classe') {
+                $map['classes'] = $col;
+            } elseif ($headerText === 'vhm' || str_contains($headerText, 'ministér') || str_contains($headerText, 'minister')) {
+                $map['vhm'] = $col;
+            } elseif ($headerText === 'vhp' || str_contains($headerText, 'propos')) {
+                $map['vhp'] = $col;
+            } elseif (str_contains($headerText, 'th(') || str_contains($headerText, 'th_max') || str_contains($headerText, 'taux max') || $headerText === 'thmax' || $headerText === 'th') {
+                $map['th_max'] = $col;
+            } elseif (str_contains($headerText, 'obs') || str_contains($headerText, 'remarque')) {
+                $map['observations'] = $col;
+            } elseif (str_contains($headerText, 'cycle')) {
+                $map['cycle'] = $col;
+                $map['is_legacy'] = true;
+            } elseif (str_contains($headerText, 'depart') || str_contains($headerText, 'départ')) {
+                $map['department'] = $col;
+                $map['is_legacy'] = true;
+            } elseif (str_contains($headerText, 'classe 1') || str_contains($headerText, 'class 1')) {
+                $map['is_legacy'] = true;
+            }
+        }
+
+        // Si la colonne matière n'est pas identifiée, tenter de la faire correspondre avec la colonne A
+        if ($map['subject'] === null && isset($headers['A'])) {
+            $first = mb_strtolower(trim((string) $headers['A']));
+            if (str_contains($first, 'mati') || str_contains($first, 'subject') || $first !== '') {
+                $map['subject'] = 'A';
+            }
+        }
+
+        if ($map['subject'] === null) {
+            $this->logError(1, "Feuille '{$sheetName}', En-tête : Colonne 'Matière' introuvable. Veuillez utiliser le modèle d'importation officiel.");
+            return null;
+        }
+
+        // Valeurs par défaut si positionnement standard
+        if ($map['coef'] === null && isset($headers['B'])) $map['coef'] = 'B';
+        if ($map['group'] === null && isset($headers['C'])) $map['group'] = 'C';
+        if ($map['classes'] === null && isset($headers['D']) && !$map['is_legacy']) $map['classes'] = 'D';
+        if ($map['vhm'] === null && isset($headers['E']) && !$map['is_legacy']) $map['vhm'] = 'E';
+        if ($map['vhp'] === null && isset($headers['F']) && !$map['is_legacy']) $map['vhp'] = 'F';
+        if ($map['th_max'] === null && isset($headers['G']) && !$map['is_legacy']) $map['th_max'] = 'G';
+        if ($map['observations'] === null && isset($headers['H']) && !$map['is_legacy']) $map['observations'] = 'H';
+
+        return $map;
+    }
+
+    private function rowHasData(array $row, array $colMap): bool
+    {
+        $subjectCol = $colMap['subject'] ?? 'A';
+        $subjectVal = trim((string) ($row[$subjectCol] ?? ''));
+        if ($subjectVal !== '') {
+            return true;
+        }
+
+        foreach (['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] as $col) {
             if (trim((string) ($row[$col] ?? '')) !== '') {
                 return true;
             }
@@ -109,156 +182,211 @@ class SubjectImportProcessor
         return false;
     }
 
-    private function validateHeaders(array $headers): void
+    private function processRow(array $row, int $line, ?int $teachingTypeId, string $sheetName, array $colMap): void
     {
-        $first = strtolower(trim((string) ($headers['A'] ?? '')));
-        if ($first === '' || (!str_contains($first, 'mati') && !str_contains($first, 'subject'))) {
-            throw new Exception('Format d\'en-tête invalide. Utilisez le modèle officiel.');
-        }
-    }
+        $subjectCol = $colMap['subject'] ?? 'A';
+        $subjectName = trim((string) ($row[$subjectCol] ?? ''));
 
-    private function processRow(array $row, int $line, int $teachingTypeId, string $sheetName): void
-    {
-        $subjectName = trim((string) ($row['A'] ?? ''));
-        $cycleRaw = trim((string) ($row['B'] ?? ''));
-        $departmentRaw = trim((string) ($row['C'] ?? ''));
-        $coefficientRaw = trim((string) ($row['D'] ?? ''));
-        $groupRaw = trim((string) ($row['E'] ?? ''));
-        $classNames = $this->extractClassNames($row);
-
-        if ($subjectName === '' || empty($classNames)) {
-            $this->logError($line, "Feuille '{$sheetName}' : Matière et classes sont obligatoires.");
+        // Ignorer les lignes de somme/total (ex: TOTAL VHm)
+        if (mb_strpos(mb_strtolower($subjectName), 'total') === 0) {
             return;
         }
 
-        $coefficient = (int) ($coefficientRaw !== '' ? $coefficientRaw : 1);
-        if ($coefficient < 1) {
-            $coefficient = 1;
-        }
-
-        if ($cycleRaw === '') {
-            $this->logError($line, "Feuille '{$sheetName}' : Le cycle est obligatoire.");
+        if ($subjectName === '') {
+            $this->logError($line, "Feuille '{$sheetName}', Colonne {$subjectCol} (Matière) : L'intitulé de la matière est obligatoire. Correction attendue : Renseigner un nom de matière.");
             return;
         }
 
-        $cycleId = $this->resolveCycleId($cycleRaw, $line, $teachingTypeId, $sheetName);
-        if ($cycleId === null) {
-            return;
-        }
-
-        $departmentId = null;
-        if ($departmentRaw !== '') {
-            $departmentId = $this->resolveDepartmentId($departmentRaw, $line, $teachingTypeId, $sheetName);
-            if ($departmentId === null) {
+        // Parsing Coefficient
+        $coefCol = $colMap['coef'] ?? 'B';
+        $coefficientRaw = trim((string) ($row[$coefCol] ?? ''));
+        $coefficient = 1;
+        if ($coefficientRaw !== '') {
+            if (!is_numeric($coefficientRaw) || (float) $coefficientRaw <= 0) {
+                $this->logError($line, "Feuille '{$sheetName}', Colonne {$coefCol} (Coef) : La valeur '{$coefficientRaw}' est invalide. Correction attendue : Renseigner un nombre supérieur à 0.");
                 return;
             }
+            $coefficient = (float) $coefficientRaw;
         }
 
+        // Parsing Groupe
+        $groupCol = $colMap['group'] ?? 'C';
+        $groupRaw = trim((string) ($row[$groupCol] ?? ''));
         $subjectGroupId = null;
         $groupe = 'Groupe 1';
-        if ($groupRaw !== '') {
-            $subjectGroupId = $this->resolveSubjectGroupId($groupRaw, $line, $teachingTypeId, $sheetName);
-            if ($subjectGroupId === null) {
-                return;
+        if ($groupRaw !== '' && $groupRaw !== '-') {
+            $subjectGroupId = $this->resolveSubjectGroupId($groupRaw, $line, $groupCol, $sheetName);
+            if ($subjectGroupId === false) {
+                return; // Erreur enregistrée dans logError
             }
             $groupe = $groupRaw;
         }
 
-        $classIds = $this->resolveClassIds($classNames, $line, $teachingTypeId, $sheetName);
+        // Parsing Classes
+        $classNames = $this->extractClassNamesFromRow($row, $colMap);
+        if (empty($classNames)) {
+            $classesCol = $colMap['classes'] ?? 'D';
+            $this->logError($line, "Feuille '{$sheetName}', Colonne {$classesCol} (Classes concernées) : Au moins une classe doit être spécifiée. Correction attendue : Indiquer une ou plusieurs classes existantes.");
+            return;
+        }
+
+        $classIds = $this->resolveClassIds($classNames, $line, $colMap['classes'] ?? 'D', $sheetName);
         if (empty($classIds)) {
             return;
         }
 
-        // Valider la cohérence de cycle pour chaque classe
-        $mismatchedClasses = [];
-        foreach ($classNames as $className) {
-            $key = mb_strtolower($className);
-            if (isset($this->classesByName[$key])) {
-                $classCycleId = $this->classesByName[$key]['cycle_id'];
-                if ($classCycleId !== $cycleId) {
-                    $mismatchedClasses[] = $className;
-                }
+        // Parsing VHm (Volume Horaire Ministériel)
+        $vhmCol = $colMap['vhm'] ?? 'E';
+        $vhmRaw = trim((string) ($row[$vhmCol] ?? ''));
+        $vhm = null;
+        if ($vhmRaw !== '') {
+            if (!is_numeric($vhmRaw) || (float) $vhmRaw < 0) {
+                $this->logError($line, "Feuille '{$sheetName}', Colonne {$vhmCol} (VHm) : La valeur '{$vhmRaw}' n'est pas un nombre valide. Correction attendue : Renseigner un nombre supérieur ou égal à 0.");
+                return;
             }
-        }
-        if (!empty($mismatchedClasses)) {
-            $this->logError($line, "Feuille '{$sheetName}' : Les classes suivantes ne correspondent pas au cycle '{$cycleRaw}' : " . implode(', ', $mismatchedClasses));
-            return;
+            $vhm = (float) $vhmRaw;
         }
 
-        $duplicateClassNames = $this->findDuplicateClassesForSubjectName($subjectName, $classIds);
-        if (!empty($duplicateClassNames)) {
-            $this->logError($line, "Feuille '{$sheetName}' : La matière '{$subjectName}' existe déjà dans les classes : " . implode(', ', $duplicateClassNames));
-            return;
+        // Parsing VHp (Volume Horaire Proposé)
+        $vhpCol = $colMap['vhp'] ?? 'F';
+        $vhpRaw = trim((string) ($row[$vhpCol] ?? ''));
+        $vhp = null;
+        if ($vhpRaw !== '') {
+            if (!is_numeric($vhpRaw) || (float) $vhpRaw < 0) {
+                $this->logError($line, "Feuille '{$sheetName}', Colonne {$vhpCol} (VHp) : La valeur '{$vhpRaw}' n'est pas un nombre valide. Correction attendue : Renseigner un nombre supérieur ou égal à 0.");
+                return;
+            }
+            $vhp = (float) $vhpRaw;
         }
 
+        // Parsing TH(Max) (Taux Horaire Maximal)
+        $thMaxCol = $colMap['th_max'] ?? 'G';
+        $thMaxRaw = trim((string) ($row[$thMaxCol] ?? ''));
+        $thMax = null;
+        if ($thMaxRaw !== '') {
+            if (!is_numeric($thMaxRaw) || (float) $thMaxRaw < 0) {
+                $this->logError($line, "Feuille '{$sheetName}', Colonne {$thMaxCol} (TH(Max)) : La valeur '{$thMaxRaw}' n'est pas un nombre valide. Correction attendue : Renseigner un nombre supérieur ou égal à 0.");
+                return;
+            }
+            $thMax = (float) $thMaxRaw;
+        }
+
+        // Parsing Observations
+        $obsCol = $colMap['observations'] ?? 'H';
+        $obsRaw = trim((string) ($row[$obsCol] ?? ''));
+        $observations = $obsRaw !== '' ? $obsRaw : null;
+
+        // Mode UPSERT : Mise à jour si la matière existe déjà, sinon Insertion sans doublon
         try {
-            $stmt = $this->db->prepare("INSERT INTO subjects (nom, coefficient, groupe, subject_group_id, teaching_type_id, department_id, status) VALUES (?, ?, ?, ?, ?, ?, 1)");
-            $stmt->execute([$subjectName, $coefficient, $groupe, $subjectGroupId, $teachingTypeId, $departmentId]);
-            $subjectId = (int) $this->db->lastInsertId();
+            $stmtCheck = $this->db->prepare("SELECT id FROM subjects WHERE LOWER(TRIM(nom)) = LOWER(TRIM(?)) LIMIT 1");
+            $stmtCheck->execute([$subjectName]);
+            $existingId = $stmtCheck->fetchColumn();
 
-            $ins = $this->db->prepare("INSERT INTO subject_classes (subject_id, class_id, academic_year_id) VALUES (?, ?, ?)");
-            foreach ($classIds as $classId) {
-                $ins->execute([$subjectId, $classId, $this->activeYearId]);
+            if ($existingId) {
+                $subjectId = (int) $existingId;
+                $stmtUpdate = $this->db->prepare("
+                    UPDATE subjects 
+                    SET coefficient = ?, 
+                        groupe = ?, 
+                        subject_group_id = COALESCE(?, subject_group_id), 
+                        vhm = ?, 
+                        vhp = ?, 
+                        th_max = ?, 
+                        observations = ?
+                    WHERE id = ?
+                ");
+                $stmtUpdate->execute([$coefficient, $groupe, $subjectGroupId, $vhm, $vhp, $thMax, $observations, $subjectId]);
+
+                $stmtInsCl = $this->db->prepare("
+                    INSERT INTO subject_classes (subject_id, class_id, academic_year_id) 
+                    VALUES (?, ?, ?) 
+                    ON DUPLICATE KEY UPDATE subject_id = subject_id
+                ");
+                foreach ($classIds as $classId) {
+                    $stmtInsCl->execute([$subjectId, $classId, $this->activeYearId]);
+                }
+
+                $this->successCount++;
+            } else {
+                $stmtInsert = $this->db->prepare("
+                    INSERT INTO subjects (nom, coefficient, groupe, subject_group_id, teaching_type_id, vhm, vhp, th_max, observations, status) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+                ");
+                $stmtInsert->execute([$subjectName, $coefficient, $groupe, $subjectGroupId, $teachingTypeId, $vhm, $vhp, $thMax, $observations]);
+                $subjectId = (int) $this->db->lastInsertId();
+
+                $stmtInsCl = $this->db->prepare("
+                    INSERT INTO subject_classes (subject_id, class_id, academic_year_id) 
+                    VALUES (?, ?, ?) 
+                    ON DUPLICATE KEY UPDATE subject_id = subject_id
+                ");
+                foreach ($classIds as $classId) {
+                    $stmtInsCl->execute([$subjectId, $classId, $this->activeYearId]);
+                }
+
+                $this->successCount++;
             }
-
-            $this->successCount++;
         } catch (\Throwable $e) {
             $this->logError($line, "Feuille '{$sheetName}' : Erreur base de données : " . $e->getMessage());
         }
     }
 
-    private function resolveClassIds(array $names, int $line, int $teachingTypeId, string $sheetName): array
+    private function extractClassNamesFromRow(array $row, array $colMap): array
+    {
+        $classNames = [];
+
+        if (!$colMap['is_legacy'] && !empty($colMap['classes'])) {
+            $classesCol = $colMap['classes'];
+            $classesRaw = trim((string) ($row[$classesCol] ?? ''));
+            if ($classesRaw !== '' && $classesRaw !== '-') {
+                // Diviser la chaîne selon les séparateurs courants : virgule, point-virgule, retour à la ligne, slash
+                $parts = preg_split('/[\n\r,;\/]+/', $classesRaw);
+                foreach ($parts as $part) {
+                    $trimmed = trim($part);
+                    if ($trimmed !== '' && $trimmed !== '-') {
+                        $classNames[] = $trimmed;
+                    }
+                }
+            }
+        } else {
+            // Format hérité : colonnes F à O
+            foreach (['F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O'] as $col) {
+                $value = trim((string) ($row[$col] ?? ''));
+                if ($value !== '' && $value !== '-') {
+                    $classNames[] = $value;
+                }
+            }
+        }
+
+        return array_values(array_unique($classNames));
+    }
+
+    private function resolveClassIds(array $names, int $line, string $colLetter, string $sheetName): array
     {
         $ids = [];
         $missing = [];
-        $mismatched = [];
 
         foreach ($names as $name) {
-            $key = mb_strtolower($name);
+            $key = mb_strtolower(trim($name));
             if (isset($this->classesByName[$key])) {
-                $classInfo = $this->classesByName[$key];
-                if ($classInfo['teaching_type_id'] === $teachingTypeId) {
-                    $ids[] = $classInfo['id'];
-                } else {
-                    $mismatched[] = $name;
-                }
+                $ids[] = $this->classesByName[$key]['id'];
             } else {
                 $missing[] = $name;
             }
         }
 
         if (!empty($missing)) {
-            $this->logError($line, "Feuille '{$sheetName}' : Classes introuvables : " . implode(', ', $missing));
-            return [];
-        }
-
-        if (!empty($mismatched)) {
-            $this->logError($line, "Feuille '{$sheetName}' : Les classes suivantes ne correspondent pas au Type d'Enseignement : " . implode(', ', $mismatched));
+            $this->logError($line, "Feuille '{$sheetName}', Colonne {$colLetter} (Classes concernées) : Classe(s) introuvable(s) dans l'établissement : " . implode(', ', $missing) . ". Correction attendue : Vérifier l'orthographe des classes.");
             return [];
         }
 
         return array_values(array_unique($ids));
     }
 
-    private function extractClassNames(array $row): array
-    {
-        $names = [];
-        // Colonnes F à O (Classe 1 à Classe 10)
-        foreach (['F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O'] as $col) {
-            $value = trim((string) ($row[$col] ?? ''));
-            if ($value !== '') {
-                $names[] = $value;
-            }
-        }
-
-        return array_values(array_unique($names));
-    }
-
     private function resolveTeachingTypeIdBySheetName(string $sheetName): ?int
     {
         $key = mb_strtolower(trim($sheetName));
         foreach ($this->teachingTypesByName as $name => $id) {
-            // Comparaison avec troncature à 31 caractères (limite des onglets Excel)
             $truncatedName = mb_substr($name, 0, 31);
             if ($truncatedName === $key) {
                 return $id;
@@ -267,57 +395,23 @@ class SubjectImportProcessor
         return null;
     }
 
-    private function resolveCycleId(string $name, int $line, int $teachingTypeId, string $sheetName): ?int
-    {
-        $key = mb_strtolower(trim($name));
-        if (isset($this->cyclesByName[$key])) {
-            $cycleInfo = $this->cyclesByName[$key];
-            if ($cycleInfo['teaching_type_id'] === null || $cycleInfo['teaching_type_id'] === $teachingTypeId) {
-                return $cycleInfo['id'];
-            } else {
-                $this->logError($line, "Feuille '{$sheetName}' : Le cycle '{$name}' ne correspond pas au Type d'Enseignement de la feuille.");
-                return null;
-            }
-        }
-        $this->logError($line, "Feuille '{$sheetName}' : Cycle introuvable : " . $name);
-        return null;
-    }
-
-    private function resolveDepartmentId(string $name, int $line, int $teachingTypeId, string $sheetName): ?int
-    {
-        $key = mb_strtolower(trim($name));
-        if (isset($this->departmentsByName[$key])) {
-            $deptInfo = $this->departmentsByName[$key];
-            if ($deptInfo['teaching_type_id'] === null || $deptInfo['teaching_type_id'] === $teachingTypeId) {
-                return $deptInfo['id'];
-            } else {
-                $this->logError($line, "Feuille '{$sheetName}' : Le département '{$name}' ne correspond pas au Type d'Enseignement de la feuille.");
-                return null;
-            }
-        }
-        $this->logError($line, "Feuille '{$sheetName}' : Département introuvable : " . $name);
-        return null;
-    }
-
-    private function resolveSubjectGroupId(string $name, int $line, int $teachingTypeId, string $sheetName): ?int
+    /**
+     * @return int|false
+     */
+    private function resolveSubjectGroupId(string $name, int $line, string $colLetter, string $sheetName)
     {
         $key = mb_strtolower(trim($name));
         if (isset($this->subjectGroupsByName[$key])) {
-            $groupInfo = $this->subjectGroupsByName[$key];
-            if ($groupInfo['teaching_type_id'] === null || $groupInfo['teaching_type_id'] === $teachingTypeId) {
-                return $groupInfo['id'];
-            } else {
-                $this->logError($line, "Feuille '{$sheetName}' : Le groupe de module '{$name}' ne correspond pas au Type d'Enseignement de la feuille.");
-                return null;
-            }
+            return $this->subjectGroupsByName[$key]['id'];
         }
-        $this->logError($line, "Feuille '{$sheetName}' : Groupe de module introuvable : " . $name);
-        return null;
+        
+        $this->logError($line, "Feuille '{$sheetName}', Colonne {$colLetter} (Groupe) : Groupe de modules introuvable : '{$name}'. Correction attendue : Saisir un nom de groupe valide.");
+        return false;
     }
 
     private function warmupData(): void
     {
-        // Récupérer les classes actives et leurs attributs
+        // Récupérer toutes les classes actives
         $rows = $this->db->query("
             SELECT c.id, c.nom, c.teaching_type_id, c.cycle_id 
             FROM classes c
@@ -331,7 +425,7 @@ class SubjectImportProcessor
               AND (c.teaching_type_id IS NULL OR tt.actif = 1)
         ")->fetchAll(PDO::FETCH_ASSOC);
         foreach ($rows as $row) {
-            $this->classesByName[mb_strtolower((string) $row['nom'])] = [
+            $this->classesByName[mb_strtolower(trim((string) $row['nom']))] = [
                 'id' => (int) $row['id'],
                 'teaching_type_id' => $row['teaching_type_id'] !== null ? (int) $row['teaching_type_id'] : null,
                 'cycle_id' => $row['cycle_id'] !== null ? (int) $row['cycle_id'] : null
@@ -341,7 +435,7 @@ class SubjectImportProcessor
         // Récupérer les types d'enseignement actifs
         $tts = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1")->fetchAll(PDO::FETCH_ASSOC);
         foreach ($tts as $tt) {
-            $this->teachingTypesByName[mb_strtolower((string) $tt['nom'])] = (int) $tt['id'];
+            $this->teachingTypesByName[mb_strtolower(trim((string) $tt['nom']))] = (int) $tt['id'];
         }
 
         // Récupérer les départements actifs
@@ -352,7 +446,7 @@ class SubjectImportProcessor
             WHERE d.status = 1 AND (d.teaching_type_id IS NULL OR tt.actif = 1)
         ")->fetchAll(PDO::FETCH_ASSOC);
         foreach ($depts as $dept) {
-            $this->departmentsByName[mb_strtolower((string) $dept['nom'])] = [
+            $this->departmentsByName[mb_strtolower(trim((string) $dept['nom']))] = [
                 'id' => (int) $dept['id'],
                 'teaching_type_id' => $dept['teaching_type_id'] !== null ? (int) $dept['teaching_type_id'] : null
             ];
@@ -366,7 +460,7 @@ class SubjectImportProcessor
             WHERE cy.status = 1 AND (cy.teaching_type_id IS NULL OR tt.actif = 1)
         ")->fetchAll(PDO::FETCH_ASSOC);
         foreach ($cycles as $cy) {
-            $this->cyclesByName[mb_strtolower((string) $cy['nom'])] = [
+            $this->cyclesByName[mb_strtolower(trim((string) $cy['nom']))] = [
                 'id' => (int) $cy['id'],
                 'teaching_type_id' => $cy['teaching_type_id'] !== null ? (int) $cy['teaching_type_id'] : null
             ];
@@ -391,28 +485,11 @@ class SubjectImportProcessor
     {
         $stmt = $this->db->prepare("SELECT id FROM academic_years WHERE is_active = 1 LIMIT 1");
         $stmt->execute();
-        $this->activeYearId = (int) $stmt->fetchColumn();
-    }
-
-    private function findDuplicateClassesForSubjectName(string $name, array $classIds): array
-    {
-        if ($name === '' || empty($classIds)) {
-            return [];
+        $activeId = $stmt->fetchColumn();
+        if (!$activeId) {
+            $activeId = $this->db->query("SELECT id FROM academic_years LIMIT 1")->fetchColumn();
         }
-
-        $placeholders = implode(', ', array_fill(0, count($classIds), '?'));
-        $sql = "SELECT DISTINCT c.nom
-                FROM subject_classes sc
-                JOIN subjects s ON s.id = sc.subject_id
-                JOIN classes c ON c.id = sc.class_id
-                WHERE sc.class_id IN ($placeholders)
-                  AND LOWER(TRIM(s.nom)) = LOWER(TRIM(?))
-                ORDER BY c.nom ASC";
-        $params = array_merge($classIds, [$name]);
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
-
-        return array_map('strval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+        $this->activeYearId = (int) $activeId;
     }
 
     private function logError(int $line, string $message): void

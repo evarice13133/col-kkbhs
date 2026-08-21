@@ -48,6 +48,22 @@
         </div>
     </div>
     <div class="col-lg-4">
+        <div class="modern-card border-0 shadow-sm p-4 rounded-4 mb-3">
+            <h6 class="fw-bold text-primary mb-2"><i class="bi bi-arrow-repeat me-2"></i>Compatibilité Export / Import</h6>
+            <p class="small text-secondary text-main-theme mb-2">
+                Le fichier d'exportation <code>matieres_etablissement.xlsx</code> peut être réimporté directement après modification.
+            </p>
+            <hr class="my-2 border-theme-light">
+            <h6 class="fw-bold text-body text-main-theme mb-2">Colonnes Reconnues</h6>
+            <ul class="small text-muted mb-0 ps-3">
+                <li><strong>Matière</strong> (Obligatoire)</li>
+                <li><strong>Coef</strong> (Optionnel, défaut: 1)</li>
+                <li><strong>Groupe</strong> (Optionnel)</li>
+                <li><strong>Classes concernées</strong> (Séparées par une virgule, ex: <code>IGL 1, IGL 2</code>)</li>
+                <li><strong>VHm, VHp, TH(Max)</strong> (Nombres optionnels)</li>
+                <li><strong>Observations</strong> (Texte optionnel)</li>
+            </ul>
+        </div>
         <div class="modern-card border-0 shadow-sm p-4 rounded-4">
             <h6 class="fw-bold text-body text-main-theme mb-2"><?= __('data_integrity') ?></h6>
             <p class="small text-secondary text-main-theme mb-0"><?= __('import_integrity_desc') ?></p>

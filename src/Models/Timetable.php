@@ -35,7 +35,7 @@ class Timetable extends BaseModel
             LEFT JOIN classes cl ON t.class_id = cl.id
             LEFT JOIN levels l ON cl.level_id = l.id
             LEFT JOIN timetable_weeks w ON t.week_id = w.id
-            WHERE (tt.code = 'LMD' OR tt.nom LIKE '%Supérieur%' OR tt.nom LIKE '%LMD%' OR t.teaching_type_id = 9 OR cl.teaching_type_id = 9 OR t.teaching_type_id IS NULL)
+            WHERE 1=1
         ";
         $params = [];
 
