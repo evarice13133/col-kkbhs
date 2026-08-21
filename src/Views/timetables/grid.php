@@ -21,7 +21,8 @@ $timetablesByClass = $gridData['timetablesByClass'];
                     <span
                         class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2.5 py-1 rounded-pill fw-medium"
                         style="font-size: 0.75rem;">
-                        <i class="bi bi-mortarboard-fill me-1"></i><?= __('timetables_type') ?> <?= h($cycleRow['teaching_type_name'] ?? 'Enseignement') ?>
+                        <i class="bi bi-mortarboard-fill me-1"></i><?= __('timetables_type') ?>
+                        <?= h($cycleRow['teaching_type_name'] ?? 'Enseignement') ?>
                     </span>
                     <span
                         class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2.5 py-1 rounded-pill fw-medium"
@@ -40,7 +41,8 @@ $timetablesByClass = $gridData['timetablesByClass'];
                     </span>
                 </div>
                 <h2 class="fw-black text-main-theme mb-0 fs-3"><?= __('timetables_grid_header_title') ?> -
-                    <?= $levelName ?></h2>
+                    <?= $levelName ?>
+                </h2>
                 <p class="text-muted small mb-0">
                     <?= __('timetables_period_from') ?> <?= date('d/m/Y', strtotime($weekRow['date_debut'])) ?>
                     <?= __('timetables_to') ?> <?= date('d/m/Y', strtotime($weekRow['date_fin'])) ?>
@@ -51,7 +53,8 @@ $timetablesByClass = $gridData['timetablesByClass'];
             <div class="d-flex flex-wrap gap-2 align-items-center">
                 <?php if ($canEdit): ?>
                     <button type="button" class="btn btn-sm btn-gradient-primary rounded-pill px-3 py-2 fw-bold shadow-sm"
-                        onclick="openBulkScheduleModal()" style="background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); color: white; border: none;">
+                        onclick="openBulkScheduleModal()"
+                        style="background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); color: white; border: none;">
                         <i class="bi bi-layers-half me-1"></i>Planification en Masse
                     </button>
                     <a href="/timetables/wizard" class="btn btn-sm btn-primary rounded-pill px-3 py-2 fw-bold shadow-sm">
@@ -63,7 +66,8 @@ $timetablesByClass = $gridData['timetablesByClass'];
                     <i class="bi bi-arrow-left me-1"></i><?= __('back') ?? 'Retour' ?>
                 </a>
 
-                <button type="button" onclick="triggerPrintModel(<?= (int)$cycleId ?>, <?= (int)$levelId ?>, <?= (int)$weekId ?>)"
+                <button type="button"
+                    onclick="triggerPrintModel(<?= (int) $cycleId ?>, <?= (int) $levelId ?>, <?= (int) $weekId ?>)"
                     class="btn btn-sm btn-action-modern text-primary border px-3 rounded-pill fw-semibold"
                     title="<?= __('print') ?? 'Imprimer' ?>">
                     <i class="bi bi-printer-fill me-1"></i><?= __('print') ?? 'Imprimer' ?>
@@ -93,14 +97,19 @@ $timetablesByClass = $gridData['timetablesByClass'];
 
     <!-- Volet d'Affectation Rapide (Palette Glisser-Déposer Offcanvas Lateral + Floating) -->
     <?php if ($canEdit): ?>
-        <div class="offcanvas offcanvas-end rounded-start-4 shadow-lg border-0" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="quickAssignPaletteOffcanvas" aria-labelledby="quickAssignPaletteLabel" style="width: 380px; background: var(--bg-card, #ffffff);">
-            <div class="offcanvas-header border-bottom py-3 px-4" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(79, 70, 229, 0.08) 100%);">
+        <div class="offcanvas offcanvas-end rounded-start-4 shadow-lg border-0" data-bs-scroll="true"
+            data-bs-backdrop="false" tabindex="-1" id="quickAssignPaletteOffcanvas"
+            aria-labelledby="quickAssignPaletteLabel" style="width: 380px; background: var(--bg-card, #ffffff);">
+            <div class="offcanvas-header border-bottom py-3 px-4"
+                style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(79, 70, 229, 0.08) 100%);">
                 <div class="d-flex align-items-center gap-2.5">
-                    <div class="avatar-init bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-xs" style="width: 38px; height: 38px;">
+                    <div class="avatar-init bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-xs"
+                        style="width: 38px; height: 38px;">
                         <i class="bi bi-hand-index-thumb-fill fs-5"></i>
                     </div>
                     <div>
-                        <h6 class="offcanvas-title fw-black text-main-theme mb-0" id="quickAssignPaletteLabel">Palette d'Affectation Rapide</h6>
+                        <h6 class="offcanvas-title fw-black text-main-theme mb-0" id="quickAssignPaletteLabel">Palette
+                            d'Affectation Rapide</h6>
                         <span class="text-muted extra-small">Glissez une matière dans la grille</span>
                     </div>
                 </div>
@@ -109,7 +118,8 @@ $timetablesByClass = $gridData['timetablesByClass'];
             <div class="offcanvas-body p-4">
                 <div class="mb-3">
                     <div class="input-group">
-                        <span class="input-group-text bg-transparent border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                        <span class="input-group-text bg-transparent border-end-0 text-muted"><i
+                                class="bi bi-search"></i></span>
                         <input type="text" id="searchPaletteSubject" class="form-control border-start-0 ps-0 rounded-end-3"
                             placeholder="Rechercher une matière..." onkeyup="filterPaletteSubjects(this.value)">
                     </div>
@@ -117,7 +127,8 @@ $timetablesByClass = $gridData['timetablesByClass'];
 
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <span class="text-muted extra-small fw-bold text-uppercase">Matières disponibles</span>
-                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2.5 py-1 extra-small fw-bold" id="paletteSubjectCount">
+                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2.5 py-1 extra-small fw-bold"
+                        id="paletteSubjectCount">
                         <?= count($gridData['subjects']) ?> matière(s)
                     </span>
                 </div>
@@ -133,7 +144,8 @@ $timetablesByClass = $gridData['timetablesByClass'];
                         Toutes les matières sont déjà planifiées ou aucune n'a été rattachée à ce niveau.
                     </div>
                 <?php else: ?>
-                    <div class="d-flex flex-column gap-2.5 overflow-auto pe-1" id="paletteSubjectsContainer" style="max-height: calc(100vh - 210px);">
+                    <div class="d-flex flex-column gap-2.5 overflow-auto pe-1" id="paletteSubjectsContainer"
+                        style="max-height: calc(100vh - 210px);">
                         <?php foreach ($gridData['subjects'] as $sub): ?>
                             <?php $sColor = !empty($sub['couleur_hex']) ? $sub['couleur_hex'] : '#3b82f6'; ?>
                             <div class="palette-subject-chip card border rounded-3 p-3 d-flex flex-row align-items-center justify-content-between cursor-grab shadow-xs transition-all hover-lift"
@@ -144,13 +156,16 @@ $timetablesByClass = $gridData['timetablesByClass'];
                                 ondragend="handleDragEnd(event)">
                                 <div class="d-flex align-items-center gap-3 overflow-hidden me-2">
                                     <i class="bi bi-grip-vertical fs-5 text-muted opacity-50 flex-shrink-0"></i>
-                                    <div class="badge rounded-circle p-2 flex-shrink-0" style="background-color: <?= $sColor ?>;"></div>
+                                    <div class="badge rounded-circle p-2 flex-shrink-0" style="background-color: <?= $sColor ?>;">
+                                    </div>
                                     <div class="text-truncate">
-                                        <h6 class="fw-bold text-main-theme mb-0 text-truncate" style="font-size: 0.92rem;"><?= h($sub['nom']) ?></h6>
+                                        <h6 class="fw-bold text-main-theme mb-0 text-truncate" style="font-size: 0.92rem;">
+                                            <?= h($sub['nom']) ?></h6>
                                         <span class="extra-small text-muted font-monospace"><?= h($sub['code'] ?? 'UV') ?></span>
                                     </div>
                                 </div>
-                                <span class="badge rounded-pill bg-light text-dark border extra-small flex-shrink-0"><i class="bi bi-arrows-move me-1"></i>Glisser</span>
+                                <span class="badge rounded-pill bg-light text-dark border extra-small flex-shrink-0"><i
+                                        class="bi bi-arrows-move me-1"></i>Glisser</span>
                             </div>
                         <?php endforeach; ?>
                     </div>
@@ -257,8 +272,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
                                                 class="text-muted fw-normal">à</span> <?= substr($slot['heure_fin'], 0, 5) ?>
                                         </div>
                                         <?php if ($isPause): ?>
-                                            <span
-                                                class="badge pause-badge rounded-pill extra-small fw-bold mt-1 px-2 py-0.5">
+                                            <span class="badge pause-badge rounded-pill extra-small fw-bold mt-1 px-2 py-0.5">
                                                 <i class="bi bi-cup-hot-fill me-1"></i>PAUSE
                                             </span>
                                         <?php else: ?>
@@ -279,12 +293,14 @@ $timetablesByClass = $gridData['timetablesByClass'];
                                                 <i class="bi bi-cup-hot-fill fs-6"></i>
                                             </div>
                                             <div class="text-center">
-                                                <span class="fw-black text-uppercase tracking-wider fs-6 pause-text-emerald me-2">PAUSE &
-                                                    INTERVALLE</span>
                                                 <span
-                                                    class="badge pause-badge rounded-pill font-monospace fw-bold px-2.5 py-1">
+                                                    class="fw-black text-uppercase tracking-wider fs-6 pause-text-emerald me-2">PAUSE
+                                                    &
+                                                    INTERVALLE</span>
+                                                <span class="badge pause-badge rounded-pill font-monospace fw-bold px-2.5 py-1">
                                                     <?= substr($slot['heure_debut'], 0, 5) ?> -
-                                                    <?= substr($slot['heure_fin'], 0, 5) ?> (<?= (int) $slot['duree_minutes'] ?> min)
+                                                    <?= substr($slot['heure_fin'], 0, 5) ?> (<?= (int) $slot['duree_minutes'] ?>
+                                                    min)
                                                 </span>
                                             </div>
                                         </div>
@@ -303,20 +319,15 @@ $timetablesByClass = $gridData['timetablesByClass'];
                                         $subjectColor = !empty($entry['couleur_hex']) ? $entry['couleur_hex'] : '#3b82f6';
                                         ?>
 
-                                        <td class="p-2 grid-cell <?= $hasConflict ? 'conflict-cell' : '' ?>"
-                                            data-day="<?= h($day) ?>"
-                                            data-slot-id="<?= (int)$slot['id'] ?>"
-                                            data-class-id="<?= (int)$classId ?>"
-                                            data-class-name="<?= h($cls['nom']) ?>"
-                                            data-timetable-id="<?= (int)$timetableId ?>"
+                                        <td class="p-2 grid-cell <?= $hasConflict ? 'conflict-cell' : '' ?>" data-day="<?= h($day) ?>"
+                                            data-slot-id="<?= (int) $slot['id'] ?>" data-class-id="<?= (int) $classId ?>"
+                                            data-class-name="<?= h($cls['nom']) ?>" data-timetable-id="<?= (int) $timetableId ?>"
                                             aria-label="<?= $entry ? h($entry['subject_name']) . ' avec ' . h($entry['teacher_name']) . ' en ' . h($entry['room_name']) : 'Créneau libre pour ' . h($cls['nom']) ?>"
-                                            <?php if ($canEdit): ?>
-                                                tabindex="0" role="button"
-                                                onclick="handleCellClick(this)"
-                                                ondragover="handleCellDragOver(event, '<?= h($day) ?>', <?= (int)$slot['id'] ?>, <?= (int)$classId ?>)"
-                                                ondragenter="handleCellDragEnter(event, '<?= h($day) ?>', <?= (int)$slot['id'] ?>, <?= (int)$classId ?>)"
+                                            <?php if ($canEdit): ?> tabindex="0" role="button" onclick="handleCellClick(this)"
+                                                ondragover="handleCellDragOver(event, '<?= h($day) ?>', <?= (int) $slot['id'] ?>, <?= (int) $classId ?>)"
+                                                ondragenter="handleCellDragEnter(event, '<?= h($day) ?>', <?= (int) $slot['id'] ?>, <?= (int) $classId ?>)"
                                                 ondragleave="handleCellDragLeave(event)"
-                                                ondrop="handleCellDrop(event, '<?= h($day) ?>', <?= (int)$slot['id'] ?>, <?= (int)$classId ?>, '<?= h($cls['nom']) ?>', <?= (int)$timetableId ?>)"
+                                                ondrop="handleCellDrop(event, '<?= h($day) ?>', <?= (int) $slot['id'] ?>, <?= (int) $classId ?>, '<?= h($cls['nom']) ?>', <?= (int) $timetableId ?>)"
                                             <?php endif; ?>>
 
                                             <?php if ($entry): ?>
@@ -324,8 +335,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
                                                 <div class="course-card p-2.5 rounded-3 text-start transition-all border h-100 w-100 d-flex flex-column justify-content-between position-relative"
                                                     style="--subject-color: <?= $subjectColor ?>;" <?php if ($canEdit): ?> draggable="true"
                                                         ondragstart="handleCardDragStart(event, <?= json_encode(['timetable_id' => $timetableId, 'slot_id' => $slot['id'], 'day' => $day, 'class_id' => $classId, 'entry' => $entry]) ?>)"
-                                                        ondragend="handleDragEnd(event)"
-                                                    <?php endif; ?>>
+                                                        ondragend="handleDragEnd(event)" <?php endif; ?>>
 
                                                     <!-- Badge Type / Accent Bar + Actions -->
                                                     <div class="d-flex align-items-center justify-content-between gap-1 mb-1.5">
@@ -413,7 +423,8 @@ $timetablesByClass = $gridData['timetablesByClass'];
                         </h5>
                         <div id="modalTargetClassHeader" class="small opacity-90 fw-semibold mt-1"></div>
                     </div>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="closeAssignModal()"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        onclick="closeAssignModal()"></button>
                 </div>
                 <div class="modal-body p-4">
                     <form id="assignForm">
@@ -522,7 +533,8 @@ $timetablesByClass = $gridData['timetablesByClass'];
                                 <option value="">-- Choisir une salle --</option>
                                 <?php foreach ($gridData['rooms'] as $r): ?>
                                     <option value="<?= $r['id'] ?>"><?= h($r['nom']) ?> (<?= h($r['code']) ?> -
-                                        <?= $r['capacite'] ?> places)</option>
+                                        <?= $r['capacite'] ?> places)
+                                    </option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -538,7 +550,8 @@ $timetablesByClass = $gridData['timetablesByClass'];
                     </form>
                 </div>
                 <div class="modal-footer border-top p-3" style="background: var(--bg-card);">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal" onclick="closeAssignModal()">Annuler</button>
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal"
+                        onclick="closeAssignModal()">Annuler</button>
                     <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm"
                         onclick="saveAssignment()">Enregistrer</button>
                 </div>
@@ -863,7 +876,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
         try {
             e.dataTransfer.setData('text/plain', JSON.stringify(draggedData));
             e.dataTransfer.setData('application/json', JSON.stringify(draggedData));
-        } catch (err) {}
+        } catch (err) { }
 
         e.dataTransfer.effectAllowed = 'copy';
         document.body.classList.add('is-dragging-active');
@@ -879,7 +892,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
         draggedData = { type: 'EXISTING_CARD', card: cardObj };
         try {
             e.dataTransfer.setData('text/plain', JSON.stringify(draggedData));
-        } catch (err) {}
+        } catch (err) { }
         e.dataTransfer.effectAllowed = 'move';
         document.body.classList.add('is-dragging-active');
         if (e.target && e.target.classList) {
@@ -941,7 +954,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
             try {
                 const raw = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('application/json');
                 if (raw) draggedData = JSON.parse(raw);
-            } catch (err) {}
+            } catch (err) { }
         }
 
         if (!draggedData) {
@@ -1178,7 +1191,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
         const rooms = window.TIMETABLE_DATA.rooms;
         if (!rooms || rooms.length === 0) return null;
         const matrix = (window.TIMETABLE_DATA && window.TIMETABLE_DATA.matrix) ? window.TIMETABLE_DATA.matrix : {};
-        
+
         for (let r of rooms) {
             let isOccupied = false;
             if (matrix[day] && matrix[day][slotId]) {
@@ -1332,7 +1345,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
                 const modalObj = bootstrap.Modal.getOrCreateInstance(modalEl);
                 modalObj.show();
             }
-            
+
             modalEl.classList.add('show');
             modalEl.style.display = 'block';
             modalEl.removeAttribute('aria-hidden');
@@ -1461,7 +1474,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
         const name = nameInput ? nameInput.value.trim() : '';
         const subjectSelect = document.getElementById('assign_subject_id');
         const subjectId = subjectSelect ? subjectSelect.value : 0;
-        
+
         let classId = 0;
         if (typeof selectedClasses !== 'undefined' && selectedClasses.length > 0) {
             classId = selectedClasses[0].id;
@@ -1706,7 +1719,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
     .course-card.dragging-card {
         opacity: 0.5 !important;
         transform: scale(0.96);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.18) !important;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18) !important;
     }
 
     /* Toast Float Container */
@@ -1729,8 +1742,15 @@ $timetablesByClass = $gridData['timetablesByClass'];
     }
 
     @keyframes slideInRight {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
     }
 
     /* Premium SaaS Timetable Grid Styling (Canva & Notion inspired) */
@@ -2143,535 +2163,600 @@ $timetablesByClass = $gridData['timetablesByClass'];
 
 <!-- Modal Assistant Planification en Masse -->
 <?php if ($canEdit): ?>
-<div class="modal fade" id="bulkScheduleModal" tabindex="-1" aria-labelledby="bulkScheduleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden" style="background: var(--bg-card, #ffffff);">
-            
-            <!-- Modal Header -->
-            <div class="modal-header border-bottom px-4 py-3" style="background: linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%);">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="avatar-icon bg-primary text-white rounded-3 p-2.5 shadow-sm d-flex align-items-center justify-content-center">
-                        <i class="bi bi-layers-half fs-4"></i>
-                    </div>
-                    <div>
-                        <h5 class="modal-title fw-black text-main-theme mb-0" id="bulkScheduleModalLabel">Assistant de Planification en Masse</h5>
-                        <p class="text-muted small mb-0">Programmez plusieurs créneaux, classes et jours en une seule opération intelligente.</p>
-                    </div>
-                </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
+    <div class="modal fade" id="bulkScheduleModal" tabindex="-1" aria-labelledby="bulkScheduleModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden"
+                style="background: var(--bg-card, #ffffff);">
 
-            <!-- Stepper Indicator Header -->
-            <div class="bg-body-tertiary px-4 py-2 border-bottom d-flex align-items-center justify-content-center gap-4 text-center">
-                <div class="step-indicator active d-flex align-items-center gap-2" id="stepIndicator1">
-                    <span class="badge bg-primary rounded-circle px-2 py-1">1</span>
-                    <span class="fw-bold text-primary small">Configuration & Sélections Multiples</span>
+                <!-- Modal Header -->
+                <div class="modal-header border-bottom px-4 py-3"
+                    style="background: linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%);">
+                    <div class="d-flex align-items-center gap-3">
+                        <div
+                            class="avatar-icon bg-primary text-white rounded-3 p-2.5 shadow-sm d-flex align-items-center justify-content-center">
+                            <i class="bi bi-layers-half fs-4"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title fw-black text-main-theme mb-0" id="bulkScheduleModalLabel">Assistant de
+                                Planification en Masse</h5>
+                            <p class="text-muted small mb-0">Programmez plusieurs créneaux, classes et jours en une seule
+                                opération intelligente.</p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <i class="bi bi-chevron-right text-muted"></i>
-                <div class="step-indicator d-flex align-items-center gap-2 opacity-50" id="stepIndicator2">
-                    <span class="badge bg-secondary rounded-circle px-2 py-1">2</span>
-                    <span class="fw-bold text-muted small">Prévisualisation & Validation des Conflits</span>
-                </div>
-            </div>
 
-            <div class="modal-body p-4">
-                
-                <!-- ÉTAPE 1 : Configuration -->
-                <div id="bulkStep1">
-                    <form id="bulkConfigForm" onsubmit="event.preventDefault(); onBulkAnalyzeSubmit();">
-                        
-                        <!-- Ligne 1 : Matière & Enseignant -->
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold text-main-theme small">
-                                    <i class="bi bi-journal-bookmark-fill me-1 text-primary"></i>Matière <span class="text-danger">*</span>
-                                </label>
-                                <select id="bulk_subject_id" class="form-select rounded-3 shadow-xs" required onchange="onBulkSubjectChange(this.value)">
-                                    <option value="">-- Sélectionner une matière --</option>
-                                    <?php foreach ($gridData['subjects'] as $sub): ?>
-                                        <option value="<?= $sub['id'] ?>" data-color="<?= htmlspecialchars($sub['couleur_hex']) ?>">
-                                            <?= htmlspecialchars($sub['nom']) ?> (<?= htmlspecialchars($sub['code'] ?? 'UE') ?>)
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-center justify-content-between mb-1">
-                                    <label class="form-label fw-bold text-main-theme small mb-0">
-                                        <i class="bi bi-person-badge-fill me-1 text-primary"></i>Enseignant <span class="text-danger">*</span>
+                <!-- Stepper Indicator Header -->
+                <div
+                    class="bg-body-tertiary px-4 py-2 border-bottom d-flex align-items-center justify-content-center gap-4 text-center">
+                    <div class="step-indicator active d-flex align-items-center gap-2" id="stepIndicator1">
+                        <span class="badge bg-primary rounded-circle px-2 py-1">1</span>
+                        <span class="fw-bold text-primary small">Configuration & Sélections Multiples</span>
+                    </div>
+                    <i class="bi bi-chevron-right text-muted"></i>
+                    <div class="step-indicator d-flex align-items-center gap-2 opacity-50" id="stepIndicator2">
+                        <span class="badge bg-secondary rounded-circle px-2 py-1">2</span>
+                        <span class="fw-bold text-muted small">Prévisualisation & Validation des Conflits</span>
+                    </div>
+                </div>
+
+                <div class="modal-body p-4">
+
+                    <!-- ÉTAPE 1 : Configuration -->
+                    <div id="bulkStep1">
+                        <form id="bulkConfigForm" onsubmit="event.preventDefault(); onBulkAnalyzeSubmit();">
+
+                            <!-- Ligne 1 : Matière & Enseignant -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold text-main-theme small">
+                                        <i class="bi bi-journal-bookmark-fill me-1 text-primary"></i>Matière <span
+                                            class="text-danger">*</span>
                                     </label>
+                                    <select id="bulk_subject_id" class="form-select rounded-3 shadow-xs" required
+                                        onchange="onBulkSubjectChange(this.value)">
+                                        <option value="">-- Sélectionner une matière --</option>
+                                        <?php foreach ($gridData['subjects'] as $sub): ?>
+                                            <option value="<?= $sub['id'] ?>"
+                                                data-color="<?= htmlspecialchars($sub['couleur_hex']) ?>">
+                                                <?= htmlspecialchars($sub['nom']) ?>
+                                                (<?= htmlspecialchars($sub['code'] ?? 'UE') ?>)
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
-                                <select id="bulk_teacher_id" class="form-select rounded-3 shadow-xs" required>
-                                    <option value="">-- Sélectionner un enseignant --</option>
-                                    <?php foreach ($gridData['teachers'] as $t): ?>
-                                        <option value="<?= $t['id'] ?>">
-                                            <?= htmlspecialchars($t['nom_complet']) ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Section 2 : Jours (Multi-sélection Badge Chips) -->
-                        <div class="mb-4 p-3 rounded-4 border bg-body-tertiary">
-                            <div class="d-flex align-items-center justify-content-between mb-2">
-                                <label class="form-label fw-bold text-main-theme small mb-0">
-                                    <i class="bi bi-calendar-week-fill me-1 text-primary"></i>Jours de la semaine (Multi-sélection) <span class="text-danger">*</span>
-                                </label>
-                                <button type="button" class="btn btn-xs btn-link text-primary text-decoration-none fw-bold p-0" onclick="toggleAllChips('days')">
-                                    <i class="bi bi-check-all me-1"></i>Tout Sélectionner / Désélectionner
-                                </button>
-                            </div>
-                            <div class="d-flex flex-wrap gap-2" id="bulkDaysContainer">
-                                <?php foreach ($days as $day): ?>
-                                    <div class="chip-badge chip-toggle px-3 py-2 rounded-pill border fw-bold cursor-pointer transition-all d-flex align-items-center gap-1.5"
-                                         data-group="days" data-value="<?= $day ?>" onclick="toggleChip(this)">
-                                        <i class="bi bi-calendar2-day text-primary"></i>
-                                        <span><?= $day ?></span>
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <label class="form-label fw-bold text-main-theme small mb-0">
+                                            <i class="bi bi-person-badge-fill me-1 text-primary"></i>Enseignant <span
+                                                class="text-danger">*</span>
+                                        </label>
                                     </div>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-
-                        <!-- Section 3 : Créneaux Horaires (Multi-sélection Badge Chips) -->
-                        <div class="mb-4 p-3 rounded-4 border bg-body-tertiary">
-                            <div class="d-flex align-items-center justify-content-between mb-2">
-                                <label class="form-label fw-bold text-main-theme small mb-0">
-                                    <i class="bi bi-clock-history me-1 text-primary"></i>Créneaux Horaires (Multi-sélection) <span class="text-danger">*</span>
-                                </label>
-                                <button type="button" class="btn btn-xs btn-link text-primary text-decoration-none fw-bold p-0" onclick="toggleAllChips('slots')">
-                                    <i class="bi bi-check-all me-1"></i>Tout Sélectionner / Désélectionner
-                                </button>
-                            </div>
-                            <div class="d-flex flex-wrap gap-2" id="bulkSlotsContainer">
-                                <?php foreach ($gridData['slots'] as $slot): ?>
-                                    <?php if ($slot['type_creneau'] === 'pause') continue; ?>
-                                    <div class="chip-badge chip-toggle px-3 py-2 rounded-pill border fw-bold cursor-pointer transition-all d-flex align-items-center gap-1.5"
-                                         data-group="slots" data-value="<?= $slot['id'] ?>" onclick="toggleChip(this)">
-                                        <i class="bi bi-clock text-info"></i>
-                                        <span><?= substr($slot['heure_debut'], 0, 5) ?> - <?= substr($slot['heure_fin'], 0, 5) ?></span>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-
-                        <!-- Section 4 : Classes (Multi-sélection Badge Chips) -->
-                        <div class="mb-4 p-3 rounded-4 border bg-body-tertiary">
-                            <div class="d-flex align-items-center justify-content-between mb-2">
-                                <label class="form-label fw-bold text-main-theme small mb-0">
-                                    <i class="bi bi-people-fill me-1 text-primary"></i>Classes Concernées (Multi-sélection) <span class="text-danger">*</span>
-                                </label>
-                                <button type="button" class="btn btn-xs btn-link text-primary text-decoration-none fw-bold p-0" onclick="toggleAllChips('classes')">
-                                    <i class="bi bi-check-all me-1"></i>Toutes les Classes
-                                </button>
-                            </div>
-                            <div class="d-flex flex-wrap gap-2" id="bulkClassesContainer">
-                                <?php foreach ($classes as $cls): ?>
-                                    <div class="chip-badge chip-toggle px-3 py-2 rounded-pill border fw-bold cursor-pointer transition-all d-flex align-items-center gap-1.5 active"
-                                         data-group="classes" data-value="<?= $cls['id'] ?>" onclick="toggleChip(this)">
-                                        <i class="bi bi-mortarboard-fill text-success"></i>
-                                        <span><?= htmlspecialchars($cls['nom']) ?></span>
-                                        <span class="badge bg-secondary rounded-pill extra-small"><?= (int)$cls['effectif'] ?> élèves</span>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-
-                        <!-- Section 5 : Affectation des Salles -->
-                        <div class="mb-4 p-3 rounded-4 border bg-body-tertiary">
-                            <label class="form-label fw-bold text-main-theme small mb-3">
-                                <i class="bi bi-geo-alt-fill me-1 text-primary"></i>Mode d'Affectation des Salles <span class="text-danger">*</span>
-                            </label>
-                            
-                            <div class="row g-3">
-                                <!-- Mode 1 : Auto -->
-                                <div class="col-md-4">
-                                    <div class="card h-100 border p-3 rounded-3 cursor-pointer room-mode-card active" id="cardRoomModeAuto" onclick="setRoomMode('auto')">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="bulk_room_mode" id="modeAuto" value="auto" checked>
-                                            <label class="form-check-label fw-bold text-main-theme cursor-pointer" for="modeAuto">
-                                                <i class="bi bi-magic text-primary me-1"></i>Affectation Automatique
-                                            </label>
-                                        </div>
-                                        <p class="extra-small text-muted mb-0 mt-2">Le moteur recherche et attribue automatiquement des salles libres sans conflit pour chaque classe.</p>
-                                    </div>
-                                </div>
-
-                                <!-- Mode 2 : Mutualisé (TC) -->
-                                <div class="col-md-4">
-                                    <div class="card h-100 border p-3 rounded-3 cursor-pointer room-mode-card" id="cardRoomModeMutualized" onclick="setRoomMode('mutualized')">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="bulk_room_mode" id="modeMutualized" value="mutualized">
-                                            <label class="form-check-label fw-bold text-main-theme cursor-pointer" for="modeMutualized">
-                                                <i class="bi bi-building-fill text-warning me-1"></i>Cours Mutualisé / TC
-                                            </label>
-                                        </div>
-                                        <p class="extra-small text-muted mb-0 mt-2">Une salle unique est partagée simultanément par toutes les classes sélectionnées.</p>
-                                    </div>
-                                </div>
-
-                                <!-- Mode 3 : Custom Pool -->
-                                <div class="col-md-4">
-                                    <div class="card h-100 border p-3 rounded-3 cursor-pointer room-mode-card" id="cardRoomModePool" onclick="setRoomMode('custom_pool')">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="bulk_room_mode" id="modeCustomPool" value="custom_pool">
-                                            <label class="form-check-label fw-bold text-main-theme cursor-pointer" for="modeCustomPool">
-                                                <i class="bi bi-door-open-fill text-info me-1"></i>Pool de Salles Spécifiques
-                                            </label>
-                                        </div>
-                                        <p class="extra-small text-muted mb-0 mt-2">Sélectionnez une liste restreinte de salles parmi lesquelles distribuer les cours.</p>
-                                    </div>
+                                    <select id="bulk_teacher_id" class="form-select rounded-3 shadow-xs" required>
+                                        <option value="">-- Sélectionner un enseignant --</option>
+                                        <?php foreach ($gridData['teachers'] as $t): ?>
+                                            <option value="<?= $t['id'] ?>">
+                                                <?= htmlspecialchars($t['nom_complet']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
                             </div>
 
-                            <!-- Options dynamiques de Salle selon le mode -->
-                            <div id="roomModeMutualizedOptions" class="mt-3 p-3 rounded-3 border bg-white d-none">
-                                <label class="form-label fw-bold small text-main-theme">Choisir la salle unique pour le cours mutualisé :</label>
-                                <select id="bulk_single_room_id" class="form-select form-select-sm rounded-3">
-                                    <?php foreach ($gridData['rooms'] as $rm): ?>
-                                        <option value="<?= $rm['id'] ?>"><?= htmlspecialchars($rm['nom']) ?> (Capacité: <?= (int)$rm['capacite'] ?> places)</option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-
-                            <div id="roomModePoolOptions" class="mt-3 p-3 rounded-3 border bg-white d-none">
-                                <label class="form-label fw-bold small text-main-theme mb-2">Sélectionner les salles autorisées (Multi-sélection) :</label>
-                                <div class="d-flex flex-wrap gap-2" id="bulkPoolRoomsContainer">
-                                    <?php foreach ($gridData['rooms'] as $rm): ?>
-                                        <div class="chip-badge chip-toggle px-3 py-1.5 rounded-pill border extra-small fw-bold cursor-pointer active"
-                                             data-group="pool_rooms" data-value="<?= $rm['id'] ?>" onclick="toggleChip(this)">
-                                            <i class="bi bi-door-open text-primary me-1"></i><?= htmlspecialchars($rm['nom']) ?>
+                            <!-- Section 2 : Jours (Multi-sélection Badge Chips) -->
+                            <div class="mb-4 p-3 rounded-4 border bg-body-tertiary">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <label class="form-label fw-bold text-main-theme small mb-0">
+                                        <i class="bi bi-calendar-week-fill me-1 text-primary"></i>Jours de la semaine
+                                        (Multi-sélection) <span class="text-danger">*</span>
+                                    </label>
+                                    <button type="button"
+                                        class="btn btn-xs btn-link text-primary text-decoration-none fw-bold p-0"
+                                        onclick="toggleAllChips('days')">
+                                        <i class="bi bi-check-all me-1"></i>Tout Sélectionner / Désélectionner
+                                    </button>
+                                </div>
+                                <div class="d-flex flex-wrap gap-2" id="bulkDaysContainer">
+                                    <?php foreach ($days as $day): ?>
+                                        <div class="chip-badge chip-toggle px-3 py-2 rounded-pill border fw-bold cursor-pointer transition-all d-flex align-items-center gap-1.5"
+                                            data-group="days" data-value="<?= $day ?>" onclick="toggleChip(this)">
+                                            <i class="bi bi-calendar2-day text-primary"></i>
+                                            <span><?= $day ?></span>
                                         </div>
                                     <?php endforeach; ?>
                                 </div>
                             </div>
 
-                        </div>
-
-                        <!-- Section 6 : Couleur de carte & Résumé en Temps Réel -->
-                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 p-3 rounded-4 border bg-primary bg-opacity-10 mb-4">
-                            <div class="d-flex align-items-center gap-2">
-                                <label class="form-label fw-bold text-main-theme small mb-0">Couleur d'affichage :</label>
-                                <input type="color" id="bulk_color_hex" class="form-control form-control-color rounded-circle border-0 p-0 cursor-pointer" value="#3b82f6" style="width: 32px; height: 32px;">
+                            <!-- Section 3 : Créneaux Horaires (Multi-sélection Badge Chips) -->
+                            <div class="mb-4 p-3 rounded-4 border bg-body-tertiary">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <label class="form-label fw-bold text-main-theme small mb-0">
+                                        <i class="bi bi-clock-history me-1 text-primary"></i>Créneaux Horaires
+                                        (Multi-sélection) <span class="text-danger">*</span>
+                                    </label>
+                                    <button type="button"
+                                        class="btn btn-xs btn-link text-primary text-decoration-none fw-bold p-0"
+                                        onclick="toggleAllChips('slots')">
+                                        <i class="bi bi-check-all me-1"></i>Tout Sélectionner / Désélectionner
+                                    </button>
+                                </div>
+                                <div class="d-flex flex-wrap gap-2" id="bulkSlotsContainer">
+                                    <?php foreach ($gridData['slots'] as $slot): ?>
+                                        <?php if ($slot['type_creneau'] === 'pause')
+                                            continue; ?>
+                                        <div class="chip-badge chip-toggle px-3 py-2 rounded-pill border fw-bold cursor-pointer transition-all d-flex align-items-center gap-1.5"
+                                            data-group="slots" data-value="<?= $slot['id'] ?>" onclick="toggleChip(this)">
+                                            <i class="bi bi-clock text-info"></i>
+                                            <span><?= substr($slot['heure_debut'], 0, 5) ?> -
+                                                <?= substr($slot['heure_fin'], 0, 5) ?></span>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
                             </div>
 
-                            <!-- Calculateur Temps Réel -->
-                            <div id="bulkRealtimeCounter" class="badge bg-primary text-white px-3 py-2 rounded-pill fs-6 fw-bold shadow-xs">
-                                <i class="bi bi-lightning-charge-fill me-1"></i>0 cours à générer
+                            <!-- Section 4 : Classes (Multi-sélection Badge Chips) -->
+                            <div class="mb-4 p-3 rounded-4 border bg-body-tertiary">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <label class="form-label fw-bold text-main-theme small mb-0">
+                                        <i class="bi bi-people-fill me-1 text-primary"></i>Classes Concernées
+                                        (Multi-sélection) <span class="text-danger">*</span>
+                                    </label>
+                                    <button type="button"
+                                        class="btn btn-xs btn-link text-primary text-decoration-none fw-bold p-0"
+                                        onclick="toggleAllChips('classes')">
+                                        <i class="bi bi-check-all me-1"></i>Toutes les Classes
+                                    </button>
+                                </div>
+                                <div class="d-flex flex-wrap gap-2" id="bulkClassesContainer">
+                                    <?php foreach ($classes as $cls): ?>
+                                        <div class="chip-badge chip-toggle px-3 py-2 rounded-pill border fw-bold cursor-pointer transition-all d-flex align-items-center gap-1.5 active"
+                                            data-group="classes" data-value="<?= $cls['id'] ?>" onclick="toggleChip(this)">
+                                            <i class="bi bi-mortarboard-fill text-success"></i>
+                                            <span><?= htmlspecialchars($cls['nom']) ?></span>
+                                            <span
+                                                class="badge bg-secondary rounded-pill extra-small"><?= (int) $cls['effectif'] ?>
+                                                élèves</span>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
                             </div>
-                        </div>
 
-                        <!-- Actions Étape 1 -->
-                        <div class="d-flex justify-content-end gap-2">
-                            <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Annuler</button>
-                            <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" id="btnBulkAnalyze">
-                                <i class="bi bi-magic me-1"></i>Analyser & Prévisualiser (Étape 2)
-                            </button>
-                        </div>
+                            <!-- Section 5 : Affectation des Salles -->
+                            <div class="mb-4 p-3 rounded-4 border bg-body-tertiary">
+                                <label class="form-label fw-bold text-main-theme small mb-3">
+                                    <i class="bi bi-geo-alt-fill me-1 text-primary"></i>Mode d'Affectation des Salles <span
+                                        class="text-danger">*</span>
+                                </label>
 
-                    </form>
-                </div>
+                                <div class="row g-3">
+                                    <!-- Mode 1 : Auto -->
+                                    <div class="col-md-4">
+                                        <div class="card h-100 border p-3 rounded-3 cursor-pointer room-mode-card active"
+                                            id="cardRoomModeAuto" onclick="setRoomMode('auto')">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="bulk_room_mode"
+                                                    id="modeAuto" value="auto" checked>
+                                                <label class="form-check-label fw-bold text-main-theme cursor-pointer"
+                                                    for="modeAuto">
+                                                    <i class="bi bi-magic text-primary me-1"></i>Affectation Automatique
+                                                </label>
+                                            </div>
+                                            <p class="extra-small text-muted mb-0 mt-2">Le moteur recherche et attribue
+                                                automatiquement des salles libres sans conflit pour chaque classe.</p>
+                                        </div>
+                                    </div>
 
-                <!-- ÉTAPE 2 : Prévisualisation & Résolution Interactive -->
-                <div id="bulkStep2" class="d-none">
-                    
-                    <!-- Top Summary Stats Bar -->
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-4">
-                            <div class="modern-card p-3 rounded-4 border text-center shadow-xs">
-                                <span class="text-muted extra-small fw-bold text-uppercase d-block">Total Cours Générés</span>
-                                <span class="fs-3 fw-black text-main-theme" id="statTotalGenerated">0</span>
+                                    <!-- Mode 2 : Mutualisé (TC) -->
+                                    <div class="col-md-4">
+                                        <div class="card h-100 border p-3 rounded-3 cursor-pointer room-mode-card"
+                                            id="cardRoomModeMutualized" onclick="setRoomMode('mutualized')">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="bulk_room_mode"
+                                                    id="modeMutualized" value="mutualized">
+                                                <label class="form-check-label fw-bold text-main-theme cursor-pointer"
+                                                    for="modeMutualized">
+                                                    <i class="bi bi-building-fill text-warning me-1"></i>Cours Mutualisé /
+                                                    TC
+                                                </label>
+                                            </div>
+                                            <p class="extra-small text-muted mb-0 mt-2">Une salle unique est partagée
+                                                simultanément par toutes les classes sélectionnées.</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Mode 3 : Custom Pool -->
+                                    <div class="col-md-4">
+                                        <div class="card h-100 border p-3 rounded-3 cursor-pointer room-mode-card"
+                                            id="cardRoomModePool" onclick="setRoomMode('custom_pool')">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="bulk_room_mode"
+                                                    id="modeCustomPool" value="custom_pool">
+                                                <label class="form-check-label fw-bold text-main-theme cursor-pointer"
+                                                    for="modeCustomPool">
+                                                    <i class="bi bi-door-open-fill text-info me-1"></i>Pool de Salles
+                                                    Spécifiques
+                                                </label>
+                                            </div>
+                                            <p class="extra-small text-muted mb-0 mt-2">Sélectionnez une liste restreinte de
+                                                salles parmi lesquelles distribuer les cours.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Options dynamiques de Salle selon le mode -->
+                                <div id="roomModeMutualizedOptions" class="mt-3 p-3 rounded-3 border bg-white d-none">
+                                    <label class="form-label fw-bold small text-main-theme">Choisir la salle unique pour le
+                                        cours mutualisé :</label>
+                                    <select id="bulk_single_room_id" class="form-select form-select-sm rounded-3">
+                                        <?php foreach ($gridData['rooms'] as $rm): ?>
+                                            <option value="<?= $rm['id'] ?>"><?= htmlspecialchars($rm['nom']) ?> (Capacité:
+                                                <?= (int) $rm['capacite'] ?> places)</option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+
+                                <div id="roomModePoolOptions" class="mt-3 p-3 rounded-3 border bg-white d-none">
+                                    <label class="form-label fw-bold small text-main-theme mb-2">Sélectionner les salles
+                                        autorisées (Multi-sélection) :</label>
+                                    <div class="d-flex flex-wrap gap-2" id="bulkPoolRoomsContainer">
+                                        <?php foreach ($gridData['rooms'] as $rm): ?>
+                                            <div class="chip-badge chip-toggle px-3 py-1.5 rounded-pill border extra-small fw-bold cursor-pointer active"
+                                                data-group="pool_rooms" data-value="<?= $rm['id'] ?>"
+                                                onclick="toggleChip(this)">
+                                                <i
+                                                    class="bi bi-door-open text-primary me-1"></i><?= htmlspecialchars($rm['nom']) ?>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+
                             </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="modern-card p-3 rounded-4 border border-success border-opacity-30 bg-success bg-opacity-10 text-center shadow-xs">
-                                <span class="text-success extra-small fw-bold text-uppercase d-block">Programmations Valides</span>
-                                <span class="fs-3 fw-black text-success" id="statValidCount">0</span>
+
+                            <!-- Section 6 : Couleur de carte & Résumé en Temps Réel -->
+                            <div
+                                class="d-flex flex-wrap align-items-center justify-content-between gap-3 p-3 rounded-4 border bg-primary bg-opacity-10 mb-4">
+                                <div class="d-flex align-items-center gap-2">
+                                    <label class="form-label fw-bold text-main-theme small mb-0">Couleur d'affichage
+                                        :</label>
+                                    <input type="color" id="bulk_color_hex"
+                                        class="form-control form-control-color rounded-circle border-0 p-0 cursor-pointer"
+                                        value="#3b82f6" style="width: 32px; height: 32px;">
+                                </div>
+
+                                <!-- Calculateur Temps Réel -->
+                                <div id="bulkRealtimeCounter"
+                                    class="badge bg-primary text-white px-3 py-2 rounded-pill fs-6 fw-bold shadow-xs">
+                                    <i class="bi bi-lightning-charge-fill me-1"></i>0 cours à générer
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="modern-card p-3 rounded-4 border border-danger border-opacity-30 bg-danger bg-opacity-10 text-center shadow-xs">
-                                <span class="text-danger extra-small fw-bold text-uppercase d-block">Conflits Détectés</span>
-                                <span class="fs-3 fw-black text-danger" id="statConflictCount">0</span>
+
+                            <!-- Actions Étape 1 -->
+                            <div class="d-flex justify-content-end gap-2">
+                                <button type="button" class="btn btn-light rounded-pill px-4"
+                                    data-bs-dismiss="modal">Annuler</button>
+                                <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm"
+                                    id="btnBulkAnalyze">
+                                    <i class="bi bi-magic me-1"></i>Analyser & Prévisualiser (Étape 2)
+                                </button>
                             </div>
-                        </div>
+
+                        </form>
                     </div>
 
-                    <!-- Interactive Preview Table -->
-                    <div class="table-responsive rounded-4 border mb-4 overflow-auto" style="max-height: 420px;">
-                        <table class="table table-hover align-middle mb-0 text-center extra-small" id="bulkPreviewTable">
-                            <thead class="bg-body-tertiary sticky-top">
-                                <tr>
-                                    <th class="py-2.5">Classe</th>
-                                    <th class="py-2.5">Jour</th>
-                                    <th class="py-2.5">Créneau</th>
-                                    <th class="py-2.5">Matière</th>
-                                    <th class="py-2.5">Enseignant</th>
-                                    <th class="py-2.5" style="min-width: 160px;">Salle Affectée</th>
-                                    <th class="py-2.5">Statut / Diagnostic</th>
-                                    <th class="py-2.5" style="width: 50px;">Inclure</th>
-                                </tr>
-                            </thead>
-                            <tbody id="bulkPreviewTbody">
-                                <!-- Populated dynamically by JavaScript -->
-                            </tbody>
-                        </table>
-                    </div>
+                    <!-- ÉTAPE 2 : Prévisualisation & Résolution Interactive -->
+                    <div id="bulkStep2" class="d-none">
 
-                    <!-- Actions Étape 2 -->
-                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 border-top pt-3">
-                        <button type="button" class="btn btn-outline-secondary rounded-pill px-3" onclick="showBulkStep(1)">
-                            <i class="bi bi-arrow-left me-1"></i>Modifier les filtres (Étape 1)
-                        </button>
-
-                        <div class="d-flex flex-wrap gap-2 align-items-center">
-                            <button type="button" class="btn btn-warning rounded-pill px-3 fw-bold text-dark shadow-sm d-none" id="btnAutoFixRooms" onclick="autoFixAllRooms()">
-                                <i class="bi bi-wrench-adjustable me-1"></i>Tout corriger automatiquement
-                            </button>
-                            <button type="button" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm" id="btnSaveValidOnly" onclick="executeBulkSave(true)">
-                                <i class="bi bi-check-circle-fill me-1"></i>Enregistrer les programmations valides
-                            </button>
+                        <!-- Top Summary Stats Bar -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <div class="modern-card p-3 rounded-4 border text-center shadow-xs">
+                                    <span class="text-muted extra-small fw-bold text-uppercase d-block">Total Cours
+                                        Générés</span>
+                                    <span class="fs-3 fw-black text-main-theme" id="statTotalGenerated">0</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div
+                                    class="modern-card p-3 rounded-4 border border-success border-opacity-30 bg-success bg-opacity-10 text-center shadow-xs">
+                                    <span class="text-success extra-small fw-bold text-uppercase d-block">Programmations
+                                        Valides</span>
+                                    <span class="fs-3 fw-black text-success" id="statValidCount">0</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div
+                                    class="modern-card p-3 rounded-4 border border-danger border-opacity-30 bg-danger bg-opacity-10 text-center shadow-xs">
+                                    <span class="text-danger extra-small fw-bold text-uppercase d-block">Conflits
+                                        Détectés</span>
+                                    <span class="fs-3 fw-black text-danger" id="statConflictCount">0</span>
+                                </div>
+                            </div>
                         </div>
+
+                        <!-- Interactive Preview Table -->
+                        <div class="table-responsive rounded-4 border mb-4 overflow-auto" style="max-height: 420px;">
+                            <table class="table table-hover align-middle mb-0 text-center extra-small"
+                                id="bulkPreviewTable">
+                                <thead class="bg-body-tertiary sticky-top">
+                                    <tr>
+                                        <th class="py-2.5">Classe</th>
+                                        <th class="py-2.5">Jour</th>
+                                        <th class="py-2.5">Créneau</th>
+                                        <th class="py-2.5">Matière</th>
+                                        <th class="py-2.5">Enseignant</th>
+                                        <th class="py-2.5" style="min-width: 160px;">Salle Affectée</th>
+                                        <th class="py-2.5">Statut / Diagnostic</th>
+                                        <th class="py-2.5" style="width: 50px;">Inclure</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bulkPreviewTbody">
+                                    <!-- Populated dynamically by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Actions Étape 2 -->
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 border-top pt-3">
+                            <button type="button" class="btn btn-outline-secondary rounded-pill px-3"
+                                onclick="showBulkStep(1)">
+                                <i class="bi bi-arrow-left me-1"></i>Modifier les filtres (Étape 1)
+                            </button>
+
+                            <div class="d-flex flex-wrap gap-2 align-items-center">
+                                <button type="button"
+                                    class="btn btn-warning rounded-pill px-3 fw-bold text-dark shadow-sm d-none"
+                                    id="btnAutoFixRooms" onclick="autoFixAllRooms()">
+                                    <i class="bi bi-wrench-adjustable me-1"></i>Tout corriger automatiquement
+                                </button>
+                                <button type="button" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm"
+                                    id="btnSaveValidOnly" onclick="executeBulkSave(true)">
+                                    <i class="bi bi-check-circle-fill me-1"></i>Enregistrer les programmations valides
+                                </button>
+                            </div>
+                        </div>
+
                     </div>
 
                 </div>
 
             </div>
-
         </div>
     </div>
-</div>
 <?php endif; ?>
 
 <style>
-.chip-toggle {
-    user-select: none;
-    transition: all 0.2s ease-in-out;
-    background-color: var(--bg-card, #ffffff);
-    color: var(--text-main, #334155);
-}
-.chip-toggle:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.08);
-}
-.chip-toggle.active {
-    background-color: rgba(59, 130, 246, 0.15) !important;
-    border-color: #3b82f6 !important;
-    color: #2563eb !important;
-}
-.room-mode-card.active {
-    border-color: #3b82f6 !important;
-    background-color: rgba(59, 130, 246, 0.05) !important;
-}
+    .chip-toggle {
+        user-select: none;
+        transition: all 0.2s ease-in-out;
+        background-color: var(--bg-card, #ffffff);
+        color: var(--text-main, #334155);
+    }
+
+    .chip-toggle:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+    }
+
+    .chip-toggle.active {
+        background-color: rgba(59, 130, 246, 0.15) !important;
+        border-color: #3b82f6 !important;
+        color: #2563eb !important;
+    }
+
+    .room-mode-card.active {
+        border-color: #3b82f6 !important;
+        background-color: rgba(59, 130, 246, 0.05) !important;
+    }
 </style>
 
 <script>
-let currentBulkSchedules = [];
+    let currentBulkSchedules = [];
 
-function openBulkScheduleModal() {
-    const modalEl = document.getElementById('bulkScheduleModal');
-    if (!modalEl) return;
-    showBulkStep(1);
-    updateRealtimeCounter();
-    const modal = new bootstrap.Modal(modalEl);
-    modal.show();
-}
-
-function showBulkStep(stepNum) {
-    const step1 = document.getElementById('bulkStep1');
-    const step2 = document.getElementById('bulkStep2');
-    const ind1 = document.getElementById('stepIndicator1');
-    const ind2 = document.getElementById('stepIndicator2');
-
-    if (stepNum === 1) {
-        step1.classList.remove('d-none');
-        step2.classList.add('d-none');
-        ind1.classList.add('active');
-        ind1.classList.remove('opacity-50');
-        ind2.classList.remove('active');
-        ind2.classList.add('opacity-50');
-    } else {
-        step1.classList.add('d-none');
-        step2.classList.remove('d-none');
-        ind2.classList.add('active');
-        ind2.classList.remove('opacity-50');
-        ind1.classList.remove('active');
-        ind1.classList.add('opacity-50');
+    function openBulkScheduleModal() {
+        const modalEl = document.getElementById('bulkScheduleModal');
+        if (!modalEl) return;
+        showBulkStep(1);
+        updateRealtimeCounter();
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
     }
-}
 
-function toggleChip(el) {
-    el.classList.toggle('active');
-    updateRealtimeCounter();
-}
+    function showBulkStep(stepNum) {
+        const step1 = document.getElementById('bulkStep1');
+        const step2 = document.getElementById('bulkStep2');
+        const ind1 = document.getElementById('stepIndicator1');
+        const ind2 = document.getElementById('stepIndicator2');
 
-function toggleAllChips(group) {
-    const chips = document.querySelectorAll(`.chip-toggle[data-group="${group}"]`);
-    const allActive = Array.from(chips).every(c => c.classList.contains('active'));
-    chips.forEach(c => {
-        if (allActive) {
-            c.classList.remove('active');
+        if (stepNum === 1) {
+            step1.classList.remove('d-none');
+            step2.classList.add('d-none');
+            ind1.classList.add('active');
+            ind1.classList.remove('opacity-50');
+            ind2.classList.remove('active');
+            ind2.classList.add('opacity-50');
         } else {
-            c.classList.add('active');
+            step1.classList.add('d-none');
+            step2.classList.remove('d-none');
+            ind2.classList.add('active');
+            ind2.classList.remove('opacity-50');
+            ind1.classList.remove('active');
+            ind1.classList.add('opacity-50');
         }
-    });
-    updateRealtimeCounter();
-}
-
-function setRoomMode(mode) {
-    document.querySelectorAll('.room-mode-card').forEach(c => c.classList.remove('active'));
-    const radio = document.querySelector(`input[name="bulk_room_mode"][value="${mode}"]`);
-    if (radio) radio.checked = true;
-
-    const mutualizedOptions = document.getElementById('roomModeMutualizedOptions');
-    const poolOptions = document.getElementById('roomModePoolOptions');
-
-    if (mode === 'auto') {
-        document.getElementById('cardRoomModeAuto').classList.add('active');
-        mutualizedOptions.classList.add('d-none');
-        poolOptions.classList.add('d-none');
-    } else if (mode === 'mutualized') {
-        document.getElementById('cardRoomModeMutualized').classList.add('active');
-        mutualizedOptions.classList.remove('d-none');
-        poolOptions.classList.add('d-none');
-    } else if (mode === 'custom_pool') {
-        document.getElementById('cardRoomModePool').classList.add('active');
-        mutualizedOptions.classList.add('d-none');
-        poolOptions.classList.remove('d-none');
-    }
-}
-
-function updateRealtimeCounter() {
-    const activeDays = document.querySelectorAll('.chip-toggle[data-group="days"].active').length;
-    const activeSlots = document.querySelectorAll('.chip-toggle[data-group="slots"].active').length;
-    const activeClasses = document.querySelectorAll('.chip-toggle[data-group="classes"].active').length;
-
-    const total = activeDays * activeSlots * activeClasses;
-    const counterEl = document.getElementById('bulkRealtimeCounter');
-    if (counterEl) {
-        counterEl.innerHTML = `<i class="bi bi-lightning-charge-fill me-1"></i>${total} cours à générer (${activeClasses} cl. × ${activeDays} j. × ${activeSlots} cr.)`;
-    }
-}
-
-function onBulkSubjectChange(subjectId) {
-    const selectSub = document.getElementById('bulk_subject_id');
-    const opt = selectSub.options[selectSub.selectedIndex];
-    if (opt && opt.dataset.color) {
-        document.getElementById('bulk_color_hex').value = opt.dataset.color;
-    }
-}
-
-function onBulkAnalyzeSubmit() {
-    const subjectId = parseInt(document.getElementById('bulk_subject_id').value || 0);
-    const teacherId = parseInt(document.getElementById('bulk_teacher_id').value || 0);
-    
-    const days = Array.from(document.querySelectorAll('.chip-toggle[data-group="days"].active')).map(c => c.dataset.value);
-    const slotIds = Array.from(document.querySelectorAll('.chip-toggle[data-group="slots"].active')).map(c => parseInt(c.dataset.value));
-    const classIds = Array.from(document.querySelectorAll('.chip-toggle[data-group="classes"].active')).map(c => parseInt(c.dataset.value));
-    
-    const roomMode = document.querySelector('input[name="bulk_room_mode"]:checked').value;
-    const singleRoomId = parseInt(document.getElementById('bulk_single_room_id').value || 0);
-    const poolRoomIds = Array.from(document.querySelectorAll('.chip-toggle[data-group="pool_rooms"].active')).map(c => parseInt(c.dataset.value));
-    const colorHex = document.getElementById('bulk_color_hex').value;
-
-    if (!subjectId || !teacherId || days.length === 0 || slotIds.length === 0 || classIds.length === 0) {
-        alert('Veuillez renseigner tous les champs obligatoires (Matière, Enseignant, au moins 1 Jour, 1 Créneau et 1 Classe).');
-        return;
     }
 
-    const payload = {
-        week_id: <?= (int)$weekId ?>,
-        subject_id: subjectId,
-        teacher_id: teacherId,
-        days: days,
-        slot_ids: slotIds,
-        class_ids: classIds,
-        room_mode: roomMode,
-        room_id: singleRoomId,
-        room_ids: poolRoomIds,
-        couleur_hex: colorHex
-    };
+    function toggleChip(el) {
+        el.classList.toggle('active');
+        updateRealtimeCounter();
+    }
 
-    const btn = document.getElementById('btnBulkAnalyze');
-    btn.disabled = true;
-    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Analyse des conflits en cours...`;
+    function toggleAllChips(group) {
+        const chips = document.querySelectorAll(`.chip-toggle[data-group="${group}"]`);
+        const allActive = Array.from(chips).every(c => c.classList.contains('active'));
+        chips.forEach(c => {
+            if (allActive) {
+                c.classList.remove('active');
+            } else {
+                c.classList.add('active');
+            }
+        });
+        updateRealtimeCounter();
+    }
 
-    fetch('/timetables/api/bulk-validate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-    })
-    .then(res => res.json())
-    .then(data => {
-        btn.disabled = false;
-        btn.innerHTML = `<i class="bi bi-magic me-1"></i>Analyser & Prévisualiser (Étape 2)`;
+    function setRoomMode(mode) {
+        document.querySelectorAll('.room-mode-card').forEach(c => c.classList.remove('active'));
+        const radio = document.querySelector(`input[name="bulk_room_mode"][value="${mode}"]`);
+        if (radio) radio.checked = true;
 
-        if (!data.success) {
-            alert(data.message || 'Erreur lors de l\'analyse des cours.');
+        const mutualizedOptions = document.getElementById('roomModeMutualizedOptions');
+        const poolOptions = document.getElementById('roomModePoolOptions');
+
+        if (mode === 'auto') {
+            document.getElementById('cardRoomModeAuto').classList.add('active');
+            mutualizedOptions.classList.add('d-none');
+            poolOptions.classList.add('d-none');
+        } else if (mode === 'mutualized') {
+            document.getElementById('cardRoomModeMutualized').classList.add('active');
+            mutualizedOptions.classList.remove('d-none');
+            poolOptions.classList.add('d-none');
+        } else if (mode === 'custom_pool') {
+            document.getElementById('cardRoomModePool').classList.add('active');
+            mutualizedOptions.classList.add('d-none');
+            poolOptions.classList.remove('d-none');
+        }
+    }
+
+    function updateRealtimeCounter() {
+        const activeDays = document.querySelectorAll('.chip-toggle[data-group="days"].active').length;
+        const activeSlots = document.querySelectorAll('.chip-toggle[data-group="slots"].active').length;
+        const activeClasses = document.querySelectorAll('.chip-toggle[data-group="classes"].active').length;
+
+        const total = activeDays * activeSlots * activeClasses;
+        const counterEl = document.getElementById('bulkRealtimeCounter');
+        if (counterEl) {
+            counterEl.innerHTML = `<i class="bi bi-lightning-charge-fill me-1"></i>${total} cours à générer (${activeClasses} cl. × ${activeDays} j. × ${activeSlots} cr.)`;
+        }
+    }
+
+    function onBulkSubjectChange(subjectId) {
+        const selectSub = document.getElementById('bulk_subject_id');
+        const opt = selectSub.options[selectSub.selectedIndex];
+        if (opt && opt.dataset.color) {
+            document.getElementById('bulk_color_hex').value = opt.dataset.color;
+        }
+    }
+
+    function onBulkAnalyzeSubmit() {
+        const subjectId = parseInt(document.getElementById('bulk_subject_id').value || 0);
+        const teacherId = parseInt(document.getElementById('bulk_teacher_id').value || 0);
+
+        const days = Array.from(document.querySelectorAll('.chip-toggle[data-group="days"].active')).map(c => c.dataset.value);
+        const slotIds = Array.from(document.querySelectorAll('.chip-toggle[data-group="slots"].active')).map(c => parseInt(c.dataset.value));
+        const classIds = Array.from(document.querySelectorAll('.chip-toggle[data-group="classes"].active')).map(c => parseInt(c.dataset.value));
+
+        const roomMode = document.querySelector('input[name="bulk_room_mode"]:checked').value;
+        const singleRoomId = parseInt(document.getElementById('bulk_single_room_id').value || 0);
+        const poolRoomIds = Array.from(document.querySelectorAll('.chip-toggle[data-group="pool_rooms"].active')).map(c => parseInt(c.dataset.value));
+        const colorHex = document.getElementById('bulk_color_hex').value;
+
+        if (!subjectId || !teacherId || days.length === 0 || slotIds.length === 0 || classIds.length === 0) {
+            alert('Veuillez renseigner tous les champs obligatoires (Matière, Enseignant, au moins 1 Jour, 1 Créneau et 1 Classe).');
             return;
         }
 
-        currentBulkSchedules = data.schedules || [];
-        document.getElementById('statTotalGenerated').textContent = data.total_generated || 0;
-        document.getElementById('statValidCount').textContent = data.valid_count || 0;
-        document.getElementById('statConflictCount').textContent = data.conflict_count || 0;
+        const payload = {
+            week_id: <?= (int) $weekId ?>,
+            subject_id: subjectId,
+            teacher_id: teacherId,
+            days: days,
+            slot_ids: slotIds,
+            class_ids: classIds,
+            room_mode: roomMode,
+            room_id: singleRoomId,
+            room_ids: poolRoomIds,
+            couleur_hex: colorHex
+        };
 
-        const btnFix = document.getElementById('btnAutoFixRooms');
-        if (data.conflict_count > 0 && currentBulkSchedules.some(s => s.has_conflict && s.suggested_room_id)) {
-            btnFix.classList.remove('d-none');
-        } else {
-            btnFix.classList.add('d-none');
-        }
+        const btn = document.getElementById('btnBulkAnalyze');
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Analyse des conflits en cours...`;
 
-        renderBulkPreviewTable(currentBulkSchedules);
-        showBulkStep(2);
-    })
-    .catch(err => {
-        btn.disabled = false;
-        btn.innerHTML = `<i class="bi bi-magic me-1"></i>Analyser & Prévisualiser (Étape 2)`;
-        alert('Erreur réseau lors de la communication avec le serveur.');
-    });
-}
+        fetch('/timetables/api/bulk-validate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+            .then(res => res.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="bi bi-magic me-1"></i>Analyser & Prévisualiser (Étape 2)`;
 
-function renderBulkPreviewTable(schedules) {
-    const tbody = document.getElementById('bulkPreviewTbody');
-    tbody.innerHTML = '';
+                if (!data.success) {
+                    alert(data.message || 'Erreur lors de l\'analyse des cours.');
+                    return;
+                }
 
-    if (schedules.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="text-muted py-4">Aucune programmation n'a pu être générée.</td></tr>`;
-        return;
+                currentBulkSchedules = data.schedules || [];
+                document.getElementById('statTotalGenerated').textContent = data.total_generated || 0;
+                document.getElementById('statValidCount').textContent = data.valid_count || 0;
+                document.getElementById('statConflictCount').textContent = data.conflict_count || 0;
+
+                const btnFix = document.getElementById('btnAutoFixRooms');
+                if (data.conflict_count > 0 && currentBulkSchedules.some(s => s.has_conflict && s.suggested_room_id)) {
+                    btnFix.classList.remove('d-none');
+                } else {
+                    btnFix.classList.add('d-none');
+                }
+
+                renderBulkPreviewTable(currentBulkSchedules);
+                showBulkStep(2);
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="bi bi-magic me-1"></i>Analyser & Prévisualiser (Étape 2)`;
+                alert('Erreur réseau lors de la communication avec le serveur.');
+            });
     }
 
-    schedules.forEach((item, index) => {
-        const tr = document.createElement('tr');
-        if (item.has_conflict) {
-            tr.className = 'table-danger border-danger border-opacity-25';
+    function renderBulkPreviewTable(schedules) {
+        const tbody = document.getElementById('bulkPreviewTbody');
+        tbody.innerHTML = '';
+
+        if (schedules.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" class="text-muted py-4">Aucune programmation n'a pu être générée.</td></tr>`;
+            return;
         }
 
-        let roomOptionsHtml = '';
-        if (item.all_rooms && item.all_rooms.length > 0) {
-            roomOptionsHtml = `<select class="form-select form-select-sm extra-small py-0.5 rounded-2" onchange="onBulkItemRoomChange(${index}, this.value)">`;
-            item.all_rooms.forEach(r => {
-                const selected = (parseInt(r.id) === parseInt(item.room_id)) ? 'selected' : '';
-                roomOptionsHtml += `<option value="${r.id}" ${selected}>${r.nom}</option>`;
-            });
-            roomOptionsHtml += `</select>`;
-        } else {
-            roomOptionsHtml = item.room_name;
-        }
-
-        let statusHtml = '';
-        if (!item.has_conflict) {
-            statusHtml = `<span class="badge bg-success bg-opacity-20 text-success border border-success border-opacity-30 rounded-pill px-2 py-1"><i class="bi bi-check-circle-fill me-1"></i>Valide</span>`;
-        } else {
-            const msgs = (item.conflict_messages || []).join(' | ');
-            statusHtml = `<span class="badge bg-danger text-white rounded-pill px-2 py-1 cursor-pointer" title="${msgs}" data-bs-toggle="tooltip"><i class="bi bi-exclamation-triangle-fill me-1"></i>Conflit</span>`;
-            if (item.suggested_room_id) {
-                statusHtml += `<div class="extra-small text-primary mt-1 fw-bold">Suggestion: ${item.suggested_room_name}</div>`;
+        schedules.forEach((item, index) => {
+            const tr = document.createElement('tr');
+            if (item.has_conflict) {
+                tr.className = 'table-danger border-danger border-opacity-25';
             }
-        }
 
-        tr.innerHTML = `
+            let roomOptionsHtml = '';
+            if (item.all_rooms && item.all_rooms.length > 0) {
+                roomOptionsHtml = `<select class="form-select form-select-sm extra-small py-0.5 rounded-2" onchange="onBulkItemRoomChange(${index}, this.value)">`;
+                item.all_rooms.forEach(r => {
+                    const selected = (parseInt(r.id) === parseInt(item.room_id)) ? 'selected' : '';
+                    roomOptionsHtml += `<option value="${r.id}" ${selected}>${r.nom}</option>`;
+                });
+                roomOptionsHtml += `</select>`;
+            } else {
+                roomOptionsHtml = item.room_name;
+            }
+
+            let statusHtml = '';
+            if (!item.has_conflict) {
+                statusHtml = `<span class="badge bg-success bg-opacity-20 text-success border border-success border-opacity-30 rounded-pill px-2 py-1"><i class="bi bi-check-circle-fill me-1"></i>Valide</span>`;
+            } else {
+                const msgs = (item.conflict_messages || []).join(' | ');
+                statusHtml = `<span class="badge bg-danger text-white rounded-pill px-2 py-1 cursor-pointer" title="${msgs}" data-bs-toggle="tooltip"><i class="bi bi-exclamation-triangle-fill me-1"></i>Conflit</span>`;
+                if (item.suggested_room_id) {
+                    statusHtml += `<div class="extra-small text-primary mt-1 fw-bold">Suggestion: ${item.suggested_room_name}</div>`;
+                }
+            }
+
+            tr.innerHTML = `
             <td class="fw-bold text-primary">${item.class_name}</td>
             <td class="fw-bold">${item.day_of_week}</td>
             <td class="font-monospace">${item.slot_label}</td>
@@ -2684,94 +2769,94 @@ function renderBulkPreviewTable(schedules) {
             </td>
         `;
 
-        tbody.appendChild(tr);
-    });
+            tbody.appendChild(tr);
+        });
 
-    if (typeof bootstrap !== 'undefined') {
-        const tooltips = [].slice.call(document.querySelectorAll('#bulkPreviewTable [data-bs-toggle="tooltip"]'));
-        tooltips.map(el => new bootstrap.Tooltip(el));
-    }
-}
-
-function onBulkItemRoomChange(index, newRoomId) {
-    if (!currentBulkSchedules[index]) return;
-    currentBulkSchedules[index].room_id = parseInt(newRoomId);
-    const rObj = (currentBulkSchedules[index].all_rooms || []).find(r => parseInt(r.id) === parseInt(newRoomId));
-    if (rObj) currentBulkSchedules[index].room_name = rObj.nom;
-}
-
-function autoFixAllRooms() {
-    let fixedCount = 0;
-    currentBulkSchedules.forEach((item) => {
-        if (item.has_conflict && item.suggested_room_id) {
-            item.room_id = item.suggested_room_id;
-            item.room_name = item.suggested_room_name;
-            item.has_conflict = false;
-            item.conflict_messages = [];
-            fixedCount++;
+        if (typeof bootstrap !== 'undefined') {
+            const tooltips = [].slice.call(document.querySelectorAll('#bulkPreviewTable [data-bs-toggle="tooltip"]'));
+            tooltips.map(el => new bootstrap.Tooltip(el));
         }
-    });
-
-    if (fixedCount > 0) {
-        let validCount = currentBulkSchedules.filter(s => !s.has_conflict).length;
-        let conflictCount = currentBulkSchedules.filter(s => s.has_conflict).length;
-
-        document.getElementById('statValidCount').textContent = validCount;
-        document.getElementById('statConflictCount').textContent = conflictCount;
-
-        renderBulkPreviewTable(currentBulkSchedules);
     }
-}
 
-function executeBulkSave(validOnly = true) {
-    let schedulesToSave = [];
-    const checks = document.querySelectorAll('.bulk-include-check');
+    function onBulkItemRoomChange(index, newRoomId) {
+        if (!currentBulkSchedules[index]) return;
+        currentBulkSchedules[index].room_id = parseInt(newRoomId);
+        const rObj = (currentBulkSchedules[index].all_rooms || []).find(r => parseInt(r.id) === parseInt(newRoomId));
+        if (rObj) currentBulkSchedules[index].room_name = rObj.nom;
+    }
 
-    checks.forEach((chk) => {
-        const idx = parseInt(chk.dataset.index);
-        if (chk.checked && currentBulkSchedules[idx]) {
-            const item = currentBulkSchedules[idx];
-            if (!validOnly || !item.has_conflict) {
-                schedulesToSave.push(item);
+    function autoFixAllRooms() {
+        let fixedCount = 0;
+        currentBulkSchedules.forEach((item) => {
+            if (item.has_conflict && item.suggested_room_id) {
+                item.room_id = item.suggested_room_id;
+                item.room_name = item.suggested_room_name;
+                item.has_conflict = false;
+                item.conflict_messages = [];
+                fixedCount++;
             }
-        }
-    });
+        });
 
-    if (schedulesToSave.length === 0) {
-        alert('Aucune programmation valide sélectionnée pour l\'enregistrement.');
-        return;
+        if (fixedCount > 0) {
+            let validCount = currentBulkSchedules.filter(s => !s.has_conflict).length;
+            let conflictCount = currentBulkSchedules.filter(s => s.has_conflict).length;
+
+            document.getElementById('statValidCount').textContent = validCount;
+            document.getElementById('statConflictCount').textContent = conflictCount;
+
+            renderBulkPreviewTable(currentBulkSchedules);
+        }
     }
 
-    const btnSave = document.getElementById('btnSaveValidOnly');
-    btnSave.disabled = true;
-    btnSave.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Enregistrement de ${schedulesToSave.length} cours...`;
+    function executeBulkSave(validOnly = true) {
+        let schedulesToSave = [];
+        const checks = document.querySelectorAll('.bulk-include-check');
 
-    fetch('/timetables/api/bulk-save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ schedules: schedulesToSave })
-    })
-    .then(res => res.json())
-    .then(data => {
-        btnSave.disabled = false;
-        btnSave.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i>Enregistrer les programmations valides`;
+        checks.forEach((chk) => {
+            const idx = parseInt(chk.dataset.index);
+            if (chk.checked && currentBulkSchedules[idx]) {
+                const item = currentBulkSchedules[idx];
+                if (!validOnly || !item.has_conflict) {
+                    schedulesToSave.push(item);
+                }
+            }
+        });
 
-        if (data.success) {
-            const modalEl = document.getElementById('bulkScheduleModal');
-            const bsModal = bootstrap.Modal.getInstance(modalEl);
-            if (bsModal) bsModal.hide();
-
-            window.location.reload();
-        } else {
-            alert(data.message || 'Erreur lors de l\'enregistrement des cours.');
+        if (schedulesToSave.length === 0) {
+            alert('Aucune programmation valide sélectionnée pour l\'enregistrement.');
+            return;
         }
-    })
-    .catch(err => {
-        btnSave.disabled = false;
-        btnSave.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i>Enregistrer les programmations valides`;
-        alert('Erreur de connexion lors de l\'enregistrement.');
-    });
-}
+
+        const btnSave = document.getElementById('btnSaveValidOnly');
+        btnSave.disabled = true;
+        btnSave.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Enregistrement de ${schedulesToSave.length} cours...`;
+
+        fetch('/timetables/api/bulk-save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ schedules: schedulesToSave })
+        })
+            .then(res => res.json())
+            .then(data => {
+                btnSave.disabled = false;
+                btnSave.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i>Enregistrer les programmations valides`;
+
+                if (data.success) {
+                    const modalEl = document.getElementById('bulkScheduleModal');
+                    const bsModal = bootstrap.Modal.getInstance(modalEl);
+                    if (bsModal) bsModal.hide();
+
+                    window.location.reload();
+                } else {
+                    alert(data.message || 'Erreur lors de l\'enregistrement des cours.');
+                }
+            })
+            .catch(err => {
+                btnSave.disabled = false;
+                btnSave.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i>Enregistrer les programmations valides`;
+                alert('Erreur de connexion lors de l\'enregistrement.');
+            });
+    }
 </script>
 
 <?php

@@ -270,14 +270,8 @@ if (isset($styleOnly)) {
                     $groupPoints = (float) ($group['total_points'] ?? 0);
                     $groupCoeffs = (int) ($group['total_coefficients'] ?? 0);
                     
-                    // Calcul de la moyenne groupée des notes annuelles
-                    $groupAnnualNotes = [];
-                    foreach ($group['rows'] as $groupRow) {
-                        if (($groupRow['annual_note'] ?? null) !== null && $groupRow['annual_note'] !== '') {
-                            $groupAnnualNotes[] = (float) $groupRow['annual_note'];
-                        }
-                    }
-                    $groupAverage = count($groupAnnualNotes) > 0 ? round(array_sum($groupAnnualNotes) / count($groupAnnualNotes), 2) : 0;
+                    // Calcul de la moyenne du groupe (Moy = Points / Coefs)
+                    $groupAverage = $group['average'] ?? ($groupCoeffs > 0 ? round($groupPoints / $groupCoeffs, 2) : 0);
                     
                     ?>
                     <table class="group-subtotal-line" style="width: 100%; border-collapse: collapse; border: none; margin: 4px 0 3px; background-color: transparent; color: #333; font-weight: normal; font-size: <?= $baseFontSize + 1 ?>px;">

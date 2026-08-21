@@ -21,20 +21,20 @@
 /* en developpement pour la configuration locale 
    
    define('DB_HOST', 'localhost');
-    define('DB_NAME', 'u290233073_col_futura_db2');
+    define('DB_NAME', 'u290233073_col_futura_db3');
     define('DB_USER', 'root');
     define('DB_PASS', '');
     define('DB_CHARSET', 'utf8mb4'); 
     define('APP_URL', 'http://localhost:8000');
 
     define('APP_ENV', 'development');
-    define('DEBUG_MODE', true);   */  //affichage des erreures PHP au developpeur
+    define('DEBUG_MODE', true);  */   //affichage des erreures PHP au developpeur
 
-/* Force error display for debugging   
+/* Force error display for debugging    
   
    ini_set('display_errors', 1);
    ini_set('display_startup_errors', 1);
    error_reporting(E_ALL);
- */ 
+ */
   
  

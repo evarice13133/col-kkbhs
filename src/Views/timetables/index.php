@@ -23,24 +23,24 @@ ob_start();
             <p class="text-muted-theme small mb-0 font-google"><?= __('timetables_subtitle') ?></p>
         </div>
         <?php if ($canManage ?? true): ?>
-        <div class="d-flex flex-wrap gap-2">
-            <a href="/timetables/slots"
-                class="btn btn-sm btn-light-theme rounded-pill px-3 py-2 fw-semibold d-flex align-items-center gap-1.5 border-theme-light shadow-xs hover-lift transition-all">
-                <i class="bi bi-clock text-primary"></i> <?= __('timetables_slots_menu') ?>
-            </a>
-            <a href="/timetables/rooms"
-                class="btn btn-sm btn-light-theme rounded-pill px-3 py-2 fw-semibold d-flex align-items-center gap-1.5 border-theme-light shadow-xs hover-lift transition-all">
-                <i class="bi bi-building text-info"></i> <?= __('timetables_rooms_menu') ?>
-            </a>
-            <a href="/timetables/weeks"
-                class="btn btn-sm btn-light-theme rounded-pill px-3 py-2 fw-semibold d-flex align-items-center gap-1.5 border-theme-light shadow-xs hover-lift transition-all">
-                <i class="bi bi-calendar-range text-warning"></i> <?= __('timetables_weeks_menu') ?>
-            </a>
-            <a href="/timetables/wizard"
-                class="btn btn-sm btn-primary rounded-pill px-3.5 py-2 fw-bold shadow-sm d-flex align-items-center gap-1.5 hover-scale transition-all">
-                <i class="bi bi-plus-circle-fill"></i> <?= __('timetables_new_wizard') ?>
-            </a>
-        </div>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="/timetables/slots"
+                    class="btn btn-sm btn-light-theme rounded-pill px-3 py-2 fw-semibold d-flex align-items-center gap-1.5 border-theme-light shadow-xs hover-lift transition-all">
+                    <i class="bi bi-clock text-primary"></i> <?= __('timetables_slots_menu') ?>
+                </a>
+                <a href="/timetables/rooms"
+                    class="btn btn-sm btn-light-theme rounded-pill px-3 py-2 fw-semibold d-flex align-items-center gap-1.5 border-theme-light shadow-xs hover-lift transition-all">
+                    <i class="bi bi-building text-info"></i> <?= __('timetables_rooms_menu') ?>
+                </a>
+                <a href="/timetables/weeks"
+                    class="btn btn-sm btn-light-theme rounded-pill px-3 py-2 fw-semibold d-flex align-items-center gap-1.5 border-theme-light shadow-xs hover-lift transition-all">
+                    <i class="bi bi-calendar-range text-warning"></i> <?= __('timetables_weeks_menu') ?>
+                </a>
+                <a href="/timetables/wizard"
+                    class="btn btn-sm btn-primary rounded-pill px-3.5 py-2 fw-bold shadow-sm d-flex align-items-center gap-1.5 hover-scale transition-all">
+                    <i class="bi bi-plus-circle-fill"></i> <?= __('timetables_new_wizard') ?>
+                </a>
+            </div>
         <?php endif; ?>
     </div>
 
@@ -185,7 +185,8 @@ ob_start();
                                 <div class="py-4">
                                     <i class="bi bi-calendar-x fs-1 d-block mb-3 text-secondary opacity-50"></i>
                                     <h6 class="fw-bold text-main-theme mb-1"><?= __('timetables_no_found') ?></h6>
-                                    <p class="small text-muted-theme mb-3">Aucun emploi du temps ne correspond à vos filtres.</p>
+                                    <p class="small text-muted-theme mb-3">Aucun emploi du temps ne correspond à vos
+                                        filtres.</p>
                                     <?php if ($canManage): ?>
                                         <a href="/timetables/wizard"
                                             class="btn btn-sm btn-primary rounded-pill px-3 py-2 fw-bold shadow-sm">
@@ -197,7 +198,7 @@ ob_start();
                         </tr>
 
                     <?php else: ?>
-                        <?php 
+                        <?php
                         $userRole = \App\Core\Session::get('user_role');
                         $canManage = in_array($userRole, ['admin', 'superadmin'], true) || \App\Core\PermissionManager::hasPermission('manage_timetables');
                         $csrfToken = \App\Core\Session::generateCsrfToken();
@@ -239,7 +240,8 @@ ob_start();
                                         <?= h($t['level_name'] ?? 'Général') ?>
                                     </span>
                                     <?php if (!empty($t['teaching_type_name'])): ?>
-                                        <div class="extra-small text-muted-theme opacity-75"><?= h($t['teaching_type_name']) ?></div>
+                                        <div class="extra-small text-muted-theme opacity-75"><?= h($t['teaching_type_name']) ?>
+                                        </div>
                                     <?php endif; ?>
                                 </td>
 
@@ -300,7 +302,8 @@ ob_start();
                                                 <form method="POST" action="/timetables/unpublish" class="d-inline m-0">
                                                     <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                                                     <input type="hidden" name="timetable_ids" value="<?= $t['timetable_ids'] ?>">
-                                                    <button type="submit" class="btn btn-sm btn-action-modern text-warning hover-scale transition-all"
+                                                    <button type="submit"
+                                                        class="btn btn-sm btn-action-modern text-warning hover-scale transition-all"
                                                         title="Dépublier (remettre en brouillon)">
                                                         <i class="bi bi-arrow-counterclockwise fs-5"></i>
                                                     </button>
@@ -310,7 +313,8 @@ ob_start();
                                                 <form method="POST" action="/timetables/publish" class="d-inline m-0">
                                                     <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                                                     <input type="hidden" name="timetable_ids" value="<?= $t['timetable_ids'] ?>">
-                                                    <button type="submit" class="btn btn-sm btn-action-modern text-success hover-scale transition-all"
+                                                    <button type="submit"
+                                                        class="btn btn-sm btn-action-modern text-success hover-scale transition-all"
                                                         title="Publier officiellement l'emploi du temps">
                                                         <i class="bi bi-check-circle-fill fs-5"></i>
                                                     </button>
@@ -333,8 +337,7 @@ ob_start();
                                         <?php if ($canManage): ?>
                                             <button type="button"
                                                 class="btn btn-sm btn-action-modern text-danger hover-scale transition-all"
-                                                data-impact-delete="timetable"
-                                                data-id="<?= explode(',', $t['timetable_ids'])[0] ?>"
+                                                data-impact-delete="timetable" data-id="<?= explode(',', $t['timetable_ids'])[0] ?>"
                                                 title="Radiographie d'impact & Suppression">
                                                 <i class="bi bi-trash3-fill fs-5"></i>
                                             </button>

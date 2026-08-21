@@ -272,7 +272,7 @@ $ribbon_structure = [
                     ['icon' => 'bi-calendar3-week', 'label' => 'Emplois du Temps', 'url' => '/timetables/print', 'permission' => 'view_timetables', 'desc' => 'Impression et export PDF des emplois du temps par cycle académique et niveau.'],
                     ['icon' => 'bi-award', 'label' => __('honor_roll_title'), 'url' => '/honors', 'permission' => 'manage_bulletins', 'roles' => ['superadmin', 'admin'], 'desc' => 'Impression des tableaux d\'honneur et félicitations.'],
                     ['icon' => 'bi-file-earmark-text', 'label' => __('proces_verbaux'), 'url' => '/proces-verbal', 'permission' => 'manage_bulletins', 'roles' => ['superadmin', 'admin'], 'desc' => 'Édition des procès-verbaux de récapitulation annuelle.'],
-                    ['icon' => 'bi-file-earmark-spreadsheet', 'label' => __('transcripts') ?? 'Relevé de Notes', 'url' => '/transcripts', 'permission' => 'view_transcripts', 'roles' => ['superadmin', 'admin'], 'desc' => 'Génération des relevés de notes consolidés.'],
+                    // ['icon' => 'bi-file-earmark-spreadsheet', 'label' => __('transcripts') ?? 'Relevé de Notes', 'url' => '/transcripts', 'permission' => 'view_transcripts', 'roles' => ['superadmin', 'admin'], 'desc' => 'Génération des relevés de notes consolidés.'],
                 ]
             ]
         ]

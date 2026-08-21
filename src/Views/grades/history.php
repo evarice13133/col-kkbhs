@@ -6,7 +6,9 @@ ob_start();
 <div class="animate-fade-in container-fluid py-3 px-md-4">
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div class="d-flex align-items-center gap-3">
-            <a href="/notes" class="btn btn-outline-secondary rounded-circle shadow-sm p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+            <a href="/notes"
+                class="btn btn-outline-secondary rounded-circle shadow-sm p-2 d-flex align-items-center justify-content-center"
+                style="width: 40px; height: 40px;">
                 <i class="bi bi-arrow-left fs-5"></i>
             </a>
             <div>
@@ -28,15 +30,18 @@ ob_start();
                         <span class="input-group-text border-0 bg-transparent text-primary">
                             <i class="bi bi-search"></i>
                         </span>
-                        <input type="text" name="q" class="form-control border-0 bg-transparent shadow-none py-2 text-main"
-                            value="<?= htmlspecialchars((string) $filters['q']) ?>"
-                            placeholder="<?= __('search') ?>..." style="min-width: 150px;">
+                        <input type="text" name="q"
+                            class="form-control border-0 bg-transparent shadow-none py-2 text-main"
+                            value="<?= htmlspecialchars((string) $filters['q']) ?>" placeholder="<?= __('search') ?>..."
+                            style="min-width: 150px;">
                     </div>
                 </div>
 
                 <!-- Filtre Type Enseignement -->
                 <div>
-                    <select name="teaching_type_id" id="filter_teaching_type" class="form-select border-0 bg-white bg-opacity-10 shadow-none py-2 text-main rounded-pill px-3" style="min-width: 150px;" onchange="this.form.submit()">
+                    <select name="teaching_type_id" id="filter_teaching_type"
+                        class="form-select border-0 bg-white bg-opacity-10 shadow-none py-2 text-main rounded-pill px-3"
+                        style="min-width: 150px;" onchange="this.form.submit()">
                         <option value="">Tous les types</option>
                         <?php foreach ($teachingTypes as $tt): ?>
                             <option value="<?= $tt['id'] ?>" <?= (int) ($filters['teaching_type_id'] ?? 0) === (int) $tt['id'] ? 'selected' : '' ?>>
@@ -48,10 +53,13 @@ ob_start();
 
                 <!-- Filtre Classe -->
                 <div>
-                    <select name="class_id" id="filter_class" class="form-select border-0 bg-white bg-opacity-10 shadow-none py-2 text-main rounded-pill px-3" style="min-width: 150px;">
+                    <select name="class_id" id="filter_class"
+                        class="form-select border-0 bg-white bg-opacity-10 shadow-none py-2 text-main rounded-pill px-3"
+                        style="min-width: 150px;">
                         <option value=""><?= __('all_classes') ?></option>
                         <?php foreach ($classes as $class): ?>
-                            <option value="<?= $class['id'] ?>" data-teaching-type="<?= $class['teaching_type_id'] ?? '' ?>" <?= (int) $filters['class_id'] === (int) $class['id'] ? 'selected' : '' ?>>
+                            <option value="<?= $class['id'] ?>" data-teaching-type="<?= $class['teaching_type_id'] ?? '' ?>"
+                                <?= (int) $filters['class_id'] === (int) $class['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($class['nom']) ?>
                             </option>
                         <?php endforeach; ?>
@@ -60,10 +68,13 @@ ob_start();
 
                 <!-- Filtre Matière -->
                 <div>
-                    <select name="subject_id" id="filter_subject" class="form-select border-0 bg-white bg-opacity-10 shadow-none py-2 text-main rounded-pill px-3" style="min-width: 150px;">
+                    <select name="subject_id" id="filter_subject"
+                        class="form-select border-0 bg-white bg-opacity-10 shadow-none py-2 text-main rounded-pill px-3"
+                        style="min-width: 150px;">
                         <option value=""><?= __('all_subjects') ?></option>
                         <?php foreach ($subjects as $subject): ?>
-                            <option value="<?= $subject['id'] ?>" data-teaching-type="<?= $subject['teaching_type_id'] ?? '' ?>" <?= (int) $filters['subject_id'] === (int) $subject['id'] ? 'selected' : '' ?>>
+                            <option value="<?= $subject['id'] ?>"
+                                data-teaching-type="<?= $subject['teaching_type_id'] ?? '' ?>" <?= (int) $filters['subject_id'] === (int) $subject['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($subject['nom']) ?>
                             </option>
                         <?php endforeach; ?>
@@ -72,7 +83,9 @@ ob_start();
 
                 <!-- Filtre Période -->
                 <div>
-                    <select name="periode" class="form-select border-0 bg-white bg-opacity-10 shadow-none py-2 text-main rounded-pill px-3" style="min-width: 150px;">
+                    <select name="periode"
+                        class="form-select border-0 bg-white bg-opacity-10 shadow-none py-2 text-main rounded-pill px-3"
+                        style="min-width: 150px;">
                         <option value=""><?= __('all_periods') ?></option>
                         <?php foreach ($periods as $period): ?>
                             <option value="<?= htmlspecialchars($period) ?>" <?= $filters['periode'] === $period ? 'selected' : '' ?>>
@@ -84,8 +97,11 @@ ob_start();
 
                 <!-- Boutons -->
                 <div class="d-flex gap-2 align-items-center ps-2">
-                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm"><?= __('filter') ?></button>
-                    <a href="/notes/history" class="btn btn-light rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" title="<?= __('reset') ?>">
+                    <button type="submit"
+                        class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm"><?= __('filter') ?></button>
+                    <a href="/notes/history"
+                        class="btn btn-light rounded-circle p-2 d-flex align-items-center justify-content-center"
+                        style="width: 40px; height: 40px;" title="<?= __('reset') ?>">
                         <i class="bi bi-arrow-counterclockwise"></i>
                     </a>
                 </div>
@@ -153,12 +169,13 @@ ob_start();
                                 </td>
                                 <td class="small"><?= htmlspecialchars($grade['appreciation']) ?></td>
                                 <td class="small">
-                                    <?= htmlspecialchars($grade['teacher_nom'] ?? '') ?> <?= htmlspecialchars($grade['teacher_prenom'] ?? '') ?>
+                                    <?= htmlspecialchars($grade['teacher_nom'] ?? '') ?>
+                                    <?= htmlspecialchars($grade['teacher_prenom'] ?? '') ?>
                                 </td>
                                 <td class="text-end">
                                     <a href="/notes/saisie?class_id=<?= $grade['class_id'] ?>&subject_id=<?= $grade['subject_id'] ?>&periode=<?= urlencode((string) $grade['periode']) ?>"
-                                       class="btn-icon-pill p-1 px-2 text-primary bg-primary bg-opacity-10 rounded-pill transition-base"
-                                       title="<?= __('edit_grade') ?>">
+                                        class="btn-icon-pill p-1 px-2 text-primary bg-primary bg-opacity-10 rounded-pill transition-base"
+                                        title="<?= __('edit_grade') ?>">
                                         <i class="bi bi-pencil-square"></i>
                                     </a>
                                 </td>
@@ -169,45 +186,47 @@ ob_start();
             </table>
         </div>
         <?php if ($totalPages > 1): ?>
-        <div class="card-footer bg-transparent border-top p-3">
-            <nav>
-                <ul class="pagination justify-content-center mb-0">
-                    <?php
-                    $queryParams = http_build_query(array_filter($filters, function($v) { return $v !== '' && $v !== 0; }));
-                    $baseUrl = '/notes/history?' . $queryParams;
-                    ?>
-                    <?php if ($page > 1): ?>
-                        <li class="page-item">
-                            <a class="page-link" href="<?= $baseUrl ?>&page=<?= $page - 1 ?>">
-                                <i class="bi bi-chevron-left"></i>
-                            </a>
-                        </li>
-                    <?php endif; ?>
-                    <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                        <?php if ($i == $page): ?>
-                            <li class="page-item active">
-                                <span class="page-link"><?= $i ?></span>
-                            </li>
-                        <?php elseif ($i == 1 || $i == $totalPages || abs($i - $page) <= 2): ?>
+            <div class="card-footer bg-transparent border-top p-3">
+                <nav>
+                    <ul class="pagination justify-content-center mb-0">
+                        <?php
+                        $queryParams = http_build_query(array_filter($filters, function ($v) {
+                            return $v !== '' && $v !== 0;
+                        }));
+                        $baseUrl = '/notes/history?' . $queryParams;
+                        ?>
+                        <?php if ($page > 1): ?>
                             <li class="page-item">
-                                <a class="page-link" href="<?= $baseUrl ?>&page=<?= $i ?>"><?= $i ?></a>
-                            </li>
-                        <?php elseif (abs($i - $page) == 3): ?>
-                            <li class="page-item disabled">
-                                <span class="page-link">...</span>
+                                <a class="page-link" href="<?= $baseUrl ?>&page=<?= $page - 1 ?>">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
                             </li>
                         <?php endif; ?>
-                    <?php endfor; ?>
-                    <?php if ($page < $totalPages): ?>
-                        <li class="page-item">
-                            <a class="page-link" href="<?= $baseUrl ?>&page=<?= $page + 1 ?>">
-                                <i class="bi bi-chevron-right"></i>
-                            </a>
-                        </li>
-                    <?php endif; ?>
-                </ul>
-            </nav>
-        </div>
+                        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                            <?php if ($i == $page): ?>
+                                <li class="page-item active">
+                                    <span class="page-link"><?= $i ?></span>
+                                </li>
+                            <?php elseif ($i == 1 || $i == $totalPages || abs($i - $page) <= 2): ?>
+                                <li class="page-item">
+                                    <a class="page-link" href="<?= $baseUrl ?>&page=<?= $i ?>"><?= $i ?></a>
+                                </li>
+                            <?php elseif (abs($i - $page) == 3): ?>
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            <?php endif; ?>
+                        <?php endfor; ?>
+                        <?php if ($page < $totalPages): ?>
+                            <li class="page-item">
+                                <a class="page-link" href="<?= $baseUrl ?>&page=<?= $page + 1 ?>">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                        <?php endif; ?>
+                    </ul>
+                </nav>
+            </div>
         <?php endif; ?>
     </div>
 </div>

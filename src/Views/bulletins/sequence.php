@@ -287,14 +287,8 @@ if (isset($styleOnly)) {
                     $groupPoints = (float) ($group['total_points'] ?? 0);
                     $groupCoeffs = (int) ($group['total_coefficients'] ?? 0);
                     
-                    // Calcul de la moyenne groupée des notes de séquence
-                    $groupSeqNotes = [];
-                    foreach ($group['rows'] as $groupRow) {
-                        if (($groupRow['seq_average'] ?? null) !== null && $groupRow['seq_average'] !== '') {
-                            $groupSeqNotes[] = (float) $groupRow['seq_average'];
-                        }
-                    }
-                    $groupAverage = count($groupSeqNotes) > 0 ? round(array_sum($groupSeqNotes) / count($groupSeqNotes), 2) : 0;
+                    // Calcul de la moyenne du groupe (Moy = Points / Coefs)
+                    $groupAverage = $group['average'] ?? ($groupCoeffs > 0 ? round($groupPoints / $groupCoeffs, 2) : 0);
                     
                     ?>
                     <table class="group-subtotal-line" style="width: 100%; border-collapse: collapse; border: none; margin: 4px 0 3px; background-color: transparent; color: #333; font-weight: normal; font-size: <?= $baseFontSize + 1 ?>px;">
