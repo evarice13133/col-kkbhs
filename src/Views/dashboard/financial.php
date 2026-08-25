@@ -134,32 +134,32 @@ ob_start();
     <div class="dashboard-tabs-container mb-4">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
             <div>
-                <h5 class="fw-black text-main-theme m-0" style="font-family: 'Outfit', sans-serif; letter-spacing: -0.02em; font-size: 1.4rem;">Tableau de bord financier</h5>
-                <p class="text-muted-theme small mb-0">Gestion de la caisse, des scolarités et des inscriptions</p>
+                <h5 class="fw-black text-main-theme m-0" style="font-family: 'Outfit', sans-serif; letter-spacing: -0.02em; font-size: 1.4rem;"><?= __('dashboard_financial_title') ?></h5>
+                <p class="text-muted-theme small mb-0"><?= __('dashboard_financial_subtitle') ?></p>
             </div>
             <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2 fw-bold small">
-                <i class="bi bi-wallet2 me-1"></i> Caisse Active
+                <i class="bi bi-wallet2 me-1"></i> <?= __('dashboard_financial_cash_active') ?>
             </span>
         </div>
         <ul class="nav nav-pills dashboard-nav-pills gap-2 flex-nowrap overflow-auto pb-2" id="dashboard-view-selector" role="tablist">
             <li class="nav-item" role="presentation">
                 <button type="button" class="nav-link active" data-view="general" role="tab">
-                    <i class="bi bi-grid-fill"></i> Vue Générale
+                    <i class="bi bi-grid-fill"></i> <?= __('dashboard_financial_tab_general') ?>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button type="button" class="nav-link" data-view="finances" role="tab">
-                    <i class="bi bi-wallet2"></i> Finances
+                    <i class="bi bi-wallet2"></i> <?= __('dashboard_financial_tab_finances') ?>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button type="button" class="nav-link" data-view="inscriptions" role="tab">
-                    <i class="bi bi-person-check-fill"></i> Inscriptions
+                    <i class="bi bi-person-check-fill"></i> <?= __('dashboard_financial_tab_registrations') ?>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button type="button" class="nav-link" data-view="scolarite" role="tab">
-                    <i class="bi bi-cash-coin"></i> Scolarité
+                    <i class="bi bi-cash-coin"></i> <?= __('dashboard_financial_tab_fees') ?>
                 </button>
             </li>
         </ul>
@@ -175,7 +175,7 @@ ob_start();
                         <i class="bi bi-people-fill"></i>
                     </div>
                     <div class="kpi-value" data-count-up="<?= (int) $totalStudents ?>"><?= $totalStudents ?></div>
-                    <div class="kpi-label">Effectif Total Actif</div>
+                    <div class="kpi-label"><?= __('dashboard_financial_total_active_students') ?></div>
                 </div>
             </div>
         </div>
@@ -187,10 +187,10 @@ ob_start();
                         <i class="bi bi-wallet2"></i>
                     </div>
                     <div class="kpi-value" style="font-size: 1.45rem; font-weight: 800;"><?= number_format($totalGeneralCollected, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 10px;">FCFA</span></div>
-                    <div class="kpi-label">Recettes Globales</div>
+                    <div class="kpi-label"><?= __('dashboard_financial_global_revenue') ?></div>
                 </div>
                 <div class="kpi-trend text-success">
-                    <i class="bi bi-percent"></i> <?= number_format($collectionRate, 1) ?>% Recouvrement
+                    <i class="bi bi-percent"></i> <?= number_format($collectionRate, 1) ?>% <?= __('dashboard_financial_recovery') ?>
                 </div>
             </div>
         </div>
@@ -202,7 +202,7 @@ ob_start();
                         <i class="bi bi-cash-stack"></i>
                     </div>
                     <div class="kpi-value" style="font-size: 1.45rem; font-weight: 800;"><?= number_format($totalExpenses, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 10px;">FCFA</span></div>
-                    <div class="kpi-label">Dépenses de l'Année</div>
+                    <div class="kpi-label"><?= __('dashboard_financial_yearly_expenses') ?></div>
                 </div>
             </div>
         </div>
@@ -214,7 +214,7 @@ ob_start();
                         <i class="bi bi-percent"></i>
                     </div>
                     <div class="kpi-value"><?= number_format($collectionRate, 1) ?>%</div>
-                    <div class="kpi-label">Taux de Recouvrement</div>
+                    <div class="kpi-label"><?= __('dashboard_financial_recovery_rate') ?></div>
                 </div>
             </div>
         </div>
@@ -253,10 +253,10 @@ ob_start();
                         <i class="bi bi-wallet2"></i>
                     </div>
                     <div class="kpi-value" style="font-size: 1.6rem;"><?= number_format($totalGeneralCollected, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 10px;">FCFA</span></div>
-                    <div class="kpi-label">Recettes Globales</div>
+                    <div class="kpi-label"><?= __('dashboard_financial_global_revenue') ?></div>
                 </div>
                 <div class="kpi-trend text-success">
-                    Scolarité (<?= number_format($totalTuitionCollected, 0, ',', ' ') ?>) + Inscription (<?= number_format($totalRegistrationCollected, 0, ',', ' ') ?>)
+                    <?= __('tuition') ?> (<?= number_format($totalTuitionCollected, 0, ',', ' ') ?>) + <?= __('registration') ?> (<?= number_format($totalRegistrationCollected, 0, ',', ' ') ?>)
                 </div>
             </div>
         </div>
@@ -268,10 +268,10 @@ ob_start();
                         <i class="bi bi-cash-stack"></i>
                     </div>
                     <div class="kpi-value" style="font-size: 1.6rem;"><?= number_format($totalExpenses, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 10px;">FCFA</span></div>
-                    <div class="kpi-label">Dépenses de l'Année</div>
+                    <div class="kpi-label"><?= __('dashboard_financial_yearly_expenses') ?></div>
                 </div>
                 <div class="kpi-trend text-danger">
-                    Ce mois : <?= number_format($monthlyExpenses, 0, ',', ' ') ?> FCFA
+                    <?= __('dashboard_financial_this_month') ?> <?= number_format($monthlyExpenses, 0, ',', ' ') ?> FCFA
                 </div>
             </div>
         </div>
@@ -283,10 +283,10 @@ ob_start();
                         <i class="bi bi-wallet-fill"></i>
                     </div>
                     <div class="kpi-value" style="font-size: 1.6rem;"><?= number_format($netBalance, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 10px;">FCFA</span></div>
-                    <div class="kpi-label">Solde Réel (Recettes - Dépenses)</div>
+                    <div class="kpi-label"><?= __('dashboard_financial_net_balance') ?></div>
                 </div>
                 <div class="kpi-trend <?= $netBalance >= 0 ? 'text-info' : 'text-danger' ?>">
-                    <i class="bi <?= $netBalance >= 0 ? 'bi-plus-circle' : 'bi-dash-circle' ?>"></i> Situation Net
+                    <i class="bi <?= $netBalance >= 0 ? 'bi-plus-circle' : 'bi-dash-circle' ?>"></i> <?= __('dashboard_financial_net_situation') ?>
                 </div>
             </div>
         </div>
@@ -302,11 +302,11 @@ ob_start();
                         <i class="bi bi-graph-up-arrow"></i>
                     </div>
                     <div class="kpi-value" style="font-size: 1.45rem;"><?= number_format($totalExpected, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 10px;">FCFA</span></div>
-                    <div class="kpi-label">Scolarité Attendue</div>
+                    <div class="kpi-label"><?= __('dashboard_financial_expected_fees') ?></div>
                 </div>
                 <?php if (!empty($totalReductions) && $totalReductions > 0): ?>
                     <div class="kpi-trend text-muted">
-                        Brut : <?= number_format($totalExpectedGross, 0, ',', ' ') ?> (-<?= number_format($totalReductions, 0, ',', ' ') ?>)
+                        <?= __('dashboard_financial_gross') ?> <?= number_format($totalExpectedGross, 0, ',', ' ') ?> (-<?= number_format($totalReductions, 0, ',', ' ') ?>)
                     </div>
                 <?php endif; ?>
             </div>
@@ -319,10 +319,10 @@ ob_start();
                         <i class="bi bi-cash-stack"></i>
                     </div>
                     <div class="kpi-value" style="font-size: 1.45rem;"><?= number_format($totalTuitionCollected, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 10px;">FCFA</span></div>
-                    <div class="kpi-label">Scolarité Encaissée</div>
+                    <div class="kpi-label"><?= __('dashboard_financial_collected_fees') ?></div>
                 </div>
                 <div class="kpi-trend text-success">
-                    Taux de Recouvrement : <?= number_format($collectionRate, 1) ?>%
+                    <?= __('dashboard_financial_recovery_rate_label') ?> <?= number_format($collectionRate, 1) ?>%
                 </div>
             </div>
         </div>
@@ -335,7 +335,7 @@ ob_start();
                     </div>
                     <?php $remainingTuition = max(0.0, $totalExpected - $totalTuitionCollected); ?>
                     <div class="kpi-value" style="font-size: 1.45rem;"><?= number_format($remainingTuition, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 10px;">FCFA</span></div>
-                    <div class="kpi-label">Reste à Recouvrer</div>
+                    <div class="kpi-label"><?= __('dashboard_financial_remaining_to_recover') ?></div>
                 </div>
             </div>
         </div>
@@ -347,7 +347,7 @@ ob_start();
                         <i class="bi bi-gift-fill"></i>
                     </div>
                     <div class="kpi-value" style="font-size: 1.45rem;"><?= number_format($totalReductions, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 10px;">FCFA</span></div>
-                    <div class="kpi-label">Réductions appliquées</div>
+                    <div class="kpi-label"><?= __('dashboard_financial_applied_reductions') ?></div>
                 </div>
             </div>
         </div>
@@ -358,16 +358,16 @@ ob_start();
         <!-- Situation des Tranches -->
         <div class="col-12">
             <div class="modern-card border-0 shadow-sm p-4">
-                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-bar-chart-steps text-primary me-2"></i>Situation des tranches configurées</h6>
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-bar-chart-steps text-primary me-2"></i><?= __('dashboard_financial_installments_situation') ?></h6>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead>
                             <tr class="text-muted small text-uppercase">
-                                <th>Tranche</th>
-                                <th class="text-end">Montant Attendu</th>
-                                <th class="text-end">Montant Payé</th>
-                                <th class="text-end">Montant Restant</th>
-                                <th style="width: 250px;">Progression</th>
+                                <th><?= __('dashboard_financial_installment') ?></th>
+                                <th class="text-end"><?= __('dashboard_financial_expected_amount') ?></th>
+                                <th class="text-end"><?= __('dashboard_financial_paid_amount') ?></th>
+                                <th class="text-end"><?= __('dashboard_financial_remaining_amount') ?></th>
+                                <th style="width: 250px;"><?= __('dashboard_financial_progress') ?></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -378,7 +378,7 @@ ob_start();
                                 $percent = $planned > 0 ? round(($paid / $planned) * 100, 1) : 0;
                             ?>
                                 <tr class="border-bottom border-theme-light">
-                                    <td class="fw-bold text-main-theme">Tranche #<?= htmlspecialchars($ts['installment_number']) ?></td>
+                                    <td class="fw-bold text-main-theme"><?= __('dashboard_financial_installment_num') ?><?= htmlspecialchars($ts['installment_number']) ?></td>
                                     <td class="text-end text-main-theme fw-semibold"><?= number_format($planned, 0, ',', ' ') ?> FCFA</td>
                                     <td class="text-end text-success fw-semibold"><?= number_format($paid, 0, ',', ' ') ?> FCFA</td>
                                     <td class="text-end text-danger fw-semibold"><?= number_format($remaining, 0, ',', ' ') ?> FCFA</td>
@@ -407,16 +407,16 @@ ob_start();
         <div class="col-12 col-lg-6">
             <div class="modern-card border-0 shadow-sm p-4 h-100">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="fw-bold text-main-theme mb-0"><i class="bi bi-door-open text-danger me-2"></i>Insolvabilité par Classe</h6>
+                    <h6 class="fw-bold text-main-theme mb-0"><i class="bi bi-door-open text-danger me-2"></i><?= __('dashboard_financial_insolvency_by_class') ?></h6>
                     <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill"><?= number_format($totalInsolventAmount, 0, ',', ' ') ?> FCFA</span>
                 </div>
                 <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
                     <table class="table table-hover align-middle mb-0">
                         <thead>
                             <tr class="text-muted small text-uppercase">
-                                <th>Classe</th>
-                                <th class="text-center">Élèves</th>
-                                <th class="text-end">Montant Dû</th>
+                                <th><?= __('dashboard_financial_class') ?></th>
+                                <th class="text-center"><?= __('dashboard_financial_students') ?></th>
+                                <th class="text-end"><?= __('dashboard_financial_amount_due') ?></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -429,7 +429,7 @@ ob_start();
                             <?php endforeach; ?>
                             <?php if (empty($insolventsByClass)): ?>
                                 <tr>
-                                    <td colspan="3" class="text-center text-muted py-3">Aucune classe insolvable</td>
+                                    <td colspan="3" class="text-center text-muted py-3"><?= __('dashboard_financial_no_insolvent_classes') ?></td>
                                 </tr>
                             <?php endif; ?>
                         </tbody>
@@ -441,15 +441,15 @@ ob_start();
         <!-- Top 10 des élèves les plus insolvables -->
         <div class="col-12 col-lg-6">
             <div class="modern-card border-0 shadow-sm p-4 h-100">
-                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-people-fill text-warning me-2"></i>Top 10 des retards les plus importants</h6>
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-people-fill text-warning me-2"></i><?= __('dashboard_financial_top_insolvents') ?></h6>
                 <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
                     <table class="table table-hover align-middle mb-0">
                         <thead>
                             <tr class="text-muted small text-uppercase">
-                                <th>Élève</th>
-                                <th>Classe</th>
-                                <th class="text-center">Échéances</th>
-                                <th class="text-end">Retard Dû</th>
+                                <th><?= __('dashboard_financial_student') ?></th>
+                                <th><?= __('dashboard_financial_class') ?></th>
+                                <th class="text-center"><?= __('dashboard_financial_due_dates') ?></th>
+                                <th class="text-end"><?= __('dashboard_financial_delay_due') ?></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -457,13 +457,13 @@ ob_start();
                                 <tr class="border-bottom border-theme-light">
                                     <td class="fw-bold text-main-theme"><?= htmlspecialchars(strtoupper($ti['student_nom']) . ' ' . ucwords(strtolower($ti['student_prenom']))) ?></td>
                                     <td><span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill"><?= htmlspecialchars($ti['class_name']) ?></span></td>
-                                    <td class="text-center text-muted-theme fw-semibold"><?= $ti['unpaid_installments_count'] ?> tranches</td>
+                                    <td class="text-center text-muted-theme fw-semibold"><?= $ti['unpaid_installments_count'] ?> <?= __('dashboard_financial_installments_count') ?></td>
                                     <td class="text-end text-danger fw-bold"><?= number_format($ti['amount_due'], 0, ',', ' ') ?> FCFA</td>
                                 </tr>
                             <?php endforeach; ?>
                             <?php if (empty($topInsolvents)): ?>
                                 <tr>
-                                    <td colspan="4" class="text-center text-muted py-3">Aucun retard de paiement détecté</td>
+                                    <td colspan="4" class="text-center text-muted py-3"><?= __('dashboard_financial_no_delays_detected') ?></td>
                                 </tr>
                             <?php endif; ?>
                         </tbody>
@@ -477,7 +477,7 @@ ob_start();
     <div class="row g-3 g-md-4 mb-4" data-views="inscriptions">
         <div class="col-12">
             <div class="kpi-section-title text-success mb-2 d-flex align-items-center gap-2">
-                <i class="bi bi-person-check fs-5"></i> Validation Financière des Inscriptions & Rentrée
+                <i class="bi bi-person-check fs-5"></i> <?= __('dashboard_financial_registration_validation') ?>
             </div>
         </div>
         <!-- Élèves Déjà Inscrits -->
@@ -488,7 +488,7 @@ ob_start();
                         <i class="bi bi-person-check"></i>
                     </div>
                     <div class="kpi-value" data-count-up="<?= (int)$totalEnrolled ?>"><?= number_format($totalEnrolled) ?></div>
-                    <div class="kpi-label">Inscriptions Payées (Caisse)</div>
+                    <div class="kpi-label"><?= __('dashboard_financial_paid_registrations') ?></div>
                 </div>
             </div>
         </div>
@@ -500,7 +500,7 @@ ob_start();
                         <i class="bi bi-person-x"></i>
                     </div>
                     <div class="kpi-value" data-count-up="<?= (int)$totalNonEnrolled ?>"><?= number_format($totalNonEnrolled) ?></div>
-                    <div class="kpi-label">Inscriptions Non Payées</div>
+                    <div class="kpi-label"><?= __('dashboard_financial_unpaid_registrations') ?></div>
                 </div>
             </div>
         </div>
@@ -513,7 +513,7 @@ ob_start();
                     </div>
                     <?php $registrationRate = $totalStudents > 0 ? round(($totalEnrolled / $totalStudents) * 100, 1) : 0; ?>
                     <div class="kpi-value" data-count-up="<?= (int)$registrationRate ?>" data-suffix="%"><?= $registrationRate ?>%</div>
-                    <div class="kpi-label">Taux de Paiement</div>
+                    <div class="kpi-label"><?= __('dashboard_financial_payment_rate') ?></div>
                 </div>
             </div>
         </div>
@@ -525,7 +525,7 @@ ob_start();
                         <i class="bi bi-people"></i>
                     </div>
                     <div class="kpi-value" data-count-up="<?= (int)$totalStudents ?>"><?= number_format($totalStudents) ?></div>
-                    <div class="kpi-label">Total Élèves Attendus</div>
+                    <div class="kpi-label"><?= __('dashboard_financial_total_expected_students') ?></div>
                 </div>
             </div>
         </div>
@@ -535,25 +535,25 @@ ob_start();
     <div class="row g-3 mb-4" data-views="finances">
         <div class="col-lg-6">
             <div class="modern-card border-0 shadow-sm p-4 h-100">
-                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-calendar-range text-primary me-2"></i>Détail des Recettes</h6>
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-calendar-range text-primary me-2"></i><?= __('dashboard_financial_receipts_detail') ?></h6>
                 <div class="row g-2">
                     <div class="col-4">
                         <div class="p-3 bg-light bg-opacity-25 rounded-4 border text-center h-100">
-                            <span class="text-muted-theme small fw-bold d-block mb-1">Aujourd'hui</span>
+                            <span class="text-muted-theme small fw-bold d-block mb-1"><?= __('dashboard_financial_today') ?></span>
                             <span class="fw-extrabold text-main-theme small d-block"><?= number_format($dailyCollections, 0, ',', ' ') ?></span>
                             <small class="text-muted" style="font-size: 8px;">FCFA</small>
                         </div>
                     </div>
                     <div class="col-4">
                         <div class="p-3 bg-light bg-opacity-25 rounded-4 border text-center h-100">
-                            <span class="text-muted-theme small fw-bold d-block mb-1">Cette semaine</span>
+                            <span class="text-muted-theme small fw-bold d-block mb-1"><?= __('dashboard_financial_this_week') ?></span>
                             <span class="fw-extrabold text-main-theme small d-block"><?= number_format($weeklyCollections, 0, ',', ' ') ?></span>
                             <small class="text-muted" style="font-size: 8px;">FCFA</small>
                         </div>
                     </div>
                     <div class="col-4">
                         <div class="p-3 bg-light bg-opacity-25 rounded-4 border text-center h-100">
-                            <span class="text-muted-theme small fw-bold d-block mb-1">Ce mois</span>
+                            <span class="text-muted-theme small fw-bold d-block mb-1"><?= __('dashboard_financial_this_month_detail') ?></span>
                             <span class="fw-extrabold text-main-theme small d-block"><?= number_format($monthlyCollections, 0, ',', ' ') ?></span>
                             <small class="text-muted" style="font-size: 8px;">FCFA</small>
                         </div>
@@ -563,25 +563,25 @@ ob_start();
         </div>
         <div class="col-lg-6">
             <div class="modern-card border-0 shadow-sm p-4 h-100">
-                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-wallet2 text-danger me-2"></i>Détail des Dépenses</h6>
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-wallet2 text-danger me-2"></i><?= __('dashboard_financial_expenses_detail') ?></h6>
                 <div class="row g-2">
                     <div class="col-4">
                         <div class="p-3 bg-light bg-opacity-25 rounded-4 border text-center h-100">
-                            <span class="text-muted-theme small fw-bold d-block mb-1">Aujourd'hui</span>
+                            <span class="text-muted-theme small fw-bold d-block mb-1"><?= __('dashboard_financial_today') ?></span>
                             <span class="fw-extrabold text-main-theme small d-block"><?= number_format($dailyExpenses, 0, ',', ' ') ?></span>
                             <small class="text-muted" style="font-size: 8px;">FCFA</small>
                         </div>
                     </div>
                     <div class="col-4">
                         <div class="p-3 bg-light bg-opacity-25 rounded-4 border text-center h-100">
-                            <span class="text-muted-theme small fw-bold d-block mb-1">Cette semaine</span>
+                            <span class="text-muted-theme small fw-bold d-block mb-1"><?= __('dashboard_financial_this_week') ?></span>
                             <span class="fw-extrabold text-main-theme small d-block"><?= number_format($weeklyExpenses, 0, ',', ' ') ?></span>
                             <small class="text-muted" style="font-size: 8px;">FCFA</small>
                         </div>
                     </div>
                     <div class="col-4">
                         <div class="p-3 bg-light bg-opacity-25 rounded-4 border text-center h-100">
-                            <span class="text-muted-theme small fw-bold d-block mb-1">Ce mois</span>
+                            <span class="text-muted-theme small fw-bold d-block mb-1"><?= __('dashboard_financial_this_month_detail') ?></span>
                             <span class="fw-extrabold text-main-theme small d-block"><?= number_format($monthlyExpenses, 0, ',', ' ') ?></span>
                             <small class="text-muted" style="font-size: 8px;">FCFA</small>
                         </div>
@@ -620,15 +620,15 @@ ob_start();
         <!-- Expenses by Category Doughnut -->
         <div class="col-lg-4 col-xl-3">
             <div class="modern-card border-0 shadow-sm p-4 h-100">
-                <h6 class="fw-black text-main-theme mb-4">Répartition des Dépenses</h6>
+                <h6 class="fw-black text-main-theme mb-4"><?= __('dashboard_financial_expenses_repartition') ?></h6>
                 <div class="d-flex align-items-center justify-content-center" style="height:220px; position:relative;">
                     <canvas id="expensesCategoryChart"></canvas>
                     <?php if (empty($expensesByCategory)): ?>
-                        <div class="position-absolute text-center text-muted small">Aucune dépense active</div>
+                        <div class="position-absolute text-center text-muted small"><?= __('dashboard_financial_no_active_expenses') ?></div>
                     <?php endif; ?>
                 </div>
                 <div class="text-center mt-3">
-                    <span class="small text-muted-theme">Total des dépenses :</span>
+                    <span class="small text-muted-theme"><?= __('dashboard_financial_total_expenses_colon') ?></span>
                     <span class="fw-bold text-danger small"><?= number_format($totalExpenses, 0, ',', ' ') ?> FCFA</span>
                 </div>
             </div>
@@ -637,7 +637,7 @@ ob_start();
         <!-- Monthly Evolution (Revenue vs Expenses) -->
         <div class="col-lg-4 col-xl-6">
             <div class="modern-card border-0 shadow-sm p-4 h-100">
-                <h6 class="fw-black text-main-theme mb-4">Comparatif Mensuel (Recettes vs Dépenses)</h6>
+                <h6 class="fw-black text-main-theme mb-4"><?= __('dashboard_financial_monthly_comparison') ?></h6>
                 <div style="height:220px;">
                     <canvas id="monthlyChart"></canvas>
                 </div>
@@ -650,7 +650,7 @@ ob_start();
         <!-- Modes de Règlement -->
         <div class="col-lg-4">
             <div class="modern-card border-0 shadow-sm p-4 h-100">
-                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-credit-card-2-back text-primary me-2"></i>Modes de Règlement</h6>
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-credit-card-2-back text-primary me-2"></i><?= __('dashboard_financial_payment_modes') ?></h6>
                 <div style="height: 180px; position: relative;" class="d-flex align-items-center justify-content-center">
                     <canvas id="paymentMethodChart"></canvas>
                 </div>
@@ -659,10 +659,10 @@ ob_start();
         <!-- Motifs des Réductions -->
         <div class="col-lg-4">
             <div class="modern-card border-0 shadow-sm p-4 h-100">
-                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-percent text-warning me-2"></i>Motifs des Réductions</h6>
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-percent text-warning me-2"></i><?= __('dashboard_financial_reduction_reasons') ?></h6>
                 <div style="height: 180px; position: relative;" class="d-flex align-items-center justify-content-center">
                     <?php if (empty($reductionsRepartition)): ?>
-                        <div class="text-center text-muted small py-5">Aucune réduction active</div>
+                        <div class="text-center text-muted small py-5"><?= __('dashboard_financial_no_active_reductions') ?></div>
                     <?php else: ?>
                         <canvas id="reductionsChart"></canvas>
                     <?php endif; ?>
@@ -672,10 +672,10 @@ ob_start();
         <!-- Motifs des Bourses -->
         <div class="col-lg-4">
             <div class="modern-card border-0 shadow-sm p-4 h-100">
-                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-award text-success me-2"></i>Motifs des Bourses</h6>
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-award text-success me-2"></i><?= __('dashboard_financial_scholarship_reasons') ?></h6>
                 <div style="height: 180px; position: relative;" class="d-flex align-items-center justify-content-center">
                     <?php if (empty($scholarshipsRepartition)): ?>
-                        <div class="text-center text-muted small py-5">Aucune bourse active</div>
+                        <div class="text-center text-muted small py-5"><?= __('dashboard_financial_no_active_scholarships') ?></div>
                     <?php else: ?>
                         <canvas id="scholarshipsChart"></canvas>
                     <?php endif; ?>
@@ -691,7 +691,7 @@ ob_start();
                 <div class="card-header bg-transparent border-0 px-4 pt-4 pb-0 d-flex align-items-center justify-content-between flex-wrap gap-2">
                     <div>
                         <h6 class="fw-black text-main-theme mb-1"><?= __('class_registration_stats') ?></h6>
-                        <p class="text-muted-theme small mb-0">Statut des inscriptions par classe (Politique : <?= htmlspecialchars(ucfirst($policy)) ?>)</p>
+                        <p class="text-muted-theme small mb-0"><?= __('dashboard_financial_registration_status_by_class') ?> (Politique : <?= htmlspecialchars(ucfirst($policy)) ?>)</p>
                     </div>
                 </div>
                 <div class="card-body p-0">
@@ -699,12 +699,12 @@ ob_start();
                         <table class="table table-hover align-middle mb-0">
                             <thead>
                                 <tr class="border-bottom border-theme-light">
-                                    <th class="ps-4 py-3 fw-semibold text-muted-theme small text-uppercase">Classe</th>
-                                    <th class="py-3 fw-semibold text-muted-theme text-center small text-uppercase">Total Élèves</th>
-                                    <th class="py-3 fw-semibold text-muted-theme text-center small text-uppercase">Inscriptions Payées</th>
-                                    <th class="py-3 fw-semibold text-muted-theme text-center small text-uppercase">Inscriptions Non Payées</th>
-                                    <th class="py-3 fw-semibold text-muted-theme small text-uppercase">Taux de Paiement</th>
-                                    <th class="pe-4 py-3 fw-semibold text-muted-theme text-end small text-uppercase">Montant Encaissé</th>
+                                    <th class="ps-4 py-3 fw-semibold text-muted-theme small text-uppercase"><?= __('dashboard_financial_class') ?></th>
+                                    <th class="py-3 fw-semibold text-muted-theme text-center small text-uppercase"><?= __('dashboard_financial_total_students_label') ?></th>
+                                    <th class="py-3 fw-semibold text-muted-theme text-center small text-uppercase"><?= __('dashboard_financial_paid_registrations_label') ?></th>
+                                    <th class="py-3 fw-semibold text-muted-theme text-center small text-uppercase"><?= __('dashboard_financial_unpaid_registrations') ?></th>
+                                    <th class="py-3 fw-semibold text-muted-theme small text-uppercase"><?= __('dashboard_financial_payment_rate') ?></th>
+                                    <th class="pe-4 py-3 fw-semibold text-muted-theme text-end small text-uppercase"><?= __('dashboard_financial_amount_collected') ?></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -798,11 +798,11 @@ ob_start();
                                                 <div class="mt-1">
                                                     <?php if (($payment['type'] ?? '') === 'inscription'): ?>
                                                         <span class="badge rounded-pill text-uppercase px-2 py-1" style="font-size: 0.65rem; background-color: rgba(59, 130, 246, 0.1); color: #2563eb;">
-                                                            <i class="bi bi-journal-check me-1"></i>Inscription
+                                                            <i class="bi bi-journal-check me-1"></i><?= __('registration') ?>
                                                         </span>
                                                     <?php else: ?>
                                                         <span class="badge rounded-pill text-uppercase px-2 py-1" style="font-size: 0.65rem; background-color: rgba(16, 185, 129, 0.1); color: #059669;">
-                                                            <i class="bi bi-cash-coin me-1"></i>Scolarité
+                                                            <i class="bi bi-cash-coin me-1"></i><?= __('tuition') ?>
                                                         </span>
                                                     <?php endif; ?>
                                                 </div>
@@ -810,7 +810,7 @@ ob_start();
                                             <td>
                                                 <?php
                                                 $methodIcons = ['especes' => 'bi-cash', 'mobile_money' => 'bi-phone', 'virement' => 'bi-bank', 'cheque' => 'bi-credit-card-2-front'];
-                                                $methodLabels = ['especes' => 'Espèces', 'mobile_money' => 'Mobile Money', 'virement' => 'Virement', 'cheque' => 'Chèque'];
+                                                $methodLabels = ['especes' => __('payment_mode_cash'), 'mobile_money' => __('payment_mode_momo'), 'virement' => __('payment_mode_bank'), 'cheque' => __('payment_mode_check')];
                                                 $m = $payment['payment_method'] ?? '';
                                                 ?>
                                                 <span class="d-flex align-items-center gap-2 text-muted-theme small">
