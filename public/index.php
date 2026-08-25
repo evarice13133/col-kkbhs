@@ -676,10 +676,7 @@ elseif (strpos($path, '/subjects') === 0) {
 
 // ====== ROUTES: ANNEES ACADEMIQUES ======
 elseif (strpos($path, '/academic_years') === 0) {
-    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'it_manager'])) {
-        header('Location: /');
-        exit;
-    }
+    \App\Core\PermissionManager::requirePermission('manage_academic_years');
     // On load le controlleur avec le namespace importé
     $c = new AcademicYearController();
     if ($path === '/academic_years')

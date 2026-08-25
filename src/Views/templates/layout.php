@@ -142,7 +142,7 @@ $ribbon_structure = [
             [
                 'title' => __('layout_academic_structure'),
                 'items' => [
-                    ['icon' => 'bi-calendar-event', 'label' => __('academic_years'), 'url' => '/academic_years', 'permission' => 'manage_academic_years', 'roles' => ['superadmin', 'it_manager'], 'desc' => __('layout_desc_academic_years')],
+                    ['icon' => 'bi-calendar-event', 'label' => __('academic_years'), 'url' => '/academic_years', 'permission' => 'manage_academic_years', 'roles' => ['superadmin', 'admin', 'it_manager'], 'desc' => __('layout_desc_academic_years')],
                     ['icon' => 'bi-diagram-3', 'label' => __('teaching_types'), 'url' => '/teaching_types', 'permission' => 'manage_teaching_types', 'roles' => ['superadmin', 'admin', 'direction_academique'], 'desc' => __('layout_desc_teaching_types')],
                     ['icon' => 'bi-bar-chart-steps', 'label' => __('layout_levels'), 'url' => '/levels', 'permission' => 'manage_classes_structure', 'roles' => ['superadmin', 'admin', 'direction_academique'], 'desc' => __('layout_levels_desc')],
                     ['icon' => 'bi-layers', 'label' => __('layout_cycles'), 'url' => '/cycles', 'permission' => 'manage_cycles', 'roles' => ['superadmin', 'admin', 'direction_academique'], 'desc' => __('layout_cycles_desc')],
