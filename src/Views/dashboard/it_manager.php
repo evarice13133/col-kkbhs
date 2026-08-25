@@ -17,22 +17,22 @@ ob_start();
     <div class="dashboard-tabs-container mb-4">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
             <div>
-                <h5 class="fw-black text-main-theme m-0" style="font-family: 'Outfit', sans-serif; letter-spacing: -0.02em; font-size: 1.4rem;">Portail d'Administration IT</h5>
-                <p class="text-muted-theme small mb-0">Supervision système, rôles et sécurité</p>
+                <h5 class="fw-black text-main-theme m-0" style="font-family: 'Outfit', sans-serif; letter-spacing: -0.02em; font-size: 1.4rem;"><?= __('dashboard_it_title') ?></h5>
+                <p class="text-muted-theme small mb-0"><?= __('dashboard_it_subtitle') ?></p>
             </div>
             <span class="badge bg-info bg-opacity-10 text-info rounded-pill px-3 py-2 fw-bold small">
-                <i class="bi bi-shield-check me-1"></i> Admin IT
+                <i class="bi bi-shield-check me-1"></i> <?= __('dashboard_it_badge') ?>
             </span>
         </div>
         <ul class="nav nav-pills dashboard-nav-pills gap-2 flex-nowrap overflow-auto pb-2" id="dashboard-view-selector" role="tablist">
             <li class="nav-item" role="presentation">
                 <button type="button" class="nav-link active" data-view="general" role="tab">
-                    <i class="bi bi-grid-fill"></i> Vue Générale
+                    <i class="bi bi-grid-fill"></i> <?= __('dashboard_it_tab_general') ?>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button type="button" class="nav-link" data-view="rh" role="tab">
-                    <i class="bi bi-people-fill"></i> Ressources Humaines
+                    <i class="bi bi-people-fill"></i> <?= __('dashboard_it_tab_rh') ?>
                 </button>
             </li>
         </ul>

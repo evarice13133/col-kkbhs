@@ -98,60 +98,61 @@ ob_start();
 <div class="animate-fade-in admin-analytics">
 
     <!-- Tabs header for modern SaaS/ERP -->
+    <!-- Tabs header for modern SaaS/ERP -->
     <div class="dashboard-tabs-container mb-4">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
             <div>
-                <h5 class="fw-black text-main-theme m-0" style="font-family: 'Outfit', sans-serif; letter-spacing: -0.02em; font-size: 1.4rem;">Tableau de bord de pilotage</h5>
-                <p class="text-muted-theme small mb-0">Gestion générale et indicateurs clés de performance</p>
+                <h5 class="fw-black text-main-theme m-0" style="font-family: 'Outfit', sans-serif; letter-spacing: -0.02em; font-size: 1.4rem;"><?= __('dashboard_admin_title') ?></h5>
+                <p class="text-muted-theme small mb-0"><?= __('dashboard_admin_subtitle') ?></p>
             </div>
             <div class="d-flex align-items-center gap-2 flex-wrap">
                 <?php if (!empty($no_active_teaching_types)): ?>
                     <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3 py-2 fw-bold small">
-                        <i class="bi bi-exclamation-triangle-fill me-1"></i> Aucun type d'enseignement actif
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i> <?= __('dashboard_admin_no_teaching_types') ?>
                     </span>
                 <?php elseif (!empty($activeTeachingTypes) && count($activeTeachingTypes) === 1): ?>
                     <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2 fw-bold small">
-                        <i class="bi bi-building me-1"></i> Type d'Enseignement : <?= htmlspecialchars($activeTeachingTypes[0]['nom']) ?>
+                        <i class="bi bi-building me-1"></i> <?= __('dashboard_admin_teaching_type_colon') ?> <?= htmlspecialchars($activeTeachingTypes[0]['nom']) ?>
                     </span>
                 <?php elseif (!empty($activeTeachingTypes) && count($activeTeachingTypes) > 1): ?>
                     <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 fw-bold small">
-                        <i class="bi bi-diagram-3-fill me-1"></i> <?= count($activeTeachingTypes) ?> Types d'Enseignement Actifs
+                        <i class="bi bi-diagram-3-fill me-1"></i> <?= count($activeTeachingTypes) ?> <?= __('dashboard_admin_active_teaching_types') ?>
                     </span>
                 <?php endif; ?>
                 <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 fw-bold small">
-                    <i class="bi bi-calendar-event me-1"></i> Année Scolaire : <?= htmlspecialchars($activeYearName ?: '') ?>
+                    <i class="bi bi-calendar-event me-1"></i> <?= __('dashboard_admin_academic_year_colon') ?> <?= htmlspecialchars($activeYearName ?: '') ?>
                 </span>
             </div>
         </div>
         <ul class="nav nav-pills dashboard-nav-pills gap-2 flex-nowrap overflow-auto pb-2" id="dashboard-view-selector" role="tablist">
             <li class="nav-item" role="presentation">
                 <button type="button" class="nav-link active" data-view="general" role="tab">
-                    <i class="bi bi-grid-fill"></i> Vue Générale1
+                    <i class="bi bi-grid-fill"></i> <?= __('dashboard_admin_tab_general') ?>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button type="button" class="nav-link" data-view="finances" role="tab">
-                    <i class="bi bi-wallet2"></i> Finances1
+                    <i class="bi bi-wallet2"></i> <?= __('dashboard_admin_tab_finances') ?>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button type="button" class="nav-link" data-view="inscriptions" role="tab">
-                    <i class="bi bi-person-check-fill"></i> Inscriptions
+                    <i class="bi bi-person-check-fill"></i> <?= __('dashboard_admin_tab_registrations') ?>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button type="button" class="nav-link" data-view="scolarite" role="tab">
-                    <i class="bi bi-cash-coin"></i> Scolarité
+                    <i class="bi bi-cash-coin"></i> <?= __('dashboard_admin_tab_fees') ?>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button type="button" class="nav-link" data-view="rh" role="tab">
-                    <i class="bi bi-people-fill"></i> Ressources Humaines
+                    <i class="bi bi-people-fill"></i> <?= __('dashboard_admin_tab_rh') ?>
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button type="button" class="nav-link" data-view="pedagogie" role="tab">
-                    <i class="bi bi-mortarboard-fill"></i> Pédagogie
+                    <i class="bi bi-mortarboard-fill"></i> <?= __('dashboard_admin_tab_pedagogy') ?>
                 </button>
             </li>
         </ul>
@@ -162,8 +163,8 @@ ob_start();
             <div class="d-flex align-items-center gap-3">
                 <i class="bi bi-exclamation-triangle-fill fs-2 text-warning"></i>
                 <div>
-                    <h6 class="fw-bold m-0 text-main-theme">Aucun type d'enseignement actif</h6>
-                    <p class="mb-0 text-muted small">Aucun type d'enseignement n'est actuellement activé pour cet établissement. Les statistiques pédagogiques et d'effectifs ne peuvent pas être calculées. Veuillez en activer un sous <strong>Configuration &gt; Types d'Enseignement</strong>.</p>
+                    <h6 class="fw-bold m-0 text-main-theme"><?= __('dashboard_admin_no_teaching_types') ?></h6>
+                    <p class="mb-0 text-muted small"><?= __('dashboard_admin_no_teaching_types_desc') ?></p>
                 </div>
             </div>
         </div>
@@ -175,9 +176,9 @@ ob_start();
             <div class="d-flex align-items-center justify-content-between mb-3">
                 <div class="d-flex align-items-center gap-2">
                     <i class="bi bi-diagram-3-fill text-primary fs-5"></i>
-                    <h6 class="fw-bold m-0 text-uppercase small letter-spacing-1 text-main-theme">Synthèses par Type d'Enseignement Actif</h6>
+                    <h6 class="fw-bold m-0 text-uppercase small letter-spacing-1 text-main-theme"><?= __('dashboard_admin_teaching_type_summaries') ?></h6>
                 </div>
-                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1 fw-bold extra-small"><?= count($activeTeachingTypes) ?> synthèses distinctes</span>
+                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1 fw-bold extra-small"><?= count($activeTeachingTypes) ?> <?= __('dashboard_admin_distinct_summaries') ?></span>
             </div>
             
             <div class="row g-4">
@@ -190,9 +191,9 @@ ob_start();
                             <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-3">
                                 <div>
                                     <h5 class="fw-black text-main-theme m-0" style="font-family: 'Outfit', sans-serif;">
-                                        <i class="bi bi-building text-primary me-2"></i>SYNTHÈSE — <?= htmlspecialchars(strtoupper($ttInfo['nom'])) ?>
+                                        <i class="bi bi-building text-primary me-2"></i><?= __('dashboard_admin_summary_dash') ?> <?= htmlspecialchars(strtoupper($ttInfo['nom'])) ?>
                                     </h5>
-                                    <small class="text-muted-theme">Type d'enseignement rattaché</small>
+                                    <small class="text-muted-theme"><?= __('dashboard_admin_attached_teaching_type') ?></small>
                                 </div>
                                 <span class="badge bg-primary text-white rounded-pill px-3 py-1 fw-bold small">Code: <?= htmlspecialchars($ttInfo['code']) ?></span>
                             </div>
@@ -200,28 +201,21 @@ ob_start();
                             <div class="row g-3 mb-3">
                                 <div class="col-6 col-sm-3">
                                     <div class="p-3 bg-body rounded-3 border shadow-2xs h-100">
-                                        <div class="text-muted small fw-bold text-truncate mb-1">Élèves / Étudiants</div>
+                                        <div class="text-muted small fw-bold text-truncate mb-1"><?= __('dashboard_admin_students_students') ?></div>
                                         <div class="h4 fw-black m-0 text-primary"><?= (int)$stt['stats_students'] ?></div>
-                                        <div class="extra-small text-success fw-bold mt-1"><i class="bi bi-check-circle me-1"></i><?= (int)$stt['stats_students_inscrits'] ?> inscrits</div>
+                                        <div class="extra-small text-success fw-bold mt-1"><i class="bi bi-check-circle me-1"></i><?= (int)$stt['stats_students_inscrits'] ?> <?= __('dashboard_admin_enrolled') ?></div>
                                     </div>
                                 </div>
                                 <div class="col-6 col-sm-3">
                                     <div class="p-3 bg-body rounded-3 border shadow-2xs h-100">
                                         <div class="text-muted small fw-bold text-truncate mb-1">Classes</div>
                                         <div class="h4 fw-black m-0 text-success"><?= (int)$stt['stats_classes'] ?></div>
-                                        <div class="extra-small text-muted mt-1"><?= (int)$stt['stats_subjects'] ?> matières</div>
+                                        <div class="extra-small text-muted mt-1"><?= (int)$stt['stats_subjects'] ?> <?= __('dashboard_admin_subjects_count') ?></div>
                                     </div>
                                 </div>
                                 <div class="col-6 col-sm-3">
                                     <div class="p-3 bg-body rounded-3 border shadow-2xs h-100">
-                                        <div class="text-muted small fw-bold text-truncate mb-1">Enseignants</div>
-                                        <div class="h4 fw-black m-0 text-warning"><?= (int)$stt['stats_teachers'] ?></div>
-                                        <div class="extra-small text-muted mt-1">affectés</div>
-                                    </div>
-                                </div>
-                                <div class="col-6 col-sm-3">
-                                    <div class="p-3 bg-body rounded-3 border shadow-2xs h-100">
-                                        <div class="text-muted small fw-bold text-truncate mb-1">Saisies Notes</div>
+                                        <div class="text-muted small fw-bold text-truncate mb-1"><?= __('dashboard_admin_marks_entries') ?></div>
                                         <div class="h4 fw-black m-0 text-info"><?= (int)$stt['globalProgress'] ?>%</div>
                                         <div class="extra-small text-muted mt-1"><?= (int)$stt['globalFilled'] ?>/<?= (int)$stt['globalExpected'] ?></div>
                                     </div>
@@ -230,12 +224,12 @@ ob_start();
 
                             <div class="d-flex justify-content-between align-items-center bg-body p-3 rounded-3 border extra-small">
                                 <div>
-                                    <span class="fw-bold text-main-theme me-2">Recouvrement scolarité :</span>
+                                    <span class="fw-bold text-main-theme me-2"><?= __('dashboard_admin_fees_recovery_colon') ?></span>
                                     <span class="fw-black text-success me-3"><?= number_format($finData['totalTuitionCollected'] ?? 0, 0, ',', ' ') ?> FCFA</span>
                                     <span class="text-muted">(Taux : <?= number_format($finData['collectionRate'] ?? 0, 1) ?>%)</span>
                                 </div>
                                 <div>
-                                    <span class="fw-bold text-danger"><i class="bi bi-person-exclamation me-1"></i><?= (int)($finData['totalInsolvent'] ?? 0) ?> insolvables</span>
+                                    <span class="fw-bold text-danger"><i class="bi bi-person-exclamation me-1"></i><?= (int)($finData['totalInsolvent'] ?? 0) ?> <?= __('dashboard_admin_insolvent') ?></span>
                                 </div>
                             </div>
                         </div>
@@ -254,9 +248,9 @@ ob_start();
                     <div class="d-flex align-items-center justify-content-between mb-3">
                         <div class="d-flex align-items-center gap-2">
                             <i class="bi bi-bell-fill text-accent fs-5"></i>
-                            <h6 class="fw-bold m-0 text-uppercase small letter-spacing-1">Notifications Vitrine (Demandes)</h6>
+                            <h6 class="fw-bold m-0 text-uppercase small letter-spacing-1"><?= __('dashboard_admin_showcase_notifications') ?></h6>
                         </div>
-                        <span class="badge bg-accent bg-opacity-10 text-accent rounded-pill"><?= count($landing_notifications) ?> nouveaux</span>
+                        <span class="badge bg-accent bg-opacity-10 text-accent rounded-pill"><?= count($landing_notifications) ?> <?= __('dashboard_admin_new_notifications') ?></span>
                     </div>
                     <div class="table-responsive">
                         <div class="d-flex gap-3 pb-3">
@@ -268,7 +262,7 @@ ob_start();
                                         <div class="fw-bold text-main-theme small d-flex align-items-center gap-2">
                                             <?= h($notif['name']) ?>
                                             <?php if ($isArchived): ?>
-                                                <span class="badge bg-secondary extra-small">Archivé</span>
+                                                <span class="badge bg-secondary extra-small"><?= __('dashboard_admin_archived') ?></span>
                                             <?php endif; ?>
                                         </div>
                                         <div class="small text-muted" style="font-size: 0.7rem;"><?= h($formatDateTime($notif['created_at'])) ?></div>
@@ -279,14 +273,14 @@ ob_start();
                                     </div>
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div class="d-flex gap-2">
-                                            <button class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-0 extra-small" onclick="manageNotif('<?= h($notif['id']) ?>', 'toggle-archive')" title="<?= $isArchived ? 'Restaurer' : 'Archiver' ?>">
+                                            <button class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-0 extra-small" onclick="manageNotif('<?= h($notif['id']) ?>', 'toggle-archive', '<?= $isArchived ? addslashes((string) __('dashboard_admin_restore_notif_confirm')) : addslashes((string) __('dashboard_admin_archive_notif_confirm')) ?>')" title="<?= $isArchived ? addslashes((string) __('restore')) : addslashes((string) __('archive')) ?>">
                                                 <i class="bi <?= $isArchived ? 'bi-arrow-counterclockwise' : 'bi-archive' ?>"></i>
                                             </button>
-                                            <button class="btn btn-xs btn-outline-danger rounded-pill px-2 py-0 extra-small" onclick="manageNotif('<?= h($notif['id']) ?>', 'delete')" title="Supprimer">
+                                            <button class="btn btn-xs btn-outline-danger rounded-pill px-2 py-0 extra-small" onclick="manageNotif('<?= h($notif['id']) ?>', 'delete', '<?= addslashes((string) __('dashboard_admin_delete_notif_confirm')) ?>')" title="<?= addslashes((string) __('delete')) ?>">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </div>
-                                        <button class="btn btn-sm btn-link p-0 text-accent fw-bold text-decoration-none small" onclick="Swal.fire({title: 'Message de <?= h($notif['name']) ?>', text: '<?= h($notif['message']) ?>', footer: 'Contact: <?= h($notif['email']) ?>'})">Lire</button>
+                                        <button class="btn btn-sm btn-link p-0 text-accent fw-bold text-decoration-none small" onclick="Swal.fire({title: '<?= addslashes((string) __('message_from')) ?> ' + '<?= h(addslashes($notif['name'])) ?>', text: '<?= h(addslashes($notif['message'])) ?>', footer: 'Contact: <?= h(addslashes($notif['email'])) ?>'})"><?= __('read') ?></button>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
@@ -296,17 +290,16 @@ ob_start();
             </div>
 
             <script>
-            function manageNotif(id, action) {
+            function manageNotif(id, action, confirmMsg) {
                 const url = action === 'delete' ? '/notifications/delete' : '/notifications/toggle-archive';
-                const confirmMsg = action === 'delete' ? 'Supprimer définitivement ce message ?' : (document.querySelector(`#notif-${id}`).classList.contains('opacity-75') ? 'Restaurer ce message ?' : 'Archiver ce message ?');
 
                 Swal.fire({
-                    title: 'Confirmation',
+                    title: '<?= addslashes((string) __('confirmation')) ?>',
                     text: confirmMsg,
                     icon: 'question',
                     showCancelButton: true,
-                    confirmButtonText: 'Oui',
-                    cancelButtonText: 'Annuler'
+                    confirmButtonText: '<?= addslashes((string) __('yes')) ?>',
+                    cancelButtonText: '<?= addslashes((string) __('cancel')) ?>'
                 }).then((result) => {
                     if (result.isConfirmed) {
                         fetch(`${url}?id=${id}`)
@@ -315,7 +308,7 @@ ob_start();
                             if (data.success) {
                                 location.reload();
                             } else {
-                                Swal.fire('Erreur', data.error, 'error');
+                                Swal.fire('<?= addslashes((string) __('error_title')) ?>', data.error, 'error');
                             }
                         });
                     }
@@ -368,7 +361,7 @@ ob_start();
                     <div class="kpi-label"><?= __('total_effectif') ?></div>
                 </div>
                 <div class="kpi-trend text-primary">
-                    <i class="bi bi-arrow-up-right"></i> <?= number_format($conversion_rate, 1) ?>% d'inscriptions
+                    <i class="bi bi-arrow-up-right"></i> <?= number_format($conversion_rate, 1) ?>% <?= __('dashboard_admin_enrollment_rate') ?>
                 </div>
             </div>
         </div>
@@ -380,10 +373,10 @@ ob_start();
                         <i class="bi bi-wallet2"></i>
                     </div>
                     <div class="kpi-value" style="font-size: 1.45rem; font-weight: 800;"><?= number_format($totalGeneralCollected, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 10px;">FCFA</span></div>
-                    <div class="kpi-label">Recettes Globales</div>
+                    <div class="kpi-label"><?= __('dashboard_financial_global_revenue') ?></div>
                 </div>
                 <div class="kpi-trend text-success">
-                    <i class="bi bi-percent"></i> <?= number_format($collectionRate, 1) ?>% Recouvrement
+                    <i class="bi bi-percent"></i> <?= number_format($collectionRate, 1) ?>% <?= __('dashboard_admin_recovery_rate') ?>
                 </div>
             </div>
         </div>
@@ -395,10 +388,10 @@ ob_start();
                         <i class="bi bi-speedometer2"></i>
                     </div>
                     <div class="kpi-value" data-count-up="<?= (int) $globalProgress ?>" data-suffix="%"><?= $globalProgress ?>%</div>
-                    <div class="kpi-label">Progression des Notes</div>
+                    <div class="kpi-label"><?= __('dashboard_admin_marks_progress_title') ?></div>
                 </div>
                 <div class="kpi-trend text-warning">
-                    <i class="bi bi-hourglass-split"></i> <?= number_format($globalPending) ?> en attente
+                    <i class="bi bi-hourglass-split"></i> <?= number_format($globalPending) ?> <?= __('pending') ?>
                 </div>
             </div>
         </div>
@@ -410,10 +403,10 @@ ob_start();
                         <i class="bi bi-person-check-fill"></i>
                     </div>
                     <div class="kpi-value" data-count-up="<?= (int) ($usageMetrics['weekly_active_users'] ?? 0) ?>"><?= (int) ($usageMetrics['weekly_active_users'] ?? 0) ?></div>
-                    <div class="kpi-label">Actifs (7 derniers jours)</div>
+                    <div class="kpi-label"><?= __('weekly_active_users') ?></div>
                 </div>
                 <div class="kpi-trend text-info">
-                    <i class="bi bi-activity"></i> <?= (int) ($usageMetrics['weekly_visits'] ?? 0) ?> visites
+                    <i class="bi bi-activity"></i> <?= (int) ($usageMetrics['weekly_visits'] ?? 0) ?> <?= __('visits_label') ?>
                 </div>
             </div>
         </div>
@@ -535,10 +528,10 @@ ob_start();
                         <i class="bi bi-award-fill"></i>
                     </div>
                     <div class="kpi-value" data-count-up="<?= (int)$successRate ?>" data-suffix="%"><?= $successRate ?>%</div>
-                    <div class="kpi-label">Taux de Réussite Global</div>
+                    <div class="kpi-label"><?= __('dashboard_admin_global_success_rate') ?></div>
                 </div>
                 <div class="kpi-trend text-primary">
-                    Calculé sur l'ensemble des moyennes >= 10/20
+                    <?= __('dashboard_admin_success_rate_calc') ?>
                 </div>
             </div>
         </div>
@@ -546,7 +539,7 @@ ob_start();
         <!-- Répartition par Sexe -->
         <div class="col-lg-4">
             <div class="modern-card border-0 shadow-sm p-4 h-100">
-                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-gender-ambiguous text-primary me-2"></i>Répartition par Sexe</h6>
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-gender-ambiguous text-primary me-2"></i><?= __('dashboard_admin_gender_distribution') ?></h6>
                 <?php 
                 $malePercent = $stats_students > 0 ? round(($maleCount / $stats_students) * 100) : 0;
                 $femalePercent = $stats_students > 0 ? round(($femaleCount / $stats_students) * 100) : 0;
@@ -556,8 +549,8 @@ ob_start();
                     <div class="progress-bar bg-danger bg-opacity-75" role="progressbar" style="width: <?= $femalePercent ?>%" aria-valuenow="<?= $femalePercent ?>" aria-valuemin="0" aria-valuemax="100" title="Filles: <?= $femaleCount ?>"><?= $femalePercent ?>%</div>
                 </div>
                 <div class="d-flex justify-content-between small text-muted-theme">
-                    <span><i class="bi bi-gender-male text-primary me-1"></i>Garçons (<?= $maleCount ?>)</span>
-                    <span>Filles (<?= $femaleCount ?>)<i class="bi bi-gender-female text-danger ms-1"></i></span>
+                    <span><i class="bi bi-gender-male text-primary me-1"></i><?= __('dashboard_admin_boys') ?> (<?= $maleCount ?>)</span>
+                    <span><?= __('dashboard_admin_girls') ?> (<?= $femaleCount ?>)<i class="bi bi-gender-female text-danger ms-1"></i></span>
                 </div>
             </div>
         </div>
@@ -565,7 +558,7 @@ ob_start();
         <!-- Répartition par Cycle -->
         <div class="col-lg-4">
             <div class="modern-card border-0 shadow-sm p-4 h-100">
-                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-diagram-3 text-success me-2"></i>Répartition par Cycle</h6>
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-diagram-3 text-success me-2"></i><?= __('dashboard_admin_cycle_distribution') ?></h6>
                 <div class="d-flex flex-column gap-2" style="max-height: 150px; overflow-y: auto;">
                     <?php foreach ($cycleRepartition as $cycle): 
                         $cycleP = $stats_students > 0 ? round(($cycle['count'] / $stats_students) * 100) : 0;
@@ -581,7 +574,7 @@ ob_start();
                         </div>
                     <?php endforeach; ?>
                     <?php if (empty($cycleRepartition)): ?>
-                        <p class="text-muted small text-center my-2">Aucun cycle enregistré</p>
+                        <p class="text-muted small text-center my-2"><?= __('dashboard_admin_no_cycles_registered') ?></p>
                     <?php endif; ?>
                 </div>
             </div>
@@ -642,7 +635,7 @@ ob_start();
                         <div>
                             <div class="d-flex align-items-center gap-2 mb-2 opacity-75">
                                 <i class="bi bi-star-fill text-warning"></i>
-                                <span class="fw-bold small text-uppercase letter-spacing-1 text-white" style="color: #ffffff !important;">Enseignant le plus actif</span>
+                                <span class="fw-bold small text-uppercase letter-spacing-1 text-white" style="color: #ffffff !important;"><?= __('dashboard_admin_most_active_teacher_card') ?></span>
                             </div>
                             <h4 class="fw-black mb-1 text-white" style="color: #ffffff !important;"><?= h($topTeacher['teacher_name']) ?></h4>
                             <p class="mb-4 small text-white" style="color: #ffffff !important; opacity: 0.9 !important;"><?= $topTeacher['classes_count'] ?> classe(s) • <?= $topTeacher['filled_count'] ?>/<?= $topTeacher['expected_count'] ?> notes</p>
@@ -662,10 +655,10 @@ ob_start();
                         <div>
                             <div class="d-flex align-items-center gap-2 mb-2 opacity-75">
                                 <i class="bi bi-exclamation-triangle-fill text-warning"></i>
-                                <span class="fw-bold small text-uppercase letter-spacing-1 text-white" style="color: #ffffff !important;">Enseignant le moins actif</span>
+                                <span class="fw-bold small text-uppercase letter-spacing-1 text-white" style="color: #ffffff !important;"><?= __('dashboard_admin_least_active_teacher_card') ?></span>
                             </div>
                             <h4 class="fw-black mb-1 text-white" style="color: #ffffff !important;"><?= h($worstTeacher['teacher_name']) ?></h4>
-                            <p class="mb-4 small text-white" style="color: #ffffff !important; opacity: 0.9 !important;"><?= $worstTeacher['classes_count'] ?> classe(s) • <?= $worstTeacher['filled_count'] ?>/<?= $worstTeacher['expected_count'] ?> notes</p>
+                            <p class="mb-4 small text-white" style="color: #ffffff !important; opacity: 0.9 !important;"><?= $worstTeacher['classes_count'] ?> class(s) • <?= $worstTeacher['filled_count'] ?>/<?= $worstTeacher['expected_count'] ?> notes</p>
                         </div>
                         <div class="d-flex justify-content-between align-items-center mt-auto">
                             <span class="badge rounded-pill px-3 py-1.5 fw-bold" style="background-color: rgba(255, 255, 255, 0.25) !important; color: #ffffff !important;"><?= $worstTeacher['progress_percent'] ?>% Rempli</span>
@@ -683,7 +676,7 @@ ob_start();
         <div class="col-12">
             <div class="d-flex align-items-center gap-2 mt-2 mb-1">
                 <i class="bi bi-person-check text-primary fs-5"></i>
-                <h6 class="fw-bold m-0 text-uppercase small letter-spacing-1 text-main-theme">Statut Administratif & Validation Financière des Inscriptions</h6>
+                <h6 class="fw-bold m-0 text-uppercase small letter-spacing-1 text-main-theme"><?= __('dashboard_admin_admin_status_title') ?></h6>
             </div>
         </div>
         <!-- 1. Administratif: Inscrits -->
@@ -694,10 +687,10 @@ ob_start();
                         <i class="bi bi-person-check-fill"></i>
                     </div>
                     <div class="kpi-value text-success" data-count-up="<?= (int) $stats_students_inscrits ?>"><?= $stats_students_inscrits ?></div>
-                    <div class="kpi-label">Inscrits (Statut)</div>
+                    <div class="kpi-label"><?= __('dashboard_admin_enrolled_status_label') ?></div>
                 </div>
                 <div class="kpi-trend text-success">
-                    Taux Conv. : <?= number_format($conversion_rate, 1) ?>%
+                    <?= __('dashboard_admin_conv_rate_colon') ?> <?= number_format($conversion_rate, 1) ?>%
                 </div>
             </div>
         </div>
@@ -709,7 +702,7 @@ ob_start();
                         <i class="bi bi-person-dash-fill"></i>
                     </div>
                     <div class="kpi-value text-warning" data-count-up="<?= (int) $stats_students_non_inscrits ?>"><?= $stats_students_non_inscrits ?></div>
-                    <div class="kpi-label">En Attente (Statut)</div>
+                    <div class="kpi-label"><?= __('pending') ?> (<?= __('status') ?>)</div>
                 </div>
             </div>
         </div>
@@ -721,7 +714,7 @@ ob_start();
                         <i class="bi bi-person-x-fill"></i>
                     </div>
                     <div class="kpi-value text-danger" data-count-up="<?= (int) $stats_students_demissionnaires ?>"><?= $stats_students_demissionnaires ?></div>
-                    <div class="kpi-label">Démissionnaires</div>
+                    <div class="kpi-label"><?= __('withdrawn') ?></div>
                 </div>
             </div>
         </div>
@@ -733,10 +726,10 @@ ob_start();
                         <i class="bi bi-cash-coin"></i>
                     </div>
                     <div class="kpi-value text-primary" data-count-up="<?= (int) $totalEnrolled ?>"><?= $totalEnrolled ?></div>
-                    <div class="kpi-label">Frais Payés (Caisse)</div>
+                    <div class="kpi-label"><?= __('dashboard_admin_school_fees') ?></div>
                 </div>
                 <div class="kpi-trend text-primary">
-                    Taux Pmt : <?= number_format($registrationRate, 1) ?>%
+                    <?= __('dashboard_financial_payment_rate') ?> : <?= number_format($registrationRate, 1) ?>%
                 </div>
             </div>
         </div>
@@ -748,7 +741,7 @@ ob_start();
                         <i class="bi bi-hourglass-split"></i>
                     </div>
                     <div class="kpi-value text-secondary" data-count-up="<?= (int) $totalNonEnrolled ?>"><?= $totalNonEnrolled ?></div>
-                    <div class="kpi-label">Frais Non Payés</div>
+                    <div class="kpi-label"><?= __('dashboard_financial_unpaid_registrations') ?></div>
                 </div>
             </div>
         </div>
@@ -1260,10 +1253,10 @@ ob_start();
                         <i class="bi bi-wallet2"></i>
                     </div>
                     <div class="kpi-value" style="font-size: 1.6rem;"><?= number_format($totalGeneralCollected, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 10px;">FCFA</span></div>
-                    <div class="kpi-label">Recettes Globales</div>
+                    <div class="kpi-label"><?= __('dashboard_financial_global_revenue') ?></div>
                 </div>
                 <div class="kpi-trend text-success">
-                    Scolarité (<?= number_format($totalTuitionCollected, 0, ',', ' ') ?>) + Inscription (<?= number_format($totalRegistrationCollected, 0, ',', ' ') ?>)
+                    <?= __('dashboard_financial_tuition_fees') ?> (<?= number_format($totalTuitionCollected, 0, ',', ' ') ?>) + <?= __('dashboard_financial_registration_fees') ?> (<?= number_format($totalRegistrationCollected, 0, ',', ' ') ?>)
                 </div>
             </div>
         </div>
@@ -1275,10 +1268,10 @@ ob_start();
                         <i class="bi bi-cash-stack"></i>
                     </div>
                     <div class="kpi-value" style="font-size: 1.6rem;"><?= number_format($totalExpenses, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 10px;">FCFA</span></div>
-                    <div class="kpi-label">Dépenses de l'Année</div>
+                    <div class="kpi-label"><?= __('dashboard_financial_yearly_expenses') ?></div>
                 </div>
                 <div class="kpi-trend text-danger">
-                    Ce mois : <?= number_format($monthlyExpenses, 0, ',', ' ') ?> FCFA
+                    <?= __('dashboard_financial_this_month_colon') ?> <?= number_format($monthlyExpenses, 0, ',', ' ') ?> FCFA
                 </div>
             </div>
         </div>
@@ -1290,10 +1283,10 @@ ob_start();
                         <i class="bi bi-wallet-fill"></i>
                     </div>
                     <div class="kpi-value" style="font-size: 1.6rem;"><?= number_format($netBalance, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 10px;">FCFA</span></div>
-                    <div class="kpi-label">Solde Réel (Recettes - Dépenses)</div>
+                    <div class="kpi-label"><?= __('dashboard_financial_real_balance') ?></div>
                 </div>
                 <div class="kpi-trend <?= $netBalance >= 0 ? 'text-info' : 'text-danger' ?>">
-                    <i class="bi <?= $netBalance >= 0 ? 'bi-plus-circle' : 'bi-dash-circle' ?>"></i> Situation Net
+                    <i class="bi <?= $netBalance >= 0 ? 'bi-plus-circle' : 'bi-dash-circle' ?>"></i> <?= __('dashboard_financial_net_situation') ?>
                 </div>
             </div>
         </div>
@@ -1309,11 +1302,11 @@ ob_start();
                         <i class="bi bi-graph-up-arrow"></i>
                     </div>
                     <div class="kpi-value" style="font-size: 1.45rem;"><?= number_format($totalExpected, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 10px;">FCFA</span></div>
-                    <div class="kpi-label">Scolarité Attendue</div>
+                    <div class="kpi-label"><?= __('dashboard_financial_expected_tuition') ?></div>
                 </div>
                 <?php if (!empty($totalReductions) && $totalReductions > 0): ?>
                     <div class="kpi-trend text-muted">
-                        Brut : <?= number_format($totalExpectedGross, 0, ',', ' ') ?> (-<?= number_format($totalReductions, 0, ',', ' ') ?>)
+                        <?= __('dashboard_financial_gross_colon') ?> <?= number_format($totalExpectedGross, 0, ',', ' ') ?> (-<?= number_format($totalReductions, 0, ',', ' ') ?>)
                     </div>
                 <?php endif; ?>
             </div>
@@ -1326,10 +1319,10 @@ ob_start();
                         <i class="bi bi-cash-stack"></i>
                     </div>
                     <div class="kpi-value" style="font-size: 1.45rem;"><?= number_format($totalTuitionCollected, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 10px;">FCFA</span></div>
-                    <div class="kpi-label">Scolarité Encaissée</div>
+                    <div class="kpi-label"><?= __('dashboard_financial_collected_tuition') ?></div>
                 </div>
                 <div class="kpi-trend text-success">
-                    Taux de Recouvrement : <?= number_format($collectionRate, 1) ?>%
+                    <?= __('dashboard_financial_recovery_rate_colon') ?> <?= number_format($collectionRate, 1) ?>%
                 </div>
             </div>
         </div>
@@ -1342,7 +1335,7 @@ ob_start();
                     </div>
                     <?php $remainingTuition = max(0.0, $totalExpected - $totalTuitionCollected); ?>
                     <div class="kpi-value" style="font-size: 1.45rem;"><?= number_format($remainingTuition, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 10px;">FCFA</span></div>
-                    <div class="kpi-label">Reste à Recouvrer</div>
+                    <div class="kpi-label"><?= __('dashboard_financial_remaining_to_recover') ?></div>
                 </div>
             </div>
         </div>
@@ -1354,7 +1347,7 @@ ob_start();
                         <i class="bi bi-gift-fill"></i>
                     </div>
                     <div class="kpi-value" style="font-size: 1.45rem;"><?= number_format($totalReductions + $totalScholarships, 0, ',', ' ') ?> <span class="small font-normal text-muted" style="font-size: 10px;">FCFA</span></div>
-                    <div class="kpi-label">Réductions & Bourses</div>
+                    <div class="kpi-label"><?= __('dashboard_financial_discounts_scholarships') ?></div>
                 </div>
                 <div class="kpi-trend text-warning">
                     Réd. : <?= number_format($totalReductions, 0, ',', ' ') ?> | Bourses : <?= number_format($totalScholarships, 0, ',', ' ') ?>
@@ -1368,16 +1361,16 @@ ob_start();
         <!-- Situation des Tranches -->
         <div class="col-12">
             <div class="modern-card border-0 shadow-sm p-4">
-                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-bar-chart-steps text-primary me-2"></i>Situation des tranches configurées</h6>
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-bar-chart-steps text-primary me-2"></i><?= __('dashboard_financial_installments_situation') ?></h6>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead>
                             <tr class="text-muted small text-uppercase">
-                                <th>Tranche</th>
-                                <th class="text-end">Montant Attendu</th>
-                                <th class="text-end">Montant Payé</th>
-                                <th class="text-end">Montant Restant</th>
-                                <th style="width: 250px;">Progression</th>
+                                <th><?= __('installment') ?></th>
+                                <th class="text-end"><?= __('expected_amount') ?></th>
+                                <th class="text-end"><?= __('paid_amount') ?></th>
+                                <th class="text-end"><?= __('remaining_amount') ?></th>
+                                <th style="width: 250px;"><?= __('progress') ?></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1388,7 +1381,7 @@ ob_start();
                                 $percent = $planned > 0 ? round(($paid / $planned) * 100, 1) : 0;
                             ?>
                                 <tr class="border-bottom border-theme-light">
-                                    <td class="fw-bold text-main-theme">Tranche #<?= htmlspecialchars($ts['installment_number']) ?></td>
+                                    <td class="fw-bold text-main-theme"><?= __('installment') ?> #<?= htmlspecialchars($ts['installment_number']) ?></td>
                                     <td class="text-end text-main-theme fw-semibold"><?= number_format($planned, 0, ',', ' ') ?> FCFA</td>
                                     <td class="text-end text-success fw-semibold"><?= number_format($paid, 0, ',', ' ') ?> FCFA</td>
                                     <td class="text-end text-danger fw-semibold"><?= number_format($remaining, 0, ',', ' ') ?> FCFA</td>
@@ -1404,7 +1397,7 @@ ob_start();
                             <?php endforeach; ?>
                             <?php if (empty($tranchesSituation)): ?>
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted py-3">Aucune tranche configurée pour cette année scolaire</td>
+                                    <td colspan="5" class="text-center text-muted py-3"><?= __('dashboard_financial_no_installments') ?></td>
                                 </tr>
                             <?php endif; ?>
                         </tbody>
@@ -1417,16 +1410,16 @@ ob_start();
         <div class="col-12 col-lg-6">
             <div class="modern-card border-0 shadow-sm p-4 h-100">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="fw-bold text-main-theme mb-0"><i class="bi bi-door-open text-danger me-2"></i>Insolvabilité par Classe</h6>
+                    <h6 class="fw-bold text-main-theme mb-0"><i class="bi bi-door-open text-danger me-2"></i><?= __('dashboard_financial_insolvency_by_class') ?></h6>
                     <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill"><?= number_format($totalInsolventAmount, 0, ',', ' ') ?> FCFA</span>
                 </div>
                 <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
                     <table class="table table-hover align-middle mb-0">
                         <thead>
                             <tr class="text-muted small text-uppercase">
-                                <th>Classe</th>
-                                <th class="text-center">Élèves</th>
-                                <th class="text-end">Montant Dû</th>
+                                <th><?= __('class') ?></th>
+                                <th class="text-center"><?= __('students') ?></th>
+                                <th class="text-end"><?= __('amount_due') ?></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1439,7 +1432,7 @@ ob_start();
                             <?php endforeach; ?>
                             <?php if (empty($insolventsByClass)): ?>
                                 <tr>
-                                    <td colspan="3" class="text-center text-muted py-3">Aucune classe insolvable</td>
+                                    <td colspan="3" class="text-center text-muted py-3"><?= __('dashboard_financial_no_insolvent_class') ?></td>
                                 </tr>
                             <?php endif; ?>
                         </tbody>
@@ -1451,15 +1444,15 @@ ob_start();
         <!-- Top 10 des élèves les plus insolvables -->
         <div class="col-12 col-lg-6">
             <div class="modern-card border-0 shadow-sm p-4 h-100">
-                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-people-fill text-warning me-2"></i>Top 10 des retards les plus importants</h6>
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-people-fill text-warning me-2"></i><?= __('dashboard_financial_top_insolvents') ?></h6>
                 <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
                     <table class="table table-hover align-middle mb-0">
                         <thead>
                             <tr class="text-muted small text-uppercase">
-                                <th>Élève</th>
-                                <th>Classe</th>
-                                <th class="text-center">Échéances</th>
-                                <th class="text-end">Retard Dû</th>
+                                <th><?= __('student') ?></th>
+                                <th><?= __('class') ?></th>
+                                <th class="text-center"><?= __('installments') ?></th>
+                                <th class="text-end"><?= __('delay_due') ?></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1467,13 +1460,13 @@ ob_start();
                                 <tr class="border-bottom border-theme-light">
                                     <td class="fw-bold text-main-theme"><?= htmlspecialchars(strtoupper($ti['student_nom']) . ' ' . ucwords(strtolower($ti['student_prenom']))) ?></td>
                                     <td><span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill"><?= htmlspecialchars($ti['class_name']) ?></span></td>
-                                    <td class="text-center text-muted-theme fw-semibold"><?= $ti['unpaid_installments_count'] ?> tranches</td>
+                                    <td class="text-center text-muted-theme fw-semibold"><?= $ti['unpaid_installments_count'] ?> <?= __('installments') ?></td>
                                     <td class="text-end text-danger fw-bold"><?= number_format($ti['amount_due'], 0, ',', ' ') ?> FCFA</td>
                                 </tr>
                             <?php endforeach; ?>
                             <?php if (empty($topInsolvents)): ?>
                                 <tr>
-                                    <td colspan="4" class="text-center text-muted py-3">Aucun retard de paiement détecté</td>
+                                    <td colspan="4" class="text-center text-muted py-3"><?= __('dashboard_financial_no_delays') ?></td>
                                 </tr>
                             <?php endif; ?>
                         </tbody>
@@ -1486,25 +1479,25 @@ ob_start();
     <div class="row g-3 mb-4" data-views="finances">
         <div class="col-lg-6">
             <div class="modern-card border-0 shadow-sm p-4 h-100" style="border-radius: 20px !important;">
-                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-calendar-range text-primary me-2"></i>Détail des Recettes</h6>
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-calendar-range text-primary me-2"></i><?= __('dashboard_financial_revenue_detail') ?></h6>
                 <div class="row g-2">
                     <div class="col-4">
                         <div class="p-3 bg-light bg-opacity-25 rounded-4 border text-center h-100">
-                            <span class="text-muted-theme small fw-bold d-block mb-1">Aujourd'hui</span>
+                            <span class="text-muted-theme small fw-bold d-block mb-1"><?= __('today') ?></span>
                             <span class="fw-extrabold text-main-theme small d-block"><?= number_format($dailyCollections, 0, ',', ' ') ?></span>
                             <small class="text-muted" style="font-size: 8px;">FCFA</small>
                         </div>
                     </div>
                     <div class="col-4">
                         <div class="p-3 bg-light bg-opacity-25 rounded-4 border text-center h-100">
-                            <span class="text-muted-theme small fw-bold d-block mb-1">Cette semaine</span>
+                            <span class="text-muted-theme small fw-bold d-block mb-1"><?= __('this_week') ?></span>
                             <span class="fw-extrabold text-main-theme small d-block"><?= number_format($weeklyCollections, 0, ',', ' ') ?></span>
                             <small class="text-muted" style="font-size: 8px;">FCFA</small>
                         </div>
                     </div>
                     <div class="col-4">
                         <div class="p-3 bg-light bg-opacity-25 rounded-4 border text-center h-100">
-                            <span class="text-muted-theme small fw-bold d-block mb-1">Ce mois</span>
+                            <span class="text-muted-theme small fw-bold d-block mb-1"><?= __('this_month') ?></span>
                             <span class="fw-extrabold text-main-theme small d-block"><?= number_format($monthlyCollections, 0, ',', ' ') ?></span>
                             <small class="text-muted" style="font-size: 8px;">FCFA</small>
                         </div>
@@ -1514,25 +1507,25 @@ ob_start();
         </div>
         <div class="col-lg-6">
             <div class="modern-card border-0 shadow-sm p-4 h-100" style="border-radius: 20px !important;">
-                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-wallet2 text-danger me-2"></i>Détail des Dépenses</h6>
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-wallet2 text-danger me-2"></i><?= __('dashboard_financial_expenses_detail') ?></h6>
                 <div class="row g-2">
                     <div class="col-4">
                         <div class="p-3 bg-light bg-opacity-25 rounded-4 border text-center h-100">
-                            <span class="text-muted-theme small fw-bold d-block mb-1">Aujourd'hui</span>
+                            <span class="text-muted-theme small fw-bold d-block mb-1"><?= __('today') ?></span>
                             <span class="fw-extrabold text-main-theme small d-block"><?= number_format($dailyExpenses, 0, ',', ' ') ?></span>
                             <small class="text-muted" style="font-size: 8px;">FCFA</small>
                         </div>
                     </div>
                     <div class="col-4">
                         <div class="p-3 bg-light bg-opacity-25 rounded-4 border text-center h-100">
-                            <span class="text-muted-theme small fw-bold d-block mb-1">Cette semaine</span>
+                            <span class="text-muted-theme small fw-bold d-block mb-1"><?= __('this_week') ?></span>
                             <span class="fw-extrabold text-main-theme small d-block"><?= number_format($weeklyExpenses, 0, ',', ' ') ?></span>
                             <small class="text-muted" style="font-size: 8px;">FCFA</small>
                         </div>
                     </div>
                     <div class="col-4">
                         <div class="p-3 bg-light bg-opacity-25 rounded-4 border text-center h-100">
-                            <span class="text-muted-theme small fw-bold d-block mb-1">Ce mois</span>
+                            <span class="text-muted-theme small fw-bold d-block mb-1"><?= __('this_month') ?></span>
                             <span class="fw-extrabold text-main-theme small d-block"><?= number_format($monthlyExpenses, 0, ',', ' ') ?></span>
                             <small class="text-muted" style="font-size: 8px;">FCFA</small>
                         </div>
@@ -1571,15 +1564,15 @@ ob_start();
         <!-- Expenses by Category Doughnut -->
         <div class="col-lg-3">
             <div class="modern-card border-0 shadow-sm p-4 h-100" style="border-radius: 20px !important;">
-                <h6 class="fw-black text-main-theme mb-4">Répartition des Dépenses</h6>
+                <h6 class="fw-black text-main-theme mb-4"><?= __('dashboard_financial_expenses_distribution') ?></h6>
                 <div class="d-flex align-items-center justify-content-center" style="height:220px; position:relative;">
                     <canvas id="adminExpensesCategoryChart"></canvas>
                     <?php if (empty($expensesByCategory)): ?>
-                        <div class="position-absolute text-center text-muted small">Aucune dépense active</div>
+                        <div class="position-absolute text-center text-muted small"><?= __('dashboard_financial_no_active_expenses') ?></div>
                     <?php endif; ?>
                 </div>
                 <div class="text-center mt-3">
-                    <span class="small text-muted-theme">Total des dépenses :</span>
+                    <span class="small text-muted-theme"><?= __('dashboard_financial_total_expenses_colon') ?></span>
                     <span class="fw-bold text-danger small"><?= number_format($totalExpenses, 0, ',', ' ') ?> FCFA</span>
                 </div>
             </div>
@@ -1588,7 +1581,7 @@ ob_start();
         <!-- Monthly Evolution Chart -->
         <div class="col-lg-6">
             <div class="modern-card border-0 shadow-sm p-4 h-100" style="border-radius: 20px !important;">
-                <h6 class="fw-black text-main-theme mb-4">Comparatif Mensuel (Recettes vs Dépenses)</h6>
+                <h6 class="fw-black text-main-theme mb-4"><?= __('dashboard_financial_monthly_comparison') ?></h6>
                 <div style="height:220px;">
                     <canvas id="adminMonthlyChart"></canvas>
                 </div>
@@ -1601,7 +1594,7 @@ ob_start();
         <!-- Modes de Règlement -->
         <div class="col-lg-4">
             <div class="modern-card border-0 shadow-sm p-4 h-100" style="border-radius: 20px !important;">
-                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-credit-card-2-back text-primary me-2"></i>Modes de Règlement</h6>
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-credit-card-2-back text-primary me-2"></i><?= __('dashboard_financial_payment_modes') ?></h6>
                 <div style="height: 180px; position: relative;" class="d-flex align-items-center justify-content-center">
                     <canvas id="adminPaymentMethodChart"></canvas>
                 </div>
@@ -1610,10 +1603,10 @@ ob_start();
         <!-- Motifs des Réductions -->
         <div class="col-lg-4">
             <div class="modern-card border-0 shadow-sm p-4 h-100" style="border-radius: 20px !important;">
-                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-percent text-warning me-2"></i>Motifs des Réductions</h6>
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-percent text-warning me-2"></i><?= __('dashboard_financial_discounts_reasons') ?></h6>
                 <div style="height: 180px; position: relative;" class="d-flex align-items-center justify-content-center">
                     <?php if (empty($reductionsRepartition)): ?>
-                        <div class="text-center text-muted small py-5">Aucune réduction active</div>
+                        <div class="text-center text-muted small py-5"><?= __('dashboard_financial_no_active_discounts') ?></div>
                     <?php else: ?>
                         <canvas id="adminReductionsChart"></canvas>
                     <?php endif; ?>
@@ -1623,10 +1616,10 @@ ob_start();
         <!-- Motifs des Bourses -->
         <div class="col-lg-4">
             <div class="modern-card border-0 shadow-sm p-4 h-100" style="border-radius: 20px !important;">
-                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-award text-success me-2"></i>Motifs des Bourses</h6>
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-award text-success me-2"></i><?= __('dashboard_financial_scholarships_reasons') ?></h6>
                 <div style="height: 180px; position: relative;" class="d-flex align-items-center justify-content-center">
                     <?php if (empty($scholarshipsRepartition)): ?>
-                        <div class="text-center text-muted small py-5">Aucune bourse active</div>
+                        <div class="text-center text-muted small py-5"><?= __('dashboard_financial_no_active_scholarships') ?></div>
                     <?php else: ?>
                         <canvas id="adminScholarshipsChart"></canvas>
                     <?php endif; ?>
@@ -1642,7 +1635,7 @@ ob_start();
                 <div class="card-header bg-transparent border-0 px-4 pt-4 pb-0 d-flex align-items-center justify-content-between flex-wrap gap-2">
                     <div>
                         <h6 class="fw-black text-main-theme mb-1"><?= __('class_registration_stats') ?></h6>
-                        <p class="text-muted-theme small mb-0">Statut des inscriptions par classe (Politique : <?= htmlspecialchars(ucfirst($policy)) ?>)</p>
+                        <p class="text-muted-theme small mb-0"><?= __('dashboard_admin_class_registration_status') ?> (<?= __('policy') ?> : <?= htmlspecialchars(ucfirst($policy)) ?>)</p>
                     </div>
                 </div>
                 <div class="card-body p-0">
@@ -1650,12 +1643,12 @@ ob_start();
                         <table class="table table-hover align-middle mb-0">
                             <thead>
                                 <tr class="border-bottom border-theme-light">
-                                    <th class="ps-4 py-3 fw-semibold text-muted-theme small text-uppercase">Classe</th>
-                                    <th class="py-3 fw-semibold text-muted-theme text-center small text-uppercase">Total Élèves</th>
-                                    <th class="py-3 fw-semibold text-muted-theme text-center small text-uppercase">Inscriptions Payées</th>
-                                    <th class="py-3 fw-semibold text-muted-theme text-center small text-uppercase">Inscriptions Non Payées</th>
-                                    <th class="py-3 fw-semibold text-muted-theme small text-uppercase">Taux de Paiement</th>
-                                    <th class="pe-4 py-3 fw-semibold text-muted-theme text-end small text-uppercase">Montant Encaissé</th>
+                                    <th class="ps-4 py-3 fw-semibold text-muted-theme small text-uppercase"><?= __('class') ?></th>
+                                    <th class="py-3 fw-semibold text-muted-theme text-center small text-uppercase"><?= __('total_students') ?></th>
+                                    <th class="py-3 fw-semibold text-muted-theme text-center small text-uppercase"><?= __('paid_registrations') ?></th>
+                                    <th class="py-3 fw-semibold text-muted-theme text-center small text-uppercase"><?= __('unpaid_registrations') ?></th>
+                                    <th class="py-3 fw-semibold text-muted-theme small text-uppercase"><?= __('dashboard_financial_payment_rate') ?></th>
+                                    <th class="pe-4 py-3 fw-semibold text-muted-theme text-end small text-uppercase"><?= __('collected_amount') ?></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1749,11 +1742,11 @@ ob_start();
                                                 <div class="mt-1">
                                                     <?php if (($payment['type'] ?? '') === 'inscription'): ?>
                                                         <span class="badge rounded-pill text-uppercase px-2 py-1" style="font-size: 0.65rem; background-color: rgba(59, 130, 246, 0.1); color: #2563eb;">
-                                                            <i class="bi bi-journal-check me-1"></i>Inscription
+                                                            <i class="bi bi-journal-check me-1"></i><?= __('registration') ?>
                                                         </span>
                                                     <?php else: ?>
                                                         <span class="badge rounded-pill text-uppercase px-2 py-1" style="font-size: 0.65rem; background-color: rgba(16, 185, 129, 0.1); color: #059669;">
-                                                            <i class="bi bi-cash-coin me-1"></i>Scolarité
+                                                            <i class="bi bi-cash-coin me-1"></i><?= __('tuition') ?>
                                                         </span>
                                                     <?php endif; ?>
                                                 </div>
@@ -1761,7 +1754,7 @@ ob_start();
                                             <td>
                                                 <?php
                                                 $methodIcons = ['especes' => 'bi-cash', 'mobile_money' => 'bi-phone', 'virement' => 'bi-bank', 'cheque' => 'bi-credit-card-2-front'];
-                                                $methodLabels = ['especes' => 'Espèces', 'mobile_money' => 'Mobile Money', 'virement' => 'Virement', 'cheque' => 'Chèque'];
+                                                $methodLabels = ['especes' => __('cash'), 'mobile_money' => __('mobile_money'), 'virement' => __('bank_transfer'), 'cheque' => __('cheque')];
                                                 $m = $payment['payment_method'] ?? '';
                                                 ?>
                                                 <span class="d-flex align-items-center gap-2 text-muted-theme small">
@@ -1793,7 +1786,7 @@ ob_start();
                     <i class="bi bi-people-fill"></i>
                 </div>
                 <div class="kpi-value" data-count-up="<?= (int) $stats_users ?>"><?= $stats_users ?></div>
-                <div class="kpi-label">Total Utilisateurs</div>
+                <div class="kpi-label"><?= __('total_users') ?></div>
             </div>
         </div>
         <!-- Active Teachers -->
@@ -1803,7 +1796,7 @@ ob_start();
                     <i class="bi bi-person-badge-fill"></i>
                 </div>
                 <div class="kpi-value" data-count-up="<?= (int) $stats_teachers ?>"><?= $stats_teachers ?></div>
-                <div class="kpi-label">Enseignants Actifs</div>
+                <div class="kpi-label"><?= __('active_teachers') ?></div>
             </div>
         </div>
         <!-- Administrative Personnel -->
@@ -1813,7 +1806,7 @@ ob_start();
                     <i class="bi bi-shield-lock-fill"></i>
                 </div>
                 <div class="kpi-value" data-count-up="<?= (int) $adminsCount ?>"><?= $adminsCount ?></div>
-                <div class="kpi-label">Personnels Administratifs</div>
+                <div class="kpi-label"><?= __('dashboard_admin_staff_label') ?></div>
             </div>
         </div>
         <!-- Teachers without assignments -->
@@ -1823,7 +1816,7 @@ ob_start();
                     <i class="bi bi-person-x-fill"></i>
                 </div>
                 <div class="kpi-value text-danger" data-count-up="<?= (int) $teachers_without_assignment ?>"><?= $teachers_without_assignment ?></div>
-                <div class="kpi-label">Enseignants Non Assignés</div>
+                <div class="kpi-label"><?= __('dashboard_admin_unassigned_teachers_label') ?></div>
             </div>
         </div>
     </div>
@@ -1833,7 +1826,7 @@ ob_start();
         <div class="col-xl-6">
             <div class="modern-card border-0 shadow-lg border-top border-warning border-4 h-100">
                 <div class="modern-card-header bg-transparent p-4 border-bottom">
-                    <h5 class="fw-bold m-0 text-main-theme"><i class="bi bi-pie-chart-fill text-warning me-2"></i>Répartition des Rôles</h5>
+                    <h5 class="fw-bold m-0 text-main-theme"><i class="bi bi-pie-chart-fill text-warning me-2"></i><?= __('dashboard_admin_role_distribution') ?></h5>
                 </div>
                 <div class="p-4" style="height: 320px; position: relative;">
                     <canvas id="adminRoleDistributionChart"></canvas>
@@ -1843,20 +1836,20 @@ ob_start();
         <div class="col-xl-6">
             <div class="modern-card border-0 shadow-lg border-top border-info border-4 h-100">
                 <div class="modern-card-header bg-transparent p-4 border-bottom">
-                    <h5 class="fw-bold m-0 text-main-theme"><i class="bi bi-list-stars text-info me-2"></i>Détails des Effectifs par Rôle</h5>
+                    <h5 class="fw-bold m-0 text-main-theme"><i class="bi bi-list-stars text-info me-2"></i><?= __('dashboard_admin_role_staff_details') ?></h5>
                 </div>
                 <div class="p-4" style="max-height: 320px; overflow-y: auto;">
                     <table class="table-modern">
                         <thead>
                             <tr>
-                                <th class="ps-4 py-3 text-main-theme">Rôle</th>
-                                <th class="text-end pe-4 py-3 text-main-theme">Nombre d'utilisateurs</th>
+                                <th class="ps-4 py-3 text-main-theme"><?= __('role') ?></th>
+                                <th class="text-end pe-4 py-3 text-main-theme"><?= __('users_count') ?></th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($roleDistribution as $roleRow): ?>
                                 <tr>
-                                    <td class="ps-4 py-3 fw-bold text-capitalize text-main-theme"><?= htmlspecialchars($roleRow['role']) ?></td>
+                                    <td class="ps-4 py-3 fw-bold text-capitalize text-main-theme"><?= __(strtolower($roleRow['role'])) ?></td>
                                     <td class="text-end pe-4 py-3 fw-black text-primary"><?= (int)$roleRow['count'] ?></td>
                                 </tr>
                             <?php endforeach; ?>
@@ -2242,10 +2235,16 @@ ob_start();
         const pmCtx = document.getElementById('adminPaymentMethodChart');
         if (pmCtx) {
             const dataPay = <?= json_encode($paymentMethodRepartition) ?>;
+            const methodLabels = {
+                especes: '<?= addslashes((string) __('cash')) ?>',
+                mobile_money: '<?= addslashes((string) __('mobile_money')) ?>',
+                virement: '<?= addslashes((string) __('bank_transfer')) ?>',
+                cheque: '<?= addslashes((string) __('cheque')) ?>'
+            };
             new Chart(pmCtx, {
                 type: 'doughnut',
                 data: {
-                    labels: dataPay.map(x => x.payment_method || 'Autre'),
+                    labels: dataPay.map(x => methodLabels[x.payment_method] || x.payment_method || '<?= addslashes((string) __('other')) ?>'),
                     datasets: [{
                         data: dataPay.map(x => parseFloat(x.total)),
                         backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#64748b', '#06b6d4'],
@@ -2277,7 +2276,7 @@ ob_start();
             new Chart(collectionCtx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Perçu', 'Restant'],
+                    labels: ['<?= addslashes((string) __('paid_amount')) ?>', '<?= addslashes((string) __('remaining_amount')) ?>'],
                     datasets: [{
                         data: [collected, remaining],
                         backgroundColor: ['#22c55e', 'rgba(15, 23, 42, 0.08)'],
@@ -2337,13 +2336,13 @@ ob_start();
                     labels: monthLabels,
                     datasets: [
                         {
-                            label: 'Recettes',
+                            label: '<?= addslashes((string) __('dashboard_financial_global_revenue')) ?>',
                             data: monthTotals,
                             backgroundColor: 'rgba(16, 185, 129, 0.85)',
                             borderRadius: 6
                         },
                         {
-                            label: 'Dépenses',
+                            label: '<?= addslashes((string) __('dashboard_financial_yearly_expenses')) ?>',
                             data: monthExpTotals,
                             backgroundColor: 'rgba(239, 68, 68, 0.85)',
                             borderRadius: 6
@@ -2466,10 +2465,16 @@ ob_start();
         const roleCtx = document.getElementById('adminRoleDistributionChart');
         if (roleCtx) {
             const roleData = <?= json_encode($roleDistribution) ?>;
+            const roleLabels = {
+                superadmin: '<?= addslashes((string) __('superadmin')) ?>',
+                teacher: '<?= addslashes((string) __('teacher')) ?>',
+                financial: '<?= addslashes((string) __('financial')) ?>',
+                it_manager: '<?= addslashes((string) __('it_manager')) ?>'
+            };
             new Chart(roleCtx, {
                 type: 'doughnut',
                 data: {
-                    labels: roleData.map(x => x.role.charAt(0).toUpperCase() + x.role.slice(1)),
+                    labels: roleData.map(x => roleLabels[x.role.toLowerCase()] || x.role),
                     datasets: [{
                         data: roleData.map(x => parseInt(x.count)),
                         backgroundColor: ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#64748b'],

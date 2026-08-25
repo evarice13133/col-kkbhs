@@ -104,16 +104,16 @@ $ribbon_structure = [
             [
                 'title' => __('pilotage') ?? 'Pilotage',
                 'items' => [
-                    ['icon' => 'bi-speedometer2', 'label' => __('dashboard'), 'url' => '/', 'desc' => 'Vue globale des indicateurs clés et statistiques de l\'établissement.']
+                    ['icon' => 'bi-speedometer2', 'label' => __('dashboard'), 'url' => '/', 'desc' => __('layout_desc_dashboard')]
 
                 ]
             ],
             [
                 'title' => __('enseignant') ?? 'Enseignant',
                 'items' => [
-                    ['icon' => 'bi-pencil-square', 'label' => __('enter_marks'), 'url' => '/notes', 'permission' => 'manage_marks', 'desc' => 'Saisie et validation des notes d\'évaluation par classe et matière.'],
-                    ['icon' => 'bi-people', 'label' => __('my_students'), 'url' => '/students', 'permission' => 'view_students', 'desc' => 'Consulter la liste et le suivi individuel de vos élèves.'],
-                    ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'desc' => 'Guides d\'utilisation et centre d\'assistance.'],
+                    ['icon' => 'bi-pencil-square', 'label' => __('enter_marks'), 'url' => '/notes', 'permission' => 'manage_marks', 'desc' => __('layout_desc_enter_marks')],
+                    ['icon' => 'bi-people', 'label' => __('my_students'), 'url' => '/students', 'permission' => 'view_students', 'desc' => __('layout_desc_my_students')],
+                    ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'desc' => __('layout_desc_help')],
 
 
                 ]
@@ -121,9 +121,9 @@ $ribbon_structure = [
             [
                 'title' => __('caisse') ?? 'Caisse',
                 'items' => [
-                    ['icon' => 'bi-credit-card', 'label' => __('payments_menu'), 'url' => '/payments', 'permission' => 'manage_payments', 'desc' => 'Enregistrement des versements de scolarité et impression des reçus.'],
-                    ['icon' => 'bi-exclamation-triangle', 'label' => __('insolvent_title'), 'url' => '/school_fees/insolvables', 'permission' => 'view_financial_reports', 'desc' => 'Rapport des élèves en retard de paiement.'],
-                    ['icon' => 'bi-door-open', 'label' => __('classes'), 'url' => '/classes', 'permission' => 'view_classes', 'desc' => 'Gestion et état d\'avancement des paiements par classe.']
+                    ['icon' => 'bi-credit-card', 'label' => __('payments_menu'), 'url' => '/payments', 'permission' => 'manage_payments', 'desc' => __('layout_desc_payments')],
+                    ['icon' => 'bi-exclamation-triangle', 'label' => __('insolvent_title'), 'url' => '/school_fees/insolvables', 'permission' => 'view_financial_reports', 'desc' => __('layout_desc_insolvent')],
+                    ['icon' => 'bi-door-open', 'label' => __('classes'), 'url' => '/classes', 'permission' => 'view_classes', 'desc' => __('layout_desc_classes')]
                 ]
             ]
         ]
@@ -134,27 +134,27 @@ $ribbon_structure = [
         'icon' => 'bi-sliders2',
         'groups' => [
             [
-                'title' => 'Sécurité & Droits',
+                'title' => __('layout_security_rights'),
                 'items' => [
-                    ['icon' => 'bi-shield-lock-fill', 'label' => 'Gestion des Permissions', 'url' => '/pilotage/rbac', 'permission' => 'manage_rbac', 'roles' => ['superadmin', 'admin', 'it_manager'], 'desc' => 'Centre de contrôle des privilèges, rôles et exceptions utilisateurs.'],
+                    ['icon' => 'bi-shield-lock-fill', 'label' => __('layout_permissions_management'), 'url' => '/pilotage/rbac', 'permission' => 'manage_rbac', 'roles' => ['superadmin', 'admin', 'it_manager'], 'desc' => __('layout_permissions_management_desc')],
                 ]
             ],
             [
-                'title' => 'Structure Académique',
+                'title' => __('layout_academic_structure'),
                 'items' => [
-                    ['icon' => 'bi-calendar-event', 'label' => __('academic_years'), 'url' => '/academic_years', 'permission' => 'manage_academic_years', 'roles' => ['superadmin', 'it_manager'], 'desc' => 'Configuration des années scolaires et périodes académiques.'],
-                    ['icon' => 'bi-diagram-3', 'label' => __('teaching_types'), 'url' => '/teaching_types', 'permission' => 'manage_teaching_types', 'roles' => ['superadmin', 'admin', 'direction_academique'], 'desc' => 'Définition des types d\'enseignement (Secondaire, Supérieur LMD, etc.).'],
-                    ['icon' => 'bi-bar-chart-steps', 'label' => 'Niveaux', 'url' => '/levels', 'permission' => 'manage_classes_structure', 'roles' => ['superadmin', 'admin', 'direction_academique'], 'desc' => 'Gestion des niveaux d\'études spécifiques au Secondaire et Supérieur LMD (Licence 1, 2, 3...).'],
-                    ['icon' => 'bi-layers', 'label' => 'Cycles Académiques', 'url' => '/cycles', 'permission' => 'manage_cycles', 'roles' => ['superadmin', 'admin', 'direction_academique'], 'desc' => 'Cycles d\'études spécifiques au secondaire et Supérieur LMD (Licence, Master, Doctorat).'],
-                    ['icon' => 'bi-grid-3x3-gap', 'label' => __('academic_sections'), 'url' => '/sections', 'permission' => 'manage_sections', 'roles' => ['superadmin', 'admin', 'direction_academique'], 'desc' => 'Sections francophones, anglophones et spécialités.'],
-                    ['icon' => 'bi-building', 'label' => __('departments'), 'url' => '/departments', 'permission' => 'manage_departments', 'roles' => ['superadmin', 'admin', 'it_manager', 'direction_academique'], 'desc' => 'Organisation des départements académiques.'],
+                    ['icon' => 'bi-calendar-event', 'label' => __('academic_years'), 'url' => '/academic_years', 'permission' => 'manage_academic_years', 'roles' => ['superadmin', 'it_manager'], 'desc' => __('layout_desc_academic_years')],
+                    ['icon' => 'bi-diagram-3', 'label' => __('teaching_types'), 'url' => '/teaching_types', 'permission' => 'manage_teaching_types', 'roles' => ['superadmin', 'admin', 'direction_academique'], 'desc' => __('layout_desc_teaching_types')],
+                    ['icon' => 'bi-bar-chart-steps', 'label' => __('layout_levels'), 'url' => '/levels', 'permission' => 'manage_classes_structure', 'roles' => ['superadmin', 'admin', 'direction_academique'], 'desc' => __('layout_levels_desc')],
+                    ['icon' => 'bi-layers', 'label' => __('layout_cycles'), 'url' => '/cycles', 'permission' => 'manage_cycles', 'roles' => ['superadmin', 'admin', 'direction_academique'], 'desc' => __('layout_cycles_desc')],
+                    ['icon' => 'bi-grid-3x3-gap', 'label' => __('academic_sections'), 'url' => '/sections', 'permission' => 'manage_sections', 'roles' => ['superadmin', 'admin', 'direction_academique'], 'desc' => __('layout_desc_teaching_types')],
+                    ['icon' => 'bi-building', 'label' => __('departments'), 'url' => '/departments', 'permission' => 'manage_departments', 'roles' => ['superadmin', 'admin', 'it_manager', 'direction_academique'], 'desc' => __('layout_desc_departments')],
                 ]
             ],
             [
-                'title' => 'Système & Config',
+                'title' => __('layout_system_config'),
                 'items' => [
-                    ['icon' => 'bi-gear', 'label' => __('settings'), 'url' => '/settings', 'permission' => 'manage_settings', 'roles' => ['superadmin', 'admin', 'direction_academique'], 'desc' => 'Identité de l\'école, logos, documents officiels et paramètres généraux.'],
-                    ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'roles' => ['superadmin', 'admin', 'it_manager', 'direction_academique'], 'desc' => 'Documentation technique et manuels utilisateur.'],
+                    ['icon' => 'bi-gear', 'label' => __('settings'), 'url' => '/settings', 'permission' => 'manage_settings', 'roles' => ['superadmin', 'admin', 'direction_academique'], 'desc' => __('layout_desc_settings')],
+                    ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'roles' => ['superadmin', 'admin', 'it_manager', 'direction_academique'], 'desc' => __('layout_desc_help_docs')],
                 ]
             ]
         ]
@@ -165,7 +165,7 @@ $ribbon_structure = [
         'icon' => 'bi-calendar3-week',
         'groups' => [
             [
-                'title' => 'Emplois du temps',
+                'title' => __('layout_timetables'),
                 'items' => [
 
                     ['icon' => 'bi-calendar3-week', 'label' => __('my_timetables'), 'url' => '/timetables', 'permission' => 'view_timetables', 'desc' => __('timetables_subtitle')],
@@ -183,12 +183,12 @@ $ribbon_structure = [
         'icon' => 'bi-people',
         'groups' => [
             [
-                'title' => 'Inscriptions & Élèves',
+                'title' => __('layout_registrations_students'),
                 'items' => [
-                    ['icon' => 'bi-person-plus', 'label' => __('register_student_menu'), 'url' => '/students/create', 'permission' => 'manage_students', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Inscrire un nouvel élève, attribuer une classe et générer un matricule.'],
-                    ['icon' => 'bi-people', 'label' => __('registered_students_menu'), 'url' => '/students', 'permission' => 'view_students', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Annuaire et dossiers complets de tous les élèves inscrits.'],
-                    ['icon' => 'bi-person-dash', 'label' => __('unregistered_students_menu'), 'url' => '/students/non-inscrits', 'permission' => 'view_students', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Élèves pré-inscrits en attente de régularisation.'],
-                    ['icon' => 'bi-person-check', 'label' => __('my_registrations_menu'), 'url' => '/students?only_mine=1', 'permission' => 'view_students', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Historique des inscriptions enregistrées par votre compte.'],
+                    ['icon' => 'bi-person-plus', 'label' => __('register_student_menu'), 'url' => '/students/create', 'permission' => 'manage_students', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => __('layout_desc_register_student')],
+                    ['icon' => 'bi-people', 'label' => __('registered_students_menu'), 'url' => '/students', 'permission' => 'view_students', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => __('layout_desc_registered_students')],
+                    ['icon' => 'bi-person-dash', 'label' => __('unregistered_students_menu'), 'url' => '/students/non-inscrits', 'permission' => 'view_students', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => __('layout_desc_unregistered_students')],
+                    ['icon' => 'bi-person-check', 'label' => __('my_registrations_menu'), 'url' => '/students?only_mine=1', 'permission' => 'view_students', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => __('layout_desc_my_registrations')],
                 ]
             ]
         ]
@@ -199,11 +199,11 @@ $ribbon_structure = [
         'icon' => 'bi-person-gear',
         'groups' => [
             [
-                'title' => 'Personnel & Comptes',
+                'title' => __('layout_staff_accounts'),
                 'items' => [
-                    ['icon' => 'bi-people-fill', 'label' => __('users'), 'url' => '/users', 'permission' => 'manage_users', 'roles' => ['superadmin', 'it_manager'], 'desc' => 'Création des comptes administrateurs, enseignants et gestionnaires.'],
-                    ['icon' => 'bi-person-plus-fill', 'label' => __('manage_cashiers_menu'), 'url' => '/users/caissiers', 'permission' => 'manage_users', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Gestion spécifique des caissiers et agents de saisie.'],
-                    ['icon' => 'bi-person-badge', 'label' => __('teachers'), 'url' => '/teachers', 'permission' => 'manage_teachers', 'roles' => ['superadmin', 'admin', 'it_manager', 'direction_academique'], 'desc' => 'Attribution des matières et des classes au corps enseignant.'],
+                    ['icon' => 'bi-people-fill', 'label' => __('users'), 'url' => '/users', 'permission' => 'manage_users', 'roles' => ['superadmin', 'it_manager'], 'desc' => __('layout_desc_users')],
+                    ['icon' => 'bi-person-plus-fill', 'label' => __('manage_cashiers_menu'), 'url' => '/users/caissiers', 'permission' => 'manage_users', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => __('layout_desc_manage_cashiers')],
+                    ['icon' => 'bi-person-badge', 'label' => __('teachers'), 'url' => '/teachers', 'permission' => 'manage_teachers', 'roles' => ['superadmin', 'admin', 'it_manager', 'direction_academique'], 'desc' => __('layout_desc_teachers')],
                 ]
             ]
         ]
@@ -216,28 +216,28 @@ $ribbon_structure = [
             [
                 'title' => __('scolarite_menu'),
                 'items' => [
-                    ['icon' => 'bi-credit-card', 'label' => __('payments_menu'), 'url' => '/payments', 'permission' => 'manage_payments', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Enregistrement des versements de scolarité et impression des reçus.'],
-                    ['icon' => 'bi-table', 'label' => __('grille_title'), 'url' => '/school_fees/grille', 'permission' => 'view_class_finances', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Grille tarifaire des frais de scolarité par classe.'],
-                    ['icon' => 'bi-diagram-2', 'label' => __('tranches_menu'), 'url' => '/school_fees/tranches', 'permission' => 'edit_class_finances', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Configuration des tranches et échéanciers de paiement.'],
-                    ['icon' => 'bi-receipt-cutoff', 'label' => __('versements_menu'), 'url' => '/school_fees/versements', 'permission' => 'view_financial_history', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Journal détaillé des reçus et opérations de caisse.'],
-                    ['icon' => 'bi-exclamation-triangle', 'label' => __('insolvent_title'), 'url' => '/school_fees/insolvables', 'permission' => 'view_financial_reports', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Rapport des élèves en retard de paiement.'],
+                    ['icon' => 'bi-credit-card', 'label' => __('payments_menu'), 'url' => '/payments', 'permission' => 'manage_payments', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => __('layout_desc_payments')],
+                    ['icon' => 'bi-table', 'label' => __('grille_title'), 'url' => '/school_fees/grille', 'permission' => 'view_class_finances', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => __('layout_desc_grille')],
+                    ['icon' => 'bi-diagram-2', 'label' => __('tranches_menu'), 'url' => '/school_fees/tranches', 'permission' => 'edit_class_finances', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => __('layout_desc_tranches')],
+                    ['icon' => 'bi-receipt-cutoff', 'label' => __('versements_menu'), 'url' => '/school_fees/versements', 'permission' => 'view_financial_history', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => __('layout_desc_versements')],
+                    ['icon' => 'bi-exclamation-triangle', 'label' => __('insolvent_title'), 'url' => '/school_fees/insolvables', 'permission' => 'view_financial_reports', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => __('layout_desc_insolvent')],
                 ]
             ],
             [
                 'title' => __('discounts'),
                 'items' => [
-                    ['icon' => 'bi-percent', 'label' => __('discounts_granted'), 'url' => '/discounts', 'permission' => 'manage_discounts', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Liste des remises exceptionnelles accordées.'],
-                    ['icon' => 'bi-mortarboard', 'label' => __('scholarships'), 'url' => '/scholarships', 'permission' => 'manage_scholarships', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Bourses d\'études attribuées aux élèves boursiers.'],
-                    ['icon' => 'bi-tags', 'label' => __('discount_types_title'), 'url' => '/discount_types', 'permission' => 'manage_discounts', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Types et règles d\'exonération tarifaire.'],
+                    ['icon' => 'bi-percent', 'label' => __('discounts_granted'), 'url' => '/discounts', 'permission' => 'manage_discounts', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => __('layout_desc_discounts_granted')],
+                    ['icon' => 'bi-mortarboard', 'label' => __('scholarships'), 'url' => '/scholarships', 'permission' => 'manage_scholarships', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => __('layout_desc_scholarships')],
+                    ['icon' => 'bi-tags', 'label' => __('discount_types_title'), 'url' => '/discount_types', 'permission' => 'manage_discounts', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => __('layout_desc_discount_types')],
                 ]
             ],
             [
                 'title' => __('expenses_menu'),
                 'items' => [
-                    ['icon' => 'bi-journal-text', 'label' => __('financial_history'), 'url' => '/financial-history', 'permission' => 'view_financial_history', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Historique comptable global des entrées et sorties.'],
-                    ['icon' => 'bi-list-ul', 'label' => __('expenses_list'), 'url' => '/expenses', 'permission' => 'manage_fees', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Saisie et approbation des dépenses d\'exploitation.'],
-                    ['icon' => 'bi-tags-fill', 'label' => __('expense_categories'), 'url' => '/expenses/categories', 'permission' => 'manage_fees', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Catégories budgétaires des dépenses.'],
-                    ['icon' => 'bi-shield-check', 'label' => __('expense_audit'), 'url' => '/expenses/audit', 'permission' => 'view_system_logs', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => 'Piste d\'audit et contrôle financier.'],
+                    ['icon' => 'bi-journal-text', 'label' => __('financial_history'), 'url' => '/financial-history', 'permission' => 'view_financial_history', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => __('layout_desc_financial_history')],
+                    ['icon' => 'bi-list-ul', 'label' => __('expenses_list'), 'url' => '/expenses', 'permission' => 'manage_fees', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => __('layout_desc_expenses_list')],
+                    ['icon' => 'bi-tags-fill', 'label' => __('expense_categories'), 'url' => '/expenses/categories', 'permission' => 'manage_fees', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => __('layout_desc_expense_categories')],
+                    ['icon' => 'bi-shield-check', 'label' => __('expense_audit'), 'url' => '/expenses/audit', 'permission' => 'view_system_logs', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => __('layout_desc_expense_audit')],
                 ]
             ]
         ]
@@ -248,14 +248,14 @@ $ribbon_structure = [
         'icon' => 'bi-journal-check',
         'groups' => [
             [
-                'title' => 'Évaluations & Matières',
+                'title' => __('layout_evaluations_subjects'),
                 'items' => [
-                    ['icon' => 'bi-check2-square', 'label' => __('evaluations'), 'url' => '/sequences', 'permission' => 'manage_sequences', 'roles' => ['superadmin', 'admin'], 'desc' => 'Configuration des séquences et trimestres d\'évaluation.'],
-                    ['icon' => 'bi-pencil-square', 'label' => __('enter_marks'), 'url' => '/notes', 'permission' => 'manage_marks', 'roles' => ['superadmin', 'admin'], 'desc' => 'Saisie centralisée des notes d\'évaluation par classe.'],
-                    ['icon' => 'bi-door-open', 'label' => __('classes'), 'url' => '/classes', 'permission' => 'view_classes', 'roles' => ['superadmin', 'admin'], 'desc' => 'Aperçu des performances académiques par classe.'],
-                    ['icon' => 'bi-book', 'label' => __('subjects'), 'url' => '/subjects', 'permission' => 'manage_subjects', 'roles' => ['superadmin', 'admin'], 'desc' => 'Programme d\'enseignement et matières dispensées.'],
-                    ['icon' => 'bi-collection', 'label' => __('subject_groups') ?? 'Groupe de Modules', 'url' => '/subject-groups', 'permission' => 'manage_subjects', 'roles' => ['superadmin', 'admin'], 'desc' => 'Regroupement de matières en unités d\'enseignement (UE).'],
-                    ['icon' => 'bi-shield-check', 'label' => __('discipline_management'), 'url' => '/bulletins/discipline', 'permission' => 'manage_absences', 'roles' => ['superadmin', 'admin'], 'desc' => 'Saisie des absences, blâmes et avertissements disciplinaires.'],
+                    ['icon' => 'bi-check2-square', 'label' => __('evaluations'), 'url' => '/sequences', 'permission' => 'manage_sequences', 'roles' => ['superadmin', 'admin'], 'desc' => __('layout_desc_evaluations')],
+                    ['icon' => 'bi-pencil-square', 'label' => __('enter_marks'), 'url' => '/notes', 'permission' => 'manage_marks', 'roles' => ['superadmin', 'admin'], 'desc' => __('layout_desc_enter_marks_central')],
+                    ['icon' => 'bi-door-open', 'label' => __('classes'), 'url' => '/classes', 'permission' => 'view_classes', 'roles' => ['superadmin', 'admin'], 'desc' => __('layout_desc_classes_academic')],
+                    ['icon' => 'bi-book', 'label' => __('subjects'), 'url' => '/subjects', 'permission' => 'manage_subjects', 'roles' => ['superadmin', 'admin'], 'desc' => __('layout_desc_subjects')],
+                    ['icon' => 'bi-collection', 'label' => __('subject_groups') ?? 'Groupe de Modules', 'url' => '/subject-groups', 'permission' => 'manage_subjects', 'roles' => ['superadmin', 'admin'], 'desc' => __('layout_desc_subject_groups')],
+                    ['icon' => 'bi-shield-check', 'label' => __('discipline_management'), 'url' => '/bulletins/discipline', 'permission' => 'manage_absences', 'roles' => ['superadmin', 'admin'], 'desc' => __('layout_desc_discipline')],
                 ]
             ]
         ]
@@ -266,12 +266,12 @@ $ribbon_structure = [
         'icon' => 'bi-printer',
         'groups' => [
             [
-                'title' => 'Édition & Documents',
+                'title' => __('layout_publishing_documents'),
                 'items' => [
-                    ['icon' => 'bi-file-earmark-pdf', 'label' => __('bulletins'), 'url' => '/bulletins', 'permission' => 'manage_bulletins', 'roles' => ['superadmin', 'admin'], 'desc' => 'Génération et impression des bulletins de notes périodiques.'],
-                    ['icon' => 'bi-calendar3-week', 'label' => 'Emplois du Temps', 'url' => '/timetables/print', 'permission' => 'view_timetables', 'desc' => 'Impression et export PDF des emplois du temps par cycle académique et niveau.'],
-                    ['icon' => 'bi-award', 'label' => __('honor_roll_title'), 'url' => '/honors', 'permission' => 'manage_bulletins', 'roles' => ['superadmin', 'admin'], 'desc' => 'Impression des tableaux d\'honneur et félicitations.'],
-                    ['icon' => 'bi-file-earmark-text', 'label' => __('proces_verbaux'), 'url' => '/proces-verbal', 'permission' => 'manage_bulletins', 'roles' => ['superadmin', 'admin'], 'desc' => 'Édition des procès-verbaux de récapitulation annuelle.'],
+                    ['icon' => 'bi-file-earmark-pdf', 'label' => __('bulletins'), 'url' => '/bulletins', 'permission' => 'manage_bulletins', 'roles' => ['superadmin', 'admin'], 'desc' => __('layout_desc_bulletins')],
+                    ['icon' => 'bi-calendar3-week', 'label' => __('layout_timetables_print'), 'url' => '/timetables/print', 'permission' => 'view_timetables', 'desc' => __('layout_desc_timetables_print')],
+                    ['icon' => 'bi-award', 'label' => __('honor_roll_title'), 'url' => '/honors', 'permission' => 'manage_bulletins', 'roles' => ['superadmin', 'admin'], 'desc' => __('layout_desc_honor_roll')],
+                    ['icon' => 'bi-file-earmark-text', 'label' => __('proces_verbaux'), 'url' => '/proces-verbal', 'permission' => 'manage_bulletins', 'roles' => ['superadmin', 'admin'], 'desc' => __('layout_desc_proces_verbaux')],
                     // ['icon' => 'bi-file-earmark-spreadsheet', 'label' => __('transcripts') ?? 'Relevé de Notes', 'url' => '/transcripts', 'permission' => 'view_transcripts', 'roles' => ['superadmin', 'admin'], 'desc' => 'Génération des relevés de notes consolidés.'],
                 ]
             ]
@@ -341,7 +341,16 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
             'warning_title': "<?= addslashes((string) __('warning_title')) ?>",
             'info_title': "<?= addslashes((string) __('info_title')) ?>",
             'error_title': "<?= addslashes((string) __('error_title')) ?>",
-            'success_title': "<?= addslashes((string) __('success_title')) ?>"
+            'success_title': "<?= addslashes((string) __('success_title')) ?>",
+            'continue': "<?= addslashes((string) __('continue')) ?>",
+            'close': "<?= addslashes((string) __('close')) ?>",
+            'understood': "<?= addslashes((string) __('understood')) ?>",
+            'ok': "<?= addslashes((string) __('ok')) ?>",
+            'are_you_sure': "<?= addslashes((string) __('are_you_sure')) ?>",
+            'action_irreversible': "<?= addslashes((string) __('action_irreversible')) ?>",
+            'delete': "<?= addslashes((string) __('delete')) ?>",
+            'processing': "<?= addslashes((string) __('processing')) ?>",
+            'please_wait': "<?= addslashes((string) __('please_wait')) ?>"
         };
     </script>
     <title><?= (isset($title) ? $title . ' | ' : '') . __('app_name') ?> - <?= __('app_tagline') ?></title>
@@ -663,36 +672,36 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                     <!-- Quick Access Toolbar (QAT) -->
                     <?php if (\App\Core\Session::isLogged()): ?>
                         <div class="ribbon-qat-container d-none d-md-flex me-2 flex-shrink-0" id="tourQAT">
-                            <a href="/" class="ribbon-qat-btn <?= $current_path === '/' ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-html="true" title="<div class='tooltip-rich-title'><i class='bi bi-house-door'></i> Tableau de bord</div><div class='tooltip-rich-desc'>Vue d'ensemble et statistiques générales de l'école.</div>">
+                            <a href="/" class="ribbon-qat-btn <?= $current_path === '/' ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-html="true" title="<div class='tooltip-rich-title'><i class='bi bi-house-door'></i> <?= addslashes((string) __('dashboard')) ?></div><div class='tooltip-rich-desc'><?= addslashes((string) __('layout_desc_dashboard')) ?></div>">
                                 <i class="bi bi-house-door"></i>
                             </a>
                             <?php if (\App\Core\PermissionManager::hasPermission('manage_marks')): ?>
-                                <a href="/notes" class="ribbon-qat-btn <?= strpos($current_path, '/notes') === 0 ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-html="true" title="<div class='tooltip-rich-title'><i class='bi bi-pencil-square'></i> Saisie des Notes</div><div class='tooltip-rich-desc'>Saisir et valider les notes d'évaluation par classe.</div>">
+                                <a href="/notes" class="ribbon-qat-btn <?= strpos($current_path, '/notes') === 0 ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-html="true" title="<div class='tooltip-rich-title'><i class='bi bi-pencil-square'></i> <?= addslashes((string) __('enter_marks')) ?></div><div class='tooltip-rich-desc'><?= addslashes((string) __('layout_desc_enter_marks')) ?></div>">
                                     <i class="bi bi-pencil-square"></i>
                                 </a>
                             <?php endif; ?>
                             <?php if (\App\Core\PermissionManager::hasPermission('view_timetables')): ?>
-                                <a href="/timetables" class="ribbon-qat-btn <?= strpos($current_path, '/timetables') === 0 ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-html="true" title="<div class='tooltip-rich-title'><i class='bi bi-calendar3-week'></i> Emplois du Temps</div><div class='tooltip-rich-desc'>Gestion et planification des emplois du temps.</div>">
+                                <a href="/timetables" class="ribbon-qat-btn <?= strpos($current_path, '/timetables') === 0 ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-html="true" title="<div class='tooltip-rich-title'><i class='bi bi-calendar3-week'></i> <?= addslashes((string) __('timetables_menu')) ?></div><div class='tooltip-rich-desc'><?= addslashes((string) __('timetables_subtitle')) ?></div>">
                                     <i class="bi bi-calendar3-week"></i>
                                 </a>
                             <?php endif; ?>
                             <?php if (\App\Core\PermissionManager::hasPermission('manage_payments')): ?>
-                                <a href="/payments" class="ribbon-qat-btn <?= strpos($current_path, '/payments') === 0 ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-html="true" title="<div class='tooltip-rich-title'><i class='bi bi-credit-card'></i> Caisse & Versements</div><div class='tooltip-rich-desc'>Encaisser les frais de scolarité et délivrer les reçus.</div>">
+                                <a href="/payments" class="ribbon-qat-btn <?= strpos($current_path, '/payments') === 0 ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-html="true" title="<div class='tooltip-rich-title'><i class='bi bi-credit-card'></i> <?= addslashes((string) __('payments_menu')) ?></div><div class='tooltip-rich-desc'><?= addslashes((string) __('layout_desc_payments')) ?></div>">
                                     <i class="bi bi-credit-card"></i>
                                 </a>
                             <?php endif; ?>
                             <?php if (\App\Core\PermissionManager::hasPermission('manage_students')): ?>
-                                <a href="/students/create" class="ribbon-qat-btn <?= strpos($current_path, '/students/create') === 0 ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-html="true" title="<div class='tooltip-rich-title'><i class='bi bi-person-plus'></i> Inscription Élève</div><div class='tooltip-rich-desc'>Enregistrer un nouvel élève et lui attribuer une classe.</div>">
+                                <a href="/students/create" class="ribbon-qat-btn <?= strpos($current_path, '/students/create') === 0 ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-html="true" title="<div class='tooltip-rich-title'><i class='bi bi-person-plus'></i> <?= addslashes((string) __('register_student_menu')) ?></div><div class='tooltip-rich-desc'><?= addslashes((string) __('layout_desc_register_student')) ?></div>">
                                     <i class="bi bi-person-plus"></i>
                                 </a>
                             <?php endif; ?>
                             <?php if (\App\Core\PermissionManager::hasPermission('manage_bulletins')): ?>
-                                <a href="/bulletins" class="ribbon-qat-btn <?= strpos($current_path, '/bulletins') === 0 ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-html="true" title="<div class='tooltip-rich-title'><i class='bi bi-printer'></i> Impression Bulletins</div><div class='tooltip-rich-desc'>Générer les bulletins de notes périodiques officiels.</div>">
+                                <a href="/bulletins" class="ribbon-qat-btn <?= strpos($current_path, '/bulletins') === 0 ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-html="true" title="<div class='tooltip-rich-title'><i class='bi bi-printer'></i> <?= addslashes((string) __('bulletins')) ?></div><div class='tooltip-rich-desc'><?= addslashes((string) __('layout_desc_bulletins')) ?></div>">
                                     <i class="bi bi-printer"></i>
                                 </a>
                             <?php endif; ?>
                             <?php if (\App\Core\PermissionManager::hasPermission('manage_rbac')): ?>
-                                <a href="/pilotage/rbac" class="ribbon-qat-btn <?= strpos($current_path, '/pilotage/rbac') === 0 ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-html="true" title="<div class='tooltip-rich-title'><i class='bi bi-shield-lock-fill'></i> Gestion des Permissions</div><div class='tooltip-rich-desc'>Centre de contrôle des privilèges, rôles et exceptions.</div>">
+                                <a href="/pilotage/rbac" class="ribbon-qat-btn <?= strpos($current_path, '/pilotage/rbac') === 0 ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-html="true" title="<div class='tooltip-rich-title'><i class='bi bi-shield-lock-fill'></i> <?= addslashes((string) __('layout_permissions_management')) ?></div><div class='tooltip-rich-desc'><?= addslashes((string) __('layout_permissions_management_desc')) ?></div>">
                                     <i class="bi bi-shield-lock-fill text-primary"></i>
                                 </a>
                             <?php endif; ?>
@@ -706,11 +715,11 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                                 <i class="bi bi-search" style="font-size: 0.85rem;"></i>
                             </span>
                             <input type="text" class="form-control border-0 bg-transparent shadow-none py-1 text-main cursor-pointer"
-                                placeholder="Rechercher... (Ctrl+K)" readonly style="font-size: 0.8rem; height: 32px; cursor: pointer;">
+                                placeholder="<?= addslashes((string) __('search')) ?>... (Ctrl+K)" readonly style="font-size: 0.8rem; height: 32px; cursor: pointer;">
                             <span class="badge bg-secondary bg-opacity-10 text-muted border rounded-pill extra-small px-1-5 py-0 me-1 d-none d-md-inline" style="font-size: 0.65rem;">⌘K</span>
                         </div>
                         <button type="button" class="btn btn-theme-soft rounded-circle d-flex d-sm-none align-items-center justify-content-center p-0 border-0 flex-shrink-0"
-                                id="openCmdPaletteTriggerMobile" title="Rechercher une commande (Ctrl+K)" style="width: 44px; height: 44px;">
+                                id="openCmdPaletteTriggerMobile" title="<?= addslashes((string) __('search_command')) ?> (Ctrl+K)" style="width: 44px; height: 44px;">
                             <i class="bi bi-search fs-5 text-primary"></i>
                         </button>
                     <?php endif; ?>
@@ -721,7 +730,7 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                     <?php if (\App\Core\Session::isLogged()): ?>
                         <!-- 1. Pill Badge Widget de Progression -->
                         <div class="dropdown me-1 d-none" id="onboardingProgressPillDropdown" style="display: none !important;">
-                            <div class="onboarding-pill-badge" data-bs-toggle="dropdown" aria-expanded="false" title="Progression de la configuration de votre espace">
+                            <div class="onboarding-pill-badge" data-bs-toggle="dropdown" aria-expanded="false" title="<?= addslashes((string) __('onboarding_progress_title')) ?>">
                                 <span class="pill-sparkle">✨</span>
                                 <span id="onboardingPillText">⚡ 0% configuré</span>
                                 <i class="bi bi-chevron-down extra-small opacity-75 ms-1"></i>
@@ -729,8 +738,8 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                             <div class="dropdown-menu dropdown-menu-end onboarding-checklist-menu p-3">
                                 <div class="onboarding-checklist-header d-flex align-items-center justify-content-between">
                                     <div>
-                                        <h6 class="fw-bold m-0 fs-6 text-main-theme">Guide d'Onboarding</h6>
-                                        <small class="text-muted" id="onboardingChecklistRemaining">Étapes restantes</small>
+                                        <h6 class="fw-bold m-0 fs-6 text-main-theme"><?= __('layout_onboarding_guide') ?></h6>
+                                        <small class="text-muted" id="onboardingChecklistRemaining"><?= __('layout_remaining_steps') ?></small>
                                     </div>
                                     <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2 py-1 extra-small">Setup</span>
                                 </div>
@@ -739,7 +748,7 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                                 </div>
                                 <div class="mt-2 pt-2 border-top text-center">
                                     <a href="/documentation" class="text-decoration-none extra-small text-muted hover-opacity-100">
-                                        <i class="bi bi-question-circle me-1"></i> Besoin d'aide pour configurer ?
+                                        <i class="bi bi-question-circle me-1"></i> <?= __('layout_need_help_to_configure') ?>
                                     </a>
                                 </div>
                             </div>
@@ -747,19 +756,19 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
 
                         <!-- 2. Bouton CTA Dynamique Contextuel -->
                         <a href="/settings" class="btn-onboarding-cta pulse-glow me-1 d-none" id="onboardingPrimaryCTA" style="display: none !important;">
-                            <i class="bi bi-rocket-takeoff"></i> Configurer maintenant
+                            <i class="bi bi-rocket-takeoff"></i> <?= __('layout_configure_now') ?>
                         </a>
 
                         <!-- 3. Smart Notification Bell Dropdown -->
                         <div class="dropdown" id="onboardingBellDropdown">
                             <button type="button" class="btn btn-theme-soft notification-bell-btn rounded-circle d-flex align-items-center justify-content-center p-0 border-0 shadow-sm transition-all"
-                                    data-bs-toggle="dropdown" aria-expanded="false" title="Notifications & Conseils Onboarding" style="width: 44px; height: 44px;">
+                                    data-bs-toggle="dropdown" aria-expanded="false" title="<?= addslashes((string) __('layout_notifications_tips')) ?>" style="width: 44px; height: 44px;">
                                 <i class="bi bi-bell fs-5 text-main-theme"></i>
                                 <span class="notification-bell-badge" id="onboardingBellBadge"></span>
                             </button>
                             <div class="dropdown-menu dropdown-menu-end notification-drawer-menu shadow-lg border-0 p-3 mt-2">
                                 <div class="d-flex align-items-center justify-content-between pb-2 mb-2 border-bottom">
-                                    <h6 class="fw-bold m-0 fs-6 text-main-theme">Notifications & Conseils</h6>
+                                    <h6 class="fw-bold m-0 fs-6 text-main-theme"><?= __('layout_notifications_tips') ?></h6>
                                     <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill extra-small">Onboarding</span>
                                 </div>
                                 <div class="notification-item-card">
@@ -768,10 +777,10 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                                             <i class="bi bi-hand-thumbs-up fs-6"></i>
                                         </div>
                                         <div>
-                                            <span class="fw-semibold d-block text-main-theme" style="font-size: 0.82rem;">Bienvenue dans NoteMaster !</span>
-                                            <p class="text-muted extra-small mb-1">Découvrez les 5 étapes simples pour configurer votre établissement.</p>
+                                            <span class="fw-semibold d-block text-main-theme" style="font-size: 0.82rem;"><?= __('layout_welcome_message') ?></span>
+                                            <p class="text-muted extra-small mb-1"><?= __('layout_welcome_desc') ?></p>
                                             <a href="javascript:void(0)" onclick="TopBarOnboarding.updateUI()" class="extra-small text-primary fw-semibold text-decoration-none">
-                                                Voir la checklist →
+                                                <?= __('layout_view_checklist') ?>
                                             </a>
                                         </div>
                                     </div>
@@ -782,8 +791,8 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                                             <i class="bi bi-lightning-charge fs-6"></i>
                                         </div>
                                         <div>
-                                            <span class="fw-semibold d-block text-main-theme" style="font-size: 0.82rem;">Conseil Pro : Raccourcis</span>
-                                            <p class="text-muted extra-small mb-0">Utilisez <kbd class="extra-small">Cmd+K</kbd> pour naviguer instantanément à travers l'application.</p>
+                                            <span class="fw-semibold d-block text-main-theme" style="font-size: 0.82rem;"><?= __('layout_pro_tip_shortcuts') ?></span>
+                                            <p class="text-muted extra-small mb-0"><?= __('layout_pro_tip_shortcuts_desc') ?></p>
                                         </div>
                                     </div>
                                 </div>
@@ -792,7 +801,7 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
 
                         <!-- 4. Interactive Guided Tour Button -->
                         <button type="button" class="btn btn-theme-soft rounded-circle d-none d-sm-flex align-items-center justify-content-center p-0 border-0 shadow-sm transition-all"
-                                id="startGuidedTour" title="Découvrir la Navigation (Visite Guidée)" style="width: 44px; height: 44px;">
+                                id="startGuidedTour" title="<?= addslashes((string) __('layout_discover_navigation')) ?>" style="width: 44px; height: 44px;">
                             <i class="bi bi-compass fs-5 text-primary"></i>
                         </button>
                     <?php endif; ?>
@@ -834,7 +843,7 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                                 <?php if (\App\Core\PermissionManager::hasPermission('manage_rbac')): ?>
                                     <li>
                                         <a class="dropdown-item dropdown-item-modern py-2" href="/pilotage/rbac">
-                                            <i class="bi bi-shield-lock-fill text-primary fs-5 me-2"></i> Gestion des Permissions
+                                            <i class="bi bi-shield-lock-fill text-primary fs-5 me-2"></i> <?= __('layout_permissions_management') ?>
                                         </a>
                                     </li>
                                 <?php endif; ?>
@@ -847,7 +856,7 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                                 <?php endif; ?>
                                 <li class="d-none">
                                     <a class="dropdown-item dropdown-item-modern py-2" href="javascript:void(0)" onclick="window.TopBarOnboarding.relaunch();">
-                                        <i class="bi bi-compass text-primary fs-5 me-2"></i> Relancer le guide d'onboarding
+                                        <i class="bi bi-compass text-primary fs-5 me-2"></i> <?= __('layout_relaunch_onboarding') ?>
                                     </a>
                                 </li>
                                 <li>
@@ -985,10 +994,10 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                             <?php endif; ?>
                             <div class="d-flex flex-column text-start overflow-hidden">
                                 <h5 class="offcanvas-title fw-bold fs-6 text-main-theme m-0 text-truncate" id="mobileRibbonDrawerLabel"><?= htmlspecialchars((string) $school_identity) ?></h5>
-                                <span class="extra-small text-primary fw-semibold" style="font-size: 0.7rem;">Espace de gestion</span>
+                                <span class="extra-small text-primary fw-semibold" style="font-size: 0.7rem;"><?= __('layout_management_space') ?></span>
                             </div>
                         </div>
-                        <button type="button" class="btn-close text-reset p-2" data-bs-dismiss="offcanvas" aria-label="Fermer" style="width: 48px; height: 48px;"></button>
+                        <button type="button" class="btn-close text-reset p-2" data-bs-dismiss="offcanvas" aria-label="<?= addslashes((string) __('close')) ?>" style="width: 48px; height: 48px;"></button>
                     </div>
 
                     <!-- Canva Workspace Context Pill -->
@@ -1007,7 +1016,7 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                         <span class="input-group-text border-0 bg-transparent text-muted ps-3 pe-1">
                             <i class="bi bi-search" style="font-size: 0.85rem;"></i>
                         </span>
-                        <input type="text" id="mobileDrawerSearch" class="form-control border-0 shadow-none py-2 text-main bg-transparent" placeholder="Filtrer les modules..." style="font-size: 0.84rem;">
+                        <input type="text" id="mobileDrawerSearch" class="form-control border-0 shadow-none py-2 text-main bg-transparent" placeholder="<?= addslashes((string) __('layout_filter_modules')) ?>" style="font-size: 0.84rem;">
                     </div>
                 </div>
 
@@ -1095,7 +1104,7 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                                         aria-controls="mobileTabCollapse_Plus"
                                         style="font-size: 0.88rem; min-height: 48px;">
                                     <i class="bi bi-three-dots text-secondary fs-5 me-2 flex-shrink-0"></i>
-                                    <span class="flex-grow-1 text-truncate">Plus & Assistance</span>
+                                    <span class="flex-grow-1 text-truncate"><?= __('layout_more_assistance') ?></span>
                                 </button>
                             </h2>
                             <div id="mobileTabCollapse_Plus" 
@@ -1110,9 +1119,9 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                                             <div class="d-flex align-items-center gap-2-5 overflow-hidden">
                                                 <div class="mobile-drawer-icon-box rounded-circle bg-secondary bg-opacity-10 text-secondary d-flex align-items-center justify-content-center flex-shrink-0"
                                                      style="width: 34px; height: 34px; font-size: 0.9rem;">
-                                                    <i class="bi bi-question-circle"></i>
+                                                     <i class="bi bi-question-circle"></i>
                                                 </div>
-                                                <span class="fw-medium text-truncate" style="font-size: 0.86rem;"><?= __('help') ?> & Documentation</span>
+                                                <span class="fw-medium text-truncate" style="font-size: 0.86rem;"><?= __('help') ?> & <?= __('documentation') ?></span>
                                             </div>
                                             <i class="bi bi-chevron-right extra-small text-muted flex-shrink-0 opacity-50"></i>
                                         </a>
@@ -1198,15 +1207,15 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
         <div class="command-palette-box">
             <div class="command-palette-header">
                 <i class="bi bi-search fs-5 text-primary"></i>
-                <input type="text" id="cmdPaletteInput" class="command-palette-input" placeholder="Rechercher une commande... (ex: Notes, Inscription, Tarifs)" autocomplete="off">
+                <input type="text" id="cmdPaletteInput" class="command-palette-input" placeholder="<?= addslashes((string) __('layout_filter_modules')) ?>... (ex: Notes, Inscription, Tarifs)" autocomplete="off">
                 <span class="badge bg-secondary bg-opacity-10 text-muted border rounded px-2 py-1 extra-small">ESC</span>
             </div>
             <div class="command-palette-results" id="cmdPaletteResults">
                 <!-- Results dynamically populated in JS -->
             </div>
             <div class="command-palette-footer">
-                <span><i class="bi bi-arrow-down-up me-1"></i> Navigation Flèches</span>
-                <span><i class="bi bi-box-arrow-in-right me-1"></i> Entrée pour exécuter</span>
+                <span><i class="bi bi-arrow-down-up me-1"></i> <?= __('layout_navigation_arrows') ?></span>
+                <span><i class="bi bi-box-arrow-in-right me-1"></i> <?= __('layout_enter_to_execute') ?></span>
             </div>
         </div>
     </div>
@@ -1214,14 +1223,14 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
     <!-- SPOTLIGHT GUIDED TOUR CARD (NO DARK BACKDROP OVERLAY) -->
     <div class="onboarding-card" id="onboardingCard" style="display: none;">
         <div class="d-flex align-items-center justify-content-between mb-2">
-            <span class="onboarding-step-badge" id="onboardingStepBadge">Étape 1 / 5</span>
+            <span class="onboarding-step-badge" id="onboardingStepBadge"><?= __('layout_step') ?> 1 / 5</span>
             <button type="button" class="btn-close" id="closeOnboardingBtn" aria-label="Close"></button>
         </div>
-        <h5 class="fw-bold text-main-theme mb-1" id="onboardingTitle">Bienvenue sur NoteMaster !</h5>
-        <p class="small text-muted mb-3" id="onboardingBody">Découvrez votre nouvelle navigation style Microsoft Word 365 conçue pour accélérer votre travail quotidien.</p>
+        <h5 class="fw-bold text-main-theme mb-1" id="onboardingTitle"><?= __('layout_welcome_message') ?></h5>
+        <p class="small text-muted mb-3" id="onboardingBody"><?= __('layout_tour_desc') ?></p>
         <div class="d-flex align-items-center justify-content-between pt-2 border-top">
-            <button type="button" class="btn btn-sm btn-light rounded-pill px-3" id="prevOnboardingBtn">Précédent</button>
-            <button type="button" class="btn btn-sm btn-primary rounded-pill px-4 fw-bold shadow-sm" id="nextOnboardingBtn">Suivant</button>
+            <button type="button" class="btn btn-sm btn-light rounded-pill px-3" id="prevOnboardingBtn"><?= __('layout_prev') ?></button>
+            <button type="button" class="btn btn-sm btn-primary rounded-pill px-4 fw-bold shadow-sm" id="nextOnboardingBtn"><?= __('layout_next') ?></button>
         </div>
     </div>
 
@@ -1239,28 +1248,28 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
             const tourSteps = [
                 {
                     target: '#tourBrandLogo',
-                    title: "Identité de l'Établissement",
-                    body: "Retrouvez ici le nom et le logo officiels de votre école. Un clic vous ramène instantanément au tableau de bord principal."
+                    title: "<?= addslashes((string) __('layout_tour_step1_title')) ?>",
+                    body: "<?= addslashes((string) __('layout_tour_step1_body')) ?>"
                 },
                 {
                     target: '#tourQAT',
-                    title: "Barre d'Accès Rapide (QAT)",
-                    body: "Accédez en 1 clic aux 5 fonctionnalités les plus vitales : Accueil, Saisie des notes, Caisse, Inscription élève et Bulletins."
+                    title: "<?= addslashes((string) __('layout_tour_step2_title')) ?>",
+                    body: "<?= addslashes((string) __('layout_tour_step2_body')) ?>"
                 },
                 {
                     target: '#openCmdPaletteTrigger',
-                    title: "Recherche Globale & Command Palette (Ctrl+K)",
-                    body: "Recherchez n'importe quel module ou commande au clavier grâce à la combinaison Ctrl+K ou ⌘K."
+                    title: "<?= addslashes((string) __('layout_tour_step3_title')) ?>",
+                    body: "<?= addslashes((string) __('layout_tour_step3_body')) ?>"
                 },
                 {
                     target: '#desktopNavItems',
-                    title: "Navigation Principale SaaS",
-                    body: "Explorez vos espaces de gestion (Pilotage, RH, Finances, Notes, Impression). Cliquez sur un menu pour ouvrir son dropdown d'actions autonomes."
+                    title: "<?= addslashes((string) __('layout_tour_step4_title')) ?>",
+                    body: "<?= addslashes((string) __('layout_tour_step4_body')) ?>"
                 },
                 {
                     target: '#tourUserAccount',
-                    title: "Compte & Préférences",
-                    body: "Gérez votre profil utilisateur, les paramètres système, le choix de la langue (Français/Anglais) et le mode Sombre."
+                    title: "<?= addslashes((string) __('layout_tour_step5_title')) ?>",
+                    body: "<?= addslashes((string) __('layout_tour_step5_body')) ?>"
                 }
             ];
 
@@ -1287,12 +1296,12 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                 const step = tourSteps[idx];
                 const targetEl = document.querySelector(step.target);
 
-                stepBadge.textContent = `Étape ${idx + 1} / ${tourSteps.length}`;
+                stepBadge.textContent = `<?= addslashes((string) __('layout_step')) ?> ${idx + 1} / ${tourSteps.length}`;
                 titleEl.textContent = step.title;
                 bodyEl.textContent = step.body;
 
                 prevBtn.style.display = idx === 0 ? 'none' : 'inline-block';
-                nextBtn.textContent = idx === tourSteps.length - 1 ? 'Terminer' : 'Suivant';
+                nextBtn.textContent = idx === tourSteps.length - 1 ? '<?= addslashes((string) __('layout_end')) ?>' : '<?= addslashes((string) __('layout_next')) ?>';
 
                 card.style.display = 'block';
 
@@ -1358,7 +1367,7 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                     cmdPaletteResults.innerHTML = `
                         <div class="text-center py-4 text-muted">
                             <i class="bi bi-search fs-3 d-block mb-2 text-opacity-50"></i>
-                            <span class="small">Aucune commande trouvée</span>
+                            <span class="small"><?= addslashes((string) __('no_commands_found')) ?></span>
                         </div>`;
                     return;
                 }

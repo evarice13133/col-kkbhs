@@ -51,16 +51,16 @@ ob_start();
                     <i class="bi bi-person-workspace fs-3"></i>
                 </div>
                 <div>
-                    <h4 class="fw-black text-main-theme m-0" style="font-family: 'Outfit', sans-serif; letter-spacing: -0.02em;">Espace Pédagogique Enseignant</h4>
-                    <p class="text-muted-theme small mb-0">Bienvenue sur votre portail de suivi et de saisie des évaluations.</p>
+                    <h4 class="fw-black text-main-theme m-0" style="font-family: 'Outfit', sans-serif; letter-spacing: -0.02em;"><?= __('dashboard_teacher_title') ?></h4>
+                    <p class="text-muted-theme small mb-0"><?= __('dashboard_teacher_subtitle') ?></p>
                 </div>
             </div>
             <div class="d-flex align-items-center gap-2 flex-wrap">
                 <?php if (!empty($has_lmd_classes)): ?>
                     <a href="/timetables"
                         class="btn btn-outline-info rounded-pill px-3 py-2 fw-bold shadow-sm scale-on-hover d-flex align-items-center gap-2"
-                        title="Consulter l'emploi du temps des classes du Supérieur LMD">
-                        <i class="bi bi-calendar3-week"></i> Mon Emploi du Temps
+                        title="<?= __('dashboard_teacher_my_schedule') ?>">
+                        <i class="bi bi-calendar3-week"></i> <?= __('dashboard_teacher_my_schedule') ?>
                     </a>
                 <?php endif; ?>
                 <a href="/students"
@@ -143,10 +143,10 @@ ob_start();
         <div class="modern-card border-0 shadow-sm rounded-4 mb-4 p-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="fw-bold m-0 text-main-theme d-flex align-items-center gap-2 fs-6">
-                    <i class="bi bi-briefcase text-primary"></i> Mes Affectations & Accès Rapide Saisie
+                    <i class="bi bi-briefcase text-primary"></i> <?= __('dashboard_teacher_my_assignments') ?>
                 </h5>
                 <a href="/notes" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold">
-                    Toutes mes saisies →
+                    <?= __('dashboard_teacher_all_my_entries') ?>
                 </a>
             </div>
             <div class="row g-3">
@@ -163,7 +163,7 @@ ob_start();
                             </div>
                             <a href="/notes/saisie?class_id=<?= $assign['class_id'] ?>&subject_id=<?= $assign['subject_id'] ?>" 
                                class="btn btn-sm btn-primary rounded-pill px-3 shadow-xs scale-on-hover flex-shrink-0 d-flex align-items-center gap-1">
-                                <i class="bi bi-pencil-square"></i> Saisir
+                                <i class="bi bi-pencil-square"></i> <?= __('dashboard_teacher_enter') ?>
                             </a>
                         </div>
                     </div>
@@ -261,10 +261,10 @@ ob_start();
 <!-- Support WhatsApp Floating Widget -->
 
 <div id="whatsapp-support" class="wa-float-container">
-    <button class="wa-close-toggle" onclick="dismissSupport()" title="Masquer l'assistance">
+    <button class="wa-close-toggle" onclick="dismissSupport()" title="<?= __('dashboard_teacher_hide_support') ?>">
         <i class="bi bi-x"></i>
     </button>
-    <a href="https://wa.me/237679164801?text=Bonjour%20support%20NotesMaster%2C%20je%20souhaite%20une%20assistance%20sur%20mon%20espace%20enseignant."
+    <a href="https://wa.me/237679164801?text=<?= rawurlencode(__('dashboard_teacher_whatsapp_message')) ?>"
         target="_blank" class="wa-fab shadow-lg">
         <div class="wa-icon-box">
             <i class="bi bi-whatsapp"></i>

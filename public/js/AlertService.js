@@ -52,7 +52,7 @@ const AlertService = {
             icon: 'success',
             title: title,
             html: message,
-            confirmButtonText: 'Continuer',
+            confirmButtonText: (window.NM_I18N && window.NM_I18N.continue) || 'Continuer',
             confirmButtonColor: '#1ea896' // nm-teal
         });
     },
@@ -70,7 +70,7 @@ const AlertService = {
             icon: 'error',
             title: title,
             html: message,
-            confirmButtonText: 'Fermer',
+            confirmButtonText: (window.NM_I18N && window.NM_I18N.close) || 'Fermer',
             confirmButtonColor: '#d1495b' // nm-red
         });
     },
@@ -88,7 +88,7 @@ const AlertService = {
             icon: 'warning',
             title: title,
             html: message,
-            confirmButtonText: 'Compris',
+            confirmButtonText: (window.NM_I18N && window.NM_I18N.understood) || 'Compris',
             confirmButtonColor: '#f4b942' // nm-gold
         });
     },
@@ -103,7 +103,7 @@ const AlertService = {
             icon: 'info',
             title: title,
             html: message,
-            confirmButtonText: 'Ok',
+            confirmButtonText: (window.NM_I18N && window.NM_I18N.ok) || 'Ok',
             confirmButtonColor: '#2f6fed' // nm-blue
         });
     },
@@ -117,12 +117,12 @@ const AlertService = {
      */
     confirm(options = {}) {
         const config = {
-            title: options.title || 'Êtes-vous sûr ?',
-            html: options.message || 'Cette action ne pourra pas être annulée.',
+            title: options.title || (window.NM_I18N && window.NM_I18N.are_you_sure) || 'Êtes-vous sûr ?',
+            html: options.message || (window.NM_I18N && window.NM_I18N.action_irreversible) || 'Cette action ne pourra pas être annulée.',
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonText: options.confirmText || 'Confirmer',
-            cancelButtonText: options.cancelText || 'Annuler',
+            confirmButtonText: options.confirmText || (window.NM_I18N && window.NM_I18N.confirm) || 'Confirmer',
+            cancelButtonText: options.cancelText || (window.NM_I18N && window.NM_I18N.cancel) || 'Annuler',
             confirmButtonColor: '#d1495b', // Défaut rouge si critique
             cancelButtonColor: '#eef4fb',
             reverseButtons: true, // Annuler à gauche, Confirmer à droite (plus standard)
@@ -141,8 +141,8 @@ const AlertService = {
             title: title,
             html: `<div style="color: #000; font-size: 0.9rem;">${message}</div>`,
             icon: 'warning',
-            confirmText: 'Supprimer',
-            cancelText: 'Annuler',
+            confirmText: (window.NM_I18N && window.NM_I18N.delete) || 'Supprimer',
+            cancelText: (window.NM_I18N && window.NM_I18N.cancel) || 'Annuler',
             confirmButtonColor: '#000000', // Noir sur Blanc
             background: '#ffffff',
             width: '320px',
@@ -186,10 +186,12 @@ const AlertService = {
     /**
      * Affiche une alerte persistante lors d'un CHARGEMENT long.
      */
-    loading(title = 'Traitement en cours...', message = 'Veuillez patienter') {
+    loading(title, message) {
+        const defaultTitle = (window.NM_I18N && window.NM_I18N.processing) || 'Traitement en cours...';
+        const defaultMsg = (window.NM_I18N && window.NM_I18N.please_wait) || 'Veuillez patienter';
         Swal.fire({
-            title: title,
-            html: message,
+            title: title || defaultTitle,
+            html: message || defaultMsg,
             allowOutsideClick: false,
             allowEscapeKey: false,
             didOpen: () => {
