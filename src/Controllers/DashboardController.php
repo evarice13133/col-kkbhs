@@ -79,25 +79,53 @@ class DashboardController
     }
 
     /**
-     * Construit les données pour le tableau de bord financier (caissier / comptable).
-     * NB : Ne contient AUCUNE donnée pédagogique. 
+     * Obtenir les types d'enseignement actifs de l'établissement.
      */
-    private function buildFinancialDashboardData(): array
+    private function getActiveTeachingTypes(): array
+    {
+        return $this->db->query("SELECT id, nom, code, position FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * Construit les données pour le tableau de bord financier (caissier / comptable).
+     * Filtré dynamiquement selon le ou les types d'enseignement actifs.
+     */
+    private function buildFinancialDashboardData($filterTeachingTypeIds = null): array
     {
         $activeYearId = $this->getActiveAcademicYearId();
 
+        $andClass = "";
+        if (is_array($filterTeachingTypeIds)) {
+            if (!empty($filterTeachingTypeIds)) {
+                $idsStr = implode(',', array_map('intval', $filterTeachingTypeIds));
+                $andClass = " AND c.teaching_type_id IN ($idsStr) ";
+            } else {
+                $andClass = " AND 1=0 ";
+            }
+        } elseif ($filterTeachingTypeIds !== null) {
+            $id = (int)$filterTeachingTypeIds;
+            $andClass = " AND c.teaching_type_id = {$id} ";
+        } else {
+            $activeTypes = $this->getActiveTeachingTypes();
+            $activeIds = array_column($activeTypes, 'id');
+            if (!empty($activeIds)) {
+                $idsStr = implode(',', array_map('intval', $activeIds));
+                $andClass = " AND c.teaching_type_id IN ($idsStr) ";
+            }
+        }
+
         $totalStudents = (int) $this->db->query(
-            "SELECT COUNT(*) FROM students WHERE is_withdrawn = 0 AND actif = 1 AND academic_year_id = {$activeYearId}"
+            "SELECT COUNT(*) FROM students s JOIN classes c ON s.class_id = c.id WHERE s.is_withdrawn = 0 AND s.actif = 1 AND s.academic_year_id = {$activeYearId} {$andClass}"
         )->fetchColumn();
 
         // Scolarité encaissée
         $totalTuitionCollected = (float) $this->db->query(
-            "SELECT COALESCE(SUM(amount), 0) FROM payments WHERE type = 'scolarite' AND academic_year_id = {$activeYearId}"
+            "SELECT COALESCE(SUM(p.amount), 0) FROM payments p JOIN students s ON p.student_id = s.id JOIN classes c ON s.class_id = c.id WHERE p.type = 'scolarite' AND p.academic_year_id = {$activeYearId} {$andClass}"
         )->fetchColumn();
 
         // Frais d'inscription encaissés
         $totalRegistrationCollected = (float) $this->db->query(
-            "SELECT COALESCE(SUM(amount), 0) FROM payments WHERE type = 'inscription' AND academic_year_id = {$activeYearId}"
+            "SELECT COALESCE(SUM(p.amount), 0) FROM payments p JOIN students s ON p.student_id = s.id JOIN classes c ON s.class_id = c.id WHERE p.type = 'inscription' AND p.academic_year_id = {$activeYearId} {$andClass}"
         )->fetchColumn();
 
         // Recettes globales de la caisse (scolarité + inscription)
@@ -107,7 +135,7 @@ class DashboardController
         $totalExpectedGross = (float) $this->db->query(
             "SELECT COALESCE(SUM(c.frais_scolarite_brut), 0)
              FROM students s JOIN classes c ON s.class_id = c.id
-             WHERE s.is_withdrawn = 0 AND s.actif = 1 AND s.academic_year_id = {$activeYearId}"
+             WHERE s.is_withdrawn = 0 AND s.actif = 1 AND s.academic_year_id = {$activeYearId} {$andClass}"
         )->fetchColumn();
 
         // Réductions accordées sur la scolarité
@@ -115,13 +143,18 @@ class DashboardController
             "SELECT COALESCE(SUM(e.total_reductions), 0)
              FROM enrollments e
              JOIN students s ON e.student_id = s.id
-             WHERE s.is_withdrawn = 0 AND s.actif = 1 AND e.academic_year_id = {$activeYearId}"
+             JOIN classes c ON s.class_id = c.id
+             WHERE s.is_withdrawn = 0 AND s.actif = 1 AND e.academic_year_id = {$activeYearId} {$andClass}"
         )->fetchColumn();
 
         $totalExpected = max(0.0, $totalExpectedGross - $totalReductions);
 
         $totalInsolvent = (int) $this->db->query(
-            "SELECT COUNT(DISTINCT student_id) FROM insolvent_students WHERE academic_year_id = {$activeYearId}"
+            "SELECT COUNT(DISTINCT ins.student_id) 
+             FROM insolvent_students ins
+             JOIN students s ON ins.student_id = s.id
+             JOIN classes c ON s.class_id = c.id
+             WHERE ins.academic_year_id = {$activeYearId} {$andClass}"
         )->fetchColumn();
 
         $collectionRate = $totalExpected > 0 ? round(($totalTuitionCollected / $totalExpected) * 100, 1) : 0;
@@ -169,7 +202,7 @@ class DashboardController
                 WHERE type = 'inscription' AND academic_year_id = :academic_year_id1
                 GROUP BY student_id
             ) p ON s.id = p.student_id
-            WHERE s.is_withdrawn = 0 AND s.actif = 1 AND s.academic_year_id = :academic_year_id2
+            WHERE s.is_withdrawn = 0 AND s.actif = 1 AND s.academic_year_id = :academic_year_id2 {$andClass}
             GROUP BY c.id, c.nom
             ORDER BY c.nom ASC
         ");
@@ -181,7 +214,7 @@ class DashboardController
             ':academic_year_id1' => $activeYearId,
             ':academic_year_id2' => $activeYearId
         ]);
-        $classRegistrationStats = $stmtClassStats->fetchAll(\PDO::FETCH_ASSOC);
+        $classRegistrationStats = $stmtClassStats->fetchAll(\PDO::FETCH_ASSOC) ?: [];
 
         // Calculer les totaux d'inscription depuis les statistiques par classe
         $totalEnrolled = 0;
@@ -191,17 +224,19 @@ class DashboardController
             $totalNonEnrolled += (int)$row['non_enrolled_count'];
         }
 
-        // Évolution mensuelle des paiements (6 derniers mois) - comprend tous les paiements (frais scolarité et inscription)
+        // Évolution mensuelle des paiements (6 derniers mois)
         $monthlyPayments = $this->db->query(
-            "SELECT DATE_FORMAT(payment_date, '%Y-%m') as month,
-                    SUM(amount) as total
-             FROM payments
-             WHERE academic_year_id = {$activeYearId}
-               AND payment_date >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+            "SELECT DATE_FORMAT(p.payment_date, '%Y-%m') as month,
+                    SUM(p.amount) as total
+             FROM payments p
+             JOIN students s ON p.student_id = s.id
+             JOIN classes c ON s.class_id = c.id
+             WHERE p.academic_year_id = {$activeYearId} {$andClass}
+               AND p.payment_date >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
              GROUP BY month ORDER BY month ASC"
-        )->fetchAll(\PDO::FETCH_ASSOC);
+        )->fetchAll(\PDO::FETCH_ASSOC) ?: [];
 
-        // Derniers paiements reçus (tous types confondus : inscription et scolarité)
+        // Derniers paiements reçus
         $recentPayments = $this->db->query(
             "SELECT p.payment_date, p.amount, p.payment_method, p.type,
                     CONCAT(s.nom, ' ', s.prenom) as student_name,
@@ -209,11 +244,11 @@ class DashboardController
              FROM payments p
              JOIN students s ON p.student_id = s.id
              JOIN classes c ON s.class_id = c.id
-             WHERE p.academic_year_id = {$activeYearId}
+             WHERE p.academic_year_id = {$activeYearId} {$andClass}
              ORDER BY p.payment_date DESC, p.id DESC LIMIT 10"
-        )->fetchAll(\PDO::FETCH_ASSOC);
+        )->fetchAll(\PDO::FETCH_ASSOC) ?: [];
 
-        // Dépenses
+        // Dépenses globales (établissement)
         $totalExpenses = (float) $this->db->query(
             "SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE status = 'active' AND academic_year_id = {$activeYearId}"
         )->fetchColumn();
@@ -235,7 +270,7 @@ class DashboardController
             JOIN expense_categories ec ON e.category_id = ec.id 
             WHERE e.status = 'active' AND e.academic_year_id = {$activeYearId} 
             GROUP BY ec.id, ec.name
-        ")->fetchAll(\PDO::FETCH_ASSOC);
+        ")->fetchAll(\PDO::FETCH_ASSOC) ?: [];
 
         $monthlyExpensesHist = $this->db->query("
             SELECT DATE_FORMAT(expense_date, '%Y-%m') as month,
@@ -244,12 +279,11 @@ class DashboardController
             WHERE status = 'active' AND academic_year_id = {$activeYearId}
               AND expense_date >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
             GROUP BY month ORDER BY month ASC
-        ")->fetchAll(\PDO::FETCH_ASSOC);
+        ")->fetchAll(\PDO::FETCH_ASSOC) ?: [];
 
-        // Assurer la rétrocompatibilité pour la vue existante
         $totalCollected = $totalTuitionCollected;
 
-        $extraFinData = $this->getExtraFinancialCenterData($activeYearId);
+        $extraFinData = $this->getExtraFinancialCenterData($activeYearId, $filterTeachingTypeIds);
 
         return array_merge(compact(
             'totalStudents', 'totalCollected', 'totalExpected', 'totalExpectedGross', 'totalReductions',
@@ -411,131 +445,52 @@ class DashboardController
         ];
     }
 
-
-
     /**
-     * Construit les données pour l'administrateur de manière optimisée.
+     * Construit les données pour l'administrateur de manière optimisée et contextualisée par type d'enseignement actif.
      */
     private function buildAdminDashboardData()
     {
         $activeYearId = $this->getActiveAcademicYearId();
         $activeEvaluations = $this->getActiveEvaluations();
-        $numEvals = count($activeEvaluations);
+        $activeTeachingTypes = $this->getActiveTeachingTypes();
+        $activeTypeIds = array_column($activeTeachingTypes, 'id');
 
-        // 1. Stats de base
-        $activeYearId = $this->getActiveAcademicYearId();
-        $stats_students = (int) $this->db->query("SELECT COUNT(*) FROM students WHERE status = 'Inscrit' AND actif = 1 AND academic_year_id = {$activeYearId}")->fetchColumn();
-        $stats_students_inscrits = $stats_students;
-        $stats_students_non_inscrits = (int) $this->db->query("SELECT COUNT(*) FROM students WHERE status = 'Non inscrit' AND actif = 1 AND academic_year_id = {$activeYearId}")->fetchColumn();
-        $stats_students_demissionnaires = (int) $this->db->query("SELECT COUNT(*) FROM students WHERE status = 'Démissionnaire' AND actif = 1 AND academic_year_id = {$activeYearId}")->fetchColumn();
-        $stats_total_importes = $stats_students_inscrits + $stats_students_non_inscrits + $stats_students_demissionnaires;
-        $conversion_rate = $stats_total_importes > 0 ? round(($stats_students_inscrits / $stats_total_importes) * 100, 1) : 0;
-        // Classes are now shared across years, no year filtering
-        $stats_classes = (int) $this->db->query("SELECT COUNT(*) FROM classes")->fetchColumn();
-        $stats_subjects = (int) $this->db->query("SELECT COUNT(*) FROM subjects WHERE status = 1")->fetchColumn();
-        $stats_subjects_inactive = (int) $this->db->query("SELECT COUNT(*) FROM subjects WHERE status = 0")->fetchColumn();
-        $inactive_subjects_list = $this->db->query("SELECT id, nom FROM subjects WHERE status = 0 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $statsByTeachingType = [];
+        $no_active_teaching_types = empty($activeTeachingTypes);
+
+        if (!$no_active_teaching_types) {
+            foreach ($activeTeachingTypes as $tt) {
+                $ttId = (int)$tt['id'];
+                $statsByTeachingType[$ttId] = $this->buildTeachingTypeMetrics($ttId, $activeYearId, $activeEvaluations);
+                $statsByTeachingType[$ttId]['teaching_type'] = $tt;
+                $statsByTeachingType[$ttId]['financial_data'] = $this->buildFinancialDashboardData($ttId);
+            }
+        }
+
+        // Métriques combinées / consolidées pour les vues principales
+        $primaryData = $this->buildTeachingTypeMetrics($activeTypeIds, $activeYearId, $activeEvaluations);
+
+        // Données globales à l'établissement (utilisateurs, logs, backups, vitrine)
         $userRole = Session::get('user_role');
         if ($userRole === 'admin') {
             $stats_users = (int) $this->db->query("SELECT COUNT(*) FROM users WHERE role <> 'superadmin'")->fetchColumn();
+            $roleDistribution = $this->db->query("
+                SELECT role, COUNT(*) as count FROM users WHERE role <> 'superadmin' GROUP BY role ORDER BY count DESC
+            ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $adminsCount = (int)$this->db->query("
+                SELECT COUNT(*) FROM users WHERE role IN ('admin', 'caissier', 'comptable', 'it_manager')
+            ")->fetchColumn();
         } else {
             $stats_users = (int) $this->db->query("SELECT COUNT(*) FROM users")->fetchColumn();
-        }
-        $stats_teachers_count = (int) $this->db->query("SELECT COUNT(*) FROM users WHERE role = 'enseignant'")->fetchColumn();
-
-        // 2. Récupérer TOUTES les affectations et TOUTES les classes avec effectifs (1 seule requête chacune)
-        $allClassCounts = $this->getBulkClassStudentCounts([]);
-        // Classes are now shared across years, no year filtering on classes
-        $allAssignments = $this->db->query("SELECT user_id, class_id, subject_id, c.nom as class_nom 
-                                            FROM teacher_assignments ta 
-                                            JOIN classes c ON c.id = ta.class_id AND ta.academic_year_id = {$activeYearId}")->fetchAll(PDO::FETCH_GROUP | PDO::FETCH_ASSOC);
-
-        // 3. Récupérer TOUTES les notes saisies pour l'année active par classe/matière (sans distinction de l'enseignant)
-        $allFilledCounts = $this->getBulkGlobalFilledCounts($activeYearId, $activeEvaluations);
-
-        // 4. Calculer la progression globale basée sur toutes les notes saisies
-        $globalExpected = 0;
-        $globalFilled = 0;
-
-        // Récupérer toutes les combinaisons classe/matière actives
-        // Classes are now shared across years, but subject_classes are still year-specific
-        $allSubjectClasses = $this->db->query("
-            SELECT sc.class_id, sc.subject_id
-            FROM subject_classes sc
-            JOIN subjects s ON s.id = sc.subject_id
-            WHERE sc.academic_year_id = {$activeYearId} AND s.status = 1
-        ")->fetchAll(PDO::FETCH_ASSOC);
-
-        foreach ($allSubjectClasses as $sc) {
-            $cId = (int) $sc['class_id'];
-            $sId = (int) $sc['subject_id'];
-            $studentCount = $allClassCounts[$cId] ?? 0;
-            $key = "{$cId}_{$sId}";
-            $filledCount = $allFilledCounts[$key] ?? 0;
-
-            $globalExpected += ($studentCount * $numEvals);
-            $globalFilled += $filledCount;
+            $roleDistribution = $this->db->query("
+                SELECT role, COUNT(*) as count FROM users GROUP BY role ORDER BY count DESC
+            ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $adminsCount = (int)$this->db->query("
+                SELECT COUNT(*) FROM users WHERE role IN ('superadmin', 'admin', 'caissier', 'comptable', 'it_manager')
+            ")->fetchColumn();
         }
 
-        $globalProgress = $globalExpected > 0 ? round(($globalFilled / $globalExpected) * 100) : 0;
-
-        // 5. Calculer la progression par enseignant basée sur les notes saisies dans leurs matières assignées
-        $teacherMetrics = [];
-        $teachersUnder50 = 0;
-
-        $teachers = $this->db->query("SELECT id, nom, prenom FROM users WHERE role = 'enseignant' ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-
-        foreach ($teachers as $t) {
-            $tId = (int) $t['id'];
-            $assignments = $allAssignments[$tId] ?? [];
-            $expected = 0;
-            $filled = 0;
-            $classes = [];
-
-            foreach ($assignments as $a) {
-                $cId = (int) $a['class_id'];
-                $sId = (int) $a['subject_id'];
-                $studentCount = $allClassCounts[$cId] ?? 0;
-
-                $expected += ($studentCount * $numEvals);
-                // Utiliser les notes saisies globalement pour cette classe/matière (sans distinction de l'enseignant)
-                $filled += ($allFilledCounts["{$cId}_{$sId}"] ?? 0);
-                $classes[$a['class_nom']] = true;
-            }
-
-            $progress = $expected > 0 ? round(($filled / $expected) * 100) : 0;
-
-            if ($progress < 50 && $expected > 0) {
-                $teachersUnder50++;
-            }
-
-            $teacherMetrics[] = [
-                'teacher_name' => trim($t['prenom'] . ' ' . $t['nom']),
-                'classes_count' => count($classes),
-                'assignments_count' => count($assignments),
-                'expected_count' => $expected,
-                'filled_count' => $filled,
-                'pending_count' => max(0, $expected - $filled),
-                'progress_percent' => $progress,
-                'level_label' => $this->getLevelLabel($progress),
-            ];
-        }
-
-        // Tri par performance
-        usort($teacherMetrics, fn($a, $b) => $b['progress_percent'] <=> $a['progress_percent']);
-
-        // 4. Matières non affectées (Sujet lié à une classe mais sans prof assigné)
-        $unassignedSubjectsRaw = $this->db->query("
-            SELECT s.nom as subject_name, c.nom as class_name, c.id as class_id, s.id as subject_id
-            FROM subject_classes sc
-            JOIN subjects s ON s.id = sc.subject_id
-            JOIN classes c ON c.id = sc.class_id
-            LEFT JOIN teacher_assignments ta ON ta.class_id = sc.class_id AND ta.subject_id = sc.subject_id
-            WHERE ta.user_id IS NULL AND s.status = 1
-            ORDER BY c.nom ASC, s.nom ASC
-        ")->fetchAll(PDO::FETCH_ASSOC);
-
-        // 5. Enseignants sans aucune affectation
+        $inactive_subjects_list = $this->db->query("SELECT id, nom FROM subjects WHERE status = 0 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
         $teachersWithoutAssignment = (int) $this->db->query("
             SELECT COUNT(*) FROM users u 
             WHERE u.role = 'enseignant' 
@@ -546,173 +501,10 @@ class DashboardController
         $teacherActivitySummary = $this->getTeacherActivitySummary();
         $backupOverview = $this->getBackupOverview();
         
-        // 6. Notifications de la vitrine (Landing Page)
         $notifications = [];
         $logPath = __DIR__ . '/../../logs/notifications.json';
         if (file_exists($logPath)) {
             $notifications = json_decode(file_get_contents($logPath), true) ?: [];
-        }
-
-        // 7. Statistiques Intelligentes du Tableau de Bord (Demande Utilisateur)
-        // A. Meilleurs élèves de l'établissement
-        $stmtTop = $this->db->prepare("
-            SELECT st.id as student_id, st.nom, st.prenom, c.nom as classe_nom,
-                   SUM(g.valeur * s.coefficient) / SUM(s.coefficient) as moyenne
-            FROM grades g
-            JOIN students st ON st.id = g.student_id
-            JOIN classes c ON c.id = st.class_id
-            JOIN subjects s ON s.id = g.subject_id
-            WHERE g.academic_year_id = ? AND st.is_withdrawn = 0
-            GROUP BY st.id, st.nom, st.prenom, c.nom
-            ORDER BY moyenne DESC
-            LIMIT 5
-        ");
-        $stmtTop->execute([$activeYearId]);
-        $topStudents = $stmtTop->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-        // B. Élèves en difficulté
-        $stmtStrug = $this->db->prepare("
-            SELECT st.id as student_id, st.nom, st.prenom, c.nom as classe_nom,
-                   SUM(g.valeur * s.coefficient) / SUM(s.coefficient) as moyenne
-            FROM grades g
-            JOIN students st ON st.id = g.student_id
-            JOIN classes c ON c.id = st.class_id
-            JOIN subjects s ON s.id = g.subject_id
-            WHERE g.academic_year_id = ? AND st.is_withdrawn = 0
-            GROUP BY st.id, st.nom, st.prenom, c.nom
-            HAVING moyenne < 10
-            ORDER BY moyenne ASC
-            LIMIT 5
-        ");
-        $stmtStrug->execute([$activeYearId]);
-        $strugglingStudents = $stmtStrug->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-        // C. Statistiques par classe
-        $stmtClassAvgs = $this->db->prepare("
-            SELECT st.class_id, c.nom as class_name, st.id as student_id,
-                   SUM(g.valeur * s.coefficient) / SUM(s.coefficient) as moyenne
-            FROM grades g
-            JOIN students st ON st.id = g.student_id
-            JOIN classes c ON c.id = st.class_id
-            JOIN subjects s ON s.id = g.subject_id
-            WHERE g.academic_year_id = ? AND st.is_withdrawn = 0
-            GROUP BY st.class_id, c.nom, st.id
-        ");
-        $stmtClassAvgs->execute([$activeYearId]);
-        $avgs = $stmtClassAvgs->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-        $classStats = [];
-        $distribution = [
-            'elite' => 0,       // >= 16
-            'satisfait' => 0,   // 12 to 15.99
-            'passable' => 0,    // 10 to 11.99
-            'soutien' => 0      // < 10
-        ];
-
-        foreach ($avgs as $row) {
-            $cId = $row['class_id'];
-            if (!isset($classStats[$cId])) {
-                $classStats[$cId] = [
-                    'class_name' => $row['class_name'],
-                    'total_students' => 0,
-                    'passing_students' => 0,
-                    'sum_averages' => 0
-                ];
-            }
-            $classStats[$cId]['total_students']++;
-            if ($row['moyenne'] >= 10) {
-                $classStats[$cId]['passing_students']++;
-            }
-            $classStats[$cId]['sum_averages'] += (float)$row['moyenne'];
-
-            // Distribution
-            $val = (float)$row['moyenne'];
-            if ($val >= 16) {
-                $distribution['elite']++;
-            } elseif ($val >= 12) {
-                $distribution['satisfait']++;
-            } elseif ($val >= 10) {
-                $distribution['passable']++;
-            } else {
-                $distribution['soutien']++;
-            }
-        }
-        foreach ($classStats as &$cs) {
-            $cs['class_avg'] = $cs['total_students'] > 0 ? ($cs['sum_averages'] / $cs['total_students']) : 0;
-            $cs['success_rate'] = $cs['total_students'] > 0 ? round(($cs['passing_students'] / $cs['total_students']) * 100) : 0;
-        }
-        unset($cs);
-        uasort($classStats, fn($a, $b) => $b['class_avg'] <=> $a['class_avg']);
-
-        // D. Évolution des moyennes par période (Séquences actives)
-        $activeSeqs = $this->getActiveEvaluations();
-        $seqAverages = [];
-        if (!empty($activeSeqs)) {
-            $placeholders = implode(',', array_fill(0, count($activeSeqs), '?'));
-            $stmtSeq = $this->db->prepare("
-                SELECT g.periode, AVG(g.valeur) as moyenne
-                FROM grades g
-                WHERE g.academic_year_id = ? AND g.periode IN ($placeholders)
-                GROUP BY g.periode
-            ");
-            $stmtSeq->execute(array_merge([$activeYearId], $activeSeqs));
-            $seqAvgsRaw = $stmtSeq->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
-            
-            foreach ($activeSeqs as $seq) {
-                $seqAverages[] = [
-                    'periode' => $seq,
-                    'moyenne' => isset($seqAvgsRaw[$seq]) ? (float)$seqAvgsRaw[$seq] : 0
-                ];
-            }
-        }
-
-        // E. Points forts & Faibles par matière avec enseignants affectés et classes
-        $stmtSubjectStats = $this->db->prepare("
-            SELECT s.id, s.nom, AVG(g.valeur) as moyenne,
-                   GROUP_CONCAT(DISTINCT CONCAT(u.nom, ' ', u.prenom) SEPARATOR ', ') as teachers,
-                   GROUP_CONCAT(DISTINCT c.nom SEPARATOR ', ') as classes
-            FROM grades g
-            JOIN subjects s ON s.id = g.subject_id
-            JOIN teacher_assignments ta ON ta.subject_id = s.id
-            JOIN users u ON ta.user_id = u.id
-            JOIN classes c ON ta.class_id = c.id
-            WHERE g.academic_year_id = ? AND s.status = 1
-            GROUP BY s.id, s.nom
-            ORDER BY moyenne DESC
-        ");
-        $stmtSubjectStats->execute([$activeYearId]);
-        $subjectStats = $stmtSubjectStats->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-        $bestSubject = !empty($subjectStats) ? $subjectStats[0] : null;
-        $worstSubject = !empty($subjectStats) && count($subjectStats) > 1 ? end($subjectStats) : null;
-
-        // 5 meilleures disciplines avec enseignants affectés
-        $top5Subjects = array_slice($subjectStats, 0, 5);
-
-        // 5 pires disciplines avec enseignants affectés
-        $bottom5Subjects = array_slice(array_reverse($subjectStats), 0, 5);
-
-        // F. Disciplines moyennes par évaluation active
-        $subjectByEval = [];
-        if (!empty($activeEvaluations)) {
-            foreach ($activeEvaluations as $eval) {
-                $stmtEval = $this->db->prepare("
-                    SELECT s.id, s.nom, AVG(g.valeur) as moyenne,
-                           GROUP_CONCAT(DISTINCT CONCAT(u.nom, ' ', u.prenom) SEPARATOR ', ') as teachers,
-                           GROUP_CONCAT(DISTINCT c.nom SEPARATOR ', ') as classes
-                    FROM grades g
-                    JOIN subjects s ON s.id = g.subject_id
-                    JOIN teacher_assignments ta ON ta.subject_id = s.id
-                    JOIN users u ON ta.user_id = u.id
-                    JOIN classes c ON ta.class_id = c.id
-                    WHERE g.academic_year_id = ? AND g.periode = ? AND s.status = 1
-                    GROUP BY s.id, s.nom
-                    ORDER BY moyenne DESC
-                    LIMIT 5
-                ");
-                $stmtEval->execute([$activeYearId, $eval]);
-                $subjectByEval[$eval] = $stmtEval->fetchAll(PDO::FETCH_ASSOC) ?: [];
-            }
         }
 
         $totalRemaining = (float)$this->db->query("
@@ -743,34 +535,395 @@ class DashboardController
             GROUP BY payment_method
         ");
         $stmtPayMethod->execute([$activeYearId]);
-        $paymentMethodRepartition = $stmtPayMethod->fetchAll(PDO::FETCH_ASSOC);
+        $paymentMethodRepartition = $stmtPayMethod->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        if ($userRole === 'admin') {
-            $roleDistribution = $this->db->query("
-                SELECT role, COUNT(*) as count FROM users WHERE role <> 'superadmin' GROUP BY role ORDER BY count DESC
-            ")->fetchAll(PDO::FETCH_ASSOC);
-
-            $adminsCount = (int)$this->db->query("
-                SELECT COUNT(*) FROM users 
-                WHERE role IN ('admin', 'caissier', 'comptable', 'it_manager')
-            ")->fetchColumn();
-        } else {
-            $roleDistribution = $this->db->query("
-                SELECT role, COUNT(*) as count FROM users GROUP BY role ORDER BY count DESC
-            ")->fetchAll(PDO::FETCH_ASSOC);
-
-            $adminsCount = (int)$this->db->query("
-                SELECT COUNT(*) FROM users 
-                WHERE role IN ('superadmin', 'admin', 'caissier', 'comptable', 'it_manager')
-            ")->fetchColumn();
-        }
-
-        $financialData = $this->buildFinancialDashboardData();
-
-        $extraFinData = $this->getExtraFinancialCenterData($activeYearId);
-        $extraAcadData = $this->getExtraExecutiveAcademicData($activeYearId);
+        $financialData = $this->buildFinancialDashboardData($activeTypeIds);
+        $extraFinData = $this->getExtraFinancialCenterData($activeYearId, $activeTypeIds);
+        $extraAcadData = $this->getExtraExecutiveAcademicData($activeYearId, $activeTypeIds);
 
         return array_merge([
+            'activeTeachingTypes' => $activeTeachingTypes,
+            'statsByTeachingType' => $statsByTeachingType,
+            'no_active_teaching_types' => $no_active_teaching_types,
+            'inactive_subjects_list' => $inactive_subjects_list,
+            'stats_users' => $stats_users,
+            'teachers_without_assignment' => $teachersWithoutAssignment,
+            'usageMetrics' => $usageMetrics,
+            'teacherActivitySummary' => $teacherActivitySummary,
+            'backupOverview' => $backupOverview,
+            'landing_notifications' => $notifications,
+            'activeEvaluations' => $activeEvaluations,
+            'bulletin_printing_enabled' => $this->settingsStore->getBool('bulletin_printing_enabled', true),
+            'totalRemaining' => $totalRemaining,
+            'totalReductions' => $totalReductions,
+            'totalScholarships' => $totalScholarships,
+            'paymentMethodRepartition' => $paymentMethodRepartition,
+            'roleDistribution' => $roleDistribution,
+            'adminsCount' => $adminsCount,
+        ], $primaryData, $financialData, $extraFinData, $extraAcadData);
+    }
+
+    /**
+     * Génère les métriques pour un ou plusieurs types d'enseignement donnés.
+     */
+    private function buildTeachingTypeMetrics($ttIdOrIds, int $activeYearId, array $activeEvaluations): array
+    {
+        $numEvals = count($activeEvaluations);
+
+        if (is_array($ttIdOrIds)) {
+            if (empty($ttIdOrIds)) {
+                return $this->getEmptyTeachingTypeMetrics($activeEvaluations);
+            }
+            $idsStr = implode(',', array_map('intval', $ttIdOrIds));
+            $whereClass = " WHERE c.teaching_type_id IN ($idsStr) ";
+            $andClass = " AND c.teaching_type_id IN ($idsStr) ";
+            $andSubject = " AND s.teaching_type_id IN ($idsStr) ";
+        } elseif ($ttIdOrIds !== null) {
+            $id = (int)$ttIdOrIds;
+            $whereClass = " WHERE c.teaching_type_id = {$id} ";
+            $andClass = " AND c.teaching_type_id = {$id} ";
+            $andSubject = " AND s.teaching_type_id = {$id} ";
+        } else {
+            $whereClass = "";
+            $andClass = "";
+            $andSubject = "";
+        }
+
+        // 1. Students stats
+        $stats_students = (int) $this->db->query("
+            SELECT COUNT(*) FROM students s 
+            JOIN classes c ON s.class_id = c.id 
+            WHERE s.status = 'Inscrit' AND s.actif = 1 AND s.academic_year_id = {$activeYearId} {$andClass}
+        ")->fetchColumn();
+
+        $stats_students_inscrits = $stats_students;
+
+        $stats_students_non_inscrits = (int) $this->db->query("
+            SELECT COUNT(*) FROM students s 
+            JOIN classes c ON s.class_id = c.id 
+            WHERE s.status = 'Non inscrit' AND s.actif = 1 AND s.academic_year_id = {$activeYearId} {$andClass}
+        ")->fetchColumn();
+
+        $stats_students_demissionnaires = (int) $this->db->query("
+            SELECT COUNT(*) FROM students s 
+            JOIN classes c ON s.class_id = c.id 
+            WHERE s.status = 'Démissionnaire' AND s.actif = 1 AND s.academic_year_id = {$activeYearId} {$andClass}
+        ")->fetchColumn();
+
+        $stats_total_importes = $stats_students_inscrits + $stats_students_non_inscrits + $stats_students_demissionnaires;
+        $conversion_rate = $stats_total_importes > 0 ? round(($stats_students_inscrits / $stats_total_importes) * 100, 1) : 0;
+
+        // 2. Classes
+        $stats_classes = (int) $this->db->query("
+            SELECT COUNT(*) FROM classes c {$whereClass}
+        ")->fetchColumn();
+
+        // 3. Subjects
+        $whereSubjectStatus = $ttIdOrIds !== null ? "WHERE status = 1 {$andSubject}" : "WHERE status = 1";
+        $stats_subjects = (int) $this->db->query("
+            SELECT COUNT(*) FROM subjects s {$whereSubjectStatus}
+        ")->fetchColumn();
+
+        $whereSubjectInactive = $ttIdOrIds !== null ? "WHERE status = 0 {$andSubject}" : "WHERE status = 0";
+        $stats_subjects_inactive = (int) $this->db->query("
+            SELECT COUNT(*) FROM subjects s {$whereSubjectInactive}
+        ")->fetchColumn();
+
+        // 4. Teachers count
+        $stats_teachers_count = (int) $this->db->query("
+            SELECT COUNT(DISTINCT ta.user_id) 
+            FROM teacher_assignments ta 
+            JOIN classes c ON ta.class_id = c.id 
+            WHERE ta.academic_year_id = {$activeYearId} {$andClass}
+        ")->fetchColumn();
+
+        // 5. Class student counts
+        $classCountsStmt = $this->db->query("
+            SELECT s.class_id, COUNT(*) 
+            FROM students s 
+            JOIN classes c ON s.class_id = c.id 
+            WHERE s.is_withdrawn = 0 AND s.actif = 1 AND s.academic_year_id = {$activeYearId} {$andClass}
+            GROUP BY s.class_id
+        ");
+        $allClassCounts = $classCountsStmt ? $classCountsStmt->fetchAll(PDO::FETCH_KEY_PAIR) : [];
+
+        // Assignments
+        $assignmentsQuery = "
+            SELECT ta.user_id, ta.class_id, ta.subject_id, c.nom as class_nom 
+            FROM teacher_assignments ta 
+            JOIN classes c ON c.id = ta.class_id AND ta.academic_year_id = {$activeYearId} {$andClass}
+        ";
+        $allAssignments = $this->db->query($assignmentsQuery)->fetchAll(PDO::FETCH_GROUP | PDO::FETCH_ASSOC) ?: [];
+
+        // Global filled counts for active evaluations
+        $allFilledCounts = $this->getBulkGlobalFilledCounts($activeYearId, $activeEvaluations, $ttIdOrIds);
+
+        // Progression
+        $globalExpected = 0;
+        $globalFilled = 0;
+
+        $subjectClassesQuery = "
+            SELECT sc.class_id, sc.subject_id
+            FROM subject_classes sc
+            JOIN subjects s ON s.id = sc.subject_id
+            JOIN classes c ON c.id = sc.class_id
+            WHERE sc.academic_year_id = {$activeYearId} AND s.status = 1 {$andClass}
+        ";
+        $allSubjectClasses = $this->db->query($subjectClassesQuery)->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        foreach ($allSubjectClasses as $sc) {
+            $cId = (int) $sc['class_id'];
+            $sId = (int) $sc['subject_id'];
+            $studentCount = $allClassCounts[$cId] ?? 0;
+            $key = "{$cId}_{$sId}";
+            $filledCount = $allFilledCounts[$key] ?? 0;
+
+            $globalExpected += ($studentCount * $numEvals);
+            $globalFilled += $filledCount;
+        }
+
+        $globalProgress = $globalExpected > 0 ? round(($globalFilled / $globalExpected) * 100) : 0;
+
+        // Teacher metrics
+        $teacherMetrics = [];
+        $teachersUnder50 = 0;
+        
+        $teachersQuery = "
+            SELECT DISTINCT u.id, u.nom, u.prenom 
+            FROM users u 
+            JOIN teacher_assignments ta ON ta.user_id = u.id 
+            JOIN classes c ON c.id = ta.class_id 
+            WHERE u.role = 'enseignant' AND ta.academic_year_id = {$activeYearId} {$andClass}
+            ORDER BY u.nom ASC
+        ";
+        $teachers = $this->db->query($teachersQuery)->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        foreach ($teachers as $t) {
+            $tId = (int) $t['id'];
+            $assignments = $allAssignments[$tId] ?? [];
+            $expected = 0;
+            $filled = 0;
+            $classes = [];
+
+            foreach ($assignments as $a) {
+                $cId = (int) $a['class_id'];
+                $sId = (int) $a['subject_id'];
+                $studentCount = $allClassCounts[$cId] ?? 0;
+
+                $expected += ($studentCount * $numEvals);
+                $filled += ($allFilledCounts["{$cId}_{$sId}"] ?? 0);
+                $classes[$a['class_nom']] = true;
+            }
+
+            $progress = $expected > 0 ? round(($filled / $expected) * 100) : 0;
+
+            if ($progress < 50 && $expected > 0) {
+                $teachersUnder50++;
+            }
+
+            $teacherMetrics[] = [
+                'teacher_name' => trim($t['prenom'] . ' ' . $t['nom']),
+                'classes_count' => count($classes),
+                'assignments_count' => count($assignments),
+                'expected_count' => $expected,
+                'filled_count' => $filled,
+                'pending_count' => max(0, $expected - $filled),
+                'progress_percent' => $progress,
+                'level_label' => $this->getLevelLabel($progress),
+            ];
+        }
+
+        usort($teacherMetrics, fn($a, $b) => $b['progress_percent'] <=> $a['progress_percent']);
+
+        // Unassigned subjects
+        $unassignedSubjectsRaw = $this->db->query("
+            SELECT s.nom as subject_name, c.nom as class_name, c.id as class_id, s.id as subject_id
+            FROM subject_classes sc
+            JOIN subjects s ON s.id = sc.subject_id
+            JOIN classes c ON c.id = sc.class_id
+            LEFT JOIN teacher_assignments ta ON ta.class_id = sc.class_id AND ta.subject_id = sc.subject_id AND ta.academic_year_id = {$activeYearId}
+            WHERE ta.user_id IS NULL AND s.status = 1 {$andClass}
+            ORDER BY c.nom ASC, s.nom ASC
+        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // Top & struggling students
+        $stmtTop = $this->db->prepare("
+            SELECT st.id as student_id, st.nom, st.prenom, c.nom as classe_nom,
+                   SUM(g.valeur * s.coefficient) / SUM(s.coefficient) as moyenne
+            FROM grades g
+            JOIN students st ON st.id = g.student_id
+            JOIN classes c ON c.id = st.class_id
+            JOIN subjects s ON s.id = g.subject_id
+            WHERE g.academic_year_id = ? AND st.is_withdrawn = 0 {$andClass}
+            GROUP BY st.id, st.nom, st.prenom, c.nom
+            ORDER BY moyenne DESC
+            LIMIT 5
+        ");
+        $stmtTop->execute([$activeYearId]);
+        $topStudents = $stmtTop->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $stmtStrug = $this->db->prepare("
+            SELECT st.id as student_id, st.nom, st.prenom, c.nom as classe_nom,
+                   SUM(g.valeur * s.coefficient) / SUM(s.coefficient) as moyenne
+            FROM grades g
+            JOIN students st ON st.id = g.student_id
+            JOIN classes c ON c.id = st.class_id
+            JOIN subjects s ON s.id = g.subject_id
+            WHERE g.academic_year_id = ? AND st.is_withdrawn = 0 {$andClass}
+            GROUP BY st.id, st.nom, st.prenom, c.nom
+            HAVING moyenne < 10
+            ORDER BY moyenne ASC
+            LIMIT 5
+        ");
+        $stmtStrug->execute([$activeYearId]);
+        $strugglingStudents = $stmtStrug->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // Class avgs
+        $stmtClassAvgs = $this->db->prepare("
+            SELECT st.class_id, c.nom as class_name, st.id as student_id,
+                   SUM(g.valeur * s.coefficient) / SUM(s.coefficient) as moyenne
+            FROM grades g
+            JOIN students st ON st.id = g.student_id
+            JOIN classes c ON c.id = st.class_id
+            JOIN subjects s ON s.id = g.subject_id
+            WHERE g.academic_year_id = ? AND st.is_withdrawn = 0 {$andClass}
+            GROUP BY st.class_id, c.nom, st.id
+        ");
+        $stmtClassAvgs->execute([$activeYearId]);
+        $avgs = $stmtClassAvgs->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $classStats = [];
+        $distribution = ['elite' => 0, 'satisfait' => 0, 'passable' => 0, 'soutien' => 0];
+
+        foreach ($avgs as $row) {
+            $cId = $row['class_id'];
+            if (!isset($classStats[$cId])) {
+                $classStats[$cId] = [
+                    'class_name' => $row['class_name'],
+                    'total_students' => 0,
+                    'passing_students' => 0,
+                    'sum_averages' => 0
+                ];
+            }
+            $classStats[$cId]['total_students']++;
+            if ($row['moyenne'] >= 10) {
+                $classStats[$cId]['passing_students']++;
+            }
+            $classStats[$cId]['sum_averages'] += (float)$row['moyenne'];
+
+            $val = (float)$row['moyenne'];
+            if ($val >= 16) $distribution['elite']++;
+            elseif ($val >= 12) $distribution['satisfait']++;
+            elseif ($val >= 10) $distribution['passable']++;
+            else $distribution['soutien']++;
+        }
+        foreach ($classStats as &$cs) {
+            $cs['class_avg'] = $cs['total_students'] > 0 ? ($cs['sum_averages'] / $cs['total_students']) : 0;
+            $cs['success_rate'] = $cs['total_students'] > 0 ? round(($cs['passing_students'] / $cs['total_students']) * 100) : 0;
+        }
+        unset($cs);
+        uasort($classStats, fn($a, $b) => $b['class_avg'] <=> $a['class_avg']);
+
+        // Period averages
+        $seqAverages = [];
+        if (!empty($activeEvaluations)) {
+            $placeholders = implode(',', array_fill(0, count($activeEvaluations), '?'));
+            $stmtSeq = $this->db->prepare("
+                SELECT g.periode, AVG(g.valeur) as moyenne
+                FROM grades g
+                JOIN students st ON st.id = g.student_id
+                JOIN classes c ON c.id = st.class_id
+                WHERE g.academic_year_id = ? AND g.periode IN ($placeholders) {$andClass}
+                GROUP BY g.periode
+            ");
+            $stmtSeq->execute(array_merge([$activeYearId], $activeEvaluations));
+            $seqAvgsRaw = $stmtSeq->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
+
+            foreach ($activeEvaluations as $seq) {
+                $seqAverages[] = [
+                    'periode' => $seq,
+                    'moyenne' => isset($seqAvgsRaw[$seq]) ? (float)$seqAvgsRaw[$seq] : 0
+                ];
+            }
+        }
+
+        // Demographics: Gender
+        $stmtGender = $this->db->prepare("
+            SELECT st.sexe, COUNT(*) as count 
+            FROM students st 
+            JOIN classes c ON st.class_id = c.id 
+            WHERE st.is_withdrawn = 0 AND st.actif = 1 AND st.academic_year_id = ? {$andClass}
+            GROUP BY st.sexe
+        ");
+        $stmtGender->execute([$activeYearId]);
+        $genders = $stmtGender->fetchAll(PDO::FETCH_KEY_PAIR);
+        $maleCount = (int)($genders['M'] ?? 0);
+        $femaleCount = (int)($genders['F'] ?? 0);
+
+        // Demographics: Cycles
+        $stmtCycles = $this->db->prepare("
+            SELECT cy.nom as cycle_nom, COUNT(st.id) as count
+            FROM students st
+            JOIN classes c ON st.class_id = c.id
+            JOIN cycles cy ON c.cycle_id = cy.id
+            WHERE st.is_withdrawn = 0 AND st.actif = 1 AND st.academic_year_id = ? {$andClass}
+            GROUP BY cy.id, cy.nom
+        ");
+        $stmtCycles->execute([$activeYearId]);
+        $cycleRepartition = $stmtCycles->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // Success rate
+        $totalWithAverage = count($avgs);
+        $passingCount = 0;
+        foreach ($avgs as $row) {
+            if ((float)$row['moyenne'] >= 10.0) {
+                $passingCount++;
+            }
+        }
+        $successRate = $totalWithAverage > 0 ? round(($passingCount / $totalWithAverage) * 100, 1) : 0;
+
+        // Subjects stats
+        $stmtSubjectStatsClean = $this->db->prepare("
+            SELECT s.id, s.nom, AVG(g.valeur) as moyenne,
+                   GROUP_CONCAT(DISTINCT c.nom SEPARATOR ', ') as classes
+            FROM grades g
+            JOIN students st ON st.id = g.student_id
+            JOIN classes c ON c.id = st.class_id
+            JOIN subjects s ON s.id = g.subject_id
+            WHERE g.academic_year_id = ? AND s.status = 1 {$andClass}
+            GROUP BY s.id, s.nom
+            ORDER BY moyenne DESC
+        ");
+        $stmtSubjectStatsClean->execute([$activeYearId]);
+        $subjectStats = $stmtSubjectStatsClean->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $bestSubject = !empty($subjectStats) ? $subjectStats[0] : null;
+        $worstSubject = !empty($subjectStats) && count($subjectStats) > 1 ? end($subjectStats) : null;
+        $top5Subjects = array_slice($subjectStats, 0, 5);
+        $bottom5Subjects = array_slice(array_reverse($subjectStats), 0, 5);
+
+        // Subject by evaluation
+        $subjectByEval = [];
+        if (!empty($activeEvaluations)) {
+            foreach ($activeEvaluations as $eval) {
+                $stmtEval = $this->db->prepare("
+                    SELECT s.id, s.nom, AVG(g.valeur) as moyenne,
+                           GROUP_CONCAT(DISTINCT c.nom SEPARATOR ', ') as classes
+                    FROM grades g
+                    JOIN students st ON st.id = g.student_id
+                    JOIN classes c ON c.id = st.class_id
+                    JOIN subjects s ON s.id = g.subject_id
+                    WHERE g.academic_year_id = ? AND g.periode = ? AND s.status = 1 {$andClass}
+                    GROUP BY s.id, s.nom
+                    ORDER BY moyenne DESC
+                    LIMIT 5
+                ");
+                $stmtEval->execute([$activeYearId, $eval]);
+                $subjectByEval[$eval] = $stmtEval->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            }
+        }
+
+        return [
             'stats_students' => $stats_students,
             'stats_students_inscrits' => $stats_students_inscrits,
             'stats_students_non_inscrits' => $stats_students_non_inscrits,
@@ -780,10 +933,7 @@ class DashboardController
             'stats_classes' => $stats_classes,
             'stats_subjects' => $stats_subjects,
             'stats_subjects_inactive' => $stats_subjects_inactive,
-            'inactive_subjects_list' => $inactive_subjects_list,
-            'stats_users' => $stats_users,
             'stats_teachers' => $stats_teachers_count,
-            'teachers_without_assignment' => $teachersWithoutAssignment,
             'globalExpected' => $globalExpected,
             'globalFilled' => $globalFilled,
             'globalPending' => max(0, $globalExpected - $globalFilled),
@@ -791,10 +941,6 @@ class DashboardController
             'teachersUnder50' => $teachersUnder50,
             'teacherMetrics' => $teacherMetrics,
             'unassignedSubjects' => $unassignedSubjectsRaw,
-            'usageMetrics' => $usageMetrics,
-            'teacherActivitySummary' => $teacherActivitySummary,
-            'backupOverview' => $backupOverview,
-            'landing_notifications' => $notifications,
             'topStudents' => $topStudents,
             'strugglingStudents' => $strugglingStudents,
             'classStats' => array_values($classStats),
@@ -805,15 +951,48 @@ class DashboardController
             'top5Subjects' => $top5Subjects,
             'bottom5Subjects' => $bottom5Subjects,
             'subjectByEval' => $subjectByEval,
-            'activeEvaluations' => $activeEvaluations,
-            'bulletin_printing_enabled' => $this->settingsStore->getBool('bulletin_printing_enabled', true),
-            'totalRemaining' => $totalRemaining,
-            'totalReductions' => $totalReductions,
-            'totalScholarships' => $totalScholarships,
-            'paymentMethodRepartition' => $paymentMethodRepartition,
-            'roleDistribution' => $roleDistribution,
-            'adminsCount' => $adminsCount,
-        ], $financialData, $extraFinData, $extraAcadData);
+            'maleCount' => $maleCount,
+            'femaleCount' => $femaleCount,
+            'cycleRepartition' => $cycleRepartition,
+            'successRate' => $successRate,
+        ];
+    }
+
+    private function getEmptyTeachingTypeMetrics(array $evals): array
+    {
+        return [
+            'stats_students' => 0,
+            'stats_students_inscrits' => 0,
+            'stats_students_non_inscrits' => 0,
+            'stats_students_demissionnaires' => 0,
+            'stats_total_importes' => 0,
+            'conversion_rate' => 0,
+            'stats_classes' => 0,
+            'stats_subjects' => 0,
+            'stats_subjects_inactive' => 0,
+            'stats_teachers' => 0,
+            'globalExpected' => 0,
+            'globalFilled' => 0,
+            'globalPending' => 0,
+            'globalProgress' => 0,
+            'teachersUnder50' => 0,
+            'teacherMetrics' => [],
+            'unassignedSubjects' => [],
+            'topStudents' => [],
+            'strugglingStudents' => [],
+            'classStats' => [],
+            'seqAverages' => array_map(fn($e) => ['periode' => $e, 'moyenne' => 0], $evals),
+            'distribution' => ['elite' => 0, 'satisfait' => 0, 'passable' => 0, 'soutien' => 0],
+            'bestSubject' => null,
+            'worstSubject' => null,
+            'top5Subjects' => [],
+            'bottom5Subjects' => [],
+            'subjectByEval' => [],
+            'maleCount' => 0,
+            'femaleCount' => 0,
+            'cycleRepartition' => [],
+            'successRate' => 0,
+        ];
     }
 
     private function getUsageMetrics(): array

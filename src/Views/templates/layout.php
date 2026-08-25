@@ -720,7 +720,7 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                 <div class="d-flex align-items-center gap-1-5 gap-sm-2 flex-shrink-0">
                     <?php if (\App\Core\Session::isLogged()): ?>
                         <!-- 1. Pill Badge Widget de Progression -->
-                        <div class="dropdown me-1 d-none d-md-block" id="onboardingProgressPillDropdown">
+                        <div class="dropdown me-1 d-none" id="onboardingProgressPillDropdown" style="display: none !important;">
                             <div class="onboarding-pill-badge" data-bs-toggle="dropdown" aria-expanded="false" title="Progression de la configuration de votre espace">
                                 <span class="pill-sparkle">✨</span>
                                 <span id="onboardingPillText">⚡ 0% configuré</span>
@@ -746,7 +746,7 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                         </div>
 
                         <!-- 2. Bouton CTA Dynamique Contextuel -->
-                        <a href="/settings" class="btn-onboarding-cta pulse-glow me-1 d-none d-lg-inline-flex" id="onboardingPrimaryCTA">
+                        <a href="/settings" class="btn-onboarding-cta pulse-glow me-1 d-none" id="onboardingPrimaryCTA" style="display: none !important;">
                             <i class="bi bi-rocket-takeoff"></i> Configurer maintenant
                         </a>
 
@@ -845,7 +845,7 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                                         </a>
                                     </li>
                                 <?php endif; ?>
-                                <li>
+                                <li class="d-none">
                                     <a class="dropdown-item dropdown-item-modern py-2" href="javascript:void(0)" onclick="window.TopBarOnboarding.relaunch();">
                                         <i class="bi bi-compass text-primary fs-5 me-2"></i> Relancer le guide d'onboarding
                                     </a>

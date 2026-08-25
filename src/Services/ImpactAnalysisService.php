@@ -434,7 +434,18 @@ class ImpactAnalysisService
 
     private function analyzeRoom(int $id): array
     {
-        $stmt = $this->db->prepare("SELECT id, nom, capacite, type_salle FROM rooms WHERE id = ?");
+        $stmtHasCR = $this->db->query("SHOW TABLES LIKE 'class_rooms'");
+        $tableName = ($stmtHasCR && $stmtHasCR->fetch()) ? 'class_rooms' : 'rooms';
+
+        $columns = $this->db->query("DESCRIBE `$tableName`")->fetchAll(PDO::FETCH_COLUMN);
+        $hasCode = in_array('code', $columns);
+        $hasType = in_array('type_salle', $columns);
+
+        $selectFields = ["id", "nom", "capacite"];
+        if ($hasCode) $selectFields[] = "code";
+        if ($hasType) $selectFields[] = "type_salle";
+
+        $stmt = $this->db->prepare("SELECT " . implode(', ', $selectFields) . " FROM `$tableName` WHERE id = ?");
         $stmt->execute([$id]);
         $room = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -449,9 +460,12 @@ class ImpactAnalysisService
         $risk = $entriesCount > 0 ? 'medium' : 'low';
         $recommendedAction = $entriesCount > 0 ? 'transfer' : 'delete';
 
-        $stmtTargets = $this->db->prepare("SELECT id, CONCAT(nom, ' (Cap: ', capacite, ')') as name FROM rooms WHERE id != ? ORDER BY nom");
+        $stmtTargets = $this->db->prepare("SELECT id, CONCAT(nom, ' (Cap: ', capacite, ')') as name FROM `$tableName` WHERE id != ? ORDER BY nom");
         $stmtTargets->execute([$id]);
         $transferTargets = $stmtTargets->fetchAll(PDO::FETCH_ASSOC);
+
+        $codeText = !empty($room['code']) ? 'Code: ' . $room['code'] . ' | ' : '';
+        $typeText = !empty($room['type_salle']) ? ' | Type: ' . $room['type_salle'] : '';
 
         return [
             'entity' => [
@@ -459,7 +473,7 @@ class ImpactAnalysisService
                 'type_label' => 'Salle de classe',
                 'id' => $id,
                 'name' => $room['nom'],
-                'subtext' => 'Capacité: ' . $room['capacite'] . ' places | Type: ' . ($room['type_salle'] ?: 'Standard')
+                'subtext' => $codeText . 'Capacité: ' . ($room['capacite'] ?? 0) . ' places' . $typeText
             ],
             'risk_level' => $risk,
             'recommended_action' => $recommendedAction,
@@ -677,18 +691,26 @@ class ImpactAnalysisService
 
     private function analyzeTimetableWeek(int $id): array
     {
-        $stmt = $this->db->prepare("SELECT id, nom, date_debut, date_fin FROM timetable_weeks WHERE id = ?");
+        $stmt = $this->db->prepare("SELECT id, libelle, date_debut, date_fin FROM timetable_weeks WHERE id = ?");
         $stmt->execute([$id]);
         $week = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$week) return $this->notFoundResponse('timetable_week', $id);
+
+        $weekName = !empty($week['libelle']) ? $week['libelle'] : 'Semaine du ' . date('d/m/Y', strtotime($week['date_debut']));
 
         $stmtTT = $this->db->prepare("SELECT COUNT(*) FROM timetables WHERE week_id = ?");
         $stmtTT->execute([$id]);
         $ttCount = (int)$stmtTT->fetchColumn();
 
         return [
-            'entity' => ['type' => 'timetable_week', 'type_label' => 'Semaine Emploi du Temps', 'id' => $id, 'name' => $week['nom']],
+            'entity' => [
+                'type' => 'timetable_week',
+                'type_label' => 'Semaine Emploi du Temps',
+                'id' => $id,
+                'name' => $weekName,
+                'subtext' => 'Du ' . date('d/m/Y', strtotime($week['date_debut'])) . ' au ' . date('d/m/Y', strtotime($week['date_fin']))
+            ],
             'risk_level' => $ttCount > 0 ? 'high' : 'low',
             'recommended_action' => $ttCount > 0 ? 'deactivate' : 'delete',
             'can_direct_delete' => true,
@@ -696,7 +718,7 @@ class ImpactAnalysisService
                 ['label' => 'Emplois du temps associés', 'count' => $ttCount, 'icon' => 'fas fa-calendar-week', 'severity' => $ttCount > 0 ? 'warning' : 'neutral']
             ],
             'impact_summary' => [
-                'direct_deletion' => "La semaine de planning " . $week['nom'] . ".",
+                'direct_deletion' => "La semaine de planning " . $weekName . ".",
                 'dependencies' => "$ttCount grilles d'emploi du temps.",
                 'historical_data' => "Dates de début et de fin de semaine.",
                 'invalid_references' => "Aucune."

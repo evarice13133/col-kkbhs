@@ -125,14 +125,31 @@ class SmartDeleteService
             case 'subjects':
             case 'matiere':
                 // 1. Transfert des affectations
-                $stmtST = $this->db->prepare("UPDATE IGNORE subject_teacher SET subject_id = ? WHERE subject_id = ?");
-                $stmtST->execute([$targetId, $sourceId]);
-                $transferredDetails['teacher_assignments'] = $stmtST->rowCount();
+                $stmtHasST = $this->db->query("SHOW TABLES LIKE 'subject_teacher'");
+                if ($stmtHasST->fetch()) {
+                    $stmtST = $this->db->prepare("UPDATE IGNORE subject_teacher SET subject_id = ? WHERE subject_id = ?");
+                    $stmtST->execute([$targetId, $sourceId]);
+                    $transferredDetails['teacher_assignments'] = $stmtST->rowCount();
+                }
+                $stmtHasTA = $this->db->query("SHOW TABLES LIKE 'teacher_assignments'");
+                if ($stmtHasTA->fetch()) {
+                    $stmtTA = $this->db->prepare("UPDATE IGNORE teacher_assignments SET subject_id = ? WHERE subject_id = ?");
+                    $stmtTA->execute([$targetId, $sourceId]);
+                    $transferredDetails['teacher_assignments'] = ($transferredDetails['teacher_assignments'] ?? 0) + $stmtTA->rowCount();
+                }
+                $stmtHasSC = $this->db->query("SHOW TABLES LIKE 'subject_classes'");
+                if ($stmtHasSC->fetch()) {
+                    $stmtSC = $this->db->prepare("UPDATE IGNORE subject_classes SET subject_id = ? WHERE subject_id = ?");
+                    $stmtSC->execute([$targetId, $sourceId]);
+                }
 
                 // 2. Transfert des créneaux
-                $stmtTT = $this->db->prepare("UPDATE timetable_entries SET subject_id = ? WHERE subject_id = ?");
-                $stmtTT->execute([$targetId, $sourceId]);
-                $transferredDetails['timetable_entries'] = $stmtTT->rowCount();
+                $stmtHasTT = $this->db->query("SHOW TABLES LIKE 'timetable_entries'");
+                if ($stmtHasTT->fetch()) {
+                    $stmtTT = $this->db->prepare("UPDATE timetable_entries SET subject_id = ? WHERE subject_id = ?");
+                    $stmtTT->execute([$targetId, $sourceId]);
+                    $transferredDetails['timetable_entries'] = $stmtTT->rowCount();
+                }
 
                 // 3. Transfert/Fusion des notes
                 $stmtGrades = $this->db->prepare("UPDATE grades SET subject_id = ? WHERE subject_id = ?");
@@ -146,11 +163,21 @@ class SmartDeleteService
             case 'rooms':
             case 'salle':
                 // Transfert des séances
-                $stmtTT = $this->db->prepare("UPDATE timetable_entries SET room_id = ? WHERE room_id = ?");
-                $stmtTT->execute([$targetId, $sourceId]);
-                $transferredDetails['timetable_entries'] = $stmtTT->rowCount();
+                $stmtHasTT = $this->db->query("SHOW TABLES LIKE 'timetable_entries'");
+                if ($stmtHasTT->fetch()) {
+                    $stmtTT = $this->db->prepare("UPDATE timetable_entries SET room_id = ? WHERE room_id = ?");
+                    $stmtTT->execute([$targetId, $sourceId]);
+                    $transferredDetails['timetable_entries'] = $stmtTT->rowCount();
+                }
 
-                $this->db->prepare("DELETE FROM rooms WHERE id = ?")->execute([$sourceId]);
+                $stmtHasCR = $this->db->query("SHOW TABLES LIKE 'class_rooms'");
+                if ($stmtHasCR->fetch()) {
+                    $this->db->prepare("DELETE FROM class_rooms WHERE id = ?")->execute([$sourceId]);
+                }
+                $stmtHasR = $this->db->query("SHOW TABLES LIKE 'rooms'");
+                if ($stmtHasR->fetch()) {
+                    $this->db->prepare("DELETE FROM rooms WHERE id = ?")->execute([$sourceId]);
+                }
                 break;
 
             default:
@@ -252,8 +279,22 @@ class SmartDeleteService
 
             case 'class':
             case 'classes':
-                $this->db->prepare("DELETE FROM subject_teacher WHERE class_id = ?")->execute([$id]);
-                $this->db->prepare("DELETE FROM timetables WHERE class_id = ?")->execute([$id]);
+                $stmtHasST = $this->db->query("SHOW TABLES LIKE 'subject_teacher'");
+                if ($stmtHasST->fetch()) {
+                    $this->db->prepare("DELETE FROM subject_teacher WHERE class_id = ?")->execute([$id]);
+                }
+                $stmtHasTA = $this->db->query("SHOW TABLES LIKE 'teacher_assignments'");
+                if ($stmtHasTA->fetch()) {
+                    $this->db->prepare("DELETE FROM teacher_assignments WHERE class_id = ?")->execute([$id]);
+                }
+                $stmtHasSC = $this->db->query("SHOW TABLES LIKE 'subject_classes'");
+                if ($stmtHasSC->fetch()) {
+                    $this->db->prepare("DELETE FROM subject_classes WHERE class_id = ?")->execute([$id]);
+                }
+                $stmtHasTT = $this->db->query("SHOW TABLES LIKE 'timetables'");
+                if ($stmtHasTT->fetch()) {
+                    $this->db->prepare("DELETE FROM timetables WHERE class_id = ?")->execute([$id]);
+                }
                 $stmt = $this->db->prepare("DELETE FROM classes WHERE id = ?");
                 $stmt->execute([$id]);
                 break;
@@ -261,8 +302,22 @@ class SmartDeleteService
             case 'subject':
             case 'subjects':
             case 'matiere':
-                $this->db->prepare("DELETE FROM subject_teacher WHERE subject_id = ?")->execute([$id]);
-                $this->db->prepare("DELETE FROM timetable_entries WHERE subject_id = ?")->execute([$id]);
+                $stmtHasST = $this->db->query("SHOW TABLES LIKE 'subject_teacher'");
+                if ($stmtHasST->fetch()) {
+                    $this->db->prepare("DELETE FROM subject_teacher WHERE subject_id = ?")->execute([$id]);
+                }
+                $stmtHasTA = $this->db->query("SHOW TABLES LIKE 'teacher_assignments'");
+                if ($stmtHasTA->fetch()) {
+                    $this->db->prepare("DELETE FROM teacher_assignments WHERE subject_id = ?")->execute([$id]);
+                }
+                $stmtHasSC = $this->db->query("SHOW TABLES LIKE 'subject_classes'");
+                if ($stmtHasSC->fetch()) {
+                    $this->db->prepare("DELETE FROM subject_classes WHERE subject_id = ?")->execute([$id]);
+                }
+                $stmtHasTT = $this->db->query("SHOW TABLES LIKE 'timetable_entries'");
+                if ($stmtHasTT->fetch()) {
+                    $this->db->prepare("DELETE FROM timetable_entries WHERE subject_id = ?")->execute([$id]);
+                }
                 $stmt = $this->db->prepare("DELETE FROM subjects WHERE id = ?");
                 $stmt->execute([$id]);
                 break;
@@ -270,9 +325,18 @@ class SmartDeleteService
             case 'room':
             case 'rooms':
             case 'salle':
-                $this->db->prepare("UPDATE timetable_entries SET room_id = NULL WHERE room_id = ?")->execute([$id]);
-                $stmt = $this->db->prepare("DELETE FROM rooms WHERE id = ?");
-                $stmt->execute([$id]);
+                $stmtHasTT = $this->db->query("SHOW TABLES LIKE 'timetable_entries'");
+                if ($stmtHasTT->fetch()) {
+                    $this->db->prepare("UPDATE timetable_entries SET room_id = NULL WHERE room_id = ?")->execute([$id]);
+                }
+                $stmtHasCR = $this->db->query("SHOW TABLES LIKE 'class_rooms'");
+                if ($stmtHasCR->fetch()) {
+                    $this->db->prepare("DELETE FROM class_rooms WHERE id = ?")->execute([$id]);
+                }
+                $stmtHasR = $this->db->query("SHOW TABLES LIKE 'rooms'");
+                if ($stmtHasR->fetch()) {
+                    $this->db->prepare("DELETE FROM rooms WHERE id = ?")->execute([$id]);
+                }
                 break;
 
             case 'cycle':
@@ -324,6 +388,10 @@ class SmartDeleteService
 
             case 'timetable_week':
             case 'week':
+                $stmtHasTT = $this->db->query("SHOW TABLES LIKE 'timetables'");
+                if ($stmtHasTT->fetch()) {
+                    $this->db->prepare("UPDATE timetables SET week_id = NULL WHERE week_id = ?")->execute([$id]);
+                }
                 $stmt = $this->db->prepare("DELETE FROM timetable_weeks WHERE id = ?");
                 $stmt->execute([$id]);
                 break;

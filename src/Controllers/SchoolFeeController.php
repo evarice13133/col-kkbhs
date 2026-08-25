@@ -1149,26 +1149,93 @@ class SchoolFeeController
     /**
      * Impression officielle PDF de la liste des insolvables
      */
+    /**
+     * Impression officielle PDF de la liste des insolvables
+     */
     public function printInsolvables()
     {
         $activeYear = $this->academicYearService->getActiveYear();
         $activeYearId = (int) ($activeYear['id'] ?? 0);
 
+        // Forcer la mise à jour du cache d'insolvabilité pour garantir la fraîcheur des données
+        $this->insolventStudentModel->refreshCache($activeYearId);
+
+        $teachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
+        $cycleId = (int) ($_GET['cycle_id'] ?? 0);
+        $sectionId = (int) ($_GET['section_id'] ?? 0);
         $classId = (int) ($_GET['class_id'] ?? 0);
         $installmentNumber = (int) ($_GET['installment_number'] ?? 0);
+        $q = trim((string) ($_GET['q'] ?? ''));
 
-        if (!$classId || !$installmentNumber) {
-            echo "Paramètres invalides ou manquants.";
-            exit;
+        // Récupérer les informations de libellés pour le filtre
+        $filterLabels = [];
+        if ($teachingTypeId > 0) {
+            $stmt = $this->db->prepare("SELECT nom FROM teaching_types WHERE id = ?");
+            $stmt->execute([$teachingTypeId]);
+            $ttName = $stmt->fetchColumn();
+            if ($ttName) $filterLabels[] = "Type: " . $ttName;
+        }
+        if ($cycleId > 0) {
+            $stmt = $this->db->prepare("SELECT nom FROM cycles WHERE id = ?");
+            $stmt->execute([$cycleId]);
+            $cyName = $stmt->fetchColumn();
+            if ($cyName) $filterLabels[] = "Cycle: " . $cyName;
+        }
+        if ($sectionId > 0) {
+            $stmt = $this->db->prepare("SELECT nom FROM sections WHERE id = ?");
+            $stmt->execute([$sectionId]);
+            $secName = $stmt->fetchColumn();
+            if ($secName) $filterLabels[] = "Section: " . $secName;
         }
 
-        // Récupérer les informations de la classe
-        $stmtC = $this->db->prepare("SELECT nom FROM classes WHERE id = ?");
-        $stmtC->execute([$classId]);
-        $className = $stmtC->fetchColumn() ?: '';
+        $className = 'Toutes les classes';
+        if ($classId > 0) {
+            $stmtC = $this->db->prepare("SELECT nom FROM classes WHERE id = ?");
+            $stmtC->execute([$classId]);
+            $className = $stmtC->fetchColumn() ?: 'Classe N°' . $classId;
+            $filterLabels[] = "Classe: " . $className;
+        }
 
-        // Récupérer les insolvables
-        $insolvents = $this->insolventStudentModel->getInsolventsForTranche($activeYearId, $classId, $installmentNumber);
+        $isTrancheView = ($classId > 0 && $installmentNumber > 0);
+
+        if ($isTrancheView) {
+            // Vue par tranche spécifique
+            $insolvents = $this->insolventStudentModel->getInsolventsForTranche($activeYearId, $classId, $installmentNumber);
+
+            if ($q !== '') {
+                $qLower = strtolower($q);
+                $insolvents = array_filter($insolvents, function ($stud) use ($qLower) {
+                    return strpos(strtolower($stud['student_nom'] ?? ''), $qLower) !== false ||
+                           strpos(strtolower($stud['student_prenom'] ?? ''), $qLower) !== false ||
+                           strpos(strtolower($stud['student_matricule'] ?? ''), $qLower) !== false;
+                });
+            }
+
+            $feeInstModel = new \App\Models\FeeInstallment();
+            $resolved = $feeInstModel->resolveInstallments($activeYearId, $classId);
+            $trancheName = "Tranche " . $installmentNumber;
+            foreach ($resolved as $r) {
+                if ((int) $r['installment_order'] === $installmentNumber) {
+                    $trancheName = $r['name'];
+                    break;
+                }
+            }
+            $filterLabels[] = "Tranche: " . $trancheName;
+        } else {
+            // Vue générale des insolvables
+            $filters = [
+                'teaching_type_id' => $teachingTypeId,
+                'cycle_id' => $cycleId,
+                'section_id' => $sectionId,
+                'class_id' => $classId,
+                'q' => $q
+            ];
+            $insolvents = $this->insolventStudentModel->getAll($activeYearId, $filters);
+        }
+
+        if ($q !== '') {
+            $filterLabels[] = "Recherche: \"" . $q . "\"";
+        }
 
         // Charger l'institution
         $settingsStore = new \App\Services\SettingsStore($this->db);
@@ -1178,26 +1245,20 @@ class SchoolFeeController
         $logoManager = \App\Core\LogoManager::getInstance($this->db);
         $logoBase64 = $logoManager->hasLogo() ? $logoManager->getLogoBase64() : '';
 
-        // Nom de la tranche
-        $feeInstModel = new \App\Models\FeeInstallment();
-        $resolved = $feeInstModel->resolveInstallments($activeYearId, $classId);
-        $trancheName = "Tranche " . $installmentNumber;
-        foreach ($resolved as $r) {
-            if ((int) $r['installment_order'] === $installmentNumber) {
-                $trancheName = $r['name'];
-                break;
-            }
-        }
-
         // Statistiques
         $totalCount = count($insolvents);
         $totalRemaining = 0.0;
         $totalPlanned = 0.0;
         $totalPaid = 0.0;
+
         foreach ($insolvents as $row) {
-            $totalRemaining += (float) $row['reste_a_payer'];
-            $totalPlanned += (float) $row['amount_planned'];
-            $totalPaid += (float) $row['amount_paid'];
+            if ($isTrancheView) {
+                $totalRemaining += (float) ($row['reste_a_payer'] ?? 0);
+                $totalPlanned += (float) ($row['amount_planned'] ?? 0);
+                $totalPaid += (float) ($row['amount_paid'] ?? 0);
+            } else {
+                $totalRemaining += (float) ($row['amount_due'] ?? $row['reste_a_payer'] ?? 0);
+            }
         }
 
         // Construction du document HTML
@@ -1219,17 +1280,21 @@ class SchoolFeeController
         $contact .= " | " . $city;
 
         $printDate = date('d/m/Y H:i');
+        $filterSummaryText = !empty($filterLabels) ? implode(' | ', array_map('htmlspecialchars', $filterLabels)) : 'Tous les élèves/classes';
 
         $html = '
         <!DOCTYPE html>
         <html lang="fr">
         <head>
             <meta charset="UTF-8">
-            <title>Liste des insolvables - ' . htmlspecialchars($className) . '</title>
+            <title>Liste des insolvables</title>
             <style>
+                @page {
+                    margin: 30px 25px 40px 25px;
+                }
                 body {
                     font-family: "Helvetica", "Arial", sans-serif;
-                    font-size: 11px;
+                    font-size: 10px;
                     line-height: 1.3;
                     color: #000;
                     margin: 0;
@@ -1238,7 +1303,7 @@ class SchoolFeeController
                 .header-table {
                     width: 100%;
                     border-collapse: collapse;
-                    margin-bottom: 15px;
+                    margin-bottom: 10px;
                 }
                 .header-table td {
                     vertical-align: top;
@@ -1253,19 +1318,19 @@ class SchoolFeeController
                     text-align: center;
                 }
                 .header-line {
-                    font-size: 9px;
+                    font-size: 8px;
                     font-weight: bold;
-                    margin: 2px 0;
+                    margin: 1px 0;
                     text-transform: uppercase;
                 }
                 .header-contact {
                     font-size: 8px;
-                    margin: 2px 0;
+                    margin: 1px 0;
                     text-transform: uppercase;
                 }
                 .logo-img {
-                    max-width: 70px;
-                    max-height: 70px;
+                    max-width: 65px;
+                    max-height: 65px;
                     object-fit: contain;
                 }
                 .school-name-row {
@@ -1275,12 +1340,12 @@ class SchoolFeeController
                     padding-bottom: 5px;
                 }
                 .school-name {
-                    font-size: 15px;
+                    font-size: 14px;
                     font-weight: bold;
                     text-transform: uppercase;
                 }
                 .academic-year {
-                    font-size: 11px;
+                    font-size: 10px;
                     margin-top: 2px;
                 }
                 .title-box {
@@ -1290,37 +1355,44 @@ class SchoolFeeController
                     text-transform: uppercase;
                     border: 1.5px solid #000;
                     padding: 6px;
-                    margin: 15px 0 10px 0;
+                    margin: 12px 0 8px 0;
                     background-color: #f3f4f6;
                 }
                 .stats-box {
-                    margin-bottom: 15px;
+                    margin-bottom: 8px;
                     border: 1px solid #ddd;
-                    padding: 8px;
+                    padding: 4px 6px;
                     background-color: #fafafa;
+                    font-size: 9px;
                 }
                 .stats-table {
                     width: 100%;
                     border-collapse: collapse;
                 }
                 .stats-table td {
-                    padding: 2px 0;
+                    padding: 2px 4px;
                 }
                 .table-list {
                     width: 100%;
                     border-collapse: collapse;
-                    margin-top: 10px;
+                    margin-top: 8px;
                 }
                 .table-list th, .table-list td {
-                    border: 1px solid #000;
-                    padding: 6px 5px;
+                    border: 1px solid #333;
+                    padding: 5px 4px;
                     text-align: left;
                 }
                 .table-list th {
                     background-color: #e5e7eb;
                     font-weight: bold;
                     text-transform: uppercase;
-                    font-size: 10px;
+                    font-size: 9px;
+                }
+                .table-list thead {
+                    display: table-header-group;
+                }
+                .table-list tr {
+                    page-break-inside: avoid;
                 }
                 .text-end {
                     text-align: right;
@@ -1331,10 +1403,30 @@ class SchoolFeeController
                 .fw-bold {
                     font-weight: bold;
                 }
+                .badge-sub {
+                    font-size: 8px;
+                    color: #555;
+                }
+                .footer-page {
+                    position: fixed;
+                    bottom: -25px;
+                    left: 0px;
+                    right: 0px;
+                    height: 20px;
+                    text-align: center;
+                    font-size: 8px;
+                    color: #666;
+                    border-top: 1px solid #ccc;
+                    padding-top: 4px;
+                }
             </style>
         </head>
         <body>
-            <!-- Official Header Without Ministry -->
+            <div class="footer-page">
+                NotesMaster &bull; Liste des insolvables générée le ' . $printDate . '
+            </div>
+
+            <!-- Header -->
             <table class="header-table">
                 <tr>
                     <td class="header-left">
@@ -1347,7 +1439,7 @@ class SchoolFeeController
         if ($logoBase64) {
             $html .= '<img class="logo-img" src="' . $logoBase64 . '" alt="Logo">';
         } else {
-            $html .= '<div style="font-size: 8px; font-weight: bold; color: #888; border: 1px solid #ccc; width: 60px; height: 60px; line-height: 60px; margin: 0 auto; border-radius: 50%;">LOGO</div>';
+            $html .= '<div style="font-size: 8px; font-weight: bold; color: #888; border: 1px solid #ccc; width: 55px; height: 55px; line-height: 55px; margin: 0 auto; border-radius: 50%;">LOGO</div>';
         }
         $html .= '  </td>
                     <td class="header-right">
@@ -1368,63 +1460,112 @@ class SchoolFeeController
                 LISTE DES ÉLÈVES INSOLVABLES
             </div>
 
-            <!-- Stats Box -->
+            <!-- Stats Box (Une seule ligne pour optimiser l\'espace) -->
             <div class="stats-box">
                 <table class="stats-table">
                     <tr>
-                        <td><strong>Classe :</strong> ' . htmlspecialchars($className) . '</td>
-                        <td><strong>Tranche :</strong> ' . htmlspecialchars($trancheName) . '</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Date d\'impression :</strong> ' . $printDate . '</td>
-                        <td><strong>Nombre d\'insolvables :</strong> ' . $totalCount . '</td>
-                    </tr>
-                    <tr>
-                        <td colspan="2"><strong>Montant Total Restant :</strong> ' . number_format($totalRemaining, 0, '.', ' ') . ' FCFA</td>
+                        <td style="width: 38%;"><strong>Filtres :</strong> ' . $filterSummaryText . '</td>
+                        <td style="width: 20%;" class="text-center"><strong>Date :</strong> ' . $printDate . '</td>
+                        <td style="width: 17%;" class="text-center"><strong>Insolvables :</strong> ' . $totalCount . '</td>
+                        <td style="width: 25%;" class="text-end"><strong>Total Restant :</strong> <span style="color: #d9534f; font-weight: bold;">' . number_format($totalRemaining, 0, '.', ' ') . ' FCFA</span></td>
                     </tr>
                 </table>
-            </div>
+            </div>';
 
-            <!-- Insolvents Table -->
+        if ($isTrancheView) {
+            $html .= '
+            <!-- Insolvents Table Tranche View -->
             <table class="table-list">
                 <thead>
                     <tr>
                         <th class="text-center" style="width: 5%;">N°</th>
                         <th style="width: 15%;">Matricule</th>
-                        <th style="width: 40%;">Nom / Prénom</th>
-                        <th class="text-end" style="width: 13%;">Montant Tranche</th>
-                        <th class="text-end" style="width: 13%;">Montant Versé</th>
+                        <th style="width: 38%;">Nom / Prénom</th>
+                        <th class="text-end" style="width: 14%;">Montant Tranche</th>
+                        <th class="text-end" style="width: 14%;">Montant Versé</th>
                         <th class="text-end" style="width: 14%;">Reste à Payer</th>
                     </tr>
                 </thead>
                 <tbody>';
-        if (empty($insolvents)) {
-            $html .= '<tr><td colspan="6" class="text-center py-4" style="color: green;">Aucun élève insolvable pour cette tranche.</td></tr>';
-        } else {
-            $idx = 1;
-            foreach ($insolvents as $row) {
-                $html .= '
-                <tr>
-                    <td class="text-center">' . $idx++ . '</td>
-                    <td style="font-family: monospace;">' . htmlspecialchars($row['student_matricule'] ?? '-') . '</td>
-                    <td>' . htmlspecialchars($row['student_nom'] . ' ' . $row['student_prenom']) . '</td>
-                    <td class="text-end">' . number_format($row['amount_planned'], 0, '.', ' ') . '</td>
-                    <td class="text-end">' . number_format($row['amount_paid'], 0, '.', ' ') . '</td>
-                    <td class="text-end fw-bold" style="color: #d9534f;">' . number_format($row['reste_a_payer'], 0, '.', ' ') . '</td>
-                </tr>';
+            if (empty($insolvents)) {
+                $html .= '<tr><td colspan="6" class="text-center py-4" style="color: green; font-weight: bold;">Aucun élève insolvable pour ces critères.</td></tr>';
+            } else {
+                $idx = 1;
+                foreach ($insolvents as $row) {
+                    $html .= '
+                    <tr>
+                        <td class="text-center">' . $idx++ . '</td>
+                        <td style="font-family: monospace;">' . htmlspecialchars($row['student_matricule'] ?? '-') . '</td>
+                        <td><strong>' . htmlspecialchars($row['student_nom'] ?? '') . '</strong> ' . htmlspecialchars($row['student_prenom'] ?? '') . '</td>
+                        <td class="text-end">' . number_format((float)($row['amount_planned'] ?? 0), 0, '.', ' ') . ' FCFA</td>
+                        <td class="text-end" style="color: green;">' . number_format((float)($row['amount_paid'] ?? 0), 0, '.', ' ') . ' FCFA</td>
+                        <td class="text-end fw-bold" style="color: #d9534f;">' . number_format((float)($row['reste_a_payer'] ?? 0), 0, '.', ' ') . ' FCFA</td>
+                    </tr>';
+                }
             }
-        }
-        $html .= '
+            $html .= '
                 </tbody>
                 <tfoot>
                     <tr class="fw-bold" style="background-color: #f3f4f6;">
                         <td colspan="3" class="text-end">TOTAL :</td>
-                        <td class="text-end">' . number_format($totalPlanned, 0, '.', ' ') . '</td>
-                        <td class="text-end">' . number_format($totalPaid, 0, '.', ' ') . '</td>
-                        <td class="text-end" style="color: #d9534f;">' . number_format($totalRemaining, 0, '.', ' ') . '</td>
+                        <td class="text-end">' . number_format($totalPlanned, 0, '.', ' ') . ' FCFA</td>
+                        <td class="text-end" style="color: green;">' . number_format($totalPaid, 0, '.', ' ') . ' FCFA</td>
+                        <td class="text-end" style="color: #d9534f;">' . number_format($totalRemaining, 0, '.', ' ') . ' FCFA</td>
                     </tr>
                 </tfoot>
-            </table>
+            </table>';
+        } else {
+            $html .= '
+            <!-- Insolvents Table General View -->
+            <table class="table-list">
+                <thead>
+                    <tr>
+                        <th class="text-center" style="width: 4%;">N°</th>
+                        <th style="width: 26%;">Élève</th>
+                        <th style="width: 16%;">Classe</th>
+                        <th style="width: 16%;">Section / Type</th>
+                        <th class="text-end" style="width: 14%;">Montant Dû</th>
+                        <th class="text-center" style="width: 10%;">Tranches</th>
+                        <th class="text-end" style="width: 14%;">Reste Total</th>
+                    </tr>
+                </thead>
+                <tbody>';
+            if (empty($insolvents)) {
+                $html .= '<tr><td colspan="7" class="text-center py-4" style="color: green; font-weight: bold;">Aucun élève insolvable pour ces critères.</td></tr>';
+            } else {
+                $idx = 1;
+                foreach ($insolvents as $row) {
+                    $due = (float)($row['amount_due'] ?? 0);
+                    $totalRest = (float)($row['total_reste_a_payer'] ?? $due);
+                    $html .= '
+                    <tr>
+                        <td class="text-center">' . $idx++ . '</td>
+                        <td>
+                            <strong>' . htmlspecialchars($row['student_nom'] ?? '') . '</strong> ' . htmlspecialchars($row['student_prenom'] ?? '') . '
+                        </td>
+                        <td>' . htmlspecialchars($row['class_name'] ?? '-') . '</td>
+                        <td>
+                            <div>' . htmlspecialchars($row['section_name'] ?? '-') . '</div>
+                            <div class="badge-sub">' . htmlspecialchars($row['teaching_type_name'] ?? '') . '</div>
+                        </td>
+                        <td class="text-end fw-bold" style="color: #d9534f;">' . number_format($due, 0, '.', ' ') . ' FCFA</td>
+                        <td class="text-center">' . ((int)($row['unpaid_installments_count'] ?? 0)) . '</td>
+                        <td class="text-end fw-bold">' . number_format($totalRest, 0, '.', ' ') . ' FCFA</td>
+                    </tr>';
+                }
+            }
+            $html .= '
+                </tbody>
+                <tfoot>
+                    <tr class="fw-bold" style="background-color: #f3f4f6;">
+                        <td colspan="4" class="text-end">TOTAL CUMULÉ DÛ :</td>
+                        <td class="text-end" style="color: #d9534f;" colspan="3">' . number_format($totalRemaining, 0, '.', ' ') . ' FCFA</td>
+                    </tr>
+                </tfoot>
+            </table>';
+        }
+
+        $html .= '
         </body>
         </html>
         ';
@@ -1440,7 +1581,7 @@ class SchoolFeeController
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
 
-        $filename = "eleves_insolvables_" . str_replace(' ', '_', $className) . "_tranche_" . $installmentNumber . ".pdf";
+        $filename = "eleves_insolvables_" . date('Y-m-d_H-i') . ".pdf";
         $dompdf->stream($filename, ["Attachment" => false]);
         exit;
     }

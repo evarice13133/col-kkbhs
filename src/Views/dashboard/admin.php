@@ -104,19 +104,34 @@ ob_start();
                 <h5 class="fw-black text-main-theme m-0" style="font-family: 'Outfit', sans-serif; letter-spacing: -0.02em; font-size: 1.4rem;">Tableau de bord de pilotage</h5>
                 <p class="text-muted-theme small mb-0">Gestion générale et indicateurs clés de performance</p>
             </div>
-            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 fw-bold small">
-                <i class="bi bi-calendar-event me-1"></i> Année Scolaire : <?= htmlspecialchars($activeYearName ?: '') ?>
-            </span>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <?php if (!empty($no_active_teaching_types)): ?>
+                    <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3 py-2 fw-bold small">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i> Aucun type d'enseignement actif
+                    </span>
+                <?php elseif (!empty($activeTeachingTypes) && count($activeTeachingTypes) === 1): ?>
+                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2 fw-bold small">
+                        <i class="bi bi-building me-1"></i> Type d'Enseignement : <?= htmlspecialchars($activeTeachingTypes[0]['nom']) ?>
+                    </span>
+                <?php elseif (!empty($activeTeachingTypes) && count($activeTeachingTypes) > 1): ?>
+                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 fw-bold small">
+                        <i class="bi bi-diagram-3-fill me-1"></i> <?= count($activeTeachingTypes) ?> Types d'Enseignement Actifs
+                    </span>
+                <?php endif; ?>
+                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 fw-bold small">
+                    <i class="bi bi-calendar-event me-1"></i> Année Scolaire : <?= htmlspecialchars($activeYearName ?: '') ?>
+                </span>
+            </div>
         </div>
         <ul class="nav nav-pills dashboard-nav-pills gap-2 flex-nowrap overflow-auto pb-2" id="dashboard-view-selector" role="tablist">
             <li class="nav-item" role="presentation">
                 <button type="button" class="nav-link active" data-view="general" role="tab">
-                    <i class="bi bi-grid-fill"></i> Vue Générale
+                    <i class="bi bi-grid-fill"></i> Vue Générale1
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button type="button" class="nav-link" data-view="finances" role="tab">
-                    <i class="bi bi-wallet2"></i> Finances
+                    <i class="bi bi-wallet2"></i> Finances1
                 </button>
             </li>
             <li class="nav-item" role="presentation">
@@ -141,6 +156,94 @@ ob_start();
             </li>
         </ul>
     </div>
+
+    <?php if (!empty($no_active_teaching_types)): ?>
+        <div class="alert alert-warning border-0 shadow-sm rounded-4 p-4 mb-4">
+            <div class="d-flex align-items-center gap-3">
+                <i class="bi bi-exclamation-triangle-fill fs-2 text-warning"></i>
+                <div>
+                    <h6 class="fw-bold m-0 text-main-theme">Aucun type d'enseignement actif</h6>
+                    <p class="mb-0 text-muted small">Aucun type d'enseignement n'est actuellement activé pour cet établissement. Les statistiques pédagogiques et d'effectifs ne peuvent pas être calculées. Veuillez en activer un sous <strong>Configuration &gt; Types d'Enseignement</strong>.</p>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <?php if (!empty($activeTeachingTypes) && count($activeTeachingTypes) > 1 && !empty($statsByTeachingType)): ?>
+        <!-- Section Multi-Synthèses par Type d'Enseignement Actif (CAS 2) -->
+        <div class="mb-5 animate-fade-in" data-views="general,pedagogie">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-diagram-3-fill text-primary fs-5"></i>
+                    <h6 class="fw-bold m-0 text-uppercase small letter-spacing-1 text-main-theme">Synthèses par Type d'Enseignement Actif</h6>
+                </div>
+                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1 fw-bold extra-small"><?= count($activeTeachingTypes) ?> synthèses distinctes</span>
+            </div>
+            
+            <div class="row g-4">
+                <?php foreach ($statsByTeachingType as $ttId => $stt): 
+                    $ttInfo = $stt['teaching_type'];
+                    $finData = $stt['financial_data'] ?? [];
+                ?>
+                    <div class="col-12 col-xl-6">
+                        <div class="modern-card p-4 border-0 shadow-sm border-top border-primary border-4 rounded-4 h-100" style="background: rgba(var(--primary-rgb), 0.02);">
+                            <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-3">
+                                <div>
+                                    <h5 class="fw-black text-main-theme m-0" style="font-family: 'Outfit', sans-serif;">
+                                        <i class="bi bi-building text-primary me-2"></i>SYNTHÈSE — <?= htmlspecialchars(strtoupper($ttInfo['nom'])) ?>
+                                    </h5>
+                                    <small class="text-muted-theme">Type d'enseignement rattaché</small>
+                                </div>
+                                <span class="badge bg-primary text-white rounded-pill px-3 py-1 fw-bold small">Code: <?= htmlspecialchars($ttInfo['code']) ?></span>
+                            </div>
+                            
+                            <div class="row g-3 mb-3">
+                                <div class="col-6 col-sm-3">
+                                    <div class="p-3 bg-body rounded-3 border shadow-2xs h-100">
+                                        <div class="text-muted small fw-bold text-truncate mb-1">Élèves / Étudiants</div>
+                                        <div class="h4 fw-black m-0 text-primary"><?= (int)$stt['stats_students'] ?></div>
+                                        <div class="extra-small text-success fw-bold mt-1"><i class="bi bi-check-circle me-1"></i><?= (int)$stt['stats_students_inscrits'] ?> inscrits</div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-sm-3">
+                                    <div class="p-3 bg-body rounded-3 border shadow-2xs h-100">
+                                        <div class="text-muted small fw-bold text-truncate mb-1">Classes</div>
+                                        <div class="h4 fw-black m-0 text-success"><?= (int)$stt['stats_classes'] ?></div>
+                                        <div class="extra-small text-muted mt-1"><?= (int)$stt['stats_subjects'] ?> matières</div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-sm-3">
+                                    <div class="p-3 bg-body rounded-3 border shadow-2xs h-100">
+                                        <div class="text-muted small fw-bold text-truncate mb-1">Enseignants</div>
+                                        <div class="h4 fw-black m-0 text-warning"><?= (int)$stt['stats_teachers'] ?></div>
+                                        <div class="extra-small text-muted mt-1">affectés</div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-sm-3">
+                                    <div class="p-3 bg-body rounded-3 border shadow-2xs h-100">
+                                        <div class="text-muted small fw-bold text-truncate mb-1">Saisies Notes</div>
+                                        <div class="h4 fw-black m-0 text-info"><?= (int)$stt['globalProgress'] ?>%</div>
+                                        <div class="extra-small text-muted mt-1"><?= (int)$stt['globalFilled'] ?>/<?= (int)$stt['globalExpected'] ?></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center bg-body p-3 rounded-3 border extra-small">
+                                <div>
+                                    <span class="fw-bold text-main-theme me-2">Recouvrement scolarité :</span>
+                                    <span class="fw-black text-success me-3"><?= number_format($finData['totalTuitionCollected'] ?? 0, 0, ',', ' ') ?> FCFA</span>
+                                    <span class="text-muted">(Taux : <?= number_format($finData['collectionRate'] ?? 0, 1) ?>%)</span>
+                                </div>
+                                <div>
+                                    <span class="fw-bold text-danger"><i class="bi bi-person-exclamation me-1"></i><?= (int)($finData['totalInsolvent'] ?? 0) ?> insolvables</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    <?php endif; ?>
 
 
     <?php if (\App\Core\Session::get('user_role') === 'superadmin'): ?>

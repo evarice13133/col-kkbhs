@@ -1,0 +1,14 @@
+-- SAUVEGARDE DES DONNÉES ORPHELINES AVANT NETTOYAGE - 2026-08-23 03:25:58
+
+-- Orphan in user_teaching_types.user_id (ref users.id): {"user_id":"41","teaching_type_id":"3"}
+-- Orphan in user_teaching_types.user_id (ref users.id): {"user_id":"41","teaching_type_id":"9"}
+-- Orphan in user_teaching_types.user_id (ref users.id): {"user_id":"44","teaching_type_id":"3"}
+-- Orphan in user_teaching_types.user_id (ref users.id): {"user_id":"57","teaching_type_id":"9"}
+-- Orphan in user_teaching_types.user_id (ref users.id): {"user_id":"58","teaching_type_id":"9"}
+-- Orphan in user_teaching_types.user_id (ref users.id): {"user_id":"59","teaching_type_id":"9"}
+-- Orphan in user_teaching_types.user_id (ref users.id): {"user_id":"60","teaching_type_id":"9"}
+-- Orphan in user_teaching_types.user_id (ref users.id): {"user_id":"61","teaching_type_id":"9"}
+-- Orphan in user_teaching_types.user_id (ref users.id): {"user_id":"62","teaching_type_id":"9"}
+-- Orphan in user_teaching_types.user_id (ref users.id): {"user_id":"63","teaching_type_id":"3"}
+-- Orphan in user_teaching_types.user_id (ref users.id): {"user_id":"63","teaching_type_id":"9"}
+-- Orphan in user_teaching_types.user_id (ref users.id): {"user_id":"65","teaching_type_id":"9"}

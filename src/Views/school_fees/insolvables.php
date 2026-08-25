@@ -11,7 +11,7 @@ ob_start();
             <p class="text-muted-theme small mb-0"><?= __('insolvent_subtitle') ?></p>
         </div>
         <div class="d-flex gap-2">
-            <a id="btn-print-pdf" href="#" target="_blank" class="btn btn-theme-soft rounded-pill px-3 fw-bold disabled" style="pointer-events: none; opacity: 0.6;">
+            <a id="btn-print-pdf" href="/school_fees/insolvables/print" target="_blank" class="btn btn-theme-soft rounded-pill px-3 fw-bold">
                 <i class="bi bi-printer me-1"></i> <?= __('print_pdf') ?>
             </a>
             <button id="btn-export-excel" class="btn btn-outline-success rounded-pill px-3 fw-bold">
@@ -210,21 +210,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const tableHeader = document.querySelector('#insolvables-table thead');
     const tableBody = document.querySelector('#insolvables-table tbody');
 
-    // Helper dynamically toggle print button state
+    // Helper dynamically toggle print button state & URL
     function updatePrintButton() {
-        const classId = classSelect.value;
-        const trancheId = trancheSelect.value;
-        if (classId && trancheId) {
-            btnPrintPdf.classList.remove('disabled');
-            btnPrintPdf.style.pointerEvents = 'auto';
-            btnPrintPdf.style.opacity = '1';
-            btnPrintPdf.setAttribute('href', `/school_fees/insolvables/print?class_id=${classId}&installment_number=${trancheId}`);
-        } else {
-            btnPrintPdf.classList.add('disabled');
-            btnPrintPdf.style.pointerEvents = 'none';
-            btnPrintPdf.style.opacity = '0.6';
-            btnPrintPdf.setAttribute('href', '#');
-        }
+        const params = new URLSearchParams();
+        if (teachingTypeSelect.value) params.append('teaching_type_id', teachingTypeSelect.value);
+        if (cycleSelect.value) params.append('cycle_id', cycleSelect.value);
+        if (sectionSelect.value) params.append('section_id', sectionSelect.value);
+        if (classSelect.value) params.append('class_id', classSelect.value);
+        if (trancheSelect.value) params.append('installment_number', trancheSelect.value);
+        if (searchInput.value.trim()) params.append('q', searchInput.value.trim());
+
+        btnPrintPdf.classList.remove('disabled');
+        btnPrintPdf.style.pointerEvents = 'auto';
+        btnPrintPdf.style.opacity = '1';
+        const queryString = params.toString();
+        btnPrintPdf.setAttribute('href', `/school_fees/insolvables/print${queryString ? '?' + queryString : ''}`);
     }
 
     // Main fetch reload function
