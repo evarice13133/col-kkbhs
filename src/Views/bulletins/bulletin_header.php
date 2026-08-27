@@ -37,19 +37,19 @@ if (isset($styleOnly)) {
     @page :first { margin-top: <?= $pageMargin ?>; }
     body { font-family: 'Arial', sans-serif; font-size: <?= $baseFontSize ?>px; margin: 0; padding: 0; color: #000;
     background: #fff; line-height: <?= $lineHeight ?>; }
-    .bulletin-sheet { width: 100%; margin: 0 auto; page-break-after: auto; page-break-inside: avoid; padding: 3px; border: 4px solid green; }
+    .bulletin-sheet { width: 100%; margin: 0 auto; page-break-after: auto; page-break-inside: avoid; padding: 3px; border: 2px solid #14347a; }
     .bulletin-sheet:last-child { page-break-after: auto; }
     .bulletin-wrapper { page-break-after: always; page-break-inside: avoid; margin-bottom: 10px; }
-    table { width: 99.5%; margin: 0 auto 1px; border-collapse: collapse; table-layout: fixed; border: 1px solid green; }
-    th, td { border: 1px solid green; padding: 2px 4px; text-align: center; color: black; }
-    th { background-color: green; color: white; text-transform: uppercase; font-weight: bold; border: 2px solid white; }
-    .grades-header-row th { border: 2px solid white; background-color: green; color: white; }
-    tbody tr:first-child td { border-top: 2px solid green; }
-    .subject-group { background: linear-gradient(180deg, #e8f5e9 0%, #c8e6c9 100%); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    table { width: 99.5%; margin: 0 auto 1px; border-collapse: collapse; table-layout: fixed; border: 1px solid #14347a; }
+    th, td { border: 1px solid #14347a; padding: 2px 4px; text-align: center; color: black; }
+    th { background-color: #14347a; color: white; text-transform: uppercase; font-weight: bold; border: 2px solid white; }
+    .grades-header-row th { border: 2px solid white; background-color: #14347a; color: white; }
+    tbody tr:first-child td { border-top: 2px solid #14347a; }
+    .subject-group { background: #d9e8fb; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .left { text-align: left; }
     .bold { font-weight: bold; }
     .uppercase { text-transform: uppercase; }
-    .vert { color: green; font-weight: bold; }
+    .vert { color: #198754; font-weight: bold; }
     .rouge { color: #ff0000; }
     .title-box { text-align: center; font-size: 14px; margin: 2px 0 1px; text-transform: uppercase; border: 2px solid #000;
     padding: 2px 3px; }
@@ -100,54 +100,61 @@ if (isset($styleOnly)) {
     .student-info-table {
     table-layout: auto;
     border: none;
-    margin: 5px 0 8px;
+    margin: 0;
     background: transparent;
     width: 100%;
-    border-collapse: separate;
+    border-collapse: collapse;
     border-spacing: 0;
     }
-    .student-info-table td { border: none !important; text-align: left; padding: 4px 8px; font-size: <?= $baseFontSize + 2 ?>px; line-height: 1.3; }
+    .student-info-table tr { margin: 0; padding: 0; line-height: 1; }
+    .student-info-table td { border: none !important; text-align: left; padding: 0 4px; font-size: <?= $baseFontSize + 2 ?>px; line-height: 1; margin: 0; }
     .student-info-table tr + tr td { border-top: none !important; }
-    .student-info-label { color: #1a5f1a; font-weight: 700; margin-right: 6px; }
-    .student-info-value { font-weight: 700; color: black; font-size: <?= $baseFontSize + 1 ?>px; }
     .student-photo-cell {
-    width: 100px;
+    width: 55px;
     vertical-align: top;
-    padding: 4px 8px 4px 0;
+    padding: 0;
+    margin: 0;
     border-right: 1px solid #000 !important;
     }
     .student-photo-container {
-    width: 90px;
-    height: 100px;
+    width: 51px;
+    height: 59px;
     border: 1px solid #000;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    padding: 0;
+    margin: 0;
     }
     .student-photo-container img {
-    width: 100%;
-    height: 100%;
+    height: 59px;
+    width: 51px;
     object-fit: cover;
     display: block;
+    margin: 0;
     }
     .student-photo-placeholder {
-    width: 90px;
-    height: 100px;
+    width: 51px;
+    height: 59px;
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
-    font-size: 35px;
+    font-size: 18px;
     color: #000;
-    line-height: 1.2;
+    line-height: 1;
     border: 1px solid #000;
+    margin: 0;
+    padding: 0;
     }
     .student-identity-row {
-    padding: 4px 6px;
+    padding: 0 4px;
     border-bottom: 1px solid #000;
-    line-height: 1.2;
+    line-height: 1;
+    margin: 0;
     }
+    .student-info-table td > * { margin: 0; padding: 0; }
     .student-identity-label {
     font-weight: 700;
     margin-right: 3px;
@@ -174,13 +181,13 @@ if (isset($styleOnly)) {
     .nowrap { white-space: nowrap; }
     .grades-table th { font-size: <?= $baseFontSize - 1 ?>px; word-wrap: break-word; overflow-wrap: break-word; }
     .grades-table thead th {
-    background: green;
+    background: #14347a;
     color: white;
     font-weight: 700;
     letter-spacing: 0.2px;
     text-transform: uppercase;
     padding: 2px 4px;
-    border-color: green;
+    border-color: #14347a;
     }
     .group-header { background-color: #e9e9e9; text-align: left; padding-left: 8px; }
     .group-subtotal-line {
@@ -210,7 +217,7 @@ if (isset($styleOnly)) {
     .compact-side th, .compact-side td { padding: 1px 2px; line-height: 0.95; }
     .rounded-legend { border: 1px solid #000; border-radius: 4px; border-collapse: separate; }
     .signature-table td { border: none; height: 30px; vertical-align: top; padding-top: 1px; }
-    .bulletin-footer { width: 100%; height: 15px; background-color: green; color: white; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold; margin-top: 10px; text-align: center; }
+    .bulletin-footer { width: 100%; height: 15px; background-color: #14347a; color: white; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold; margin-top: 10px; text-align: center; }
     .no-border { border: none !important; }
     .absences-title { text-align: center; vertical-align: middle; width: 15px; font-weight: bold; font-size: 6.5px;
     line-height: 0.8; }
@@ -220,6 +227,35 @@ if (isset($styleOnly)) {
     .legend-text { font-size: 6.5px; line-height: 0.95; text-align: left; }
     .summary-total td { background-color: #f7f7f7; font-weight: bold; }
     .compact-value { font-weight: bold; font-size: 9px; }
+    .report-card-grid { margin: 4px 0 6px; page-break-inside: avoid; }
+    .report-card-main-table { width: 100%; border-collapse: collapse; table-layout: fixed; border: 2px solid #14347a; }
+    .report-card-main-table th, .report-card-main-table td { border: 1px solid #14347a; padding: 3px 4px; text-align: center; vertical-align: middle; }
+    .report-card-main-table thead th, .report-card-group-header th, .report-card-grand-total th { background: #14347a; color: #fff; font-weight: 700; text-transform: uppercase; }
+    .report-card-main-table thead th { height: 24px; }
+    .report-card-group-header th { background: #193f8f; text-align: left; padding-left: 7px; }
+    .report-card-subject { text-align: left !important; font-weight: 700; }
+    .report-card-teacher { display: block; font-size: .78em; font-style: italic; font-weight: 400; color: #3d4f6f; }
+    .report-card-competence { text-align: left !important; font-size: .9em; }
+    .report-card-subtotal td { background: #d9e8fb; color: #14347a; font-weight: 700; }
+    .report-card-grand-total th, .report-card-grand-total td { background: #14347a; color: #fff; font-weight: 700; }
+    .report-card-legend { display: flex; gap: 14px; justify-content: flex-end; align-items: center; border: 1px solid #14347a; padding: 3px 6px; color: #14347a; font-size: .8em; }
+    .report-card-lower-grid { display: grid; grid-template-columns: 1.35fr .8fr 1fr; gap: 5px; margin-top: 5px; }
+    .report-card-lower-grid table, .report-card-decision-table { width: 100%; border-collapse: collapse; border: 1px solid #14347a; }
+    .report-card-lower-grid th, .report-card-decision-table th { background: #14347a; color: #fff; font-weight: 700; }
+    .report-card-lower-grid td, .report-card-decision-table td { border: 1px solid #14347a; padding: 3px 5px; }
+    .report-card-kpi { text-align: center; font-size: 1.25em; font-weight: 700; color: #14347a; }
+    .report-card-decision-table { margin-top: 5px; table-layout: fixed; }
+    .report-card-decision-table th, .report-card-decision-table td { width: 25%; }
+    .remarks-space { height: 72px; vertical-align: top; }
+    .report-card-signatures { display: flex; justify-content: space-between; gap: 10px; padding-top: 8px; font-size: .82em; }
+    .col-subject { width: 24%; }
+    .col-competence { width: 22%; }
+    .col-test { width: 10%; }
+    .col-average { width: 11%; }
+    .col-coefficient { width: 7%; }
+    .col-score { width: 12%; }
+    .col-appreciation { width: 7%; }
+    .legacy-grades-table { display: none; }
     /* BARRE D'OUTILS */
     @media print { .pv-toolbar { display: none !important; } }
     .pv-toolbar {
@@ -240,22 +276,27 @@ if (isset($styleOnly)) {
     .grades-table { table-layout: auto; word-wrap: break-word; }
     .grades-table th, .grades-table td { word-wrap: break-word; overflow-wrap: break-word; }
     .student-info-table { display: block; overflow-x: auto; }
-    .student-info-table td { display: block; width: 100%; padding: 6px 8px; border-bottom: none !important; }
-    .student-info-table tr { display: block; margin-bottom: 5px; }
+    .student-info-table td { display: block; width: 100%; padding: 1px 4px; border-bottom: none !important; }
+    .student-info-table tr { display: block; margin-bottom: 0; }
     .header-wrapper { display: flex; flex-direction: column; }
     .header-left, .header-center, .header-right { width: 100%; float: none; margin-bottom: 5px; }
     .school-name-display { font-size: 14px; }
     .academic-year-display { font-size: 12px; }
     }
+    @media screen and (max-width: 700px) {
+        .report-card-lower-grid { grid-template-columns: 1fr; }
+        .report-card-legend, .report-card-signatures { flex-wrap: wrap; justify-content: flex-start; }
+        .report-card-main-table { font-size: 10px; }
+    }
     @media print {
     .bulletin-wrapper { page-break-after: always; page-break-inside: avoid; }
-    .bulletin-sheet { page-break-inside: avoid; border: 4px solid green; padding: 5px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .bulletin-sheet { page-break-inside: avoid; border: 2px solid #14347a; padding: 5px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     table { page-break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     tr { page-break-inside: avoid; }
-    th, td { border: 1px solid green; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    th { background-color: green !important; color: white !important; border: 2px solid white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .bulletin-footer { background-color: green !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .subject-group { background: linear-gradient(180deg, #e8f5e9 0%, #c8e6c9 100%) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    th, td { border: 1px solid #14347a; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    th { background-color: #14347a !important; color: white !important; border: 2px solid white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .bulletin-footer { background-color: #14347a !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .subject-group { background: #d9e8fb !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
     

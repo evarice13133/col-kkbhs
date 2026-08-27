@@ -168,8 +168,10 @@ if (isset($styleOnly)) {
         include __DIR__ . '/bulletin_header_html.php';
         ?>
 
+        <?php $bulletinPeriod = 'annuel'; include __DIR__ . '/bulletin_grades_table.php'; ?>
+
         <!-- C. TABLEAU DES NOTES ANNUELLES (Synthèse des 3 trimestres) -->
-        <div class="grades-table-wrap">
+        <div class="grades-table-wrap legacy-grades-table">
             <?php if (($lang ?? 'fr') !== 'en'): ?>
                 <div class="grades-watermark"><?= htmlspecialchars($schoolCodeWatermark) ?></div>
             <?php endif; ?>

@@ -626,8 +626,11 @@ class BulletinController
             $studentRankSubj = $subjStats['student_ranks'][$student['id']] ?? null;
 
             $rows[] = [
+                'subject_id' => (int) $subject['id'],
                 'subject' => $subjectName,
                 'teacher' => strtoupper((string) ($subject['teacher_name'] ?? '')),
+                'test_1' => $value,
+                'test_2' => null,
                 'group' => $subjectGroupe,
                 'note' => $value,
                 'coefficient' => $coefficient,
@@ -651,6 +654,11 @@ class BulletinController
         $classStats = $this->buildClassStats($ranking);
         $mention = $this->getMention($average);
         $tableFont = $this->getTableFontSize(count($rows));
+        $competencies = $this->getBulletinCompetencies((int) $student['class_id'], array_column($rows, 'subject_id'), (int) $activeYear['id'], [$sequence['label']]);
+        foreach ($rows as &$row) {
+            $row['competence'] = $competencies[$row['subject_id']] ?? '';
+        }
+        unset($row);
         $groupedRows = $this->groupRowsBySubjectGroup($rows);
         // La période discipline correspond au trimestre de la séquence
         $disciplinePeriode = 'trim_' . (int) ($sequence['trimestre'] ?? 1);
@@ -673,11 +681,12 @@ class BulletinController
             'tableFont' => $tableFont,
             'activeYear' => $activeYear,
             'institution' => $this->getInstitutionSettings(),
-            'evaluationLabels' => [$this->getShortSequenceLabel((string) $sequence['label'])],
+            'evaluationLabels' => [(string) ($sequence['code'] ?? $this->getShortSequenceLabel((string) ($sequence['label'] ?? '')))],
             'discipline' => $discipline,
             'professor_name' => $professor_name,
             'displayMatricule' => $this->getDisplayMatricule($student),
             'globalAppreciation' => $this->getCouncilAppreciation($average),
+            'evaluation_form' => $this->getEvaluationForm((int) $student['class_id']),
         ];
     }
 
@@ -747,8 +756,11 @@ class BulletinController
             $studentRankSubj = $subjStats['student_ranks'][$student['id']] ?? null;
 
             $rows[] = [
+                'subject_id' => (int) $subject['id'],
                 'subject' => $subjectName,
                 'teacher' => strtoupper((string) ($subject['teacher_name'] ?? '')),
+                'test_1' => $sequenceValues[0] ?? null,
+                'test_2' => $sequenceValues[1] ?? null,
                 'group' => $subjectGroupe,
                 'sequence_values' => $sequenceValues,
                 'term_note' => $termNote,
@@ -790,6 +802,12 @@ class BulletinController
         $mention = $this->getMention($average);
         $tableFont = $this->getTableFontSize(count($rows));
 
+        $competencies = $this->getBulletinCompetencies((int) $student['class_id'], array_column($rows, 'subject_id'), (int) $activeYear['id'], $sequenceLabels);
+        foreach ($rows as &$row) {
+            $row['competence'] = $competencies[$row['subject_id']] ?? '';
+        }
+        unset($row);
+
         $strengths = array_column(array_filter($rows, function ($row) {
             return $row['term_note'] !== null && $row['term_note'] >= 14;
         }), 'subject');
@@ -802,7 +820,7 @@ class BulletinController
         $discipline = $precomputedDiscipline ?? $this->buildDisciplineData($student, [$term], (int) $activeYear['id']);
         $professor_name = $this->getProfessorPrincipalName((int) $student['class_id']);
         $evaluationLabels = array_map(function ($seq) {
-            return $this->getShortSequenceLabel((string) $seq['label']);
+            return (string) ($seq['code'] ?? $this->getShortSequenceLabel((string) ($seq['label'] ?? '')));
         }, $termSequences);
         $evaluationLabels[] = __('trimester_short') . ' ' . $term;
 
@@ -833,6 +851,7 @@ class BulletinController
             'professor_name' => $professor_name,
             'displayMatricule' => $this->getDisplayMatricule($student),
             'globalAppreciation' => $this->getCouncilAppreciation($average),
+            'evaluation_form' => $this->getEvaluationForm((int) $student['class_id']),
         ];
     }
 
@@ -929,8 +948,11 @@ class BulletinController
             $studentRankSubj = $subjStats['student_ranks'][$studentId] ?? null;
 
             $rows[] = [
+                'subject_id' => $subjectId,
                 'subject' => $subjectName,
                 'teacher' => strtoupper((string) ($subject['teacher_name'] ?? '')),
+                'test_1' => null,
+                'test_2' => null,
                 'group' => $subjectGroupe,
                 'term_values' => [
                     $termNotes[1] ?? null,
@@ -961,6 +983,11 @@ class BulletinController
 
         $mention = $this->getMention($average);
         $tableFont = $this->getTableFontSize(count($rows));
+        $competencies = $this->getBulletinCompetencies($classId, array_column($rows, 'subject_id'), (int) $activeYear['id'], $allSeqLabels);
+        foreach ($rows as &$row) {
+            $row['competence'] = $competencies[$row['subject_id']] ?? '';
+        }
+        unset($row);
         $groupedRows = $this->groupRowsBySubjectGroup($rows);
         // L'annuel agrège les 3 trimestres (périodes 1, 2, 3)
         $discipline = $precomputedDiscipline ?? $this->buildDisciplineData($student, [1, 2, 3], (int) $activeYear['id']);
@@ -987,6 +1014,7 @@ class BulletinController
             'professor_name' => $professor_name,
             'displayMatricule' => $this->getDisplayMatricule($student),
             'globalAppreciation' => $this->getCouncilAppreciation($average),
+            'evaluation_form' => $this->getEvaluationForm($classId),
         ];
     }
 
@@ -1915,6 +1943,49 @@ class BulletinController
         return array_values(array_filter($groups, static function ($group) {
             return !empty($group['rows']);
         }));
+    }
+
+    protected function getEvaluationForm(int $classId): string
+    {
+        try {
+            $stmt = $this->db->prepare("SELECT tt.code, tt.nom FROM classes c LEFT JOIN teaching_types tt ON tt.id = c.teaching_type_id WHERE c.id = ? LIMIT 1");
+            $stmt->execute([$classId]);
+            $type = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+            $typeLabel = strtolower((string) (($type['code'] ?? '') . ' ' . ($type['nom'] ?? '')));
+            return preg_match('/tech|prof|voc|tvet|etp/', $typeLabel) ? 'technical' : 'general';
+        } catch (\Throwable $e) {
+            return 'general';
+        }
+    }
+
+    protected function getBulletinCompetencies(int $classId, array $subjectIds, int $academicYearId, array $periods): array
+    {
+        $subjectIds = array_values(array_unique(array_filter(array_map('intval', $subjectIds))));
+        if (!$subjectIds) {
+            return [];
+        }
+
+        try {
+            $subjectPlaceholders = implode(',', array_fill(0, count($subjectIds), '?'));
+            $periodPlaceholders = implode(',', array_fill(0, count($periods), '?'));
+            $sql = "SELECT ec.subject_id, GROUP_CONCAT(DISTINCT c.libelle ORDER BY ec.position, c.libelle SEPARATOR ' / ') AS competence
+                    FROM evaluation_competencies ec
+                    JOIN competencies c ON c.id = ec.competency_id
+                    WHERE ec.class_id = ? AND ec.academic_year_id = ?
+                      AND ec.subject_id IN ($subjectPlaceholders)
+                      AND ec.periode IN ($periodPlaceholders)
+                    GROUP BY ec.subject_id";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute(array_merge([$classId, $academicYearId], $subjectIds, $periods));
+            $result = [];
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $result[(int) $row['subject_id']] = (string) $row['competence'];
+            }
+
+            return $result;
+        } catch (\Throwable $e) {
+            return [];
+        }
     }
 
     protected function getShortSequenceLabel(string $label): string
