@@ -197,8 +197,10 @@ if (isset($styleOnly)) {
         include __DIR__ . '/bulletin_header_html.php';
         ?>
 
+        <?php $bulletinPeriod = 'sequence'; include __DIR__ . '/bulletin_grades_table.php'; ?>
+
         <!-- D. TABLEAU DES NOTES -->
-        <div class="grades-table-wrap">
+        <div class="grades-table-wrap legacy-grades-table">
             <?php if (($lang ?? 'fr') !== 'en'): ?>
                 <div class="grades-watermark"><?= htmlspecialchars($schoolCodeWatermark) ?></div>
             <?php endif; ?>

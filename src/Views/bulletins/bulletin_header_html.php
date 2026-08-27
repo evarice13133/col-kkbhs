@@ -119,16 +119,16 @@ $i = $institution;
             <div class="header-right">
                 <div class="header-side-content">
                     <p class="header-line">
-                        <?= htmlspecialchars((string) ($i['school_republic_en'] ?? 'REPUBLIC OF CAMEROON')) ?>
+                        <?= htmlspecialchars((string) ($i['school_republic_en'] ?? __('republic_of_cameroon'))) ?>
                     </p>
                     <p class="header-line">
-                        <?= htmlspecialchars((string) ($i['school_motto_en'] ?? 'PEACE - WORK - FATHERLAND')) ?>
+                        <?= htmlspecialchars((string) ($i['school_motto_en'] ?? __('peace_work_fatherland'))) ?>
                     </p>
                     <p class="header-line">
-                        <?= htmlspecialchars((string) ($i['school_ministry_en'] ?? 'MINISTRY OF SECONDARY EDUCATION')) ?>
+                        <?= htmlspecialchars((string) ($i['school_ministry_en'] ?? __('ministry_secondary_education'))) ?>
                     </p>
                     <p class="header-line">
-                        <?= htmlspecialchars((string) ($i['school_slogan_en'] ?? 'DISCIPLINE - WORK - SUCCESS')) ?>
+                        <?= htmlspecialchars((string) ($i['school_slogan_en'] ?? __('slogan'))) ?>
                     </p>
                     <p class="header-contact"><?= htmlspecialchars(strtoupper($contact)) ?></p>
                 </div>

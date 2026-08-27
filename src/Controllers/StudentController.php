@@ -1774,6 +1774,31 @@ class StudentController
 
 
 
+            // Les tables financières doivent générer leurs identifiants automatiquement.
+            foreach (['student_discounts', 'student_scholarships'] as $financialTable) {
+                if (!$this->tableExists($financialTable)) {
+                    continue;
+                }
+
+                $idDefinition = $this->db->prepare("SELECT EXTRA FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = 'id'");
+                $idDefinition->execute([$financialTable]);
+                if (stripos((string) $idDefinition->fetchColumn(), 'auto_increment') === false) {
+                    $zeroIds = $this->db->query("SELECT id FROM `{$financialTable}` WHERE id = 0")->fetchAll(PDO::FETCH_COLUMN);
+                    if ($zeroIds) {
+                        $nextId = (int) $this->db->query("SELECT COALESCE(MAX(id), 0) + 1 FROM `{$financialTable}`")->fetchColumn();
+                        $fixZeroId = $this->db->prepare("UPDATE `{$financialTable}` SET id = ? WHERE id = 0");
+                        foreach ($zeroIds as $_) {
+                            $fixZeroId->execute([$nextId++]);
+                        }
+                    }
+                    $this->db->exec("ALTER TABLE `{$financialTable}` MODIFY id INT(11) NOT NULL AUTO_INCREMENT");
+                    $nextId = (int) $this->db->query("SELECT COALESCE(MAX(id), 0) + 1 FROM `{$financialTable}`")->fetchColumn();
+                    $this->db->exec("ALTER TABLE `{$financialTable}` AUTO_INCREMENT = " . max(1, $nextId));
+                }
+            }
+
+
+
             // Tenter de créer un index unique sur email si la colonne existe et qu'il n'y a pas de doublons
 
             if ($this->studentColumnExists('email')) {
