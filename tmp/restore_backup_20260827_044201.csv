@@ -1,0 +1,320 @@
+id,nom,groupe,subject_group_id,teaching_type_id
+15,LITTÉRATURE,"Groupe 1",,3
+16,INFORMATIQUE,"Groupe 2",,3
+17,"LANGUE FRANçAISE","Groupe 1",,3
+18,PHILISOPHIE,"Groupe 1",,3
+19,PHILISOPHIE,"Groupe 1",,3
+20,ANGLAIS,"Groupe 1",,3
+21,"LANGUE VIVANTE II","Groupe 1",,3
+22,GEOGRAPHIE,"Groupe 2",,3
+23,HISTOIRE,"Groupe 2",,3
+24,ECM,"Groupe 2",,3
+25,MATHEMATIQUES,"Groupe 2",,3
+26,SCIENCES,"Groupe 2",,3
+27,TM,"Groupe 3",,3
+28,"LANGUES NATIONALLES","Groupe 2",,3
+30,"EDUCATION ARTISTIQUE","Groupe 2",,3
+31,"TRAVAIL MANUEL","Groupe 3",,3
+32,EPS,"Groupe 3",,3
+33,MATHEMATIQUES,"Groupe 2",,3
+34,MATHEMATIQUES,"Groupe 2",,3
+35,MATHEMATIQUES,"Groupe 2",,3
+36,PHYSIQUE,"Groupe 2",,3
+37,PHYSIQUE,"Groupe 2",,3
+38,CHIMIE,"Groupe 2",,3
+39,CHIMIE,"Groupe 2",,3
+40,INFORMATIQUE,"Groupe 2",,3
+41,INFORMATIQUE,"Groupe 2",,3
+42,INFORMATIQUE,"Groupe 2",,3
+43,SVTEEHB,"Groupe 2",,3
+44,LITTÉRATURE,"Groupe 1",,3
+45,"LANGUE FRANçAISE","Groupe 1",,3
+46,ANGLAIS,"Groupe 1",,3
+47,SVTEEHB,"Groupe 2",,3
+48,PHILOSOPHIE,"Groupe 1",,3
+49,PHILOSOPHIE,"Groupe 1",,3
+50,HISTOIRE,"Groupe 1",,3
+51,GEOGRAPHIE,"Groupe 1",,3
+52,ECM,"Groupe 1",,3
+53,SVTEEHB,"Groupe 2",,3
+54,MATHEMATIQUES,"Groupe 2",,3
+55,CHIMIE,"Groupe 2",,3
+56,INFORMATIQUE,"Groupe 2",,3
+57,PHYSIQUE,"Groupe 2",,3
+58,HISTOIRE,"Groupe 1",,3
+59,GEOGRAPHIE,"Groupe 1",,3
+60,EPS,"Groupe 3",,3
+61,"TRAVAIL MANUEL","Groupe 3",,3
+63,Histoire/Géographie,"Groupe 1",,3
+64,Anglais,"Groupe 1",,3
+65,"Economie d'entreprise","Groupe 1",,3
+66,Français,"Groupe 1",,3
+67,"Mathematique Générale","Groupe 2",,3
+68,"Redaction Professionnelle","Groupe 2",,3
+70,Droit,"Groupe 1",,3
+71,ECM,"Groupe 1",,3
+72,"Economie générale","Groupe 1",,3
+73,GIF,"Groupe 2",,3
+74,EPS,"Groupe 3",,3
+75,"Travail Manuel","Groupe 3",,3
+76,Mathematiques,"Groupe 2",,3
+77,"Finance d'entreprise","Groupe 2",,3
+78,"Mathématiques Appliquées","Groupe 2",,3
+79,Management,"Groupe 2",,3
+80,Philosophie,"Groupe 1",,3
+81,MOB,"Groupe 2",,3
+82,RPC,"Groupe 2",,3
+83,OTA,"Groupe 2",,3
+84,"Prise de parole rapide","Groupe 2",,3
+85,TAS,"Groupe 2",,3
+86,Bureautique,"Groupe 2",,3
+87,Comptabilité,"Groupe 2",,3
+88,Statistiques,"Groupe 2",,3
+89,"Examen de Laboratoire","Groupe 2",,3
+90,"Gestion des ressources humaines","Groupe 2",,3
+91,GSS,"Groupe 2",,3
+92,"Santé publique","Groupe 2",,3
+93,"Soins infirmiers","Groupe 2",,3
+94,"Terminologie Médical","Groupe 2",,3
+95,BPPH,"Groupe 2",,3
+96,Bureautique,"Groupe 2",,3
+97,"Science physique","Groupe 2",,3
+98,"Action sociale","Groupe 2",,3
+234,"Metier et formation","Groupe 2",,3
+236,"Connaissance des materiaux","Groupe 2",,3
+237,"Dessin technique","Groupe 2",,3
+238,EPS,"Groupe 3",,3
+239,"Travail manuel","Groupe 3",,3
+240,Français,"Groupe 1",,3
+241,Anglais,"Groupe 1",,3
+242,ECM,"Groupe 1",,3
+243,Informatique,"Groupe 2",,3
+244,Mathematiques,"Groupe 2",,3
+245,"Sciences physique","Groupe 2",,3
+246,"Sante, securite, et envirronnement","Groupe 3",,3
+247,Materiaux,"Groupe 2",,3
+248,Ajustage,"Groupe 2",,3
+249,RESEO,"Groupe 2",,3
+250,"Technologie professionnel","Groupe 2",,3
+251,Tracage,"Groupe 2",,3
+252,RESEO,"Groupe 2",,3
+253,"Schema electrique","Groupe 2",,3
+256,Technologie,"Groupe 2",,3
+257,"Machine electrique","Groupe 2",,3
+258,"Dessin technique","Groupe 2",,3
+259,Entrepreneuriat,"Groupe 1",,3
+260,EPS,"Groupe 3",,3
+261,"Travail Manuel","Groupe 3",,3
+262,"Dessin Industriel","Groupe 2",,3
+263,Exploitation,"Groupe 2",,3
+264,"Mecanique Appliquée","Groupe 2",,3
+265,Métré,"Groupe 2",,3
+266,"Procédé de Construction","Groupe 2",,3
+267,Réglementation,"Groupe 2",,3
+268,Topographie,"Groupe 2",,3
+269,Anglais,"Groupe 1",,3
+270,ECM,"Groupe 1",,3
+271,HISTOIRE/Géographie,"Groupe 1",,3
+272,INFORMATIQUE,"Groupe 2",,3
+273,Mathematiques,"Groupe 2",,3
+274,Français,"Groupe 1",,3
+275,"Sciences Physiques","Groupe 2",,3
+276,"Dessin Technique","Groupe 2",,3
+277,Entrepreneuriat,"Groupe 3",,3
+278,Montage,"Groupe 2",,3
+279,TPFA,"Groupe 2",,3
+280,"Travaux Pratique","Groupe 2",,3
+281,"Mecanique Appliquée","Groupe 2",,3
+282,PPRO,"Groupe 2",,3
+283,Traçage,"Groupe 2",,3
+284,"Mecanique Appliquée","Groupe 2",,3
+285,Laboratoire,"Groupe 2",,3
+286,MPN,"Groupe 2",,3
+287,Maintenance,"Groupe 2",,3
+288,"Travaux Pratique","Groupe 2",,3
+289,"Technologie des Materiaux","Groupe 2",,3
+290,"Processus Previsionnel","Groupe 2",,3
+291,"SCHEMA ELECTRIQUE","Groupe 2",,3
+292,"Electronique et electrotechnique","Groupe 2",,3
+293,"Technologie Schema","Groupe 2",,3
+294,"Sols et Materiaux","Groupe 2",,3
+295,ANALYSE,"Groupe 2",,3
+296,"Dessin de Mode","Groupe 2",,3
+297,PATRONAGE,"Groupe 2",,3
+298,"Dessin Technique","Groupe 2",,3
+299,ECM,"Groupe 1",,3
+300,Technologie,"Groupe 2",,3
+301,Mathematique,"Groupe 2",,3
+302,"Dessin de Mode","Groupe 2",,3
+303,Coupe,"Groupe 2",,3
+304,Couture,"Groupe 2",,3
+305,Hygiène,"Groupe 3",,3
+306,Bureautique,"Groupe 2",,3
+307,"Rédaction Professionnel","Groupe 2",,3
+308,PRP,"Groupe 2",,3
+309,DCC,"Groupe 2",,3
+310,OTA,"Groupe 2",,3
+311,Commerce,"Groupe 2",,3
+312,"Législation du travail","Groupe 1",,3
+314,"Pratique comptable","Groupe 2",,3
+315,"Travaux comptable","Groupe 2",,3
+316,Hygiène,"Groupe 3",,3
+317,"Mathematique Commerciale","Groupe 2",,3
+319,"Dessin technique","Groupe 2",,3
+320,MOB,"Groupe 2",,3
+321,"Terminologie Médical","Groupe 2",,3
+322,Deontologie,"Groupe 2",,3
+323,GEH,"Groupe 2",,3
+325,"Technologie Electrique","Groupe 2",,3
+326,"Technologie Mecanique","Groupe 2",,3
+327,"Reception d'un vehicule","Groupe 2",,3
+328,"Moteur CI","Groupe 2",,3
+329,"Procedes de Realisation","Groupe 2",,3
+330,"Devis et estimation","Groupe 2",,3
+331,"Financial Accounting","Groupe 1",,3
+333,"Business Managemennt","Groupe 2",,3
+334,Economic,"Groupe 1",,3
+335,"Corporate Accounting","Groupe 1",,3
+336,"Business Maths","Groupe 2",,3
+337,"Commerce And financial","Groupe 2",,3
+338,Entrepreuneurship,"Groupe 3",,3
+341,Economic,"Groupe 1",,3
+342,Geography,"Groupe 1",,3
+343,ICT,"Groupe 2",,3
+344,English,"Groupe 1",,3
+345,"Pure Ma thematics and statistics","Groupe 2",,3
+346,Biology,"Groupe 2",,3
+347,Statistics,"Groupe 2",,3
+348,Chemistry,"Groupe 2",,3
+349,Physic,"Groupe 2",,3
+350,French,"Groupe 1",,3
+351,Citizenship,"Groupe 3",,3
+352,Mathematics,"Groupe 2",,3
+353,"Literature in  English","Groupe 1",,3
+354,History,"Groupe 1",,3
+355,"Food and nutrition","Groupe 2",,3
+357,ENGLISH,"Groupe 1",,3
+359,FRENCH,"Groupe 1",,3
+363,"CITIZENSHIP EDUCATION","Groupe 3",,3
+364,"COMPUTER STUDIES","Groupe 2",,3
+365,BIOLOGY,"Groupe 2",,3
+366,CHEMISTRY,"Groupe 2",,3
+367,MATHEMATICS,"Groupe 2",,3
+368,PHYSICS,"Groupe 2",,3
+370,ENGLISH,"Groupe 1",,3
+372,FRENCH,"Groupe 1",,3
+376,"CITIZENSHIP EDUCATION","Groupe 3",,3
+377,"COMPUTER STUDIES","Groupe 2",,3
+379,CHEMISTRY,"Groupe 2",,3
+380,MATHEMATICS,"Groupe 2",,3
+381,PHYSICS,"Groupe 2",,3
+382,"C.S. (General Science)","Groupe 2",,3
+383,ENGLISH,"Groupe 1",,3
+384,LITERATURE,"Groupe 1",,3
+385,FRENCH,"Groupe 1",,3
+386,GEOGRAPHY,"Groupe 1",,3
+387,ECONOMICS,"Groupe 2",,3
+388,HISTORY,"Groupe 1",,3
+389,"CITIZENSHIP EDUCATION","Groupe 3",,3
+390,"COMPUTER STUDIES","Groupe 2",,3
+391,BIOLOGY,"Groupe 2",,3
+392,CHEMISTRY,"Groupe 2",,3
+393,MATHEMATICS,"Groupe 2",,3
+394,PHYSICS,"Groupe 2",,3
+395,"C.S. (General Science)","Groupe 2",,3
+396,"F/N/H/BIO (combinée)","Groupe 2",,3
+397,"A.M.A / LOGIC / PHIL  (selon options)","Groupe 2",,3
+398,"ELECTRICAL TECHNOLOGIE AND DIASRAM","Groupe 2",,3
+399,"ELECTRICAL TEST AND MEASUREMENT","Groupe 2",,3
+400,"ELCTRICAL MACHINE","Groupe 2",,3
+401,"ELECTRICAL AND ELECTRONIQUE CIRCUITS","Groupe 2",,3
+403,ECM,"Groupe 1",,3
+405,Hygiène,"Groupe 1",,3
+406,"Travail manuel","Groupe 3",,3
+407,Mathematique,"Groupe 2",,3
+408,Mathematique,"Groupe 2",,3
+409,Informatique,"Groupe 2",,3
+410,Anglais,"Groupe 1",,3
+411,"Sciences physique","Groupe 2",,3
+412,Français,"Groupe 1",,3
+413,Législation,"Groupe 1",,3
+414,Materiaux,"Groupe 2",,3
+415,Dessin,"Groupe 2",,3
+416,Dessin,"Groupe 2",,3
+417,Français,"Groupe 1",,3
+418,Informatique,"Groupe 2",,3
+419,"Travail manuel","Groupe 3",,3
+420,"Science physique","Groupe 2",,3
+421,MATHEMATIQUES,"Groupe 2",,3
+422,"Etude de  texte","Groupe 1",,3
+423,"Correction orthographie","Groupe 1",,3
+424,"Expression ecrite","Groupe 1",,3
+425,Anglais,"Groupe 1",,3
+426,ECM,"Groupe 1",,3
+427,Espagnol,"Groupe 1",,3
+428,HISTOIRE,"Groupe 1",,3
+429,Geographie,"Groupe 1",,3
+431,PCT,"Groupe 2",,3
+432,Informatique,"Groupe 2",,3
+433,Mathematque,"Groupe 2",,3
+434,SVTEEHB,"Groupe 2",,3
+435,ESF,"Groupe 2",,3
+436,"Schéma électrique","Groupe 2",,3
+437,"Circuit électrique","Groupe 2",,3
+438,PID,"Groupe 2",,3
+439,"Dessin technique","Groupe 2",,3
+440,"Essaie et mesure","Groupe 2",,3
+441,"Circuit électrique","Groupe 2",,3
+442,"Essaie et mesure","Groupe 2",,3
+444,Eps,"Groupe 3",,3
+445,Production,"Groupe 2",,3
+446,Mathematics,"Groupe 2",,3
+447,H.biology,"Groupe 2",,3
+448,Eps,"Groupe 3",,3
+449,"Technologie professionnelle","Groupe 2",,3
+450,"Dessin technique","Groupe 2",,3
+451,Traçage,"Groupe 2",,3
+452,RESEO,"Groupe 2",,3
+453,Français,"Groupe 1",,3
+454,Anglais,"Groupe 1",,3
+455,"Mécanique Appliqué","Groupe 2",,3
+456,Législation,"Groupe 1",,3
+457,RESEO,"Groupe 2",,3
+458,Commerce,"Groupe 1",,3
+459,B.Maths,"Groupe 2",,3
+460,Accounting,"Groupe 2",,3
+461,HYGIÈNE,"Groupe 3",,3
+462,PDC,"Groupe 2",,3
+463,Commerce,"Groupe 1",,3
+464,"Science physique","Groupe 2",,3
+465,"Comptabilité d'entreprise","Groupe 2",,3
+466,"Mathematique Appliqué","Groupe 2",,3
+467,ECM,"Groupe 1",,3
+468,MOB,"Groupe 2",,3
+469,Informatique,"Groupe 2",,3
+470,RPC,"Groupe 2",,3
+473,PCQ,"Groupe 2",,3
+475,Histoire/Géographie,"Groupe 1",,3
+476,Anglais,"Groupe 2",,3
+477,Français,"Groupe 1",,3
+478,Mathematique,"Groupe 2",,3
+479,"Économie générale","Groupe 1",,3
+480,OTA,"Groupe 2",,3
+481,PRP,"Groupe 1",,3
+482,Bureautique,"Groupe 2",,3
+483,"Comptabilité financière","Groupe 2",,3
+484,ECM,"Groupe 1",,3
+485,INFORMATIQUE,"Groupe 2",,3
+486,EPS,"Groupe 3",,3
+487,"Travail manuel","Groupe 3",,3
+488,"Dessin de Mode","Groupe 2",,3
+489,EPS,"Groupe 1",,3
+492,Anglais,"Groupe 1",,3
+493,ECM,"Groupe 1",,3
+494,Informatique,"Groupe 1",,3
+495,Législation,"Groupe 1",,3
+496,Français,"Groupe 1",,3
+497,MATHEMATIQUES,"Groupe 2",,3
+509,"Matière Inactive 6a65595b9953a","Groupe 1",,1
+511,"Matière Inactive 6a655981c60fe","Groupe 1",,1
+531,TEST_AUTO_20260826_054246,"Groupe 1",,

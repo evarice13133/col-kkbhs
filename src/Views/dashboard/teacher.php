@@ -172,6 +172,70 @@ ob_start();
         </div>
     <?php endif; ?>
 
+    <!-- Compétences Management Section -->
+    <div class="modern-card border-0 shadow-sm rounded-4 mb-4 p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold m-0 text-main-theme d-flex align-items-center gap-2 fs-6">
+                <i class="bi bi-list-check text-info"></i> <?= __('competencies_management') ?? 'Gestion des Compétences' ?>
+            </h5>
+        </div>
+        
+        <div class="row g-3 mb-3">
+            <div class="col-md-4">
+                <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">
+                    <?= __('select_class') ?? 'Sélectionner une classe' ?>
+                </label>
+                <select id="competencyClassSelect" class="form-select premium-input">
+                    <option value=""><?= __('select_class_placeholder') ?? 'Choisir une classe...' ?></option>
+                    <?php 
+                    $uniqueClasses = [];
+                    foreach ($teacherAssignments as $assign) {
+                        $key = $assign['class_id'];
+                        if (!isset($uniqueClasses[$key])) {
+                            $uniqueClasses[$key] = $assign['class_nom'];
+                        }
+                    }
+                    foreach ($uniqueClasses as $classId => $className): ?>
+                        <option value="<?= $classId ?>"><?= h($className) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">
+                    <?= __('select_subject') ?? 'Sélectionner une matière' ?>
+                </label>
+                <select id="competencySubjectSelect" class="form-select premium-input" disabled>
+                    <option value=""><?= __('select_subject_placeholder') ?? 'Choisir une matière...' ?></option>
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button id="loadCompetenciesBtn" class="btn btn-info rounded-pill px-4 py-2 fw-bold shadow-sm w-100" disabled>
+                    <i class="bi bi-arrow-clockwise me-2"></i><?= __('load_competencies') ?? 'Charger les compétences' ?>
+                </button>
+            </div>
+        </div>
+
+        <div id="competenciesManagementArea" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold m-0 text-info extra-small text-uppercase">
+                    <?= __('subject_competencies') ?? 'Compétences de la matière' ?>
+                </h6>
+                <button id="addCompetencyBtn" class="btn btn-sm btn-outline-info rounded-pill px-3 fw-bold">
+                    <i class="bi bi-plus-circle me-1"></i><?= __('add_competency') ?? 'Ajouter' ?>
+                </button>
+            </div>
+            
+            <div id="competenciesList" class="row g-2 mb-3">
+                <!-- Competencies will be loaded here -->
+            </div>
+
+            <div id="noCompetenciesMessage" class="text-center py-4 text-muted border border-dashed rounded-4" style="display: none;">
+                <i class="bi bi-inbox fs-1 d-block mb-2 opacity-25"></i>
+                <?= __('no_competencies_defined') ?? 'Aucune compétence définie pour cette matière' ?>
+            </div>
+        </div>
+    </div>
+
     <!-- Pédagogie : Séquences (7/12) + Progression par Classe (5/12) -->
     <div class="row g-4 mb-5">
         <div class="col-xl-7">
@@ -289,7 +353,207 @@ ob_start();
             document.getElementById('whatsapp-support')?.remove();
         }
 
+        // Competency Management JavaScript
+        const competencyClassSelect = document.getElementById('competencyClassSelect');
+        const competencySubjectSelect = document.getElementById('competencySubjectSelect');
+        const loadCompetenciesBtn = document.getElementById('loadCompetenciesBtn');
+        const competenciesManagementArea = document.getElementById('competenciesManagementArea');
+        const competenciesList = document.getElementById('competenciesList');
+        const noCompetenciesMessage = document.getElementById('noCompetenciesMessage');
+        const addCompetencyBtn = document.getElementById('addCompetencyBtn');
 
+        // Teacher assignments data from PHP
+        const teacherAssignments = <?= json_encode($teacherAssignments ?? []) ?>;
+
+        // Load subjects when class is selected
+        if (competencyClassSelect) {
+            competencyClassSelect.addEventListener('change', function() {
+                const classId = this.value;
+                
+                // Reset subject select
+                competencySubjectSelect.innerHTML = '<option value=""><?= __('select_subject_placeholder') ?? 'Choisir une matière...' ?></option>';
+                competencySubjectSelect.disabled = true;
+                loadCompetenciesBtn.disabled = true;
+                competenciesManagementArea.style.display = 'none';
+
+                if (classId) {
+                    // Filter subjects for this class
+                    const subjects = teacherAssignments.filter(a => a.class_id == classId);
+                    const uniqueSubjects = {};
+                    subjects.forEach(s => {
+                        if (!uniqueSubjects[s.subject_id]) {
+                            uniqueSubjects[s.subject_id] = s.subject_nom;
+                        }
+                    });
+
+                    Object.entries(uniqueSubjects).forEach(([id, name]) => {
+                        const option = document.createElement('option');
+                        option.value = id;
+                        option.textContent = name;
+                        competencySubjectSelect.appendChild(option);
+                    });
+
+                    competencySubjectSelect.disabled = false;
+                }
+            });
+        }
+
+        // Load competencies when button is clicked
+        if (loadCompetenciesBtn) {
+            loadCompetenciesBtn.addEventListener('click', function() {
+                const classId = competencyClassSelect.value;
+                const subjectId = competencySubjectSelect.value;
+
+                if (!classId || !subjectId) return;
+
+                this.disabled = true;
+                this.innerHTML = '<i class="bi bi-arrow-clockwise me-2 spin"></i><?= __('loading') ?? 'Chargement...' ?>';
+
+                fetch(`/competencies/api/by-subject?subject_id=${subjectId}&class_id=${classId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            renderCompetencies(data.competencies);
+                            competenciesManagementArea.style.display = 'block';
+                        } else {
+                            alert(data.error || '<?= __('error_loading_competencies') ?? 'Erreur lors du chargement des compétences' ?>');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('<?= __('error_loading_competencies') ?? 'Erreur lors du chargement des compétences' ?>');
+                    })
+                    .finally(() => {
+                        this.disabled = false;
+                        this.innerHTML = '<i class="bi bi-arrow-clockwise me-2"></i><?= __('load_competencies') ?? 'Charger les compétences' ?>';
+                    });
+            });
+        }
+
+        // Render competencies list
+        function renderCompetencies(competencies) {
+            competenciesList.innerHTML = '';
+            
+            if (competencies.length === 0) {
+                noCompetenciesMessage.style.display = 'block';
+                return;
+            }
+
+            noCompetenciesMessage.style.display = 'none';
+
+            competencies.forEach((comp, index) => {
+                const col = document.createElement('div');
+                col.className = 'col-md-6 col-lg-4';
+                col.innerHTML = `
+                    <div class="p-2 border border-info border-opacity-25 rounded-3 bg-info bg-opacity-5 d-flex align-items-center justify-content-between gap-2">
+                        <div class="flex-grow-1">
+                            <div class="fw-bold text-info small text-truncate">${comp.libelle}</div>
+                            ${comp.description ? `<div class="extra-small text-muted text-truncate">${comp.description}</div>` : ''}
+                        </div>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-sm btn-outline-info rounded-circle p-1" onclick="editCompetency(${comp.id}, '${comp.libelle.replace(/'/g, "\\'")}', '${(comp.description || '').replace(/'/g, "\\'")}')" title="<?= __('edit') ?? 'Modifier' ?>">
+                                <i class="bi bi-pencil fs-6"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger rounded-circle p-1" onclick="deleteCompetency(${comp.id})" title="<?= __('delete') ?? 'Supprimer' ?>">
+                                <i class="bi bi-trash fs-6"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                competenciesList.appendChild(col);
+            });
+        }
+
+        // Add new competency
+        if (addCompetencyBtn) {
+            addCompetencyBtn.addEventListener('click', function() {
+                const libelle = prompt('<?= __('enter_competency_name') ?? 'Entrez le nom de la compétence' ?>:');
+                if (!libelle) return;
+
+                const description = prompt('<?= __('enter_competency_description_optional') ?? 'Description (optionnel)' ?? 'Description (optionnel):' ?>:') || '';
+
+                const classId = competencyClassSelect.value;
+                const subjectId = competencySubjectSelect.value;
+
+                const formData = new FormData();
+                formData.append('subject_id', subjectId);
+                formData.append('class_id', classId);
+                formData.append('libelle', libelle);
+                formData.append('description', description);
+
+                fetch('/competencies/api/create', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        loadCompetenciesBtn.click();
+                    } else {
+                        alert(data.error || '<?= __('error_creating_competency') ?? 'Erreur lors de la création' ?>');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('<?= __('error_creating_competency') ?? 'Erreur lors de la création' ?>');
+                });
+            });
+        }
+
+        // Edit competency (global function)
+        window.editCompetency = function(id, currentLibelle, currentDescription) {
+            const libelle = prompt('<?= __('enter_competency_name') ?? 'Entrez le nom de la compétence' ?>:', currentLibelle);
+            if (libelle === null) return;
+
+            const description = prompt('<?= __('enter_competency_description_optional') ?? 'Description (optionnel):' ?>', currentDescription) || '';
+
+            const formData = new FormData();
+            formData.append('competency_id', id);
+            formData.append('libelle', libelle);
+            formData.append('description', description);
+
+            fetch('/competencies/api/update', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadCompetenciesBtn.click();
+                } else {
+                    alert(data.error || '<?= __('error_updating_competency') ?? 'Erreur lors de la mise à jour' ?>');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('<?= __('error_updating_competency') ?? 'Erreur lors de la mise à jour' ?>');
+            });
+        };
+
+        // Delete competency (global function)
+        window.deleteCompetency = function(id) {
+            if (!confirm('<?= __('confirm_delete_competency') ?? 'Êtes-vous sûr de vouloir supprimer cette compétence ?' ?>')) return;
+
+            const formData = new FormData();
+            formData.append('competency_id', id);
+
+            fetch('/competencies/api/delete', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadCompetenciesBtn.click();
+                } else {
+                    alert(data.error || '<?= __('error_deleting_competency') ?? 'Erreur lors de la suppression' ?>');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('<?= __('error_deleting_competency') ?? 'Erreur lors de la suppression' ?>');
+            });
+        };
 
         document.querySelectorAll('[data-count-up]').forEach((element, index) => {
             const target = Number(element.dataset.countUp || '0');

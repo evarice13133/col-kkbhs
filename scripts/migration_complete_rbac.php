@@ -278,7 +278,7 @@ try {
             'view_classes', 'manage_classes_structure', 'manage_teaching_types',
             'manage_cycles', 'manage_levels', 'manage_sections', 'manage_departments',
             'manage_subjects', 'manage_subject_groups', 'manage_teachers', 'manage_timetables',
-            'manage_sequences',
+            'manage_academic_years', 'manage_sequences',
             'view_students', 'manage_students', 'export_students', 'manage_marks',
             'manage_bulletins', 'manage_transcripts', 'manage_absences',
             'view_class_finances', 'edit_class_finances', 'manage_fees', 'manage_payments',

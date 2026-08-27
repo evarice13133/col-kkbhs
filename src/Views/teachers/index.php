@@ -202,7 +202,7 @@ ob_start(); ?>
                                                     <i class="bi bi-journal-plus fs-5"></i>
                                                 </a>
                                             <?php else: ?>
-                                                <a href="/teachers/direct_assign?teacher_id=<?= $t['id'] ?>&subject_id=<?= $assignContext['subject_id'] ?>&class_id=<?= $assignContext['class_id'] ?>"
+                                                <a href="/teachers/direct_assign?teacher_id=<?= $t['id'] ?>&subject_id=<?= $assignContext['subject_id'] ?? 0 ?>&class_id=<?= $assignContext['class_id'] ?? 0 ?>"
                                                     class="btn btn-sm btn-action-modern text-success" title="<?= __('choose') ?>">
                                                     <i class="bi bi-check2-circle fs-5"></i>
                                                 </a>

@@ -65,6 +65,7 @@ INSERT INTO permissions (perm_code, perm_name, description) VALUES
 ('manage_teaching_types', 'Gérer les types d''enseignement', 'Créer et configurer les types d''enseignement.'),
 ('manage_cycles', 'Gérer les cycles', 'Créer et modifier les cycles académiques.'),
 ('manage_sections', 'Gérer les sections', 'Créer et modifier les sections d''études.'),
+('manage_teaching_forms', 'Gérer les formes d''enseignement', 'Créer et modifier les formes d''enseignement.'),
 ('manage_departments', 'Gérer les départements', 'Créer et modifier les départements d''enseignement.'),
 ('manage_subjects', 'Gérer les matières', 'Gérer le catalogue des matières et coefficients.'),
 ('manage_teachers', 'Gérer les enseignants', 'Gérer le registre des enseignants et leurs affectations.'),
@@ -107,7 +108,7 @@ FROM permissions
 WHERE perm_code IN (
     'manage_users', 'manage_settings', 'view_system_logs',
     'view_classes', 'manage_classes_structure', 'manage_teaching_types',
-    'manage_cycles', 'manage_sections', 'manage_departments',
+    'manage_cycles', 'manage_sections', 'manage_teaching_forms', 'manage_departments',
     'manage_subjects', 'manage_teachers', 'manage_timetables',
     'manage_academic_years', 'manage_sequences',
     'view_students', 'manage_students', 'manage_marks',

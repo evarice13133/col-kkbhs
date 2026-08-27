@@ -48,6 +48,40 @@ class SubjectController
         try {
             $this->db->exec("ALTER TABLE subjects ADD COLUMN observations TEXT DEFAULT NULL");
         } catch (\PDOException $e) {}
+        // Garantir que la colonne `id` est PRIMARY KEY et AUTO_INCREMENT de façon non destructive.
+        try {
+            // Vérifier s'il existe des doublons d'ID -> ne pas appliquer la modification automatiquement
+            $dupStmt = $this->db->query("SELECT id, COUNT(*) AS c FROM subjects GROUP BY id HAVING c > 1");
+            $hasDup = ($dupStmt && $dupStmt->fetchColumn() !== false);
+            if (!$hasDup) {
+                try {
+                    $this->db->exec("ALTER TABLE subjects MODIFY id INT(11) NOT NULL AUTO_INCREMENT");
+                } catch (\PDOException $e) {
+                    // Si MODIFY échoue, on continue et on tentera d'ajouter la PK si possible
+                }
+
+                try {
+                    $this->db->exec("ALTER TABLE subjects ADD PRIMARY KEY (id)");
+                } catch (\PDOException $e) {
+                    // PK peut déjà exister ou échouer si données incohérentes
+                }
+
+                // Synchroniser la valeur AUTO_INCREMENT avec le max(id)+1
+                try {
+                    $maxId = (int) $this->db->query("SELECT COALESCE(MAX(id),0) FROM subjects")->fetchColumn();
+                    $next = $maxId + 1;
+                    $this->db->exec("ALTER TABLE subjects AUTO_INCREMENT = " . (int)$next);
+                } catch (\PDOException $e) {
+                    // Ne pas bloquer l'exécution sur l'échec de la synchronisation
+                }
+            } else {
+                // Si doublons détectés, on ne change rien automatiquement — opération manuelle requise
+                // Éventuelle journalisation à ajouter ici si nécessaire
+            }
+        } catch (\PDOException $e) {
+            // Ignorer les erreurs d'audit ici pour ne pas empêcher l'initialisation de la page
+        }
+
     }
 
     public function index()
@@ -87,7 +121,8 @@ class SubjectController
 
         $this->streamPdf($html, "Registre_Matieres_" . date('Y-m-d') . ".pdf");
     }
-    public function exportExcel()
+
+    public function exportExcel()
     {
         PermissionManager::requirePermission('manage_subjects');
 
@@ -367,12 +402,43 @@ class SubjectController
 
                 $stmt = $this->db->prepare("INSERT INTO subjects (nom, coefficient, groupe, subject_group_id, teaching_type_id, department_id, code_uv, code_ue, vhm, vhp, th_max, observations) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 $stmt->execute([$nom, $coeff, $groupe, $subject_group_id, $teaching_type_id, $department_id, $code_uv, $code_ue, $vhm, $vhp, $th_max, $observations]);
-                $subject_id = $this->db->lastInsertId();
+                $subject_id = (int) $this->db->lastInsertId();
+
+                // Fallback defensif si lastInsertId() est invalide (ex: retourne 0 ou 1 de manière inattendue)
+                if ($subject_id <= 1) {
+                    // Tenter une recherche sûre basée sur le nom et la date de création la plus récente
+                    try {
+                        $fallbackStmt = $this->db->prepare("SELECT id FROM subjects WHERE nom = ? ORDER BY id DESC LIMIT 1");
+                        $fallbackStmt->execute([$nom]);
+                        $found = (int) $fallbackStmt->fetchColumn();
+                        if ($found > 0) {
+                            $subject_id = $found;
+                        } else {
+                            // journaliser pour investigation
+                            error_log("[SubjectController] lastInsertId invalid and fallback failed for subject '{$nom}'");
+                        }
+                    } catch (\Throwable $e) {
+                        error_log("[SubjectController] fallback select id failed: " . $e->getMessage());
+                    }
+                }
 
                 $academicYearId = $this->academicYearService->getActiveYearId();
                 $stmt = $this->db->prepare("INSERT INTO subject_classes (subject_id, class_id, academic_year_id) VALUES (?, ?, ?)");
                 foreach ($classes_ids as $cid) {
                     $stmt->execute([$subject_id, (int) $cid, $academicYearId]);
+                }
+
+                // Sauvegarder les compétences si fournies
+                $competencies = $_POST['competencies'] ?? [];
+                if (!empty($competencies) && is_array($competencies)) {
+                    $compStmt = $this->db->prepare("INSERT INTO competencies (subject_id, libelle, position, created_by) VALUES (?, ?, ?, ?)");
+                    $userId = (int) Session::get('user_id');
+                    foreach ($competencies as $index => $libelle) {
+                        $libelle = trim($libelle);
+                        if (!empty($libelle)) {
+                            $compStmt->execute([$subject_id, $libelle, $index + 1, $userId]);
+                        }
+                    }
                 }
 
                 $this->db->commit();
@@ -422,6 +488,12 @@ class SubjectController
         $deptQuery = "SELECT d.id, d.nom, d.teaching_type_id FROM departments d LEFT JOIN teaching_types tt ON d.teaching_type_id = tt.id WHERE d.status = 1 AND (d.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY d.nom ASC";
         $departments = $this->db->query($deptQuery)->fetchAll(PDO::FETCH_ASSOC);
         $subjectGroups = $this->db->query("SELECT id, libelle, teaching_type_id FROM subject_groups WHERE status = 1 ORDER BY libelle ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+        // Récupérer les compétences existantes de la matière
+        $stmtComp = $this->db->prepare("SELECT id, libelle, description, position FROM competencies WHERE subject_id = ? ORDER BY position, libelle");
+        $stmtComp->execute([$id]);
+        $existingCompetencies = $stmtComp->fetchAll(PDO::FETCH_ASSOC);
+
         include __DIR__ . '/../Views/subjects/edit.php';
     }
 
@@ -525,6 +597,25 @@ class SubjectController
                 $stmt_ins = $this->db->prepare("INSERT INTO subject_classes (subject_id, class_id, academic_year_id) VALUES (?, ?, ?)");
                 foreach ($classes_ids as $cid) {
                     $stmt_ins->execute([$id, (int) $cid, $academicYearId]);
+                }
+
+                // Mise à jour des compétences
+                $competencies = $_POST['competencies'] ?? [];
+                
+                // Supprimer les compétences existantes de cette matière
+                $delCompStmt = $this->db->prepare("DELETE FROM competencies WHERE subject_id = ?");
+                $delCompStmt->execute([$id]);
+                
+                // Réinsérer les nouvelles compétences
+                if (!empty($competencies) && is_array($competencies)) {
+                    $compStmt = $this->db->prepare("INSERT INTO competencies (subject_id, libelle, position, created_by) VALUES (?, ?, ?, ?)");
+                    $userId = (int) Session::get('user_id');
+                    foreach ($competencies as $index => $libelle) {
+                        $libelle = trim($libelle);
+                        if (!empty($libelle)) {
+                            $compStmt->execute([$id, $libelle, $index + 1, $userId]);
+                        }
+                    }
                 }
 
                 $this->db->commit();

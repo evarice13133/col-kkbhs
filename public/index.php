@@ -30,6 +30,7 @@ use App\Controllers\HonorRollController;
 use App\Controllers\DepartmentController;
 use App\Controllers\LandingController;
 use App\Controllers\TeachingTypeController;
+use App\Controllers\TeachingFormController;
 use App\Controllers\PaymentController;
 use App\Controllers\DiscountController;
 use App\Controllers\ScholarshipController;
@@ -41,6 +42,7 @@ use App\Controllers\SubjectGroupController;
 use App\Controllers\LevelController;
 use App\Controllers\TranscriptController;
 use App\Controllers\TimetableController;
+use App\Controllers\CompetencyController;
 
 
 
@@ -400,6 +402,26 @@ elseif (strpos($path, '/cycles') === 0) {
         $c->toggleStatus($_GET['id'] ?? 0);
     elseif ($path === '/departments/delete')
         $c->delete($_GET['id'] ?? 0);
+} elseif (strpos($path, '/teaching_forms') === 0) {
+    if (!Session::isLogged() || (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'direction_academique'], true) && !\App\Core\PermissionManager::hasPermission('manage_teaching_forms'))) {
+        header('Location: /');
+        exit;
+    }
+    $c = new TeachingFormController();
+    if ($path === '/teaching_forms' || $path === '/teaching_forms/' || $path === '/teaching_forms/index.php')
+        $c->index();
+    elseif ($path === '/teaching_forms/store' && $method === 'POST')
+        $c->store();
+    elseif ($path === '/teaching_forms/update' && $method === 'POST')
+        $c->update($_GET['id'] ?? 0);
+    elseif ($path === '/teaching_forms/toggle')
+        $c->toggleStatus($_GET['id'] ?? 0);
+    elseif ($path === '/teaching_forms/delete')
+        $c->delete($_GET['id'] ?? 0);
+    else {
+        header('Location: /teaching_forms');
+        exit;
+    }
 } elseif (strpos($path, '/classes') === 0) {
     if (!Session::isLogged() || (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'direction_academique'], true) && !\App\Core\PermissionManager::hasPermission('view_classes'))) {
         header('Location: /');
@@ -541,6 +563,8 @@ elseif (strpos($path, '/teachers') === 0) {
         $c->delete($_GET['id'] ?? 0);
     elseif ($path === '/teachers/assign')
         $c->assign($_GET['id'] ?? 0);
+    elseif ($path === '/teachers/select_teacher')
+        $c->selectTeacher();
     elseif ($path === '/teachers/direct_assign')
         $c->directAssign();
     elseif ($path === '/teachers/store_assignment' && $method === 'POST')
@@ -674,12 +698,30 @@ elseif (strpos($path, '/subjects') === 0) {
         $c->toggleStatus($_GET['id'] ?? 0);
 }
 
-// ====== ROUTES: ANNEES ACADEMIQUES ======
-elseif (strpos($path, '/academic_years') === 0) {
-    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'it_manager'])) {
-        header('Location: /');
+// ====== ROUTES: COMPETENCIES ======
+elseif (strpos($path, '/competencies') === 0) {
+    if (!Session::isLogged()) {
+        header('Location: /login');
         exit;
     }
+    $c = new CompetencyController();
+    if ($path === '/competencies/api/by-subject' && $method === 'GET')
+        $c->apiBySubject();
+    elseif ($path === '/competencies/api/create' && $method === 'POST')
+        $c->apiCreate();
+    elseif ($path === '/competencies/api/update' && $method === 'POST')
+        $c->apiUpdate();
+    elseif ($path === '/competencies/api/delete' && $method === 'POST')
+        $c->apiDelete();
+    elseif ($path === '/competencies/api/link-to-evaluation' && $method === 'POST')
+        $c->apiLinkToEvaluation();
+    elseif ($path === '/competencies/api/get-evaluation-competencies' && $method === 'GET')
+        $c->apiGetEvaluationCompetencies();
+}
+
+// ====== ROUTES: ANNEES ACADEMIQUES ======
+elseif (strpos($path, '/academic_years') === 0) {
+    \App\Core\PermissionManager::requirePermission('manage_academic_years');
     // On load le controlleur avec le namespace importé
     $c = new AcademicYearController();
     if ($path === '/academic_years')

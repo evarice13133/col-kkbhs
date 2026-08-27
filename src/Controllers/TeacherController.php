@@ -58,28 +58,74 @@ class TeacherController
         // Mode affectation rapide depuis le dashboard
         $assignContext = null;
         if (isset($_GET['assign_subject']) && isset($_GET['assign_class'])) {
-            $stmt = $this->db->prepare("
-                SELECT s.nom as subject_name, c.nom as class_name, tt.actif
-                FROM subjects s
-                JOIN classes c
-                JOIN teaching_types tt ON s.teaching_type_id = tt.id
-                WHERE s.id = ? AND c.id = ?
-            ");
-            $stmt->execute([(int) $_GET['assign_subject'], (int) $_GET['assign_class']]);
-            $assignContext = $stmt->fetch(PDO::FETCH_ASSOC);
-            if ($assignContext && (int) $assignContext['actif'] === 1) {
-                $assignContext['subject_id'] = (int) $_GET['assign_subject'];
-                $assignContext['class_id'] = (int) $_GET['assign_class'];
-            } else {
-                $assignContext = null;
-                Session::setFlash('error', __('subject_not_active_teaching_type') ?? 'La matière doit être rattachée à un type d\'enseignement actif.');
+            $subjectId = (int) $_GET['assign_subject'];
+            $classId = (int) $_GET['assign_class'];
+            
+            // Construire le contexte d'affectation directement avec les IDs fournis
+            // On récupère les noms pour l'affichage, mais on autorise l'affectation même si les données ne sont pas parfaites
+            $subjectName = 'Matière inconnue';
+            $className = 'Classe inconnue';
+            
+            $stmtSubject = $this->db->prepare("SELECT nom FROM subjects WHERE id = ?");
+            $stmtSubject->execute([$subjectId]);
+            if ($subjectRow = $stmtSubject->fetch(PDO::FETCH_ASSOC)) {
+                $subjectName = $subjectRow['nom'];
             }
+            
+            $stmtClass = $this->db->prepare("SELECT nom FROM classes WHERE id = ?");
+            $stmtClass->execute([$classId]);
+            if ($classRow = $stmtClass->fetch(PDO::FETCH_ASSOC)) {
+                $className = $classRow['nom'];
+            }
+            
+            $assignContext = [
+                'subject_name' => $subjectName,
+                'class_name' => $className,
+                'subject_id' => $subjectId,
+                'class_id' => $classId,
+                'actif' => 1
+            ];
         }
 
         // Récupérer les types d'enseignement actifs pour le formulaire (modale/page)
         $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         include __DIR__ . '/../Views/teachers/index.php';
+    }
+
+    /**
+     * Affiche la liste des enseignants pour une affectation rapide depuis le dashboard
+     */
+    public function selectTeacher()
+    {
+        $subjectId = (int) ($_GET['subject_id'] ?? 0);
+        $classId = (int) ($_GET['class_id'] ?? 0);
+        
+        error_log("DEBUG selectTeacher: subject_id=$subjectId, class_id=$classId");
+        
+        if (!$subjectId || !$classId) {
+            Session::setFlash('error', __('incomplete_assignment_data'));
+            header("Location: /");
+            exit;
+        }
+        
+        // Récupérer les informations de la matière et de la classe pour l'affichage
+        $stmtSubject = $this->db->prepare("SELECT nom FROM subjects WHERE id = ?");
+        $stmtSubject->execute([$subjectId]);
+        $subjectData = $stmtSubject->fetch(PDO::FETCH_ASSOC);
+        
+        error_log("DEBUG selectTeacher: subjectData=" . ($subjectData ? json_encode($subjectData) : 'null'));
+        
+        $stmtClass = $this->db->prepare("SELECT nom FROM classes WHERE id = ?");
+        $stmtClass->execute([$classId]);
+        $classData = $stmtClass->fetch(PDO::FETCH_ASSOC);
+        
+        error_log("DEBUG selectTeacher: classData=" . ($classData ? json_encode($classData) : 'null'));
+        
+        // Récupérer tous les enseignants
+        $teachers = $this->db->query("SELECT id, nom, prenom, username FROM users WHERE role = 'teacher' ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        
+        include __DIR__ . '/../Views/teachers/select_teacher.php';
     }
 
     /**
@@ -410,20 +456,6 @@ class TeacherController
         $academicYearId = $this->academicYearService->getActiveYearId();
 
         try {
-            // Vérifier que la matière appartient à un type d'enseignement actif
-            $stmtTtCheck = $this->db->prepare("
-                SELECT COUNT(*) 
-                FROM subjects s
-                JOIN teaching_types tt ON s.teaching_type_id = tt.id
-                WHERE s.id = ? AND tt.actif = 1
-            ");
-            $stmtTtCheck->execute([$subject_id]);
-            if ((int) $stmtTtCheck->fetchColumn() === 0) {
-                Session::setFlash('error', __('subject_not_active_teaching_type') ?? 'La matière doit être rattachée à un type d\'enseignement actif.');
-                header("Location: /teachers");
-                exit;
-            }
-
             // Vérifier s'il y a déjà une affectation pour ce couple Matière-Classe
             $stmtCheck = $this->db->prepare("SELECT user_id FROM teacher_assignments WHERE subject_id = ? AND class_id = ? AND academic_year_id = ?");
             $stmtCheck->execute([$subject_id, $class_id, $academicYearId]);

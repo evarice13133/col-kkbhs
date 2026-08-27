@@ -116,7 +116,8 @@
                                             'id' => (int)$dept['id'],
                                             'nom' => $dept['nom'],
                                             'code' => $dept['code'],
-                                            'teaching_type_id' => (int)$dept['teaching_type_id']
+                                            'teaching_type_id' => (int)$dept['teaching_type_id'],
+                                            'teaching_form_id' => (int)($dept['teaching_form_id'] ?? 0)
                                         ]), ENT_QUOTES, 'UTF-8') ?>)">
                                             <i class="bi bi-pencil text-primary"></i> <?= __('edit') ?>
                                         </button>
@@ -238,6 +239,18 @@
                                         <?= htmlspecialchars((string) $tt['nom']) ?>
                                     </option>
                                 <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-2">
+                            <?= __('teaching_form') ?? 'Forme d\'enseignement' ?> <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group-modern">
+                            <span class="input-group-text-modern"><i class="bi bi-bookmarks"></i></span>
+                            <select name="teaching_form_id" id="dept_teaching_form_id" class="form-select premium-input" required disabled>
+                                <option value="" disabled selected><?= __('select_teaching_form') ?? 'Sélectionner la forme' ?></option>
                             </select>
                         </div>
                     </div>
@@ -558,11 +571,51 @@
 </style>
 
 <script>
+const teachingFormsByType = <?= json_encode($teachingFormsByType ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP) ?>;
+const teachingFormPlaceholder = <?= json_encode(__('select_teaching_form') ?? 'Sélectionner la forme') ?>;
+const noTeachingFormForTypeText = <?= json_encode(__('no_teaching_form_for_type') ?? 'Aucune forme d’enseignement disponible pour ce type') ?>;
+
+function populateTeachingFormSelect(typeId, selectedFormId = null) {
+    const select = document.getElementById('dept_teaching_form_id');
+    if (!select) return;
+
+    const forms = typeId && teachingFormsByType[typeId] ? teachingFormsByType[typeId] : [];
+    select.innerHTML = '<option value="" disabled selected>' + teachingFormPlaceholder + '</option>';
+
+    if (!forms.length) {
+        select.disabled = true;
+        select.innerHTML = '<option value="" disabled selected>' + noTeachingFormForTypeText + '</option>';
+        return;
+    }
+
+    select.disabled = false;
+    forms.forEach(function (form) {
+        const option = document.createElement('option');
+        option.value = String(form.id);
+        option.textContent = form.nom + (form.code ? ' (' + form.code + ')' : '');
+        if (String(selectedFormId) === String(form.id)) {
+            option.selected = true;
+        }
+        select.appendChild(option);
+    });
+
+    if (selectedFormId !== null && selectedFormId !== '' && String(selectedFormId) !== '0') {
+        select.value = String(selectedFormId);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.getElementById('search-input');
     const teachingTypeSelect = document.getElementById('teaching-type-select');
     const filterForm = document.getElementById('dept-filter-form');
+    const deptTeachingTypeSelect = document.getElementById('dept_teaching_type_id');
     let debounceTimer;
+
+    if (deptTeachingTypeSelect) {
+        deptTeachingTypeSelect.addEventListener('change', function () {
+            populateTeachingFormSelect(this.value, null);
+        });
+    }
 
     if (searchInput && filterForm) {
         searchInput.addEventListener('input', function () {
@@ -591,7 +644,9 @@ function openCreateDepartmentModal() {
     
     document.getElementById('dept_nom').value = '';
     document.getElementById('dept_code').value = '';
-    document.getElementById('dept_teaching_type_id').value = '';
+    const teachingTypeInput = document.getElementById('dept_teaching_type_id');
+    teachingTypeInput.value = '';
+    populateTeachingFormSelect('', null);
 
     const modal = new bootstrap.Modal(document.getElementById('departmentModal'));
     modal.show();
@@ -608,7 +663,9 @@ function openEditDepartmentModal(dept) {
 
     document.getElementById('dept_nom').value = dept.nom || '';
     document.getElementById('dept_code').value = dept.code || '';
-    document.getElementById('dept_teaching_type_id').value = dept.teaching_type_id || '';
+    const teachingTypeInput = document.getElementById('dept_teaching_type_id');
+    teachingTypeInput.value = dept.teaching_type_id || '';
+    populateTeachingFormSelect(dept.teaching_type_id || '', dept.teaching_form_id || null);
 
     const modal = new bootstrap.Modal(document.getElementById('departmentModal'));
     modal.show();
