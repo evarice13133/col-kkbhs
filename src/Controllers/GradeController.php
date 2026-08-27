@@ -1101,6 +1101,16 @@ class GradeController
 
         $appreciations = $_POST['appreciations'] ?? [];
 
+        $rawCompetencyIds = $_POST['competency_ids'] ?? [];
+
+        if (!is_array($rawCompetencyIds)) {
+            $rawCompetencyIds = [$rawCompetencyIds];
+        }
+
+        $competencyIds = array_values(array_unique(array_map('intval', array_filter($rawCompetencyIds, function ($value) {
+            return $value !== null && $value !== '' && $value !== false;
+        }))));
+
 
 
         $teacher_id = (int) Session::get('user_id');
@@ -1190,15 +1200,33 @@ class GradeController
 
         $activeYear = $this->getActiveAcademicYear();
 
+        if (!$activeYear) {
+            Session::setFlash('error', __('no_active_academic_year') ?? 'Aucune année académique active');
+            header("Location: /notes/saisie?class_id=$class_id&subject_id=$subject_id");
+            exit;
+        }
 
+        if (empty($competencyIds)) {
+            $competencyCheck = $this->db->prepare("
+                SELECT competency_id
+                FROM evaluation_competencies
+                WHERE class_id = ?
+                  AND subject_id = ?
+                  AND academic_year_id = ?
+                  AND periode = ?
+                ORDER BY position ASC
+            ");
+            $competencyCheck->execute([$class_id, $subject_id, (int) $activeYear['id'], $periode]);
+            $competencyIds = array_values(array_unique(array_map('intval', $competencyCheck->fetchAll(PDO::FETCH_COLUMN))));
+        }
 
-
-
-
+        if (empty($competencyIds)) {
+            Session::setFlash('error', __('select_at_least_one_competency') ?? 'Veuillez sélectionner au moins une compétence pour cette évaluation.');
+            header("Location: /notes/saisie?class_id=$class_id&subject_id=$subject_id");
+            exit;
+        }
 
         try {
-
-
 
             $existingStudentIds = $this->getExistingGradeStudentIds($subject_id, $periode, (int) $activeYear['id'], array_keys($notes));
 

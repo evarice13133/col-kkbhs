@@ -44,7 +44,8 @@ const UX = (function () {
             // 1. Intercepte les soumissions de formulaires pour montrer le chargement
             document.addEventListener('submit', function (e) {
                 const form = e.target;
-                if (!form.hasAttribute('data-ajax') && !form.classList.contains('no-loader')) {
+                const isManualSubmit = form.hasAttribute('data-manual-submit') || form.dataset.manualSubmit === 'true';
+                if (!form.hasAttribute('data-ajax') && !form.classList.contains('no-loader') && !isManualSubmit) {
                     AlertService.loading();
                 }
             });

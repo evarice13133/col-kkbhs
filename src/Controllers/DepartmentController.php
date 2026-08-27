@@ -36,11 +36,11 @@ class DepartmentController
 
         $q = trim((string) ($_GET['q'] ?? ''));
         $teaching_type_id = !empty($_GET['teaching_type_id']) ? (int) $_GET['teaching_type_id'] : null;
+        $teaching_form_id = !empty($_GET['teaching_form_id']) ? (int) $_GET['teaching_form_id'] : null;
 
         $conditions = [];
         $params = [];
 
-        // Ne sélectionner que les départements rattachés à un type d'enseignement actif (ou sans type)
         $conditions[] = "(t.actif = 1 OR d.teaching_type_id IS NULL)";
 
         if ($q !== '') {
@@ -54,18 +54,30 @@ class DepartmentController
             $params[] = $teaching_type_id;
         }
 
+        if ($teaching_form_id !== null) {
+            $conditions[] = "d.teaching_form_id = ?";
+            $params[] = $teaching_form_id;
+        }
+
         $whereClause = !empty($conditions) ? " WHERE " . implode(" AND ", $conditions) : "";
-        $query = "SELECT d.*, t.nom as teaching_type_nom FROM departments d LEFT JOIN teaching_types t ON d.teaching_type_id = t.id" . $whereClause . " ORDER BY d.nom ASC";
+        $query = "SELECT d.*, t.nom as teaching_type_nom, tf.nom as teaching_form_nom FROM departments d LEFT JOIN teaching_types t ON d.teaching_type_id = t.id LEFT JOIN teaching_forms tf ON d.teaching_form_id = tf.id" . $whereClause . " ORDER BY d.nom ASC";
 
         $stmt = $this->db->prepare($query);
         $stmt->execute($params);
         $departments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $teachingTypes = $this->db->query("SELECT * FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $teachingForms = $this->db->query("SELECT * FROM teaching_forms WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $teachingFormsByType = [];
+        foreach ($teachingForms as $form) {
+            $typeId = (int) ($form['teaching_type_id'] ?? 0);
+            $teachingFormsByType[$typeId][] = $form;
+        }
 
         $filters = [
             'q' => $q,
-            'teaching_type_id' => $teaching_type_id
+            'teaching_type_id' => $teaching_type_id,
+            'teaching_form_id' => $teaching_form_id
         ];
 
         include __DIR__ . '/../Views/departments/index.php';
@@ -93,8 +105,18 @@ class DepartmentController
             $nom = trim((string)($_POST['nom'] ?? ''));
             $code = strtoupper(trim((string)($_POST['code'] ?? '')));
             $teaching_type_id = !empty($_POST['teaching_type_id']) ? (int) $_POST['teaching_type_id'] : null;
+            $teaching_form_id = !empty($_POST['teaching_form_id']) ? (int) $_POST['teaching_form_id'] : null;
 
-            if ($nom === '' || $code === '' || !$teaching_type_id) {
+            if ($nom === '' || $code === '' || !$teaching_type_id || !$teaching_form_id) {
+                $error = __('required');
+                $teachingTypes = $this->db->query("SELECT * FROM teaching_types ORDER BY position ASC")->fetchAll(PDO::FETCH_ASSOC);
+                include __DIR__ . '/../Views/departments/create.php';
+                return;
+            }
+
+            $checkForm = $this->db->prepare("SELECT id FROM teaching_forms WHERE id = ? AND teaching_type_id = ? LIMIT 1");
+            $checkForm->execute([$teaching_form_id, $teaching_type_id]);
+            if (!$checkForm->fetch()) {
                 $error = __('required');
                 $teachingTypes = $this->db->query("SELECT * FROM teaching_types ORDER BY position ASC")->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/departments/create.php';
@@ -102,8 +124,8 @@ class DepartmentController
             }
 
             try {
-                $stmt = $this->db->prepare("INSERT INTO departments (nom, code, status, teaching_type_id) VALUES (?, ?, 1, ?)");
-                $stmt->execute([$nom, $code, $teaching_type_id]);
+                $stmt = $this->db->prepare("INSERT INTO departments (nom, code, status, teaching_type_id, teaching_form_id) VALUES (?, ?, 1, ?, ?)");
+                $stmt->execute([$nom, $code, $teaching_type_id, $teaching_form_id]);
                 
                 Session::setFlash('success', __('created_success'));
                 header("Location: /departments");
@@ -133,6 +155,7 @@ class DepartmentController
         }
 
         $teachingTypes = $this->db->query("SELECT * FROM teaching_types ORDER BY position ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $teachingForms = $this->db->query("SELECT * FROM teaching_forms WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         include __DIR__ . '/../Views/departments/edit.php';
     }
 
@@ -147,25 +170,36 @@ class DepartmentController
             $nom = trim((string)($_POST['nom'] ?? ''));
             $code = strtoupper(trim((string)($_POST['code'] ?? '')));
             $teaching_type_id = !empty($_POST['teaching_type_id']) ? (int) $_POST['teaching_type_id'] : null;
+            $teaching_form_id = !empty($_POST['teaching_form_id']) ? (int) $_POST['teaching_form_id'] : null;
 
-            if ($nom === '' || $code === '' || !$teaching_type_id) {
+            if ($nom === '' || $code === '' || !$teaching_type_id || !$teaching_form_id) {
                 $error = __('required');
-                $department = ['id' => $id, 'nom' => $nom, 'code' => $code, 'teaching_type_id' => $teaching_type_id];
+                $department = ['id' => $id, 'nom' => $nom, 'code' => $code, 'teaching_type_id' => $teaching_type_id, 'teaching_form_id' => $teaching_form_id];
+                $teachingTypes = $this->db->query("SELECT * FROM teaching_types ORDER BY position ASC")->fetchAll(PDO::FETCH_ASSOC);
+                include __DIR__ . '/../Views/departments/edit.php';
+                return;
+            }
+
+            $checkForm = $this->db->prepare("SELECT id FROM teaching_forms WHERE id = ? AND teaching_type_id = ? LIMIT 1");
+            $checkForm->execute([$teaching_form_id, $teaching_type_id]);
+            if (!$checkForm->fetch()) {
+                $error = __('required');
+                $department = ['id' => $id, 'nom' => $nom, 'code' => $code, 'teaching_type_id' => $teaching_type_id, 'teaching_form_id' => $teaching_form_id];
                 $teachingTypes = $this->db->query("SELECT * FROM teaching_types ORDER BY position ASC")->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/departments/edit.php';
                 return;
             }
 
             try {
-                $stmt = $this->db->prepare("UPDATE departments SET nom = ?, code = ?, teaching_type_id = ? WHERE id = ?");
-                $stmt->execute([$nom, $code, $teaching_type_id, (int)$id]);
+                $stmt = $this->db->prepare("UPDATE departments SET nom = ?, code = ?, teaching_type_id = ?, teaching_form_id = ? WHERE id = ?");
+                $stmt->execute([$nom, $code, $teaching_type_id, $teaching_form_id, (int)$id]);
                 
                 Session::setFlash('success', __('updated_success'));
                 header("Location: /departments");
                 exit;
             } catch (\PDOException $e) {
                 $error = __('error_generic');
-                $department = ['id' => $id, 'nom' => $nom, 'code' => $code, 'teaching_type_id' => $teaching_type_id];
+                $department = ['id' => $id, 'nom' => $nom, 'code' => $code, 'teaching_type_id' => $teaching_type_id, 'teaching_form_id' => $teaching_form_id];
                 $teachingTypes = $this->db->query("SELECT * FROM teaching_types ORDER BY position ASC")->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/departments/edit.php';
             }

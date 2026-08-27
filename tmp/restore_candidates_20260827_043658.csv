@@ -1,0 +1,320 @@
+subject_id,nom,groupe,matched_group_id,matched_group_libelle,match_type
+15,LITTÉRATURE,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+17,"LANGUE FRANçAISE","Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+18,PHILISOPHIE,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+19,PHILISOPHIE,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+20,ANGLAIS,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+21,"LANGUE VIVANTE II","Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+44,LITTÉRATURE,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+45,"LANGUE FRANçAISE","Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+46,ANGLAIS,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+48,PHILOSOPHIE,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+49,PHILOSOPHIE,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+50,HISTOIRE,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+51,GEOGRAPHIE,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+52,ECM,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+58,HISTOIRE,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+59,GEOGRAPHIE,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+63,Histoire/Géographie,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+64,Anglais,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+65,"Economie d'entreprise","Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+66,Français,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+70,Droit,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+71,ECM,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+72,"Economie générale","Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+80,Philosophie,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+240,Français,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+241,Anglais,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+242,ECM,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+259,Entrepreneuriat,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+269,Anglais,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+270,ECM,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+271,HISTOIRE/Géographie,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+274,Français,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+299,ECM,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+312,"Législation du travail","Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+331,"Financial Accounting","Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+334,Economic,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+335,"Corporate Accounting","Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+341,Economic,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+342,Geography,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+344,English,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+350,French,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+353,"Literature in  English","Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+354,History,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+357,ENGLISH,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+359,FRENCH,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+370,ENGLISH,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+372,FRENCH,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+383,ENGLISH,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+384,LITERATURE,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+385,FRENCH,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+386,GEOGRAPHY,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+388,HISTORY,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+403,ECM,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+405,Hygiène,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+410,Anglais,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+412,Français,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+413,Législation,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+417,Français,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+422,"Etude de  texte","Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+423,"Correction orthographie","Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+424,"Expression ecrite","Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+425,Anglais,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+426,ECM,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+427,Espagnol,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+428,HISTOIRE,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+429,Geographie,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+453,Français,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+454,Anglais,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+456,Législation,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+458,Commerce,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+463,Commerce,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+467,ECM,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+475,Histoire/Géographie,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+477,Français,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+479,"Économie générale","Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+481,PRP,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+484,ECM,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+489,EPS,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+492,Anglais,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+493,ECM,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+494,Informatique,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+495,Législation,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+496,Français,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+509,"Matière Inactive 6a65595b9953a","Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+511,"Matière Inactive 6a655981c60fe","Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+531,TEST_AUTO_20260826_054246,"Groupe 1",1,"Groupe 1 - Matières Littéraires",like
+16,INFORMATIQUE,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+22,GEOGRAPHIE,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+23,HISTOIRE,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+24,ECM,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+25,MATHEMATIQUES,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+26,SCIENCES,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+28,"LANGUES NATIONALLES","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+30,"EDUCATION ARTISTIQUE","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+33,MATHEMATIQUES,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+34,MATHEMATIQUES,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+35,MATHEMATIQUES,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+36,PHYSIQUE,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+37,PHYSIQUE,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+38,CHIMIE,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+39,CHIMIE,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+40,INFORMATIQUE,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+41,INFORMATIQUE,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+42,INFORMATIQUE,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+43,SVTEEHB,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+47,SVTEEHB,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+53,SVTEEHB,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+54,MATHEMATIQUES,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+55,CHIMIE,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+56,INFORMATIQUE,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+57,PHYSIQUE,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+67,"Mathematique Générale","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+68,"Redaction Professionnelle","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+73,GIF,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+76,Mathematiques,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+77,"Finance d'entreprise","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+78,"Mathématiques Appliquées","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+79,Management,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+81,MOB,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+82,RPC,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+83,OTA,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+84,"Prise de parole rapide","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+85,TAS,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+86,Bureautique,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+87,Comptabilité,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+88,Statistiques,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+89,"Examen de Laboratoire","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+90,"Gestion des ressources humaines","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+91,GSS,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+92,"Santé publique","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+93,"Soins infirmiers","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+94,"Terminologie Médical","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+95,BPPH,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+96,Bureautique,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+97,"Science physique","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+98,"Action sociale","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+234,"Metier et formation","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+236,"Connaissance des materiaux","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+237,"Dessin technique","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+243,Informatique,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+244,Mathematiques,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+245,"Sciences physique","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+247,Materiaux,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+248,Ajustage,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+249,RESEO,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+250,"Technologie professionnel","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+251,Tracage,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+252,RESEO,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+253,"Schema electrique","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+256,Technologie,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+257,"Machine electrique","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+258,"Dessin technique","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+262,"Dessin Industriel","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+263,Exploitation,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+264,"Mecanique Appliquée","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+265,Métré,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+266,"Procédé de Construction","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+267,Réglementation,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+268,Topographie,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+272,INFORMATIQUE,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+273,Mathematiques,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+275,"Sciences Physiques","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+276,"Dessin Technique","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+278,Montage,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+279,TPFA,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+280,"Travaux Pratique","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+281,"Mecanique Appliquée","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+282,PPRO,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+283,Traçage,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+284,"Mecanique Appliquée","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+285,Laboratoire,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+286,MPN,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+287,Maintenance,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+288,"Travaux Pratique","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+289,"Technologie des Materiaux","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+290,"Processus Previsionnel","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+291,"SCHEMA ELECTRIQUE","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+292,"Electronique et electrotechnique","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+293,"Technologie Schema","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+294,"Sols et Materiaux","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+295,ANALYSE,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+296,"Dessin de Mode","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+297,PATRONAGE,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+298,"Dessin Technique","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+300,Technologie,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+301,Mathematique,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+302,"Dessin de Mode","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+303,Coupe,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+304,Couture,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+306,Bureautique,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+307,"Rédaction Professionnel","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+308,PRP,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+309,DCC,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+310,OTA,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+311,Commerce,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+314,"Pratique comptable","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+315,"Travaux comptable","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+317,"Mathematique Commerciale","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+319,"Dessin technique","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+320,MOB,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+321,"Terminologie Médical","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+322,Deontologie,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+323,GEH,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+325,"Technologie Electrique","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+326,"Technologie Mecanique","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+327,"Reception d'un vehicule","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+328,"Moteur CI","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+329,"Procedes de Realisation","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+330,"Devis et estimation","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+333,"Business Managemennt","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+336,"Business Maths","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+337,"Commerce And financial","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+343,ICT,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+345,"Pure Ma thematics and statistics","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+346,Biology,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+347,Statistics,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+348,Chemistry,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+349,Physic,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+352,Mathematics,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+355,"Food and nutrition","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+364,"COMPUTER STUDIES","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+365,BIOLOGY,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+366,CHEMISTRY,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+367,MATHEMATICS,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+368,PHYSICS,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+377,"COMPUTER STUDIES","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+379,CHEMISTRY,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+380,MATHEMATICS,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+381,PHYSICS,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+382,"C.S. (General Science)","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+387,ECONOMICS,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+390,"COMPUTER STUDIES","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+391,BIOLOGY,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+392,CHEMISTRY,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+393,MATHEMATICS,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+394,PHYSICS,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+395,"C.S. (General Science)","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+396,"F/N/H/BIO (combinée)","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+397,"A.M.A / LOGIC / PHIL  (selon options)","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+398,"ELECTRICAL TECHNOLOGIE AND DIASRAM","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+399,"ELECTRICAL TEST AND MEASUREMENT","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+400,"ELCTRICAL MACHINE","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+401,"ELECTRICAL AND ELECTRONIQUE CIRCUITS","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+407,Mathematique,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+408,Mathematique,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+409,Informatique,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+411,"Sciences physique","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+414,Materiaux,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+415,Dessin,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+416,Dessin,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+418,Informatique,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+420,"Science physique","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+421,MATHEMATIQUES,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+431,PCT,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+432,Informatique,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+433,Mathematque,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+434,SVTEEHB,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+435,ESF,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+436,"Schéma électrique","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+437,"Circuit électrique","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+438,PID,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+439,"Dessin technique","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+440,"Essaie et mesure","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+441,"Circuit électrique","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+442,"Essaie et mesure","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+445,Production,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+446,Mathematics,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+447,H.biology,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+449,"Technologie professionnelle","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+450,"Dessin technique","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+451,Traçage,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+452,RESEO,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+455,"Mécanique Appliqué","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+457,RESEO,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+459,B.Maths,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+460,Accounting,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+462,PDC,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+464,"Science physique","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+465,"Comptabilité d'entreprise","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+466,"Mathematique Appliqué","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+468,MOB,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+469,Informatique,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+470,RPC,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+473,PCQ,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+476,Anglais,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+478,Mathematique,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+480,OTA,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+482,Bureautique,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+483,"Comptabilité financière","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+485,INFORMATIQUE,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+488,"Dessin de Mode","Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+497,MATHEMATIQUES,"Groupe 2",2,"Groupe 2 - Matières Scientifiques",like
+27,TM,"Groupe 3",3,"Groupe 3 - Développement Personnel",like
+31,"TRAVAIL MANUEL","Groupe 3",3,"Groupe 3 - Développement Personnel",like
+32,EPS,"Groupe 3",3,"Groupe 3 - Développement Personnel",like
+60,EPS,"Groupe 3",3,"Groupe 3 - Développement Personnel",like
+61,"TRAVAIL MANUEL","Groupe 3",3,"Groupe 3 - Développement Personnel",like
+74,EPS,"Groupe 3",3,"Groupe 3 - Développement Personnel",like
+75,"Travail Manuel","Groupe 3",3,"Groupe 3 - Développement Personnel",like
+238,EPS,"Groupe 3",3,"Groupe 3 - Développement Personnel",like
+239,"Travail manuel","Groupe 3",3,"Groupe 3 - Développement Personnel",like
+246,"Sante, securite, et envirronnement","Groupe 3",3,"Groupe 3 - Développement Personnel",like
+260,EPS,"Groupe 3",3,"Groupe 3 - Développement Personnel",like
+261,"Travail Manuel","Groupe 3",3,"Groupe 3 - Développement Personnel",like
+277,Entrepreneuriat,"Groupe 3",3,"Groupe 3 - Développement Personnel",like
+305,Hygiène,"Groupe 3",3,"Groupe 3 - Développement Personnel",like
+316,Hygiène,"Groupe 3",3,"Groupe 3 - Développement Personnel",like
+338,Entrepreuneurship,"Groupe 3",3,"Groupe 3 - Développement Personnel",like
+351,Citizenship,"Groupe 3",3,"Groupe 3 - Développement Personnel",like
+363,"CITIZENSHIP EDUCATION","Groupe 3",3,"Groupe 3 - Développement Personnel",like
+376,"CITIZENSHIP EDUCATION","Groupe 3",3,"Groupe 3 - Développement Personnel",like
+389,"CITIZENSHIP EDUCATION","Groupe 3",3,"Groupe 3 - Développement Personnel",like
+406,"Travail manuel","Groupe 3",3,"Groupe 3 - Développement Personnel",like
+419,"Travail manuel","Groupe 3",3,"Groupe 3 - Développement Personnel",like
+444,Eps,"Groupe 3",3,"Groupe 3 - Développement Personnel",like
+448,Eps,"Groupe 3",3,"Groupe 3 - Développement Personnel",like
+461,HYGIÈNE,"Groupe 3",3,"Groupe 3 - Développement Personnel",like
+486,EPS,"Groupe 3",3,"Groupe 3 - Développement Personnel",like
+487,"Travail manuel","Groupe 3",3,"Groupe 3 - Développement Personnel",like

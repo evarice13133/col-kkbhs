@@ -208,6 +208,26 @@ $appreciationLabels = [
         box-shadow: 0 18px 40px rgba(124, 58, 237, 0.5);
     }
 
+    .workflow-step {
+        opacity: 0.7;
+    }
+
+    .workflow-step.active {
+        color: #1d4ed8;
+        opacity: 1;
+        font-weight: 600;
+    }
+
+    .workflow-step.done {
+        color: #047857;
+        opacity: 1;
+        font-weight: 600;
+    }
+
+    .workflow-separator {
+        opacity: 0.5;
+    }
+
     @media (max-width: 767.98px) {
         .info-header-card {
             padding: 1.25rem 1rem !important;
@@ -317,6 +337,70 @@ $appreciationLabels = [
             </div>
         </div>
 
+        <div class="small text-muted-theme mb-3">
+            <span id="gradeWorkflowSummary" class="fw-bold text-primary">1/4</span>
+            <span class="ms-2">
+                <span class="workflow-step step-evaluation" data-step="evaluation">Évaluation</span>
+                <span class="workflow-separator mx-1">→</span>
+                <span class="workflow-step step-competency" data-step="competency">Compétence</span>
+                <span class="workflow-separator mx-1">→</span>
+                <span class="workflow-step step-notes" data-step="notes">Notes</span>
+                <span class="workflow-separator mx-1">→</span>
+                <span class="workflow-step step-save" data-step="save">Enregistrement</span>
+            </span>
+        </div>
+
+        <!-- Competency Selection Section -->
+        <div class="modern-card border-0 shadow-sm rounded-4 mb-4 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold m-0 text-info d-flex align-items-center gap-2 fs-6">
+                    <i class="bi bi-list-check"></i> <?= __('evaluation_competencies') ?? 'Compétences de l\'évaluation' ?>
+                </h6>
+                <span class="badge bg-info bg-opacity-10 text-info rounded-pill px-3 py-1 extra-small fw-bold">
+                    <?= __('max_2_competencies') ?? 'Max 2 compétences' ?>
+                </span>
+            </div>
+            
+            <div class="row g-3">
+                <div class="col-md-5">
+                    <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">
+                        <?= __('competency_1') ?? 'Compétence 1' ?>
+                    </label>
+                    <div class="d-flex gap-2">
+                        <select id="competency1Select" name="competency_ids[]" class="form-select premium-input flex-grow-1">
+                            <option value=""><?= __('select_competency') ?? 'Sélectionner une compétence' ?></option>
+                        </select>
+                        <button type="button" class="btn btn-outline-info rounded-circle p-2" onclick="openCompetencyModal(1)" title="<?= __('create_new_competency') ?? 'Créer une nouvelle compétence' ?>">
+                            <i class="bi bi-plus-lg"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">
+                        <?= __('competency_2') ?? 'Compétence 2 (optionnelle)' ?>
+                    </label>
+                    <div class="d-flex gap-2">
+                        <select id="competency2Select" name="competency_ids[]" class="form-select premium-input flex-grow-1">
+                            <option value=""><?= __('select_competency_optional') ?? 'Aucune (optionnel)' ?></option>
+                        </select>
+                        <button type="button" class="btn btn-outline-info rounded-circle p-2" onclick="openCompetencyModal(2)" title="<?= __('create_new_competency') ?? 'Créer une nouvelle compétence' ?>">
+                            <i class="bi bi-plus-lg"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="button" id="saveCompetenciesBtn" class="btn btn-info rounded-pill px-4 py-2 fw-bold shadow-sm w-100">
+                        <i class="bi bi-check-lg me-2"></i><?= __('save_competencies') ?? 'Enregistrer' ?>
+                    </button>
+                </div>
+            </div>
+            
+            <div id="competencyStatus" class="form-text extra-small text-muted mt-2">
+                <i class="bi bi-info-circle me-1"></i>
+                <?= __('competency_selection_info') ?? 'Sélectionnez les compétences évaluées pour cette évaluation. Vous pouvez en créer de nouvelles si nécessaire.' ?>
+            </div>
+        </div>
+
         <div class="registry-card shadow-sm overflow-hidden">
             <div class="table-responsive">
                 <table class="table align-middle mb-0 registry-table">
@@ -376,9 +460,339 @@ $appreciationLabels = [
     </form>
 </div>
 
+<div class="modal fade" id="newCompetencyModal" tabindex="-1" aria-labelledby="newCompetencyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <form id="newCompetencyForm" class="no-loader" data-manual-submit="true">
+                <input type="hidden" id="competencySlotInput" value="1">
+                <div class="modal-header border-0 pb-2" style="background: linear-gradient(135deg, rgba(67,97,238,0.08), rgba(124,58,237,0.08));">
+                    <div>
+                        <h5 class="modal-title fw-bold mb-0" id="newCompetencyModalLabel"><?= __('create_new_competency') ?? 'Créer une nouvelle compétence' ?></h5>
+                        <small class="text-muted">
+                            <?= __('subject') ?? 'Matière' ?>: <?= htmlspecialchars((string) $subjectInfo['nom']) ?>
+                        </small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body px-4 py-3">
+                    <div class="mb-3">
+                        <label for="newCompetencyName" class="form-label fw-bold small text-uppercase text-muted-theme">
+                            <?= __('competency_name') ?? 'Nom de la compétence' ?>
+                        </label>
+                        <input type="text" id="newCompetencyName" class="form-control premium-input" required maxlength="255" placeholder="Ex. : Comprendre les fractions">
+                    </div>
+                    <div class="mb-0">
+                        <label for="newCompetencyDescription" class="form-label fw-bold small text-uppercase text-muted-theme">
+                            <?= __('description') ?? 'Description' ?>
+                        </label>
+                        <textarea id="newCompetencyDescription" class="form-control premium-input" rows="3" placeholder="Description optionnelle..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-2">
+                    <button type="button" class="btn btn-light-theme rounded-pill px-3" data-bs-dismiss="modal"><?= __('cancel') ?? 'Annuler' ?></button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">
+                        <i class="bi bi-plus-lg me-2"></i><?= __('create') ?? 'Créer' ?>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const appreciationLabels = <?= json_encode($appreciationLabels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+
+        // Competency Management for Grade Entry
+        const classId = <?= $class_id ?>;
+        const subjectId = <?= $subject_id ?>;
+        const periode = '<?= htmlspecialchars((string) $periode) ?>';
+        
+        const competency1Select = document.getElementById('competency1Select');
+        const competency2Select = document.getElementById('competency2Select');
+        const saveCompetenciesBtn = document.getElementById('saveCompetenciesBtn');
+        const competencyStatus = document.getElementById('competencyStatus');
+
+        // Load competencies for the subject
+        function loadSubjectCompetencies() {
+            const selectedCompetency1 = competency1Select ? competency1Select.value : '';
+            const selectedCompetency2 = competency2Select ? competency2Select.value : '';
+
+            return fetch(`/competencies/api/by-subject?subject_id=${subjectId}&class_id=${classId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && Array.isArray(data.competencies)) {
+                        [competency1Select, competency2Select].forEach(select => {
+                            if (!select) return;
+
+                            const placeholder = select.id === 'competency2Select'
+                                ? <?= json_encode(__('select_competency_optional') ?? 'Aucune (optionnel)') ?>
+                                : <?= json_encode(__('select_competency') ?? 'Sélectionner une compétence') ?>;
+
+                            const currentValue = select.value;
+                            const nextOptions = ['<option value="">' + placeholder + '</option>'];
+
+                            data.competencies.forEach(comp => {
+                                const option = document.createElement('option');
+                                option.value = String(comp.id);
+                                option.textContent = comp.libelle;
+                                nextOptions.push('<option value="' + String(comp.id) + '">' + (comp.libelle || '') + '</option>');
+                            });
+
+                            select.innerHTML = nextOptions.join('');
+
+                            const preferredValue = currentValue || (select.id === 'competency1Select' ? selectedCompetency1 : selectedCompetency2);
+                            if (preferredValue && Array.from(select.options).some(option => option.value === preferredValue)) {
+                                select.value = preferredValue;
+                            }
+                        });
+
+                        return loadEvaluationCompetencies();
+                    }
+
+                    throw new Error(data.error || <?= json_encode(__('error_loading_competencies') ?? 'Erreur lors du chargement des compétences') ?>);
+                })
+                .catch(error => {
+                    console.error('Error loading competencies:', error);
+                    return null;
+                });
+        }
+
+        // Load competencies already associated with this evaluation
+        function loadEvaluationCompetencies() {
+            return fetch(`/competencies/api/get-evaluation-competencies?class_id=${classId}&subject_id=${subjectId}&periode=${encodeURIComponent(periode)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.competencies && data.competencies.length > 0) {
+                        data.competencies.forEach((comp, index) => {
+                            if (index === 0 && competency1Select) {
+                                competency1Select.value = String(comp.competency_id);
+                            } else if (index === 1 && competency2Select) {
+                                competency2Select.value = String(comp.competency_id);
+                            }
+                        });
+                        updateCompetencyStatus('loaded');
+                        return true;
+                    }
+
+                    if (competency1Select) competency1Select.value = '';
+                    if (competency2Select) competency2Select.value = '';
+                    updateCompetencyStatus('loaded');
+                    return false;
+                })
+                .catch(error => {
+                    console.error('Error loading evaluation competencies:', error);
+                    return null;
+                });
+        }
+
+        // Save competency associations
+        if (saveCompetenciesBtn) {
+            saveCompetenciesBtn.addEventListener('click', function() {
+                const competencyIds = [];
+                
+                if (competency1Select && competency1Select.value) {
+                    competencyIds.push(competency1Select.value);
+                }
+                
+                if (competency2Select && competency2Select.value) {
+                    competencyIds.push(competency2Select.value);
+                }
+
+                if (competencyIds.length === 0) {
+                    alert(<?= json_encode(__('select_at_least_one_competency') ?? 'Veuillez sélectionner au moins une compétence pour cette évaluation') ?>);
+                    return;
+                }
+
+                const uniqueCompetencyIds = [...new Set(competencyIds)];
+
+                if (competencyIds.length !== uniqueCompetencyIds.length) {
+                    alert(<?= json_encode(__('max_2_competencies_error') ?? 'Une compétence ne peut pas être sélectionnée deux fois') ?>);
+                    return;
+                }
+
+                if (uniqueCompetencyIds.length > 2) {
+                    alert(<?= json_encode(__('max_2_competencies_error') ?? 'Maximum 2 compétences autorisées') ?>);
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('class_id', classId);
+                formData.append('subject_id', subjectId);
+                formData.append('periode', periode);
+                uniqueCompetencyIds.forEach(id => formData.append('competency_ids[]', id));
+
+                this.disabled = true;
+                this.innerHTML = '<i class="bi bi-arrow-clockwise me-2 spin"></i><?= __('saving') ?? 'Enregistrement...' ?>';
+
+                fetch('/competencies/api/link-to-evaluation', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateCompetencyStatus('saved');
+                    } else {
+                        alert(data.error || <?= json_encode(__('error_saving_competencies') ?? 'Erreur lors de l\'enregistrement') ?>);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert(<?= json_encode(__('error_saving_competencies') ?? 'Erreur lors de l\'enregistrement') ?>);
+                })
+                .finally(() => {
+                    this.disabled = false;
+                    this.innerHTML = '<i class="bi bi-check-lg me-2"></i><?= __('save_competencies') ?? 'Enregistrer' ?>';
+                });
+            });
+        }
+
+        // Create new competency via modal
+        const competencyModal = document.getElementById('newCompetencyModal');
+        const competencySlotInput = document.getElementById('competencySlotInput');
+        const competencyNameInput = document.getElementById('newCompetencyName');
+        const competencyDescriptionInput = document.getElementById('newCompetencyDescription');
+        const competencyForm = document.getElementById('newCompetencyForm');
+
+        window.openCompetencyModal = function(slot) {
+            if (!competencyModal || !competencySlotInput) return;
+            competencySlotInput.value = String(slot || 1);
+            if (competencyNameInput) {
+                competencyNameInput.value = '';
+                competencyNameInput.focus();
+            }
+            if (competencyDescriptionInput) competencyDescriptionInput.value = '';
+
+            const bootstrapModal = typeof bootstrap !== 'undefined' ? bootstrap.Modal.getOrCreateInstance(competencyModal) : null;
+            if (bootstrapModal) {
+                bootstrapModal.show();
+            }
+        };
+
+        if (competencyForm) {
+            competencyForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+
+                const libelle = (competencyNameInput ? competencyNameInput.value.trim() : '').trim();
+                const description = competencyDescriptionInput ? competencyDescriptionInput.value.trim() : '';
+                const slot = Number(competencySlotInput ? competencySlotInput.value : 1);
+
+                if (!libelle) {
+                    if (competencyNameInput) competencyNameInput.focus();
+                    alert(<?= json_encode(__('enter_competency_name') ?? 'Entrez le nom de la compétence') ?>);
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('subject_id', subjectId);
+                formData.append('class_id', classId);
+                formData.append('libelle', libelle);
+                formData.append('description', description);
+
+                fetch('/competencies/api/create', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (competencyModal && typeof bootstrap !== 'undefined') {
+                            const modalInstance = bootstrap.Modal.getInstance(competencyModal);
+                            if (modalInstance) modalInstance.hide();
+                        }
+
+                        return loadSubjectCompetencies().then(() => {
+                            const select = slot === 1 ? competency1Select : competency2Select;
+                            if (select) {
+                                select.value = String(data.competency.id);
+                                updateCompetencyStatus('changed');
+                            }
+                        });
+                    }
+
+                    throw new Error(data.error || <?= json_encode(__('error_creating_competency') ?? 'Erreur lors de la création') ?>);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert(error.message || <?= json_encode(__('error_creating_competency') ?? 'Erreur lors de la création') ?>);
+                });
+            });
+        }
+
+        function updateGradeWorkflowState() {
+            const stepItems = document.querySelectorAll('.workflow-step');
+            const workflowSummary = document.getElementById('gradeWorkflowSummary');
+            if (!stepItems.length) return;
+
+            const evaluationDone = !!(periode && periode.trim() !== '');
+            const competencyDone = !!Array.from(document.querySelectorAll('#competency1Select, #competency2Select'))
+                .map(select => String(select.value || '').trim())
+                .filter(Boolean).length;
+            const notesDone = !!Array.from(document.querySelectorAll('.js-note-input')).some(input => String(input.value || '').trim() !== '');
+
+            const states = {
+                evaluation: evaluationDone,
+                competency: competencyDone,
+                notes: notesDone,
+                save: competencyDone && notesDone
+            };
+
+            stepItems.forEach(step => {
+                const stepName = step.dataset.step;
+                const isDone = !!states[stepName];
+                const isActive = !isDone && (
+                    (stepName === 'evaluation' && !evaluationDone) ||
+                    (stepName === 'competency' && evaluationDone && !competencyDone) ||
+                    (stepName === 'notes' && evaluationDone && competencyDone && !notesDone) ||
+                    (stepName === 'save' && evaluationDone && competencyDone && notesDone && !states.save)
+                );
+
+                step.classList.toggle('done', isDone);
+                step.classList.toggle('active', isActive);
+            });
+
+            if (workflowSummary) {
+                const completed = Object.values(states).filter(Boolean).length;
+                workflowSummary.textContent = `${completed}/4`;
+            }
+        }
+
+        // Update competency status message
+        function updateCompetencyStatus(status) {
+            if (!competencyStatus) return;
+            
+            const messages = {
+                loaded: '<i class="bi bi-check-circle text-success me-1"></i><?= __('competencies_loaded') ?? 'Compétences chargées' ?>',
+                saved: '<i class="bi bi-check-circle-fill text-success me-1"></i><?= __('competencies_saved') ?? 'Compétences enregistrées avec succès' ?>',
+                changed: '<i class="bi bi-exclamation-circle text-warning me-1"></i><?= __('competencies_changed_not_saved') ?? 'Modifications non enregistrées' ?>'
+            };
+            
+            competencyStatus.innerHTML = messages[status] || competencyStatus.innerHTML;
+        }
+
+        document.querySelectorAll('#competency1Select, #competency2Select, .js-note-input').forEach(input => {
+            input.addEventListener('input', updateGradeWorkflowState);
+            input.addEventListener('change', updateGradeWorkflowState);
+        });
+
+        updateGradeWorkflowState();
+
+        // Track changes to show unsaved status
+        [competency1Select, competency2Select].forEach(select => {
+            if (select) {
+                select.addEventListener('change', function() {
+                    if (competency1Select && competency2Select && competency1Select.value && competency2Select.value && competency1Select.value === competency2Select.value) {
+                        alert(<?= json_encode(__('max_2_competencies_error') ?? 'Une compétence ne peut pas être sélectionnée deux fois') ?>);
+                        this.value = '';
+                    }
+                    updateCompetencyStatus('changed');
+                });
+            }
+        });
+
+        // Initial load
+        loadSubjectCompetencies();
 
         function getAppreciation(note) {
             if (note >= 18) return appreciationLabels.excellent;
@@ -448,6 +862,19 @@ $appreciationLabels = [
         window.confirmGradeSubmission = function() {
             const form = document.getElementById('gradeEntryForm');
             if (!form) return;
+
+            const selectedCompetencyIds = Array.from(document.querySelectorAll('#competency1Select, #competency2Select'))
+                .map(select => String(select.value || '').trim())
+                .filter(Boolean);
+
+            if (selectedCompetencyIds.length === 0) {
+                if (typeof AlertService !== 'undefined') {
+                    AlertService.toast('error', 'Veuillez sélectionner au moins une compétence pour cette évaluation.');
+                } else {
+                    alert('Veuillez sélectionner au moins une compétence pour cette évaluation.');
+                }
+                return;
+            }
 
             const noteInputs = form.querySelectorAll('.js-note-input');
             let hasInvalidGrade = false;

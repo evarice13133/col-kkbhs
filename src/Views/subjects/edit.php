@@ -124,6 +124,62 @@ ob_start();
                     </div>
                 </div>
 
+                <!-- Competencies Section (Optional) -->
+                <div class="row g-3 g-md-4 mb-4 mb-md-5">
+                    <div class="col-12 border-bottom border-theme-light pb-2 mb-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="fw-black text-info m-0 text-uppercase letter-spacing-1">
+                                <?= __('competencies_objectives') ?? 'Compétences / Objectifs' ?>
+                            </h6>
+                            <span class="badge bg-info bg-opacity-10 text-info rounded-pill px-3 py-1 extra-small fw-bold">
+                                <?= __('optional') ?? 'Optionnel' ?>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="p-3 bg-info bg-opacity-5 border border-info border-opacity-25 rounded-4">
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-4">
+                                    <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">
+                                        <?= __('number_of_competencies') ?? 'Nombre de compétences' ?>
+                                    </label>
+                                    <input type="number" id="competencyCount" class="form-control premium-input" 
+                                           min="0" max="20" value="<?= count($existingCompetencies ?? []) ?>" placeholder="0">
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="form-text extra-small text-muted-theme">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        <?= __('competencies_optional_info') ?? 'Laissez à 0 pour ne pas définir de compétences. Les compétences pourront être ajoutées ultérieurement.' ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12" id="competenciesContainer" style="display: none;">
+                        <div class="row g-3" id="competenciesFields">
+                            <?php if (!empty($existingCompetencies)): ?>
+                                <?php foreach ($existingCompetencies as $index => $comp): ?>
+                                    <div class="col-md-6 col-lg-4">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2 py-1 extra-small fw-bold">
+                                                <?= $index + 1 ?>
+                                            </span>
+                                            <input type="text" 
+                                                   name="competencies[]" 
+                                                   class="form-control premium-input" 
+                                                   placeholder="<?= __('competency_placeholder') ?? 'Ex: Comprendre les concepts de base' ?>"
+                                                   value="<?= h($comp['libelle']) ?>"
+                                                   data-index="<?= $index ?>">
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Class Assignment Section -->
                 <div class="row g-3 g-md-4 mb-3 mb-md-4">
                     <div class="col-12 border-bottom border-theme-light pb-2 mb-2">
@@ -258,6 +314,75 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         });
+    }
+
+    // Dynamic Competency Fields Generation
+    const competencyCountInput = document.getElementById('competencyCount');
+    const competenciesContainer = document.getElementById('competenciesContainer');
+    const competenciesFields = document.getElementById('competenciesFields');
+    let existingCompetencies = [];
+
+    // Initialize existing competencies from DOM
+    if (competenciesFields) {
+        const currentInputs = competenciesFields.querySelectorAll('input[type="text"]');
+        existingCompetencies = Array.from(currentInputs).map(input => input.value);
+        
+        // Show container if there are existing competencies
+        if (existingCompetencies.length > 0) {
+            competenciesContainer.style.display = 'block';
+        }
+    }
+
+    if (competencyCountInput) {
+        competencyCountInput.addEventListener('input', function() {
+            const count = Math.max(0, Math.min(20, parseInt(this.value) || 0));
+            generateCompetencyFields(count);
+        });
+    }
+
+    function generateCompetencyFields(count) {
+        // Save existing values
+        const currentInputs = competenciesFields.querySelectorAll('input[type="text"]');
+        existingCompetencies = Array.from(currentInputs).map(input => input.value);
+
+        // Clear existing fields
+        competenciesFields.innerHTML = '';
+
+        if (count > 0) {
+            competenciesContainer.style.display = 'block';
+            
+            for (let i = 0; i < count; i++) {
+                const col = document.createElement('div');
+                col.className = 'col-md-6 col-lg-4';
+                
+                const inputValue = existingCompetencies[i] || '';
+                
+                col.innerHTML = `
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2 py-1 extra-small fw-bold">
+                            ${i + 1}
+                        </span>
+                        <input type="text" 
+                               name="competencies[]" 
+                               class="form-control premium-input" 
+                               placeholder="<?= __('competency_placeholder') ?? 'Ex: Comprendre les concepts de base' ?>"
+                               value="${inputValue}"
+                               data-index="${i}">
+                    </div>
+                `;
+                competenciesFields.appendChild(col);
+            }
+
+            // Focus on first field if it's a new field
+            if (existingCompetencies.length < count) {
+                const firstNewField = competenciesFields.querySelector(`input[data-index="${existingCompetencies.length}"]`);
+                if (firstNewField) {
+                    firstNewField.focus();
+                }
+            }
+        } else {
+            competenciesContainer.style.display = 'none';
+        }
     }
 
     // Dynamic Filtering between Teaching Type, Department, Subject Groups and Classes

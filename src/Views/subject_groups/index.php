@@ -39,7 +39,7 @@ ob_start(); ?>
                 <thead>
                     <tr>
                         <th class="ps-4">Libellé du Groupe</th>
-                        <th>Type d'Enseignement</th>
+                        <th><?= __('teaching_form') ?? 'Forme d\'enseignement' ?> <span class="text-muted small">/ <?= __('teaching_type') ?? 'Type' ?></span></th>
                         <th>Nombre de Matières</th>
                         <th>Statut</th>
                         <th class="text-end pe-4"><?= __('action') ?></th>
@@ -61,11 +61,14 @@ ob_start(); ?>
                                         class="fw-bold text-main-theme group-libelle"><?= htmlspecialchars((string) $g['libelle']) ?></span>
                                 </td>
                                 <td>
-                                    <span
-                                        class="badge bg-secondary bg-opacity-10 text-secondary fw-bold px-3 py-1 rounded-pill small">
-                                        <i
-                                            class="bi bi-diagram-3 me-1"></i><?= htmlspecialchars((string) ($g['teaching_type_nom'] ?? 'N/A')) ?>
-                                    </span>
+                                    <div>
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary fw-bold px-3 py-1 rounded-pill small me-1">
+                                            <i class="bi bi-diagram-3 me-1"></i><?= htmlspecialchars((string) ($g['teaching_form_nom'] ?? '')) ?>
+                                        </span>
+                                        <?php if (!empty($g['teaching_type_nom'])): ?>
+                                            <small class="text-muted d-block mt-1"><?= htmlspecialchars((string) $g['teaching_type_nom']) ?></small>
+                                        <?php endif; ?>
+                                    </div>
                                 </td>
                                 <td>
                                     <span class="badge bg-info bg-opacity-10 text-info fw-bold px-3 py-1 rounded-3">
@@ -95,12 +98,13 @@ ob_start(); ?>
                                             class="btn btn-sm btn-action-modern text-primary border-0 bg-transparent" onclick="openEditGroupModal(<?= htmlspecialchars(json_encode([
                                                 'id' => (int) $g['id'],
                                                 'libelle' => $g['libelle'],
+                                                'teaching_form_id' => (int) ($g['teaching_form_id'] ?? 0),
                                                 'teaching_type_id' => (int) ($g['teaching_type_id'] ?? 0),
                                                 'status' => (int) $g['status']
                                             ]), ENT_QUOTES, 'UTF-8') ?>)" title="<?= __('edit') ?>">
                                             <i class="bi bi-pencil-square fs-5"></i>
                                         </button>
-                                        <?php if ((int) $g['subjects_count'] == 0): ?>
+                                        <?php if ((int) $g['subjects_count'] == 0 && (int)$g['id'] > 0): ?>
                                             <a href="/subject-groups/delete?id=<?= $g['id'] ?>"
                                                 class="btn btn-sm btn-action-modern text-danger btn-confirm-delete"
                                                 data-confirm="Voulez-vous vraiment supprimer ce groupe de modules ?"
@@ -156,18 +160,30 @@ ob_start(); ?>
 
                     <div class="mb-3">
                         <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">
-                            Type d'Enseignement <span class="text-danger">*</span>
+                            <?= __('teaching_form') ?? 'Forme d\'enseignement' ?> <span class="text-danger">*</span>
                         </label>
                         <div class="input-group-modern">
                             <span class="input-group-text-modern"><i class="bi bi-diagram-3"></i></span>
-                            <select name="teaching_type_id" id="group_teaching_type_id"
-                                class="form-select premium-input" required>
-                                <option value="" disabled selected>Sélectionner un type...</option>
+                            <select name="teaching_form_id" id="group_teaching_form_id"
+                                class="form-select premium-input" <?= !empty($teachingForms) ? 'required' : '' ?>>
+                                <option value="" disabled selected><?= __('select_teaching_form') ?? 'Sélectionner la forme' ?>...</option>
+                                <?php foreach ($teachingForms as $tf): ?>
+                                    <option value="<?= $tf['id'] ?>"><?= htmlspecialchars((string) $tf['nom']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">
+                            <?= __('teaching_type') ?? 'Type Enseignement' ?> <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group-modern">
+                            <span class="input-group-text-modern"><i class="bi bi-tag"></i></span>
+                            <select name="teaching_type_id" id="group_teaching_type_id" class="form-select premium-input" required>
+                                <option value="" disabled selected><?= __('select_teaching_type') ?? 'Sélectionner le type' ?>...</option>
                                 <?php foreach ($teachingTypes as $tt): ?>
-                                    <option value="<?= $tt['id'] ?>">
-                                        <?= htmlspecialchars((string) $tt['nom']) ?>
-                                        (<?= htmlspecialchars((string) $tt['code']) ?>)
-                                    </option>
+                                    <option value="<?= $tt['id'] ?>"><?= htmlspecialchars((string) $tt['nom']) ?> (<?= htmlspecialchars((string) $tt['code']) ?>)</option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -274,8 +290,10 @@ ob_start(); ?>
         document.getElementById('groupSubmitBtnText').textContent = "<?= addslashes(__('create') ?? 'Créer') ?>";
 
         document.getElementById('group_libelle').value = '';
+        const tfSelect = document.getElementById('group_teaching_form_id');
+        if (tfSelect && tfSelect.options.length > 1) tfSelect.selectedIndex = 1;
         const ttSelect = document.getElementById('group_teaching_type_id');
-        if (ttSelect.options.length > 1) ttSelect.selectedIndex = 1;
+        if (ttSelect && ttSelect.options.length > 1) ttSelect.selectedIndex = 1;
         document.getElementById('group_status').checked = true;
 
         const modal = new bootstrap.Modal(document.getElementById('subjectGroupModal'));
@@ -291,8 +309,12 @@ ob_start(); ?>
         document.getElementById('groupSubmitBtnText').textContent = "<?= addslashes(__('save') ?? 'Enregistrer') ?>";
 
         document.getElementById('group_libelle').value = data.libelle || '';
+        const tfSelect = document.getElementById('group_teaching_form_id');
+        if (data.teaching_form_id && tfSelect) {
+            tfSelect.value = data.teaching_form_id;
+        }
         const ttSelect = document.getElementById('group_teaching_type_id');
-        if (data.teaching_type_id) {
+        if (data.teaching_type_id && ttSelect) {
             ttSelect.value = data.teaching_type_id;
         }
         document.getElementById('group_status').checked = data.status == 1;

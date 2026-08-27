@@ -314,6 +314,21 @@ class SubjectImportProcessor
                 ");
                 $stmtInsert->execute([$subjectName, $coefficient, $groupe, $subjectGroupId, $teachingTypeId, $vhm, $vhp, $thMax, $observations]);
                 $subjectId = (int) $this->db->lastInsertId();
+                if ($subjectId <= 1) {
+                    // Fallback basé sur le nom (ordre décroissant d'id)
+                    try {
+                        $fb = $this->db->prepare("SELECT id FROM subjects WHERE LOWER(TRIM(nom)) = LOWER(TRIM(?)) ORDER BY id DESC LIMIT 1");
+                        $fb->execute([$subjectName]);
+                        $found = (int) $fb->fetchColumn();
+                        if ($found > 0) {
+                            $subjectId = $found;
+                        } else {
+                            $this->logError($line, "Impossible de récupérer l'ID pour la matière '{$subjectName}' après insertion.");
+                        }
+                    } catch (\Throwable $e) {
+                        $this->logError($line, "Fallback select id échoué: " . $e->getMessage());
+                    }
+                }
 
                 $stmtInsCl = $this->db->prepare("
                     INSERT INTO subject_classes (subject_id, class_id, academic_year_id) 

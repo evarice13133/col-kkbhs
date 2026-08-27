@@ -1954,7 +1954,7 @@ ob_start();
                                             <div class="fw-bold text-main-theme"><?= h($us['subject_name']) ?></div>
                                         </td>
                                         <td class="text-end pe-4 py-3">
-                                            <a href="/teachers?assign_subject=<?= $us['subject_id'] ?>&assign_class=<?= $us['class_id'] ?>" class="btn btn-sm btn-outline-warning rounded-pill px-3 fw-bold">
+                                            <a href="/teachers/select_teacher?subject_id=<?= $us['subject_id'] ?>&class_id=<?= $us['class_id'] ?>" class="btn btn-sm btn-outline-warning rounded-pill px-3 fw-bold">
                                                 <i class="bi bi-person-plus me-1"></i> <?= __('assign') ?>
                                             </a>
                                         </td>

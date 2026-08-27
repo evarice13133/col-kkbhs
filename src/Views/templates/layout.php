@@ -147,6 +147,7 @@ $ribbon_structure = [
                     ['icon' => 'bi-bar-chart-steps', 'label' => __('layout_levels'), 'url' => '/levels', 'permission' => 'manage_classes_structure', 'roles' => ['superadmin', 'admin', 'direction_academique'], 'desc' => __('layout_levels_desc')],
                     ['icon' => 'bi-layers', 'label' => __('layout_cycles'), 'url' => '/cycles', 'permission' => 'manage_cycles', 'roles' => ['superadmin', 'admin', 'direction_academique'], 'desc' => __('layout_cycles_desc')],
                     ['icon' => 'bi-grid-3x3-gap', 'label' => __('academic_sections'), 'url' => '/sections', 'permission' => 'manage_sections', 'roles' => ['superadmin', 'admin', 'direction_academique'], 'desc' => __('layout_desc_teaching_types')],
+                    ['icon' => 'bi-bookmarks', 'label' => __('teaching_forms'), 'url' => '/teaching_forms', 'permission' => 'manage_teaching_forms', 'roles' => ['superadmin', 'admin', 'direction_academique'], 'desc' => __('layout_desc_teaching_forms')],
                     ['icon' => 'bi-building', 'label' => __('departments'), 'url' => '/departments', 'permission' => 'manage_departments', 'roles' => ['superadmin', 'admin', 'it_manager', 'direction_academique'], 'desc' => __('layout_desc_departments')],
                 ]
             ],

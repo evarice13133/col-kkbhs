@@ -74,3 +74,14 @@
 [2026-08-23 06:00:49] [IP: ::1] [UID: 40] Connexion réussie pour l'utilisateur : admin
 [2026-08-25 02:46:20] [IP: ::1] [UID: GUEST] Session expirée pour inactivité prolongée.
 [2026-08-25 02:46:44] [IP: ::1] [UID: 42] Connexion réussie pour l'utilisateur : sup
+                                                                                                                                                                                   [2026-08-26 05:55:55] [IP: ::1] [UID: 40] Connexion réussie pour l'utilisateur : admin
+[2026-08-26 06:04:28] [IP: 127.0.0.1] [UID: 40] Connexion réussie pour l'utilisateur : admin
+[2026-08-26 06:07:36] [IP: ::1] [UID: 40] Connexion réussie pour l'utilisateur : admin
+[2026-08-27 02:26:37] [IP: ::1] [UID: 40] Connexion réussie pour l'utilisateur : admin
+[2026-08-27 03:04:24] [IP: ::1] [UID: 40] Connexion réussie pour l'utilisateur : admin
+[2026-08-27 03:05:09] [IP: ::1] [UID: 40] Accès refusé pour la permission 'manage_teaching_forms' - Utilisateur: INCONNU (Rôle: admin)
+[2026-08-27 03:21:31] [IP: ::1] [UID: 40] Accès refusé pour la permission 'manage_teaching_forms' - Utilisateur: INCONNU (Rôle: admin)
+[2026-08-27 03:21:34] [IP: ::1] [UID: 40] Accès refusé pour la permission 'manage_teaching_forms' - Utilisateur: INCONNU (Rôle: admin)
+[2026-08-27 03:30:44] [IP: ::1] [UID: GUEST] Session expirée pour inactivité prolongée.
+[2026-08-27 03:30:59] [IP: ::1] [UID: 42] Connexion réussie pour l'utilisateur : sup
+[2026-08-27 04:53:59] [IP: ::1] [UID: 42] Erreur lors de l'enregistrement de l'inscription : SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '0' for key 'PRIMARY'
