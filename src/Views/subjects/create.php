@@ -22,7 +22,8 @@ ob_start();
                 <div class="row g-3 g-md-4 mb-4 mb-md-5">
                     <div class="col-12 border-bottom border-theme-light pb-2 mb-2">
                         <h6 class="fw-black text-primary m-0 text-uppercase letter-spacing-1">
-                            <?= __('subject_identification') ?></h6>
+                            <?= __('subject_identification') ?>
+                        </h6>
                     </div>
 
                     <div class="col-md-4">
@@ -41,18 +42,6 @@ ob_start();
                         <input type="text" name="nom" class="form-control premium-input"
                             placeholder="<?= __('subject_name_placeholder') ?>" value="<?= h($nom ?? '') ?>" required
                             autofocus>
-                    </div>
-
-                    <div class="col-md-4">
-                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('department') ?></label>
-                        <select name="department_id" id="department_id" class="form-select premium-input">
-                            <option value=""><?= __('no_department') ?? 'Aucun département' ?></option>
-                            <?php foreach ($departments as $dept): ?>
-                                <option value="<?= $dept['id'] ?>" data-teaching-type-id="<?= $dept['teaching_type_id'] ?>">
-                                    <?= h($dept['nom']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
                     </div>
 
                     <div class="col-md-4">
