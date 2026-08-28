@@ -632,6 +632,7 @@ class BulletinController
                 'test_1' => $value,
                 'test_2' => null,
                 'group' => $subjectGroupe,
+                'group_position' => (int) ($subject['group_position'] ?? 0),
                 'note' => $value,
                 'coefficient' => $coefficient,
                 'weighted' => ($value !== null ? round($value * $coefficient, 2) : null),
@@ -686,6 +687,7 @@ class BulletinController
             'professor_name' => $professor_name,
             'displayMatricule' => $this->getDisplayMatricule($student),
             'globalAppreciation' => $this->getCouncilAppreciation($average),
+            'overallAcquisitionLevel' => $this->getAcquisitionLevel($average),
             'evaluation_form' => $this->getEvaluationForm((int) $student['class_id']),
         ];
     }
@@ -762,6 +764,7 @@ class BulletinController
                 'test_1' => $sequenceValues[0] ?? null,
                 'test_2' => $sequenceValues[1] ?? null,
                 'group' => $subjectGroupe,
+                'group_position' => (int) ($subject['group_position'] ?? 0),
                 'sequence_values' => $sequenceValues,
                 'term_note' => $termNote,
                 'coefficient' => $coefficient,
@@ -822,7 +825,7 @@ class BulletinController
         $evaluationLabels = array_map(function ($seq) {
             return (string) ($seq['code'] ?? $this->getShortSequenceLabel((string) ($seq['label'] ?? '')));
         }, $termSequences);
-        $evaluationLabels[] = __('trimester_short') . ' ' . $term;
+        $evaluationLabels[] = __('trimester') . ' ' . $term;
 
         return [
             'bulletinType' => __('bulletin_trimester'),
@@ -851,6 +854,7 @@ class BulletinController
             'professor_name' => $professor_name,
             'displayMatricule' => $this->getDisplayMatricule($student),
             'globalAppreciation' => $this->getCouncilAppreciation($average),
+            'overallAcquisitionLevel' => $this->getAcquisitionLevel($average),
             'evaluation_form' => $this->getEvaluationForm((int) $student['class_id']),
         ];
     }
@@ -954,6 +958,7 @@ class BulletinController
                 'test_1' => null,
                 'test_2' => null,
                 'group' => $subjectGroupe,
+                'group_position' => (int) ($subject['group_position'] ?? 0),
                 'term_values' => [
                     $termNotes[1] ?? null,
                     $termNotes[2] ?? null,
@@ -1014,6 +1019,7 @@ class BulletinController
             'professor_name' => $professor_name,
             'displayMatricule' => $this->getDisplayMatricule($student),
             'globalAppreciation' => $this->getCouncilAppreciation($average),
+            'overallAcquisitionLevel' => $this->getAcquisitionLevel($average),
             'evaluation_form' => $this->getEvaluationForm($classId),
         ];
     }
@@ -1265,16 +1271,31 @@ class BulletinController
     protected function buildClassStats(array $ranking)
     {
         if (empty($ranking)) {
-            return ['average' => null, 'max' => null, 'min' => null];
+            return ['average' => null, 'max' => null, 'min' => null, 'first_average' => null, 'last_average' => null, 'profile' => ['unclassified' => 0, 'below' => 0, 'middle' => 0, 'passed' => 0, 'total' => 0]];
         }
 
         $values = array_column($ranking, 'average');
         $passed = array_filter($values, fn($v) => $v >= 10);
+        $profile = ['unclassified' => 0, 'below' => 0, 'middle' => 0, 'passed' => 0, 'total' => count($values)];
+        foreach ($values as $value) {
+            if ($value === null) {
+                $profile['unclassified']++;
+            } elseif ($value < 5) {
+                $profile['below']++;
+            } elseif ($value < 10) {
+                $profile['middle']++;
+            } else {
+                $profile['passed']++;
+            }
+        }
         return [
             'average' => round(array_sum($values) / count($values), 2),
             'max' => max($values),
             'min' => min($values),
-            'success_rate' => count($values) > 0 ? round((count($passed) / count($values)) * 100, 2) : 0
+            'first_average' => $ranking[array_key_first($ranking)]['average'] ?? null,
+            'last_average' => $ranking[array_key_last($ranking)]['average'] ?? null,
+            'success_rate' => count($values) > 0 ? round((count($passed) / count($values)) * 100, 2) : 0,
+            'profile' => $profile
         ];
     }
 
@@ -1291,7 +1312,7 @@ class BulletinController
         if ($academicYearId <= 0) {
             $academicYearId = (int) ($this->getActiveAcademicYear()['id'] ?? 0);
         }
-        $stmt = $this->db->prepare("SELECT st.*, c.nom AS class_nom FROM students st JOIN classes c ON c.id = st.class_id WHERE st.class_id = ? AND st.academic_year_id = ? AND st.is_withdrawn = 0 AND st.actif = 1 ORDER BY st.nom ASC, st.prenom ASC");
+        $stmt = $this->db->prepare("SELECT st.*, c.nom AS class_nom, d.nom AS department_nom FROM students st JOIN classes c ON c.id = st.class_id LEFT JOIN departments d ON d.id = c.department_id WHERE st.class_id = ? AND st.academic_year_id = ? AND st.is_withdrawn = 0 AND st.actif = 1 ORDER BY st.nom ASC, st.prenom ASC");
         $stmt->execute([$classId, $academicYearId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -1305,7 +1326,7 @@ class BulletinController
         if ($academicYearId <= 0) {
             $academicYearId = (int) ($this->getActiveAcademicYear()['id'] ?? 0);
         }
-        $stmt = $this->db->prepare("SELECT st.*, c.nom AS class_nom FROM students st JOIN classes c ON c.id = st.class_id WHERE st.id = ? AND st.academic_year_id = ? AND st.is_withdrawn = 0 AND st.actif = 1");
+        $stmt = $this->db->prepare("SELECT st.*, c.nom AS class_nom, d.nom AS department_nom FROM students st JOIN classes c ON c.id = st.class_id LEFT JOIN departments d ON d.id = c.department_id WHERE st.id = ? AND st.academic_year_id = ? AND st.is_withdrawn = 0 AND st.actif = 1");
         $stmt->execute([$studentId, $academicYearId]);
         $student = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -1525,8 +1546,8 @@ class BulletinController
 
     protected function getClassSubjects(int $classId)
     {
-        // On recupere les matieres et le nom de l'enseignant (le premier trouve)
-        $sql = "SELECT s.id, s.nom, s.coefficient, COALESCE(s.groupe, 'Groupe 1') AS groupe,
+        // Les matières du bulletin suivent la forme portée par le département de la classe.
+        $sql = "SELECT DISTINCT s.id, s.nom, s.coefficient, sg.libelle AS groupe, sg.position AS group_position,
                                     (SELECT CONCAT(u.nom, ' ', u.prenom)
                                      FROM teacher_assignments ta
                                      JOIN users u ON u.id = ta.user_id
@@ -1534,7 +1555,21 @@ class BulletinController
                                      LIMIT 1) as teacher_name
             FROM subject_classes sc
             JOIN subjects s ON s.id = sc.subject_id
+            JOIN classes c ON c.id = sc.class_id
+            LEFT JOIN departments d ON d.id = c.department_id
+            JOIN subject_groups sg ON sg.id = s.subject_group_id
+            LEFT JOIN teaching_forms tf ON tf.id = sg.teaching_form_id
             WHERE sc.class_id = ? AND s.status = 1
+              AND sg.status = 1
+              AND (
+                    (d.teaching_form_id IS NOT NULL
+                        AND sg.teaching_form_id = d.teaching_form_id
+                        AND tf.status = 1)
+                    OR
+                    ((d.id IS NULL OR d.teaching_form_id IS NULL)
+                        AND sg.teaching_form_id IS NULL
+                        AND sg.teaching_type_id = c.teaching_type_id)
+              )
             ORDER BY s.nom ASC";
 
         $stmt = $this->db->prepare($sql);
@@ -1548,8 +1583,12 @@ class BulletinController
      */
     protected function getSubjectsWithGrades(int $classId, array $periodLabels, int $academicYearId)
     {
+        if (empty($periodLabels)) {
+            return [];
+        }
+
         $placeholders = implode(', ', array_fill(0, count($periodLabels), '?'));
-        $sql = "SELECT DISTINCT s.id, s.nom, s.coefficient, COALESCE(s.groupe, 'Groupe 1') AS groupe,
+        $sql = "SELECT DISTINCT s.id, s.nom, s.coefficient, sg.libelle AS groupe, sg.position AS group_position,
                                     (SELECT CONCAT(u.nom, ' ', u.prenom)
                                      FROM teacher_assignments ta
                                      JOIN users u ON u.id = ta.user_id
@@ -1557,8 +1596,23 @@ class BulletinController
                                      LIMIT 1) as teacher_name
             FROM subject_classes sc
             JOIN subjects s ON s.id = sc.subject_id
+            JOIN classes c ON c.id = sc.class_id
+            LEFT JOIN departments d ON d.id = c.department_id
+            JOIN subject_groups sg ON sg.id = s.subject_group_id
+            LEFT JOIN teaching_forms tf ON tf.id = sg.teaching_form_id
             JOIN grades g ON g.subject_id = s.id
-            WHERE sc.class_id = ? AND s.status = 1 AND g.periode IN ($placeholders) AND g.academic_year_id = ?
+            WHERE sc.class_id = ? AND s.status = 1
+              AND sg.status = 1
+              AND (
+                    (d.teaching_form_id IS NOT NULL
+                        AND sg.teaching_form_id = d.teaching_form_id
+                        AND tf.status = 1)
+                    OR
+                    ((d.id IS NULL OR d.teaching_form_id IS NULL)
+                        AND sg.teaching_form_id IS NULL
+                        AND sg.teaching_type_id = c.teaching_type_id)
+              )
+              AND g.periode IN ($placeholders) AND g.academic_year_id = ?
             ORDER BY s.nom ASC";
 
         $params = array_merge([$classId], $periodLabels, [$academicYearId]);
@@ -1914,16 +1968,15 @@ class BulletinController
 
     protected function groupRowsBySubjectGroup(array $rows): array
     {
-        $groups = [
-            'Groupe 1' => ['label' => __('group_label_literary'), 'rows' => [], 'total_points' => 0.0, 'total_coefficients' => 0.0, 'total_coeffs_all' => 0.0, 'average' => null],
-            'Groupe 2' => ['label' => __('group_label_scientific'), 'rows' => [], 'total_points' => 0.0, 'total_coefficients' => 0.0, 'total_coeffs_all' => 0.0, 'average' => null],
-            'Groupe 3' => ['label' => __('group_label_complementary'), 'rows' => [], 'total_points' => 0.0, 'total_coefficients' => 0.0, 'total_coeffs_all' => 0.0, 'average' => null],
-        ];
+        $groups = [];
 
         foreach ($rows as $row) {
-            $groupName = $row['group'] ?? 'Groupe 1';
+            $groupName = trim((string) ($row['group'] ?? ''));
+            if ($groupName === '') {
+                continue;
+            }
             if (!isset($groups[$groupName])) {
-                $groups[$groupName] = ['label' => $groupName, 'rows' => [], 'total_points' => 0.0, 'total_coefficients' => 0.0, 'total_coeffs_all' => 0.0, 'average' => null];
+                $groups[$groupName] = ['label' => $groupName, 'position' => (int) ($row['group_position'] ?? 0), 'rows' => [], 'total_points' => 0.0, 'total_coefficients' => 0.0, 'total_coeffs_all' => 0.0, 'average' => null];
             }
 
             $groups[$groupName]['rows'][] = $row;
@@ -1932,6 +1985,11 @@ class BulletinController
             $groups[$groupName]['total_points'] += (float) ($row['weighted'] ?? 0);
             $groups[$groupName]['total_coefficients'] += (float) ($row['coefficient'] ?? 0);
         }
+
+        uasort($groups, static function (array $first, array $second): int {
+            $positionComparison = ((int) ($first['position'] ?? 0)) <=> ((int) ($second['position'] ?? 0));
+            return $positionComparison !== 0 ? $positionComparison : strcmp((string) $first['label'], (string) $second['label']);
+        });
 
         foreach ($groups as &$group) {
             if ($group['total_coefficients'] > 0) {

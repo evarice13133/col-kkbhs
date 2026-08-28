@@ -48,7 +48,7 @@ $subjectCount = count($rows);
 $baseFontSize = 14;
 $pageMargin = '0.5cm';
 $lineHeight = 1.3;
-$logoSize = '85px';
+$logoSize = '95px';
 
 if ($subjectCount >= 10 && $subjectCount <= 12) {
     $baseFontSize = 12;
@@ -62,7 +62,7 @@ if ($subjectCount >= 10 && $subjectCount <= 12) {
     $baseFontSize = 10;
     $pageMargin = '0.2cm';
     $lineHeight = 1.1;
-    $logoSize = '70px';
+    $logoSize = '80px';
 }
 
 /**
@@ -309,7 +309,7 @@ if (isset($styleOnly)) {
         </div>
 
         <!-- D. RÉSULTATS GLOBAUX, RÉCAPITULATIF ET DÉCISION DU CONSEIL (TABLEAU UNIFIÉ À 3 COLONNES HORIZONTALES) -->
-        <div class="grades-table-wrap">
+        <div class="grades-table-wrap legacy-summary-table">
             <table class="grades-table-header">
                 <colgroup>
                     <col style="width:22%;">
@@ -499,17 +499,6 @@ if (isset($styleOnly)) {
             </table>
         </div>
 
-        <!-- F. BLOC DES SIGNATURES -->
-        <div class="grades-table-wrap" style="padding: 10px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                <div style="flex: 1;"><?= __('signature_student_parent') ?></div>
-                <div style="flex: 1; text-align: center;"><?= __('signature_teacher') ?><?php if ($showTeacherNamesOnBulletins): ?> <?= htmlspecialchars($professor_name ?? '') ?><?php endif; ?></div>
-                <div style="flex: 1; text-align: center; font-size: 10px;">
-                    <em><?= __('date') ?> : ..............................................</em><br><br>
-                    <strong style="font-weight: bold;"><?= __('signature_principal') ?></strong>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- G. BANDE DE PIED DE PAGE (Extérieur du cadre) -->
