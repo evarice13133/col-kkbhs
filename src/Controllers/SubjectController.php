@@ -117,6 +117,7 @@ class SubjectController
 
         ob_start();
         include __DIR__ . '/../Views/subjects/templates/export_pdf_subject.php';
+        
         $html = ob_get_clean();
 
         $this->streamPdf($html, "Registre_Matieres_" . date('Y-m-d') . ".pdf");
