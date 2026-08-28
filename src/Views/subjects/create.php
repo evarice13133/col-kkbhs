@@ -44,18 +44,6 @@ ob_start();
                     </div>
 
                     <div class="col-md-4">
-                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('department') ?></label>
-                        <select name="department_id" id="department_id" class="form-select premium-input">
-                            <option value=""><?= __('no_department') ?? 'Aucun département' ?></option>
-                            <?php foreach ($departments as $dept): ?>
-                                <option value="<?= $dept['id'] ?>" data-teaching-type-id="<?= $dept['teaching_type_id'] ?>">
-                                    <?= h($dept['nom']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="col-md-4">
                         <label
                             class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('subject_group') ?></label>
                         <select name="subject_group_id" id="subject_group_id" class="form-select premium-input">
