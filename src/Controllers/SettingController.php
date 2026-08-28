@@ -58,6 +58,8 @@ class SettingController
                 'school_republic_en',
                 'school_ministry',
                 'school_ministry_en',
+                'school_delegation',
+                'school_delegation_en',
                 'school_slogan',
                 'school_slogan_en',
                 'school_motto',

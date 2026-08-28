@@ -48,7 +48,7 @@ $subjectCount = count($rows);
 $baseFontSize = 14;
 $pageMargin = '0.5cm';
 $lineHeight = 1.3;
-$logoSize = '85px';
+$logoSize = '95px';
 
 if ($subjectCount >= 10 && $subjectCount <= 12) {
     $baseFontSize = 12;
@@ -62,7 +62,7 @@ if ($subjectCount >= 10 && $subjectCount <= 12) {
     $baseFontSize = 10;
     $pageMargin = '0.2cm';
     $lineHeight = 1.1;
-    $logoSize = '70px';
+    $logoSize = '80px';
 }
 
 /**

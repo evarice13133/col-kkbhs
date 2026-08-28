@@ -39,6 +39,7 @@ ob_start(); ?>
                 <thead>
                     <tr>
                         <th class="ps-4">Libellé du Groupe</th>
+                        <th><?= __('subject_group_position') ?? 'Position' ?></th>
                         <th><?= __('teaching_form') ?? 'Forme d\'enseignement' ?> <span class="text-muted small">/ <?= __('teaching_type') ?? 'Type' ?></span></th>
                         <th>Nombre de Matières</th>
                         <th>Statut</th>
@@ -48,7 +49,7 @@ ob_start(); ?>
                 <tbody>
                     <?php if (empty($groups)): ?>
                         <tr>
-                            <td colspan="5" class="text-center py-5">
+                            <td colspan="6" class="text-center py-5">
                                 <i class="bi bi-collection fs-1 opacity-25 mb-3 d-block"></i>
                                 <span class="text-muted-theme"><?= __('no_data') ?></span>
                             </td>
@@ -60,6 +61,7 @@ ob_start(); ?>
                                     <span
                                         class="fw-bold text-main-theme group-libelle"><?= htmlspecialchars((string) $g['libelle']) ?></span>
                                 </td>
+                                <td><span class="badge bg-primary bg-opacity-10 text-primary fw-bold px-3 py-1 rounded-pill"><?= (int) ($g['position'] ?? 0) ?></span></td>
                                 <td>
                                     <div>
                                         <span class="badge bg-secondary bg-opacity-10 text-secondary fw-bold px-3 py-1 rounded-pill small me-1">
@@ -98,6 +100,7 @@ ob_start(); ?>
                                             class="btn btn-sm btn-action-modern text-primary border-0 bg-transparent" onclick="openEditGroupModal(<?= htmlspecialchars(json_encode([
                                                 'id' => (int) $g['id'],
                                                 'libelle' => $g['libelle'],
+                                                'position' => (int) ($g['position'] ?? 0),
                                                 'teaching_form_id' => (int) ($g['teaching_form_id'] ?? 0),
                                                 'teaching_type_id' => (int) ($g['teaching_type_id'] ?? 0),
                                                 'status' => (int) $g['status']
@@ -146,6 +149,16 @@ ob_start(); ?>
             <form id="subjectGroupForm" action="/subject-groups/store" method="POST">
                 <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
                 <div class="modal-body p-4">
+
+                    <div class="mb-3">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">
+                            <?= __('subject_group_position') ?? 'Position' ?> <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group-modern">
+                            <span class="input-group-text-modern"><i class="bi bi-sort-numeric-down"></i></span>
+                            <input type="number" name="position" id="group_position" class="form-control premium-input" min="1" step="1" required>
+                        </div>
+                    </div>
 
                     <div class="mb-3">
                         <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">
@@ -290,6 +303,7 @@ ob_start(); ?>
         document.getElementById('groupSubmitBtnText').textContent = "<?= addslashes(__('create') ?? 'Créer') ?>";
 
         document.getElementById('group_libelle').value = '';
+        document.getElementById('group_position').value = '';
         const tfSelect = document.getElementById('group_teaching_form_id');
         if (tfSelect && tfSelect.options.length > 1) tfSelect.selectedIndex = 1;
         const ttSelect = document.getElementById('group_teaching_type_id');
@@ -309,6 +323,7 @@ ob_start(); ?>
         document.getElementById('groupSubmitBtnText').textContent = "<?= addslashes(__('save') ?? 'Enregistrer') ?>";
 
         document.getElementById('group_libelle').value = data.libelle || '';
+        document.getElementById('group_position').value = data.position || '';
         const tfSelect = document.getElementById('group_teaching_form_id');
         if (data.teaching_form_id && tfSelect) {
             tfSelect.value = data.teaching_form_id;

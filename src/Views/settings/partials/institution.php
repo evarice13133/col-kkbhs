@@ -206,6 +206,21 @@
             </div>
 
             <div class="col-12 mt-5">
+                <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('delegations') ?></label>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <textarea name="school_delegation" class="form-control premium-input" rows="2"
+                            placeholder="<?= __('school_delegation_fr_placeholder') ?>"><?= htmlspecialchars((string) ($settings['school_delegation'] ?? '')) ?></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <textarea name="school_delegation_en" class="form-control premium-input" rows="2"
+                            placeholder="<?= __('school_delegation_en_placeholder') ?>"><?= htmlspecialchars((string) ($settings['school_delegation_en'] ?? '')) ?></textarea>
+                    </div>
+                </div>
+                <div class="form-text"><?= __('delegations_help_text') ?></div>
+            </div>
+
+            <div class="col-12 mt-5">
                 <div class="p-4 rounded-4 bg-soft-primary border border-primary border-opacity-10 position-relative overflow-hidden">
                     <div class="position-absolute top-0 end-0 p-3 opacity-10"><i class="bi bi-quote fs-1"></i></div>
                     <label class="form-label text-primary fw-black extra-small text-uppercase mb-3"><?= __('slogan_and_motto') ?></label>

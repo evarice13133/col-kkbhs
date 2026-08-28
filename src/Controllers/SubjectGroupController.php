@@ -60,7 +60,7 @@ class SubjectGroupController
                 $params[] = $teaching_type_id;
             }
 
-            $sql .= " ORDER BY sg.libelle ASC";
+            $sql .= " ORDER BY sg.teaching_form_id IS NULL ASC, sg.teaching_form_id ASC, sg.position ASC, sg.id ASC";
 
             $stmt = $this->db->prepare($sql);
             $stmt->execute($params);
@@ -83,7 +83,7 @@ class SubjectGroupController
                 $params[] = $teaching_type_id;
             }
 
-            $sql .= " ORDER BY sg.libelle ASC";
+            $sql .= " ORDER BY sg.teaching_type_id ASC, sg.position ASC, sg.id ASC";
             $stmt = $this->db->prepare($sql);
             $stmt->execute($params);
             $groups = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -111,6 +111,7 @@ class SubjectGroupController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $libelle = trim($_POST['libelle'] ?? '');
             $teaching_form_id = !empty($_POST['teaching_form_id']) ? (int) $_POST['teaching_form_id'] : null;
+            $position = filter_var($_POST['position'] ?? null, FILTER_VALIDATE_INT);
 
             // Vérifier si la colonne teaching_form_id est présente
             $colCheck = $this->db->query("SHOW COLUMNS FROM subject_groups LIKE 'teaching_form_id'")->fetchColumn();
@@ -121,7 +122,7 @@ class SubjectGroupController
 
             if ($hasTeachingFormCol) {
                 // Exiger à la fois le type et la forme (forme obligatoire selon règle métier)
-                if (empty($libelle) || empty($teaching_type_id) || empty($teaching_form_id)) {
+                if (empty($libelle) || empty($teaching_type_id) || empty($teaching_form_id) || $position === false || $position < 1) {
                     Session::setFlash('error', __('fill_required_fields') ?? 'Veuillez remplir les champs obligatoires.');
                     header("Location: /subject-groups");
                     exit;
@@ -137,8 +138,8 @@ class SubjectGroupController
                 }
 
                 // Vérifier que la forme existe et est active
-                $tfStmt = $this->db->prepare("SELECT id FROM teaching_forms WHERE id = ? AND status = 1 LIMIT 1");
-                $tfStmt->execute([$teaching_form_id]);
+                $tfStmt = $this->db->prepare("SELECT id FROM teaching_forms WHERE id = ? AND teaching_type_id = ? AND status = 1 LIMIT 1");
+                $tfStmt->execute([$teaching_form_id, $teaching_type_id]);
                 if (!$tfStmt->fetchColumn()) {
                     Session::setFlash('error', __('invalid_teaching_form') ?? 'Forme d\'enseignement invalide.');
                     header("Location: /subject-groups");
@@ -155,8 +156,15 @@ class SubjectGroupController
 
             // Insérer : si la colonne teaching_form_id existe, l'inclure, sinon garder l'insertion legacy
             if ($hasTeachingFormCol) {
-                $stmt = $this->db->prepare("INSERT INTO subject_groups (libelle, teaching_type_id, teaching_form_id, status) VALUES (?, ?, ?, 1)");
-                $stmt->execute([$libelle, $teaching_type_id, $teaching_form_id]);
+                $positionStmt = $this->db->prepare("SELECT 1 FROM subject_groups WHERE teaching_form_id = ? AND position = ? LIMIT 1");
+                $positionStmt->execute([$teaching_form_id, $position]);
+                if ($positionStmt->fetchColumn()) {
+                    Session::setFlash('error', __('subject_group_position_taken') ?? 'Cette position est déjà utilisée pour cette forme d’enseignement.');
+                    header("Location: /subject-groups");
+                    exit;
+                }
+                $stmt = $this->db->prepare("INSERT INTO subject_groups (libelle, teaching_type_id, teaching_form_id, position, status) VALUES (?, ?, ?, ?, 1)");
+                $stmt->execute([$libelle, $teaching_type_id, $teaching_form_id, $position]);
             } else {
                 $stmt = $this->db->prepare("INSERT INTO subject_groups (libelle, teaching_type_id, status) VALUES (?, ?, 1)");
                 $stmt->execute([$libelle, $teaching_type_id]);
@@ -177,6 +185,7 @@ class SubjectGroupController
             $id = (int) $id;
             $libelle = trim($_POST['libelle'] ?? '');
             $teaching_form_id = !empty($_POST['teaching_form_id']) ? (int) $_POST['teaching_form_id'] : null;
+            $position = filter_var($_POST['position'] ?? null, FILTER_VALIDATE_INT);
             $status = isset($_POST['status']) ? 1 : 0;
 
             // Vérifier si la colonne teaching_form_id est présente
@@ -188,7 +197,7 @@ class SubjectGroupController
 
             if ($hasTeachingFormCol) {
                 // Exiger à la fois le type et la forme
-                if ($id <= 0 || empty($libelle) || empty($teaching_type_id) || empty($teaching_form_id)) {
+                if ($id <= 0 || empty($libelle) || empty($teaching_type_id) || empty($teaching_form_id) || $position === false || $position < 1) {
                     Session::setFlash('error', __('fill_required_fields') ?? 'Veuillez remplir les champs obligatoires.');
                     header("Location: /subject-groups");
                     exit;
@@ -204,8 +213,8 @@ class SubjectGroupController
                 }
 
                 // Vérifier que la forme existe et est active
-                $tfStmt = $this->db->prepare("SELECT id FROM teaching_forms WHERE id = ? AND status = 1 LIMIT 1");
-                $tfStmt->execute([$teaching_form_id]);
+                $tfStmt = $this->db->prepare("SELECT id FROM teaching_forms WHERE id = ? AND teaching_type_id = ? AND status = 1 LIMIT 1");
+                $tfStmt->execute([$teaching_form_id, $teaching_type_id]);
                 if (!$tfStmt->fetchColumn()) {
                     Session::setFlash('error', __('invalid_teaching_form') ?? 'Forme d\'enseignement invalide.');
                     header("Location: /subject-groups");
@@ -221,8 +230,15 @@ class SubjectGroupController
 
             // Mettre à jour selon la présence de la colonne teaching_form_id
             if ($hasTeachingFormCol) {
-                $stmt = $this->db->prepare("UPDATE subject_groups SET libelle = ?, teaching_type_id = ?, teaching_form_id = ?, status = ? WHERE id = ?");
-                $stmt->execute([$libelle, $teaching_type_id, $teaching_form_id, $status, $id]);
+                $positionStmt = $this->db->prepare("SELECT 1 FROM subject_groups WHERE teaching_form_id = ? AND position = ? AND id <> ? LIMIT 1");
+                $positionStmt->execute([$teaching_form_id, $position, $id]);
+                if ($positionStmt->fetchColumn()) {
+                    Session::setFlash('error', __('subject_group_position_taken') ?? 'Cette position est déjà utilisée pour cette forme d’enseignement.');
+                    header("Location: /subject-groups");
+                    exit;
+                }
+                $stmt = $this->db->prepare("UPDATE subject_groups SET libelle = ?, teaching_type_id = ?, teaching_form_id = ?, position = ?, status = ? WHERE id = ?");
+                $stmt->execute([$libelle, $teaching_type_id, $teaching_form_id, $position, $status, $id]);
             } else {
                 $stmt = $this->db->prepare("UPDATE subject_groups SET libelle = ?, teaching_type_id = ?, status = ? WHERE id = ?");
                 $stmt->execute([$libelle, $teaching_type_id, $status, $id]);

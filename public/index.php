@@ -508,6 +508,8 @@ elseif (strpos($path, '/cycles') === 0) {
         $c->update($_GET['id'] ?? 0);
     elseif ($path === '/subject-groups/toggle')
         $c->toggle($_GET['id'] ?? 0);
+    elseif ($path === '/subject-groups/delete')
+        $c->delete($_GET['id'] ?? 0);
 } elseif (strpos($path, '/levels') === 0) {
     if (!Session::isLogged() || (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'direction_academique'], true) && !\App\Core\PermissionManager::hasPermission('manage_classes_structure'))) {
         header('Location: /');
