@@ -105,7 +105,12 @@ class ClassController
         $cycles = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id FROM cycles c LEFT JOIN teaching_types t ON c.teaching_type_id = t.id WHERE c.status = 1 AND (t.actif = 1 OR c.teaching_type_id IS NULL) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $sections = $this->db->query("SELECT id, nom FROM sections WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $teachingForms = $this->db->query("SELECT id, nom, code, teaching_type_id FROM teaching_forms WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $levels = $this->db->query("SELECT l.id, l.code, l.libelle_fr, l.libelle_en, l.teaching_type_id FROM levels l LEFT JOIN teaching_types tt ON l.teaching_type_id = tt.id WHERE l.status = 1 AND (tt.actif = 1 OR l.teaching_type_id IS NULL) ORDER BY l.code ASC, l.libelle_fr ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $teachingFormsByType = [];
+        foreach ($teachingForms as $form) {
+            $teachingFormsByType[(int) $form['teaching_type_id']][] = $form;
+        }
         
         // Pour la création, on ne propose que les départements actifs rattachés à un type d'enseignement actif (ou sans type)
         $departments = $this->db->query("SELECT d.id, d.nom, d.teaching_type_id FROM departments d LEFT JOIN teaching_types t ON d.teaching_type_id = t.id WHERE d.status = 1 AND (t.actif = 1 OR d.teaching_type_id IS NULL) ORDER BY d.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -124,6 +129,7 @@ class ClassController
             $section_id = !empty($_POST['section_id']) ? (int) $_POST['section_id'] : null;
             $department_id = !empty($_POST['department_id']) ? (int) $_POST['department_id'] : null;
             $teaching_type_id = !empty($_POST['teaching_type_id']) ? (int) $_POST['teaching_type_id'] : null;
+            $teaching_form_id = !empty($_POST['teaching_form_id']) ? (int) $_POST['teaching_form_id'] : null;
             $level_id = !empty($_POST['level_id']) ? (int) $_POST['level_id'] : null;
 
             $frais_inscription = !empty($_POST['frais_inscription']) ? (float)$_POST['frais_inscription'] : 0.0;
@@ -140,10 +146,20 @@ class ClassController
             }
 
             $hasError = false;
-            if ($nom === '' || !$level_id) {
-                $error = $nom === '' ? __('required') : (__('level_required') ?? 'Le niveau est obligatoire.');
+            if ($nom === '' || !$teaching_type_id || !$teaching_form_id || !$level_id) {
+                $error = $nom === '' ? __('required') : (($teaching_type_id ? ($teaching_form_id ? (__('level_required') ?? 'Le niveau est obligatoire.') : 'La forme d’enseignement est obligatoire.') : 'Le type d’enseignement est obligatoire.'));
                 $hasError = true;
-            } elseif ($frais_scolarite_brut > 0) {
+            } elseif ($teaching_form_id && $teaching_type_id) {
+                $tformStmt = $this->db->prepare("SELECT teaching_type_id FROM teaching_forms WHERE id = ? AND status = 1 LIMIT 1");
+                $tformStmt->execute([$teaching_form_id]);
+                $formTypeId = (int) $tformStmt->fetchColumn();
+                if ($formTypeId > 0 && $formTypeId !== (int) $teaching_type_id) {
+                    $error = __('teaching_form_teaching_type_mismatch') ?? 'La forme d’enseignement sélectionnée doit appartenir au type d’enseignement choisi.';
+                    $hasError = true;
+                }
+            }
+
+            if (!$hasError && $frais_scolarite_brut > 0) {
                 if ($nbr_tranches <= 0) {
                     $error = "Le nombre de tranches est obligatoire si les frais de scolarité sont renseignés.";
                     $hasError = true;
@@ -166,6 +182,11 @@ class ClassController
                 $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $sections = $this->db->query("SELECT id, nom FROM sections WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $teachingForms = $this->db->query("SELECT id, nom, code, teaching_type_id FROM teaching_forms WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $teachingFormsByType = [];
+                foreach ($teachingForms as $form) {
+                    $teachingFormsByType[(int) $form['teaching_type_id']][] = $form;
+                }
                 $levels = $this->db->query("SELECT l.id, l.code, l.libelle_fr, l.libelle_en, l.teaching_type_id FROM levels l LEFT JOIN teaching_types tt ON l.teaching_type_id = tt.id WHERE l.status = 1 AND (tt.actif = 1 OR l.teaching_type_id IS NULL) ORDER BY l.code ASC, l.libelle_fr ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $departments = $this->db->query("SELECT id, nom FROM departments ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $classe = [
@@ -174,6 +195,7 @@ class ClassController
                     'section_id' => $section_id,
                     'department_id' => $department_id,
                     'teaching_type_id' => $teaching_type_id,
+                    'teaching_form_id' => $teaching_form_id,
                     'level_id' => $level_id,
                     'frais_inscription' => $frais_inscription,
                     'frais_inscription_reinscription' => $frais_inscription_reinscription,
@@ -196,6 +218,11 @@ class ClassController
                     $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                     $sections = $this->db->query("SELECT id, nom FROM sections WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                     $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                    $teachingForms = $this->db->query("SELECT id, nom, code, teaching_type_id FROM teaching_forms WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                    $teachingFormsByType = [];
+                    foreach ($teachingForms as $form) {
+                        $teachingFormsByType[(int) $form['teaching_type_id']][] = $form;
+                    }
                     $levels = $this->db->query("SELECT l.id, l.code, l.libelle_fr, l.libelle_en, l.teaching_type_id FROM levels l LEFT JOIN teaching_types tt ON l.teaching_type_id = tt.id WHERE l.status = 1 AND (tt.actif = 1 OR l.teaching_type_id IS NULL) ORDER BY l.code ASC, l.libelle_fr ASC")->fetchAll(PDO::FETCH_ASSOC);
                     $departments = $this->db->query("SELECT id, nom FROM departments ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                     $classe = [
@@ -204,6 +231,7 @@ class ClassController
                         'section_id' => $section_id,
                         'department_id' => $department_id,
                         'teaching_type_id' => $teaching_type_id,
+                        'teaching_form_id' => $teaching_form_id,
                         'level_id' => $level_id,
                         'frais_inscription' => $frais_inscription,
                         'frais_inscription_reinscription' => $frais_inscription_reinscription,
@@ -220,8 +248,8 @@ class ClassController
             try {
                 $this->db->beginTransaction();
 
-                $stmt = $this->db->prepare("INSERT INTO classes (nom, cycle_id, section_id, department_id, teaching_type_id, level_id, frais_inscription, frais_inscription_reinscription, frais_scolarite_brut, nbr_tranches) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$nom, $cycle_id, $section_id, $department_id, $teaching_type_id, $level_id, $frais_inscription, $frais_inscription_reinscription, $frais_scolarite_brut, $nbr_tranches]);
+                $stmt = $this->db->prepare("INSERT INTO classes (nom, cycle_id, section_id, department_id, teaching_type_id, teaching_form_id, level_id, frais_inscription, frais_inscription_reinscription, frais_scolarite_brut, nbr_tranches) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$nom, $cycle_id, $section_id, $department_id, $teaching_type_id, $teaching_form_id, $level_id, $frais_inscription, $frais_inscription_reinscription, $frais_scolarite_brut, $nbr_tranches]);
                 $newClassId = (int) $this->db->lastInsertId();
 
                 $activeYearId = $this->academicYearService->getActiveYearId();
@@ -278,6 +306,11 @@ class ClassController
                 $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $sections = $this->db->query("SELECT id, nom FROM sections WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $teachingForms = $this->db->query("SELECT id, nom, code, teaching_type_id FROM teaching_forms WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $teachingFormsByType = [];
+                foreach ($teachingForms as $form) {
+                    $teachingFormsByType[(int) $form['teaching_type_id']][] = $form;
+                }
                 $departments = $this->db->query("SELECT id, nom FROM departments ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $classe = [
                     'nom' => $nom,
@@ -285,6 +318,7 @@ class ClassController
                     'section_id' => $section_id,
                     'department_id' => $department_id,
                     'teaching_type_id' => $teaching_type_id,
+                    'teaching_form_id' => $teaching_form_id,
                     'frais_inscription' => $frais_inscription,
                     'frais_scolarite_brut' => $frais_scolarite_brut,
                     'nbr_tranches' => $nbr_tranches,
@@ -333,6 +367,11 @@ class ClassController
         $cycles = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id FROM cycles c LEFT JOIN teaching_types t ON c.teaching_type_id = t.id WHERE c.status = 1 AND (t.actif = 1 OR c.teaching_type_id IS NULL) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $sections = $this->db->query("SELECT id, nom FROM sections WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $teachingForms = $this->db->query("SELECT id, nom, code, teaching_type_id FROM teaching_forms WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $teachingFormsByType = [];
+        foreach ($teachingForms as $form) {
+            $teachingFormsByType[(int) $form['teaching_type_id']][] = $form;
+        }
         $levels = $this->db->query("SELECT l.id, l.code, l.libelle_fr, l.libelle_en, l.teaching_type_id FROM levels l LEFT JOIN teaching_types tt ON l.teaching_type_id = tt.id WHERE l.status = 1 AND (tt.actif = 1 OR l.teaching_type_id IS NULL) ORDER BY l.code ASC, l.libelle_fr ASC")->fetchAll(PDO::FETCH_ASSOC);
         $deptQuery = Session::get('user_role') === 'superadmin' ? "SELECT id, nom, teaching_type_id FROM departments ORDER BY nom ASC" : "SELECT id, nom, teaching_type_id FROM departments WHERE status = 1 ORDER BY nom ASC";
         $departments = $this->db->query($deptQuery)->fetchAll(PDO::FETCH_ASSOC);
@@ -351,6 +390,7 @@ class ClassController
             $section_id = !empty($_POST['section_id']) ? (int) $_POST['section_id'] : null;
             $department_id = !empty($_POST['department_id']) ? (int) $_POST['department_id'] : null;
             $teaching_type_id = !empty($_POST['teaching_type_id']) ? (int) $_POST['teaching_type_id'] : null;
+            $teaching_form_id = !empty($_POST['teaching_form_id']) ? (int) $_POST['teaching_form_id'] : null;
             $level_id = !empty($_POST['level_id']) ? (int) $_POST['level_id'] : null;
 
             $frais_inscription = !empty($_POST['frais_inscription']) ? (float)$_POST['frais_inscription'] : 0.0;
@@ -367,10 +407,20 @@ class ClassController
             }
 
             $hasError = false;
-            if ($nom === '' || !$level_id) {
-                $error = $nom === '' ? __('required') : (__('level_required') ?? 'Le niveau est obligatoire.');
+            if ($nom === '' || !$teaching_type_id || !$teaching_form_id || !$level_id) {
+                $error = $nom === '' ? __('required') : (($teaching_type_id ? ($teaching_form_id ? (__('level_required') ?? 'Le niveau est obligatoire.') : 'La forme d’enseignement est obligatoire.') : 'Le type d’enseignement est obligatoire.'));
                 $hasError = true;
-            } elseif ($frais_scolarite_brut > 0) {
+            } elseif ($teaching_form_id && $teaching_type_id) {
+                $tformStmt = $this->db->prepare("SELECT teaching_type_id FROM teaching_forms WHERE id = ? AND status = 1 LIMIT 1");
+                $tformStmt->execute([$teaching_form_id]);
+                $formTypeId = (int) $tformStmt->fetchColumn();
+                if ($formTypeId > 0 && $formTypeId !== (int) $teaching_type_id) {
+                    $error = __('teaching_form_teaching_type_mismatch') ?? 'La forme d’enseignement sélectionnée doit appartenir au type d’enseignement choisi.';
+                    $hasError = true;
+                }
+            }
+
+            if (!$hasError && $frais_scolarite_brut > 0) {
                 if ($nbr_tranches <= 0) {
                     $error = "Le nombre de tranches est obligatoire si les frais de scolarité sont renseignés.";
                     $hasError = true;
@@ -397,6 +447,7 @@ class ClassController
                     'section_id' => $section_id,
                     'department_id' => $department_id,
                     'teaching_type_id' => $teaching_type_id,
+                    'teaching_form_id' => $teaching_form_id,
                     'level_id' => $level_id,
                     'frais_inscription' => $frais_inscription,
                     'frais_inscription_reinscription' => $frais_inscription_reinscription,
@@ -408,6 +459,11 @@ class ClassController
                 $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $teachingForms = $this->db->query("SELECT id, nom, code, teaching_type_id FROM teaching_forms WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $teachingFormsByType = [];
+                foreach ($teachingForms as $form) {
+                    $teachingFormsByType[(int) $form['teaching_type_id']][] = $form;
+                }
                 $levels = $this->db->query("SELECT l.id, l.code, l.libelle_fr, l.libelle_en, l.teaching_type_id FROM levels l LEFT JOIN teaching_types tt ON l.teaching_type_id = tt.id WHERE l.status = 1 AND (tt.actif = 1 OR l.teaching_type_id IS NULL) ORDER BY l.code ASC, l.libelle_fr ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $departments = $this->db->query("SELECT id, nom FROM departments ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/classes/edit.php';
@@ -428,6 +484,7 @@ class ClassController
                         'section_id' => $section_id,
                         'department_id' => $department_id,
                         'teaching_type_id' => $teaching_type_id,
+                        'teaching_form_id' => $teaching_form_id,
                         'level_id' => $level_id,
                         'frais_inscription' => $frais_inscription,
                         'frais_inscription_reinscription' => $frais_inscription_reinscription,
@@ -439,6 +496,11 @@ class ClassController
                     $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                     $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                     $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                    $teachingForms = $this->db->query("SELECT id, nom, code, teaching_type_id FROM teaching_forms WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                    $teachingFormsByType = [];
+                    foreach ($teachingForms as $form) {
+                        $teachingFormsByType[(int) $form['teaching_type_id']][] = $form;
+                    }
                     $levels = $this->db->query("SELECT l.id, l.code, l.libelle_fr, l.libelle_en, l.teaching_type_id FROM levels l LEFT JOIN teaching_types tt ON l.teaching_type_id = tt.id WHERE l.status = 1 AND (tt.actif = 1 OR l.teaching_type_id IS NULL) ORDER BY l.code ASC, l.libelle_fr ASC")->fetchAll(PDO::FETCH_ASSOC);
                     $departments = $this->db->query("SELECT id, nom FROM departments WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                     include __DIR__ . '/../Views/classes/edit.php';
@@ -459,8 +521,8 @@ class ClassController
                 $oldClass['tranches'] = $stmtOldTr->fetchAll(PDO::FETCH_KEY_PAIR);
 
                 // Mettre à jour la classe
-                $stmt = $this->db->prepare("UPDATE classes SET nom = ?, cycle_id = ?, section_id = ?, department_id = ?, teaching_type_id = ?, level_id = ?, frais_inscription = ?, frais_inscription_reinscription = ?, frais_scolarite_brut = ?, nbr_tranches = ? WHERE id = ?");
-                $stmt->execute([$nom, $cycle_id, $section_id, $department_id, $teaching_type_id, $level_id, $frais_inscription, $frais_inscription_reinscription, $frais_scolarite_brut, $nbr_tranches, (int)$id]);
+                $stmt = $this->db->prepare("UPDATE classes SET nom = ?, cycle_id = ?, section_id = ?, department_id = ?, teaching_type_id = ?, teaching_form_id = ?, level_id = ?, frais_inscription = ?, frais_inscription_reinscription = ?, frais_scolarite_brut = ?, nbr_tranches = ? WHERE id = ?");
+                $stmt->execute([$nom, $cycle_id, $section_id, $department_id, $teaching_type_id, $teaching_form_id, $level_id, $frais_inscription, $frais_inscription_reinscription, $frais_scolarite_brut, $nbr_tranches, (int)$id]);
                 
                 // Mettre à jour les tranches et échéances
                 $del = $this->db->prepare("DELETE FROM class_installments WHERE class_id = ?");
@@ -521,6 +583,7 @@ class ClassController
                     'section_id' => $section_id,
                     'department_id' => $department_id,
                     'teaching_type_id' => $teaching_type_id,
+                    'teaching_form_id' => $teaching_form_id,
                     'frais_inscription' => $frais_inscription,
                     'frais_inscription_reinscription' => $frais_inscription_reinscription,
                     'frais_scolarite_brut' => $frais_scolarite_brut,
@@ -531,6 +594,11 @@ class ClassController
                 $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $teachingForms = $this->db->query("SELECT id, nom, code, teaching_type_id FROM teaching_forms WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $teachingFormsByType = [];
+                foreach ($teachingForms as $form) {
+                    $teachingFormsByType[(int) $form['teaching_type_id']][] = $form;
+                }
                 $departments = $this->db->query("SELECT id, nom FROM departments WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/classes/edit.php';
             }

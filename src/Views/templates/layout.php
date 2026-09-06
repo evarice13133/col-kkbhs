@@ -256,6 +256,7 @@ $ribbon_structure = [
                     ['icon' => 'bi-door-open', 'label' => __('classes'), 'url' => '/classes', 'permission' => 'view_classes', 'roles' => ['superadmin', 'admin'], 'desc' => __('layout_desc_classes_academic')],
                     ['icon' => 'bi-book', 'label' => __('subjects'), 'url' => '/subjects', 'permission' => 'manage_subjects', 'roles' => ['superadmin', 'admin'], 'desc' => __('layout_desc_subjects')],
                     ['icon' => 'bi-collection', 'label' => __('subject_groups') ?? 'Groupe de Modules', 'url' => '/subject-groups', 'permission' => 'manage_subjects', 'roles' => ['superadmin', 'admin'], 'desc' => __('layout_desc_subject_groups')],
+                    ['icon' => 'bi-diagram-3', 'label' => 'Compétences et affectations', 'url' => '/competencies', 'permission' => 'manage_subjects', 'roles' => ['superadmin', 'admin'], 'desc' => 'Gestion des compétences et des affectations de matières'],
                     ['icon' => 'bi-shield-check', 'label' => __('discipline_management'), 'url' => '/bulletins/discipline', 'permission' => 'manage_absences', 'roles' => ['superadmin', 'admin'], 'desc' => __('layout_desc_discipline')],
                 ]
             ]
@@ -351,7 +352,19 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
             'action_irreversible': "<?= addslashes((string) __('action_irreversible')) ?>",
             'delete': "<?= addslashes((string) __('delete')) ?>",
             'processing': "<?= addslashes((string) __('processing')) ?>",
-            'please_wait': "<?= addslashes((string) __('please_wait')) ?>"
+            'please_wait': "<?= addslashes((string) __('please_wait')) ?>",
+            'space_configured': "<?= addslashes((string) __('space_configured')) ?>",
+            'configuration_complete': "<?= addslashes((string) __('configuration_complete')) ?>",
+            'remaining_step': "<?= addslashes((string) __('remaining_step')) ?>",
+            'remaining_steps': "<?= addslashes((string) __('remaining_steps')) ?>",
+            'access': "<?= addslashes((string) __('access')) ?>",
+            'execute': "<?= addslashes((string) __('execute')) ?>",
+            'skip': "<?= addslashes((string) __('skip')) ?>",
+            'finish': "<?= addslashes((string) __('finish')) ?>",
+            'already_completed': "<?= addslashes((string) __('already_completed')) ?>",
+            'onboarding': "<?= addslashes((string) __('onboarding')) ?>",
+            'accompaniment_onboarding': "<?= addslashes((string) __('accompaniment_onboarding')) ?>",
+            'onboarding_progress_message': "<?= addslashes((string) __('onboarding_progress_message')) ?>"
         };
     </script>
     <title><?= (isset($title) ? $title . ' | ' : '') . __('app_name') ?> - <?= __('app_tagline') ?></title>
@@ -647,7 +660,7 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                 <div class="d-flex align-items-center gap-2 flex-grow-1 overflow-hidden" style="max-width: 750px;">
                     <!-- Mobile Menu Button (WCAG 44x44px Touch Target) -->
                     <?php if (\App\Core\Session::isLogged()): ?>
-                        <button class="btn btn-theme-soft p-0 d-lg-none border-0 rounded-circle flex-shrink-0 d-flex align-items-center justify-content-center" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileRibbonDrawer" title="Menu Mobile" style="width: 44px; height: 44px;">
+                        <button class="btn btn-theme-soft p-0 d-lg-none border-0 rounded-circle flex-shrink-0 d-flex align-items-center justify-content-center" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileRibbonDrawer" title="<?= __('mobile_menu') ?>" aria-label="<?= __('mobile_menu') ?>" style="width: 44px; height: 44px;">
                             <i class="bi bi-list fs-3 text-main-theme"></i>
                         </button>
                     <?php endif; ?>
@@ -656,11 +669,11 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                     <a href="/" class="ribbon-brand flex-shrink-0 me-1 text-decoration-none" id="tourBrandLogo">
                         <?php if ($logoData['has_logo'] && !empty($logoData['base64'])): ?>
                             <div class="sidebar-logo-container" style="width: 32px; height: 32px;">
-                                <img src="<?= htmlspecialchars($logoData['base64']) ?>" alt="Logo" class="sidebar-logo">
+                                <img src="<?= htmlspecialchars($logoData['base64']) ?>" alt="<?= __('logo') ?>" class="sidebar-logo">
                             </div>
                         <?php elseif ($logoData['has_logo'] && !empty($logoData['url'])): ?>
                             <div class="sidebar-logo-container" style="width: 32px; height: 32px;">
-                                <img src="<?= htmlspecialchars($logoData['url']) ?>" alt="Logo" class="sidebar-logo">
+                                <img src="<?= htmlspecialchars($logoData['url']) ?>" alt="<?= __('logo') ?>" class="sidebar-logo">
                             </div>
                         <?php else: ?>
                             <div class="logo-fallback-modern" style="width: 32px; height: 32px; font-size: 1.05rem;">
@@ -733,7 +746,7 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                         <div class="dropdown me-1 d-none" id="onboardingProgressPillDropdown" style="display: none !important;">
                             <div class="onboarding-pill-badge" data-bs-toggle="dropdown" aria-expanded="false" title="<?= addslashes((string) __('onboarding_progress_title')) ?>">
                                 <span class="pill-sparkle">✨</span>
-                                <span id="onboardingPillText">⚡ 0% configuré</span>
+                                <span id="onboardingPillText">⚡ 0% <?= __('configured') ?></span>
                                 <i class="bi bi-chevron-down extra-small opacity-75 ms-1"></i>
                             </div>
                             <div class="dropdown-menu dropdown-menu-end onboarding-checklist-menu p-3">
@@ -742,7 +755,7 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                                         <h6 class="fw-bold m-0 fs-6 text-main-theme"><?= __('layout_onboarding_guide') ?></h6>
                                         <small class="text-muted" id="onboardingChecklistRemaining"><?= __('layout_remaining_steps') ?></small>
                                     </div>
-                                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2 py-1 extra-small">Setup</span>
+                                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2 py-1 extra-small"><?= __('setup') ?></span>
                                 </div>
                                 <div id="onboardingChecklistContainer" class="d-flex flex-column gap-1 my-2">
                                     <!-- Dynamic Checklist items rendered via JS -->
@@ -770,7 +783,7 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                             <div class="dropdown-menu dropdown-menu-end notification-drawer-menu shadow-lg border-0 p-3 mt-2">
                                 <div class="d-flex align-items-center justify-content-between pb-2 mb-2 border-bottom">
                                     <h6 class="fw-bold m-0 fs-6 text-main-theme"><?= __('layout_notifications_tips') ?></h6>
-                                    <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill extra-small">Onboarding</span>
+                                    <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill extra-small"><?= __('onboarding') ?></span>
                                 </div>
                                 <div class="notification-item-card">
                                     <div class="d-flex align-items-start gap-2">
@@ -870,13 +883,13 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                                 <li>
                                     <a class="dropdown-item dropdown-item-modern py-2 <?= $app_lang === 'fr' ? 'active' : '' ?>"
                                         href="javascript:void(0)" onclick="UX.switchLanguage('fr')">
-                                        <span class="fs-5 me-2">🇫🇷</span> Français
+                                        <span class="fs-5 me-2">🇫🇷</span> <?= __('french') ?>
                                     </a>
                                 </li>
                                 <li>
                                     <a class="dropdown-item dropdown-item-modern py-2 <?= $app_lang === 'en' ? 'active' : '' ?>"
                                         href="javascript:void(0)" onclick="UX.switchLanguage('en')">
-                                        <span class="fs-5 me-2">🇺🇸</span> English
+                                        <span class="fs-5 me-2">🇺🇸</span> <?= __('english') ?>
                                     </a>
                                 </li>
                                 <li><hr class="dropdown-divider my-1"></li>

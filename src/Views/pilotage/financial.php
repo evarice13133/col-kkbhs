@@ -113,7 +113,7 @@ ob_start();
         <!-- Répartition des paiements -->
         <div class="col-12 col-md-6 col-xl-3">
             <div class="modern-card border-0 shadow-sm p-4 h-100">
-                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-pie-chart me-2"></i>Modes de Règlement</h6>
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-pie-chart me-2"></i><?= __('payment_methods') ?></h6>
                 <div style="height: 200px; position: relative;" class="d-flex align-items-center justify-content-center">
                     <canvas id="paymentMethodChart"></canvas>
                 </div>
@@ -122,10 +122,10 @@ ob_start();
         <!-- Répartition des réductions -->
         <div class="col-12 col-md-6 col-xl-3">
             <div class="modern-card border-0 shadow-sm p-4 h-100">
-                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-percent me-2"></i>Motifs des Réductions</h6>
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-percent me-2"></i><?= __('reduction_reasons') ?></h6>
                 <div style="height: 200px; position: relative;" class="d-flex align-items-center justify-content-center">
                     <?php if (empty($reductionsRepartition)): ?>
-                        <div class="text-center text-muted small py-5">Aucune réduction active</div>
+                        <div class="text-center text-muted small py-5"><?= __('no_active_reductions') ?></div>
                     <?php else: ?>
                         <canvas id="reductionsChart"></canvas>
                     <?php endif; ?>
@@ -135,10 +135,10 @@ ob_start();
         <!-- Répartition des bourses -->
         <div class="col-12 col-md-6 col-xl-3">
             <div class="modern-card border-0 shadow-sm p-4 h-100">
-                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-award-fill me-2"></i>Motifs des Bourses</h6>
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-award-fill me-2"></i><?= __('scholarship_reasons') ?></h6>
                 <div style="height: 200px; position: relative;" class="d-flex align-items-center justify-content-center">
                     <?php if (empty($scholarshipsRepartition)): ?>
-                        <div class="text-center text-muted small py-5">Aucune bourse active</div>
+                        <div class="text-center text-muted small py-5"><?= __('no_active_scholarships') ?></div>
                     <?php else: ?>
                         <canvas id="scholarshipsChart"></canvas>
                     <?php endif; ?>
@@ -148,10 +148,10 @@ ob_start();
         <!-- Répartition des dépenses -->
         <div class="col-12 col-md-6 col-xl-3">
             <div class="modern-card border-0 shadow-sm p-4 h-100">
-                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-wallet2 me-2"></i>Répartition des Dépenses</h6>
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-wallet2 me-2"></i><?= __('dashboard_financial_expenses_repartition') ?></h6>
                 <div style="height: 200px; position: relative;" class="d-flex align-items-center justify-content-center">
                     <?php if (empty($expensesByCategory)): ?>
-                        <div class="text-center text-muted small py-5">Aucune dépense active</div>
+                        <div class="text-center text-muted small py-5"><?= __('no_active_expenses') ?></div>
                     <?php else: ?>
                         <canvas id="expensesPilotageChart"></canvas>
                     <?php endif; ?>
@@ -162,16 +162,16 @@ ob_start();
 
     <!-- Section 3: Situation des Tranches -->
     <div class="modern-card border-0 shadow-sm p-4 mb-4">
-        <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-bar-chart-steps me-2"></i>Situation des tranches configurées</h6>
+        <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-bar-chart-steps me-2"></i><?= __('configured_installments') ?></h6>
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead>
                     <tr class="text-muted small text-uppercase">
-                        <th>Tranche</th>
-                        <th class="text-end">Montant Attendu</th>
-                        <th class="text-end">Montant Payé</th>
-                        <th class="text-end">Montant Restant</th>
-                        <th style="width: 250px;">Progression</th>
+                        <th><?= __('installment') ?></th>
+                        <th class="text-end"><?= __('expected_amount') ?></th>
+                        <th class="text-end"><?= __('paid_amount') ?></th>
+                        <th class="text-end"><?= __('remaining_amount') ?></th>
+                        <th style="width: 250px;"><?= __('progress') ?></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -198,7 +198,7 @@ ob_start();
                     <?php endforeach; ?>
                     <?php if (empty($tranchesSituation)): ?>
                         <tr>
-                            <td colspan="5" class="text-center text-muted py-3">Aucune tranche configurée pour cette année scolaire</td>
+                            <td colspan="5" class="text-center text-muted py-3"><?= __('no_installments_configured') ?></td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
@@ -212,16 +212,16 @@ ob_start();
         <div class="col-12 col-lg-6">
             <div class="modern-card border-0 shadow-sm p-4 h-100">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="fw-bold text-main-theme mb-0"><i class="bi bi-door-open me-2"></i>Insolvabilité par Classe</h6>
-                    <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill"><?= number_format($totalInsolventAmount, 0, ',', ' ') ?> FCFA en retard</span>
+                    <h6 class="fw-bold text-main-theme mb-0"><i class="bi bi-door-open me-2"></i><?= __('insolvency_by_class') ?></h6>
+                    <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill"><?= number_format($totalInsolventAmount, 0, ',', ' ') ?> FCFA <?= __('due') ?></span>
                 </div>
                 <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
                     <table class="table table-hover align-middle mb-0">
                         <thead>
                             <tr class="text-muted small text-uppercase">
-                                <th>Classe</th>
-                                <th class="text-center">Élèves</th>
-                                <th class="text-end">Montant Dû</th>
+                                <th><?= __('classes') ?></th>
+                                <th class="text-center"><?= __('students') ?></th>
+                                <th class="text-end"><?= __('amount_due') ?></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -234,7 +234,7 @@ ob_start();
                             <?php endforeach; ?>
                             <?php if (empty($insolventsByClass)): ?>
                                 <tr>
-                                    <td colspan="3" class="text-center text-muted py-3">Aucune classe insolvable</td>
+                                    <td colspan="3" class="text-center text-muted py-3"><?= __('no_insolvent_class') ?></td>
                                 </tr>
                             <?php endif; ?>
                         </tbody>
@@ -246,15 +246,15 @@ ob_start();
         <!-- Top 10 des élèves les plus insolvables -->
         <div class="col-12 col-lg-6">
             <div class="modern-card border-0 shadow-sm p-4 h-100">
-                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-people-fill me-2"></i>Top 10 des retards les plus importants</h6>
+                <h6 class="fw-bold text-main-theme mb-3"><i class="bi bi-people-fill me-2"></i><?= __('top_payment_delays') ?></h6>
                 <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
                     <table class="table table-hover align-middle mb-0">
                         <thead>
                             <tr class="text-muted small text-uppercase">
-                                <th>Élève</th>
-                                <th>Classe</th>
-                                <th class="text-center">Échéances</th>
-                                <th class="text-end">Retard Dû</th>
+                                <th><?= __('students') ?></th>
+                                <th><?= __('classes') ?></th>
+                                <th class="text-center"><?= __('installments') ?></th>
+                                <th class="text-end"><?= __('amount_due') ?></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -268,7 +268,7 @@ ob_start();
                             <?php endforeach; ?>
                             <?php if (empty($topInsolvents)): ?>
                                 <tr>
-                                    <td colspan="4" class="text-center text-muted py-3">Aucun retard de paiement détecté</td>
+                                    <td colspan="4" class="text-center text-muted py-3"><?= __('no_payment_delay') ?></td>
                                 </tr>
                             <?php endif; ?>
                         </tbody>

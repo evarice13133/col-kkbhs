@@ -22,7 +22,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
                         class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2.5 py-1 rounded-pill fw-medium"
                         style="font-size: 0.75rem;">
                         <i class="bi bi-mortarboard-fill me-1"></i><?= __('timetables_type') ?>
-                        <?= h($cycleRow['teaching_type_name'] ?? 'Enseignement') ?>
+                        <?= h($cycleRow['teaching_type_name'] ?? __('timetables_teaching')) ?>
                     </span>
                     <span
                         class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2.5 py-1 rounded-pill fw-medium"
@@ -32,7 +32,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
                     <span
                         class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2.5 py-1 rounded-pill fw-medium"
                         style="font-size: 0.75rem;">
-                        <i class="bi bi-layers-fill me-1"></i><?= __('level') ?? 'Niveau' ?>: <?= $levelName ?>
+                        <i class="bi bi-layers-fill me-1"></i><?= __('level') ?>: <?= $levelName ?>
                     </span>
                     <span
                         class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2.5 py-1 rounded-pill fw-medium"
@@ -55,7 +55,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
                     <button type="button" class="btn btn-sm btn-gradient-primary rounded-pill px-3 py-2 fw-bold shadow-sm"
                         onclick="openBulkScheduleModal()"
                         style="background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); color: white; border: none;">
-                        <i class="bi bi-layers-half me-1"></i>Planification en Masse
+                        <i class="bi bi-layers-half me-1"></i><?= __('timetables_bulk_plan') ?>
                     </button>
                     <a href="/timetables/wizard" class="btn btn-sm btn-primary rounded-pill px-3 py-2 fw-bold shadow-sm">
                         <i class="bi bi-plus-circle me-1"></i><?= __('timetables_new_wizard') ?>
@@ -85,11 +85,9 @@ $timetablesByClass = $gridData['timetablesByClass'];
         <div class="alert alert-danger rounded-4 shadow-sm border-2 border-danger d-flex align-items-center mb-4">
             <i class="bi bi-exclamation-octagon-fill fs-2 me-3 text-danger flex-shrink-0"></i>
             <div>
-                <h6 class="fw-bold mb-1">Conflits détectés dans l'emploi du temps (<?= count($gridConflicts) ?>)</h6>
+                <h6 class="fw-bold mb-1"><?= __('timetables_conflicts_title', ['count' => count($gridConflicts)]) ?></h6>
                 <div class="small">
-                    Des enseignants ou des salles sont affectés simultanément à des matières différentes au même créneau.
-                    (Remarque : Un cours identique au même créneau pour plusieurs classes est autorisé en cours
-                    mutualisé/tronc commun).
+                    <?= __('timetables_conflicts_desc') ?>
                 </div>
             </div>
         </div>
@@ -110,7 +108,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
                     <div>
                         <h6 class="offcanvas-title fw-black text-main-theme mb-0" id="quickAssignPaletteLabel">Palette
                             d'Affectation Rapide</h6>
-                        <span class="text-muted extra-small">Glissez une matière dans la grille</span>
+                        <span class="text-muted extra-small"><?= __('timetables_drag_subject') ?></span>
                     </div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Fermer"></button>
@@ -121,12 +119,12 @@ $timetablesByClass = $gridData['timetablesByClass'];
                         <span class="input-group-text bg-transparent border-end-0 text-muted"><i
                                 class="bi bi-search"></i></span>
                         <input type="text" id="searchPaletteSubject" class="form-control border-start-0 ps-0 rounded-end-3"
-                            placeholder="Rechercher une matière..." onkeyup="filterPaletteSubjects(this.value)">
+                            placeholder="<?= __('timetables_search_subject') ?>" onkeyup="filterPaletteSubjects(this.value)">
                     </div>
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <span class="text-muted extra-small fw-bold text-uppercase">Matières disponibles</span>
+                    <span class="text-muted extra-small fw-bold text-uppercase"><?= __('timetables_available_subjects') ?></span>
                     <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2.5 py-1 extra-small fw-bold"
                         id="paletteSubjectCount">
                         <?= count($gridData['subjects']) ?> matière(s)
@@ -134,14 +132,14 @@ $timetablesByClass = $gridData['timetablesByClass'];
                 </div>
 
                 <div id="paletteNoMatchAlert" class="alert alert-warning rounded-3 small p-3 text-center mb-3 d-none">
-                    <i class="bi bi-search me-1"></i> Aucune matière ne correspond à votre recherche.
+                    <i class="bi bi-search me-1"></i> <?= __('timetables_no_subject_match') ?>
                 </div>
 
                 <?php if (empty($gridData['subjects'])): ?>
                     <div class="alert alert-info rounded-3 small p-3 text-center mb-0">
                         <i class="bi bi-info-circle fs-4 text-info d-block mb-2"></i>
-                        <strong>Aucune matière disponible.</strong><br>
-                        Toutes les matières sont déjà planifiées ou aucune n'a été rattachée à ce niveau.
+                        <strong><?= __('timetables_no_subjects') ?></strong><br>
+                        <?= __('timetables_no_subject_match') ?>
                     </div>
                 <?php else: ?>
                     <div class="d-flex flex-column gap-2.5 overflow-auto pe-1" id="paletteSubjectsContainer"
@@ -165,7 +163,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
                                     </div>
                                 </div>
                                 <span class="badge rounded-pill bg-light text-dark border extra-small flex-shrink-0"><i
-                                        class="bi bi-arrows-move me-1"></i>Glisser</span>
+                                        class="bi bi-arrows-move me-1"></i><?= __('timetables_drag') ?></span>
                             </div>
                         <?php endforeach; ?>
                     </div>
@@ -182,8 +180,8 @@ $timetablesByClass = $gridData['timetablesByClass'];
                         <i class="bi bi-hand-index-thumb-fill"></i>
                     </div>
                     <div>
-                        <h6 class="fw-bold text-main-theme mb-0">Palette d'Affectation Rapide</h6>
-                        <span class="text-muted extra-small">Glissez une matière dans la grille</span>
+                        <h6 class="fw-bold text-main-theme mb-0"><?= __('timetables_quick_palette') ?></h6>
+                        <span class="text-muted extra-small"><?= __('timetables_drag_subject') ?></span>
                     </div>
                 </div>
                 <button type="button" class="btn-close" onclick="toggleQuickAssignPalette()"></button>
@@ -216,11 +214,11 @@ $timetablesByClass = $gridData['timetablesByClass'];
                     <tr>
                         <!-- Coin Haut-Gauche Fixe 1: Jours -->
                         <th style="width: 100px; min-width: 100px;" class="py-3 text-center fw-bold sticky-top-left-1">
-                            <i class="bi bi-calendar3 me-1"></i>Jours
+                            <i class="bi bi-calendar3 me-1"></i><?= __('timetables_days') ?>
                         </th>
                         <!-- Coin Haut-Gauche Fixe 2: Horaires -->
                         <th style="width: 130px; min-width: 130px;" class="py-3 text-center fw-bold sticky-top-left-2">
-                            <i class="bi bi-clock-history me-1"></i>Horaires
+                            <i class="bi bi-clock-history me-1"></i><?= __('timetables_hours') ?>
                         </th>
                         <!-- Colonnes Fixes en Haut: Classes -->
                         <?php foreach ($classes as $cls): ?>
@@ -243,7 +241,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
                                 </div>
                                 <span
                                     class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill extra-small font-normal fw-medium px-2 py-0.5">
-                                    <i class="bi bi-people-fill me-1"></i><?= (int) $cls['effectif'] ?> élèves
+                                    <i class="bi bi-people-fill me-1"></i><?= (int) $cls['effectif'] ?> <?= __('timetables_students') ?>
                                 </span>
                             </th>
                         <?php endforeach; ?>
@@ -273,7 +271,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
                                         </div>
                                         <?php if ($isPause): ?>
                                             <span class="badge pause-badge rounded-pill extra-small fw-bold mt-1 px-2 py-0.5">
-                                                <i class="bi bi-cup-hot-fill me-1"></i>PAUSE
+                                                <i class="bi bi-cup-hot-fill me-1"></i><?= __('timetables_pause') ?>
                                             </span>
                                         <?php else: ?>
                                             <span
@@ -294,9 +292,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
                                             </div>
                                             <div class="text-center">
                                                 <span
-                                                    class="fw-black text-uppercase tracking-wider fs-6 pause-text-emerald me-2">PAUSE
-                                                    &
-                                                    INTERVALLE</span>
+                                                    class="fw-black text-uppercase tracking-wider fs-6 pause-text-emerald me-2"><?= __('timetables_pause_interval') ?></span>
                                                 <span class="badge pause-badge rounded-pill font-monospace fw-bold px-2.5 py-1">
                                                     <?= substr($slot['heure_debut'], 0, 5) ?> -
                                                     <?= substr($slot['heure_fin'], 0, 5) ?> (<?= (int) $slot['duree_minutes'] ?>
@@ -358,7 +354,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
                                                                 <button type="button"
                                                                     class="btn-delete-course btn btn-link p-0 flex-shrink-0 border-0 bg-transparent"
                                                                     onclick="event.stopPropagation(); deleteEntry(<?= $timetableId ?>, <?= $slot['id'] ?>, '<?= $day ?>')"
-                                                                    title="Libérer ce créneau">
+                                                                    title="<?= __('timetables_release_slot') ?>">
                                                                     <i class="bi bi-x-circle-fill"></i>
                                                                 </button>
                                                             <?php endif; ?>
@@ -374,12 +370,12 @@ $timetablesByClass = $gridData['timetablesByClass'];
                                                     <!-- Métadonnées (Enseignant & Salle) -->
                                                     <div class="course-meta d-flex flex-column gap-1 pt-1.5 border-top">
                                                         <div class="d-flex align-items-center gap-1.5 teacher-info"
-                                                            title="Enseignant: <?= h($entry['teacher_name']) ?>">
+                                                            title="<?= __('timetables_teacher_title', ['name' => h($entry['teacher_name'])]) ?>">
                                                             <i class="bi bi-person-circle text-primary flex-shrink-0"></i>
                                                             <span class="teacher-name text-truncate"><?= h($entry['teacher_name']) ?></span>
                                                         </div>
                                                         <div class="d-flex align-items-center gap-1.5 room-info"
-                                                            title="Salle: <?= h($entry['room_name']) ?>">
+                                                            title="<?= __('timetables_room_title', ['name' => h($entry['room_name'])]) ?>">
                                                             <i class="bi bi-geo-alt-fill text-danger flex-shrink-0"></i>
                                                             <span class="room-badge badge rounded-2 text-truncate">
                                                                 <?= h($entry['room_name']) ?>
@@ -393,10 +389,10 @@ $timetablesByClass = $gridData['timetablesByClass'];
                                                     <div
                                                         class="empty-slot-placeholder p-2 text-center rounded-3 transition-all border border-dashed h-100 w-100 d-flex flex-column align-items-center justify-content-center">
                                                         <i class="bi bi-plus-circle-dotted text-primary fs-5 mb-1 opacity-75"></i>
-                                                        <span class="extra-small fw-bold text-muted-theme">Affecter</span>
+                                                        <span class="extra-small fw-bold text-muted-theme"><?= __('timetables_assign') ?></span>
                                                     </div>
                                                 <?php else: ?>
-                                                    <div class="text-muted extra-small py-2 opacity-50 fw-semibold">- Libre -</div>
+                                                    <div class="text-muted extra-small py-2 opacity-50 fw-semibold">- <?= __('timetables_free') ?> -</div>
                                                 <?php endif; ?>
                                             <?php endif; ?>
                                         </td>
@@ -946,7 +942,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
 
         const isPause = e.currentTarget.parentElement && e.currentTarget.parentElement.classList.contains('bg-pause-row');
         if (isPause) {
-            showGridToast('danger', 'Déplacement Bloqué', 'Ce créneau horaire est une PAUSE. Aucun cours ne peut y être planifié.');
+            showGridToast('danger', <?= json_encode(__('timetables_move_blocked')) ?>, <?= json_encode(__('timetables_pause_no_course')) ?>);
             return;
         }
 
@@ -1638,7 +1634,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
     }
 
     function deleteEntry(timetableId, slotId, day) {
-        if (!confirm('Voulez-vous vraiment libérer ce créneau ?')) return;
+        if (!confirm(<?= json_encode(__('timetables_release_confirm')) ?>)) return;
 
         fetch('/timetables/api/grid/delete', {
             method: 'POST',

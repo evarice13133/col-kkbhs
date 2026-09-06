@@ -28,13 +28,13 @@
     define('APP_URL', 'http://localhost:8000');
 
     define('APP_ENV', 'development');
-    define('DEBUG_MODE', true);  */   //affichage des erreures PHP au developpeur
+    define('DEBUG_MODE', true);*/     //affichage des erreures PHP au developpeur
 
 /* Force error display for debugging    
   
    ini_set('display_errors', 1);
    ini_set('display_startup_errors', 1);
-   error_reporting(E_ALL);
-*/ 
+   error_reporting(E_ALL);*/ 
+
 //   git@github.com:evarice13133/futura.camertech.git    -     https://webhooks.hostinger.com/deploy/5c268448f78945b471bbef333ea10955
 //   git@github.com:evarice13133/col-kkbhs.git           -     https://webhooks.hostinger.com/deploy/cd6d548d7e495bd4ec18fa3c3f7b2e44

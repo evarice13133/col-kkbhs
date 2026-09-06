@@ -1,67 +1,12 @@
 <?php
 
-
-
-
-
-
-
 namespace App\Controllers;
 
-
-
-
-
-
-
 use App\Core\Database;
-
-
-
 use App\Core\Session;
-
-
-
 use App\Services\ActivityTracker;
-
-
-
 use App\Services\AcademicYearService;
-
-
-
 use PDO;
-
-
-
-
-
-
-
-/**
-
-
-
- * GradeController
-
-
-
- * 
-
-
-
- * Ce contrôleur est le moteur de saisie et de suivi des performances académiques.
-
-
-
- * Il gère les fiches de notes, les exports de report et la validation des entrées professeurs.
-
-
-
- */
-
-
-
 class GradeController
 
 
@@ -554,29 +499,13 @@ class GradeController
 
 
             $exportRows = array_map(function ($grade) {
-
-
+                $periodeCode = (string) ($grade['periode_code'] ?? $grade['periode'] ?? '-');
 
                 return [
-
-
-
                     trim($grade['student_nom'] . ' ' . $grade['student_prenom']),
-
-
-
                     $grade['class_nom'],
-
-
-
                     $grade['subject_nom'],
-
-
-
-                    $grade['periode'],
-
-
-
+                    $periodeCode,
                     number_format((float) $grade['valeur'], 2, ',', ' ') . '/20',
 
 
@@ -1131,6 +1060,14 @@ class GradeController
 
         }
 
+        try {
+            $competencyIds = $this->normalizeAndValidateCompetencySelection($class_id, $subject_id, $periode, $rawCompetencyIds);
+        } catch (\InvalidArgumentException $e) {
+            Session::setFlash('error', $e->getMessage());
+            header("Location: /notes/saisie?class_id={$class_id}&subject_id={$subject_id}");
+            exit;
+        }
+
 
 
         // Vérification de la cohérence Type Enseignement vs Département
@@ -1668,75 +1605,47 @@ class GradeController
 
         $sql = "SELECT g.id, g.valeur, g.appreciation, g.periode, g.updated_at,
 
-
+                       COALESCE(seq.code, seq.short_label, g.periode) AS periode_code,
 
                        s.nom as student_nom, s.prenom as student_prenom,
 
-
-
                        sub.nom as subject_nom, sub.coefficient,
-
-
 
                        c.id as class_id, c.nom as class_nom,
 
-
-
                        sub.id as subject_id,
-
-
 
                        ay.nom as academic_year_nom,
 
-
-
-                       COALESCE(u.nom, g.teacher_nom_snapshot) as teacher_nom, 
+                       COALESCE(u.nom, g.teacher_nom_snapshot) as teacher_nom,
 
                        COALESCE(u.prenom, g.teacher_prenom_snapshot) as teacher_prenom,
 
-
-
                        g.teacher_id,
-
-
 
                        g.teacher_nom_snapshot,
 
-
-
                        g.teacher_prenom_snapshot,
-
-
 
                        g.subject_nom_snapshot,
 
-
-
                        g.created_by_type
-
-
 
                 FROM grades g
 
-
-
                 JOIN students s ON g.student_id = s.id
-
-
 
                 JOIN classes c ON s.class_id = c.id
 
-
-
                 JOIN subjects sub ON g.subject_id = sub.id
-
-
 
                 LEFT JOIN users u ON g.teacher_id = u.id
 
                 LEFT JOIN academic_years ay ON g.academic_year_id = ay.id
 
-                LEFT JOIN teaching_types tt ON COALESCE(sub.teaching_type_id, c.teaching_type_id) = tt.id";
+                LEFT JOIN teaching_types tt ON COALESCE(sub.teaching_type_id, c.teaching_type_id) = tt.id
+
+                LEFT JOIN sequences seq ON seq.label = g.periode OR seq.short_label = g.periode OR seq.code = g.periode";
 
         $params = [];
 
@@ -2225,6 +2134,40 @@ class GradeController
 
 
 
+
+    private function normalizeAndValidateCompetencySelection(int $classId, int $subjectId, string $periode, array $rawCompetencyIds): array
+    {
+        $filtered = array_values(array_unique(array_map('intval', array_filter($rawCompetencyIds, static function ($value) {
+            return $value !== null && $value !== '' && $value !== false;
+        }))));
+
+        if (empty($filtered)) {
+            throw new \InvalidArgumentException(__('select_at_least_one_competency') ?? 'Veuillez sélectionner au moins une compétence pour cette évaluation.');
+        }
+
+        if (count($filtered) > 2) {
+            throw new \InvalidArgumentException(__('max_2_competencies_error') ?? 'Maximum 2 compétences autorisées pour une évaluation.');
+        }
+
+        $stmtCheck = $this->db->prepare("SELECT 1 FROM subject_classes WHERE class_id = ? AND subject_id = ? LIMIT 1");
+        $stmtCheck->execute([$classId, $subjectId]);
+        if ($stmtCheck->fetchColumn() === false) {
+            throw new \InvalidArgumentException('La matière sélectionnée n\'est pas affectée à cette classe.');
+        }
+
+        $in = implode(',', array_fill(0, count($filtered), '?'));
+        $stmt = $this->db->prepare("SELECT id FROM competencies WHERE id IN ({$in}) AND subject_id = ?");
+        $params = $filtered;
+        $params[] = $subjectId;
+        $stmt->execute($params);
+        $validIds = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+
+        if (count($validIds) !== count(array_unique($filtered))) {
+            throw new \InvalidArgumentException('Une ou plusieurs compétences sélectionnées ne correspondent pas à la matière concernée.');
+        }
+
+        return $filtered;
+    }
 
     private function fetchOne($sql, array $params = [])
 
@@ -2920,7 +2863,8 @@ class GradeController
 
         }
 
-
+        $assignments = $this->getAccessibleAssignments();
+        $subjects = $this->extractAccessibleSubjects($assignments, $class_id, 0);
 
         include __DIR__ . '/../Views/grades/import.php';
 
@@ -3135,6 +3079,9 @@ class GradeController
             $subjectInfo = $this->fetchOne("SELECT id, nom FROM subjects WHERE id = ?", [$subject_id]);
 
         }
+
+        $assignments = $this->getAccessibleAssignments();
+        $subjects = $this->extractAccessibleSubjects($assignments, $class_id, 0);
 
         include __DIR__ . '/../Views/grades/import.php';
 

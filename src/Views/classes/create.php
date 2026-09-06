@@ -144,11 +144,18 @@ ob_start();
 
                         <div class="col-md-6">
                             <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Type Enseignement *</label>
-                            <select name="teaching_type_id" class="form-select premium-input border-primary border-opacity-25" required>
+                            <select name="teaching_type_id" id="teaching_type_id" class="form-select premium-input border-primary border-opacity-25" required>
                                 <option value="">Sélectionner un type</option>
                                 <?php foreach ($teachingTypes as $tt): ?>
                                     <option value="<?= $tt['id'] ?>" <?= (($classe['teaching_type_id'] ?? '') == $tt['id']) ? 'selected' : '' ?>><?= h($tt['nom']) ?></option>
                                 <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Forme d’enseignement *</label>
+                            <select name="teaching_form_id" id="teaching_form_id" class="form-select premium-input border-primary border-opacity-25" required disabled>
+                                <option value="">Sélectionner une forme</option>
                             </select>
                         </div>
 
@@ -285,7 +292,54 @@ ob_start();
 </div>
 
 <script>
+const teachingFormsByType = <?= json_encode($teachingFormsByType ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP) ?>;
+const teachingFormPlaceholder = 'Sélectionner une forme';
+const noTeachingFormForTypeText = 'Aucune forme d’enseignement disponible pour ce type';
+
+function populateTeachingFormSelect(typeId, selectedFormId = null) {
+    const select = document.getElementById('teaching_form_id');
+    if (!select) return;
+
+    const forms = typeId && teachingFormsByType[typeId] ? teachingFormsByType[typeId] : [];
+    select.innerHTML = '<option value="" disabled selected>' + teachingFormPlaceholder + '</option>';
+
+    if (!forms.length) {
+        select.disabled = true;
+        select.innerHTML = '<option value="" disabled selected>' + noTeachingFormForTypeText + '</option>';
+        return;
+    }
+
+    select.disabled = false;
+    forms.forEach(function (form) {
+        const option = document.createElement('option');
+        option.value = String(form.id);
+        option.textContent = form.nom + (form.code ? ' (' + form.code + ')' : '');
+        if (String(selectedFormId) === String(form.id)) {
+            option.selected = true;
+        }
+        select.appendChild(option);
+    });
+
+    if (selectedFormId !== null && selectedFormId !== '' && String(selectedFormId) !== '0') {
+        select.value = String(selectedFormId);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    const teachingTypeSelect = document.getElementById('teaching_type_id');
+    const selectedTeachingType = teachingTypeSelect ? teachingTypeSelect.value : '';
+    const selectedTeachingForm = <?= json_encode((string) ($classe['teaching_form_id'] ?? '')) ?>;
+
+    if (teachingTypeSelect) {
+        teachingTypeSelect.addEventListener('change', function () {
+            populateTeachingFormSelect(this.value, null);
+        });
+    }
+
+    if (selectedTeachingType) {
+        populateTeachingFormSelect(selectedTeachingType, selectedTeachingForm || null);
+    }
+
     // Stepper Navigation
     let currentStep = 1;
     const totalSteps = 3;
@@ -296,14 +350,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitBtn = document.getElementById('submitBtn');
     const stepperProgress = document.getElementById('stepperProgress');
 
-    const teachingTypeSelect = document.querySelector('select[name="teaching_type_id"]');
+    const typeFilterSelect = document.querySelector('select[name="teaching_type_id"]');
     const departmentSelect = document.getElementById('department_id');
     const cycleSelect = document.getElementById('cycle_id');
     const originalDeptOptions = departmentSelect ? Array.from(departmentSelect.options) : [];
     const originalCycleOptions = cycleSelect ? Array.from(cycleSelect.options) : [];
 
     function filterDepartmentsAndCycles() {
-        const selectedType = teachingTypeSelect ? teachingTypeSelect.value : '';
+        const selectedType = typeFilterSelect ? typeFilterSelect.value : '';
         
         if (departmentSelect) {
             const currentDeptValue = departmentSelect.value;
@@ -336,8 +390,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    if (teachingTypeSelect) {
-        teachingTypeSelect.addEventListener('change', filterDepartmentsAndCycles);
+    if (typeFilterSelect) {
+        typeFilterSelect.addEventListener('change', filterDepartmentsAndCycles);
         filterDepartmentsAndCycles(); // Initial call
     }
 

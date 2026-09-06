@@ -208,7 +208,7 @@ ob_start();
                                 </div>
                                 <div class="col-6 col-sm-3">
                                     <div class="p-3 bg-body rounded-3 border shadow-2xs h-100">
-                                        <div class="text-muted small fw-bold text-truncate mb-1">Classes</div>
+                                        <div class="text-muted small fw-bold text-truncate mb-1"><?= __('classes') ?></div>
                                         <div class="h4 fw-black m-0 text-success"><?= (int)$stt['stats_classes'] ?></div>
                                         <div class="extra-small text-muted mt-1"><?= (int)$stt['stats_subjects'] ?> <?= __('dashboard_admin_subjects_count') ?></div>
                                     </div>
@@ -587,16 +587,16 @@ ob_start();
             <!-- Suivi Progression Enseignants -->
             <div class="modern-card border-0 shadow-lg border-top border-success border-4 h-100">
                 <div class="modern-card-header bg-transparent p-4 border-bottom">
-                    <h5 class="fw-bold m-0 text-main-theme"><i class="bi bi-clock-history text-success me-2"></i>Suivi de la saisie des notes par enseignant</h5>
+                        <h5 class="fw-bold m-0 text-main-theme"><i class="bi bi-clock-history text-success me-2"></i><?= __('notes_entry_tracking') ?></h5>
                 </div>
                 <div class="table-responsive" style="max-height: 320px; overflow-y: auto;">
                     <table class="table-modern">
                         <thead>
                             <tr>
-                                <th class="ps-4 border-0 py-3">Enseignant</th>
-                                <th class="border-0 py-3 text-center">Saisies</th>
-                                <th class="border-0 py-3">Progression</th>
-                                <th class="border-0 py-3 pe-4">Statut</th>
+                                <th class="ps-4 border-0 py-3"><?= __('teacher') ?></th>
+                                <th class="border-0 py-3 text-center"><?= __('entries') ?></th>
+                                <th class="border-0 py-3"><?= __('progress') ?></th>
+                                <th class="border-0 py-3 pe-4"><?= __('status') ?></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -641,7 +641,7 @@ ob_start();
                             <p class="mb-4 small text-white" style="color: #ffffff !important; opacity: 0.9 !important;"><?= $topTeacher['classes_count'] ?> classe(s) • <?= $topTeacher['filled_count'] ?>/<?= $topTeacher['expected_count'] ?> notes</p>
                         </div>
                         <div class="d-flex justify-content-between align-items-center mt-auto">
-                            <span class="badge rounded-pill px-3 py-1.5 fw-bold" style="background-color: rgba(255, 255, 255, 0.25) !important; color: #ffffff !important;"><?= $topTeacher['progress_percent'] ?>% Rempli</span>
+                            <span class="badge rounded-pill px-3 py-1.5 fw-bold" style="background-color: rgba(255, 255, 255, 0.25) !important; color: #ffffff !important;"><?= $topTeacher['progress_percent'] ?>% <?= __('filled') ?></span>
                             <i class="bi bi-patch-check-fill text-white fs-1 position-absolute bottom-0 end-0 m-3 opacity-25" style="font-size: 5rem !important;"></i>
                         </div>
                     </div>
@@ -661,7 +661,7 @@ ob_start();
                             <p class="mb-4 small text-white" style="color: #ffffff !important; opacity: 0.9 !important;"><?= $worstTeacher['classes_count'] ?> class(s) • <?= $worstTeacher['filled_count'] ?>/<?= $worstTeacher['expected_count'] ?> notes</p>
                         </div>
                         <div class="d-flex justify-content-between align-items-center mt-auto">
-                            <span class="badge rounded-pill px-3 py-1.5 fw-bold" style="background-color: rgba(255, 255, 255, 0.25) !important; color: #ffffff !important;"><?= $worstTeacher['progress_percent'] ?>% Rempli</span>
+                            <span class="badge rounded-pill px-3 py-1.5 fw-bold" style="background-color: rgba(255, 255, 255, 0.25) !important; color: #ffffff !important;"><?= $worstTeacher['progress_percent'] ?>% <?= __('filled') ?></span>
                             <i class="bi bi-x-circle-fill text-white fs-1 position-absolute bottom-0 end-0 m-3 opacity-25" style="font-size: 5rem !important;"></i>
                         </div>
                     </div>

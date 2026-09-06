@@ -1774,6 +1774,27 @@ class StudentController
 
 
 
+            // Réparer la table students pour éviter les clés primaires invalides (id = 0)
+            if ($this->tableExists('students')) {
+                $zeroIds = $this->db->query("SELECT id FROM students WHERE id = 0")->fetchAll(PDO::FETCH_COLUMN);
+                if ($zeroIds) {
+                    $nextId = (int) $this->db->query("SELECT COALESCE(MAX(id), 0) + 1 FROM students")->fetchColumn();
+                    $fixZeroId = $this->db->prepare("UPDATE students SET id = ? WHERE id = 0");
+                    foreach ($zeroIds as $_) {
+                        $fixZeroId->execute([$nextId++]);
+                    }
+                }
+
+                try {
+                    $this->db->exec("ALTER TABLE students MODIFY id INT(11) NOT NULL AUTO_INCREMENT");
+                } catch (\Throwable $e) {
+                    // Le type de colonne est déjà correct ou la table est incohérente ; on continue.
+                }
+
+                $maxId = (int) $this->db->query("SELECT COALESCE(MAX(id), 0) FROM students")->fetchColumn();
+                $this->db->exec("ALTER TABLE students AUTO_INCREMENT = " . max(1, $maxId + 1));
+            }
+
             // Les tables financières doivent générer leurs identifiants automatiquement.
             foreach (['student_discounts', 'student_scholarships'] as $financialTable) {
                 if (!$this->tableExists($financialTable)) {
@@ -1800,37 +1821,27 @@ class StudentController
 
 
             // Tenter de créer un index unique sur email si la colonne existe et qu'il n'y a pas de doublons
-
             if ($this->studentColumnExists('email')) {
-
                 try {
-
                     $dupStmt = $this->db->query("SELECT email, COUNT(*) c FROM students GROUP BY email HAVING c > 1 LIMIT 1");
-
                     $dup = $dupStmt->fetch(\PDO::FETCH_ASSOC);
 
-                    if (!$dup) {
+                    if (!$dup && $this->studentColumnExists('academic_year_id')) {
+                        $yearIndexExists = $this->db->prepare("SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'students' AND INDEX_NAME = 'uniq_students_email_year'");
+                        $yearIndexExists->execute();
 
-                        // Vérifier si l'index existe
-
-                        $idxCheck = $this->db->prepare("SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'students' AND INDEX_NAME = 'uniq_students_email'");
-
-                        $idxCheck->execute();
-
-                        if ((int) $idxCheck->fetchColumn() === 0) {
-
-                            $this->db->exec("CREATE UNIQUE INDEX uniq_students_email ON students(email)");
-
+                        if ((int) $yearIndexExists->fetchColumn() === 0) {
+                            try {
+                                $this->db->exec("DROP INDEX uniq_students_email ON students");
+                            } catch (\Throwable $e) {
+                                // L'index legacy n'existe pas ou a déjà été remplacé.
+                            }
+                            $this->db->exec("CREATE UNIQUE INDEX uniq_students_email_year ON students(email, academic_year_id)");
                         }
-
                     }
-
                 } catch (\Throwable $e) {
-
                     // Ne pas empêcher l'application de démarrer si l'index ne peut pas être créé
-
                 }
-
             }
 
         } catch (\Throwable $e) {

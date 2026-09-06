@@ -102,6 +102,29 @@ try {
         UNIQUE KEY uniq_stud_inst (student_id, academic_year_id, installment_number)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
 
+    // Corriger toute table legacy avec id=0 et réactiver AUTO_INCREMENT si besoin.
+    try {
+        $zeroIds = $pdo->query("SELECT id FROM student_installments WHERE id = 0")->fetchAll(PDO::FETCH_COLUMN);
+        if ($zeroIds) {
+            $nextId = (int) $pdo->query("SELECT COALESCE(MAX(id), 0) + 1 FROM student_installments")->fetchColumn();
+            $fixZeroId = $pdo->prepare("UPDATE student_installments SET id = ? WHERE id = 0");
+            foreach ($zeroIds as $_) {
+                $fixZeroId->execute([$nextId++]);
+            }
+        }
+
+        $idExtra = $pdo->query("SELECT EXTRA FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'student_installments' AND COLUMN_NAME = 'id'")->fetchColumn();
+        if (stripos((string)$idExtra, 'auto_increment') === false) {
+            $pdo->exec("ALTER TABLE student_installments MODIFY id INT(11) NOT NULL AUTO_INCREMENT");
+        }
+
+        $nextAuto = (int) $pdo->query("SELECT COALESCE(MAX(id), 0) + 1 FROM student_installments")->fetchColumn();
+        $pdo->exec("ALTER TABLE student_installments AUTO_INCREMENT = " . max(1, $nextAuto));
+        echo "  - student_installments: structure et AUTO_INCREMENT vérifiés.\n";
+    } catch (Throwable $e) {
+        echo "  - student_installments: correction automatique ignorée (" . $e->getMessage() . ")\n";
+    }
+
     // 5. Création de student_discounts
     echo "Création de la table 'student_discounts'...\n";
     $pdo->exec("CREATE TABLE IF NOT EXISTS student_discounts (

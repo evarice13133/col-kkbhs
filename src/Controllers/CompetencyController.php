@@ -40,6 +40,11 @@ class CompetencyController
         $userRole = Session::get('user_role');
         $userId = (int) Session::get('user_id');
 
+        if (!in_array($userRole, ['admin', 'superadmin'], true) && !PermissionManager::hasPermission('manage_subjects')) {
+            header('Location: /');
+            exit;
+        }
+
         // Récupérer les filtres
         $subjectId = (int) ($_GET['subject_id'] ?? 0);
         $classId = (int) ($_GET['class_id'] ?? 0);
@@ -96,7 +101,244 @@ class CompetencyController
             $subjects = $subjects->fetchAll(PDO::FETCH_ASSOC);
         }
 
+        $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $teachingTypes = $this->db->query("SELECT id, nom, code FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $hasTeachingFormColumn = (bool) $this->db->query("SHOW COLUMNS FROM subject_groups LIKE 'teaching_form_id'")->fetchColumn();
+        $groupsSql = "SELECT id, libelle, teaching_type_id" . ($hasTeachingFormColumn ? ", teaching_form_id" : ", NULL AS teaching_form_id") . " FROM subject_groups WHERE status = 1 ORDER BY libelle ASC";
+        $groups = $this->db->query($groupsSql)->fetchAll(PDO::FETCH_ASSOC);
+        $teachingForms = [];
+        if ($this->db->query("SHOW TABLES LIKE 'teaching_forms'")->fetchColumn()) {
+            $teachingForms = $this->db->query("SELECT id, nom, teaching_type_id FROM teaching_forms WHERE status = 1 ORDER BY teaching_type_id ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        }
+        $allSubjects = $this->db->query("SELECT s.id, s.nom, s.subject_group_id, sg.libelle AS group_nom,
+                            sg.teaching_type_id AS group_type_id,
+                            " . ($hasTeachingFormColumn ? "sg.teaching_form_id" : "NULL") . " AS group_form_id
+                                         FROM subjects s
+                                         LEFT JOIN subject_groups sg ON sg.id = s.subject_group_id
+                                         WHERE s.status = 1 ORDER BY s.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $activeYearId = $this->academicYearService->getActiveYearId();
+        $subjectClassSql = "SELECT DISTINCT subject_id, class_id FROM subject_classes";
+        $subjectClassParams = [];
+        if ($activeYearId > 0) {
+            $subjectClassSql .= " WHERE academic_year_id = ?";
+            $subjectClassParams[] = $activeYearId;
+        }
+        $subjectClassStmt = $this->db->prepare($subjectClassSql);
+        $subjectClassStmt->execute($subjectClassParams);
+        $subjectClassMap = [];
+        foreach ($subjectClassStmt->fetchAll(PDO::FETCH_ASSOC) as $association) {
+            $subjectClassMap[(int) $association['class_id']][] = (int) $association['subject_id'];
+        }
+
         include __DIR__ . '/../Views/competencies/index.php';
+    }
+
+    public function apiAssignmentData(): void
+    {
+        header('Content-Type: application/json');
+        if (!$this->canManageAssignments()) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Non autorisé.']);
+            exit;
+        }
+        $subjects = $this->db->query("SELECT s.id, s.nom, s.subject_group_id, sg.libelle AS group_nom
+                                      FROM subjects s LEFT JOIN subject_groups sg ON sg.id = s.subject_group_id
+                                      WHERE s.status = 1 ORDER BY s.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode(['success' => true, 'subjects' => $subjects]);
+        exit;
+    }
+
+    public function apiAssignmentImpact(): void
+    {
+        header('Content-Type: application/json');
+        if (!$this->canManageAssignments()) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Non autorisé.']);
+            exit;
+        }
+        $subjectIds = array_values(array_unique(array_filter(array_map('intval', (array) ($_POST['subject_ids'] ?? [])))));
+        $groupId = (int) ($_POST['group_id'] ?? 0);
+        if (!$subjectIds || $groupId <= 0) {
+            echo json_encode(['success' => false, 'error' => 'Sélectionnez au moins une matière et un groupe.']);
+            exit;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($subjectIds), '?'));
+        $stmt = $this->db->prepare("SELECT s.nom, sg.libelle AS group_nom FROM subjects s
+                                    LEFT JOIN subject_groups sg ON sg.id = s.subject_group_id
+                                    WHERE s.id IN ($placeholders)");
+        $stmt->execute($subjectIds);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode(['success' => true, 'count' => count($rows), 'items' => $rows,
+            'message' => count($rows) . ' matière(s) seront rattachée(s) au groupe sélectionné.']);
+        exit;
+    }
+
+    public function apiAssignSubjects(): void
+    {
+        header('Content-Type: application/json');
+        if (!$this->canManageAssignments()) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Non autorisé.']);
+            exit;
+        }
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Méthode non autorisée.']);
+            exit;
+        }
+        $subjectIds = array_values(array_unique(array_filter(array_map('intval', (array) ($_POST['subject_ids'] ?? [])))));
+        $groupId = (int) ($_POST['group_id'] ?? 0);
+        if (!$subjectIds || $groupId <= 0) {
+            echo json_encode(['success' => false, 'error' => 'Sélectionnez au moins une matière et un groupe.']);
+            exit;
+        }
+        $groupCheck = $this->db->prepare("SELECT id FROM subject_groups WHERE id = ? AND status = 1");
+        $groupCheck->execute([$groupId]);
+        if (!$groupCheck->fetchColumn()) {
+            echo json_encode(['success' => false, 'error' => 'Groupe invalide.']);
+            exit;
+        }
+        try {
+            $this->db->beginTransaction();
+            $placeholders = implode(',', array_fill(0, count($subjectIds), '?'));
+            $stmt = $this->db->prepare("UPDATE subjects SET subject_group_id = ? WHERE id IN ($placeholders) AND status = 1");
+            $stmt->execute(array_merge([$groupId], $subjectIds));
+            $updated = $stmt->rowCount();
+            $this->db->commit();
+            echo json_encode(['success' => true, 'updated' => $updated]);
+        } catch (\Throwable $e) {
+            if ($this->db->inTransaction()) $this->db->rollBack();
+            echo json_encode(['success' => false, 'error' => 'Affectation impossible : ' . $e->getMessage()]);
+        }
+        exit;
+    }
+
+    private function canManageAssignments(): bool
+    {
+        return in_array(Session::get('user_role'), ['admin', 'superadmin'], true)
+            || PermissionManager::hasPermission('manage_subjects');
+    }
+
+    public function apiTeacherAssignmentData(): void
+    {
+        header('Content-Type: application/json');
+        if (!$this->canManageAssignments()) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Non autorisé.']);
+            exit;
+        }
+        $typeId = (int) ($_GET['teaching_type_id'] ?? 0);
+        $classId = (int) ($_GET['class_id'] ?? 0);
+        $activeYearId = $this->academicYearService->getActiveYearId();
+        $teachersSql = "SELECT DISTINCT u.id, u.nom, u.prenom, u.username
+                        FROM users u
+                        INNER JOIN user_teaching_types utt ON utt.user_id = u.id
+                        WHERE u.role = 'enseignant' AND u.status = 1";
+        $teacherParams = [];
+        if ($typeId > 0) {
+            $teachersSql .= " AND utt.teaching_type_id = ?";
+            $teacherParams[] = $typeId;
+        }
+        $teachersSql .= " ORDER BY u.nom, u.prenom";
+        $teacherStmt = $this->db->prepare($teachersSql);
+        $teacherStmt->execute($teacherParams);
+        $teachers = $teacherStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $subjectSql = "SELECT DISTINCT s.id, s.nom, s.teaching_type_id,
+                              ta.user_id AS assigned_teacher_id,
+                              CONCAT(COALESCE(u.prenom, ''), ' ', COALESCE(u.nom, '')) AS assigned_teacher_name
+                       FROM subjects s
+                       INNER JOIN subject_classes sc ON sc.subject_id = s.id
+                       LEFT JOIN teacher_assignments ta ON ta.subject_id = s.id AND ta.class_id = sc.class_id
+                           AND (ta.academic_year_id = ? OR ta.academic_year_id IS NULL)
+                       LEFT JOIN users u ON u.id = ta.user_id
+                       INNER JOIN teaching_types tt ON tt.id = s.teaching_type_id AND tt.actif = 1
+                       WHERE s.status = 1";
+        $subjectParams = [$activeYearId];
+        if ($classId > 0) {
+            $subjectSql .= " AND sc.class_id = ?";
+            $subjectParams[] = $classId;
+        }
+        if ($activeYearId > 0) {
+            $subjectSql .= " AND sc.academic_year_id = ?";
+            $subjectParams[] = $activeYearId;
+        }
+        if ($typeId > 0) {
+            $subjectSql .= " AND s.teaching_type_id = ?";
+            $subjectParams[] = $typeId;
+        }
+        $subjectSql .= " ORDER BY s.nom ASC";
+        $subjectStmt = $this->db->prepare($subjectSql);
+        $subjectStmt->execute($subjectParams);
+        echo json_encode(['success' => true, 'teachers' => $teachers, 'subjects' => $subjectStmt->fetchAll(PDO::FETCH_ASSOC)]);
+        exit;
+    }
+
+    public function apiTeacherAssignmentImpact(): void
+    {
+        header('Content-Type: application/json');
+        if (!$this->canManageAssignments()) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Non autorisé.']);
+            exit;
+        }
+        $teacherId = (int) ($_POST['teacher_id'] ?? 0);
+        $classId = (int) ($_POST['class_id'] ?? 0);
+        $subjectIds = array_values(array_unique(array_filter(array_map('intval', (array) ($_POST['subject_ids'] ?? [])))));
+        if ($teacherId <= 0 || $classId <= 0 || !$subjectIds) {
+            echo json_encode(['success' => false, 'error' => 'Sélectionnez un enseignant, une classe et au moins une matière.']);
+            exit;
+        }
+        $activeYearId = $this->academicYearService->getActiveYearId();
+        $placeholders = implode(',', array_fill(0, count($subjectIds), '?'));
+        $params = array_merge([$classId, $activeYearId], $subjectIds);
+        $stmt = $this->db->prepare("SELECT s.id, s.nom, ta.user_id, CONCAT(COALESCE(u.prenom, ''), ' ', COALESCE(u.nom, '')) AS teacher_name
+                                    FROM subjects s
+                                    INNER JOIN teacher_assignments ta ON ta.subject_id = s.id AND ta.class_id = ?
+                                    LEFT JOIN users u ON u.id = ta.user_id
+                                    WHERE (ta.academic_year_id = ? OR ta.academic_year_id IS NULL) AND s.id IN ($placeholders) AND ta.user_id <> ?");
+        $stmt->execute(array_merge($params, [$teacherId]));
+        $conflicts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode(['success' => true, 'conflicts' => $conflicts, 'has_conflicts' => !empty($conflicts),
+            'message' => empty($conflicts) ? 'Aucune affectation existante ne sera remplacée.' : count($conflicts) . ' matière(s) sont déjà affectées et seront retirées de leur enseignant actuel.']);
+        exit;
+    }
+
+    public function apiAssignTeacherSubjects(): void
+    {
+        header('Content-Type: application/json');
+        if (!$this->canManageAssignments() || $_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Opération non autorisée.']);
+            exit;
+        }
+        $teacherId = (int) ($_POST['teacher_id'] ?? 0);
+        $classId = (int) ($_POST['class_id'] ?? 0);
+        $subjectIds = array_values(array_unique(array_filter(array_map('intval', (array) ($_POST['subject_ids'] ?? [])))));
+        if ($teacherId <= 0 || $classId <= 0 || !$subjectIds) {
+            echo json_encode(['success' => false, 'error' => 'Données d’affectation incomplètes.']);
+            exit;
+        }
+        $activeYearId = $this->academicYearService->getActiveYearId();
+        try {
+            $this->db->beginTransaction();
+            $placeholders = implode(',', array_fill(0, count($subjectIds), '?'));
+            $valid = $this->db->prepare("SELECT COUNT(*) FROM subject_classes WHERE class_id = ? AND academic_year_id = ? AND subject_id IN ($placeholders)");
+            $valid->execute(array_merge([$classId, $activeYearId], $subjectIds));
+            if ((int) $valid->fetchColumn() !== count($subjectIds)) {
+                throw new \RuntimeException('Une ou plusieurs matières ne sont pas affectées à cette classe.');
+            }
+            $delete = $this->db->prepare("DELETE FROM teacher_assignments WHERE class_id = ? AND academic_year_id = ? AND subject_id IN ($placeholders)");
+            $delete->execute(array_merge([$classId, $activeYearId], $subjectIds));
+            $insert = $this->db->prepare("INSERT INTO teacher_assignments (user_id, subject_id, class_id, academic_year_id) VALUES (?, ?, ?, ?)");
+            foreach ($subjectIds as $subjectId) $insert->execute([$teacherId, $subjectId, $classId, $activeYearId]);
+            $this->db->commit();
+            echo json_encode(['success' => true, 'assigned' => count($subjectIds)]);
+        } catch (\Throwable $e) {
+            if ($this->db->inTransaction()) $this->db->rollBack();
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        }
+        exit;
     }
 
     /**
@@ -112,6 +354,22 @@ class CompetencyController
         if ($subjectId <= 0) {
             echo json_encode(['error' => 'subject_id requis']);
             exit;
+        }
+
+        if ($classId > 0) {
+            $activeYearId = $this->academicYearService->getActiveYearId();
+            $sql = "SELECT COUNT(*) FROM subject_classes WHERE subject_id = ? AND class_id = ?";
+            $params = [$subjectId, $classId];
+            if ($activeYearId > 0) {
+                $sql .= " AND academic_year_id = ?";
+                $params[] = $activeYearId;
+            }
+            $classSubjectCheck = $this->db->prepare($sql);
+            $classSubjectCheck->execute($params);
+            if ((int) $classSubjectCheck->fetchColumn() === 0) {
+                echo json_encode(['error' => 'Cette matière n’est pas affectée à la classe sélectionnée.']);
+                exit;
+            }
         }
 
         // Vérifier les permissions

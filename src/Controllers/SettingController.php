@@ -65,6 +65,7 @@ class SettingController
                 'school_motto',
                 'school_motto_en',
                 'school_city',
+                'school_address',
                 'school_phone',
                 'school_po_box',
                 'school_fax',

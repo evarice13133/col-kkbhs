@@ -253,6 +253,12 @@
                     placeholder="<?= __('city_location_placeholder') ?>">
             </div>
             <div class="col-md-4">
+                <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('address') ?></label>
+                <input type="text" name="school_address" class="form-control premium-input"
+                    value="<?= htmlspecialchars((string) ($settings['school_address'] ?? '')) ?>"
+                    placeholder="Adresse de l'établissement">
+            </div>
+            <div class="col-md-4">
                 <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('phone') ?></label>
                 <input type="text" name="school_phone" class="form-control premium-input"
                     value="<?= htmlspecialchars((string) ($settings['school_phone'] ?? '')) ?>"

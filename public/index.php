@@ -688,8 +688,14 @@ elseif (strpos($path, '/subjects') === 0) {
         $c->downloadTemplate();
     elseif ($path === '/subjects/upload' && $method === 'POST')
         $c->upload();
-    elseif ($path === '/subjects/store' && $method === 'POST')
-        $c->store();
+    elseif ($path === '/subjects/store') {
+        if ($method === 'POST') {
+            $c->store();
+        } else {
+            header('Location: /subjects/create');
+            exit;
+        }
+    }
     elseif ($path === '/subjects/edit')
         $c->edit($_GET['id'] ?? 0);
     elseif ($path === '/subjects/update' && $method === 'POST')
@@ -707,7 +713,21 @@ elseif (strpos($path, '/competencies') === 0) {
         exit;
     }
     $c = new CompetencyController();
-    if ($path === '/competencies/api/by-subject' && $method === 'GET')
+    if ($path === '/competencies' || $path === '/competencies/')
+        $c->index();
+    elseif ($path === '/competencies/api/assignment-data' && $method === 'GET')
+        $c->apiAssignmentData();
+    elseif ($path === '/competencies/api/assignment-impact' && $method === 'POST')
+        $c->apiAssignmentImpact();
+    elseif ($path === '/competencies/api/assign-subjects' && $method === 'POST')
+        $c->apiAssignSubjects();
+    elseif ($path === '/competencies/api/teacher-assignment-data' && $method === 'GET')
+        $c->apiTeacherAssignmentData();
+    elseif ($path === '/competencies/api/teacher-assignment-impact' && $method === 'POST')
+        $c->apiTeacherAssignmentImpact();
+    elseif ($path === '/competencies/api/assign-teacher-subjects' && $method === 'POST')
+        $c->apiAssignTeacherSubjects();
+    elseif ($path === '/competencies/api/by-subject' && $method === 'GET')
         $c->apiBySubject();
     elseif ($path === '/competencies/api/create' && $method === 'POST')
         $c->apiCreate();

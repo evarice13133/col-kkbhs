@@ -299,152 +299,108 @@ class ExcelTemplateService
     public function generateSubjectTemplate(string $lang = 'fr'): string
     {
         $spreadsheet = new Spreadsheet();
-        $spreadsheet->removeSheetByIndex(0); // On enlève la feuille par défaut
+        $spreadsheet->removeSheetByIndex(0);
 
-        // Récupérer les types d'enseignement actifs
-        $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-
-        // Feuille masquée pour les données de référence
         $dataSheet = $spreadsheet->createSheet();
         $dataSheet->setTitle('SUBJECT_DATASOURCES');
         $dataSheet->setSheetState(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet::SHEETSTATE_VERYHIDDEN);
 
-        $i = 0;
+        $classList = $this->db->query("SELECT nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_COLUMN);
+
+        $groupList = $this->db->query("SELECT libelle FROM subject_groups WHERE status = 1 ORDER BY libelle ASC")->fetchAll(PDO::FETCH_COLUMN);
+        $groupRange = empty($groupList) ? 'SUBJECT_DATASOURCES!$A$1:$A$1' : 'SUBJECT_DATASOURCES!$A$1:$A$' . count($groupList);
+        $classRange = empty($classList) ? 'SUBJECT_DATASOURCES!$B$1:$B$1' : 'SUBJECT_DATASOURCES!$B$1:$B$' . count($classList);
+
+        for ($i = 0; $i < count($groupList); $i++) {
+            $dataSheet->setCellValue('A' . ($i + 1), (string) $groupList[$i]);
+        }
+        for ($i = 0; $i < count($classList); $i++) {
+            $dataSheet->setCellValue('B' . ($i + 1), (string) $classList[$i]);
+        }
+
+        $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         foreach ($teachingTypes as $tt) {
             $ttId = (int) $tt['id'];
             $ttNom = (string) $tt['nom'];
-
-            // Cycles actifs associés à ce type d'enseignement
-            $stmtCycles = $this->db->prepare("SELECT nom FROM cycles WHERE status = 1 AND (teaching_type_id = ? OR teaching_type_id IS NULL) ORDER BY nom ASC");
-            $stmtCycles->execute([$ttId]);
-            $cycleList = $stmtCycles->fetchAll(PDO::FETCH_COLUMN);
-
-            // Départements actifs associés à ce type d'enseignement
-            $stmtDepts = $this->db->prepare("SELECT nom FROM departments WHERE status = 1 AND (teaching_type_id = ? OR teaching_type_id IS NULL) ORDER BY nom ASC");
-            $stmtDepts->execute([$ttId]);
-            $deptList = $stmtDepts->fetchAll(PDO::FETCH_COLUMN);
-
-            // Groupes de modules actifs associés à ce type d'enseignement
-            $stmtGroups = $this->db->prepare("SELECT libelle FROM subject_groups WHERE status = 1 AND (teaching_type_id = ? OR teaching_type_id IS NULL) ORDER BY libelle ASC");
-            $stmtGroups->execute([$ttId]);
-            $groupList = $stmtGroups->fetchAll(PDO::FETCH_COLUMN);
-
-            // Classes actives associées à ce type d'enseignement
-            $stmtClasses = $this->db->prepare("
-                SELECT c.nom 
-                FROM classes c
-                LEFT JOIN departments d ON c.department_id = d.id
-                LEFT JOIN cycles cy ON c.cycle_id = cy.id
-                LEFT JOIN sections sec ON c.section_id = sec.id
-                WHERE c.teaching_type_id = ?
-                  AND (c.department_id IS NULL OR d.status = 1)
-                  AND (c.cycle_id IS NULL OR cy.status = 1)
-                  AND (c.section_id IS NULL OR sec.status = 1)
-                ORDER BY c.nom ASC
-            ");
-            $stmtClasses->execute([$ttId]);
-            $classList = $stmtClasses->fetchAll(PDO::FETCH_COLUMN);
-
-            // Écrire les listes dans la feuille cachée dans des colonnes distinctes
-            // Colonne 1: Cycle, Colonne 2: Département, Colonne 3: Groupe, Colonne 4: Classe
-            $colCycle = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(4 * $i + 1);
-            $colDept = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(4 * $i + 2);
-            $colGroup = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(4 * $i + 3);
-            $colClass = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(4 * $i + 4);
-
-            $row = 1;
-            foreach ($cycleList as $val) {
-                $dataSheet->setCellValue($colCycle . ($row++), (string) $val);
-            }
-            $row = 1;
-            foreach ($deptList as $val) {
-                $dataSheet->setCellValue($colDept . ($row++), (string) $val);
-            }
-            $row = 1;
-            foreach ($groupList as $val) {
-                $dataSheet->setCellValue($colGroup . ($row++), (string) $val);
-            }
-            $row = 1;
-            foreach ($classList as $val) {
-                $dataSheet->setCellValue($colClass . ($row++), (string) $val);
-            }
-
-            // Créer la feuille pour ce type d'enseignement
             $sheet = $spreadsheet->createSheet();
             $sheet->setTitle(substr($ttNom, 0, 31));
 
-            // En-têtes de colonnes alignés sur l'export
             $headers = $lang === 'fr'
                 ? [
-                    'A1' => 'Matière', 
-                    'B1' => 'Coef', 
-                    'C1' => 'Groupe', 
-                    'D1' => 'Classes concernées', 
-                    'E1' => 'VHm', 
-                    'F1' => 'VHp', 
-                    'G1' => 'TH(Max)', 
-                    'H1' => 'Observations'
+                    'A1' => 'Matière',
+                    'B1' => 'Coef',
+                    'C1' => 'Groupe',
+                    'D1' => 'Classe 1',
+                    'E1' => 'Classe 2',
+                    'F1' => 'Classe 3',
+                    'G1' => 'Classe 4',
+                    'H1' => 'Classe 5',
+                    'I1' => 'Compétence 1',
+                    'J1' => 'Compétence 2',
+                    'K1' => 'Compétence 3',
+                    'L1' => 'Compétence 4',
+                    'M1' => 'Compétence 5',
+                    'N1' => 'Compétence 6',
+                    'O1' => 'Compétence 7'
                 ]
                 : [
-                    'A1' => 'Subject', 
-                    'B1' => 'Coef', 
-                    'C1' => 'Group', 
-                    'D1' => 'Classes concerned', 
-                    'E1' => 'VHm', 
-                    'F1' => 'VHp', 
-                    'G1' => 'TH(Max)', 
-                    'H1' => 'Observations'
+                    'A1' => 'Subject',
+                    'B1' => 'Coef',
+                    'C1' => 'Group',
+                    'D1' => 'Class 1',
+                    'E1' => 'Class 2',
+                    'F1' => 'Class 3',
+                    'G1' => 'Class 4',
+                    'H1' => 'Class 5',
+                    'I1' => 'Competency 1',
+                    'J1' => 'Competency 2',
+                    'K1' => 'Competency 3',
+                    'L1' => 'Competency 4',
+                    'M1' => 'Competency 5',
+                    'N1' => 'Competency 6',
+                    'O1' => 'Competency 7'
                 ];
 
             foreach ($headers as $cell => $value) {
                 $sheet->setCellValue($cell, $value);
             }
 
-            // Appliquer le style aux en-têtes
             $styleArray = [
                 'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-                'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
+                'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
                 'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]],
                 'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '1F4E78']]
             ];
-            $sheet->getStyle('A1:H1')->applyFromArray($styleArray);
+            $sheet->getStyle('A1:O1')->applyFromArray($styleArray);
             $sheet->getRowDimension(1)->setRowHeight(26);
 
-            $groupCount = count($groupList);
+            $groupValidation = $this->createDropdown($groupRange, $lang === 'fr' ? 'Choisir un groupe' : 'Choose a group');
+            $classValidation = $this->createDropdown($classRange, $lang === 'fr' ? 'Choisir une classe' : 'Choose a class');
 
-            // Validation Groupe (Colonne C)
-            if ($groupCount > 0) {
-                $validationGroup = $this->createDropdown(
-                    "SUBJECT_DATASOURCES!\${$colGroup}\$1:\${$colGroup}\$" . $groupCount,
-                    $lang === 'fr' ? 'Choisir un Groupe' : 'Choose a Group'
-                );
-                for ($row = 2; $row <= 1000; $row++) {
-                    $sheet->getCell('C' . $row)->setDataValidation(clone $validationGroup);
+            foreach (range(2, 1000) as $row) {
+                $sheet->getCell('C' . $row)->setDataValidation(clone $groupValidation);
+                foreach (range('D', 'H') as $col) {
+                    $sheet->getCell($col . $row)->setDataValidation(clone $classValidation);
                 }
             }
 
-            // Lignes d'exemple
-            $exampleGroup = (string) ($groupList[0] ?? ($lang === 'fr' ? 'Informatique' : 'Computer Science'));
-            $exampleClasses = count($classList) >= 2 
-                ? implode(', ', array_slice($classList, 0, 2)) 
-                : (count($classList) === 1 ? (string)$classList[0] : 'IGL 1, IGL 2');
-
             $sheet->setCellValue('A2', $lang === 'fr' ? 'Algorithmique' : 'Algorithms');
             $sheet->setCellValue('B2', 3);
-            $sheet->setCellValue('C2', $exampleGroup);
-            $sheet->setCellValue('D2', $exampleClasses);
-            $sheet->setCellValue('E2', 60);
-            $sheet->setCellValue('F2', 54);
-            $sheet->setCellValue('G2', 30);
-            $sheet->setCellValue('H2', $lang === 'fr' ? 'Cours renforcé' : 'Advanced course');
+            $sheet->setCellValue('C2', $groupList[0] ?? ($lang === 'fr' ? 'Informatique' : 'Computer Science'));
+            $sheet->setCellValue('D2', $classList[0] ?? 'IGL 1');
+            $sheet->setCellValue('E2', $classList[1] ?? 'IGL 2');
+            $sheet->setCellValue('I2', $lang === 'fr' ? 'Comprendre' : 'Understand');
+            $sheet->setCellValue('J2', $lang === 'fr' ? 'Analyser' : 'Analyze');
+            $sheet->setCellValue('K2', $lang === 'fr' ? 'Produire' : 'Create');
 
+            $sheet->getStyle('A2:O2')->getFont()->setItalic(true);
+            $sheet->getStyle('A2:O2')->getFont()->getColor()->setRGB('6B7280');
             $sheet->getStyle('B2:G2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT);
-            $sheet->getStyle('A2:H2')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+            $sheet->getStyle('A2:O2')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
 
-            foreach (range('A', 'H') as $col) {
+            foreach (range('A', 'O') as $col) {
                 $sheet->getColumnDimension($col)->setAutoSize(true);
             }
-            $i++;
         }
 
         $writer = new Xlsx($spreadsheet);
@@ -565,6 +521,19 @@ class ExcelTemplateService
         return $content;
     }
 
+    private function nextColumnLetter(string $column): string
+    {
+        $index = 
+            \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($column);
+        return \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($index + 1);
+    }
+
+    private function previousColumnLetter(string $column): string
+    {
+        $index = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($column);
+        return \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(max(1, $index - 1));
+    }
+
     /**
      * Modèle Excel pour import des notes avec plusieurs feuilles (une par matière).
      */
@@ -653,21 +622,75 @@ class ExcelTemplateService
             $sheet = $spreadsheet->createSheet();
             $sheet->setTitle($sheetName);
 
-            // En-têtes: Nom, Prénom, puis une colonne par période
+            $stmtCompetencies = $this->db->prepare("SELECT libelle FROM competencies WHERE subject_id = ? ORDER BY position ASC, libelle ASC");
+            $stmtCompetencies->execute([(int) $subject['id']]);
+            $subjectCompetencies = array_values(array_unique(array_filter(array_map('trim', $stmtCompetencies->fetchAll(PDO::FETCH_COLUMN)), static fn($value) => $value !== '')));
+
+            // En-têtes: Nom, Prénom, puis pour chaque période: note + compétence + ajout manuelle
             $headers = [$lang === 'fr' ? 'Nom' : 'Last Name', $lang === 'fr' ? 'Prénom' : 'First Name'];
+            $hiddenListColumn = 'Z';
+            $competencyValidationConfig = [];
+
             foreach ($evaluationTypes as $eval) {
                 $headers[] = $eval;
+                $headers[] = $lang === 'fr' ? 'Compétence (' . $eval . ')' : 'Competency (' . $eval . ')';
+                $headers[] = $lang === 'fr' ? 'Ajouter compétence (' . $eval . ')' : 'Add competency (' . $eval . ')';
+
+                $competencyValidationConfig[$eval] = [
+                    'note_col' => null,
+                    'competency_col' => null,
+                    'custom_col' => null,
+                    'list_col' => null,
+                ];
             }
 
             // Écrire les en-têtes
             $col = 'A';
             foreach ($headers as $header) {
                 $sheet->setCellValue($col . '1', $header);
-                $col++;
+                $col = $this->nextColumnLetter($col);
+            }
+
+            // Préparer les listes cachées de compétences pour chaque évaluation, en gardant un menu dédié par matière
+            $currentVisibleCol = 'C';
+            foreach ($evaluationTypes as $eval) {
+                $noteCol = $currentVisibleCol;
+                $competencyCol = $this->nextColumnLetter($noteCol);
+                $customCol = $this->nextColumnLetter($competencyCol);
+
+                $competencyValidationConfig[$eval]['note_col'] = $noteCol;
+                $competencyValidationConfig[$eval]['competency_col'] = $competencyCol;
+                $competencyValidationConfig[$eval]['custom_col'] = $customCol;
+
+                if (!empty($subjectCompetencies)) {
+                    $competencyValidationConfig[$eval]['list_col'] = $hiddenListColumn;
+                    foreach ($subjectCompetencies as $index => $competency) {
+                        $sheet->setCellValue($hiddenListColumn . ($index + 1), $competency);
+                    }
+                    $sheet->getColumnDimension($hiddenListColumn)->setVisible(false);
+                    $hiddenListColumn = $this->nextColumnLetter($hiddenListColumn);
+                }
+
+                $currentVisibleCol = $this->nextColumnLetter($customCol);
+            }
+
+            // Appliquer les validations dropdown sur les colonnes de compétence
+            foreach ($competencyValidationConfig as $eval => $config) {
+                $competencyCol = $config['competency_col'];
+                $listCol = $config['list_col'];
+
+                if ($competencyCol !== null && $listCol !== null && !empty($subjectCompetencies)) {
+                    $sourceRange = "'{$sheetName}'!\${$listCol}\$1:\${$listCol}\$" . count($subjectCompetencies);
+                    $validation = $this->createDropdown($sourceRange, $lang === 'fr' ? 'Choisir une compétence' : 'Choose a competency');
+                    for ($row = 2; $row <= 1000; $row++) {
+                        $sheet->getCell($competencyCol . $row)->setDataValidation(clone $validation);
+                    }
+                }
             }
 
             // Style des en-têtes
-            $lastCol = chr(ord('A') + count($headers) - 1);
+            $lastCol = $col;
+            $lastCol = $this->previousColumnLetter($lastCol);
             $styleArray = [
                 'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
                 'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
@@ -676,18 +699,26 @@ class ExcelTemplateService
             ];
             $sheet->getStyle('A1:' . $lastCol . '1')->applyFromArray($styleArray);
 
+            $exampleSourceCol = 'Z';
             // Remplir avec les élèves
             $row = 2;
             foreach ($students as $student) {
                 $sheet->setCellValue('A' . $row, $student['nom']);
                 $sheet->setCellValue('B' . $row, $student['prenom']);
-                // Les colonnes de périodes restent vides pour la saisie
+                $col = 'C';
+                foreach ($evaluationTypes as $eval) {
+                    $competencyCol = $this->nextColumnLetter($col);
+                    $customCol = $this->nextColumnLetter($competencyCol);
+                    $sheet->setCellValue($competencyCol . $row, '');
+                    $sheet->setCellValue($customCol . $row, '');
+                    $col = $this->nextColumnLetter($customCol);
+                }
                 $row++;
             }
 
             // Largeur des colonnes
-            foreach (range('A', $lastCol) as $col) {
-                $sheet->getColumnDimension($col)->setAutoSize(true);
+            foreach (range('A', $lastCol) as $column) {
+                $sheet->getColumnDimension($column)->setAutoSize(true);
             }
         }
 

@@ -15,6 +15,29 @@ class SubjectController
     private $db;
     private AcademicYearService $academicYearService;
 
+    private function resolveCurrentUserId(): int
+    {
+        $userId = (int) Session::get('user_id', 0);
+        if ($userId > 0) {
+            $stmt = $this->db->prepare("SELECT id FROM users WHERE id = ? LIMIT 1");
+            $stmt->execute([$userId]);
+            if ((int) $stmt->fetchColumn() > 0) {
+                return $userId;
+            }
+        }
+
+        $fallbackStmt = $this->db->prepare("SELECT id FROM users ORDER BY id ASC LIMIT 1");
+        $fallbackStmt->execute();
+        $fallbackUserId = (int) $fallbackStmt->fetchColumn();
+
+        if ($fallbackUserId > 0) {
+            error_log("[SubjectController] Invalid or missing session user_id, fallback to user_id={$fallbackUserId}.");
+            return $fallbackUserId;
+        }
+
+        throw new \RuntimeException("Aucun utilisateur valide n'est disponible pour créer les compétences de la matière.");
+    }
+
     public function __construct()
     {
         $this->db = Database::getInstance()->getConnection();
@@ -32,9 +55,20 @@ class SubjectController
             FOREIGN KEY (academic_year_id) REFERENCES academic_years(id) ON UPDATE CASCADE
         )");
 
+        $this->db->exec("CREATE TABLE IF NOT EXISTS subject_group_assignments (
+            subject_id INT NOT NULL,
+            subject_group_id INT NOT NULL,
+            PRIMARY KEY (subject_id, subject_group_id),
+            FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
+            FOREIGN KEY (subject_group_id) REFERENCES subject_groups(id) ON DELETE CASCADE
+        )");
+
         // Ensure optional columns exist in subjects table
         try {
             $this->db->exec("ALTER TABLE subjects ADD COLUMN groupe VARCHAR(50) DEFAULT 'Groupe 1'");
+        } catch (\PDOException $e) {}
+        try {
+            $this->db->exec("ALTER TABLE subjects ADD COLUMN teaching_form_id INT NULL AFTER teaching_type_id");
         } catch (\PDOException $e) {}
         try {
             $this->db->exec("ALTER TABLE subjects ADD COLUMN vhm DECIMAL(8,2) DEFAULT NULL");
@@ -98,9 +132,10 @@ class SubjectController
             exit;
         }
 
-        $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $departments = $this->db->query("SELECT d.id, d.nom, d.teaching_type_id FROM departments d LEFT JOIN teaching_types tt ON d.teaching_type_id = tt.id WHERE d.status = 1 AND (d.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY d.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id, c.teaching_form_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $teachingTypes = $this->db->query("SELECT id, nom, code FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $teachingForms = $this->db->query("SELECT id, nom, code, teaching_type_id FROM teaching_forms WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $departments = $this->db->query("SELECT d.id, d.nom, d.teaching_type_id, d.teaching_form_id FROM departments d LEFT JOIN teaching_types tt ON d.teaching_type_id = tt.id WHERE d.status = 1 AND (d.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY d.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         include __DIR__ . '/../Views/subjects/index.php';
     }
 
@@ -309,11 +344,17 @@ class SubjectController
         // Sécurité RBAC : Accès réservé aux administrateurs
         PermissionManager::requirePermission('manage_subjects');
         
-        $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id, c.teaching_form_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $teachingTypes = $this->db->query("SELECT id, nom, code FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $deptQuery = "SELECT d.id, d.nom, d.teaching_type_id FROM departments d LEFT JOIN teaching_types tt ON d.teaching_type_id = tt.id WHERE d.status = 1 AND (d.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY d.nom ASC";
+        $teachingForms = $this->db->query("SELECT id, nom, code, teaching_type_id FROM teaching_forms WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $deptQuery = "SELECT d.id, d.nom, d.teaching_type_id, d.teaching_form_id FROM departments d LEFT JOIN teaching_types tt ON d.teaching_type_id = tt.id WHERE d.status = 1 AND (d.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY d.nom ASC";
         $departments = $this->db->query($deptQuery)->fetchAll(PDO::FETCH_ASSOC);
-        $subjectGroups = $this->db->query("SELECT id, libelle, teaching_type_id FROM subject_groups WHERE status = 1 ORDER BY libelle ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $colCheck = $this->db->query("SHOW COLUMNS FROM subject_groups LIKE 'teaching_form_id'")->fetchColumn();
+        if ($colCheck) {
+            $subjectGroups = $this->db->query("SELECT id, libelle, teaching_type_id, teaching_form_id FROM subject_groups WHERE status = 1 ORDER BY libelle ASC")->fetchAll(PDO::FETCH_ASSOC);
+        } else {
+            $subjectGroups = $this->db->query("SELECT id, libelle, teaching_type_id FROM subject_groups WHERE status = 1 ORDER BY libelle ASC")->fetchAll(PDO::FETCH_ASSOC);
+        }
         include __DIR__ . '/../Views/subjects/create.php';
     }
 
@@ -321,122 +362,196 @@ class SubjectController
     {
         // Sécurité RBAC : Accès réservé aux administrateurs
         PermissionManager::requirePermission('manage_subjects');
-        
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $nom = trim($_POST['nom'] ?? '');
-            $coeff = (int) ($_POST['coefficient'] ?? 1);
-            $vhm = (isset($_POST['vhm']) && $_POST['vhm'] !== '' && is_numeric($_POST['vhm'])) ? (float) $_POST['vhm'] : null;
-            $vhp = (isset($_POST['vhp']) && $_POST['vhp'] !== '' && is_numeric($_POST['vhp'])) ? (float) $_POST['vhp'] : null;
-            $th_max = (isset($_POST['th_max']) && $_POST['th_max'] !== '' && is_numeric($_POST['th_max'])) ? (float) $_POST['th_max'] : null;
-            $observations = (isset($_POST['observations']) && trim($_POST['observations']) !== '') ? trim($_POST['observations']) : null;
-            $subject_group_id = !empty($_POST['subject_group_id']) ? (int) $_POST['subject_group_id'] : null;
-            $groupe = trim($_POST['groupe'] ?? 'Groupe 1');
-            $teaching_type_id = !empty($_POST['teaching_type_id']) ? (int) $_POST['teaching_type_id'] : null;
-            $classes_ids = array_values(array_unique(array_map('intval', $_POST['classes'] ?? [])));
 
-            $code_uv = !empty($_POST['code_uv']) ? trim($_POST['code_uv']) : null;
-            $code_ue = !empty($_POST['code_ue']) ? trim($_POST['code_ue']) : null;
-            if ($teaching_type_id) {
-                $stmtTt = $this->db->prepare("SELECT code FROM teaching_types WHERE id = ?");
-                $stmtTt->execute([$teaching_type_id]);
-                $ttCode = $stmtTt->fetchColumn();
-                if ($ttCode !== 'LMD') {
-                    $code_uv = null;
-                    $code_ue = null;
-                }
-            } else {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: /subjects/create');
+            exit;
+        }
+
+        if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+            Session::setFlash('error', __('session_expired_retry') ?? 'Session expirée ou requête invalide.');
+            header('Location: /subjects/create');
+            exit;
+        }
+
+        $nom = trim($_POST['nom'] ?? '');
+        $coeff = (int) ($_POST['coefficient'] ?? 1);
+        $vhm = (isset($_POST['vhm']) && $_POST['vhm'] !== '' && is_numeric($_POST['vhm'])) ? (float) $_POST['vhm'] : null;
+        $vhp = (isset($_POST['vhp']) && $_POST['vhp'] !== '' && is_numeric($_POST['vhp'])) ? (float) $_POST['vhp'] : null;
+        $th_max = (isset($_POST['th_max']) && $_POST['th_max'] !== '' && is_numeric($_POST['th_max'])) ? (float) $_POST['th_max'] : null;
+        $observations = (isset($_POST['observations']) && trim($_POST['observations']) !== '') ? trim($_POST['observations']) : null;
+        $subject_group_id = !empty($_POST['subject_group_id']) ? (int) $_POST['subject_group_id'] : null;
+        $groupe = trim($_POST['groupe'] ?? 'Groupe 1');
+        $teaching_type_id = !empty($_POST['teaching_type_id']) ? (int) $_POST['teaching_type_id'] : null;
+        $teaching_form_id = !empty($_POST['teaching_form_id']) ? (int) $_POST['teaching_form_id'] : null;
+        $classes_ids = array_values(array_unique(array_map('intval', $_POST['classes'] ?? [])));
+        
+        error_log("[SubjectController::store] POST data received: nom='$nom', tt=$teaching_type_id, tf=$teaching_form_id, grp=$subject_group_id, classes_count=" . count($classes_ids));
+        $code_uv = !empty($_POST['code_uv']) ? trim($_POST['code_uv']) : null;
+        $code_ue = !empty($_POST['code_ue']) ? trim($_POST['code_ue']) : null;
+
+        if ($teaching_type_id) {
+            $stmtTt = $this->db->prepare("SELECT code FROM teaching_types WHERE id = ?");
+            $stmtTt->execute([$teaching_type_id]);
+            $ttCode = $stmtTt->fetchColumn();
+            if ($ttCode !== 'LMD') {
                 $code_uv = null;
                 $code_ue = null;
             }
+        } else {
+            $code_uv = null;
+            $code_ue = null;
+        }
 
-            // Si un groupe de modules est sélectionné, récupérer son libellé pour assurer la rétrocompatibilité du champ 'groupe'
-            if ($subject_group_id) {
-                $grpStmt = $this->db->prepare("SELECT libelle FROM subject_groups WHERE id = ?");
-                $grpStmt->execute([$subject_group_id]);
-                $grpLib = $grpStmt->fetchColumn();
-                if ($grpLib) $groupe = $grpLib;
-            }
-
-            if (empty($nom) || empty($classes_ids)) {
-                $error = \__('subject_name_and_class_required');
-                $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-                $teachingTypes = $this->db->query("SELECT id, nom, code FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-                $deptQuery = "SELECT d.id, d.nom, d.teaching_type_id FROM departments d LEFT JOIN teaching_types tt ON d.teaching_type_id = tt.id WHERE d.status = 1 AND (d.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY d.nom ASC";
-                $departments = $this->db->query($deptQuery)->fetchAll(PDO::FETCH_ASSOC);
+        $reloadCreateView = function (?string $errorMessage) use ($nom, $coeff, $vhm, $vhp, $th_max, $observations, $subject_group_id, $teaching_type_id, $teaching_form_id, $classes_ids, $code_uv, $code_ue) {
+            $error = $errorMessage;
+            $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id, c.teaching_form_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+            $teachingTypes = $this->db->query("SELECT id, nom, code FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+            $teachingForms = $this->db->query("SELECT id, nom, code, teaching_type_id FROM teaching_forms WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+            $deptQuery = "SELECT d.id, d.nom, d.teaching_type_id, d.teaching_form_id FROM departments d LEFT JOIN teaching_types tt ON d.teaching_type_id = tt.id WHERE d.status = 1 AND (d.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY d.nom ASC";
+            $departments = $this->db->query($deptQuery)->fetchAll(PDO::FETCH_ASSOC);
+            $colCheck = $this->db->query("SHOW COLUMNS FROM subject_groups LIKE 'teaching_form_id'")->fetchColumn();
+            if ($colCheck) {
+                $subjectGroups = $this->db->query("SELECT id, libelle, teaching_type_id, teaching_form_id FROM subject_groups WHERE status = 1 ORDER BY libelle ASC")->fetchAll(PDO::FETCH_ASSOC);
+            } else {
                 $subjectGroups = $this->db->query("SELECT id, libelle, teaching_type_id FROM subject_groups WHERE status = 1 ORDER BY libelle ASC")->fetchAll(PDO::FETCH_ASSOC);
-                include __DIR__ . '/../Views/subjects/create.php';
+            }
+            include __DIR__ . '/../Views/subjects/create.php';
+        };
+
+        if (empty($nom) || empty($classes_ids)) {
+            $reloadCreateView(__('subject_name_and_class_required'));
+            return;
+        }
+
+        if (empty($teaching_type_id)) {
+            $reloadCreateView("Veuillez sélectionner un type d’enseignement.");
+            return;
+        }
+
+        $stmtCheckTt = $this->db->prepare("SELECT id FROM teaching_types WHERE id = ? AND actif = 1");
+        $stmtCheckTt->execute([$teaching_type_id]);
+        if (!$stmtCheckTt->fetchColumn()) {
+            $reloadCreateView("Le type d’enseignement sélectionné est invalide ou inactif.");
+            return;
+        }
+
+        if (!empty($teaching_form_id)) {
+            $stmtCheckTf = $this->db->prepare("SELECT id FROM teaching_forms WHERE id = ? AND status = 1 AND teaching_type_id = ?");
+            $stmtCheckTf->execute([$teaching_form_id, $teaching_type_id]);
+            if (!$stmtCheckTf->fetchColumn()) {
+                $reloadCreateView("La forme d’enseignement sélectionnée est invalide ou inactive pour ce type d’enseignement.");
                 return;
             }
+        }
 
-            $duplicateClasses = $this->findDuplicateClassesForSubjectName($nom, $classes_ids);
-            if (!empty($duplicateClasses)) {
-                $error = \__('subject_already_exists_in_classes', ['classes' => implode(', ', $duplicateClasses)]);
-                $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-                $teachingTypes = $this->db->query("SELECT id, nom, code FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-                $deptQuery = "SELECT d.id, d.nom, d.teaching_type_id FROM departments d LEFT JOIN teaching_types tt ON d.teaching_type_id = tt.id WHERE d.status = 1 AND (d.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY d.nom ASC";
-                $departments = $this->db->query($deptQuery)->fetchAll(PDO::FETCH_ASSOC);
-                $subjectGroups = $this->db->query("SELECT id, libelle, teaching_type_id FROM subject_groups WHERE status = 1 ORDER BY libelle ASC")->fetchAll(PDO::FETCH_ASSOC);
-                include __DIR__ . '/../Views/subjects/create.php';
-                return;
+        if (empty($subject_group_id)) {
+            $reloadCreateView("Le champ Groupe de matières est obligatoire.");
+            return;
+        }
+
+        $stmtCheckGrp = $this->db->prepare("SELECT id, teaching_type_id, libelle FROM subject_groups WHERE id = ? AND status = 1");
+        $stmtCheckGrp->execute([$subject_group_id]);
+        $grpData = $stmtCheckGrp->fetch(PDO::FETCH_ASSOC);
+        if (!$grpData) {
+            $reloadCreateView("Le groupe de matières sélectionné est invalide.");
+            return;
+        }
+        $groupe = $grpData['libelle'];
+
+        $placeholders = implode(',', array_fill(0, count($classes_ids), '?'));
+        $stmtCheckClasses = $this->db->prepare("SELECT id, nom, teaching_type_id, teaching_form_id FROM classes WHERE id IN ($placeholders)");
+        $stmtCheckClasses->execute($classes_ids);
+        $fetchedClasses = $stmtCheckClasses->fetchAll(PDO::FETCH_ASSOC);
+        if (count($fetchedClasses) !== count($classes_ids)) {
+            $reloadCreateView("Une ou plusieurs classes sélectionnées sont invalides.");
+            return;
+        }
+
+        $duplicateClasses = $this->findDuplicateClassesForSubjectName($nom, $classes_ids);
+        if (!empty($duplicateClasses)) {
+            $reloadCreateView(__('subject_already_exists_in_classes', ['classes' => implode(', ', $duplicateClasses)]));
+            return;
+        }
+
+        try {
+            $this->db->beginTransaction();
+
+            $academicYearId = $this->academicYearService->getActiveYearId();
+            if ($academicYearId <= 0) {
+                throw new \RuntimeException("Aucune année académique active n'est configurée.");
             }
+            $userId = $this->resolveCurrentUserId();
+            $commonCompetencies = is_array($_POST['competencies'] ?? null) ? $_POST['competencies'] : [];
+            $createdCount = 0;
 
-            try {
-                $this->db->beginTransaction();
+            $hasTeachingFormInSubjects = $this->hasColumn('subjects', 'teaching_form_id');
+            $subjectFields = ['nom', 'coefficient', 'groupe', 'subject_group_id', 'teaching_type_id'];
+            if ($hasTeachingFormInSubjects) {
+                $subjectFields[] = 'teaching_form_id';
+            }
+            $subjectFields = array_merge($subjectFields, ['code_uv', 'code_ue', 'vhm', 'vhp', 'th_max', 'observations']);
+            $subjectPlaceholders = implode(',', array_fill(0, count($subjectFields), '?'));
+            $stmtInsertSub = $this->db->prepare("INSERT INTO subjects (" . implode(', ', $subjectFields) . ") VALUES (" . $subjectPlaceholders . ")");
+            $stmtInsertSC = $this->db->prepare("INSERT INTO subject_classes (subject_id, class_id, academic_year_id) VALUES (?, ?, ?)");
+            $stmtInsertSGA = $this->db->prepare("INSERT IGNORE INTO subject_group_assignments (subject_id, subject_group_id) VALUES (?, ?)");
+            $stmtInsertComp = $this->db->prepare("INSERT INTO competencies (subject_id, libelle, position, created_by) VALUES (?, ?, ?, ?)");
 
-                $stmt = $this->db->prepare("INSERT INTO subjects (nom, coefficient, groupe, subject_group_id, teaching_type_id, code_uv, code_ue, vhm, vhp, th_max, observations) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$nom, $coeff, $groupe, $subject_group_id, $teaching_type_id, $code_uv, $code_ue, $vhm, $vhp, $th_max, $observations]);
+            foreach ($classes_ids as $cid) {
+                $subjectValues = [$nom, $coeff, $groupe, $subject_group_id, $teaching_type_id];
+                if ($hasTeachingFormInSubjects) {
+                    $subjectValues[] = $teaching_form_id;
+                }
+                $subjectValues = array_merge($subjectValues, [$code_uv, $code_ue, $vhm, $vhp, $th_max, $observations]);
+                $stmtInsertSub->execute($subjectValues);
+
                 $subject_id = (int) $this->db->lastInsertId();
-
-                // Fallback defensif si lastInsertId() est invalide (ex: retourne 0 ou 1 de manière inattendue)
-                if ($subject_id <= 1) {
-                    // Tenter une recherche sûre basée sur le nom et la date de création la plus récente
-                    try {
-                        $fallbackStmt = $this->db->prepare("SELECT id FROM subjects WHERE nom = ? ORDER BY id DESC LIMIT 1");
-                        $fallbackStmt->execute([$nom]);
-                        $found = (int) $fallbackStmt->fetchColumn();
-                        if ($found > 0) {
-                            $subject_id = $found;
-                        } else {
-                            // journaliser pour investigation
-                            error_log("[SubjectController] lastInsertId invalid and fallback failed for subject '{$nom}'");
-                        }
-                    } catch (\Throwable $e) {
-                        error_log("[SubjectController] fallback select id failed: " . $e->getMessage());
+                if ($subject_id <= 0) {
+                    $fallbackStmt = $this->db->prepare("SELECT id FROM subjects WHERE nom = ? ORDER BY id DESC LIMIT 1");
+                    $fallbackStmt->execute([$nom]);
+                    $found = (int) $fallbackStmt->fetchColumn();
+                    if ($found > 0) {
+                        $subject_id = $found;
+                    } else {
+                        throw new \Exception("Impossible de récupérer l'identifiant unique de la matière pour la classe ID $cid.");
                     }
                 }
 
-                $academicYearId = $this->academicYearService->getActiveYearId();
-                $stmt = $this->db->prepare("INSERT INTO subject_classes (subject_id, class_id, academic_year_id) VALUES (?, ?, ?)");
-                foreach ($classes_ids as $cid) {
-                    $stmt->execute([$subject_id, (int) $cid, $academicYearId]);
+                $stmtInsertSC->execute([$subject_id, (int) $cid, $academicYearId]);
+
+                if ($subject_group_id) {
+                    $stmtInsertSGA->execute([$subject_id, $subject_group_id]);
                 }
 
-                // Sauvegarder les compétences si fournies
-                $competencies = $_POST['competencies'] ?? [];
-                if (!empty($competencies) && is_array($competencies)) {
-                    $compStmt = $this->db->prepare("INSERT INTO competencies (subject_id, libelle, position, created_by) VALUES (?, ?, ?, ?)");
-                    $userId = (int) Session::get('user_id');
-                    foreach ($competencies as $index => $libelle) {
-                        $libelle = trim($libelle);
-                        if (!empty($libelle)) {
-                            $compStmt->execute([$subject_id, $libelle, $index + 1, $userId]);
-                        }
+                foreach ($commonCompetencies as $index => $libelle) {
+                    $trimmedLib = trim((string) $libelle);
+                    if ($trimmedLib !== '') {
+                        $stmtInsertComp->execute([$subject_id, $trimmedLib, $index + 1, $userId]);
                     }
                 }
 
-                $this->db->commit();
-                Session::setFlash('success', __('subject_created_success'));
-                header("Location: /subjects");
-                exit;
-            } catch (\PDOException $e) {
-                $this->db->rollBack();
-                $error = \__('server_error_subject_creation');
-                $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-                $teachingTypes = $this->db->query("SELECT id, nom, code FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-                $deptQuery = Session::get('user_role') === 'superadmin' ? "SELECT id, nom, teaching_type_id FROM departments ORDER BY nom ASC" : "SELECT id, nom, teaching_type_id FROM departments WHERE status = 1 ORDER BY nom ASC";
-                $departments = $this->db->query($deptQuery)->fetchAll(PDO::FETCH_ASSOC);
-                include __DIR__ . '/../Views/subjects/create.php';
+                $createdCount++;
             }
+
+            $this->db->commit();
+
+            $successMsg = $createdCount > 1
+                ? "La matière « {$nom} » a été désolidarisée et créée individuellement pour {$createdCount} classes."
+                : __('subject_created_success');
+
+            Session::setFlash('success', $successMsg);
+            header('Location: /subjects');
+            exit;
+        } catch (\Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            error_log("[SubjectController::store] Erreur création désolidarisée : " . $e->getMessage());
+            $errorMessage = (defined('DEBUG_MODE') && DEBUG_MODE === true)
+                ? 'Erreur technique: ' . $e->getMessage()
+                : __('server_error_subject_creation');
+            $reloadCreateView($errorMessage);
+            return;
         }
     }
 
@@ -550,8 +665,24 @@ class SubjectController
             try {
                 $this->db->beginTransaction();
 
-                $stmt = $this->db->prepare("UPDATE subjects SET nom = ?, coefficient = ?, groupe = ?, subject_group_id = ?, teaching_type_id = ?, code_uv = ?, code_ue = ?, vhm = ?, vhp = ?, th_max = ?, observations = ? WHERE id = ?");
-                $stmt->execute([$nom, $coeff, $groupe, $subject_group_id, $teaching_type_id, $code_uv, $code_ue, $vhm, $vhp, $th_max, $observations, $id]);
+                $subjectFieldSql = ['nom = ?', 'coefficient = ?', 'groupe = ?', 'subject_group_id = ?', 'teaching_type_id = ?'];
+                if ($this->hasColumn('subjects', 'teaching_form_id')) {
+                    $subjectFieldSql[] = 'teaching_form_id = ?';
+                }
+                $subjectFieldSql[] = 'code_uv = ?';
+                $subjectFieldSql[] = 'code_ue = ?';
+                $subjectFieldSql[] = 'vhm = ?';
+                $subjectFieldSql[] = 'vhp = ?';
+                $subjectFieldSql[] = 'th_max = ?';
+                $subjectFieldSql[] = 'observations = ?';
+                $subjectFieldSql[] = 'WHERE id = ?';
+                $updateValues = [$nom, $coeff, $groupe, $subject_group_id, $teaching_type_id];
+                if ($this->hasColumn('subjects', 'teaching_form_id')) {
+                    $updateValues[] = $teaching_form_id;
+                }
+                $updateValues = array_merge($updateValues, [$code_uv, $code_ue, $vhm, $vhp, $th_max, $observations, $id]);
+                $stmt = $this->db->prepare("UPDATE subjects SET " . implode(', ', $subjectFieldSql));
+                $stmt->execute($updateValues);
 
                 $stmt_del = $this->db->prepare("DELETE FROM subject_classes WHERE subject_id = ? AND academic_year_id = ?");
                 $stmt_del->execute([$id, $academicYearId]);
@@ -559,6 +690,13 @@ class SubjectController
                 $stmt_ins = $this->db->prepare("INSERT INTO subject_classes (subject_id, class_id, academic_year_id) VALUES (?, ?, ?)");
                 foreach ($classes_ids as $cid) {
                     $stmt_ins->execute([$id, (int) $cid, $academicYearId]);
+                }
+
+                $groupLinkDelete = $this->db->prepare("DELETE FROM subject_group_assignments WHERE subject_id = ?");
+                $groupLinkDelete->execute([$id]);
+                if ($subject_group_id) {
+                    $groupLinkInsert = $this->db->prepare("INSERT INTO subject_group_assignments (subject_id, subject_group_id) VALUES (?, ?)");
+                    $groupLinkInsert->execute([$id, $subject_group_id]);
                 }
 
                 // Mise à jour des compétences
@@ -571,7 +709,7 @@ class SubjectController
                 // Réinsérer les nouvelles compétences
                 if (!empty($competencies) && is_array($competencies)) {
                     $compStmt = $this->db->prepare("INSERT INTO competencies (subject_id, libelle, position, created_by) VALUES (?, ?, ?, ?)");
-                    $userId = (int) Session::get('user_id');
+                    $userId = $this->resolveCurrentUserId();
                     foreach ($competencies as $index => $libelle) {
                         $libelle = trim($libelle);
                         if (!empty($libelle)) {
@@ -762,7 +900,17 @@ class SubjectController
         $totalCount = (int) $stmtCount->fetchColumn();
 
         // 2. Fetch data
-        $sql = "SELECT s.*, tt.nom as teaching_type_nom, sg.libelle as subject_group_libelle, GROUP_CONCAT(c.nom SEPARATOR ', ') as classes_list
+        $sql = "SELECT s.*, tt.nom as teaching_type_nom,
+                sg.libelle as subject_group_libelle,
+                COALESCE(
+                    (SELECT GROUP_CONCAT(DISTINCT sg2.libelle ORDER BY sg2.libelle SEPARATOR ', ')
+                     FROM subject_group_assignments sga
+                     LEFT JOIN subject_groups sg2 ON sg2.id = sga.subject_group_id
+                     WHERE sga.subject_id = s.id),
+                    sg.libelle,
+                    s.groupe
+                ) AS group_list,
+                GROUP_CONCAT(DISTINCT c.nom SEPARATOR ', ') as classes_list
                 FROM subjects s
                 LEFT JOIN subject_classes sc ON s.id = sc.subject_id
                 LEFT JOIN classes c ON sc.class_id = c.id
@@ -809,6 +957,16 @@ class SubjectController
         $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         return [$data, ['q' => $search, 'class_id' => $classId, 'teaching_type_id' => $teachingTypeId, 'department_id' => $departmentId], $totalCount];
+    }
+
+    private function hasColumn(string $table, string $column): bool
+    {
+        $stmt = $this->db->prepare(
+            "SELECT COUNT(*) FROM information_schema.columns
+             WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ?"
+        );
+        $stmt->execute([$table, $column]);
+        return (bool) $stmt->fetchColumn();
     }
 
     private function findDuplicateClassesForSubjectName(string $nom, array $classIds, ?int $excludeSubjectId = null): array

@@ -30,7 +30,7 @@ class GradeImportProcessor
     /**
      * @return array{success: bool, count: int, errors: list<string>}
      */
-    public function process(string $filePath, int $classId, int $subjectId): array
+    public function process(string $filePath, int $classId, int $subjectId, array $competencyIds = []): array
 
     {
 
@@ -150,24 +150,42 @@ class GradeImportProcessor
 
 
 
+                if (!empty($competencyIds)) {
+                    $this->validateSubjectCompetencies($classId, $subjectId, $competencyIds);
+                }
+
                 // Identifier les colonnes de périodes (à partir de la colonne C)
-
                 $periodColumns = [];
-
                 $col = 'C';
 
                 while (isset($headers[$col])) {
-
                     $periodLabel = trim((string) $headers[$col]);
-
                     if ($periodLabel !== '' && in_array($periodLabel, $this->evaluationTypes, true)) {
+                        $periodColumns[$col] = [
+                            'label' => $periodLabel,
+                            'note_col' => $col,
+                            'competency_col' => null,
+                            'custom_col' => null,
+                        ];
 
-                        $periodColumns[$col] = $periodLabel;
+                        $competencyCol = $this->nextColumnLetter($col);
+                        $customCol = $this->nextColumnLetter($competencyCol);
 
+                        $competencyHeader = trim((string) ($headers[$competencyCol] ?? ''));
+                        if ($competencyHeader !== '' && (str_contains(mb_strtolower($competencyHeader), 'competence') || str_contains(mb_strtolower($competencyHeader), 'skill'))) {
+                            $periodColumns[$col]['competency_col'] = $competencyCol;
+                        }
+
+                        $customHeader = trim((string) ($headers[$customCol] ?? ''));
+                        if ($customHeader !== '' && (str_contains(mb_strtolower($customHeader), 'ajout') || str_contains(mb_strtolower($customHeader), 'add') || str_contains(mb_strtolower($customHeader), 'nouvelle') || str_contains(mb_strtolower($customHeader), 'new'))) {
+                            $periodColumns[$col]['custom_col'] = $customCol;
+                        }
+
+                        $col = $this->nextColumnLetter($customCol);
+                        continue;
                     }
 
-                    $col++;
-
+                    $col = $this->nextColumnLetter($col);
                 }
 
 
@@ -273,7 +291,8 @@ class GradeImportProcessor
         }
 
         // Traiter chaque période (chaque colonne de période)
-        foreach ($periodColumns as $col => $periode) {
+        foreach ($periodColumns as $col => $config) {
+            $periode = (string) $config['label'];
             $noteRaw = trim((string) ($row[$col] ?? ''));
 
             // Ignorer si la note est vide
@@ -319,6 +338,12 @@ class GradeImportProcessor
                 continue;
             }
 
+            // Récupérer l'association compétence correspondante si elle est fournie dans le modèle Excel
+            $selectedCompetencyId = $this->resolveCompetencyIdFromTemplateRow($subjectId, $row, $config, $line, $sheetName);
+            if ($selectedCompetencyId !== null) {
+                $this->saveEvaluationCompetencyAssociation((int) $classId, $subjectId, $this->activeYearId, (int) $sequenceId, $periode, $selectedCompetencyId);
+            }
+
             // Générer l'appréciation
             $appreciation = $this->generateAppreciation($note);
 
@@ -355,6 +380,87 @@ class GradeImportProcessor
             } catch (\Throwable $e) {
                 $this->logError($line, "Feuille '{$sheetName}', période '{$periode}': Erreur base de donnees : " . $e->getMessage());
             }
+        }
+    }
+
+    private function resolveCompetencyIdFromTemplateRow(int $subjectId, array $row, array $config, int $line, string $sheetName): ?int
+    {
+        $candidate = trim((string) ($row[$config['competency_col']] ?? ''));
+        $custom = trim((string) ($row[$config['custom_col']] ?? ''));
+
+        if ($candidate === '' && $custom === '') {
+            return null;
+        }
+
+        $chosen = $candidate !== '' ? $candidate : $custom;
+
+        $stmt = $this->db->prepare("SELECT id FROM competencies WHERE subject_id = ? AND LOWER(TRIM(libelle)) = LOWER(TRIM(?)) LIMIT 1");
+        $stmt->execute([$subjectId, $chosen]);
+        $existingId = $stmt->fetchColumn();
+        if ($existingId !== false) {
+            return (int) $existingId;
+        }
+
+        if ($custom !== '') {
+            $insert = $this->db->prepare("INSERT INTO competencies (subject_id, libelle, position, created_by) VALUES (?, ?, ?, ?)");
+            $maxPos = $this->db->prepare("SELECT COALESCE(MAX(position), 0) FROM competencies WHERE subject_id = ?");
+            $maxPos->execute([$subjectId]);
+            $position = (int) $maxPos->fetchColumn() + 1;
+            $insert->execute([$subjectId, $chosen, $position, $this->teacherId]);
+            return (int) $this->db->lastInsertId();
+        }
+
+        return null;
+    }
+
+    private function saveEvaluationCompetencyAssociation(int $classId, int $subjectId, int $academicYearId, int $sequenceId, string $periode, int $competencyId): void
+    {
+        $delete = $this->db->prepare("DELETE FROM evaluation_competencies WHERE class_id = ? AND subject_id = ? AND academic_year_id = ? AND periode = ? AND sequence_id = ?");
+        $delete->execute([$classId, $subjectId, $academicYearId, $periode, $sequenceId]);
+
+        $insert = $this->db->prepare("INSERT INTO evaluation_competencies (class_id, subject_id, academic_year_id, sequence_id, periode, competency_id, position) VALUES (?, ?, ?, ?, ?, ?, 1)");
+        $insert->execute([$classId, $subjectId, $academicYearId, $sequenceId, $periode, $competencyId]);
+    }
+
+    private function nextColumnLetter(string $column): string
+    {
+        $index = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($column);
+        return \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($index + 1);
+    }
+
+    private function validateSubjectCompetencies(int $classId, int $subjectId, array $competencyIds): void
+    {
+        $normalized = array_values(array_unique(array_map('intval', array_filter($competencyIds, static function ($value) {
+            return $value !== null && $value !== '' && $value !== false;
+        }))));
+
+        if ($subjectId <= 0) {
+            throw new Exception('Import rejeté : matière invalide ou absente pour cette classe. Vérifiez le filtre matière et la feuille Excel correspondante.');
+        }
+
+        if (empty($normalized)) {
+            throw new Exception('Import rejeté : aucune compétence n\'a été renseignée dans le fichier Excel pour cette matière. Remplissez la colonne « Compétence (...) » ou « Ajouter compétence (...) » avant de relancer l\'import.');
+        }
+
+        if (count($normalized) > 2) {
+            throw new Exception('Import rejeté : trop de compétences déclarées pour une évaluation. Une seule évaluation accepte au maximum 2 compétences.');
+        }
+
+        $subjectCheck = $this->db->prepare('SELECT 1 FROM subject_classes WHERE class_id = ? AND subject_id = ? LIMIT 1');
+        $subjectCheck->execute([$classId, $subjectId]);
+        if ($subjectCheck->fetchColumn() === false) {
+            throw new Exception('La matière sélectionnée n\'est pas affectée à cette classe.');
+        }
+
+        $in = implode(',', array_fill(0, count($normalized), '?'));
+        $stmt = $this->db->prepare("SELECT id FROM competencies WHERE id IN ({$in}) AND subject_id = ?");
+        $params = $normalized;
+        $params[] = $subjectId;
+        $stmt->execute($params);
+        $validIds = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+
+        if (count($validIds) !== count(array_unique($normalized))) {
+            throw new Exception('Import rejeté : au moins une compétence ne correspond pas à la matière sélectionnée. Vérifiez la liste de compétences de la feuille Excel et les libellés exacts enregistrés en base.');
         }
     }
 
