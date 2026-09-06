@@ -138,6 +138,25 @@
     background-color: rgba(255, 255, 255, 0.05) !important;
 }
 
+[data-theme="dark"] .modern-card .table {
+    --bs-table-bg: #1e293b;
+    --bs-table-color: #f8fafc;
+    --bs-table-border-color: #334155;
+    --bs-table-hover-bg: rgba(255, 255, 255, 0.06);
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+}
+
+[data-theme="dark"] .modern-card .table > :not(caption) > * > * {
+    background-color: #1e293b !important;
+    border-bottom-color: #334155 !important;
+    color: inherit;
+}
+
+[data-theme="dark"] .modern-card .table tbody tr:hover > * {
+    background-color: rgba(255, 255, 255, 0.06) !important;
+}
+
 [data-theme="dark"] .border-bottom {
     border-bottom-color: var(--border-color) !important;
 }

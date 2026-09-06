@@ -410,9 +410,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (isNaN(amount) || amount <= 0) {
                 e.preventDefault();
                 if (typeof AlertService !== 'undefined') {
-                    AlertService.toast('error', "Le montant doit être supérieur à 0.");
+                    AlertService.toast('error', <?= json_encode(__('payment_amount_positive'), JSON_UNESCAPED_UNICODE) ?>);
                 } else {
-                    alert("Le montant doit être supérieur à 0.");
+                    alert(<?= json_encode(__('payment_amount_positive'), JSON_UNESCAPED_UNICODE) ?>);
                 }
                 return;
             }
@@ -420,9 +420,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (amount > balance) {
                 e.preventDefault();
                 if (typeof AlertService !== 'undefined') {
-                    AlertService.toast('error', "Montant supérieur au solde restant de l'élève.");
+                    AlertService.toast('error', <?= json_encode(__('payment_amount_over_balance'), JSON_UNESCAPED_UNICODE) ?>);
                 } else {
-                    alert("Montant supérieur au solde restant de l'élève.");
+                    alert(<?= json_encode(__('payment_amount_over_balance'), JSON_UNESCAPED_UNICODE) ?>);
                 }
                 return;
             }
