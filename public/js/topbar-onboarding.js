@@ -5,6 +5,12 @@
 (function () {
     'use strict';
 
+    const t = (key) => (window.NM_I18N && window.NM_I18N[key]) || key;
+    const replace = (key, values) => Object.keys(values).reduce(
+        (text, name) => text.replaceAll(`:${name}`, values[name]),
+        t(key)
+    );
+
     class OnboardingEngine {
         constructor() {
             this.serverData = window.NM_ONBOARDING_DATA || {
@@ -163,12 +169,12 @@
 
             const isLast = (idx === steps.length - 1);
             const isFirst = (idx === 0);
-            const statusBadge = step.completed ? '<span class="badge bg-success bg-opacity-10 text-success ms-2">✓ Déjà terminé</span>' : '';
+            const statusBadge = step.completed ? `<span class="badge bg-success bg-opacity-10 text-success ms-2">✓ ${t('already_completed')}</span>` : '';
 
             card.innerHTML = `
                 <div class="d-flex align-items-center justify-content-between pb-2 mb-2 border-bottom">
                     <span class="badge bg-primary bg-opacity-10 text-primary fw-bold extra-small">
-                        Étape ${idx + 1} / ${steps.length} (${Math.round(((idx + 1) / steps.length) * 100)}%)
+                        ${t('layout_step')} ${idx + 1} / ${steps.length} (${Math.round(((idx + 1) / steps.length) * 100)}%)
                     </span>
                     ${statusBadge}
                     <button type="button" class="btn-close extra-small ms-auto" onclick="window.TopBarOnboarding.closeTour()"></button>
@@ -177,13 +183,13 @@
                 <p class="text-muted extra-small mb-3" style="line-height: 1.45;">${step.desc || ''}</p>
                 <div class="d-flex align-items-center justify-content-between pt-2 border-top">
                     <div>
-                        ${!isFirst ? `<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 me-1 extra-small" onclick="window.TopBarOnboarding.prevStep()">← Précédent</button>` : ''}
+                        ${!isFirst ? `<button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 me-1 extra-small" onclick="window.TopBarOnboarding.prevStep()">← ${t('layout_prev')}</button>` : ''}
                     </div>
                     <div class="d-flex align-items-center gap-1">
                         <a href="${step.url}" class="btn btn-sm btn-primary py-1 px-2.5 extra-small fw-bold">
-                            Exécuter <i class="bi bi-arrow-right"></i>
+                            ${t('execute')} <i class="bi bi-arrow-right"></i>
                         </a>
-                        ${!isLast ? `<button type="button" class="btn btn-sm btn-light py-1 px-2 extra-small text-muted" onclick="window.TopBarOnboarding.nextStep()">Passer →</button>` : `<button type="button" class="btn btn-sm btn-success py-1 px-2 extra-small" onclick="window.TopBarOnboarding.finishTour()">Terminer 🎉</button>`}
+                        ${!isLast ? `<button type="button" class="btn btn-sm btn-light py-1 px-2 extra-small text-muted" onclick="window.TopBarOnboarding.nextStep()">${t('skip')} →</button>` : `<button type="button" class="btn btn-sm btn-success py-1 px-2 extra-small" onclick="window.TopBarOnboarding.finishTour()">${t('finish')} 🎉</button>`}
                     </div>
                 </div>
             `;
@@ -268,7 +274,7 @@
             const pillText = document.getElementById('onboardingPillText');
             if (pillText) {
                 if (data.isComplete) {
-                    pillText.textContent = '✨ Espace configuré (100%)';
+                    pillText.textContent = `✨ ${t('space_configured')} (100%)`;
                 } else {
                     pillText.textContent = `⚡ ${completedCount}/${totalCount} (${progress}%)`;
                 }
@@ -278,9 +284,9 @@
             const checklistHeader = document.getElementById('onboardingChecklistRemaining');
             if (checklistHeader) {
                 if (data.isComplete) {
-                    checklistHeader.textContent = '🎉 Configuration terminée !';
+                    checklistHeader.textContent = `🎉 ${t('configuration_complete')}`;
                 } else {
-                    checklistHeader.textContent = `${remainingCount} étape${remainingCount > 1 ? 's' : ''} restante${remainingCount > 1 ? 's' : ''}`;
+                    checklistHeader.textContent = `${remainingCount} ${remainingCount > 1 ? t('remaining_steps') : t('remaining_step')}`;
                 }
             }
 
@@ -294,7 +300,7 @@
                         <div class="flex-grow-1 text-truncate">
                             <span class="fw-medium">${step.title}</span>
                         </div>
-                        <a href="${step.url}" onclick="event.stopPropagation()" class="btn btn-sm btn-link p-0 text-primary opacity-75 hover-opacity-100" title="Accéder">
+                        <a href="${step.url}" onclick="event.stopPropagation()" class="btn btn-sm btn-link p-0 text-primary opacity-75 hover-opacity-100" title="${t('access')}">
                             <i class="bi bi-arrow-right-short fs-5"></i>
                         </a>
                     </div>
@@ -303,7 +309,7 @@
                 const relaunchBtnHTML = `
                     <div class="mt-2 pt-2 border-top text-center">
                         <button type="button" class="btn btn-sm btn-outline-primary w-100 rounded-pill extra-small py-1" onclick="window.TopBarOnboarding.relaunch()">
-                            <i class="bi bi-arrow-counterclockwise me-1"></i> Relancer le guide d'onboarding
+                            <i class="bi bi-arrow-counterclockwise me-1"></i> ${t('layout_relaunch_onboarding')}
                         </button>
                     </div>
                 `;
@@ -334,7 +340,7 @@
                     banner.style.display = 'none';
                 } else {
                     banner.style.display = 'flex';
-                    bannerText.innerHTML = `<strong>Accompagnement Onboarding :</strong> Vous avez complété <strong>${completedCount}/${totalCount} étapes</strong> (${progress}%).`;
+                    bannerText.innerHTML = `<strong>${t('accompaniment_onboarding')} :</strong> <strong>${replace('onboarding_progress_message', { completed: completedCount, total: totalCount, progress })}</strong>`;
                 }
             }
         }

@@ -26,7 +26,7 @@ if (!function_exists('__')) {
     }
 }
 
-// Charger les paramètres institutionnels
+// Charger les paramètres institutionnels selon le type d'enseignement actif
 $settings = [
     'school_republic' => 'Republique du Cameroun',
     'school_republic_en' => 'Republic of Cameroon',
@@ -40,15 +40,27 @@ $settings = [
 
 try {
     $db = Database::getInstance()->getConnection();
-    $stmt = $db->query("SELECT setting_key, setting_value FROM settings");
-    foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
-        $settings[$row['setting_key']] = $row['setting_value'];
+    $teachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
+    $classId = (int) ($_GET['class_id'] ?? 0);
+
+    if ($classId > 0 && $teachingTypeId <= 0) {
+        $classStmt = $db->prepare('SELECT teaching_type_id FROM classes WHERE id = ? LIMIT 1');
+        $classStmt->execute([$classId]);
+        $teachingTypeId = (int) ($classStmt->fetchColumn() ?: 0);
     }
+
+    if ($teachingTypeId <= 0) {
+        $ttStmt = $db->query('SELECT id FROM teaching_types WHERE actif = 1 ORDER BY position ASC, id ASC LIMIT 1');
+        $teachingTypeId = (int) ($ttStmt->fetchColumn() ?: 0);
+    }
+
+    $settingsStore = new \App\Services\SettingsStore($db, $teachingTypeId);
+    $settings = $settingsStore->all($teachingTypeId);
 } catch (\Throwable $e) {
 }
 
 // Utiliser LogoManager pour récupérer le logo comme dans le PV
-$logoManager = \App\Core\LogoManager::getInstance($db);
+$logoManager = \App\Core\LogoManager::getInstance($db, $teachingTypeId ?? null);
 $logoData = [
     'has_logo' => $logoManager->hasLogo(),
     'base64' => $logoManager->hasLogo() ? $logoManager->getLogoBase64() : '',
@@ -96,9 +108,9 @@ $generatedAt = (new DateTime())->format('d/m/Y H:i');
         .meta-label { font-size: 9px; text-transform: uppercase; color: #444; margin-bottom: 2px; }
         .meta-value { font-weight: bold; font-size: 10px; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #000; padding: 6px 8px; text-align: center; }
-        th { background: #f0f0f0; text-transform: uppercase; font-size: 10px; font-weight: bold; }
-        td { font-size: 11px; }
+        th, td { border: 1px solid #000; padding: 4px 5px; text-align: center; }
+        th { background: #f0f0f0; text-transform: uppercase; font-size: 9px; font-weight: bold; }
+        td { font-size: 10px; }
         td.text-left { text-align: left; }
         .footer { position: fixed; left: 10mm; right: 10mm; bottom: 5mm; display: flex; justify-content: space-between; font-size: 10px; }
     </style>
@@ -155,25 +167,65 @@ $generatedAt = (new DateTime())->format('d/m/Y H:i');
             <?php endforeach; ?>
         </div>
 
+        <?php
+        $groupedRows = [];
+        $subjectColumns = [];
+
+        foreach ($exportRows as $row) {
+            $studentName = (string) ($row[0] ?? '');
+            $subjectName = (string) ($row[2] ?? '');
+            if ($studentName !== '') {
+                $groupedRows[$studentName]['student'] = $studentName;
+            }
+            if ($subjectName !== '') {
+                $subjectColumns[$subjectName] = $subjectName;
+            }
+            $groupedRows[$studentName]['subjects'][$subjectName][] = [
+                'evaluation' => (string) ($row[3] ?? '-'),
+                'grade' => (string) ($row[4] ?? '-'),
+                'appreciation' => (string) ($row[5] ?? '-'),
+            ];
+        }
+
+        $subjectNames = array_values($subjectColumns);
+        sort($subjectNames, SORT_NATURAL | SORT_FLAG_CASE);
+        ?>
+
         <table>
             <thead>
                 <tr>
-                    <?php foreach ($exportColumns as $column): ?>
-                        <th><?= htmlspecialchars((string) $column) ?></th>
+                    <th>#</th>
+                    <th><?= htmlspecialchars(nm_export_t('student', 'Élève')) ?></th>
+                    <?php foreach ($subjectNames as $subjectName): ?>
+                        <th><?= htmlspecialchars((string) $subjectName) ?></th>
                     <?php endforeach; ?>
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($exportRows as $row): ?>
+                <?php if (!empty($groupedRows)): ?>
+                    <?php $i = 1; foreach ($groupedRows as $studentName => $studentData): ?>
+                        <tr>
+                            <td><?= $i ?></td>
+                            <td class="text-left"><?= htmlspecialchars((string) $studentName) ?></td>
+                            <?php foreach ($subjectNames as $subjectName): ?>
+                                <?php $items = $studentData['subjects'][$subjectName] ?? []; ?>
+                                <td class="text-left">
+                                    <?php if (!empty($items)): ?>
+                                        <?php $parts = []; foreach ($items as $item): ?>
+                                            <?php $parts[] = $item['evaluation'] . ' ' . $item['grade'] . ' (' . $item['appreciation'] . ')'; ?>
+                                        <?php endforeach; ?>
+                                        <?= htmlspecialchars(implode(' | ', $parts)) ?>
+                                    <?php else: ?>
+                                        -
+                                    <?php endif; ?>
+                                </td>
+                            <?php endforeach; ?>
+                        </tr>
+                        <?php $i++; ?>
+                    <?php endforeach; ?>
+                <?php else: ?>
                     <tr>
-                        <?php foreach ($row as $cell): ?>
-                            <td class="text-left"><?= htmlspecialchars((string) $cell) ?></td>
-                        <?php endforeach; ?>
-                    </tr>
-                <?php endforeach; ?>
-                <?php if (empty($exportRows)): ?>
-                    <tr>
-                        <td colspan="<?= count($exportColumns) ?>" style="text-align:center; padding: 20px;">
+                        <td colspan="<?= 2 + count($subjectNames) ?>" style="text-align:center; padding: 20px;">
                             <?= htmlspecialchars(nm_export_t('no_grades', 'Aucune note à exporter.')) ?>
                         </td>
                     </tr>

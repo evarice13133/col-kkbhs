@@ -1,0 +1,21 @@
+[2026-08-29 02:50:20] [IP: ::1] [UID: 40] Connexion réussie pour l'utilisateur : admin
+[2026-08-29 02:51:24] [IP: ::1] [UID: 40] Erreur lors de l'enregistrement de l'inscription : SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '0' for key 'PRIMARY'
+[2026-08-29 05:54:51] [IP: ::1] [UID: 40] Connexion réussie pour l'utilisateur : admin
+[2026-08-29 06:58:25] [IP: ::1] [UID: 40] Connexion réussie pour l'utilisateur : admin
+[2026-08-29 07:38:38] [IP: ::1] [UID: GUEST] Session expirée pour inactivité prolongée.
+[2026-08-29 07:38:49] [IP: ::1] [UID: 40] Connexion réussie pour l'utilisateur : admin
+[2026-08-29 07:39:27] [IP: 127.0.0.1] [UID: 40] Connexion réussie pour l'utilisateur : admin
+[2026-08-29 07:41:32] [IP: ::1] [UID: 40] Connexion réussie pour l'utilisateur : admin
+[2026-08-31 03:40:44] [IP: ::1] [UID: 40] Connexion réussie pour l'utilisateur : admin
+[2026-08-31 04:14:06] [IP: ::1] [UID: 40] Connexion réussie pour l'utilisateur : admin
+[2026-09-02 01:24:21] [IP: ::1] [UID: 40] Connexion réussie pour l'utilisateur : admin
+[2026-09-02 01:39:12] [IP: ::1] [UID: GUEST] Session expirée pour inactivité prolongée.
+[2026-09-02 01:39:32] [IP: ::1] [UID: 40] Connexion réussie pour l'utilisateur : admin
+[2026-09-02 02:53:42] [IP: ::1] [UID: 40] Connexion réussie pour l'utilisateur : admin
+[2026-09-02 03:30:31] [IP: ::1] [UID: 40] Connexion réussie pour l'utilisateur : admin
+[2026-09-02 04:10:07] [IP: 127.0.0.1] [UID: 40] Connexion réussie pour l'utilisateur : admin
+[2026-09-02 04:15:52] [IP: 127.0.0.1] [UID: 40] Connexion réussie pour l'utilisateur : admin
+[2026-09-02 04:56:25] [IP: 127.0.0.1] [UID: 40] Connexion réussie pour l'utilisateur : admin
+[2026-09-02 04:57:12] [IP: 127.0.0.1] [UID: 40] Connexion réussie pour l'utilisateur : admin
+[2026-09-02 05:01:01] [IP: 127.0.0.1] [UID: GUEST] Échec de vérification CSRF lors de la connexion. IP suspendue ?
+[2026-09-05 04:05:59] [IP: 127.0.0.1] [UID: 40] Connexion réussie pour l'utilisateur : admin

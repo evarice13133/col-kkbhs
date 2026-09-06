@@ -28,7 +28,7 @@ if (!function_exists('__')) {
     }
 }
 
-// On recharge les parametres institutionnels pour garder un rendu officiel sur la fiche papier.
+// On recharge les paramètres institutionnels selon le type d'enseignement actif pour garder un rendu officiel cohérent.
 $settings = [
     'school_republic' => 'Republique du Cameroun',
     'school_republic_en' => 'Republic of Cameroon',
@@ -42,15 +42,27 @@ $settings = [
 
 try {
     $db = Database::getInstance()->getConnection();
-    $stmt = $db->query("SELECT setting_key, setting_value FROM settings");
-    foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
-        $settings[$row['setting_key']] = $row['setting_value'];
+    $teachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
+    $classId = (int) ($_GET['class_id'] ?? 0);
+
+    if ($classId > 0 && $teachingTypeId <= 0) {
+        $classStmt = $db->prepare('SELECT teaching_type_id FROM classes WHERE id = ? LIMIT 1');
+        $classStmt->execute([$classId]);
+        $teachingTypeId = (int) ($classStmt->fetchColumn() ?: 0);
     }
+
+    if ($teachingTypeId <= 0) {
+        $ttStmt = $db->query('SELECT id FROM teaching_types WHERE actif = 1 ORDER BY position ASC, id ASC LIMIT 1');
+        $teachingTypeId = (int) ($ttStmt->fetchColumn() ?: 0);
+    }
+
+    $settingsStore = new \App\Services\SettingsStore($db, $teachingTypeId);
+    $settings = $settingsStore->all($teachingTypeId);
 } catch (\Throwable $e) {
 }
 
 // Utiliser LogoManager pour récupérer le logo comme dans le PV
-$logoManager = \App\Core\LogoManager::getInstance($db);
+$logoManager = \App\Core\LogoManager::getInstance($db, $teachingTypeId ?? null);
 $logoData = [
     'has_logo' => $logoManager->hasLogo(),
     'base64' => $logoManager->hasLogo() ? $logoManager->getLogoBase64() : '',

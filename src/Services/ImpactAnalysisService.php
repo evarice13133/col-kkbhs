@@ -96,6 +96,12 @@ class ImpactAnalysisService
             case 'teaching_types':
                 return $this->analyzeTeachingType($entityId);
 
+            case 'competency':
+            case 'competencies':
+            case 'competence':
+            case 'competences':
+                return $this->analyzeCompetency($entityId);
+
             default:
                 return $this->buildGenericAnalysis($entityType, $entityId);
         }
@@ -751,6 +757,33 @@ class ImpactAnalysisService
                 'dependencies' => "$subsCount matières rattachées à ce groupe.",
                 'historical_data' => "Coefficients d'UE sur les bulletins.",
                 'invalid_references' => "Les matières seront dissociées de tout groupe."
+            ]
+        ];
+    }
+
+    private function analyzeCompetency(int $id): array
+    {
+        $stmt = $this->db->prepare("SELECT c.id, c.libelle, c.description, s.nom AS subject_nom
+                                    FROM competencies c LEFT JOIN subjects s ON s.id = c.subject_id
+                                    WHERE c.id = ?");
+        $stmt->execute([$id]);
+        $competency = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$competency) return $this->notFoundResponse('competency', $id);
+
+        $usage = $this->db->prepare("SELECT COUNT(*) FROM evaluation_competencies WHERE competency_id = ?");
+        $usage->execute([$id]);
+        $usageCount = (int) $usage->fetchColumn();
+        return [
+            'entity' => ['type' => 'competency', 'type_label' => 'Compétence', 'id' => $id, 'name' => $competency['libelle'], 'subtext' => 'Matière : ' . ($competency['subject_nom'] ?? 'Transversale')],
+            'risk_level' => $usageCount > 0 ? 'critical' : 'low',
+            'recommended_action' => $usageCount > 0 ? 'deactivate' : 'delete',
+            'can_direct_delete' => $usageCount === 0,
+            'stats' => [['label' => 'Évaluations utilisant cette compétence', 'count' => $usageCount, 'icon' => 'fas fa-clipboard-check', 'severity' => $usageCount > 0 ? 'danger' : 'success']],
+            'impact_summary' => [
+                'direct_deletion' => 'La compétence « ' . $competency['libelle'] . ' » sera supprimée.',
+                'dependencies' => $usageCount . ' association(s) d’évaluation seront concernées.',
+                'historical_data' => 'Les notes restent conservées, mais la compétence ne sera plus disponible.',
+                'invalid_references' => $usageCount > 0 ? 'Suppression directe bloquée pour préserver les évaluations.' : 'Aucune.'
             ]
         ];
     }

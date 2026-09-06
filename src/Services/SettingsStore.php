@@ -12,7 +12,7 @@ class SettingsStore
     private const SCOPED_KEYS = [
         'school_name', 'school_code', 'school_republic', 'school_republic_en',
         'school_ministry', 'school_ministry_en', 'school_delegation', 'school_delegation_en', 'school_slogan', 'school_slogan_en',
-        'school_motto', 'school_motto_en', 'school_logo', 'tutelage_logo', 'creation_decree', 'school_city',
+        'school_motto', 'school_motto_en', 'school_logo', 'tutelage_logo', 'creation_decree', 'school_city', 'school_address',
         'school_phone', 'school_po_box', 'school_fax', 'school_email', 'school_website',
         'display_school_year', 'principal_name', 'principal_title', 'principal_signature',
         'school_stamp', 'honor_roll_default_threshold', 'bulletin_printing_enabled',
@@ -36,6 +36,7 @@ class SettingsStore
         'creation_decree' => '',
         'school_code' => 'CMR-COL',
         'school_city' => 'BWADIBO',
+        'school_address' => '',
         'school_phone' => '',
         'school_po_box' => '',
         'school_fax' => '',

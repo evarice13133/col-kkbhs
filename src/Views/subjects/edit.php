@@ -129,7 +129,7 @@ ob_start();
                     </div>
 
                     <div class="col-12">
-                        <div class="p-3 bg-info bg-opacity-5 border border-info border-opacity-25 rounded-4">
+                        <div class="p-3 rounded-4">
                             <div class="row g-3 align-items-end">
                                 <div class="col-md-4">
                                     <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">

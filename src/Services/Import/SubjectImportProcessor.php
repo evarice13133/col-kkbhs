@@ -99,11 +99,12 @@ class SubjectImportProcessor
             'subject' => null,
             'coef' => null,
             'group' => null,
-            'classes' => null,
+            'classes' => [],
             'vhm' => null,
             'vhp' => null,
             'th_max' => null,
             'observations' => null,
+            'competences' => [],
             'cycle' => null,
             'department' => null,
             'is_legacy' => false,
@@ -119,8 +120,8 @@ class SubjectImportProcessor
                 $map['coef'] = $col;
             } elseif (str_contains($headerText, 'group')) {
                 $map['group'] = $col;
-            } elseif (str_contains($headerText, 'concern') || str_contains($headerText, 'impact') || $headerText === 'classes' || $headerText === 'classe') {
-                $map['classes'] = $col;
+            } elseif (preg_match('/classe\s*(1|2|3|4|5)|class\s*(1|2|3|4|5)|classes\s*concern|classes concern|classe/iu', $headerText)) {
+                $map['classes'][] = $col;
             } elseif ($headerText === 'vhm' || str_contains($headerText, 'ministér') || str_contains($headerText, 'minister')) {
                 $map['vhm'] = $col;
             } elseif ($headerText === 'vhp' || str_contains($headerText, 'propos')) {
@@ -129,18 +130,17 @@ class SubjectImportProcessor
                 $map['th_max'] = $col;
             } elseif (str_contains($headerText, 'obs') || str_contains($headerText, 'remarque')) {
                 $map['observations'] = $col;
+            } elseif (preg_match('/competence(s)?\s*(1|2|3|4|5|6|7)?|skill(s)?/iu', $headerText)) {
+                $map['competences'][] = $col;
             } elseif (str_contains($headerText, 'cycle')) {
                 $map['cycle'] = $col;
                 $map['is_legacy'] = true;
             } elseif (str_contains($headerText, 'depart') || str_contains($headerText, 'départ')) {
                 $map['department'] = $col;
                 $map['is_legacy'] = true;
-            } elseif (str_contains($headerText, 'classe 1') || str_contains($headerText, 'class 1')) {
-                $map['is_legacy'] = true;
             }
         }
 
-        // Si la colonne matière n'est pas identifiée, tenter de la faire correspondre avec la colonne A
         if ($map['subject'] === null && isset($headers['A'])) {
             $first = mb_strtolower(trim((string) $headers['A']));
             if (str_contains($first, 'mati') || str_contains($first, 'subject') || $first !== '') {
@@ -153,14 +153,30 @@ class SubjectImportProcessor
             return null;
         }
 
-        // Valeurs par défaut si positionnement standard
         if ($map['coef'] === null && isset($headers['B'])) $map['coef'] = 'B';
         if ($map['group'] === null && isset($headers['C'])) $map['group'] = 'C';
-        if ($map['classes'] === null && isset($headers['D']) && !$map['is_legacy']) $map['classes'] = 'D';
-        if ($map['vhm'] === null && isset($headers['E']) && !$map['is_legacy']) $map['vhm'] = 'E';
-        if ($map['vhp'] === null && isset($headers['F']) && !$map['is_legacy']) $map['vhp'] = 'F';
-        if ($map['th_max'] === null && isset($headers['G']) && !$map['is_legacy']) $map['th_max'] = 'G';
-        if ($map['observations'] === null && isset($headers['H']) && !$map['is_legacy']) $map['observations'] = 'H';
+        
+        // PRIORITÉ: Reconnaître d'abord les colonnes Classe 1-5 (D-H) et Compétence 1-7 (I-O)
+        if (empty($map['classes'])) {
+            foreach (range('D', 'H') as $col) {
+                if (isset($headers[$col])) {
+                    $map['classes'][] = $col;
+                }
+            }
+        }
+        if (empty($map['competences'])) {
+            foreach (range('I', 'O') as $col) {
+                if (isset($headers[$col])) {
+                    $map['competences'][] = $col;
+                }
+            }
+        }
+        
+        // Fallback pour VHM/VHP/TH/Observations: ne pas utiliser D-O (réservés pour classes et compétences)
+        if ($map['vhm'] === null && isset($headers['P']) && !$map['is_legacy']) $map['vhm'] = 'P';
+        if ($map['vhp'] === null && isset($headers['Q']) && !$map['is_legacy']) $map['vhp'] = 'Q';
+        if ($map['th_max'] === null && isset($headers['R']) && !$map['is_legacy']) $map['th_max'] = 'R';
+        if ($map['observations'] === null && isset($headers['S']) && !$map['is_legacy']) $map['observations'] = 'S';
 
         return $map;
     }
@@ -173,7 +189,7 @@ class SubjectImportProcessor
             return true;
         }
 
-        foreach (['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] as $col) {
+        foreach (range('A', 'O') as $col) {
             if (trim((string) ($row[$col] ?? '')) !== '') {
                 return true;
             }
@@ -225,19 +241,19 @@ class SubjectImportProcessor
         // Parsing Classes
         $classNames = $this->extractClassNamesFromRow($row, $colMap);
         if (empty($classNames)) {
-            $classesCol = $colMap['classes'] ?? 'D';
-            $this->logError($line, "Feuille '{$sheetName}', Colonne {$classesCol} (Classes concernées) : Au moins une classe doit être spécifiée. Correction attendue : Indiquer une ou plusieurs classes existantes.");
+            $classesCols = !empty($colMap['classes']) ? implode(', ', $colMap['classes']) : 'D:H';
+            $this->logError($line, "Feuille '{$sheetName}', Colonnes {$classesCols} (Classes concernées) : Aucune classe n'a été renseignée. Correction attendue : remplir au moins une des 5 colonnes Classe 1 à Classe 5 avec un nom de classe existant.");
             return;
         }
 
-        $classIds = $this->resolveClassIds($classNames, $line, $colMap['classes'] ?? 'D', $sheetName);
+        $classIds = $this->resolveClassIds($classNames, $line, !empty($colMap['classes']) ? implode(', ', $colMap['classes']) : 'D:H', $sheetName);
         if (empty($classIds)) {
             return;
         }
 
         // Parsing VHm (Volume Horaire Ministériel)
-        $vhmCol = $colMap['vhm'] ?? 'E';
-        $vhmRaw = trim((string) ($row[$vhmCol] ?? ''));
+        $vhmCol = $colMap['vhm'] ?? null;  // Pas de fallback à 'E' - E est réservé pour Classe 2
+        $vhmRaw = trim((string) ($vhmCol ? ($row[$vhmCol] ?? '') : ''));
         $vhm = null;
         if ($vhmRaw !== '') {
             if (!is_numeric($vhmRaw) || (float) $vhmRaw < 0) {
@@ -248,8 +264,8 @@ class SubjectImportProcessor
         }
 
         // Parsing VHp (Volume Horaire Proposé)
-        $vhpCol = $colMap['vhp'] ?? 'F';
-        $vhpRaw = trim((string) ($row[$vhpCol] ?? ''));
+        $vhpCol = $colMap['vhp'] ?? null;  // Pas de fallback à 'F' - F est réservé pour Classe 3
+        $vhpRaw = trim((string) ($vhpCol ? ($row[$vhpCol] ?? '') : ''));
         $vhp = null;
         if ($vhpRaw !== '') {
             if (!is_numeric($vhpRaw) || (float) $vhpRaw < 0) {
@@ -260,8 +276,8 @@ class SubjectImportProcessor
         }
 
         // Parsing TH(Max) (Taux Horaire Maximal)
-        $thMaxCol = $colMap['th_max'] ?? 'G';
-        $thMaxRaw = trim((string) ($row[$thMaxCol] ?? ''));
+        $thMaxCol = $colMap['th_max'] ?? null;  // Pas de fallback à 'G' - G est réservé pour Classe 4
+        $thMaxRaw = trim((string) ($thMaxCol ? ($row[$thMaxCol] ?? '') : ''));
         $thMax = null;
         if ($thMaxRaw !== '') {
             if (!is_numeric($thMaxRaw) || (float) $thMaxRaw < 0) {
@@ -272,9 +288,17 @@ class SubjectImportProcessor
         }
 
         // Parsing Observations
-        $obsCol = $colMap['observations'] ?? 'H';
-        $obsRaw = trim((string) ($row[$obsCol] ?? ''));
+        $obsCol = $colMap['observations'] ?? null;  // Pas de fallback à 'H' - H est réservé pour Classe 5
+        $obsRaw = trim((string) ($obsCol ? ($row[$obsCol] ?? '') : ''));
         $observations = $obsRaw !== '' ? $obsRaw : null;
+
+        // Parsing Compétences
+        $competenceLabels = [];
+        foreach ($colMap['competences'] ?? ['I', 'J', 'K', 'L', 'M', 'N', 'O'] as $competenceCol) {
+            $competenceRaw = trim((string) ($row[$competenceCol] ?? ''));
+            $competenceLabels = array_merge($competenceLabels, $this->extractCompetencyNames($competenceRaw));
+        }
+        $competenceLabels = array_values(array_unique(array_filter($competenceLabels, static fn($value) => trim((string) $value) !== '')));
 
         // Mode UPSERT : Mise à jour si la matière existe déjà, sinon Insertion sans doublon
         try {
@@ -306,6 +330,7 @@ class SubjectImportProcessor
                     $stmtInsCl->execute([$subjectId, $classId, $this->activeYearId]);
                 }
 
+                $this->saveSubjectCompetencies($subjectId, $competenceLabels, $line, $sheetName, $competenceCol);
                 $this->successCount++;
             } else {
                 $stmtInsert = $this->db->prepare("
@@ -339,6 +364,7 @@ class SubjectImportProcessor
                     $stmtInsCl->execute([$subjectId, $classId, $this->activeYearId]);
                 }
 
+                $this->saveSubjectCompetencies($subjectId, $competenceLabels, $line, $sheetName, $competenceCol);
                 $this->successCount++;
             }
         } catch (\Throwable $e) {
@@ -346,29 +372,73 @@ class SubjectImportProcessor
         }
     }
 
+    private function extractCompetencyNames(string $raw): array
+    {
+        if (trim($raw) === '') {
+            return [];
+        }
+
+        $parts = preg_split('/[\n\r,;|\/]+/', $raw);
+        $names = [];
+        foreach ($parts as $part) {
+            $name = trim((string) $part);
+            if ($name !== '' && $name !== '-') {
+                $names[] = $name;
+            }
+        }
+
+        return array_values(array_unique($names));
+    }
+
+    private function saveSubjectCompetencies(int $subjectId, array $labels, int $line, string $sheetName, string $competenceCol): void
+    {
+        $deleteStmt = $this->db->prepare("DELETE FROM competencies WHERE subject_id = ?");
+        $deleteStmt->execute([$subjectId]);
+
+        if (empty($labels)) {
+            return;
+        }
+
+        $insertStmt = $this->db->prepare("INSERT INTO competencies (subject_id, libelle, position, created_by) VALUES (?, ?, ?, ?)");
+        
+        // Utiliser l'ID de l'utilisateur admin (40) ou chercher le premier utilisateur disponible
+        $createdById = 40;
+        $userCheckStmt = $this->db->prepare("SELECT id FROM users WHERE id = ?");
+        $userCheckStmt->execute([$createdById]);
+        if (!$userCheckStmt->fetch()) {
+            // Si l'ID 40 n'existe pas, chercher le premier utilisateur
+            $firstUserStmt = $this->db->query("SELECT MIN(id) as id FROM users");
+            $firstUser = $firstUserStmt->fetch(PDO::FETCH_ASSOC);
+            $createdById = $firstUser['id'] ?? 1;
+        }
+        
+        foreach ($labels as $index => $label) {
+            $clean = trim((string) $label);
+            if ($clean === '') {
+                continue;
+            }
+            $insertStmt->execute([$subjectId, $clean, $index + 1, $createdById]);
+        }
+    }
+
     private function extractClassNamesFromRow(array $row, array $colMap): array
     {
         $classNames = [];
 
-        if (!$colMap['is_legacy'] && !empty($colMap['classes'])) {
-            $classesCol = $colMap['classes'];
-            $classesRaw = trim((string) ($row[$classesCol] ?? ''));
-            if ($classesRaw !== '' && $classesRaw !== '-') {
-                // Diviser la chaîne selon les séparateurs courants : virgule, point-virgule, retour à la ligne, slash
-                $parts = preg_split('/[\n\r,;\/]+/', $classesRaw);
-                foreach ($parts as $part) {
-                    $trimmed = trim($part);
-                    if ($trimmed !== '' && $trimmed !== '-') {
-                        $classNames[] = $trimmed;
-                    }
-                }
+        $classCols = $colMap['classes'] ?? ['D', 'E', 'F', 'G', 'H'];
+        $classCols = is_array($classCols) ? $classCols : [$classCols];
+
+        foreach ($classCols as $classCol) {
+            $raw = trim((string) ($row[$classCol] ?? ''));
+            if ($raw === '' || $raw === '-') {
+                continue;
             }
-        } else {
-            // Format hérité : colonnes F à O
-            foreach (['F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O'] as $col) {
-                $value = trim((string) ($row[$col] ?? ''));
-                if ($value !== '' && $value !== '-') {
-                    $classNames[] = $value;
+
+            $parts = preg_split('/[\n\r,;\/]+/', $raw);
+            foreach ($parts as $part) {
+                $trimmed = trim((string) $part);
+                if ($trimmed !== '' && $trimmed !== '-') {
+                    $classNames[] = $trimmed;
                 }
             }
         }

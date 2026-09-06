@@ -681,7 +681,7 @@ class BulletinController
             'effectif' => count($ranking),
             'tableFont' => $tableFont,
             'activeYear' => $activeYear,
-            'institution' => $this->getInstitutionSettings(),
+            'institution' => $this->getInstitutionSettings($this->resolveCurrentTeachingTypeId((int) ($student['class_id'] ?? 0))),
             'evaluationLabels' => [(string) ($sequence['code'] ?? $this->getShortSequenceLabel((string) ($sequence['label'] ?? '')))],
             'discipline' => $discipline,
             'professor_name' => $professor_name,
@@ -846,7 +846,7 @@ class BulletinController
             'councilAppreciation' => $this->getCouncilAppreciation($average),
             'strengths' => $strengths,
             'weaknesses' => $weaknesses,
-            'institution' => $this->getInstitutionSettings(),
+            'institution' => $this->getInstitutionSettings($this->resolveCurrentTeachingTypeId((int) ($student['class_id'] ?? 0))),
             'evaluationLabels' => $evaluationLabels,
             'discipline' => $discipline,
             'seqAverages' => $seqAverages,
@@ -1012,7 +1012,7 @@ class BulletinController
             'activeYear' => $activeYear,
             'total_coefficients' => $coeffSum,
             'total_coef_valide' => $coeffValidSum,
-            'institution' => $this->getInstitutionSettings(),
+            'institution' => $this->getInstitutionSettings($this->resolveCurrentTeachingTypeId((int) ($student['class_id'] ?? 0))),
             'discipline' => $discipline,
             'termAverages' => $termAverages,
             'termRanks' => $termRanks,
@@ -1873,12 +1873,33 @@ class BulletinController
         }
     }
 
+    protected function resolveCurrentTeachingTypeId(?int $classId = null): int
+    {
+        $requested = (int) ($_GET['teaching_type_id'] ?? 0);
+        if ($requested > 0) {
+            return $requested;
+        }
+
+        if ($classId !== null && $classId > 0) {
+            $stmt = $this->db->prepare('SELECT teaching_type_id FROM classes WHERE id = ? LIMIT 1');
+            $stmt->execute([$classId]);
+            $classTtId = (int) ($stmt->fetchColumn() ?: 0);
+            if ($classTtId > 0) {
+                return $classTtId;
+            }
+        }
+
+        $settingsStore = new \App\Services\SettingsStore($this->db);
+        return $settingsStore->getDefaultTeachingTypeId();
+    }
+
     protected function getInstitutionSettings(?int $teachingTypeId = null)
     {
-        $settingsStore = new \App\Services\SettingsStore($this->db, $teachingTypeId);
-        $defaults = $settingsStore->all($teachingTypeId);
+        $resolvedType = $teachingTypeId !== null && $teachingTypeId > 0 ? (int) $teachingTypeId : $this->resolveCurrentTeachingTypeId();
+        $settingsStore = new \App\Services\SettingsStore($this->db, $resolvedType);
+        $defaults = $settingsStore->all($resolvedType);
 
-        $logoManager = \App\Core\LogoManager::getInstance($this->db, $teachingTypeId);
+        $logoManager = \App\Core\LogoManager::getInstance($this->db, $resolvedType);
         if ($logoManager->hasLogo()) {
             $defaults['school_logo'] = $logoManager->getLogoUrl();
             $defaults['school_logo_base64'] = $logoManager->getLogoBase64();

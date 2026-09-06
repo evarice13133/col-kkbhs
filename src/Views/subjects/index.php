@@ -132,15 +132,13 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_subjects');
                 <table class="table-modern">
                     <thead>
                         <tr>
-                            <th class="ps-4"><?= __('subject') ?></th>
-                            <th><?= __('classes') ?></th>
-                            <th><?= __('coefficient') ?></th>
-                            <?php if (\App\Core\PermissionManager::hasRole('superadmin')): ?>
-                                <th><?= __('status') ?></th>
-                            <?php endif; ?>
-                            <th><?= __('group') ?></th>
+                            <th class="ps-4 col-subject"><?= __('subject') ?></th>
+                            <th class="col-classes"><?= __('classes') ?? 'Classes concernées' ?></th>
+                            <th class="col-coefficient"><?= __('coefficient') ?></th>
+                            <th class="col-group"><?= __('group') ?></th>
+                            <th class="col-status"><?= __('status') ?></th>
                             <?php if (\App\Core\PermissionManager::hasPermission('manage_subjects')): ?>
-                                <th class="text-end pe-4"><?= __('actions') ?></th>
+                                <th class="text-end pe-4 col-actions"><?= __('actions') ?></th>
                             <?php endif; ?>
                         </tr>
                     </thead>
@@ -157,7 +155,7 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_subjects');
                                 $isActive = (int) ($s['status'] ?? 1) === 1;
                                 ?>
                                 <tr class="<?= !$isActive ? 'opacity-50 grayscale bg-light' : '' ?>">
-                                    <td class="ps-4">
+                                    <td class="ps-4 col-subject">
                                         <div class="d-flex align-items-center gap-2">
                                             <div class="avatar-init bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center shadow-sm"
                                                 style="width: 36px; height: 36px; border: 1px solid rgba(var(--primary-rgb), 0.2);">
@@ -168,21 +166,27 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_subjects');
                                             </div>
                                         </div>
                                     </td>
-                                    <td>
-                                        <span
-                                            class="text-muted small"><?= htmlspecialchars((string) ($s['classes_list'] ?: __('no_class_associated'))) ?></span>
-                                        <?php if (!empty($s['subject_group_libelle']) || !empty($s['groupe'])): ?>
-                                            <div class="mt-1">
-                                                <span
-                                                    class="badge bg-secondary bg-opacity-10 text-secondary fw-bold px-2 py-1 rounded-pill"
-                                                    style="font-size: 0.68rem;">
-                                                    <i
-                                                        class="bi bi-collection me-1"></i><?= htmlspecialchars((string) ($s['subject_group_libelle'] ?? $s['groupe'])) ?>
-                                                </span>
+                                    <td class="col-classes">
+                                        <?php
+                                        $classNames = [];
+                                        if (!empty($s['classes_list'])) {
+                                            $classNames = array_values(array_filter(array_map('trim', preg_split('/\s*,\s*/', (string) $s['classes_list']))));
+                                            $classNames = array_values(array_unique($classNames));
+                                        }
+                                        ?>
+                                        <?php if (empty($classNames)): ?>
+                                            <span class="text-muted small"><?= htmlspecialchars((string) __('no_class_associated')) ?></span>
+                                        <?php else: ?>
+                                            <div class="d-flex flex-wrap gap-1 align-items-center" style="min-height: 28px;">
+                                                <?php foreach ($classNames as $className): ?>
+                                                    <span class="badge bg-info bg-opacity-10 text-info fw-bold px-2 py-1 rounded-pill" style="font-size: 0.68rem; white-space: nowrap;">
+                                                        <i class="bi bi-people-fill me-1"></i><?= htmlspecialchars((string) $className) ?>
+                                                    </span>
+                                                <?php endforeach; ?>
                                             </div>
                                         <?php endif; ?>
                                     </td>
-                                    <td>
+                                    <td class="col-coefficient">
                                         <span class="badge bg-primary bg-opacity-10 text-primary fw-bold px-3 py-1 rounded-3">
                                             <?= __('coef') ?>: <?= (int) $s['coefficient'] ?>
                                         </span>
@@ -231,30 +235,28 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_subjects');
                                             </div>
                                         <?php endif; ?>
                                     </td>
-                                    <?php if (\App\Core\PermissionManager::hasPermission('manage_subjects')): ?>
-                                        <td>
-                                            <?php if ($isActive): ?>
-                                                <span
-                                                    class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-2 py-1"
-                                                    style="font-size: 0.7rem;">
-                                                    <i class="bi bi-check-circle-fill me-1"></i> <?= __('active') ?>
-                                                </span>
-                                            <?php else: ?>
-                                                <span
-                                                    class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill px-2 py-1"
-                                                    style="font-size: 0.7rem;">
-                                                    <i class="bi bi-x-circle-fill me-1"></i> <?= __('inactive') ?>
-                                                </span>
-                                            <?php endif; ?>
-                                        </td>
-                                    <?php endif; ?>
-                                    <td>
+                                    <td class="col-group">
                                         <span class="badge bg-success bg-opacity-10 text-success fw-bold px-3 py-1 rounded-3">
-                                            <?= htmlspecialchars($s['groupe'] ?? 'Groupe 1') ?>
+                                            <?= htmlspecialchars((string) (($s['group_list'] ?? '') ?: ($s['subject_group_libelle'] ?? $s['groupe'] ?? 'Groupe 1'))) ?>
                                         </span>
                                     </td>
+                                    <td class="col-status">
+                                        <?php if ($isActive): ?>
+                                            <span
+                                                class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-2 py-1"
+                                                style="font-size: 0.7rem;">
+                                                <i class="bi bi-check-circle-fill me-1"></i> <?= __('active') ?>
+                                            </span>
+                                        <?php else: ?>
+                                            <span
+                                                class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill px-2 py-1"
+                                                style="font-size: 0.7rem;">
+                                                <i class="bi bi-x-circle-fill me-1"></i> <?= __('inactive') ?>
+                                            </span>
+                                        <?php endif; ?>
+                                    </td>
                                     <?php if (\App\Core\PermissionManager::hasPermission('manage_subjects')): ?>
-                                        <td class="text-end pe-4">
+                                        <td class="text-end pe-4 col-actions">
                                             <div class="d-flex justify-content-end gap-1 align-items-center table-row-actions">
                                                 <?php if (\App\Core\PermissionManager::hasPermission('manage_subjects')): ?>
                                                     <a href="/subjects/toggleStatus?id=<?= $s['id'] ?>"
@@ -618,6 +620,15 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_subjects');
                     });
                 }
             });
+
+            // L'import ne doit pas dependre de la presence des filtres de la liste.
+            const earlyImportFileInput = document.getElementById('subject-import-file');
+            const earlyImportSubmitBtn = document.getElementById('subject-import-submit');
+            if (earlyImportFileInput && earlyImportSubmitBtn) {
+                earlyImportFileInput.addEventListener('change', function () {
+                    earlyImportSubmitBtn.disabled = earlyImportFileInput.files.length === 0;
+                });
+            }
 
             if (!filterTT || !filterClass) return;
 

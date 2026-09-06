@@ -63,10 +63,20 @@ ob_start();
                     </div>
                 </div>
                 <div class="card-body p-4 pt-2">
-                    <form action="/notes/upload" method="POST" enctype="multipart/form-data">
+                    <form action="/notes/upload" method="POST" enctype="multipart/form-data" id="gradeImportForm">
                         <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
                         <input type="hidden" name="class_id" value="<?= $class_id ?>">
-                        <input type="hidden" name="subject_id" value="0">
+                        <input type="hidden" name="subject_id" id="importSubjectId" value="<?= htmlspecialchars((string) ($subject_id ?? 0)) ?>">
+
+                        <?php if ((int) ($subject_id ?? 0) <= 0): ?>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-uppercase text-muted-theme mb-2"><?= __('subject') ?? 'Matière' ?></label>
+                                <select id="importSubjectSelect" class="form-select premium-input">
+                                    <option value="0">Sélectionnez une matière</option>
+                                </select>
+                            </div>
+                        <?php endif; ?>
+
                         <input type="file" id="grade-import-file" name="import_file" class="form-control mb-3"
                             accept=".xlsx" required>
                         <button type="submit" id="grade-import-submit"
@@ -93,11 +103,27 @@ ob_start();
     document.addEventListener('DOMContentLoaded', function () {
         const importFile = document.getElementById('grade-import-file');
         const importSubmit = document.getElementById('grade-import-submit');
-        if (!importFile || !importSubmit) return;
+        const importSubjectSelect = document.getElementById('importSubjectSelect');
+        const importSubjectId = document.getElementById('importSubjectId');
 
-        importFile.addEventListener('change', function () {
-            importSubmit.disabled = importFile.files.length === 0;
-        });
+        if (importFile && importSubmit) {
+            importFile.addEventListener('change', function () {
+                importSubmit.disabled = importFile.files.length === 0;
+            });
+        }
+
+        if (importSubjectSelect) {
+            const subjectOptions = <?= json_encode($subjects ?? []) ?>;
+            if (Array.isArray(subjectOptions) && subjectOptions.length) {
+                subjectOptions.forEach(subject => {
+                    const option = document.createElement('option');
+                    option.value = String(subject.id);
+                    option.textContent = subject.nom;
+                    if (Number(importSubjectId.value) === Number(subject.id)) option.selected = true;
+                    importSubjectSelect.appendChild(option);
+                });
+            }
+        }
     });
 </script>
 

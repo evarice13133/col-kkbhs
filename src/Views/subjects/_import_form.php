@@ -38,7 +38,7 @@
             <div class="card-body p-4 pt-2">
                 <form action="/subjects/upload" method="POST" enctype="multipart/form-data" id="subjectImportForm">
                     <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
-                    <input type="file" id="subject-import-file" name="import_file" class="form-control mb-3" accept=".xlsx" required>
+                    <input type="file" id="subject-import-file" name="import_file" class="form-control mb-3" accept=".xlsx" required onchange="document.getElementById('subject-import-submit').disabled = this.files.length === 0;">
                     <button type="submit" id="subject-import-submit" class="btn btn-outline-success w-100 fw-bold rounded-3 py-3" disabled>
                         <i class="bi bi-cloud-upload me-2"></i> <?= __('validate_import_final') ?>
                     </button>
@@ -59,7 +59,8 @@
                 <li><strong>Matière</strong> (Obligatoire)</li>
                 <li><strong>Coef</strong> (Optionnel, défaut: 1)</li>
                 <li><strong>Groupe</strong> (Optionnel)</li>
-                <li><strong>Classes concernées</strong> (Séparées par une virgule, ex: <code>IGL 1, IGL 2</code>)</li>
+                <li><strong>Classe 1 à Classe 5</strong> (5 colonnes pour associer la matière à plusieurs classes)</li>
+                <li><strong>Compétence 1 à Compétence 7</strong> (7 colonnes pour importer les compétences de la matière)</li>
                 <li><strong>VHm, VHp, TH(Max)</strong> (Nombres optionnels)</li>
                 <li><strong>Observations</strong> (Texte optionnel)</li>
             </ul>
