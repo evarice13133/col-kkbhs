@@ -340,13 +340,13 @@ $appreciationLabels = [
         <div class="small text-muted-theme mb-3">
             <span id="gradeWorkflowSummary" class="fw-bold text-primary">1/4</span>
             <span class="ms-2">
-                <span class="workflow-step step-evaluation" data-step="evaluation">Évaluation</span>
+                <span class="workflow-step step-evaluation" data-step="evaluation"><?= __('evaluation') ?></span>
                 <span class="workflow-separator mx-1">→</span>
-                <span class="workflow-step step-competency" data-step="competency">Compétence</span>
+                <span class="workflow-step step-competency" data-step="competency"><?= __('workflow_competency') ?></span>
                 <span class="workflow-separator mx-1">→</span>
-                <span class="workflow-step step-notes" data-step="notes">Notes</span>
+                <span class="workflow-step step-notes" data-step="notes"><?= __('grades') ?></span>
                 <span class="workflow-separator mx-1">→</span>
-                <span class="workflow-step step-save" data-step="save">Enregistrement</span>
+                <span class="workflow-step step-save" data-step="save"><?= __('workflow_save') ?></span>
             </span>
         </div>
 
@@ -869,9 +869,9 @@ $appreciationLabels = [
 
             if (selectedCompetencyIds.length === 0) {
                 if (typeof AlertService !== 'undefined') {
-                    AlertService.toast('error', 'Veuillez sélectionner au moins une compétence pour cette évaluation.');
+                    AlertService.toast('error', <?= json_encode(__('select_competency_required'), JSON_UNESCAPED_UNICODE) ?>);
                 } else {
-                    alert('Veuillez sélectionner au moins une compétence pour cette évaluation.');
+                    alert(<?= json_encode(__('select_competency_required'), JSON_UNESCAPED_UNICODE) ?>);
                 }
                 return;
             }
@@ -894,9 +894,9 @@ $appreciationLabels = [
 
             if (hasInvalidGrade) {
                 if (typeof AlertService !== 'undefined') {
-                    AlertService.toast('error', 'La note ne doit pas être supérieure à 20');
+                    AlertService.toast('error', <?= json_encode(__('grade_max_value'), JSON_UNESCAPED_UNICODE) ?>);
                 } else {
-                    alert('La note ne doit pas être supérieure à 20');
+                    alert(<?= json_encode(__('grade_max_value'), JSON_UNESCAPED_UNICODE) ?>);
                 }
                 return;
             }
@@ -904,7 +904,7 @@ $appreciationLabels = [
             const filledCount = Array.from(noteInputs).filter(input => input.value.trim() !== '').length;
 
             if (typeof AlertService === 'undefined') {
-                if (confirm("Enregistrer les notes ?")) form.submit();
+                if (confirm(<?= json_encode(__('confirm_save_grades'), JSON_UNESCAPED_UNICODE) ?>)) form.submit();
                 return;
             }
 
@@ -912,7 +912,7 @@ $appreciationLabels = [
                 <div style="font-size: 0.85rem; color: #000000;">
                     <p class="mb-2 fw-medium"><?= json_encode(__('grade_save_confirm_text'), JSON_UNESCAPED_UNICODE) ?></p>
                     <div class="d-inline-block px-3 py-1 rounded-pill bg-warning-subtle text-warning-emphasis fw-bold small">
-                        ${filledCount} notes
+                        ${filledCount === 1 ? <?= json_encode(__('filled_notes_one'), JSON_UNESCAPED_UNICODE) ?>.replace(':count', filledCount) : <?= json_encode(__('filled_notes_many'), JSON_UNESCAPED_UNICODE) ?>.replace(':count', filledCount)}
                     </div>
                 </div>
             `;

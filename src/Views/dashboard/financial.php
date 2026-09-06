@@ -771,7 +771,7 @@ ob_start();
                         </div>
                     <?php else: ?>
                         <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0">
+                            <table class="table table-hover align-middle mb-0 recent-payments-table">
                                 <thead>
                                     <tr class="border-bottom border-theme-light">
                                         <th class="ps-4 py-3 fw-semibold text-muted-theme small text-uppercase"><?= __('student') ?></th>

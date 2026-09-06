@@ -593,8 +593,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.preventDefault();
                 Swal.fire({
                     icon: 'error',
-                    title: 'Erreur de validation',
-                    text: `La somme des tranches (${formatNumber(total)} FCFA) doit être égale aux frais de scolarité brut (${formatNumber(totalFrais)} FCFA).`,
+                    title: <?= json_encode(__('validation_error'), JSON_UNESCAPED_UNICODE) ?>,
+                    text: <?= json_encode(__('installment_sum_mismatch'), JSON_UNESCAPED_UNICODE) ?>.replace(':total', formatNumber(total)).replace(':fees', formatNumber(totalFrais)),
                     confirmButtonColor: '#2563EB'
                 });
                 return;
@@ -616,8 +616,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.preventDefault();
                 Swal.fire({
                     icon: 'error',
-                    title: 'Échéances manquantes',
-                    text: 'Veuillez renseigner toutes les dates d\'échéance de paiement.',
+                    title: <?= json_encode(__('missing_deadlines'), JSON_UNESCAPED_UNICODE) ?>,
+                    text: <?= json_encode(__('fill_payment_deadlines'), JSON_UNESCAPED_UNICODE) ?>,
                     confirmButtonColor: '#2563EB'
                 });
             }

@@ -54,6 +54,120 @@ ob_start();
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    const translations = <?= json_encode([
+        'Saisie des notes' => __('notes_entry'),
+        'Grade entry' => __('notes_entry'),
+        '1. Choisir le groupe' => __('choose_group_step'),
+        '1. Choose the group' => __('choose_group_step'),
+        '2. Sélectionner les matières' => __('select_subjects_step'),
+        '2. Select subjects' => __('select_subjects_step'),
+        'Classe concernée' => __('assignment_class_label'),
+        'Class concerned' => __('assignment_class_label'),
+        'Type d\'enseignement actif' => __('active_teaching_type'),
+        'Active teaching type' => __('active_teaching_type'),
+        'Forme d\'enseignement active' => __('active_teaching_form'),
+        'Active teaching form' => __('active_teaching_form'),
+        'Tous les types actifs' => __('all_active_teaching_types'),
+        'All active types' => __('all_active_teaching_types'),
+        'Toutes les formes actives' => __('all_active_teaching_forms'),
+        'All active forms' => __('all_active_teaching_forms'),
+        'Toutes les matières' => __('all_subjects'),
+        'All subjects' => __('all_subjects'),
+        'Toutes les classes' => __('all_classes'),
+        'All classes' => __('all_classes'),
+        'Sélectionner une matière affectée...' => __('assigned_subject_placeholder'),
+        'Select an assigned subject...' => __('assigned_subject_placeholder'),
+        'Groupe de matières' => __('select_group'),
+        'Choose group' => __('select_group'),
+        'Sélectionner...' => __('select_group_placeholder'),
+        'Select...' => __('select_group_placeholder'),
+        'Rechercher...' => __('search_subjects'),
+        'Search...' => __('search_subjects'),
+        'Sélectionnez un groupe et au moins une matière' => __('select_group_and_subjects'),
+        'Select a group and at least one subject' => __('select_group_and_subjects'),
+        'Valider l\'affectation' => __('validate_assignment'),
+        'Validate assignment' => __('validate_assignment'),
+        'Analyser puis valider définitivement l\'affectation' => __('assignment_analyze_validate'),
+        'Analyze and permanently validate the assignment' => __('assignment_analyze_validate'),
+        'Enseignant' => __('teacher'),
+        'Teacher' => __('teacher'),
+        'Sélectionner...' => __('select_group_placeholder'),
+        'Choisir d\'abord la classe et le type...' => __('select_teacher_first'),
+        'Choose the class and type first...' => __('select_teacher_first'),
+        'Charger' => __('load'),
+        'Load' => __('load'),
+        'Choisissez une classe, un type et un enseignant.' => __('choose_class_type_teacher'),
+        'Choose a class, type and teacher.' => __('choose_class_type_teacher'),
+        'Ajouter une compétence' => __('add_competency'),
+        'Add a competency' => __('add_competency'),
+        'Libellé' => __('competency_label'),
+        'Label' => __('competency_label'),
+        'Description' => __('description'),
+        'Annuler' => __('cancel'),
+        'Cancel' => __('cancel'),
+        'Enregistrer' => __('save'),
+        'Save' => __('save'),
+        'Analyse d\'impact' => __('impact_analysis'),
+        'Impact analysis' => __('impact_analysis'),
+        'Supprimer' => __('delete'),
+        'Delete' => __('delete'),
+        'Valider définitivement' => __('confirm_permanently'),
+        'Confirm permanently' => __('confirm_permanently'),
+        'Confirmer le remplacement' => __('confirm_replacement'),
+        'Confirm replacement' => __('confirm_replacement'),
+        'Confirmer la création' => __('confirm_creation'),
+        'Confirm creation' => __('confirm_creation'),
+        'Chargement...' => __('loading'),
+        'Loading...' => __('loading'),
+        'Sélectionner un enseignant...' => __('select_teacher'),
+        'Select a teacher...' => __('select_teacher'),
+        'Aucune description' => __('no_description'),
+        'No description' => __('no_description'),
+        'Sélectionnez une matière pour afficher ses compétences.' => __('select_subject_to_view_competencies'),
+        'Select a subject to view its competencies.' => __('select_subject_to_view_competencies'),
+        'Aucune matière ne correspond aux filtres actifs.' => __('no_subject_matches_filters'),
+        'No subject matches the active filters.' => __('no_subject_matches_filters'),
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    const dynamicTranslations = <?= json_encode([
+        'subjectContext' => __('subject_context'),
+        'classContext' => __('class_context'),
+        'impactDeletion' => __('impact_deletion'),
+        'teacherCount' => __('teacher_assignment_count'),
+        'teacherCountPlural' => __('teacher_assignment_count_plural'),
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    const translateText = value => {
+        const trimmed = value.trim();
+        if (translations[trimmed]) return value.replace(trimmed, translations[trimmed]);
+        let match = trimmed.match(/^(?:Matière|Subject) : (.+?)(?: \| (?:Classe|Class) : (.+))?$/);
+        if (match) {
+            const classContext = match[2] ? dynamicTranslations.classContext.replace(':class', match[2]) : '';
+            return value.replace(trimmed, dynamicTranslations.subjectContext.replace(':subject', match[1]).replace(':class_context', classContext));
+        }
+        match = trimmed.match(/^(?:Impact de la suppression|Deletion impact):?\s*(.+)$/);
+        if (match) return value.replace(trimmed, dynamicTranslations.impactDeletion.replace(':label', match[1]));
+        match = trimmed.match(/^(\d+) matière sélectionnée$/);
+        if (match) return value.replace(trimmed, dynamicTranslations.teacherCount.replace(':count', match[1]));
+        match = trimmed.match(/^(\d+) matières sélectionnées$/);
+        if (match) return value.replace(trimmed, dynamicTranslations.teacherCountPlural.replace(':count', match[1]));
+        return value;
+    };
+    const translatePage = root => {
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        const nodes = [];
+        while (walker.nextNode()) nodes.push(walker.currentNode);
+        nodes.forEach(node => {
+            if (!node.parentElement.closest('script, style')) node.nodeValue = translateText(node.nodeValue);
+        });
+        root.querySelectorAll?.('input[placeholder], [title], [aria-label]').forEach(element => {
+            ['placeholder', 'title', 'aria-label'].forEach(attribute => {
+                if (element.hasAttribute(attribute)) element.setAttribute(attribute, translateText(element.getAttribute(attribute)));
+            });
+        });
+    };
+    translatePage(document.getElementById('competency-management'));
+    const translationObserver = new window.MutationObserver(() => translatePage(document.getElementById('competency-management')));
+    translationObserver.observe(document.getElementById('competency-management'), {childList: true, subtree: true});
+
     const subjects = <?= json_encode($allSubjects, JSON_UNESCAPED_UNICODE) ?>;
     const subjectClassMap = <?= json_encode($subjectClassMap, JSON_UNESCAPED_UNICODE) ?>;
     const classFilter = document.getElementById('class-filter');
