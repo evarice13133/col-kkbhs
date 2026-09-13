@@ -355,11 +355,10 @@ if (isset($styleOnly)) {
                 </tbody>
             </table>
         </div>
-    </div>
-
-    <!-- G. BANDE DE PIED DE PAGE (Extérieur du cadre) -->
-    <div class="bulletin-footer">
-        © NoteMaster - Douala-Cameroun. <?= htmlspecialchars($i['school_code'] ?? '') ?>.camertech.com
+        <div class="bulletin-footer">
+            <span class="bulletin-name"><?= htmlspecialchars($bulletinType ?: __('report_card')) ?></span>
+            <span class="bulletin-copyright">© NoteMaster - Douala-Cameroun. <?= htmlspecialchars($i['school_code'] ?? '') ?>.camertech.com</span>
+        </div>
     </div>
     </div>
 

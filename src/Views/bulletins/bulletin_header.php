@@ -30,16 +30,23 @@
  */
 
 // Vérifier si on est en mode styleOnly pour le CSS
+$pageContentHeight = $pageContentHeight ?? match ($pageMargin ?? '0.5cm') {
+    '0.3cm' => '291mm',
+    '0.25cm' => '292mm',
+    '0.2cm' => '293mm',
+    default => '287mm',
+};
+
 if (isset($styleOnly)) {
     ?>
     * { box-sizing: border-box; }
-    @page { size: A4 portrait; margin: <?= $pageMargin ?>; }
-    @page :first { margin-top: <?= $pageMargin ?>; }
-    body { font-family: 'Arial', sans-serif; font-size: <?= $baseFontSize ?>px; margin: 0; padding: 0; color: #000;
+    @page { size: A4 portrait; margin: 3mm 4mm 4mm 4mm; }
+    @page :first { margin-top: 3mm; }
+    body { font-family: 'Arial', sans-serif; font-size: <?= max(10, $baseFontSize - 2) ?>px; margin: 0; padding: 0; color: #000;
     background: #fff; line-height: <?= $lineHeight ?>; }
-    .bulletin-sheet { width: 100%; min-height: 0; margin: 0 auto; display: flex; flex: 1 1 auto; flex-direction: column; page-break-after: auto; page-break-inside: avoid; padding: 3px; border: none; }
+    .bulletin-sheet { width: 100%; max-width: 198mm; min-height: 0; margin: 0 auto; display: flex; flex: 1 1 auto; flex-direction: column; page-break-after: auto; page-break-inside: avoid; padding: 0; border: none; }
     .bulletin-sheet:last-child { page-break-after: auto; }
-    .bulletin-wrapper { width: 100%; min-height: calc(297mm - <?= $pageMargin ?> - <?= $pageMargin ?>); display: flex; flex-direction: column; page-break-after: always; page-break-inside: avoid; margin: 0 auto 10px; padding: 3px; border: 2px solid #14347a; }
+    .bulletin-wrapper { width: 100%; max-width: 210mm; height: auto; min-height: auto; display: flex; flex-direction: column; page-break-after: always; page-break-inside: avoid; margin: 0 auto 6px; padding: 0 0 2mm; border: none; }
     table { width: 99.5%; margin: 0 auto 1px; border-collapse: collapse; table-layout: fixed; border: 1px solid #14347a; }
     th, td { border: 1px solid #14347a; padding: 2px 4px; text-align: center; color: black; }
     th { background-color: #14347a; color: white; text-transform: uppercase; font-weight: bold; border: 2px solid #14347a; }
@@ -51,26 +58,29 @@ if (isset($styleOnly)) {
     .uppercase { text-transform: uppercase; }
     .vert { color: #198754; font-weight: bold; }
     .rouge { color: #ff0000; }
-    .title-box { display: table; text-align: center; font-family: 'Arial Black', Arial, sans-serif; font-size: 19px; margin: 8px auto 5px; text-transform: uppercase;
-    padding: 2px 3px; }
-    .header-wrapper { width: 100%; display: grid; grid-template-columns: 1fr auto 1fr; align-items: start; column-gap: 8px; margin-bottom: 5px; }
+    .title-box { display: block; width: 100%; text-align: center; font-family: 'Arial Black', Arial, sans-serif; font-size: 19px; margin: 8px auto 5px; text-transform: uppercase;
+    padding: 2px 3px; border: 2px solid #000; }
+    .header-wrapper { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) minmax(150px, 155px) minmax(0, 1fr); align-items: start; column-gap: 10px; margin-bottom: 5px; page-break-inside: avoid; }
     .header-left, .header-center, .header-right { min-width: 0; }
-    .header-left { text-align: left; }
+    .header-left { text-align: center; }
     .header-center { display: flex; flex-direction: column; align-items: center; text-align: center; }
-    .header-right { text-align: right; }
-    .header-side-content { width: 100%; padding: 0 2px; }
+    .header-right { text-align: center; }
+    .header-branding { grid-column: 1 / -1; text-align: center; margin-top: 2px; }
+    .header-side-content { display: inline-flex; flex-direction: column; align-items: stretch; width: auto; max-width: 100%; padding: 0 2px; overflow-wrap: anywhere; word-break: normal; }
+    .header-line-group { display: table; width: auto; max-width: 100%; margin: 0 auto; }
+    .header-line-group .header-line { display: table; width: 100%; }
+    .header-contact-row { display: flex; align-items: baseline; justify-content: center; gap: 10px; white-space: nowrap; }
     .school-name-display, .academic-year-display { margin: 0; line-height: 1.15; }
-    .school-name-display { font-family: 'Arial Black', Arial, sans-serif; font-weight: 900; font-size: 19px; color: #0057b8; text-transform: uppercase; }
-    .academic-year-display { margin-top: 1px; font-weight: 700; font-size: 17px; text-transform: uppercase; }
-    .header-line { font-size: 16px; font-weight: bold; margin: 0; line-height: 1.15; text-transform: uppercase; }
-    .header-contact { font-size: 15px; margin: 0; line-height: 1.15; }
-    .header-left .header-line { font-size: 20px; color: #0057b8; }
-    .header-left .ministry-line { font-size: 17px; color: #000; }
-    .header-left .header-contact { font-size: 17px; }
+    .school-name-display { font-family: 'Arial Black', Arial, sans-serif; font-weight: 900; font-size: 23px; color: #0057b8; text-transform: uppercase; text-align: center; overflow-wrap: anywhere; }
+    .academic-year-display { margin-top: 2px; margin-bottom: 10px; font-weight: 700; font-size: 16px; text-transform: uppercase; text-align: center; }
+    .header-line { font-size: 12px; font-weight: bold; margin: 0; line-height: 1.15; text-transform: uppercase; }
+    .header-contact { font-size: 11px; margin: 2px 0 0; line-height: 1.15; text-transform: uppercase; }
+    .header-side-content .republic-line { font-size: 14px; color: #0057b8; }
+    .header-side-content .motto-line { font-size: 11px; font-style: italic; }
+    .header-side-content .ministry-line { font-size: 12px; color: #000; }
+    .header-side-content .slogan-line { font-size: 11px; }
     .header-contact-label { color: #0057b8; }
     .header-contact-value { color: #000; font-weight: 700; }
-    .header-right .header-line { font-size: 15px; }
-    .header-separator { margin: 0; font-size: 8px; line-height: 1; color: #000; }
     .logo-box { width: <?= $logoSize ?>; height: <?= $logoSize ?>; margin: 0 auto; display: flex; align-items: center;
     justify-content: center;
     overflow: hidden; }
@@ -132,7 +142,7 @@ if (isset($styleOnly)) {
     .department-banner::after {
     content: "";
     flex: 1;
-    height: 2px;
+    height: 3px;
     background: linear-gradient(to right, transparent 0%, #9aadd1 16%, #14347A 42%, #14347A 58%, #9aadd1 84%, transparent 100%);
     box-shadow: 0 1px 0 rgba(20, 52, 122, .16);
     margin: 0 14px;
@@ -158,7 +168,8 @@ if (isset($styleOnly)) {
     }
     }
     .student-photo-cell {
-    width: 55px;
+    width: 70px;
+    min-width: 70px;
     height: 100%;
     vertical-align: middle;
     padding: 0;
@@ -166,10 +177,11 @@ if (isset($styleOnly)) {
     border-right: 1px solid #14347a !important;
     }
     .student-photo-container {
-    width: 55px;
-    height: 100%;
-    min-height: 84px;
+    width: 100%;
+    height: auto;
+    min-height: 85px;
     background: #fff;
+    border: 2px solid #14347a;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -181,7 +193,7 @@ if (isset($styleOnly)) {
     }
     .student-photo-container img {
     width: 100%;
-    height: 100%;
+    height: auto;
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
@@ -191,8 +203,9 @@ if (isset($styleOnly)) {
     margin: 0;
     }
     .student-photo-placeholder {
-    width: 51px;
-    height: 59px;
+    width: 100%;
+    height: auto;
+    min-height: 59px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -209,30 +222,60 @@ if (isset($styleOnly)) {
     line-height: 1;
     margin: 0;
     }
+    .student-info-table td,
+    .student-info-table tr + tr td,
+    .student-info-table .student-photo-cell {
+    border: none !important;
+    }
+    .student-info-table tr {
+    margin: 0;
+    padding: 0;
+    }
+    .student-info-table tr + tr td {
+    margin-top: 0;
+    padding-top: 0;
+    }
+    .student-identity-half { width: 50%; }
     .student-info-table td > * { margin: 0; padding: 0; }
     .student-identity-label {
     font-weight: 700;
-    margin-right: 3px;
-    font-size: <?= $baseFontSize - 1 ?>px;
+    margin-right: 2px;
+    margin-bottom: 0;
+    font-size: <?= $baseFontSize - 6 ?>px;
+    line-height: 1;
+    display: inline-block;
+    vertical-align: middle;
     color: #000;
     }
     .student-identity-value {
     font-weight: 700;
     color: #0057b8;
-    font-size: <?= $baseFontSize - 1 ?>px;
+    margin-bottom: 0;
+    font-size: <?= $baseFontSize - 6 ?>px;
+    line-height: 1;
+    display: inline-block;
+    vertical-align: middle;
+    border-bottom: 1px solid #14347a;
+    padding-bottom: 0;
     }
     .student-identity-item {
     display: inline-block;
-    margin-right: 12px;
+    margin-right: 10px;
     }
     .student-identity-item:last-child {
     margin-right: 0;
     }
     .student-name-value {
     font-weight: 900;
-    font-size: <?= $baseFontSize + 2 ?>px;
+    font-size: <?= $baseFontSize - 4 ?>px;
+    line-height: 1;
+    margin-bottom: 0;
     text-transform: uppercase;
     color: #0057b8;
+    display: inline-block;
+    vertical-align: middle;
+    border-bottom: 1px solid #14347a;
+    padding-bottom: 0;
     }
     .check-group { font-family: 'Courier New', monospace; white-space: nowrap; }
     .nowrap { white-space: nowrap; }
@@ -274,7 +317,34 @@ if (isset($styleOnly)) {
     .compact-side th, .compact-side td { padding: 1px 2px; line-height: 0.95; }
     .rounded-legend { border: 1px solid #14347a; border-radius: 4px; border-collapse: separate; }
     .signature-table td { border: none; height: 30px; vertical-align: top; padding-top: 1px; }
-    .bulletin-footer { width: 100%; height: 15px; background-color: #14347a; color: white; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold; margin-top: 10px; text-align: center; }
+    .bulletin-footer {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        font-size: 9px;
+        font-weight: 700;
+        line-height: 1.2;
+        color: #14347a;
+        margin-top: auto;
+        padding-top: 10px;
+        text-align: center;
+        border-top: none;
+        background: transparent;
+        flex-shrink: 0;
+    }
+    .bulletin-footer .bulletin-name {
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        white-space: nowrap;
+    }
+    .bulletin-footer .bulletin-copyright {
+        flex: 1;
+        text-align: center;
+        font-weight: 700;
+    }
     .no-border { border: none !important; }
     .absences-title { text-align: center; vertical-align: middle; width: 15px; font-weight: bold; font-size: 6.5px;
     line-height: 0.8; }
@@ -284,24 +354,34 @@ if (isset($styleOnly)) {
     .legend-text { font-size: 6.5px; line-height: 0.95; text-align: left; }
     .summary-total td { background-color: #f7f7f7; font-weight: bold; }
     .compact-value { font-weight: bold; font-size: 9px; }
-    .report-card-grid { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; margin: 4px 0 6px; page-break-inside: avoid; }
+    .report-card-grid { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; margin: 2px 0 2px; page-break-inside: avoid; }
     .report-card-header-table { display: table; width: 100%; margin: 0; border-collapse: collapse; table-layout: fixed; border: 2px solid #14347a; }
-    .report-card-header-table th { border: 1px solid #fff; padding: 2px 3px; text-align: center; vertical-align: middle; font-size: 10px; line-height: 1; }
+    .report-card-header-table th { border: 1px solid #fff; padding: 2px 2px; text-align: center; vertical-align: middle; font-size: 8.5px; line-height: 1.05; }
     .report-card-header-table thead th { border-bottom: 1px solid #fff; }
     .report-card-main-table { width: 100%; border-collapse: collapse; table-layout: fixed; border: 2px solid #14347a; }
-    .report-card-main-table th, .report-card-main-table td { border: 1px solid #14347a !important; padding: 3px 4px; text-align: center; vertical-align: middle; }
-    .report-card-statistics-table { width: 100%; border-collapse: collapse; table-layout: auto; border: 1px solid #14347a; margin-top: 5px; }
-    .report-card-statistics-table col { width: auto !important; }
-    .report-card-statistics-table th, .report-card-statistics-table td { border: 1px solid #14347a; padding: 3px 4px; text-align: center; vertical-align: middle; white-space: nowrap; }
-    .report-card-statistics-table th { background: #14347a; color: #fff; font-weight: 700; text-transform: uppercase; }
-    .report-card-statistics-table td:nth-child(odd) { font-weight: 700; color: #14347a; }
-    .report-card-statistics-table .student-average-label,
-    .report-card-statistics-table .student-average-value { border-width: 2px; font-weight: 700; }
-    .report-card-statistics-table .student-average-value { font-size: 11px !important; }
-    .report-card-statistics-table .average-positive { border-color: #198754; color: #198754; }
-    .report-card-statistics-table .average-negative { border-color: #dc3545; color: #dc3545; }
-    .stats-student-col, .stats-work-col { width: 6%; }
-    .stats-profile-col { width: 4.666%; }
+    .report-card-main-table th, .report-card-main-table td { border: 1px solid #14347a !important; padding: 2px 2px; text-align: center; vertical-align: middle; }
+    .report-card-top-grid { width: 100%; border-collapse: collapse; table-layout: fixed; border: 2px solid #14347a; margin-bottom: 0; background: #eff3ef; }
+    .report-card-top-grid th, .report-card-top-grid td { border: 1px solid #14347a; vertical-align: middle; text-align: center; padding: 4px 3px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    .report-card-top-grid .label-cell { text-align: left; padding-left: 6px; }
+    .report-card-statistics-grid { width: 100%; border-collapse: collapse; table-layout: fixed; border: 2px solid #14347a; margin-top: 0; background: #eef2ee; }
+    .report-card-statistics-grid th, .report-card-statistics-grid td { border: 1px solid #14347a; padding: 4px 3px; text-align: center; vertical-align: middle; font-size: 9px; font-weight: 700; }
+    .report-card-statistics-grid th { background: #dfe9e5; color: #000; text-transform: uppercase; }
+    .report-card-statistics-grid td { background: transparent; }
+    .stats-row-label { text-align: left !important; padding-left: 6px !important; text-transform: uppercase; line-height: 1.15; }
+    .stats-row-doubleline { line-height: 1.2; }
+    .stats-cell-compact { display: flex; flex-direction: column; width: 100%; height: 100%; justify-content: center; }
+    .stats-cell-main { display: block; font-size: 8.7px; font-weight: 800; letter-spacing: 0.02em; }
+    .stats-cell-split { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-top: 2px; border-top: 1px solid #14347a; }
+    .stats-cell-split span { display: block; font-size: 7px; font-weight: 700; line-height: 1.2; padding-top: 1px; }
+    .stats-cell-split span + span { border-left: 1px solid #14347a; padding-left: 4px; }
+    .stats-subrow { display: block; font-size: 7.5px; font-weight: 700; margin-top: 2px; line-height: 1.2; }
+    .remarks-cell { background: #f5f2ea !important; }
+    .stats-footer-block { width: 100%; border: 2px solid #14347a; border-top: none; background: #efefec; }
+    .stats-footer-row { display: grid; grid-template-columns: 1.5fr 1fr; border-top: 1px solid #14347a; }
+    .stats-footer-row:first-child { border-top: none; }
+    .stats-footer-row span { display: block; padding: 5px 8px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    .stats-footer-row span:first-child { border-right: 1px solid #14347a; }
+    .stats-footer-row span:last-child { text-align: center; }
     .report-card-footer-table { width: 100%; flex: 1 1 auto; min-height: 0; border-collapse: collapse; table-layout: fixed; border: 1px solid #14347a; margin-top: auto; }
     .report-card-footer-table th, .report-card-footer-table td { border: 1px solid #14347a; padding: 3px 4px; text-align: center; vertical-align: top; font-size: 10px; }
     .report-card-footer-table th { background: #14347a; color: #fff; font-weight: 700; }
@@ -321,22 +401,57 @@ if (isset($styleOnly)) {
     .bulletin-sheet .report-card-grid { margin: 5px 0 0; }
     .bulletin-sheet .report-card-teacher { font-size: 10px !important; }
     .bulletin-sheet .student-info-table td { font-size: 10px !important; }
-    .bulletin-sheet .department-banner { margin: 5px 0; padding: 3px 0; font-size: 11px; }
+    .bulletin-sheet .department-banner { margin: 5px 0; padding: 3px 0; font-size: 13px; }
     .bulletin-sheet .department-banner::before,
-    .bulletin-sheet .department-banner::after { margin: 0 16px; }
-    .bulletin-sheet .department-label { font-size: 9px; }
-    .bulletin-sheet .department-name { font-size: 12px; }
+    .bulletin-sheet .department-banner::after { margin: 0 16px; height: 3px; }
+    .bulletin-sheet .department-label { font-size: 11px; }
+    .bulletin-sheet .department-name { font-size: 14px; }
     .bulletin-sheet .report-card-legend { margin: 0; padding: 2px 4px; font-size: 10px; flex-wrap: wrap; justify-content: flex-start; gap: 4px 10px; line-height: 1.1; }
     .bulletin-sheet .report-card-footer-table td { height: auto; }
     .report-card-header-table thead th, .report-card-group-header th, .report-card-grand-total th { background: #14347a; color: #fff; font-weight: 700; text-transform: uppercase; }
     .report-card-header-table thead th { height: 18px; }
+    .report-card-grid-under-17 .report-card-header-table th {
+        height: auto !important;
+        line-height: 1.15 !important;
+        padding: 4px 3px;
+        vertical-align: middle;
+    }
+    .report-card-grid-under-17 .report-card-main-table th,
+    .report-card-grid-under-17 .report-card-main-table td {
+        height: auto !important;
+        line-height: 1.15 !important;
+        padding-top: 4px;
+        padding-bottom: 4px;
+        vertical-align: middle;
+    }
+    .report-card-grid-under-17 {
+        flex: 0 0 auto;
+        overflow: visible;
+    }
+    .report-card-grid-under-17 .report-card-statistics-table,
+    .report-card-grid-under-17 .report-card-footer-table {
+        flex: 0 0 auto;
+    }
+    .report-card-grid-under-17 .report-card-footer-table {
+        margin-top: 5px !important;
+        height: auto !important;
+        min-height: 0 !important;
+    }
+    .report-card-grid-under-17 .report-card-header-table thead th { font-size: 9px !important; }
     .report-card-group-header th { background: #193f8f; text-align: left; padding-left: 7px; }
-    .report-card-subject { text-align: left !important; font-weight: 700; }
-    .report-card-teacher { display: block; font-size: .78em; font-style: italic; font-weight: 400; color: #3d4f6f; }
-    .report-card-competence { text-align: left !important; font-size: .9em; }
+    .report-card-grid-under-17 .report-card-group-header th { font-size: 9.5px !important; }
+    .report-card-subject { text-align: left !important; font-weight: 700; font-size: 11px; }
+    .report-card-grid-under-17 .report-card-subject { font-size: 11px !important; }
+    .report-card-teacher { display: block; font-size: .72em; font-style: italic; font-weight: 400; color: #3d4f6f; }
+    .report-card-competence { text-align: left !important; font-size: 8px; }
+    .report-card-grid-under-17 .report-card-competence { font-size: 8.5px !important; }
     .report-card-subtotal td { background: #d9e8fb; color: #14347a; font-weight: 700; }
+    .report-card-grid-under-17 .report-card-subtotal td { font-size: 9.5px !important; }
+    .report-card-grid-under-17 .report-card-main-table tbody tr:not(.report-card-group-header):not(.report-card-subtotal):not(.report-card-grand-total) td { font-size: 8.8px !important; }
+    .report-card-grid-under-17 .report-card-main-table tbody tr:not(.report-card-group-header):not(.report-card-subtotal):not(.report-card-grand-total) .report-card-subject { font-size: 10.5px !important; }
+    .report-card-grid-under-17 .report-card-main-table tbody tr:not(.report-card-group-header):not(.report-card-subtotal):not(.report-card-grand-total) .report-card-competence { font-size: 8px !important; }
     .report-card-grand-total th, .report-card-grand-total td { background: #14347a; color: #fff; font-weight: 700; }
-    .report-card-legend { display: flex; gap: 14px; justify-content: flex-end; align-items: center; border: 1px solid #14347a; padding: 3px 6px; color: #14347a; font-size: .8em; }
+    .report-card-legend { display: flex; gap: 10px; justify-content: center; align-items: center; border: 1px solid #14347a; padding: 2px 5px; color: #14347a; font-size: 8px; flex-wrap: wrap; }
     .report-card-lower-grid { display: grid; grid-template-columns: 1.35fr .8fr 1fr; gap: 5px; margin-top: 5px; }
     .report-card-lower-grid table, .report-card-decision-table { width: 100%; border-collapse: collapse; border: 1px solid #14347a; }
     .report-card-lower-grid th, .report-card-decision-table th { background: #14347a; color: #fff; font-weight: 700; }
@@ -346,15 +461,16 @@ if (isset($styleOnly)) {
     .report-card-decision-table th, .report-card-decision-table td { width: 33.333%; }
     .remarks-space { height: 72px; vertical-align: top; }
     .report-card-signatures { display: flex; justify-content: space-between; gap: 10px; padding-top: 8px; font-size: .82em; }
-    .col-subject { width: 24%; }
-    .col-competence { width: 22%; }
+    .col-subject { width: calc(14% + 5px); }
+    .col-competence { width: calc(34% - 5px); }
     .col-test { width: 5%; }
     .col-term { width: 5%; }
     .col-average { width: 5.5%; }
     .col-coefficient { width: 6%; }
     .col-score { width: 6%; }
     .col-rank { width: 6%; }
-    .col-appreciation { width: 14%; }
+    .col-appreciation { width: 12%; }
+    .col-teacher-signature { width: 12%; }
     .appreciation-header, .appreciation-cell {
     white-space: normal;
     overflow-wrap: anywhere;
@@ -386,7 +502,7 @@ if (isset($styleOnly)) {
     .student-info-table tr { display: block; margin-bottom: 0; }
     .header-wrapper { display: flex; flex-direction: column; }
     .header-left, .header-center, .header-right { width: 100%; float: none; margin-bottom: 5px; }
-    .school-name-display { font-size: 14px; }
+    .school-name-display { font-size: 22px; }
     .academic-year-display { font-size: 12px; }
     }
     @media screen and (max-width: 700px) {
@@ -396,7 +512,7 @@ if (isset($styleOnly)) {
     }
     @media print {
     .bulletin-wrapper { page-break-after: always; page-break-inside: avoid; }
-    .bulletin-wrapper { border: 2px solid #14347a; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .bulletin-wrapper { border: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .bulletin-sheet { page-break-inside: avoid; border: none; padding: 5px; }
     table { page-break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     tr { page-break-inside: avoid; }
@@ -404,7 +520,13 @@ if (isset($styleOnly)) {
     th { background-color: #14347a !important; color: white !important; border: 2px solid #14347a !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .report-card-header-table th { border: 1px solid #fff !important; }
     .report-card-header-table thead th { border-bottom-color: #fff !important; }
-    .bulletin-footer { background-color: #14347a !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .bulletin-footer {
+        background: transparent !important;
+        color: #14347a !important;
+        border-top: none !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
     .subject-group { background: #d9e8fb !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
@@ -531,14 +653,29 @@ if (isset($styleOnly)) {
 
 $i = $institution;
 $isEnglish = (($lang ?? \App\Core\Session::get('app_lang', 'fr')) === 'en');
-$stateRepublic = $isEnglish ? ($i['school_republic_en'] ?? __('republic_of_cameroon')) : ($i['school_republic'] ?? __('republic_of_cameroon'));
-$stateMinistry = $isEnglish ? ($i['school_ministry_en'] ?? __('ministry_secondary_education')) : ($i['school_ministry'] ?? __('ministry_secondary_education'));
-$stateMotto = $isEnglish ? ($i['school_motto_en'] ?? __('motto')) : ($i['school_motto'] ?? __('motto'));
-$stateSlogan = $isEnglish ? ($i['school_slogan_en'] ?? __('slogan')) : ($i['school_slogan'] ?? __('slogan'));
-$stateDelegation = $isEnglish ? ($i['school_delegation_en'] ?? '') : ($i['school_delegation'] ?? '');
-$stateDelegationHtml = nl2br(htmlspecialchars(str_replace(';', "\n", trim((string) $stateDelegation)), ENT_QUOTES, 'UTF-8'));
+$stateRepublicFr = $i['school_republic'] ?? __('republic_of_cameroon');
+$stateRepublicEn = $i['school_republic_en'] ?? __('republic_of_cameroon');
+$stateMinistryFr = $i['school_ministry'] ?? __('ministry_secondary_education');
+$stateMinistryEn = $i['school_ministry_en'] ?? __('ministry_secondary_education');
+$stateMottoFr = $i['school_motto'] ?? __('motto');
+$stateMottoEn = $i['school_motto_en'] ?? __('motto');
+$stateSloganFr = $i['school_slogan'] ?? __('slogan');
+$stateSloganEn = $i['school_slogan_en'] ?? __('slogan');
+$stateDelegationFr = $i['school_delegation'] ?? '';
+$stateDelegationEn = $i['school_delegation_en'] ?? '';
+$stateDelegationFrHtml = nl2br(htmlspecialchars(str_replace(';', "\n", trim((string) $stateDelegationFr)), ENT_QUOTES, 'UTF-8'));
+$stateDelegationEnHtml = nl2br(htmlspecialchars(str_replace(';', "\n", trim((string) $stateDelegationEn)), ENT_QUOTES, 'UTF-8'));
 $schoolPhone = trim((string) ($i['school_phone'] ?? ''));
-$schoolAddress = trim((string) ($i['school_address'] ?? $i['school_city'] ?? ''));
+$schoolAddress = trim((string) ($i['school_address'] ?? ''));
+if ($schoolAddress === '') {
+    $schoolAddress = trim((string) ($i['school_city'] ?? ''));
+}
+$frTranslations = require __DIR__ . '/../../../i18n/fr.php';
+$enTranslations = require __DIR__ . '/../../../i18n/en.php';
+$phoneLabelFr = $frTranslations['tel'] ?? 'TEL';
+$addressLabelFr = $frTranslations['address'] ?? 'Adresse';
+$phoneLabelEn = $enTranslations['tel'] ?? 'Tel';
+$addressLabelEn = $enTranslations['address'] ?? 'Address';
 ?>
 
 <?php if (!$embeddedBatch && empty($isPdf)): ?>
@@ -590,10 +727,25 @@ $schoolAddress = trim((string) ($i['school_address'] ?? $i['school_city'] ?? '')
         <div class="header-wrapper">
             <div class="header-left">
                 <div class="header-side-content">
-                    <p class="header-line ministry-line"><?= htmlspecialchars((string) $stateMinistry) ?></p>
-                    <p class="header-line school-name-display"><?= htmlspecialchars($schoolDisplayName) ?></p>
-                    <p class="header-contact"><span class="header-contact-label"><?= htmlspecialchars(__('tel')) ?>:</span> <span class="header-contact-value"><?= htmlspecialchars($schoolPhone) ?></span></p>
-                    <p class="header-contact"><span class="header-contact-label"><?= htmlspecialchars(__('address')) ?>:</span> <span class="header-contact-value"><?= htmlspecialchars($schoolAddress) ?></span></p>
+                    <div class="header-line-group">
+                        <p class="header-line republic-line"><?= htmlspecialchars((string) $stateRepublicFr) ?></p>
+                    </div>
+                    <div class="header-line-group">
+                        <p class="header-line motto-line"><?= htmlspecialchars((string) $stateMottoFr) ?></p>
+                    </div>
+                    <div class="header-line-group">
+                        <p class="header-line ministry-line"><?= htmlspecialchars((string) $stateMinistryFr) ?></p>
+                    </div>
+                    <?php if ($stateDelegationFrHtml !== ''): ?>
+                        <div class="header-line-group">
+                            <p class="header-line delegation-line"><?= $stateDelegationFrHtml ?></p>
+                        </div>
+                    <?php endif; ?>
+                    <p class="header-line slogan-line"><?= htmlspecialchars((string) $stateSloganFr) ?></p>
+                    <div class="header-contact-row">
+                        <p class="header-contact"><span class="header-contact-label"><?= htmlspecialchars($phoneLabelFr) ?>:</span> <span class="header-contact-value"><?= htmlspecialchars($schoolPhone) ?></span></p>
+                        <p class="header-contact"><span class="header-contact-label"><?= htmlspecialchars($addressLabelFr) ?>:</span> <span class="header-contact-value"><?= htmlspecialchars($schoolAddress) ?></span></p>
+                    </div>
                 </div>
             </div>
 
@@ -608,26 +760,38 @@ $schoolAddress = trim((string) ($i['school_address'] ?? $i['school_city'] ?? '')
                         <div class="logo-placeholder">LOGO</div>
                     <?php endif; ?>
                 </div>
-                <div class="academic-year-display"><?= __('academic_years') ?> : <?= htmlspecialchars((string) ($activeYear['nom'] ?? '')) ?></div>
             </div>
 
             <div class="header-right">
                 <div class="header-side-content">
-                    <p class="header-line"><?= htmlspecialchars((string) $stateRepublic) ?></p>
-                    <p class="header-separator">*************</p>
-                    <p class="header-line"><?= htmlspecialchars((string) $stateMotto) ?></p>
-                    <p class="header-separator">*************</p>
-                    <?php if ($stateDelegationHtml !== ''): ?>
-                        <p class="header-line"><?= $stateDelegationHtml ?></p>
-                        <p class="header-separator">*************</p>
+                    <div class="header-line-group">
+                        <p class="header-line republic-line"><?= htmlspecialchars((string) $stateRepublicEn) ?></p>
+                    </div>
+                    <div class="header-line-group">
+                        <p class="header-line motto-line"><?= htmlspecialchars((string) $stateMottoEn) ?></p>
+                    </div>
+                    <div class="header-line-group">
+                        <p class="header-line ministry-line"><?= htmlspecialchars((string) $stateMinistryEn) ?></p>
+                    </div>
+                    <?php if ($stateDelegationEnHtml !== ''): ?>
+                        <div class="header-line-group">
+                            <p class="header-line delegation-line"><?= $stateDelegationEnHtml ?></p>
+                        </div>
                     <?php endif; ?>
-                    <p class="header-line"><?= htmlspecialchars((string) $stateSlogan) ?></p>
+                    <p class="header-line slogan-line"><?= htmlspecialchars((string) $stateSloganEn) ?></p>
+                    <div class="header-contact-row">
+                        <p class="header-contact"><span class="header-contact-label"><?= htmlspecialchars($phoneLabelEn) ?>:</span> <span class="header-contact-value"><?= htmlspecialchars($schoolPhone) ?></span></p>
+                        <p class="header-contact"><span class="header-contact-label"><?= htmlspecialchars($addressLabelEn) ?>:</span> <span class="header-contact-value"><?= htmlspecialchars($schoolAddress) ?></span></p>
+                    </div>
                 </div>
             </div>
 
         </div>
 
-        <div class="title-box" style="font-weight: bold;"><?= __('report_card') ?> <?= strtoupper($bulletinType) ?></div>
+        <div class="header-branding">
+            <div class="school-name-display"><?= htmlspecialchars($schoolDisplayName) ?></div>
+            <div class="academic-year-display"><?= __('academic_years') ?> : <?= htmlspecialchars((string) ($activeYear['nom'] ?? '')) ?></div>
+        </div>
 
         <!-- B. CARTE D'IDENTITÉ -->
         <table class="student-info-table">
@@ -653,9 +817,13 @@ $schoolAddress = trim((string) ($i['school_address'] ?? $i['school_city'] ?? '')
                         </div>
                     <?php endif; ?>
                 </td>
-                <td colspan="5" class="student-identity-row">
+                <td colspan="2" class="student-identity-row student-identity-half">
                     <span class="student-identity-label"><?= __('name_and_surname') ?> :</span>
                     <span class="student-name-value"><?= htmlspecialchars($studentLastName . ' ' . ($student['prenom'] ?? '')) ?></span>
+                </td>
+                <td colspan="3" class="student-identity-row student-identity-half">
+                    <span class="student-identity-label"><?= __('department') ?> :</span>
+                    <span class="student-identity-value"><?= htmlspecialchars((string) ($student['department_nom'] ?? '-')) ?></span>
                 </td>
             </tr>
             <tr>
@@ -691,3 +859,5 @@ $schoolAddress = trim((string) ($i['school_address'] ?? $i['school_city'] ?? '')
                 </td>
             </tr>
         </table>
+
+        <div class="title-box" style="font-weight: bold;"><?= __('report_card') ?> <?= strtoupper($bulletinType) ?></div>
