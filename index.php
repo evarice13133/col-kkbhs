@@ -30,7 +30,7 @@ if ($path === '/' && !\App\Core\Session::has('splash_done') && !isset($_GET['ski
     $logoManager = \App\Core\LogoManager::getInstance($db);
 
     $school_name = $settingsStore->get('school_name', 'NotesMaster');
-    $school_code = $settingsStore->get('school_code', 'IMT');
+    $school_code = $settingsStore->get('school_code', 'Camertech');
     $logo_base64 = $logoManager->hasLogo() ? $logoManager->getLogoBase64() : '';
     $fallback_letter = $logoManager->getFallbackLetter();
 

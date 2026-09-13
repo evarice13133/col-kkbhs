@@ -20,57 +20,78 @@
 
 $i = $institution;
 $isEnglish = (($lang ?? \App\Core\Session::get('app_lang', 'fr')) === 'en');
-$stateRepublic = $isEnglish ? ($i['school_republic_en'] ?? __('republic_of_cameroon')) : ($i['school_republic'] ?? __('republic_of_cameroon'));
-$stateMinistry = $isEnglish ? ($i['school_ministry_en'] ?? __('ministry_secondary_education')) : ($i['school_ministry'] ?? __('ministry_secondary_education'));
-$stateMotto = $isEnglish ? ($i['school_motto_en'] ?? __('motto')) : ($i['school_motto'] ?? __('motto'));
-$stateSlogan = $isEnglish ? ($i['school_slogan_en'] ?? __('slogan')) : ($i['school_slogan'] ?? __('slogan'));
-$stateDelegation = $isEnglish ? ($i['school_delegation_en'] ?? '') : ($i['school_delegation'] ?? '');
-$stateDelegationHtml = nl2br(htmlspecialchars(str_replace(';', "\n", trim((string) $stateDelegation)), ENT_QUOTES, 'UTF-8'));
+$stateRepublicFr = $i['school_republic'] ?? __('republic_of_cameroon');
+$stateRepublicEn = $i['school_republic_en'] ?? __('republic_of_cameroon');
+$stateMinistryFr = $i['school_ministry'] ?? __('ministry_secondary_education');
+$stateMinistryEn = $i['school_ministry_en'] ?? __('ministry_secondary_education');
+$stateMottoFr = $i['school_motto'] ?? __('motto');
+$stateMottoEn = $i['school_motto_en'] ?? __('motto');
+$stateSloganFr = $i['school_slogan'] ?? __('slogan');
+$stateSloganEn = $i['school_slogan_en'] ?? __('slogan');
+$stateDelegationFr = $i['school_delegation'] ?? '';
+$stateDelegationEn = $i['school_delegation_en'] ?? '';
+$stateDelegationFrHtml = nl2br(htmlspecialchars(str_replace(';', "\n", trim((string) $stateDelegationFr)), ENT_QUOTES, 'UTF-8'));
+$stateDelegationEnHtml = nl2br(htmlspecialchars(str_replace(';', "\n", trim((string) $stateDelegationEn)), ENT_QUOTES, 'UTF-8'));
 $schoolPhone = trim((string) ($i['school_phone'] ?? ''));
-$schoolAddress = trim((string) ($i['school_address'] ?? $i['school_city'] ?? ''));
+$schoolAddress = trim((string) ($i['school_address'] ?? ''));
+if ($schoolAddress === '') {
+    $schoolAddress = trim((string) ($i['school_city'] ?? ''));
+}
+$frTranslations = require __DIR__ . '/../../../i18n/fr.php';
+$enTranslations = require __DIR__ . '/../../../i18n/en.php';
+$phoneLabelFr = $frTranslations['tel'] ?? 'TEL';
+$addressLabelFr = $frTranslations['address'] ?? 'Adresse';
+$phoneLabelEn = $enTranslations['tel'] ?? 'Tel';
+$addressLabelEn = $enTranslations['address'] ?? 'Address';
 ?>
 
 <style>
     .header-wrapper {
         width: 100%;
         display: grid;
-        grid-template-columns: 1fr auto 1fr;
+        grid-template-columns: minmax(0, 1fr) minmax(150px, 155px) minmax(0, 1fr);
         align-items: start;
-        column-gap: 8px;
+        column-gap: 10px;
         margin-bottom: 5px;
+        page-break-inside: avoid;
     }
     .header-left,
     .header-center,
     .header-right { min-width: 0; }
-    .header-left { text-align: left; }
+    .header-left { text-align: center; }
     .header-center { display: flex; flex-direction: column; align-items: center; text-align: center; }
-    .header-right { text-align: right; }
-    .header-side-content { width: 100%; padding: 0 2px; }
+    .header-right { text-align: center; }
+    .header-branding { grid-column: 1 / -1; text-align: center; margin-top: 2px; }
+    .header-side-content { display: inline-flex; flex-direction: column; align-items: stretch; width: auto; max-width: 100%; padding: 0 2px; overflow-wrap: anywhere; word-break: normal; }
+    .header-line-group { display: table; width: auto; max-width: 100%; margin: 0 auto; }
+    .header-line-group .header-line { display: table; width: 100%; }
+    .header-contact-row { display: flex; align-items: baseline; justify-content: center; gap: 10px; white-space: nowrap; }
     .header-line, .header-contact, .school-name-display, .academic-year-display { margin: 0; line-height: 1.15; }
-    .header-line { font-size: 16px; font-weight: bold; text-transform: uppercase; }
-    .header-contact { font-size: 15px; }
-    .header-left .header-line { font-size: 20px; color: #0057b8; }
-    .header-left .ministry-line { font-size: 17px; color: #000; }
-    .header-left .header-contact { font-size: 17px; }
+    .header-line { font-size: 12px; font-weight: bold; text-transform: uppercase; }
+    .header-contact { font-size: 11px; margin-top: 2px; text-transform: uppercase; }
+    .header-side-content .republic-line { font-size: 14px; color: #0057b8; }
+    .header-side-content .motto-line { font-size: 11px; font-style: italic; }
+    .header-side-content .ministry-line { font-size: 12px; color: #000; }
+    .header-side-content .slogan-line { font-size: 11px; }
     .header-contact-label { color: #0057b8; }
     .header-contact-value { color: #000; font-weight: 700; }
-    .header-right .header-line { font-size: 15px; }
-    .header-separator { margin: 0; font-size: 13px; line-height: 1; color: #000; }
-    .school-name-display { font-family: 'Arial Black', Arial, sans-serif; font-weight: 900; font-size: 19px; color: #0057b8; text-transform: uppercase; }
-    .academic-year-display { margin-top: 1px; font-weight: 700; font-size: 17px; text-transform: uppercase; }
+    .school-name-display { font-family: 'Arial Black', Arial, sans-serif; font-weight: 900; font-size: 23px; color: #0057b8; text-transform: uppercase; text-align: center; overflow-wrap: anywhere; }
+    .academic-year-display { margin-top: 2px; margin-bottom: 10px; font-weight: 700; font-size: 16px; text-transform: uppercase; text-align: center; }
 
     .student-photo-cell {
-        width: 86px;
+        width: 101px;
+        min-width: 101px;
         height: 100%;
         vertical-align: middle;
         padding: 0 12px 0 0;
         border-right: 1px solid #14347a !important;
     }
     .student-photo-container {
-        width: 79px;
-        height: 100%;
-        min-height: 84px;
+        width: 100%;
+        height: auto;
+        min-height: 98px;
         background: #fff;
+        border: 2px solid #14347a;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -80,7 +101,7 @@ $schoolAddress = trim((string) ($i['school_address'] ?? $i['school_city'] ?? '')
     }
     .student-photo-container img {
         width: 100%;
-        height: 100%;
+        height: auto;
         max-width: 100%;
         max-height: 100%;
         object-fit: contain;
@@ -89,8 +110,9 @@ $schoolAddress = trim((string) ($i['school_address'] ?? $i['school_city'] ?? '')
         overflow: hidden;
     }
     .student-photo-placeholder {
-        width: 79px;
-        height: 60px;
+        width: 100%;
+        height: auto;
+        min-height: 60px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -100,33 +122,77 @@ $schoolAddress = trim((string) ($i['school_address'] ?? $i['school_city'] ?? '')
         line-height: 1.2;
     }
     .student-identity-row {
-        padding: 4px 6px;
+        padding: 0 4px;
         border: 1px solid #14347a !important;
-        line-height: 1.2;
+        line-height: 1;
+        margin: 0;
+    }
+    .student-info-table td,
+    .student-info-table tr + tr td,
+    .student-info-table .student-photo-cell {
+        border: none !important;
+    }
+    .student-info-table tr {
+        margin: 0;
+        padding: 0;
+    }
+    .student-info-table tr + tr td {
+        margin-top: 0;
+        padding-top: 0;
+    }
+    .student-identity-half {
+        width: 50%;
     }
     .student-identity-label {
-        font-weight: 900;
-        margin-right: 3px;
-        font-size: 14px;
+        font-weight: 700;
+        margin-right: 2px;
+        margin-bottom: 0;
+        font-size: 9px;
+        line-height: 1;
+        display: inline-block;
+        vertical-align: middle;
         color: #000;
     }
     .student-identity-value {
-        font-weight: 900;
+        font-weight: 700;
         color: #0057b8;
-        font-size: 12px;
+        margin-bottom: 0;
+        font-size: 9px;
+        line-height: 1;
+        display: inline-block;
+        vertical-align: middle;
+        border-bottom: 1px solid #14347a;
+        padding-bottom: 0;
     }
     .student-identity-item {
         display: inline-block;
-        margin-right: 15px;
+        margin-right: 10px;
     }
     .student-identity-item:last-child {
         margin-right: 0;
     }
     .student-name-value {
         font-weight: 900;
-        font-size: 14px;
+        font-size: 11px;
+        line-height: 1;
+        margin-bottom: 0;
         text-transform: uppercase;
         color: #0057b8;
+        display: inline-block;
+        vertical-align: middle;
+        border-bottom: 1px solid #14347a;
+        padding-bottom: 0;
+    }
+    .title-box {
+        display: block;
+        width: 100%;
+        text-align: center;
+        font-family: 'Arial Black', Arial, sans-serif;
+        font-size: 19px;
+        margin: 8px auto 5px;
+        text-transform: uppercase;
+        padding: 2px 3px;
+        border: 2px solid #000;
     }
 </style>
 
@@ -134,10 +200,25 @@ $schoolAddress = trim((string) ($i['school_address'] ?? $i['school_city'] ?? '')
         <div class="header-wrapper">
             <div class="header-left">
                 <div class="header-side-content">
-                    <p class="header-line ministry-line"><?= htmlspecialchars((string) $stateMinistry) ?></p>
-                    <p class="header-line school-name-display"><?= htmlspecialchars($schoolDisplayName) ?></p>
-                    <p class="header-contact"><span class="header-contact-label"><?= htmlspecialchars(__('tel')) ?>:</span> <span class="header-contact-value"><?= htmlspecialchars($schoolPhone) ?></span></p>
-                    <p class="header-contact"><span class="header-contact-label"><?= htmlspecialchars(__('address')) ?>:</span> <span class="header-contact-value"><?= htmlspecialchars($schoolAddress) ?></span></p>
+                    <div class="header-line-group">
+                        <p class="header-line republic-line"><?= htmlspecialchars((string) $stateRepublicFr) ?></p>
+                    </div>
+                    <div class="header-line-group">
+                        <p class="header-line motto-line"><?= htmlspecialchars((string) $stateMottoFr) ?></p>
+                    </div>
+                    <div class="header-line-group">
+                        <p class="header-line ministry-line"><?= htmlspecialchars((string) $stateMinistryFr) ?></p>
+                    </div>
+                    <?php if ($stateDelegationFrHtml !== ''): ?>
+                        <div class="header-line-group">
+                            <p class="header-line delegation-line"><?= $stateDelegationFrHtml ?></p>
+                        </div>
+                    <?php endif; ?>
+                    <p class="header-line slogan-line"><?= htmlspecialchars((string) $stateSloganFr) ?></p>
+                    <div class="header-contact-row">
+                        <p class="header-contact"><span class="header-contact-label"><?= htmlspecialchars($phoneLabelFr) ?>:</span> <span class="header-contact-value"><?= htmlspecialchars($schoolPhone) ?></span></p>
+                        <p class="header-contact"><span class="header-contact-label"><?= htmlspecialchars($addressLabelFr) ?>:</span> <span class="header-contact-value"><?= htmlspecialchars($schoolAddress) ?></span></p>
+                    </div>
                 </div>
             </div>
 
@@ -152,33 +233,40 @@ $schoolAddress = trim((string) ($i['school_address'] ?? $i['school_city'] ?? '')
                         <div class="logo-placeholder">LOGO</div>
                     <?php endif; ?>
                 </div>
-                <div class="academic-year-display"><?= __('academic_years') ?> : <?= htmlspecialchars((string) ($activeYear['nom'] ?? '')) ?></div>
             </div>
 
             <div class="header-right">
                 <div class="header-side-content">
-                    <p class="header-line"><?= htmlspecialchars((string) $stateRepublic) ?></p>
-                    <p class="header-separator">*************</p>
-                    <p class="header-line"><?= htmlspecialchars((string) $stateMotto) ?></p>
-                    <p class="header-separator">*************</p>
-                    <?php if ($stateDelegationHtml !== ''): ?>
-                        <p class="header-line"><?= $stateDelegationHtml ?></p>
-                        <p class="header-separator">*************</p>
+                    <div class="header-line-group">
+                        <p class="header-line republic-line"><?= htmlspecialchars((string) $stateRepublicEn) ?></p>
+                    </div>
+                    <div class="header-line-group">
+                        <p class="header-line motto-line"><?= htmlspecialchars((string) $stateMottoEn) ?></p>
+                    </div>
+                    <div class="header-line-group">
+                        <p class="header-line ministry-line"><?= htmlspecialchars((string) $stateMinistryEn) ?></p>
+                    </div>
+                    <?php if ($stateDelegationEnHtml !== ''): ?>
+                        <div class="header-line-group">
+                            <p class="header-line delegation-line"><?= $stateDelegationEnHtml ?></p>
+                        </div>
                     <?php endif; ?>
-                    <p class="header-line"><?= htmlspecialchars((string) $stateSlogan) ?></p>
+                    <p class="header-line slogan-line"><?= htmlspecialchars((string) $stateSloganEn) ?></p>
+                    <div class="header-contact-row">
+                        <p class="header-contact"><span class="header-contact-label"><?= htmlspecialchars($phoneLabelEn) ?>:</span> <span class="header-contact-value"><?= htmlspecialchars($schoolPhone) ?></span></p>
+                        <p class="header-contact"><span class="header-contact-label"><?= htmlspecialchars($addressLabelEn) ?>:</span> <span class="header-contact-value"><?= htmlspecialchars($schoolAddress) ?></span></p>
+                    </div>
                 </div>
             </div>
 
         </div>
 
-        <div class="title-box" style="font-weight: bold;"><?= __('report_card') ?> <?= strtoupper($bulletinType) ?></div>
-
-        <!-- B. TITRE ET CARTE D'IDENTITÉ -->
-        <div class="department-banner">
-            <span class="department-label"><?= htmlspecialchars(__('department')) ?> :</span>
-            <span class="department-name"><?= htmlspecialchars((string) ($student['department_nom'] ?? '-')) ?></span>
+        <div class="header-branding">
+            <div class="school-name-display"><?= htmlspecialchars($schoolDisplayName) ?></div>
+            <div class="academic-year-display"><?= __('academic_years') ?> : <?= htmlspecialchars((string) ($activeYear['nom'] ?? '')) ?></div>
         </div>
 
+        <!-- B. TITRE ET CARTE D'IDENTITÉ -->
         <table class="student-info-table">
             <tr>
                 <td class="student-photo-cell" rowspan="4">
@@ -202,9 +290,13 @@ $schoolAddress = trim((string) ($i['school_address'] ?? $i['school_city'] ?? '')
                         </div>
                     <?php endif; ?>
                 </td>
-                <td colspan="5" class="student-identity-row">
+                <td colspan="2" class="student-identity-row student-identity-half">
                     <span class="student-identity-label"><?= __('name_and_surname') ?> :</span>
                     <span class="student-name-value"><?= htmlspecialchars($studentLastName . ' ' . ($student['prenom'] ?? '')) ?></span>
+                </td>
+                <td colspan="3" class="student-identity-row student-identity-half">
+                    <span class="student-identity-label"><?= __('department') ?> :</span>
+                    <span class="student-identity-value"><?= htmlspecialchars((string) ($student['department_nom'] ?? '-')) ?></span>
                 </td>
             </tr>
             <tr>
@@ -255,4 +347,6 @@ $schoolAddress = trim((string) ($i['school_address'] ?? $i['school_city'] ?? '')
                 </td>
             </tr>
         </table>
+
+        <div class="title-box" style="font-weight: bold;"><?= __('report_card') ?> <?= strtoupper($bulletinType) ?></div>
 

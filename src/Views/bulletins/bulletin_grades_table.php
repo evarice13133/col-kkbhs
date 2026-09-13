@@ -3,24 +3,27 @@ $isTechnicalBulletin = ($evaluation_form ?? 'general') === 'technical';
 $bulletinPeriod = $bulletinPeriod ?? 'sequence';
 $showEvaluationTests = $bulletinPeriod === 'trimestre';
 $showAnnualTerms = $bulletinPeriod === 'annuel';
+$subjectCountForSizing = (int) ($subjectCount ?? 0);
+$tableColumns = $showEvaluationTests ? 10 : ($showAnnualTerms ? 11 : 9);
+$groupLabelColspan = $showEvaluationTests ? 4 : ($showAnnualTerms ? 5 : 3);
 $grandPoints = 0.0;
 $grandCoefficients = 0.0;
 $passedSubjects = 0;
 $totalSubjects = 0;
 ?>
-<div class="report-card-grid <?= $isTechnicalBulletin ? 'report-card-grid-technical' : '' ?>">
+<div class="report-card-grid <?= $isTechnicalBulletin ? 'report-card-grid-technical' : '' ?><?= $subjectCountForSizing < 17 ? ' report-card-grid-under-17' : '' ?>">
     <table class="report-card-header-table">
         <colgroup>
             <col class="col-subject">
             <col class="col-competence">
             <?php if ($showEvaluationTests): ?><col class="col-test"><col class="col-test"><?php endif; ?>
             <?php if ($showAnnualTerms): ?><col class="col-term"><col class="col-term"><col class="col-term"><?php endif; ?>
-            <col class="col-average"><col class="col-coefficient"><col class="col-score"><col class="col-rank"><col class="col-appreciation">
+            <col class="col-average"><col class="col-coefficient"><col class="col-score"><col class="col-rank"><col class="col-appreciation"><col class="col-teacher-signature">
         </colgroup>
         <thead>
             <tr>
-                <th rowspan="2"><?= __('subject') ?></th>
-                <th rowspan="2"><?= __('competence') ?></th>
+                <th rowspan="2"><?= __('subjects_column') ?></th>
+                <th rowspan="2"><?= __('competences') ?></th>
                 <?php if ($showEvaluationTests): ?>
                     <th colspan="2"><?= htmlspecialchars((string) (($evaluationLabels[2] ?? null) ?: __('evaluation'))) ?></th>
                 <?php elseif ($showAnnualTerms): ?>
@@ -33,6 +36,7 @@ $totalSubjects = 0;
                 <th rowspan="2"><?= __('score') ?></th>
                 <th rowspan="2"><?= __('rank') ?></th>
                 <th rowspan="2" class="appreciation-header"><?= __('appreciation') ?></th>
+                <th rowspan="2"><?= __('teacher_signature') ?></th>
             </tr>
             <?php if ($showEvaluationTests): ?>
                 <tr>
@@ -54,12 +58,12 @@ $totalSubjects = 0;
             <col class="col-competence">
             <?php if ($showEvaluationTests): ?><col class="col-test"><col class="col-test"><?php endif; ?>
             <?php if ($showAnnualTerms): ?><col class="col-term"><col class="col-term"><col class="col-term"><?php endif; ?>
-            <col class="col-average"><col class="col-coefficient"><col class="col-score"><col class="col-rank"><col class="col-appreciation">
+            <col class="col-average"><col class="col-coefficient"><col class="col-score"><col class="col-rank"><col class="col-appreciation"><col class="col-teacher-signature">
         </colgroup>
         <tbody>
             <?php foreach ($groupedRows as $groupIndex => $group): ?>
                 <tr class="report-card-group-header">
-                    <th colspan="<?= 7 + ($showEvaluationTests ? 2 : ($showAnnualTerms ? 3 : 0)) ?>">
+                    <th colspan="<?= $tableColumns ?>">
                         <?= htmlspecialchars((string) $group['label']) ?>
                     </th>
                 </tr>
@@ -78,7 +82,6 @@ $totalSubjects = 0;
                     <tr>
                         <td class="report-card-subject">
                             <?= htmlspecialchars((string) $row['subject']) ?>
-                            <?php if (!empty($row['teacher'])): ?><small class="report-card-teacher"><?= htmlspecialchars((string) $row['teacher']) ?></small><?php endif; ?>
                         </td>
                         <td class="report-card-competence"><?= htmlspecialchars((string) ($row['competence'] ?? '')) ?></td>
                         <?php if ($showEvaluationTests): ?>
@@ -96,22 +99,23 @@ $totalSubjects = 0;
                         <td><?= formatSimple($scoreValue) ?></td>
                         <td><?= htmlspecialchars((string) ($row['rank_subject'] ?? '-')) ?></td>
                         <td class="appreciation-cell"><?= htmlspecialchars((string) ($row['appreciation'] ?? '-')) ?></td>
+                        <td class="teacher-signature-cell"><?= htmlspecialchars((string) ($row['teacher'] ?? '-')) ?></td>
                     </tr>
                 <?php endforeach; ?>
                 <tr class="report-card-subtotal">
-                    <td colspan="<?= 2 + ($showEvaluationTests ? 2 : ($showAnnualTerms ? 3 : 0)) ?>"><?= __('subtotal') ?> <?= $groupIndex + 1 ?></td>
+                    <td colspan="<?= $groupLabelColspan ?>"><?= __('subtotal') ?> <?= $groupIndex + 1 ?></td>
                     <td></td>
                     <td><?= formatSimple($groupCoefficients) ?></td>
                     <td><?= formatSimple($groupPoints) ?></td>
-                    <td colspan="2"></td>
+                    <td colspan="3"></td>
                 </tr>
             <?php endforeach; ?>
             <tr class="report-card-grand-total">
-                <th colspan="<?= 2 + ($showEvaluationTests ? 2 : ($showAnnualTerms ? 3 : 0)) ?>"><?= __('grand_total') ?></th>
+                <th colspan="<?= $groupLabelColspan ?>"><?= __('grand_total') ?></th>
                     <th></th>
                     <th><?= formatSimple($grandCoefficients) ?></th>
                     <th><?= formatSimple($grandPoints) ?></th>
-                <th colspan="2"><?= $passedSubjects ?> / <?= $totalSubjects ?></th>
+                <th colspan="3"><?= $passedSubjects ?> / <?= $totalSubjects ?></th>
             </tr>
         </tbody>
     </table>
@@ -135,6 +139,35 @@ $totalSubjects = 0;
     $profilePercentages = array_map(static function ($value) use ($profileTotal) {
         return $profileTotal > 0 ? formatSimple(($value / $profileTotal) * 100) . '%' : '0%';
     }, $profileValues);
+    $classAverage = $classStats['average'] ?? null;
+    $classMax = $classStats['max'] ?? null;
+    $classMin = $classStats['min'] ?? null;
+    $classSuccessRate = $classStats['success_rate'] ?? 0;
+    $classPassedCount = (int) ($classStats['profile']['passed'] ?? 0);
+    $disciplineValues = $discipline ?? [];
+    $disciplineLate = (int) ($disciplineValues['late_count'] ?? $disciplineValues['retards'] ?? 0);
+    $disciplineTotalAbsences = (int) (($disciplineValues['absences']['total'] ?? $disciplineValues['absences_total'] ?? 0));
+    $disciplineJustified = (int) (($disciplineValues['absences']['justified'] ?? $disciplineValues['absences_justified'] ?? 0));
+    $disciplineUnjustified = max(0, $disciplineTotalAbsences - $disciplineJustified);
+    $disciplinePunishment = (int) ($disciplineValues['exclusion_days'] ?? 0);
+    $councilDecision = __('average_level');
+    if (($average ?? 0) < 5) {
+        $councilDecision = __('poor');
+    } elseif (($average ?? 0) < 8) {
+        $councilDecision = __('weak');
+    } elseif (($average ?? 0) < 10) {
+        $councilDecision = __('below_average');
+    } elseif (($average ?? 0) < 12) {
+        $councilDecision = __('average_level');
+    } elseif (($average ?? 0) < 14) {
+        $councilDecision = __('fairly_good');
+    } elseif (($average ?? 0) < 16) {
+        $councilDecision = __('good');
+    } elseif (($average ?? 0) < 18) {
+        $councilDecision = __('very_good');
+    } else {
+        $councilDecision = __('excellent');
+    }
     $workKey = ($discipline['encouragements'] ?? '') === 'X' ? 'work_good' : (($average ?? 0) >= 14 ? 'work_excellent' : (($average ?? 0) >= 12 ? 'work_good' : (($average ?? 0) >= 10 ? 'work_passable' : 'work_bad')));
     $workTrendKey = 'trend_stable';
     $workTrendClass = '';
@@ -158,84 +191,4 @@ $totalSubjects = 0;
         $workBlameClass = 'vert';
     }
     ?>
-    <table class="report-card-statistics-table">
-        <colgroup>
-            <col span="4" class="stats-student-col">
-            <col span="4" class="stats-work-col">
-            <col span="6" class="stats-profile-col">
-        </colgroup>
-        <thead>
-            <tr>
-                <th colspan="4" rowspan="2"><?= __('discipline') ?> <?= __('student') ?></th>
-                <th colspan="4" rowspan="2"><?= __('student_work') ?></th>
-                <th colspan="6"><?= __('class_profile') ?></th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td><?= __('absence_total_short') ?></td><td><?= (int) ($discipline['absences']['total'] ?? 0) ?></td>
-                <td><?= __('conduct_note') ?></td><td><?= htmlspecialchars((string) (($discipline['conduct'] ?? '') !== '' ? $discipline['conduct'] : '-')) ?></td>
-                <td><?= __('subjects_count') ?></td><td><?= $passedSubjects ?> / <?= $totalSubjects ?></td>
-                <td><?= __('honour_roll') ?></td><td><?= (($discipline['tableau_honneur'] ?? '') === 'X' || (($discipline['tableau_honneur'] ?? '') === '' && ($average ?? 0) >= 12)) ? strtoupper(__('yes')) : strtoupper(__('no')) ?></td>
-                <td></td><td><?= __('unclassified') ?></td><td>0 - 4,9</td><td>5,00 - 9,99</td><td>10,00 - 20,00</td><td><?= __('total') ?></td>
-            </tr>
-            <tr>
-                <td><?= __('unjustified') ?></td><td><?= (int) ($discipline['absences']['unjustified'] ?? 0) ?></td>
-                <td><?= __('warning_conduct_short') ?></td><td><?= htmlspecialchars((string) ($discipline['warning_conduct'] ?? '-')) ?></td>
-                <td><?= __('total') ?> / <?= __('coef') ?></td><td><?= formatSimple($grandPoints) ?> / <?= formatSimple($grandCoefficients) ?></td>
-                <td><?= __('encouragements') ?></td><td><?= __($workKey) ?></td>
-                <td><?= __('effectif') ?></td><?php foreach ($profileValues as $value): ?><td><?= $value ?></td><?php endforeach; ?><td><?= $profileTotal ?></td>
-            </tr>
-            <tr>
-                <td><?= __('absence_justified_short') ?></td><td><?= (int) ($discipline['absences']['justified'] ?? 0) ?></td>
-                <td><?= __('blame_conduct') ?></td><td><?= htmlspecialchars((string) ($discipline['blame_conduct'] ?? '-')) ?></td>
-                <td class="student-average-label <?= ($average ?? 0) >= 10 ? 'average-positive' : 'average-negative' ?>"><?= __('student_avg') ?></td><td class="student-average-value <?= ($average ?? 0) >= 10 ? 'average-positive' : 'average-negative' ?>"><?= formatNote($average ?? null) ?></td>
-                <td><?= __('felicitations') ?></td><td><?= (($discipline['felicitations'] ?? '') === 'X' || (($discipline['felicitations'] ?? '') === '' && ($average ?? 0) >= 14)) ? strtoupper(__('yes')) : strtoupper(__('no')) ?></td>
-                <td><?= __('percentage') ?></td><?php foreach ($profilePercentages as $percentage): ?><td><?= $percentage ?></td><?php endforeach; ?><td>100%</td>
-            </tr>
-            <tr>
-                <td><?= __('consignes') ?> (hrs)</td><td><?= (int) ($discipline['consignes'] ?? 0) ?></td>
-                <td><?= __('exclusions') ?> (hrs)</td><td>-</td>
-                <td><?= __('student_rank') ?></td><td><?= $rank !== null ? $rank . '/' . $effectif : '-' ?></td>
-                <td><?= __('warn_work') ?></td><td class="<?= $workTrendClass ?>"><?= __($workTrendKey) ?></td>
-                <td><?= __('first_average') ?></td><td><?= formatSimple($classStats['first_average'] ?? null) ?></td><td><?= __('last_average') ?></td><td><?= formatSimple($classStats['last_average'] ?? null) ?></td><td><?= __('success_rate') ?></td><td><?= isset($classStats['success_rate']) ? formatSimple($classStats['success_rate']) . '%' : '-' ?></td>
-            </tr>
-            <tr>
-                <td><?= __('consignes') ?> (jnr)</td><td>-</td>
-                <td><?= __('exclusions') ?> (jnr)</td><td><?= sprintf('%02d', (int) ($discipline['exclusion_days'] ?? 0)) ?></td>
-                <td><?= __('mention') ?></td><td><?= htmlspecialchars((string) ($mention ?? '-')) ?></td>
-                <td><?= __('work_blame') ?></td><td class="<?= $workBlameClass ?>"><?= $workBlameText ?></td>
-                <td><?= __('class_size') ?></td><td><?= $profileTotal ?></td><td><?= __('subjects_passed') ?></td><td><?= $passedSubjects ?></td><td><?= __('total') ?></td><td><?= $totalSubjects ?></td>
-            </tr>
-            <tr>
-                <td><?= __('delays') ?></td><td>-</td><td></td><td></td>
-                <td><?= __('terms_results') ?></td><td><?= htmlspecialchars(implode(' / ', $evaluationLabels ?? [])) ?></td>
-                <td><?= __('general_observation') ?></td><td><?= htmlspecialchars((string) ($globalAppreciation ?? '-')) ?></td>
-                <td><?= __('class_avg_gen') ?></td><td><?= formatSimple($classStats['average'] ?? null) ?></td><td colspan="4"></td>
-            </tr>
-        </tbody>
-    </table>
-    <?php if (!$showAnnualTerms): ?>
-    <table class="report-card-footer-table">
-        <thead>
-            <tr>
-                <th><?= __('class_council_observations') ?></th>
-                <th><?= __('parent_visa') ?></th>
-                <th><?= __('class_teacher') ?></th>
-                <th><?= __('school_head') ?></th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td class="footer-observation <?= ($average ?? 0) > 10 ? 'vert' : 'rouge' ?>">
-                    <?= htmlspecialchars((string) ($globalAppreciation ?? '-')) ?>
-                    (<?= htmlspecialchars((string) ($overallAcquisitionLevel ?? '-')) ?>)
-                </td>
-                <td class="footer-signature"></td>
-                <td class="footer-signature"><?= htmlspecialchars((string) ($professor_name ?? '')) ?></td>
-                <td class="footer-signature"></td>
-            </tr>
-        </tbody>
-    </table>
-    <?php endif; ?>
 </div>
