@@ -1522,6 +1522,81 @@ class StudentController
         exit;
     }
 
+    public function bulkValidate()
+    {
+        \App\Core\PermissionManager::requirePermission('manage_students');
+        header('Content-Type: application/json');
+
+        if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+            echo json_encode(['success' => false, 'message' => __('unauthorized_action')]);
+            exit;
+        }
+
+        $ids = $_POST['student_ids'] ?? [];
+        if (empty($ids) || !is_array($ids)) {
+            echo json_encode(['success' => false, 'message' => 'Aucun élève sélectionné.']);
+            exit;
+        }
+
+        try {
+            $this->db->beginTransaction();
+            $successCount = 0;
+
+            // Fetch active academic year
+            $stmt = $this->db->prepare("SELECT id FROM academic_years WHERE is_active = 1 LIMIT 1");
+            $stmt->execute();
+            $academicYearId = (int) $stmt->fetchColumn();
+
+            if (!$academicYearId) {
+                throw new \Exception("Aucune année académique active trouvée.");
+            }
+
+            $updateStudentStmt = $this->db->prepare("UPDATE students SET status = 'Inscrit' WHERE id = ? AND status = 'Non inscrit'");
+            $checkEnrollmentStmt = $this->db->prepare("SELECT COUNT(*) FROM enrollments WHERE student_id = ? AND academic_year_id = ?");
+            $getStudentInfoStmt = $this->db->prepare("SELECT class_id, is_redoublant FROM students WHERE id = ?");
+            $insertEnrollmentStmt = $this->db->prepare("INSERT INTO enrollments (student_id, class_id, academic_year_id, student_status, frais_scolarite_brut, total_reductions, total_bourses, total_paye, reste_a_payer) VALUES (?, ?, ?, ?, 0.00, 0.00, 0.00, 0.00, 0.00)");
+
+            foreach ($ids as $id) {
+                $id = (int) $id;
+                
+                // Update student status
+                $updateStudentStmt->execute([$id]);
+                if ($updateStudentStmt->rowCount() > 0) {
+                    // Check if enrollment already exists
+                    $checkEnrollmentStmt->execute([$id, $academicYearId]);
+                    if ((int) $checkEnrollmentStmt->fetchColumn() === 0) {
+                        // Get class_id and is_redoublant
+                        $getStudentInfoStmt->execute([$id]);
+                        $studentInfo = $getStudentInfoStmt->fetch(PDO::FETCH_ASSOC);
+                        
+                        if ($studentInfo && !empty($studentInfo['class_id'])) {
+                            $studentStatus = $studentInfo['is_redoublant'] ? 'ancien' : 'nouveau';
+                            $insertEnrollmentStmt->execute([$id, $studentInfo['class_id'], $academicYearId, $studentStatus]);
+                            $successCount++;
+                        }
+                    } else {
+                        $successCount++;
+                    }
+                }
+            }
+
+            $this->db->commit();
+            echo json_encode([
+                'success' => true,
+                'message' => "Validation réussie pour $successCount élève(s)."
+            ]);
+        } catch (\Exception $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            echo json_encode([
+                'success' => false,
+                'message' => 'Erreur lors de la validation: ' . $e->getMessage()
+            ]);
+        }
+        exit;
+    }
+
 
 
     public function delete($id)
