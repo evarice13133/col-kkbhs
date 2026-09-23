@@ -93,10 +93,27 @@ ob_start(); ?>
 
     <!-- Table Card -->
     <div class="modern-card border-0 shadow-sm overflow-hidden animate-fade-in">
+        
+        <!-- Bulk Actions Bar (Hidden by default) -->
+        <div id="bulk-actions-bar" class="bg-light p-3 border-bottom d-none align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-primary rounded-pill px-3 py-2" id="selected-count">0 sélectionné(s)</span>
+            </div>
+            <div>
+                <button type="button" class="btn btn-success btn-sm fw-bold px-3 d-flex align-items-center gap-2" id="btn-bulk-validate">
+                    <i class="bi bi-check-circle"></i>
+                    Valider l'inscription
+                </button>
+            </div>
+        </div>
+
         <div class="table-responsive">
             <table class="table-modern">
                 <thead>
                     <tr>
+                        <th style="width: 40px;">
+                            <input type="checkbox" id="selectAll" class="form-check-input">
+                        </th>
                         <th>Matricule</th>
                         <th><?= __('student') ?></th>
                         <th>Sexe</th>
@@ -270,6 +287,95 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+
+    // Bulk validation logic
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const bulkActionsBar = document.getElementById('bulk-actions-bar');
+    const selectedCountSpan = document.getElementById('selected-count');
+    const btnBulkValidate = document.getElementById('btn-bulk-validate');
+
+    function updateBulkActionsVisibility() {
+        const checkedBoxes = document.querySelectorAll('.student-checkbox:checked');
+        if (checkedBoxes.length > 0) {
+            bulkActionsBar.classList.remove('d-none');
+            bulkActionsBar.classList.add('d-flex');
+            selectedCountSpan.textContent = `${checkedBoxes.length} sélectionné(s)`;
+        } else {
+            bulkActionsBar.classList.add('d-none');
+            bulkActionsBar.classList.remove('d-flex');
+        }
+
+        const allBoxes = document.querySelectorAll('.student-checkbox');
+        if (allBoxes.length > 0 && checkedBoxes.length === allBoxes.length) {
+            if(selectAllCheckbox) selectAllCheckbox.checked = true;
+        } else {
+            if(selectAllCheckbox) selectAllCheckbox.checked = false;
+        }
+    }
+
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.student-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = selectAllCheckbox.checked;
+            });
+            updateBulkActionsVisibility();
+        });
+    }
+
+    // Event delegation for dynamically loaded checkboxes
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.classList.contains('student-checkbox')) {
+            updateBulkActionsVisibility();
+        }
+    });
+
+    if (btnBulkValidate) {
+        btnBulkValidate.addEventListener('click', function() {
+            const checkedBoxes = document.querySelectorAll('.student-checkbox:checked');
+            const studentIds = Array.from(checkedBoxes).map(cb => cb.value);
+
+            if (studentIds.length === 0) return;
+
+            Swal.fire({
+                title: 'Confirmer la validation ?',
+                text: `Vous êtes sur le point de valider l'inscription de ${studentIds.length} élève(s).`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#bdc3c7',
+                confirmButtonText: 'Oui, valider',
+                cancelButtonText: 'Annuler'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const formData = new FormData();
+                    formData.append('csrf_token', '<?= \App\Core\Session::generateCsrfToken() ?>');
+                    studentIds.forEach(id => formData.append('student_ids[]', id));
+
+                    fetch('/students/bulk-validate', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire('Succès !', data.message, 'success').then(() => {
+                                handleFilterChange(false);
+                                if(selectAllCheckbox) selectAllCheckbox.checked = false;
+                                updateBulkActionsVisibility();
+                            });
+                        } else {
+                            Swal.fire('Erreur', data.message || 'Une erreur est survenue.', 'error');
+                        }
+                    })
+                    .catch(err => {
+                        console.error("Erreur de validation en masse :", err);
+                        Swal.fire('Erreur', 'Impossible de joindre le serveur.', 'error');
+                    });
+                }
+            });
+        });
+    }
 
     // Initial setup
     updateAdvancedBadge();

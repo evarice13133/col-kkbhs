@@ -429,7 +429,7 @@ class StudentImportProcessor
 
 
 
-            $sql = "INSERT INTO students (nom, prenom, email, class_id, teaching_type_id, sexe, date_naissance, lieu_naissance, is_redoublant, academic_year_id, parent_contact, guardian_contact, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $sql = "INSERT INTO students (nom, prenom, email, class_id, teaching_type_id, sexe, date_naissance, lieu_naissance, is_redoublant, academic_year_id, parent_contact, guardian_contact, created_by, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Non inscrit')";
 
             $stmt = $this->db->prepare($sql);
 

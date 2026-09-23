@@ -8,6 +8,11 @@
 <?php else: ?>
     <?php foreach ($students as $s): ?>
         <tr class="student-row">
+            <td>
+                <?php if ($s['status'] === 'Non inscrit'): ?>
+                <input type="checkbox" class="form-check-input student-checkbox" value="<?= $s['id'] ?>">
+                <?php endif; ?>
+            </td>
             <!-- Matricule -->
             <td>
                 <span class="fw-bold text-main-theme small"><?= htmlspecialchars((string) ($s['email'] ?: '-')) ?></span>
