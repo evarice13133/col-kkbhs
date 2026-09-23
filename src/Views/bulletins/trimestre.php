@@ -165,6 +165,7 @@ if (isset($styleOnly)) {
         </div>
     <?php endif; ?>
 
+    <div class="print-page-frame" aria-hidden="true"></div>
     <div class="bulletin-wrapper">
         <div class="bulletin-sheet">
         <?php
@@ -174,6 +175,7 @@ if (isset($styleOnly)) {
         ?>
 
         <?php $bulletinPeriod = 'trimestre'; include __DIR__ . '/bulletin_grades_table.php'; ?>
+        <?php include __DIR__ . '/bulletin_statistics.php'; ?>
 
         <div class="bulletin-footer">
             <span class="bulletin-name"><?= htmlspecialchars($bulletinType ?: __('report_card')) ?></span>

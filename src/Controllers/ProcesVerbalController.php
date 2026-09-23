@@ -56,7 +56,7 @@ class ProcesVerbalController extends BulletinController
         }
 
         // Récupération des classes filtrées par le type d'enseignement (si spécifié > 0)
-        $classes = $this->getAccessibleClassesWithTeachingType($teachingTypeId > 0 ? $teachingTypeId : null);
+        $classes = $this->getAccessibleClassesWithTeachingType($teachingTypeId > 0 ? $teachingTypeId : null, $anneeId);
 
         $isLmdClass = ($selectedClassInfo['teaching_type_code'] ?? '') === 'LMD';
         $evalTtId = $teachingTypeId > 0 ? $teachingTypeId : (int)($selectedClassInfo['teaching_type_id'] ?? 0);
@@ -216,12 +216,24 @@ class ProcesVerbalController extends BulletinController
     /**
      * Récupère les classes accessibles avec leur code de type d'enseignement, optionnellement filtrées par type.
      */
-    protected function getAccessibleClassesWithTeachingType(?int $teachingTypeId = null): array
+    protected function getAccessibleClassesWithTeachingType(?int $teachingTypeId = null, ?int $academicYearId = null): array
     {
-        $params = [];
-        $whereTt = "";
+        if (!$academicYearId || $academicYearId <= 0) {
+            $academicYearId = (int) ($this->getActiveAcademicYear()['id'] ?? 0);
+        }
+
+        $params = [$academicYearId];
+        $whereTt = " WHERE EXISTS (
+                        SELECT 1
+                        FROM students st
+                        WHERE st.class_id = c.id
+                          AND st.academic_year_id = ?
+                          AND st.is_withdrawn = 0
+                          AND st.actif = 1
+                      )
+                      AND tt.actif = 1";
         if ($teachingTypeId && $teachingTypeId > 0) {
-            $whereTt = " WHERE c.teaching_type_id = ? ";
+            $whereTt .= " AND c.teaching_type_id = ?";
             $params[] = $teachingTypeId;
         }
 
@@ -236,18 +248,27 @@ class ProcesVerbalController extends BulletinController
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
-        $academicYearId = $this->getActiveAcademicYear()['id'] ?? 0;
         $sql = "SELECT DISTINCT c.id, c.nom, c.teaching_type_id, tt.code as teaching_type_code
             FROM teacher_assignments ta
             JOIN classes c ON c.id = ta.class_id
             LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id
             WHERE ta.user_id = ? AND ta.academic_year_id = ?" . ($teachingTypeId > 0 ? " AND c.teaching_type_id = ?" : "") . "
+                            AND tt.actif = 1
+              AND EXISTS (
+                  SELECT 1
+                  FROM students st
+                  WHERE st.class_id = c.id
+                    AND st.academic_year_id = ?
+                    AND st.is_withdrawn = 0
+                    AND st.actif = 1
+              )
             ORDER BY c.nom ASC";
         
         $paramsUser = [(int) Session::get('user_id'), $academicYearId];
         if ($teachingTypeId > 0) {
             $paramsUser[] = $teachingTypeId;
         }
+        $paramsUser[] = $academicYearId;
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute($paramsUser);

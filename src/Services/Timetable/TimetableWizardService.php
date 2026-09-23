@@ -50,7 +50,9 @@ class TimetableWizardService
         $stmt = $this->db->prepare("
             SELECT c.id, c.nom 
             FROM cycles c
+                        JOIN teaching_types tt ON tt.id = c.teaching_type_id
             WHERE c.status = 1 
+                            AND tt.actif = 1
               AND (c.teaching_type_id = ? OR ? = 0)
             ORDER BY c.nom ASC
         ");
