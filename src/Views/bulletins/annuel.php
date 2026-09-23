@@ -160,6 +160,7 @@ if (isset($styleOnly)) {
         </div>
     <?php endif; ?>
 
+    <div class="print-page-frame" aria-hidden="true"></div>
     <div class="bulletin-wrapper">
         <div class="bulletin-sheet">
         <?php
@@ -294,71 +295,8 @@ if (isset($styleOnly)) {
             <?php endforeach; ?>
         </div>
 
-        <!-- F. BLOC DECISION DE FIN D'ANNEE -->
-        <div class="grades-table-wrap">
-            <table class="grades-table">
-                <colgroup>
-                    <col style="width:12.5%;">
-                    <col style="width:12.5%;">
-                    <col style="width:25%;">
-                    <col style="width:50%;">
-                </colgroup>
-                <tbody>
-            <tr class="grades-header-row">
-                <th colspan="3"><?= strtoupper(__('decision_end_of_year_title')) ?></th>
-                <th><?= __('signature_principal') ?></th>
-            </tr>
-            <tr>
-                <!-- toutes les bordures doivent avoir la meme couleur que les couleurs utilisé en background de chaque entete de tableau-->
-                <td colspan="2" style="text-align: left; vertical-align: top; font-size:10px"><br>
-                    <strong><span style="margin-right: 5px;"></span> 1- <?= __('promoted_to') ?> : ........................................</strong><br><br>
-                    <strong><span style="margin-right: 5px;"></span> 2- <?= __('authorized_to_repeat') ?> : .....................</strong><br><br>
-                    <strong><span style="margin-right: 5px;"></span> 3- <?= __('must_recompose') ?> : ........................</strong><br>
-                </td>
-                <td style="vertical-align: middle;">
-                    <table style="width: 100%; border: none; font-size: 8px;">
-                        <tr>
-                            <th colspan="2" style="background-color: #ffffff; color: #000000; font-weight: bold; text-align: center; border: none; padding: 1px; font-size: 8px;">
-                                4- <?= __('exclusion_reasons') ?> :
-                            </th>
-                        </tr>
-                        <tr>
-                            <td style="padding: 2px; border: none; vertical-align: top; ;">
-                                <div style="display: flex; align-items: center; margin-bottom: 2px;">
-                                    <input type="text" style="width: 30px; height: 18px; margin-right: 5px; border: 1px solid #000;">
-                                    <span style="font-size:10px"><?= __('age') ?></span>
-                                </div><br><br>
-                                <div style="display: flex; align-items: center;">
-                                    <input type="text" style="width: 30px; height: 18px; margin-right: 5px; border: 1px solid #000;">
-                                    <span style="font-size:10px"><?= __('work') ?></span>
-                                </div>
-                            </td>
-                            <td style="padding: 2px; border: none; vertical-align: top;">
-                                <div style="display: flex; align-items: center; margin-bottom: 2px;">
-                                    <input type="text" style="width: 30px; height: 18px; margin-right: 5px; border: 1px solid #000;">
-                                    <span style="font-size:10px"><?= __('cannot_triple') ?></span>
-                                </div><br><br>
-                                <div style="display: flex; align-items: center;">
-                                    <input type="text" style="width: 30px; height: 18px; margin-right: 5px; border: 1px solid #000;">
-                                    <span style="font-size:10px"><?= __('bad_conduct') ?></span>
-                                </div>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-                <!-- signature du chef d'établissement et date -->
-                <td style="font-size: 10px; padding: 1px; vertical-align: middle; text-align: center;">
-                    <em><?= __('date') ?> : ..............................................</em><br><br>
-                    <span><?= __('signature_label') ?> : ................................</span>
-                </td>
-            </tr>
-                </tbody>
-            </table>
-        </div>
-        <div class="bulletin-footer">
-            <span class="bulletin-name"><?= htmlspecialchars($bulletinType ?: __('report_card')) ?></span>
-            <span class="bulletin-copyright">© NoteMaster - Douala-Cameroun. <?= htmlspecialchars($i['school_code'] ?? '') ?>.camertech.com</span>
-        </div>
+        <?php include __DIR__ . '/bulletin_statistics.php'; ?>
+
     </div>
     </div>
 

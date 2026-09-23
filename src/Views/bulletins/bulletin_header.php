@@ -40,13 +40,14 @@ $pageContentHeight = $pageContentHeight ?? match ($pageMargin ?? '0.5cm') {
 if (isset($styleOnly)) {
     ?>
     * { box-sizing: border-box; }
-    @page { size: A4 portrait; margin: 3mm 4mm 4mm 4mm; }
-    @page :first { margin-top: 3mm; }
+    @page { size: A4 portrait; margin: 2mm 3mm 3mm 3mm; }
+    @page :first { margin-top: 2mm; }
     body { font-family: 'Arial', sans-serif; font-size: <?= max(10, $baseFontSize - 2) ?>px; margin: 0; padding: 0; color: #000;
     background: #fff; line-height: <?= $lineHeight ?>; }
-    .bulletin-sheet { width: 100%; max-width: 198mm; min-height: 0; margin: 0 auto; display: flex; flex: 1 1 auto; flex-direction: column; page-break-after: auto; page-break-inside: avoid; padding: 0; border: none; }
+    .print-page-frame { display: none; }
+    .bulletin-sheet { width: 100%; max-width: 200mm; min-height: 0; margin: 0 auto; display: flex; flex: 1 1 auto; flex-direction: column; page-break-after: auto; page-break-inside: avoid; padding: 0; border: none; }
     .bulletin-sheet:last-child { page-break-after: auto; }
-    .bulletin-wrapper { width: 100%; max-width: 210mm; height: auto; min-height: auto; display: flex; flex-direction: column; page-break-after: always; page-break-inside: avoid; margin: 0 auto 6px; padding: 0 0 2mm; border: none; }
+    .bulletin-wrapper { width: 100%; max-width: 210mm; height: auto; min-height: auto; display: flex; flex-direction: column; page-break-after: always; page-break-inside: avoid; margin: 0 auto 3px; padding: 0; border: none; }
     table { width: 99.5%; margin: 0 auto 1px; border-collapse: collapse; table-layout: fixed; border: 1px solid #14347a; }
     th, td { border: 1px solid #14347a; padding: 2px 4px; text-align: center; color: black; }
     th { background-color: #14347a; color: white; text-transform: uppercase; font-weight: bold; border: 2px solid #14347a; }
@@ -60,28 +61,44 @@ if (isset($styleOnly)) {
     .rouge { color: #ff0000; }
     .title-box { display: block; width: 100%; text-align: center; font-family: 'Arial Black', Arial, sans-serif; font-size: 19px; margin: 8px auto 5px; text-transform: uppercase;
     padding: 2px 3px; border: 2px solid #000; }
-    .header-wrapper { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) minmax(150px, 155px) minmax(0, 1fr); align-items: start; column-gap: 10px; margin-bottom: 5px; page-break-inside: avoid; }
+    .header-wrapper { width: 100%; display: grid; grid-template-columns: 40% 20% 40%; align-items: center; column-gap: 6px; margin-bottom: 2px; page-break-inside: avoid; }
     .header-left, .header-center, .header-right { min-width: 0; }
+    .header-left, .header-right { font-size: 12px; }
     .header-left { text-align: center; }
-    .header-center { display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .header-center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
     .header-right { text-align: center; }
-    .header-branding { grid-column: 1 / -1; text-align: center; margin-top: 2px; }
-    .header-side-content { display: inline-flex; flex-direction: column; align-items: stretch; width: auto; max-width: 100%; padding: 0 2px; overflow-wrap: anywhere; word-break: normal; }
-    .header-line-group { display: table; width: auto; max-width: 100%; margin: 0 auto; }
-    .header-line-group .header-line { display: table; width: 100%; }
-    .header-contact-row { display: flex; align-items: baseline; justify-content: center; gap: 10px; white-space: nowrap; }
-    .school-name-display, .academic-year-display { margin: 0; line-height: 1.15; }
-    .school-name-display { font-family: 'Arial Black', Arial, sans-serif; font-weight: 900; font-size: 23px; color: #0057b8; text-transform: uppercase; text-align: center; overflow-wrap: anywhere; }
-    .academic-year-display { margin-top: 2px; margin-bottom: 10px; font-weight: 700; font-size: 16px; text-transform: uppercase; text-align: center; }
-    .header-line { font-size: 12px; font-weight: bold; margin: 0; line-height: 1.15; text-transform: uppercase; }
-    .header-contact { font-size: 11px; margin: 2px 0 0; line-height: 1.15; text-transform: uppercase; }
-    .header-side-content .republic-line { font-size: 14px; color: #0057b8; }
-    .header-side-content .motto-line { font-size: 11px; font-style: italic; }
-    .header-side-content .ministry-line { font-size: 12px; color: #000; }
-    .header-side-content .slogan-line { font-size: 11px; }
-    .header-contact-label { color: #0057b8; }
-    .header-contact-value { color: #000; font-weight: 700; }
-    .logo-box { width: <?= $logoSize ?>; height: <?= $logoSize ?>; margin: 0 auto; display: flex; align-items: center;
+    .header-branding { grid-column: 1 / -1; text-align: center; margin-top: 5px; margin-bottom: 5px; }
+    .header-side-content {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+        max-width: 100%;
+        padding: 0 8px;
+        margin: 0 auto;
+        overflow-wrap: anywhere;
+        word-break: normal;
+        font-family: 'Arial Black', Arial, sans-serif;
+        letter-spacing: 0;
+        gap: 2px;
+    }
+    .header-line-group { display: block; width: 100%; max-width: 100%; margin: 0; }
+    .header-line-group + .header-line-group { margin-top: 1px; }
+    .header-line-group .header-line { display: block; width: 100%; margin: 0; }
+    .header-contact-row { display: flex; align-items: baseline; justify-content: center; gap: 8px; white-space: nowrap; flex-wrap: wrap; margin-top: 2px; }
+    .school-name-display, .academic-year-display { margin: 0; line-height: 1.1; }
+    .school-name-display { font-family: 'Arial Black', Arial, sans-serif; font-weight: 900; font-size: 16px; color: #0057b8; text-transform: uppercase; text-align: center; overflow-wrap: anywhere; }
+    .academic-year-display { margin-top: 1px; margin-bottom: 6px; font-family: Arial, sans-serif; font-weight: 700; font-size: 14px; text-transform: uppercase; text-align: center; }
+    .header-line { font-family: 'Arial Black', Arial, sans-serif; font-size: 9px; font-weight: 900; margin: 0; line-height: 1.1; text-transform: uppercase; }
+    .header-contact { font-family: 'Arial Black', Arial, sans-serif; font-size: 9px; margin: 0; line-height: 1.1; text-transform: uppercase; }
+    .header-side-content .republic-line { font-size: 13px; color: #0057b8; }
+    .header-side-content .motto-line { font-size: 10px; font-style: italic; }
+    .header-side-content .ministry-line { font-size: 9px; color: #000; }
+    .header-side-content .delegation-line { font-size: 9px; }
+    .header-side-content .slogan-line { font-size: 9px; }
+    .header-contact-label { color: #0057b8; font-size: 9px; }
+    .header-contact-value { color: #000; font-weight: 700; font-size: 9px; }
+    .logo-box { width: <?= max(55, (int) preg_replace('/\D+/', '', $logoSize) - 20) ?>px; height: <?= max(55, (int) preg_replace('/\D+/', '', $logoSize) - 20) ?>px; margin: 0 auto; display: flex; align-items: center;
     justify-content: center;
     overflow: hidden; }
     .logo-box img { width: 100%; height: 100%; object-fit: contain; display: block; }
@@ -237,11 +254,19 @@ if (isset($styleOnly)) {
     }
     .student-identity-half { width: 50%; }
     .student-info-table td > * { margin: 0; padding: 0; }
+    .student-identity-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1px 4px;
+        align-items: stretch;
+        border: 1px solid #14347a;
+        padding: 2px;
+    }
     .student-identity-label {
     font-weight: 700;
     margin-right: 2px;
     margin-bottom: 0;
-    font-size: <?= $baseFontSize - 6 ?>px;
+    font-size: <?= $baseFontSize - 7 ?>px;
     line-height: 1;
     display: inline-block;
     vertical-align: middle;
@@ -251,7 +276,7 @@ if (isset($styleOnly)) {
     font-weight: 700;
     color: #0057b8;
     margin-bottom: 0;
-    font-size: <?= $baseFontSize - 6 ?>px;
+    font-size: <?= $baseFontSize - 7 ?>px;
     line-height: 1;
     display: inline-block;
     vertical-align: middle;
@@ -260,14 +285,16 @@ if (isset($styleOnly)) {
     }
     .student-identity-item {
     display: inline-block;
-    margin-right: 10px;
+    margin-right: 4px;
+    min-height: 12px;
+    padding: 0 2px;
     }
     .student-identity-item:last-child {
     margin-right: 0;
     }
     .student-name-value {
     font-weight: 900;
-    font-size: <?= $baseFontSize - 4 ?>px;
+    font-size: <?= $baseFontSize - 5 ?>px;
     line-height: 1;
     margin-bottom: 0;
     text-transform: uppercase;
@@ -326,24 +353,35 @@ if (isset($styleOnly)) {
         font-size: 9px;
         font-weight: 700;
         line-height: 1.2;
-        color: #14347a;
-        margin-top: auto;
-        padding-top: 10px;
+        color: #dfeeff;
+        margin-top: 0;
+        padding: 3px 0;
         text-align: center;
         border-top: none;
-        background: transparent;
+        background: #14347a !important;
         flex-shrink: 0;
+        position: relative;
+        z-index: 1;
+        box-sizing: border-box;
+        page-break-inside: avoid;
     }
     .bulletin-footer .bulletin-name {
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.06em;
         white-space: nowrap;
+        color: #dfeeff;
+        position: relative;
+        z-index: 1;
     }
     .bulletin-footer .bulletin-copyright {
         flex: 1;
         text-align: center;
         font-weight: 700;
+        color: #dfeeff;
+        position: relative;
+        z-index: 1;
+        background: transparent;
     }
     .no-border { border: none !important; }
     .absences-title { text-align: center; vertical-align: middle; width: 15px; font-weight: bold; font-size: 6.5px;
@@ -354,7 +392,9 @@ if (isset($styleOnly)) {
     .legend-text { font-size: 6.5px; line-height: 0.95; text-align: left; }
     .summary-total td { background-color: #f7f7f7; font-weight: bold; }
     .compact-value { font-weight: bold; font-size: 9px; }
-    .report-card-grid { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; margin: 2px 0 2px; page-break-inside: avoid; }
+    .report-card-grid { position: relative; display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; margin: 1px 0 1px; page-break-inside: avoid; overflow: hidden; }
+    .report-card-watermark { position: absolute; inset: 12% 20%; width: 60%; height: 76%; object-fit: contain; opacity: .1; pointer-events: none; user-select: none; z-index: 0; }
+    .report-card-grid > *:not(.report-card-watermark) { position: relative; z-index: 1; }
     .report-card-header-table { display: table; width: 100%; margin: 0; border-collapse: collapse; table-layout: fixed; border: 2px solid #14347a; }
     .report-card-header-table th { border: 1px solid #fff; padding: 2px 2px; text-align: center; vertical-align: middle; font-size: 8.5px; line-height: 1.05; }
     .report-card-header-table thead th { border-bottom: 1px solid #fff; }
@@ -419,9 +459,8 @@ if (isset($styleOnly)) {
     .report-card-grid-under-17 .report-card-main-table th,
     .report-card-grid-under-17 .report-card-main-table td {
         height: auto !important;
-        line-height: 1.15 !important;
-        padding-top: 4px;
-        padding-bottom: 4px;
+        line-height: 1.05 !important;
+        padding: 1px 0 !important;
         vertical-align: middle;
     }
     .report-card-grid-under-17 {
@@ -437,19 +476,41 @@ if (isset($styleOnly)) {
         height: auto !important;
         min-height: 0 !important;
     }
-    .report-card-grid-under-17 .report-card-header-table thead th { font-size: 9px !important; }
+    .report-card-grid-under-17 .report-card-header-table thead th {
+        font-size: 9px !important;
+        line-height: 9px !important;
+    }
     .report-card-group-header th { background: #193f8f; text-align: left; padding-left: 7px; }
-    .report-card-grid-under-17 .report-card-group-header th { font-size: 9.5px !important; }
-    .report-card-subject { text-align: left !important; font-weight: 700; font-size: 11px; }
-    .report-card-grid-under-17 .report-card-subject { font-size: 11px !important; }
-    .report-card-teacher { display: block; font-size: .72em; font-style: italic; font-weight: 400; color: #3d4f6f; }
+    .report-card-grid-under-17 .report-card-group-header th { font-size: 11px !important; }
+    .report-card-subject { text-align: center !important; font-weight: 700; font-size: 11px; }
+    .report-card-grid-under-17 .report-card-subject { font-size: 12px !important; }
+    .report-card-teacher { display: block; font-size: 9px; font-style: italic; font-weight: 400; color: #3d4f6f; }
     .report-card-competence { text-align: left !important; font-size: 8px; }
-    .report-card-grid-under-17 .report-card-competence { font-size: 8.5px !important; }
+    .report-card-grid-under-17 .report-card-competence { font-size: 12px !important; }
     .report-card-subtotal td { background: #d9e8fb; color: #14347a; font-weight: 700; }
-    .report-card-grid-under-17 .report-card-subtotal td { font-size: 9.5px !important; }
-    .report-card-grid-under-17 .report-card-main-table tbody tr:not(.report-card-group-header):not(.report-card-subtotal):not(.report-card-grand-total) td { font-size: 8.8px !important; }
-    .report-card-grid-under-17 .report-card-main-table tbody tr:not(.report-card-group-header):not(.report-card-subtotal):not(.report-card-grand-total) .report-card-subject { font-size: 10.5px !important; }
+    .report-card-grid-under-17 .report-card-subtotal td { font-size: 11px !important; }
+    .report-card-grid-under-17 .report-card-main-table tbody tr:not(.report-card-group-header):not(.report-card-subtotal):not(.report-card-grand-total) td { font-size: 12px !important; }
+    .report-card-grid-under-17 .report-card-main-table tbody tr:not(.report-card-group-header):not(.report-card-subtotal):not(.report-card-grand-total) .report-card-subject { font-size: 12px !important; }
     .report-card-grid-under-17 .report-card-main-table tbody tr:not(.report-card-group-header):not(.report-card-subtotal):not(.report-card-grand-total) .report-card-competence { font-size: 8px !important; }
+    .report-card-grid-under-17 .report-card-main-table td.report-card-competence {
+        font-size: 12px !important;
+        text-align: center !important;
+        margin: 0;
+        padding: 0 !important;
+        justify-content: center;
+    }
+    .report-card-grid-under-17 .report-card-main-table tbody tr:not(.report-card-group-header):not(.report-card-subtotal):not(.report-card-grand-total) td.report-card-competence {
+        font-size: 8px !important;
+    }
+    .report-card-grid-under-17 .report-card-main-table tbody tr:not(.report-card-group-header):not(.report-card-subtotal):not(.report-card-grand-total) td {
+        font-size: 10px !important;
+    }
+    .report-card-grid-under-17 .report-card-main-table tbody tr:not(.report-card-group-header):not(.report-card-subtotal):not(.report-card-grand-total) td.report-card-subject {
+        font-size: 11px !important;
+    }
+    .report-card-grid-under-17 .report-card-main-table tbody tr:not(.report-card-group-header):not(.report-card-subtotal):not(.report-card-grand-total) td.report-card-competence {
+        font-size: 8px !important;
+    }
     .report-card-grand-total th, .report-card-grand-total td { background: #14347a; color: #fff; font-weight: 700; }
     .report-card-legend { display: flex; gap: 10px; justify-content: center; align-items: center; border: 1px solid #14347a; padding: 2px 5px; color: #14347a; font-size: 8px; flex-wrap: wrap; }
     .report-card-lower-grid { display: grid; grid-template-columns: 1.35fr .8fr 1fr; gap: 5px; margin-top: 5px; }
@@ -462,7 +523,7 @@ if (isset($styleOnly)) {
     .remarks-space { height: 72px; vertical-align: top; }
     .report-card-signatures { display: flex; justify-content: space-between; gap: 10px; padding-top: 8px; font-size: .82em; }
     .col-subject { width: calc(14% + 5px); }
-    .col-competence { width: calc(34% - 5px); }
+    .col-competence { width: calc(46% - 5px); }
     .col-test { width: 5%; }
     .col-term { width: 5%; }
     .col-average { width: 5.5%; }
@@ -470,7 +531,6 @@ if (isset($styleOnly)) {
     .col-score { width: 6%; }
     .col-rank { width: 6%; }
     .col-appreciation { width: 12%; }
-    .col-teacher-signature { width: 12%; }
     .appreciation-header, .appreciation-cell {
     white-space: normal;
     overflow-wrap: anywhere;
@@ -511,9 +571,9 @@ if (isset($styleOnly)) {
         .report-card-main-table, .report-card-header-table { font-size: 10px; }
     }
     @media print {
-    .bulletin-wrapper { page-break-after: always; page-break-inside: avoid; }
-    .bulletin-wrapper { border: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .bulletin-sheet { page-break-inside: avoid; border: none; padding: 5px; }
+    .print-page-frame { display: none !important; }
+    .bulletin-wrapper { box-sizing: border-box; width: calc(100% - 2mm); max-width: none; min-height: 292mm; margin: 0 auto 3px; border: 2px solid #14347a !important; page-break-after: always; page-break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .bulletin-sheet { page-break-inside: avoid; border: none; padding: 6px 6px 42px; }
     table { page-break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     tr { page-break-inside: avoid; }
     th, td { border: 1px solid #14347a; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -521,11 +581,41 @@ if (isset($styleOnly)) {
     .report-card-header-table th { border: 1px solid #fff !important; }
     .report-card-header-table thead th { border-bottom-color: #fff !important; }
     .bulletin-footer {
-        background: transparent !important;
-        color: #14347a !important;
+        position: relative !important;
+        left: auto !important;
+        right: auto !important;
+        bottom: auto !important;
+        z-index: 1 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        width: 100% !important;
+        margin-top: 10px !important;
+        padding: 2px 0 !important;
+        background: #14347a !important;
+        color: #dfeeff !important;
         border-top: none !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
+        page-break-inside: avoid;
+    }
+    .bulletin-footer .bulletin-copyright {
+        position: relative !important;
+        z-index: 1 !important;
+        display: block !important;
+        width: 100% !important;
+        padding: 1px 0 !important;
+        background: transparent !important;
+        color: #dfeeff !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .bulletin-footer .bulletin-name {
+        position: relative !important;
+        z-index: 1 !important;
+        color: #dfeeff !important;
     }
     .subject-group { background: #d9e8fb !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Partie statistique des bulletins de notes</title>
+<style>
+    body {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 10pt;
+    }
+    table {
+        border-collapse: collapse;
+    }
+    td {
+        border: 1px solid #000;
+        padding: 4px 6px;
+    }
+    /* cellules destinées à recevoir une saisie manuscrite : plus de hauteur */
+    td.saisie {
+        height: 26px;
+        min-width: 40px;
+    }
+    div.main {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+    td.saisie-large {
+        height: 25px;
+        min-width: 130px;
+    }
+    td.saisie-large2 {
+        height: 30px;
+        min-width: 400px;
+    }
+
+    @media print {
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 10pt;
+        }
+        table {
+            page-break-inside: avoid;
+        }
+    }
+</style>
+</head>
+<body>
+<div class="main">
+<table>
+
+<!-- ============ LIGNE 1 : TABLEAU DU HAUT (TEST / AVERAGE / RANK / RESULTS) ============ -->
+<tr>
+<td colspan="2">
+
+<table>
+<tr>
+    <td></td>
+    <td colspan="2">1st TERM</td>
+    <td colspan="2">2nd TERM</td>
+    <td>N&deg; OF SUBJECTS PASSED</td>
+</tr>
+<tr>
+    <td>TEST</td>
+    <td>1st Test</td>
+    <td>2nd Test</td>
+    <td>3rd Test</td>
+    <td>4th Test</td>
+    <td>OUT OF</td>
+</tr>
+<tr>
+    <td>STUDENT'S AVERAGE</td>
+    <td class="saisie"></td><td class="saisie"></td><td class="saisie"></td><td class="saisie"></td>
+    <td rowspan="4" class="saisie"></td>
+</tr>
+<tr>
+    <td>RANK</td>
+    <td class="saisie"></td><td class="saisie"></td><td class="saisie"></td><td class="saisie"></td>
+</tr>
+<tr>
+    <td rowspan="2">TERM'S RESULTS</td>
+    <td rowspan="2">FIRST TERM</td>
+    <td class="saisie"></td>
+    <td rowspan="2">SECOND TERM</td>
+    <td class="saisie"></td>
+</tr>
+<tr>
+    <td class="saisie"></td>
+    <td class="saisie"></td>
+</tr>
+</table>
+
+</td>
+</tr>
+
+<!-- ============ LIGNE 2 : DISCIPLINE+DECISION+PERFORMANCE (gauche) / REMARQUES (droite) ============ -->
+<tr>
+
+<td valign="top">
+<table>
+
+<tr>
+    <td colspan="3">DISCIPLINE</td>
+    <td colspan="2">CLASS COUNCIL DECISION</td>
+    <td colspan="2">CLASS PERFORMANCE</td>
+</tr>
+
+<tr>
+    <td>LATENESS</td>
+    <td colspan="2" class="saisie-large"></td>
+    <td>POOR</td>
+    <td class="saisie"></td>
+    <td>HIGHEST AVERAGE</td>
+    <td class="saisie"></td>
+</tr>
+
+<tr>
+    <td rowspan="2">ABSENCES</td>
+    <td>J</td>
+    <td class="saisie"></td>
+    <td>WEAK</td>
+    <td class="saisie"></td>
+    <td>LOWEST AVERAGE</td>
+    <td class="saisie"></td>
+</tr>
+<tr>
+    <td>N.J</td>
+    <td class="saisie"></td>
+    <td>BELOW AVERAGE</td>
+    <td class="saisie"></td>
+    <td>CLASS AVERAGE</td>
+    <td class="saisie"></td>
+</tr>
+
+<tr>
+    <td>PUNISHMENT</td>
+    <td colspan="2" class="saisie-large"></td>
+    <td>AVERAGE</td>
+    <td class="saisie"></td>
+    <td rowspan="2">N&deg; WITH AV&gt;10</td>
+    <td rowspan="2" class="saisie"></td>
+</tr>
+
+<tr>
+    <td rowspan="2">WARNINGS</td>
+    <td>CONDUCT</td>
+    <td class="saisie"></td>
+    <td>FAIRLY GOOD</td>
+    <td class="saisie"></td>
+</tr>
+<tr>
+    <td>ACADEMIC</td>
+    <td class="saisie"></td>
+    <td>GOOD</td>
+    <td class="saisie"></td>
+    <td rowspan="2">% PASSED</td>
+    <td rowspan="2" class="saisie"></td>
+</tr>
+
+<tr>
+    <td rowspan="4">DISMISSED</td>
+    <td>CONDUCT</td>
+    <td class="saisie"></td>
+    <td>VERY GOOD</td>
+    <td class="saisie"></td>
+</tr>
+<tr>
+    <td>ABSENCES</td>
+    <td class="saisie"></td>
+    <td>EXCELLENT</td>
+    <td class="saisie"></td>
+    <td class="saisie"></td>
+    <td class="saisie"></td>
+</tr>
+<tr>
+    <td>FEES</td>
+    <td class="saisie"></td>
+    <td class="saisie"></td>
+    <td class="saisie"></td>
+    <td class="saisie"></td>
+    <td class="saisie"></td>
+</tr>
+<tr>
+    <td>ACADEMICS</td>
+    <td class="saisie"></td>
+    <td class="saisie"></td>
+    <td class="saisie"></td>
+    <td class="saisie"></td>
+    <td class="saisie"></td>
+</tr>
+
+</table>
+</td>
+
+<td valign="top" rowspan="2">
+<table height="100%">
+<tr><td>PRINCIPAL'S REMARKS/SIGN</td></tr>
+<tr><td class="saisie" style="height: 500px;">&nbsp;</td></tr>
+</table>
+</td>
+
+</tr>
+
+<!-- ============ LIGNE 3 : PIED DE PAGE (FEES OWING etc.) ============ -->
+<tr>
+<td valign="top">
+<table>
+<tr><td>FEES OWING:</td><td class="saisie-large2"></td></tr>
+<tr><td>CLASS MASTER / MISTRESS:</td><td class="saisie-large2"></td></tr>
+<tr><td>PARENT'S / GUARDIAN'S NAME:</td><td class="saisie-large2"></td></tr>
+<tr><td>SIGN:</td><td class="saisie-large2"></td></tr>
+<tr><td>NEXT TERM BEGINS ON</td><td class="saisie-large2"></td></tr>
+</table>
+</td>
+</tr>
+
+</table>
+</div>
+</body>
+</html>

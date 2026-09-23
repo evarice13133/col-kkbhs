@@ -4,28 +4,47 @@ $bulletinPeriod = $bulletinPeriod ?? 'sequence';
 $showEvaluationTests = $bulletinPeriod === 'trimestre';
 $showAnnualTerms = $bulletinPeriod === 'annuel';
 $subjectCountForSizing = (int) ($subjectCount ?? 0);
-$tableColumns = $showEvaluationTests ? 10 : ($showAnnualTerms ? 11 : 9);
+$trimesterGroupLabel = __('trimester') . ' ' . (int) ($term ?? 1);
+$trimesterHeaderLabels = array_values(array_filter(array_map(static function ($label) {
+    $value = trim((string) ($label ?? ''));
+    return $value !== '' ? $value : null;
+}, (array) ($evaluationLabels ?? [])), static function ($value) {
+    return $value !== null && $value !== '';
+}));
+if (count($trimesterHeaderLabels) === 0) {
+    $fallbackTerm = max(1, min(3, (int) ($term ?? 1)));
+    $fallbackStart = (($fallbackTerm - 1) * 2) + 1;
+    $trimesterHeaderLabels = ['SEQ' . $fallbackStart, 'SEQ' . ($fallbackStart + 1)];
+}
+$tableColumns = $showEvaluationTests ? 9 : ($showAnnualTerms ? 10 : 8);
 $groupLabelColspan = $showEvaluationTests ? 4 : ($showAnnualTerms ? 5 : 3);
 $grandPoints = 0.0;
 $grandCoefficients = 0.0;
 $passedSubjects = 0;
 $totalSubjects = 0;
+$reportCardLogo = (string) (($institution['school_logo_base64'] ?? '') ?: '');
+if ($reportCardLogo === '' && !empty($institution['school_logo'])) {
+    $reportCardLogo = \App\Core\Helpers::normalizeLogoPath((string) $institution['school_logo']);
+}
 ?>
 <div class="report-card-grid <?= $isTechnicalBulletin ? 'report-card-grid-technical' : '' ?><?= $subjectCountForSizing < 17 ? ' report-card-grid-under-17' : '' ?>">
+    <?php if ($reportCardLogo !== ''): ?>
+        <img class="report-card-watermark" src="<?= htmlspecialchars($reportCardLogo, ENT_QUOTES, 'UTF-8') ?>" alt="" aria-hidden="true">
+    <?php endif; ?>
     <table class="report-card-header-table">
         <colgroup>
             <col class="col-subject">
             <col class="col-competence">
             <?php if ($showEvaluationTests): ?><col class="col-test"><col class="col-test"><?php endif; ?>
             <?php if ($showAnnualTerms): ?><col class="col-term"><col class="col-term"><col class="col-term"><?php endif; ?>
-            <col class="col-average"><col class="col-coefficient"><col class="col-score"><col class="col-rank"><col class="col-appreciation"><col class="col-teacher-signature">
+            <col class="col-average"><col class="col-coefficient"><col class="col-score"><col class="col-rank"><col class="col-appreciation">
         </colgroup>
         <thead>
             <tr>
                 <th rowspan="2"><?= __('subjects_column') ?></th>
                 <th rowspan="2"><?= __('competences') ?></th>
                 <?php if ($showEvaluationTests): ?>
-                    <th colspan="2"><?= htmlspecialchars((string) (($evaluationLabels[2] ?? null) ?: __('evaluation'))) ?></th>
+                    <th colspan="<?= count($trimesterHeaderLabels) ?: 2 ?>"><?= htmlspecialchars((string) $trimesterGroupLabel) ?></th>
                 <?php elseif ($showAnnualTerms): ?>
                     <th colspan="3"><?= __('evaluation') ?></th>
                 <?php else: ?>
@@ -36,12 +55,12 @@ $totalSubjects = 0;
                 <th rowspan="2"><?= __('score') ?></th>
                 <th rowspan="2"><?= __('rank') ?></th>
                 <th rowspan="2" class="appreciation-header"><?= __('appreciation') ?></th>
-                <th rowspan="2"><?= __('teacher_signature') ?></th>
             </tr>
             <?php if ($showEvaluationTests): ?>
                 <tr>
-                    <th><?= htmlspecialchars((string) (($evaluationLabels[0] ?? null) ?: __('test_1'))) ?></th>
-                    <th><?= htmlspecialchars((string) (($evaluationLabels[1] ?? null) ?: __('test_2'))) ?></th>
+                    <?php foreach ($trimesterHeaderLabels as $trimesterHeaderLabel): ?>
+                        <th><?= htmlspecialchars((string) $trimesterHeaderLabel) ?></th>
+                    <?php endforeach; ?>
                 </tr>
             <?php elseif ($showAnnualTerms): ?>
                 <tr>
@@ -58,7 +77,7 @@ $totalSubjects = 0;
             <col class="col-competence">
             <?php if ($showEvaluationTests): ?><col class="col-test"><col class="col-test"><?php endif; ?>
             <?php if ($showAnnualTerms): ?><col class="col-term"><col class="col-term"><col class="col-term"><?php endif; ?>
-            <col class="col-average"><col class="col-coefficient"><col class="col-score"><col class="col-rank"><col class="col-appreciation"><col class="col-teacher-signature">
+            <col class="col-average"><col class="col-coefficient"><col class="col-score"><col class="col-rank"><col class="col-appreciation">
         </colgroup>
         <tbody>
             <?php foreach ($groupedRows as $groupIndex => $group): ?>
@@ -82,6 +101,9 @@ $totalSubjects = 0;
                     <tr>
                         <td class="report-card-subject">
                             <?= htmlspecialchars((string) $row['subject']) ?>
+                            <?php if (trim((string) ($row['teacher'] ?? '')) !== ''): ?>
+                                <span class="report-card-teacher"><?= htmlspecialchars((string) $row['teacher']) ?></span>
+                            <?php endif; ?>
                         </td>
                         <td class="report-card-competence"><?= htmlspecialchars((string) ($row['competence'] ?? '')) ?></td>
                         <?php if ($showEvaluationTests): ?>
@@ -99,7 +121,6 @@ $totalSubjects = 0;
                         <td><?= formatSimple($scoreValue) ?></td>
                         <td><?= htmlspecialchars((string) ($row['rank_subject'] ?? '-')) ?></td>
                         <td class="appreciation-cell"><?= htmlspecialchars((string) ($row['appreciation'] ?? '-')) ?></td>
-                        <td class="teacher-signature-cell"><?= htmlspecialchars((string) ($row['teacher'] ?? '-')) ?></td>
                     </tr>
                 <?php endforeach; ?>
                 <tr class="report-card-subtotal">
@@ -107,7 +128,7 @@ $totalSubjects = 0;
                     <td></td>
                     <td><?= formatSimple($groupCoefficients) ?></td>
                     <td><?= formatSimple($groupPoints) ?></td>
-                    <td colspan="3"></td>
+                    <td colspan="2"></td>
                 </tr>
             <?php endforeach; ?>
             <tr class="report-card-grand-total">
@@ -115,7 +136,7 @@ $totalSubjects = 0;
                     <th></th>
                     <th><?= formatSimple($grandCoefficients) ?></th>
                     <th><?= formatSimple($grandPoints) ?></th>
-                <th colspan="3"><?= $passedSubjects ?> / <?= $totalSubjects ?></th>
+                <th colspan="2"><?= $passedSubjects ?> / <?= $totalSubjects ?></th>
             </tr>
         </tbody>
     </table>
@@ -191,4 +212,24 @@ $totalSubjects = 0;
         $workBlameClass = 'vert';
     }
     ?>
+    <script>
+    (() => {
+        const adjustLongCompetencies = () => {
+            document.querySelectorAll('.report-card-competence').forEach((cell) => {
+                const computed = getComputedStyle(cell);
+                const lineHeight = parseFloat(computed.lineHeight);
+                if (lineHeight > 0 && cell.scrollHeight > (lineHeight * 3) + 1) {
+                    cell.style.setProperty('font-size', '6.5px', 'important');
+                    cell.style.setProperty('line-height', '1.05', 'important');
+                }
+            });
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', adjustLongCompetencies, { once: true });
+        } else {
+            adjustLongCompetencies();
+        }
+    })();
+    </script>
 </div>

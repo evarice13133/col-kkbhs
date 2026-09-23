@@ -49,147 +49,205 @@ $addressLabelEn = $enTranslations['address'] ?? 'Address';
     .header-wrapper {
         width: 100%;
         display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(150px, 155px) minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1fr) 200px minmax(0, 1fr);
         align-items: start;
-        column-gap: 10px;
-        margin-bottom: 5px;
+        column-gap: 4px;
+        margin-bottom: 0;
         page-break-inside: avoid;
     }
     .header-left,
     .header-center,
     .header-right { min-width: 0; }
-    .header-left { text-align: center; }
-    .header-center { display: flex; flex-direction: column; align-items: center; text-align: center; }
-    .header-right { text-align: center; }
-    .header-branding { grid-column: 1 / -1; text-align: center; margin-top: 2px; }
-    .header-side-content { display: inline-flex; flex-direction: column; align-items: stretch; width: auto; max-width: 100%; padding: 0 2px; overflow-wrap: anywhere; word-break: normal; }
-    .header-line-group { display: table; width: auto; max-width: 100%; margin: 0 auto; }
-    .header-line-group .header-line { display: table; width: 100%; }
-    .header-contact-row { display: flex; align-items: baseline; justify-content: center; gap: 10px; white-space: nowrap; }
-    .header-line, .header-contact, .school-name-display, .academic-year-display { margin: 0; line-height: 1.15; }
-    .header-line { font-size: 12px; font-weight: bold; text-transform: uppercase; }
-    .header-contact { font-size: 11px; margin-top: 2px; text-transform: uppercase; }
-    .header-side-content .republic-line { font-size: 14px; color: #0057b8; }
-    .header-side-content .motto-line { font-size: 11px; font-style: italic; }
-    .header-side-content .ministry-line { font-size: 12px; color: #000; }
-    .header-side-content .slogan-line { font-size: 11px; }
-    .header-contact-label { color: #0057b8; }
-    .header-contact-value { color: #000; font-weight: 700; }
-    .school-name-display { font-family: 'Arial Black', Arial, sans-serif; font-weight: 900; font-size: 23px; color: #0057b8; text-transform: uppercase; text-align: center; overflow-wrap: anywhere; }
-    .academic-year-display { margin-top: 2px; margin-bottom: 10px; font-weight: 700; font-size: 16px; text-transform: uppercase; text-align: center; }
+    .header-left { font-size: 12px; text-align: center; }
+    .header-right { font-size: 12px; text-align: center; }
+    .header-center { display: flex; align-items: center; justify-content: center; text-align: center; }
+    .header-center .logo-box { margin: 0 auto 5px; }
+    .header-branding { grid-column: 1 / -1; text-align: center; margin-top: 0; }
+    .header-side-content {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+        max-width: 100%;
+        padding: 0 4px;
+        margin: 0 auto;
+        overflow-wrap: anywhere;
+        word-break: normal;
+        font-family: 'Arial Black', Arial, sans-serif;
+        letter-spacing: 0;
+        gap: 1px;
+    }
+    .header-line-group { display: block; width: 100%; max-width: 100%; margin: 0; }
+    .header-line-group + .header-line-group { margin-top: 0; }
+    .header-line-group .header-line { display: block; width: 100%; margin: 0; }
+    .header-contact-row { display: flex; align-items: baseline; justify-content: center; gap: 4px; white-space: nowrap; flex-wrap: wrap; margin-top: 1px; }
+    .header-line, .header-contact, .school-name-display, .academic-year-display { margin: 0; line-height: 1.05; }
+    .header-line { font-family: 'Arial Black', Arial, sans-serif; font-size: 6.2px; font-weight: 900; text-transform: uppercase; }
+    .header-contact { font-family: 'Arial Black', Arial, sans-serif; font-size: 6.2px; margin-top: 0; text-transform: uppercase; }
+    .header-side-content .republic-line { font-size: 6.8px; color: #0057b8; }
+    .header-side-content .motto-line { font-size: 6.4px; font-style: italic; }
+    .header-side-content .ministry-line { font-size: 6.1px; color: #000; }
+    .header-side-content .delegation-line { font-size: 6.1px; }
+    .header-side-content .slogan-line { font-size: 6.1px; }
+    .header-contact-label { color: #0057b8; font-size: 6.1px; }
+    .header-contact-value { color: #000; font-weight: 700; font-size: 6.1px; }
+    .school-name-display { font-family: 'Arial Black', Arial, sans-serif; font-weight: 900; font-size: 17px; color: #0057b8; text-transform: uppercase; text-align: center; overflow-wrap: anywhere; }
+    .academic-year-display { margin-top: 0; margin-bottom: 2px; font-weight: 700; font-size: 12px; text-transform: uppercase; text-align: center; }
 
-    .student-photo-cell {
-        width: 101px;
-        min-width: 101px;
-        height: 100%;
-        vertical-align: middle;
-        padding: 0 12px 0 0;
-        border-right: 1px solid #14347a !important;
+    .student-header-layout {
+        width: 100%;
+        display: flex;
+        align-items: stretch;
+        gap: 6px;
+        margin: 0 0 4px;
+    }
+    .student-photo-block {
+        flex: 0 0 72px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .student-photo-block .student-photo-container {
+        width: 72px;
+        height: 78px;
     }
     .student-photo-container {
-        width: 100%;
-        height: auto;
-        min-height: 98px;
         background: #fff;
-        border: 2px solid #14347a;
+        border: 1px solid #14347a;
         display: flex;
         align-items: center;
         justify-content: center;
         overflow: hidden;
-        max-width: 100%;
-        max-height: 100%;
     }
     .student-photo-container img {
         width: 100%;
-        height: auto;
-        max-width: 100%;
-        max-height: 100%;
-        object-fit: contain;
+        height: 100%;
+        object-fit: cover;
         object-position: center;
         display: block;
-        overflow: hidden;
     }
     .student-photo-placeholder {
         width: 100%;
-        height: auto;
-        min-height: 60px;
+        height: 100%;
         display: flex;
         align-items: center;
         justify-content: center;
         text-align: center;
-        font-size: 40px;
-        color: #000;
-        line-height: 1.2;
+        font-size: 26px;
+        color: #14347a;
+        background: #f4f7fb;
     }
-    .student-identity-row {
-        padding: 0 4px;
-        border: 1px solid #14347a !important;
-        line-height: 1;
-        margin: 0;
-    }
-    .student-info-table td,
-    .student-info-table tr + tr td,
-    .student-info-table .student-photo-cell {
-        border: none !important;
-    }
-    .student-info-table tr {
-        margin: 0;
+    .student-identity-grid {
+        flex: 1 1 auto;
+        min-width: 0;
+        display: grid;
+        grid-template-columns: 1.7fr 1.1fr .9fr 1.3fr;
+        justify-content: stretch;
+        gap: 0 2px;
+        align-items: stretch;
+        border: none;
+        border-radius: 0;
         padding: 0;
-    }
-    .student-info-table tr + tr td {
-        margin-top: 0;
-        padding-top: 0;
-    }
-    .student-identity-half {
-        width: 50%;
-    }
-    .student-identity-label {
+        overflow: hidden;
+        background: transparent;
         font-weight: 700;
-        margin-right: 2px;
-        margin-bottom: 0;
-        font-size: 9px;
-        line-height: 1;
-        display: inline-block;
-        vertical-align: middle;
-        color: #000;
     }
-    .student-identity-value {
+    .student-identity-grid * {
         font-weight: 700;
-        color: #0057b8;
-        margin-bottom: 0;
-        font-size: 9px;
-        line-height: 1;
-        display: inline-block;
-        vertical-align: middle;
-        border-bottom: 1px solid #14347a;
-        padding-bottom: 0;
     }
     .student-identity-item {
-        display: inline-block;
-        margin-right: 10px;
+        display: flex;
+        align-items: baseline;
+        justify-content: flex-start;
+        gap: 3px;
+        min-height: 19px;
+        padding: 2px 3px;
+        background: transparent;
+        text-align: left;
+        border: none;
     }
-    .student-identity-item:last-child {
+    .student-identity-item.full {
+        grid-column: 1 / -1;
+        align-items: center;
+        min-height: 28px;
+        padding: 4px 3px;
+        background: transparent;
+        border-bottom: none;
+    }
+    .student-identity-item:nth-child(2),
+    .student-identity-item:nth-child(3),
+    .student-identity-item:nth-child(4),
+    .student-identity-item:nth-child(5) {
+        background: transparent;
+    }
+    .student-identity-item:nth-child(6),
+    .student-identity-item:nth-child(7),
+    .student-identity-item:nth-child(8),
+    .student-identity-item:nth-child(9) {
+        background: transparent;
+    }
+    .student-identity-footer {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: baseline;
+        gap: 5px;
+        padding: 0;
+        background: transparent;
+        border-top: none;
+    }
+    .student-identity-footer .student-identity-item {
         margin-right: 0;
+    }
+    .student-identity-footer .student-contact-item {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+    .student-identity-footer .student-principal-item {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+    .student-identity-label {
+        font-weight: 800;
+        font-size: 9.7px;
+        line-height: 1.05;
+        color: #1d3557;
+        white-space: nowrap;
+        letter-spacing: 0;
+    }
+    .student-identity-value {
+        font-weight: 900;
+        font-size: 10.2px;
+        line-height: 1.05;
+        color: #074b8a;
+        white-space: nowrap;
+        text-transform: uppercase;
+        border-bottom: none;
+        overflow: visible;
+        text-overflow: clip;
+        flex-shrink: 0;
+        text-decoration: underline;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 1px;
     }
     .student-name-value {
         font-weight: 900;
-        font-size: 11px;
-        line-height: 1;
-        margin-bottom: 0;
+        font-size: 13px;
+        line-height: 1.05;
         text-transform: uppercase;
         color: #0057b8;
-        display: inline-block;
-        vertical-align: middle;
-        border-bottom: 1px solid #14347a;
-        padding-bottom: 0;
+        letter-spacing: .15px;
+        border-bottom: none;
+        text-decoration: underline;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 1px;
     }
     .title-box {
         display: block;
         width: 100%;
         text-align: center;
         font-family: 'Arial Black', Arial, sans-serif;
-        font-size: 19px;
-        margin: 8px auto 5px;
+        font-size: 15px;
+        margin: 0 auto 3px;
         text-transform: uppercase;
         padding: 2px 3px;
         border: 2px solid #000;
@@ -267,86 +325,75 @@ $addressLabelEn = $enTranslations['address'] ?? 'Address';
         </div>
 
         <!-- B. TITRE ET CARTE D'IDENTITÉ -->
-        <table class="student-info-table">
-            <tr>
-                <td class="student-photo-cell" rowspan="4">
-                    <?php if (!empty($student['photo_eleve'])): ?>
-                        <?php
-                        $photoPath = $student['photo_eleve'];
-                        // Gérer les deux formats de chemin: /uploads/ et /public/uploads/
-                        if (strpos($photoPath, '/public/uploads/') === 0) {
-                            // Le chemin est déjà au bon format
-                        } elseif (strpos($photoPath, '/uploads/') === 0) {
-                            // Ancien format, ajouter /public/
-                            $photoPath = '/public' . $photoPath;
-                        }
-                        ?>
-                        <div class="student-photo-container">
-                            <img src="<?= $photoPath ?>" alt="Photo de l'élève">
-                        </div>
-                    <?php else: ?>
-                        <div class="student-photo-placeholder">
-                            👤
-                        </div>
-                    <?php endif; ?>
-                </td>
-                <td colspan="2" class="student-identity-row student-identity-half">
+        <div class="student-header-layout">
+            <div class="student-photo-block">
+                <?php if (!empty($student['photo_eleve'])): ?>
+                    <?php
+                    $photoPath = $student['photo_eleve'];
+                    if (strpos($photoPath, '/public/uploads/') !== 0 && strpos($photoPath, '/uploads/') === 0) {
+                        $photoPath = '/public' . $photoPath;
+                    }
+                    ?>
+                    <div class="student-photo-container">
+                        <img src="<?= $photoPath ?>" alt="Photo de l'élève">
+                    </div>
+                <?php else: ?>
+                    <div class="student-photo-container student-photo-placeholder">👤</div>
+                <?php endif; ?>
+            </div>
+            <div class="student-identity-grid">
+                <div class="student-identity-item full">
                     <span class="student-identity-label"><?= __('name_and_surname') ?> :</span>
                     <span class="student-name-value"><?= htmlspecialchars($studentLastName . ' ' . ($student['prenom'] ?? '')) ?></span>
-                </td>
-                <td colspan="3" class="student-identity-row student-identity-half">
+                </div>
+
+                <div class="student-identity-item">
                     <span class="student-identity-label"><?= __('department') ?> :</span>
                     <span class="student-identity-value"><?= htmlspecialchars((string) ($student['department_nom'] ?? '-')) ?></span>
-                </td>
-            </tr>
-            <tr>
-                <td class="student-identity-row">
-                    <span class="student-identity-label"><?= __('birth_date') ?> :</span>
-                    <span class="student-identity-value"><?= htmlspecialchars(formatBulletinDate($birthDate)) ?></span>
-                </td>
-                <td colspan="2" class="student-identity-row">
+                </div>
+                <div class="student-identity-item">
                     <span class="student-identity-label"><?= __('matricule') ?> :</span>
                     <span class="student-identity-value"><?= htmlspecialchars((string) ($displayMatricule ?? $student['matricule'] ?? '')) ?></span>
-                </td>
-                <td class="student-identity-row">
+                </div>
+                <div class="student-identity-item">
                     <span class="student-identity-label"><?= __('class') ?> :</span>
                     <span class="student-identity-value"><?= htmlspecialchars((string) ($student['class_nom'] ?? '')) ?></span>
-                </td>
-            </tr>
-            <tr>
-                <td class="student-identity-row">
+                </div>
+                <div class="student-identity-item">
+                    <span class="student-identity-label"><?= __('birth_date') ?> :</span>
+                    <span class="student-identity-value"><?= htmlspecialchars(formatBulletinDate($birthDate)) ?></span>
+                </div>
+                <div class="student-identity-item">
                     <span class="student-identity-label"><?= __('birth_place') ?> :</span>
                     <span class="student-identity-value"><?= htmlspecialchars($birthPlace) ?></span>
-                </td>
-                <td class="student-identity-row">
-                    <span class="student-identity-label"><?= __('effectif') ?> :</span>
-                    <span class="student-identity-value"><?= (int) $effectif ?></span>
-                </td>
-                <td class="student-identity-row">
+                </div>
+                <div class="student-identity-item">
                     <span class="student-identity-label"><?= __('sex') ?> :</span>
                     <span class="student-identity-value"><?= htmlspecialchars((string) ($student['sexe'] ?? '-')) ?></span>
-                </td>
-                <td colspan="2" class="student-identity-row">
+                </div>
+                <div class="student-identity-item">
+                    <span class="student-identity-label"><?= __('effectif') ?> :</span>
+                    <span class="student-identity-value"><?= (int) $effectif ?></span>
+                </div>
+                <div class="student-identity-item">
                     <span class="student-identity-label"><?= __('repeating') ?> :</span>
                     <span class="student-identity-value"><?= $isRedoublant ? __('yes') : __('no') ?></span>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="3" class="student-identity-row">
-                    <span class="student-identity-label"><?= __('parents_guardians_contact') ?> :</span>
-                    <span class="student-identity-value">
-                        <?= htmlspecialchars(implode(' / ', array_filter([
+                </div>
+                <div class="student-identity-footer">
+                    <div class="student-identity-item student-contact-item">
+                        <span class="student-identity-label"><?= __('parents_guardians_contact') ?> :</span>
+                        <span class="student-identity-value"><?= htmlspecialchars(implode(' / ', array_filter([
                             $student['parent_contact'] ?? '',
                             $student['guardian_contact'] ?? '',
-                        ])) ?: '-') ?>
-                    </span>
-                </td>
-                <td colspan="2" class="student-identity-row">
-                    <span class="student-identity-label"><?= __('main_teacher') ?> :</span>
-                    <span class="student-identity-value"><?= htmlspecialchars((string) ($professor_name ?? '-')) ?></span>
-                </td>
-            </tr>
-        </table>
+                        ])) ?: '-') ?></span>
+                    </div>
+                    <div class="student-identity-item student-principal-item">
+                        <span class="student-identity-label"><?= __('main_teacher') ?> :</span>
+                        <span class="student-identity-value"><?= htmlspecialchars((string) ($professor_name ?? '-')) ?></span>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div class="title-box" style="font-weight: bold;"><?= __('report_card') ?> <?= strtoupper($bulletinType) ?></div>
 

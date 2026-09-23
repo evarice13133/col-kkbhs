@@ -728,15 +728,15 @@ class BulletinController
             $existingValues = array_values(array_filter($sequenceValues, function ($v) {
                 return $v !== null;
             }));
-            $numSeqs = count($termSequences) ?: 1;
-            $termNoteCalc = array_sum($sequenceValues) / $numSeqs;
-            $termNote = !empty($existingValues) ? round($termNoteCalc, 2) : null;
+            $termNote = !empty($existingValues)
+                ? round(array_sum($existingValues) / (count($termSequences) ?: 1), 2)
+                : null;
 
             // Utiliser les snapshots si disponibles, sinon les valeurs actuelles de la matière
             $subjectName = $firstNote && !empty($firstNote['subject_nom_snapshot']) ? $firstNote['subject_nom_snapshot'] : $subject['nom'];
             $coefficient = $firstNote && !empty($firstNote['subject_coefficient_snapshot']) ? (float) $firstNote['subject_coefficient_snapshot'] : (float) $subject['coefficient'];
             $subjectGroupe = $firstNote && !empty($firstNote['subject_groupe_snapshot']) ? $firstNote['subject_groupe_snapshot'] : ($subject['groupe'] ?? __('group_default'));
-            $weighted = round($termNoteCalc * $coefficient, 2);
+            $weighted = $termNote !== null ? round($termNote * $coefficient, 2) : 0.0;
 
             // Pour la section anglophone, on n'inclut que les matières avec des notes dans le calcul
             if ($isEnglishSection) {
@@ -794,11 +794,49 @@ class BulletinController
             $foundData = $seqRanking[$studentId] ?? null;
 
             if ($foundData) {
-                $seqAverages[] = $foundData['average'];
-                $seqRanks[] = $foundData['rank'];
+                $sequenceWeightedSum = 0.0;
+                $sequenceCoefficientSum = 0.0;
+                foreach ($subjects as $subject) {
+                    $sequenceNote = $notesMap[$subject['id'] . '|' . $seq['label']] ?? null;
+                    $sequenceValue = $sequenceNote !== null ? (float) $sequenceNote['valeur'] : null;
+                    if ($isEnglishSection && $sequenceValue === null) {
+                        continue;
+                    }
+                    $sequenceCoefficient = $sequenceNote && !empty($sequenceNote['subject_coefficient_snapshot'])
+                        ? (float) $sequenceNote['subject_coefficient_snapshot']
+                        : (float) $subject['coefficient'];
+                    $sequenceWeightedSum += ($sequenceValue ?? 0.0) * $sequenceCoefficient;
+                    $sequenceCoefficientSum += $sequenceCoefficient;
+                }
+                $sequenceAverage = $sequenceCoefficientSum > 0
+                    ? round($sequenceWeightedSum / $sequenceCoefficientSum, 2)
+                    : null;
+                $seqAverages[] = $sequenceAverage;
+                $seqRanks[] = $sequenceAverage !== null ? $foundData['rank'] : null;
             } else {
                 $seqAverages[] = null;
                 $seqRanks[] = null;
+            }
+        }
+
+        $previousTermAverage = null;
+        $previousTermRank = null;
+        $previousTermEvaluationLabels = [];
+        $previousTermSeqAverages = [];
+        $previousTermSeqRanks = [];
+
+        if ((int) $term > 1) {
+            $previousTermSequences = $this->getActiveSequencesByTerm((int) $term - 1);
+            $previousTermRanking = $this->computeTrimesterRanking((int) $student['class_id'], $previousTermSequences, (int) $activeYear['id']);
+            $previousTermAverage = $previousTermRanking[(int) $student['id']]['average'] ?? null;
+            $previousTermRank = $previousTermRanking[(int) $student['id']]['rank'] ?? null;
+
+            foreach ($previousTermSequences as $prevSeq) {
+                $previousTermEvaluationLabels[] = trim((string) ($prevSeq['code'] ?? $prevSeq['short_label'] ?? $prevSeq['label'] ?? ''));
+                $prevSeqRanking = $this->computeSequenceRanking((int) $student['class_id'], $prevSeq['label'], (int) $activeYear['id']);
+                $prevStudentData = $prevSeqRanking[(int) $student['id']] ?? null;
+                $previousTermSeqAverages[] = $prevStudentData['average'] ?? null;
+                $previousTermSeqRanks[] = $prevStudentData['rank'] ?? null;
             }
         }
 
@@ -822,10 +860,26 @@ class BulletinController
         // La période discipline correspond directement au trimestre (1, 2 ou 3)
         $discipline = $precomputedDiscipline ?? $this->buildDisciplineData($student, [$term], (int) $activeYear['id']);
         $professor_name = $this->getProfessorPrincipalName((int) $student['class_id']);
-        $evaluationLabels = array_map(function ($seq) {
-            return (string) ($seq['code'] ?? $this->getShortSequenceLabel((string) ($seq['label'] ?? '')));
-        }, $termSequences);
-        $evaluationLabels[] = __('trimester') . ' ' . $term;
+        $evaluationLabels = array_values(array_filter(array_map(function ($seq) {
+            $code = trim((string) ($seq['code'] ?? ''));
+            if ($code !== '') {
+                return $code;
+            }
+
+            $shortLabel = trim((string) ($seq['short_label'] ?? ''));
+            if ($shortLabel !== '') {
+                return $shortLabel;
+            }
+
+            $label = trim((string) ($seq['label'] ?? ''));
+            if ($label !== '') {
+                return preg_replace('/^.*?\s*-\s*/', '', $label) ?: $label;
+            }
+
+            return $this->getShortSequenceLabel((string) ($seq['label'] ?? ''));
+        }, $termSequences), static function ($value) {
+            return $value !== null && $value !== '';
+        }));
 
         return [
             'bulletinType' => __('bulletin_trimester'),
@@ -848,6 +902,11 @@ class BulletinController
             'weaknesses' => $weaknesses,
             'institution' => $this->getInstitutionSettings($this->resolveCurrentTeachingTypeId((int) ($student['class_id'] ?? 0))),
             'evaluationLabels' => $evaluationLabels,
+            'previousTermAverage' => $previousTermAverage,
+            'previousTermRank' => $previousTermRank,
+            'previousTermEvaluationLabels' => $previousTermEvaluationLabels,
+            'previousTermSeqAverages' => $previousTermSeqAverages,
+            'previousTermSeqRanks' => $previousTermSeqRanks,
             'discipline' => $discipline,
             'seqAverages' => $seqAverages,
             'seqRanks' => $seqRanks,
@@ -1370,8 +1429,16 @@ class BulletinController
                          WHERE (c.teaching_type_id IS NULL OR tt.actif = 1)
                            AND (c.cycle_id IS NULL OR cy.status = 1)
                            AND (c.section_id IS NULL OR sec.status = 1)
-                           AND (c.department_id IS NULL OR d.status = 1)";
-        $params = [];
+                                                     AND (c.department_id IS NULL OR d.status = 1)
+                                                     AND EXISTS (
+                                                             SELECT 1
+                                                             FROM students st
+                                                             WHERE st.class_id = c.id
+                                                                 AND st.academic_year_id = ?
+                                                                 AND st.is_withdrawn = 0
+                                                                 AND st.actif = 1
+                                                     )";
+                $params = [$academicYearId];
 
         if ($teachingTypeId > 0) {
             $classesQuery .= " AND c.teaching_type_id = ?";
@@ -1729,6 +1796,7 @@ class BulletinController
 
     protected function getActiveSequencesByTerm(int $term)
     {
+        // Seules les évaluations actives rattachées au trimestre sont prises en compte.
         $stmt = $this->db->prepare("SELECT s.* FROM sequences s LEFT JOIN teaching_types tt ON s.teaching_type_id = tt.id WHERE s.trimestre = ? AND s.is_active = 1 AND (tt.actif = 1 OR s.teaching_type_id IS NULL) ORDER BY s.position ASC");
         $stmt->execute([$term]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -2199,7 +2267,7 @@ class BulletinController
         $stats = [];
         foreach ($perStudentSubject as $studentId => $subjects) {
             foreach ($subjects as $subjectId => $values) {
-                $termNote = array_sum($values) / count($values);
+                $termNote = array_sum($values) / count($termSequences);
                 $stats[$subjectId]['grades'][] = [
                     'student_id' => $studentId,
                     'valeur' => $termNote

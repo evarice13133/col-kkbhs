@@ -167,6 +167,7 @@ if (isset($styleOnly)) {
         </div>
     <?php endif; ?>
 
+    <div class="print-page-frame" aria-hidden="true"></div>
     <div class="bulletin-wrapper">
         <div class="bulletin-sheet">
         <?php
@@ -477,6 +478,8 @@ if (isset($styleOnly)) {
                 </tbody>
             </table>
         </div>
+
+        <?php include __DIR__ . '/bulletin_statistics.php'; ?>
 
         <!-- G. BLOC DES SIGNATURES -->
         <div class="grades-table-wrap" style="padding: 10px;">

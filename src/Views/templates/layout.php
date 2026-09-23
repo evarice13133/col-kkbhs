@@ -434,6 +434,7 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
 
         body {
             font-family: 'Inter', sans-serif;
+            font-size: 13px;
         }
 
         h1, h2, h3, h4, h5, h6, .page-title, .ribbon-brand-text {
