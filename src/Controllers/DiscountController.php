@@ -66,7 +66,20 @@ class DiscountController
             ORDER BY s.nom ASC, s.prenom ASC
         ")->fetchAll(PDO::FETCH_ASSOC);
 
-        $classes = $this->db->query("SELECT id, nom, teaching_type_id, section_id, cycle_id FROM classes WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $classesStmt = $this->db->prepare("SELECT c.id, c.nom, c.teaching_type_id, c.section_id, c.cycle_id
+                                                                                     FROM classes c
+                                                                                     WHERE c.status = 1
+                                                                                         AND EXISTS (
+                                                                                                 SELECT 1 FROM students s
+                                                                                                 WHERE s.class_id = c.id
+                                                                                                     AND s.academic_year_id = ?
+                                                                                                     AND s.status = 'Inscrit'
+                                                                                                     AND s.actif = 1
+                                                                                                     AND s.is_withdrawn = 0
+                                                                                         )
+                                                                                     ORDER BY c.nom ASC");
+                $classesStmt->execute([$activeYearId]);
+                $classes = $classesStmt->fetchAll(PDO::FETCH_ASSOC);
         $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);

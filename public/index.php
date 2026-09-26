@@ -719,7 +719,9 @@ elseif (strpos($path, '/competencies') === 0) {
         exit;
     }
     $c = new CompetencyController();
-    if ($path === '/competencies' || $path === '/competencies/')
+    if ($path === '/competencies/teacher')
+        $c->teacherManagement();
+    elseif ($path === '/competencies' || $path === '/competencies/')
         $c->index();
     elseif ($path === '/competencies/api/assignment-data' && $method === 'GET')
         $c->apiAssignmentData();

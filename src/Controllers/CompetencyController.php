@@ -31,6 +31,32 @@ class CompetencyController
         }
     }
 
+    public function teacherManagement(): void
+    {
+        if (Session::get('user_role') !== 'enseignant') {
+            header('Location: /');
+            exit;
+        }
+
+        $activeYearId = $this->academicYearService->getActiveYearId();
+        $teacherAssignments = [];
+        if ($activeYearId > 0) {
+            $stmt = $this->db->prepare("SELECT ta.class_id, ta.subject_id, c.nom AS class_nom, s.nom AS subject_nom
+                                        FROM teacher_assignments ta
+                                        INNER JOIN classes c ON c.id = ta.class_id AND c.status = 1
+                                        INNER JOIN subjects s ON s.id = ta.subject_id AND s.status = 1
+                                        INNER JOIN subject_classes sc ON sc.class_id = ta.class_id
+                                            AND sc.subject_id = ta.subject_id AND sc.academic_year_id = ta.academic_year_id
+                                        WHERE ta.user_id = ? AND ta.academic_year_id = ?
+                                        ORDER BY c.nom ASC, s.nom ASC");
+            $stmt->execute([(int) Session::get('user_id'), $activeYearId]);
+            $teacherAssignments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+
+        $title = 'Gestion des compétences';
+        include __DIR__ . '/../Views/competencies/teacher.php';
+    }
+
     /**
      * Liste les compétences accessibles à l'utilisateur
      * Filtre par matière, classe et permissions
@@ -101,7 +127,21 @@ class CompetencyController
             $subjects = $subjects->fetchAll(PDO::FETCH_ASSOC);
         }
 
-        $classes = $this->db->query("SELECT id, nom FROM classes WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $activeYearId = $this->academicYearService->getActiveYearId();
+                $classesStmt = $this->db->prepare("SELECT c.id, c.nom
+                                                                                     FROM classes c
+                                                                                     WHERE c.status = 1
+                                                                                         AND EXISTS (
+                                                                                                 SELECT 1 FROM students st
+                                                                                                 WHERE st.class_id = c.id
+                                                                                                     AND st.academic_year_id = ?
+                                                                                                     AND st.status = 'Inscrit'
+                                                                                                     AND st.actif = 1
+                                                                                                     AND st.is_withdrawn = 0
+                                                                                         )
+                                                                                     ORDER BY c.nom ASC");
+                $classesStmt->execute([$activeYearId]);
+                $classes = $classesStmt->fetchAll(PDO::FETCH_ASSOC);
         $teachingTypes = $this->db->query("SELECT id, nom, code FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $hasTeachingFormColumn = (bool) $this->db->query("SHOW COLUMNS FROM subject_groups LIKE 'teaching_form_id'")->fetchColumn();
         $groupsSql = "SELECT id, libelle, teaching_type_id" . ($hasTeachingFormColumn ? ", teaching_form_id" : ", NULL AS teaching_form_id") . " FROM subject_groups WHERE status = 1 ORDER BY libelle ASC";
@@ -116,7 +156,6 @@ class CompetencyController
                                          FROM subjects s
                                          LEFT JOIN subject_groups sg ON sg.id = s.subject_group_id
                                          WHERE s.status = 1 ORDER BY s.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $activeYearId = $this->academicYearService->getActiveYearId();
         $subjectClassSql = "SELECT DISTINCT sc.subject_id, sc.class_id FROM subject_classes sc JOIN classes c ON c.id = sc.class_id AND c.status = 1";
         $subjectClassParams = [];
         if ($activeYearId > 0) {
@@ -217,6 +256,41 @@ class CompetencyController
     {
         return in_array(Session::get('user_role'), ['admin', 'superadmin'], true)
             || PermissionManager::hasPermission('manage_subjects');
+    }
+
+    private function teacherHasActiveAssignment(int $userId, int $subjectId, int $classId, int $competencyId = 0): bool
+    {
+        $activeYearId = $this->academicYearService->getActiveYearId();
+        if ($activeYearId <= 0 || $subjectId <= 0 || $classId <= 0) {
+            return false;
+        }
+
+        if ($competencyId > 0) {
+            $stmt = $this->db->prepare("SELECT COUNT(*)
+                                        FROM competencies c
+                                        INNER JOIN teacher_assignments ta ON ta.subject_id = c.subject_id
+                                        WHERE c.id = ? AND c.subject_id = ? AND ta.user_id = ?
+                                                                                    AND ta.class_id = ? AND ta.academic_year_id = ?
+                                                                                    AND EXISTS (
+                                                                                            SELECT 1 FROM subject_classes sc
+                                                                                            WHERE sc.subject_id = ta.subject_id AND sc.class_id = ta.class_id
+                                                                                                AND sc.academic_year_id = ta.academic_year_id
+                                                                                    )");
+            $stmt->execute([$competencyId, $subjectId, $userId, $classId, $activeYearId]);
+        } else {
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM teacher_assignments
+                                        WHERE user_id = ? AND subject_id = ? AND class_id = ?
+                                                                                    AND academic_year_id = ?
+                                                                                    AND EXISTS (
+                                                                                            SELECT 1 FROM subject_classes sc
+                                                                                            WHERE sc.subject_id = teacher_assignments.subject_id
+                                                                                                AND sc.class_id = teacher_assignments.class_id
+                                                                                                AND sc.academic_year_id = teacher_assignments.academic_year_id
+                                                                                    )");
+            $stmt->execute([$userId, $subjectId, $classId, $activeYearId]);
+        }
+
+        return (int) $stmt->fetchColumn() > 0;
     }
 
     public function apiTeacherAssignmentData(): void
@@ -356,6 +430,15 @@ class CompetencyController
             exit;
         }
 
+        $userRole = Session::get('user_role');
+        $userId = (int) Session::get('user_id');
+        if (!in_array($userRole, ['admin', 'superadmin'], true)
+            && !$this->teacherHasActiveAssignment($userId, $subjectId, $classId)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Affectation active requise pour cette classe et cette matière.']);
+            exit;
+        }
+
         if ($classId > 0) {
             $activeYearId = $this->academicYearService->getActiveYearId();
             $sql = "SELECT COUNT(*) FROM subject_classes WHERE subject_id = ? AND class_id = ?";
@@ -372,29 +455,8 @@ class CompetencyController
             }
         }
 
-        // Vérifier les permissions
-        $userRole = Session::get('user_role');
-        $userId = (int) Session::get('user_id');
-
-        if (!in_array($userRole, ['admin', 'superadmin'], true)) {
-            // Vérifier que l'enseignant est affecté à cette matière/classe
-            $check = $this->db->prepare("SELECT COUNT(*) FROM teacher_assignments 
-                                         WHERE user_id = ? AND subject_id = ?" . 
-                                         ($classId > 0 ? " AND class_id = ?" : ""));
-            $params = [$userId, $subjectId];
-            if ($classId > 0) {
-                $params[] = $classId;
-            }
-            $check->execute($params);
-            
-            if ($check->fetchColumn() == 0) {
-                echo json_encode(['error' => 'Non autorisé']);
-                exit;
-            }
-        }
-
         // Récupérer les compétences de la matière
-        $stmt = $this->db->prepare("SELECT id, libelle, description 
+        $stmt = $this->db->prepare("SELECT id, libelle, description, position
                                      FROM competencies 
                                      WHERE subject_id = ? 
                                      ORDER BY position, libelle");
@@ -419,36 +481,26 @@ class CompetencyController
 
         $userRole = Session::get('user_role');
         $userId = (int) Session::get('user_id');
+        $subjectId = (int) ($_POST['subject_id'] ?? 0);
+        $classId = (int) ($_POST['class_id'] ?? 0);
+
+        if ($subjectId <= 0) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'subject_id requis']);
+            exit;
+        }
 
         // Vérifier les permissions
         if (!in_array($userRole, ['admin', 'superadmin'], true)) {
-            // Les enseignants peuvent créer des compétences pour leurs matières
-            $subjectId = (int) ($_POST['subject_id'] ?? 0);
-            $classId = (int) ($_POST['class_id'] ?? 0);
-            
-            if ($subjectId <= 0) {
-                echo json_encode(['error' => 'subject_id requis']);
-                exit;
-            }
-
-            $check = $this->db->prepare("SELECT COUNT(*) FROM teacher_assignments 
-                                         WHERE user_id = ? AND subject_id = ?" . 
-                                         ($classId > 0 ? " AND class_id = ?" : ""));
-            $params = [$userId, $subjectId];
-            if ($classId > 0) {
-                $params[] = $classId;
-            }
-            $check->execute($params);
-            
-            if ($check->fetchColumn() == 0) {
-                echo json_encode(['error' => 'Non autorisé à créer des compétences pour cette matière']);
+            if (!$this->teacherHasActiveAssignment($userId, $subjectId, $classId)) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'error' => 'Affectation active requise pour cette classe et cette matière.']);
                 exit;
             }
         }
 
         $libelle = trim($_POST['libelle'] ?? '');
         $description = trim($_POST['description'] ?? '');
-        $subjectId = (int) ($_POST['subject_id'] ?? 0);
         $position = (int) ($_POST['position'] ?? 0);
 
         if (empty($libelle)) {
@@ -506,6 +558,8 @@ class CompetencyController
         $userRole = Session::get('user_role');
         $userId = (int) Session::get('user_id');
         $competencyId = (int) ($_POST['competency_id'] ?? 0);
+        $subjectId = (int) ($_POST['subject_id'] ?? 0);
+        $classId = (int) ($_POST['class_id'] ?? 0);
 
         if ($competencyId <= 0) {
             echo json_encode(['error' => 'competency_id requis']);
@@ -514,15 +568,9 @@ class CompetencyController
 
         // Vérifier les permissions
         if (!in_array($userRole, ['admin', 'superadmin'], true)) {
-            // Vérifier que l'enseignant peut modifier cette compétence
-            $check = $this->db->prepare("SELECT c.subject_id, c.created_by 
-                                         FROM competencies c
-                                         INNER JOIN teacher_assignments ta ON c.subject_id = ta.subject_id
-                                         WHERE c.id = ? AND ta.user_id = ?");
-            $check->execute([$competencyId, $userId]);
-            
-            if ($check->rowCount() == 0) {
-                echo json_encode(['error' => 'Non autorisé à modifier cette compétence']);
+            if (!$this->teacherHasActiveAssignment($userId, $subjectId, $classId, $competencyId)) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'error' => 'Affectation active requise pour cette compétence.']);
                 exit;
             }
         }
@@ -571,34 +619,28 @@ class CompetencyController
         $userRole = Session::get('user_role');
         $userId = (int) Session::get('user_id');
         $competencyId = (int) ($_POST['competency_id'] ?? 0);
+        $subjectId = (int) ($_POST['subject_id'] ?? 0);
+        $classId = (int) ($_POST['class_id'] ?? 0);
 
         if ($competencyId <= 0) {
             echo json_encode(['error' => 'competency_id requis']);
             exit;
         }
 
-        // Vérifier si la compétence est utilisée dans des évaluations
-        $checkUsage = $this->db->prepare("SELECT COUNT(*) FROM evaluation_competencies WHERE competency_id = ?");
-        $checkUsage->execute([$competencyId]);
-        
-        if ($checkUsage->fetchColumn() > 0) {
-            echo json_encode(['error' => 'Cette compétence est utilisée dans des évaluations et ne peut pas être supprimée']);
-            exit;
-        }
-
         // Vérifier les permissions
         if (!in_array($userRole, ['admin', 'superadmin'], true)) {
-            // Vérifier que l'enseignant peut supprimer cette compétence
-            $check = $this->db->prepare("SELECT c.subject_id 
-                                         FROM competencies c
-                                         INNER JOIN teacher_assignments ta ON c.subject_id = ta.subject_id
-                                         WHERE c.id = ? AND ta.user_id = ?");
-            $check->execute([$competencyId, $userId]);
-            
-            if ($check->rowCount() == 0) {
-                echo json_encode(['error' => 'Non autorisé à supprimer cette compétence']);
+            if (!$this->teacherHasActiveAssignment($userId, $subjectId, $classId, $competencyId)) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'error' => 'Affectation active requise pour cette compétence.']);
                 exit;
             }
+        }
+
+        $checkUsage = $this->db->prepare("SELECT COUNT(*) FROM evaluation_competencies WHERE competency_id = ?");
+        $checkUsage->execute([$competencyId]);
+        if ((int) $checkUsage->fetchColumn() > 0) {
+            echo json_encode(['success' => false, 'error' => 'Cette compétence est utilisée dans des évaluations et ne peut pas être supprimée.']);
+            exit;
         }
 
         try {

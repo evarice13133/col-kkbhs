@@ -344,6 +344,22 @@ class DashboardController
         $classIds = array_values(array_unique(array_column($assignments, 'class_id')));
         $classCounts = $this->getBulkClassStudentCounts($classIds);
 
+        $placeholders = implode(',', array_fill(0, count($classIds), '?'));
+        $enrolledClassesStmt = $this->db->prepare("SELECT DISTINCT class_id
+                                                   FROM students
+                                                   WHERE academic_year_id = ? AND status = 'Inscrit'
+                                                     AND is_withdrawn = 0 AND actif = 1
+                                                     AND class_id IN ($placeholders)");
+        $enrolledClassesStmt->execute(array_merge([$activeYearId], $classIds));
+        $classesWithEnrolledStudents = array_fill_keys(
+            array_map('intval', $enrolledClassesStmt->fetchAll(PDO::FETCH_COLUMN)),
+            true
+        );
+        $assignmentCards = array_values(array_filter(
+            $assignments,
+            fn($assignment) => isset($classesWithEnrolledStudents[(int) $assignment['class_id']])
+        ));
+
         // 3. Récupérer TOUTES les notes déjà saisies par ce prof pour l'année active (1 seule requête)
         $filledCounts = $this->getBulkTeacherFilledCounts($teacherId, $activeYearId, $activeEvaluations);
 
@@ -441,7 +457,8 @@ class DashboardController
             'evaluationStats' => array_values($evaluationStats),
             'activeEvaluations' => $activeEvaluations,
             'has_lmd_classes' => $has_lmd_classes,
-            'teacherAssignments' => $assignments
+            'teacherAssignments' => $assignments,
+            'teacherAssignmentCards' => $assignmentCards
         ];
     }
 
@@ -1150,11 +1167,14 @@ class DashboardController
     private function getTeacherAssignments($teacherId)
     {
         $activeYearId = $this->getActiveAcademicYearId();
-        $stmt = $this->db->prepare("SELECT ta.class_id, ta.subject_id, c.nom AS class_nom, s.nom AS subject_nom 
+                $stmt = $this->db->prepare("SELECT ta.class_id, ta.subject_id, c.nom AS class_nom, s.nom AS subject_nom 
                                     FROM teacher_assignments ta 
                                     JOIN classes c ON c.id = ta.class_id
                                     JOIN subjects s ON s.id = ta.subject_id
-                                    WHERE ta.user_id = ? AND ta.academic_year_id = ? AND s.status = 1 ORDER BY c.nom ASC, s.nom ASC");
+                                                                        LEFT JOIN teaching_types tt ON tt.id = c.teaching_type_id
+                                                                        WHERE ta.user_id = ? AND ta.academic_year_id = ? AND s.status = 1
+                                                                            AND (c.teaching_type_id IS NULL OR tt.actif = 1)
+                                                                        ORDER BY c.nom ASC, s.nom ASC");
         $stmt->execute([$teacherId, $activeYearId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }

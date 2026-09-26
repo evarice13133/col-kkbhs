@@ -626,8 +626,16 @@ class SchoolFeeController
                 $teachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
                 $cycleId = (int) ($_GET['cycle_id'] ?? 0);
                 $sectionId = (int) ($_GET['section_id'] ?? 0);
-                $sql = "SELECT id, nom FROM classes WHERE status = 1";
-                $params = [];
+                $sql = "SELECT id, nom FROM classes WHERE status = 1
+                    AND EXISTS (
+                        SELECT 1 FROM students st
+                        WHERE st.class_id = classes.id
+                          AND st.academic_year_id = ?
+                          AND st.status = 'Inscrit'
+                          AND st.actif = 1
+                          AND st.is_withdrawn = 0
+                    )";
+                $params = [$activeYearId];
                 if ($teachingTypeId > 0) {
                     $sql .= " AND teaching_type_id = ?";
                     $params[] = $teachingTypeId;
@@ -864,8 +872,16 @@ class SchoolFeeController
         }
 
         if ($filters['teaching_type_id'] > 0 || $filters['cycle_id'] > 0 || $filters['section_id'] > 0) {
-            $sqlCla = "SELECT id, nom FROM classes WHERE status = 1";
-            $paramsCla = [];
+                        $sqlCla = "SELECT id, nom FROM classes WHERE status = 1
+                                             AND EXISTS (
+                                                     SELECT 1 FROM students st
+                                                     WHERE st.class_id = classes.id
+                                                         AND st.academic_year_id = ?
+                                                         AND st.status = 'Inscrit'
+                                                         AND st.actif = 1
+                                                         AND st.is_withdrawn = 0
+                                             )";
+                        $paramsCla = [$activeYearId];
             if ($filters['teaching_type_id'] > 0) {
                 $sqlCla .= " AND teaching_type_id = ?";
                 $paramsCla[] = $filters['teaching_type_id'];
@@ -883,7 +899,18 @@ class SchoolFeeController
             $stmtCla->execute($paramsCla);
             $classes = $stmtCla->fetchAll(PDO::FETCH_ASSOC);
         } else {
-            $classes = $this->db->query("SELECT id, nom FROM classes WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+            $classesStmt = $this->db->prepare("SELECT id, nom FROM classes WHERE status = 1
+                                               AND EXISTS (
+                                                   SELECT 1 FROM students st
+                                                   WHERE st.class_id = classes.id
+                                                     AND st.academic_year_id = ?
+                                                     AND st.status = 'Inscrit'
+                                                     AND st.actif = 1
+                                                     AND st.is_withdrawn = 0
+                                               )
+                                               ORDER BY nom ASC");
+            $classesStmt->execute([$activeYearId]);
+            $classes = $classesStmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
         $tranches = [];

@@ -137,7 +137,29 @@ class SubjectController
             exit;
         }
 
-        $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id, c.teaching_form_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE c.status = 1 AND (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $academicYearId = $this->academicYearService->getActiveYearId();
+                $classesStmt = $this->db->prepare("SELECT c.id, c.nom, c.teaching_type_id, c.teaching_form_id
+                                                                                     FROM classes c
+                                                                                     LEFT JOIN departments d ON c.department_id = d.id
+                                                                                     LEFT JOIN cycles cy ON c.cycle_id = cy.id
+                                                                                     LEFT JOIN sections sec ON c.section_id = sec.id
+                                                                                     LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id
+                                                                                     WHERE c.status = 1
+                                                                                         AND (c.department_id IS NULL OR d.status = 1)
+                                                                                         AND (c.cycle_id IS NULL OR cy.status = 1)
+                                                                                         AND (c.section_id IS NULL OR sec.status = 1)
+                                                                                         AND (c.teaching_type_id IS NULL OR tt.actif = 1)
+                                                                                         AND EXISTS (
+                                                                                                 SELECT 1 FROM students st
+                                                                                                 WHERE st.class_id = c.id
+                                                                                                     AND st.academic_year_id = ?
+                                                                                                     AND st.status = 'Inscrit'
+                                                                                                     AND st.actif = 1
+                                                                                                     AND st.is_withdrawn = 0
+                                                                                         )
+                                                                                     ORDER BY c.nom ASC");
+                $classesStmt->execute([$academicYearId]);
+                $classes = $classesStmt->fetchAll(PDO::FETCH_ASSOC);
         $teachingForms = $this->db->query("SELECT id, nom, code, teaching_type_id FROM teaching_forms WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $departments = $this->db->query("SELECT d.id, d.nom, d.teaching_type_id, d.teaching_form_id FROM departments d LEFT JOIN teaching_types tt ON d.teaching_type_id = tt.id WHERE d.status = 1 AND (d.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY d.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         include __DIR__ . '/../Views/subjects/index.php';

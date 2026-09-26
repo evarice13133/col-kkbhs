@@ -117,12 +117,22 @@ class TimetableController
 
 
         $years = $this->db->query("SELECT id, nom as libelle FROM academic_years ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
-        $classes = $this->db->query("
-            SELECT c.id, c.nom 
-            FROM classes c
-            WHERE c.status = 1
-            ORDER BY c.nom ASC
-        ")->fetchAll(PDO::FETCH_ASSOC);
+                $classesStmt = $this->db->prepare("
+                        SELECT c.id, c.nom
+                        FROM classes c
+                        WHERE c.status = 1
+                            AND EXISTS (
+                                    SELECT 1 FROM students st
+                                    WHERE st.class_id = c.id
+                                        AND st.academic_year_id = ?
+                                        AND st.status = 'Inscrit'
+                                        AND st.actif = 1
+                                        AND st.is_withdrawn = 0
+                            )
+                        ORDER BY c.nom ASC
+                ");
+                $classesStmt->execute([$selectedYear]);
+                $classes = $classesStmt->fetchAll(PDO::FETCH_ASSOC);
         $weeks = $selectedYear ? $this->weekModel->getByAcademicYear($selectedYear) : $this->weekModel->getAll();
 
         require __DIR__ . '/../Views/timetables/index.php';

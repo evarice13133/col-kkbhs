@@ -908,8 +908,9 @@ class GradeController
                     AND g.academic_year_id = ?
                 WHERE st.class_id = ? 
                   AND st.academic_year_id = ? 
+                                    AND st.actif = 1
+                                    AND st.status = 'Inscrit'
                   AND st.is_withdrawn = 0 
-                  AND st.actif = 1 
                   AND st.status NOT IN ('Démission', 'Démissionnaire', 'Abandon')
                 ORDER BY st.nom ASC, st.prenom ASC";
 
@@ -1504,11 +1505,14 @@ class GradeController
 
         $user_id = (int) Session::get('user_id');
 
+        $activeYear = $this->getActiveAcademicYear();
+        $academicYearId = (int) ($activeYear['id'] ?? 0);
+
 
 
         if (in_array($role, ['superadmin', 'admin'], true)) {
 
-            return $this->db->query("SELECT sc.subject_id, sc.class_id, s.nom as subject_nom, c.nom as class_nom,
+            $stmt = $this->db->prepare("SELECT sc.subject_id, sc.class_id, s.nom as subject_nom, c.nom as class_nom,
 
                                             COALESCE(s.teaching_type_id, c.teaching_type_id) as teaching_type_id,
 
@@ -1526,9 +1530,18 @@ class GradeController
 
                                      LEFT JOIN users u ON ta.user_id = u.id
 
-                                     WHERE s.status = 1 AND c.status = 1 AND (tt.actif = 1 OR COALESCE(s.teaching_type_id, c.teaching_type_id) IS NULL)
-
-                                     ORDER BY c.nom ASC, s.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                                                                         WHERE s.status = 1 AND c.status = 1 AND (tt.actif = 1 OR COALESCE(s.teaching_type_id, c.teaching_type_id) IS NULL)
+                                                                             AND EXISTS (
+                                                                                     SELECT 1 FROM students st
+                                                                                     WHERE st.class_id = c.id
+                                                                                         AND st.academic_year_id = ?
+                                                                                         AND st.status = 'Inscrit'
+                                                                                         AND st.actif = 1
+                                                                                         AND st.is_withdrawn = 0
+                                                                             )
+                                                                         ORDER BY c.nom ASC, s.nom ASC");
+                        $stmt->execute([$academicYearId]);
+                        return $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         }
 
@@ -1550,11 +1563,19 @@ class GradeController
 
                                     JOIN users u ON ta.user_id = u.id
 
-                                    WHERE ta.user_id = ? AND s.status = 1 AND c.status = 1 AND (tt.actif = 1 OR COALESCE(s.teaching_type_id, c.teaching_type_id) IS NULL)
+                                                                        WHERE ta.user_id = ? AND s.status = 1 AND c.status = 1 AND (tt.actif = 1 OR COALESCE(s.teaching_type_id, c.teaching_type_id) IS NULL)
+                                                                            AND EXISTS (
+                                                                                    SELECT 1 FROM students st
+                                                                                    WHERE st.class_id = c.id
+                                                                                        AND st.academic_year_id = ?
+                                                                                        AND st.status = 'Inscrit'
+                                                                                        AND st.actif = 1
+                                                                                        AND st.is_withdrawn = 0
+                                                                            )
 
                                     ORDER BY c.nom ASC, s.nom ASC");
 
-        $stmt->execute([$user_id]);
+        $stmt->execute([$user_id, $academicYearId]);
 
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -1680,7 +1701,7 @@ class GradeController
             $params[] = $subjectId;
         }
 
-        $sql .= " AND s.is_withdrawn = 0 AND s.actif = 1 AND sub.status = 1 AND (tt.actif = 1 OR COALESCE(sub.teaching_type_id, c.teaching_type_id) IS NULL)";
+        $sql .= " AND s.status = 'Inscrit' AND s.is_withdrawn = 0 AND s.actif = 1 AND sub.status = 1 AND (tt.actif = 1 OR COALESCE(sub.teaching_type_id, c.teaching_type_id) IS NULL)";
 
 
 
@@ -1961,7 +1982,7 @@ class GradeController
         $activeYear = $this->getActiveAcademicYear();
         $academicYearId = $activeYear['id'] ?? 0;
 
-        $stmt = $this->db->prepare("SELECT COUNT(*) FROM students WHERE class_id = ? AND academic_year_id = ? AND actif = 1 AND is_withdrawn = 0 AND status NOT IN ('Démission', 'Démissionnaire', 'Abandon')");
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM students WHERE class_id = ? AND academic_year_id = ? AND actif = 1 AND is_withdrawn = 0 AND status = 'Inscrit'");
         $stmt->execute([$classId, $academicYearId]);
         return (int) $stmt->fetchColumn();
     }
@@ -2641,7 +2662,7 @@ class GradeController
 
         $studentCounts = [];
 
-        $stmt = $this->db->query("SELECT class_id, COUNT(*) as count FROM students WHERE academic_year_id = {$academicYearId} AND is_withdrawn = 0 AND actif = 1 AND status NOT IN ('Démission', 'Démissionnaire', 'Abandon') GROUP BY class_id");
+        $stmt = $this->db->query("SELECT class_id, COUNT(*) as count FROM students WHERE academic_year_id = {$academicYearId} AND is_withdrawn = 0 AND actif = 1 AND status = 'Inscrit' GROUP BY class_id");
 
         while ($row = $stmt->fetch()) {
 
@@ -2720,6 +2741,8 @@ class GradeController
                   AND g.periode IN ($periodePlaceholders)
 
                   AND s.is_withdrawn = 0
+                  AND s.actif = 1
+                  AND s.status = 'Inscrit'
 
                   AND s.class_id IN ($classPlaceholders)
 
