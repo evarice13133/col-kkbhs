@@ -2204,15 +2204,11 @@ class BulletinController
     {
         if ($note === null)
             return '-';
-        if ($note < 8)
-            return 'CNA';
         if ($note < 10)
-            return 'CMA';
-        if ($note < 14)
-            return 'CA';
-        if ($note < 17)
-            return 'CBA';
-        return 'CTBA';
+            return 'CNA';
+        if ($note < 15)
+            return 'CEA';
+        return 'CA';
     }
 
     protected function getSubjectStatsForSequence(int $classId, string $sequenceLabel, int $academicYearId)

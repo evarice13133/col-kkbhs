@@ -38,13 +38,15 @@ class TemplateGenerator
         $query = "
             SELECT DISTINCT s.id as section_id, s.nom as section_nom, cy.id as cycle_id, cy.nom as cycle_nom
             FROM classes c
+            JOIN teaching_types tt ON tt.id = c.teaching_type_id
             JOIN sections s ON c.section_id = s.id
             JOIN cycles cy ON c.cycle_id = cy.id
+            WHERE c.status = 1 AND tt.actif = 1
         ";
         $params = [];
         
         if ($teachingTypeId !== null) {
-            $query .= " WHERE c.teaching_type_id = ?";
+            $query .= " AND c.teaching_type_id = ?";
             $params[] = $teachingTypeId;
         }
         
@@ -73,7 +75,7 @@ class TemplateGenerator
             $sheet->setTitle(substr($title, 0, 31));
 
             // Récupérer les classes spécifiques
-            $classQuery = "SELECT nom FROM classes WHERE section_id = ? AND cycle_id = ?";
+            $classQuery = "SELECT c.nom FROM classes c JOIN teaching_types tt ON tt.id = c.teaching_type_id WHERE c.status = 1 AND tt.actif = 1 AND c.section_id = ? AND c.cycle_id = ?";
             $classParams = [$comb['section_id'], $comb['cycle_id']];
             if ($teachingTypeId !== null) {
                 $classQuery .= " AND teaching_type_id = ?";
@@ -88,7 +90,7 @@ class TemplateGenerator
             if (empty($classList) && $comb['section_id'] == 0) {
                 // Cas d'erreur ou fallback, on charge toutes les classes du type si possible
                 if ($teachingTypeId !== null) {
-                    $fallbackStmt = $this->db->prepare("SELECT nom FROM classes WHERE teaching_type_id = ? ORDER BY nom ASC");
+                    $fallbackStmt = $this->db->prepare("SELECT c.nom FROM classes c JOIN teaching_types tt ON tt.id = c.teaching_type_id WHERE c.status = 1 AND tt.actif = 1 AND c.teaching_type_id = ? ORDER BY c.nom ASC");
                     $fallbackStmt->execute([$teachingTypeId]);
                     $classList = $fallbackStmt->fetchAll(PDO::FETCH_COLUMN);
                 } else {

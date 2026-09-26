@@ -23,11 +23,16 @@ ob_start();
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const importFile = document.getElementById('subject-import-file');
+    const importFileName = document.getElementById('subject-import-file-name');
+    const defaultImportFileName = importFileName ? importFileName.textContent : '';
     const importSubmit = document.getElementById('subject-import-submit');
     if (!importFile || !importSubmit) return;
 
     importFile.addEventListener('change', function () {
         importSubmit.disabled = importFile.files.length === 0;
+        if (importFileName) {
+            importFileName.textContent = importFile.files.length > 0 ? importFile.files[0].name : defaultImportFileName;
+        }
     });
 });
 </script>

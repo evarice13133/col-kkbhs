@@ -31,6 +31,15 @@ $appreciationLabels = [
         padding-bottom: 100px;
     }
 
+    .grade-setup-panel {
+        background: var(--bg-card, #ffffff);
+        border: 1px solid var(--border-color, #e2e8f0);
+        border-radius: 18px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+
     /* Info Bar (Canva Workspace Style) */
     .info-header-card {
         background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #9333ea 100%);
@@ -58,29 +67,38 @@ $appreciationLabels = [
 
     /* Sticky Toolbar (MS 365 Command Bar) */
     .sticky-grade-toolbar {
-        position: sticky;
-        top: 15px;
-        z-index: 100;
-        background: color-mix(in srgb, var(--bg-card) 92%, var(--primary-color));
-        backdrop-filter: blur(20px) saturate(180%);
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
-        border-radius: 18px;
-        padding: 12px 20px;
-        margin-bottom: 24px;
-        border: 1px solid rgba(124, 58, 237, 0.18);
-        box-shadow: 0 12px 35px rgba(124, 58, 237, 0.12);
+        position: relative;
+        z-index: 1;
+        background: transparent;
+        padding: 16px 20px;
+        margin: 0;
+        border: 0;
+        border-bottom: 1px solid var(--border-color, #e2e8f0);
         display: flex;
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
         gap: 12px;
-        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: background-color 0.2s ease;
     }
 
-    [data-theme="dark"] .sticky-grade-toolbar {
-        background: rgba(15, 23, 42, 0.88);
-        border-color: rgba(255, 255, 255, 0.14);
-        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4);
+    .grade-workflow-bar {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 12px 20px;
+        border-bottom: 1px solid var(--border-color, #e2e8f0);
+    }
+
+    .grade-workflow-steps {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .grade-competency-section {
+        padding: 18px 20px 16px;
     }
 
     .eval-select-pill {
@@ -209,23 +227,33 @@ $appreciationLabels = [
     }
 
     .workflow-step {
-        opacity: 0.7;
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 5px 10px;
+        color: var(--text-muted, #64748b);
+        background: color-mix(in srgb, var(--bg-card) 88%, var(--text-muted, #64748b));
+        opacity: 0.8;
+        font-size: 0.78rem;
+        font-weight: 600;
+        line-height: 1.2;
     }
 
     .workflow-step.active {
-        color: #1d4ed8;
+        color: var(--primary-color, #2563eb);
+        background: color-mix(in srgb, var(--primary-color, #2563eb) 12%, var(--bg-card, #ffffff));
         opacity: 1;
-        font-weight: 600;
     }
 
     .workflow-step.done {
         color: #047857;
+        background: rgba(16, 185, 129, 0.1);
         opacity: 1;
-        font-weight: 600;
     }
 
     .workflow-separator {
-        opacity: 0.5;
+        color: var(--text-muted, #64748b);
+        opacity: 0.4;
     }
 
     @media (max-width: 767.98px) {
@@ -242,11 +270,9 @@ $appreciationLabels = [
 
         .sticky-grade-toolbar {
             padding: 0.75rem 0.85rem !important;
-            border-radius: 14px !important;
             flex-direction: column !important;
             align-items: stretch !important;
             gap: 0.75rem !important;
-            top: 65px !important;
         }
 
         .sticky-grade-toolbar .eval-select-group {
@@ -260,6 +286,21 @@ $appreciationLabels = [
             width: 100% !important;
             min-width: 100% !important;
             min-height: 44px !important;
+        }
+
+        .grade-workflow-bar {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 8px;
+            padding: 12px 14px;
+        }
+
+        .grade-workflow-steps {
+            gap: 2px;
+        }
+
+        .grade-competency-section {
+            padding: 16px 14px;
         }
 
         .floating-save {
@@ -311,7 +352,7 @@ $appreciationLabels = [
         <input type="hidden" name="subject_id" value="<?= $subject_id ?>">
         <input type="hidden" name="periode" value="<?= htmlspecialchars((string) $periode) ?>">
 
-        <!-- Sticky Command Bar (MS 365 Style) -->
+        <div class="grade-setup-panel">
         <div class="sticky-grade-toolbar">
             <div class="d-flex align-items-center gap-2 gap-md-3 eval-select-group flex-grow-1">
                 <span class="badge bg-primary-subtle text-primary rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
@@ -337,9 +378,9 @@ $appreciationLabels = [
             </div>
         </div>
 
-        <div class="small text-muted-theme mb-3">
-            <span id="gradeWorkflowSummary" class="fw-bold text-primary">1/4</span>
-            <span class="ms-2">
+            <div class="grade-workflow-bar">
+                <span id="gradeWorkflowSummary" class="grade-workflow-count badge bg-primary-subtle text-primary rounded-pill px-3 py-2">1/4</span>
+                <div class="grade-workflow-steps">
                 <span class="workflow-step step-evaluation" data-step="evaluation"><?= __('evaluation') ?></span>
                 <span class="workflow-separator mx-1">→</span>
                 <span class="workflow-step step-competency" data-step="competency"><?= __('workflow_competency') ?></span>
@@ -347,13 +388,12 @@ $appreciationLabels = [
                 <span class="workflow-step step-notes" data-step="notes"><?= __('grades') ?></span>
                 <span class="workflow-separator mx-1">→</span>
                 <span class="workflow-step step-save" data-step="save"><?= __('workflow_save') ?></span>
-            </span>
-        </div>
+                </div>
+            </div>
 
-        <!-- Competency Selection Section -->
-        <div class="modern-card border-0 shadow-sm rounded-4 mb-4 p-4">
+            <section class="grade-competency-section" aria-labelledby="gradeCompetencyTitle">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="fw-bold m-0 text-info d-flex align-items-center gap-2 fs-6">
+                <h6 id="gradeCompetencyTitle" class="fw-bold m-0 text-info d-flex align-items-center gap-2 fs-6">
                     <i class="bi bi-list-check"></i> <?= __('evaluation_competencies') ?? 'Compétences de l\'évaluation' ?>
                 </h6>
                 <span class="badge bg-info bg-opacity-10 text-info rounded-pill px-3 py-1 extra-small fw-bold">
@@ -362,7 +402,7 @@ $appreciationLabels = [
             </div>
             
             <div class="row g-3">
-                <div class="col-md-5">
+                <div class="col-md-6">
                     <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">
                         <?= __('competency_1') ?? 'Compétence 1' ?>
                     </label>
@@ -375,7 +415,7 @@ $appreciationLabels = [
                         </button>
                     </div>
                 </div>
-                <div class="col-md-5">
+                <div class="col-md-6">
                     <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">
                         <?= __('competency_2') ?? 'Compétence 2 (optionnelle)' ?>
                     </label>
@@ -388,17 +428,13 @@ $appreciationLabels = [
                         </button>
                     </div>
                 </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <button type="button" id="saveCompetenciesBtn" class="btn btn-info rounded-pill px-4 py-2 fw-bold shadow-sm w-100">
-                        <i class="bi bi-check-lg me-2"></i><?= __('save_competencies') ?? 'Enregistrer' ?>
-                    </button>
-                </div>
             </div>
             
             <div id="competencyStatus" class="form-text extra-small text-muted mt-2">
                 <i class="bi bi-info-circle me-1"></i>
                 <?= __('competency_selection_info') ?? 'Sélectionnez les compétences évaluées pour cette évaluation. Vous pouvez en créer de nouvelles si nécessaire.' ?>
             </div>
+            </section>
         </div>
 
         <div class="registry-card shadow-sm overflow-hidden">
@@ -510,8 +546,10 @@ $appreciationLabels = [
         
         const competency1Select = document.getElementById('competency1Select');
         const competency2Select = document.getElementById('competency2Select');
-        const saveCompetenciesBtn = document.getElementById('saveCompetenciesBtn');
         const competencyStatus = document.getElementById('competencyStatus');
+        let competencySaveInProgress = false;
+        let competencySaveQueued = false;
+        let savedCompetencyIds = [];
 
         // Load competencies for the subject
         function loadSubjectCompetencies() {
@@ -564,7 +602,9 @@ $appreciationLabels = [
                 .then(response => response.json())
                 .then(data => {
                     if (data.success && data.competencies && data.competencies.length > 0) {
+                        savedCompetencyIds = [];
                         data.competencies.forEach((comp, index) => {
+                            savedCompetencyIds.push(String(comp.competency_id));
                             if (index === 0 && competency1Select) {
                                 competency1Select.value = String(comp.competency_id);
                             } else if (index === 1 && competency2Select) {
@@ -575,6 +615,7 @@ $appreciationLabels = [
                         return true;
                     }
 
+                    savedCompetencyIds = [];
                     if (competency1Select) competency1Select.value = '';
                     if (competency2Select) competency2Select.value = '';
                     updateCompetencyStatus('loaded');
@@ -586,65 +627,63 @@ $appreciationLabels = [
                 });
         }
 
-        // Save competency associations
-        if (saveCompetenciesBtn) {
-            saveCompetenciesBtn.addEventListener('click', function() {
-                const competencyIds = [];
-                
-                if (competency1Select && competency1Select.value) {
-                    competencyIds.push(competency1Select.value);
+        function saveSelectedCompetencies() {
+            const competencyIds = [competency1Select, competency2Select]
+                .filter(select => select && select.value)
+                .map(select => select.value);
+
+            if (competencyIds.length === 0) {
+                if (savedCompetencyIds.length > 0) {
+                    if (competency1Select) competency1Select.value = savedCompetencyIds[0] || '';
+                    if (competency2Select) competency2Select.value = savedCompetencyIds[1] || '';
+                    updateGradeWorkflowState();
                 }
-                
-                if (competency2Select && competency2Select.value) {
-                    competencyIds.push(competency2Select.value);
+                updateCompetencyStatus('loaded');
+                return;
+            }
+
+            const uniqueCompetencyIds = [...new Set(competencyIds)];
+            if (uniqueCompetencyIds.length !== competencyIds.length) return;
+            if (competencySaveInProgress) {
+                competencySaveQueued = true;
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('class_id', classId);
+            formData.append('subject_id', subjectId);
+            formData.append('periode', periode);
+            uniqueCompetencyIds.forEach(id => formData.append('competency_ids[]', id));
+
+            const competencySelects = [competency1Select, competency2Select].filter(Boolean);
+            competencySelects.forEach(select => { select.disabled = true; });
+            competencySaveInProgress = true;
+            updateCompetencyStatus('saving');
+
+            fetch('/competencies/api/link-to-evaluation', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    throw new Error(data.error || <?= json_encode(__('error_saving_competencies') ?? 'Erreur lors de l\'enregistrement') ?>);
                 }
-
-                if (competencyIds.length === 0) {
-                    alert(<?= json_encode(__('select_at_least_one_competency') ?? 'Veuillez sélectionner au moins une compétence pour cette évaluation') ?>);
-                    return;
+                savedCompetencyIds = uniqueCompetencyIds;
+                updateCompetencyStatus('saved');
+            })
+            .catch(error => {
+                console.error('Error saving competencies:', error);
+                updateCompetencyStatus('changed');
+                alert(error.message || <?= json_encode(__('error_saving_competencies') ?? 'Erreur lors de l\'enregistrement') ?>);
+            })
+            .finally(() => {
+                competencySelects.forEach(select => { select.disabled = false; });
+                competencySaveInProgress = false;
+                if (competencySaveQueued) {
+                    competencySaveQueued = false;
+                    saveSelectedCompetencies();
                 }
-
-                const uniqueCompetencyIds = [...new Set(competencyIds)];
-
-                if (competencyIds.length !== uniqueCompetencyIds.length) {
-                    alert(<?= json_encode(__('max_2_competencies_error') ?? 'Une compétence ne peut pas être sélectionnée deux fois') ?>);
-                    return;
-                }
-
-                if (uniqueCompetencyIds.length > 2) {
-                    alert(<?= json_encode(__('max_2_competencies_error') ?? 'Maximum 2 compétences autorisées') ?>);
-                    return;
-                }
-
-                const formData = new FormData();
-                formData.append('class_id', classId);
-                formData.append('subject_id', subjectId);
-                formData.append('periode', periode);
-                uniqueCompetencyIds.forEach(id => formData.append('competency_ids[]', id));
-
-                this.disabled = true;
-                this.innerHTML = '<i class="bi bi-arrow-clockwise me-2 spin"></i><?= __('saving') ?? 'Enregistrement...' ?>';
-
-                fetch('/competencies/api/link-to-evaluation', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        updateCompetencyStatus('saved');
-                    } else {
-                        alert(data.error || <?= json_encode(__('error_saving_competencies') ?? 'Erreur lors de l\'enregistrement') ?>);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert(<?= json_encode(__('error_saving_competencies') ?? 'Erreur lors de l\'enregistrement') ?>);
-                })
-                .finally(() => {
-                    this.disabled = false;
-                    this.innerHTML = '<i class="bi bi-check-lg me-2"></i><?= __('save_competencies') ?? 'Enregistrer' ?>';
-                });
             });
         }
 
@@ -705,8 +744,11 @@ $appreciationLabels = [
                         return loadSubjectCompetencies().then(() => {
                             const select = slot === 1 ? competency1Select : competency2Select;
                             if (select) {
-                                select.value = String(data.competency.id);
-                                updateCompetencyStatus('changed');
+                                const createdCompetencyId = String(data.competency.id);
+                                select.value = createdCompetencyId;
+                                if (select.value === createdCompetencyId) {
+                                    select.dispatchEvent(new Event('change', { bubbles: true }));
+                                }
                             }
                         });
                     }
@@ -764,6 +806,7 @@ $appreciationLabels = [
             
             const messages = {
                 loaded: '<i class="bi bi-check-circle text-success me-1"></i><?= __('competencies_loaded') ?? 'Compétences chargées' ?>',
+                saving: '<i class="bi bi-arrow-repeat spin me-1"></i><?= __('saving') ?? 'Enregistrement...' ?>',
                 saved: '<i class="bi bi-check-circle-fill text-success me-1"></i><?= __('competencies_saved') ?? 'Compétences enregistrées avec succès' ?>',
                 changed: '<i class="bi bi-exclamation-circle text-warning me-1"></i><?= __('competencies_changed_not_saved') ?? 'Modifications non enregistrées' ?>'
             };
@@ -785,8 +828,10 @@ $appreciationLabels = [
                     if (competency1Select && competency2Select && competency1Select.value && competency2Select.value && competency1Select.value === competency2Select.value) {
                         alert(<?= json_encode(__('max_2_competencies_error') ?? 'Une compétence ne peut pas être sélectionnée deux fois') ?>);
                         this.value = '';
+                        updateGradeWorkflowState();
                     }
                     updateCompetencyStatus('changed');
+                    saveSelectedCompetencies();
                 });
             }
         });

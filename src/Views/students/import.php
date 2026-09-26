@@ -43,9 +43,9 @@ ob_start();
                 <div class="card-body p-4 pt-2">
                     <p class="small text-secondary text-main-theme mb-3"><?= __('import_students_teaching_type_desc') ?></p>
                     <select id="teaching-type-select" class="form-select form-select-lg mb-3">
-                        <option value="" selected disabled><?= __('select_teaching_type') ?? 'Sélectionner le type' ?></option>
-                        <?php foreach ($teachingTypes as $tt): ?>
-                            <option value="<?= $tt['id'] ?>"><?= htmlspecialchars((string) $tt['nom']) ?></option>
+                        <option value="" <?= empty($teachingTypes) ? 'selected' : '' ?> disabled><?= __('select_teaching_type') ?? 'Sélectionner le type' ?></option>
+                        <?php foreach ($teachingTypes as $index => $tt): ?>
+                            <option value="<?= $tt['id'] ?>" <?= $index === 0 ? 'selected' : '' ?>><?= htmlspecialchars((string) $tt['nom']) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -79,7 +79,11 @@ ob_start();
                     <form action="/students/upload" method="POST" enctype="multipart/form-data">
                         <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
                         <input type="hidden" name="teaching_type_id" id="hidden-teaching-type" value="">
-                        <input type="file" id="student-import-file" name="import_file" class="form-control mb-3" accept=".xlsx" required disabled>
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <input type="file" id="student-import-file" name="import_file" class="visually-hidden" accept=".xlsx" required disabled>
+                            <label for="student-import-file" id="student-import-file-label" class="btn btn-outline-secondary mb-0 disabled" aria-disabled="true"><?= __('choose_file') ?></label>
+                            <span id="student-import-file-name" class="text-secondary text-truncate"><?= __('no_file_chosen') ?></span>
+                        </div>
                         <button type="submit" id="student-import-submit" class="btn btn-outline-success w-100 fw-bold rounded-3 py-3" disabled>
                             <i class="bi bi-cloud-upload me-2"></i> <?= __('validate_import_final') ?>
                         </button>
@@ -100,6 +104,9 @@ ob_start();
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const importFile = document.getElementById('student-import-file');
+    const importFileLabel = document.getElementById('student-import-file-label');
+    const importFileName = document.getElementById('student-import-file-name');
+    const defaultImportFileName = importFileName ? importFileName.textContent : '';
     const importSubmit = document.getElementById('student-import-submit');
     const teachingTypeSelect = document.getElementById('teaching-type-select');
     const downloadTemplateBtn = document.getElementById('download-template-btn');
@@ -108,8 +115,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const step3Container = document.getElementById('step3-container');
 
     if (teachingTypeSelect) {
-        teachingTypeSelect.addEventListener('change', function() {
-            const val = this.value;
+        const updateTeachingType = function() {
+            const val = teachingTypeSelect.value;
             if (val) {
                 // Enable Step 2 & 3
                 step2Container.classList.remove('opacity-50');
@@ -120,6 +127,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 
                 hiddenTeachingType.value = val;
                 if(importFile) importFile.disabled = false;
+                if(importFileLabel) {
+                    importFileLabel.classList.remove('disabled');
+                    importFileLabel.setAttribute('aria-disabled', 'false');
+                }
             } else {
                 step2Container.classList.add('opacity-50');
                 step3Container.classList.add('opacity-50');
@@ -130,14 +141,24 @@ document.addEventListener('DOMContentLoaded', function () {
                     importFile.disabled = true;
                     importFile.value = '';
                 }
+                if(importFileName) importFileName.textContent = defaultImportFileName;
+                if(importFileLabel) {
+                    importFileLabel.classList.add('disabled');
+                    importFileLabel.setAttribute('aria-disabled', 'true');
+                }
                 if(importSubmit) importSubmit.disabled = true;
             }
-        });
+        };
+        teachingTypeSelect.addEventListener('change', updateTeachingType);
+        updateTeachingType();
     }
 
     if (importFile && importSubmit) {
         importFile.addEventListener('change', function () {
             importSubmit.disabled = importFile.files.length === 0;
+            if(importFileName) {
+                importFileName.textContent = importFile.files.length > 0 ? importFile.files[0].name : defaultImportFileName;
+            }
         });
     }
 

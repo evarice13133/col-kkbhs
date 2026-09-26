@@ -145,7 +145,7 @@ ob_start();
                                             <?php foreach ($row['tranches'] as $tr): ?>
                                                 <div class="badge-premium badge-premium-info"
                                                     style="font-size: 0.72rem; padding: 0.35rem 0.6rem;">
-                                                    <span class="fw-bold me-1 text-dark"><?= h($tr['name']) ?>:</span>
+                                                    <span class="fw-bold me-1 text-dark"><?= h(($tr['source_type'] ?? '') === 'default' ? __('monotranche') : $tr['name']) ?>:</span>
                                                     <span class="fw-black text-primary"><?= number_format($tr['amount'], 0, '.', ' ') ?>
                                                         FCFA</span>
                                                     <span class="ms-1 border-start border-secondary border-opacity-25 ps-1 text-muted"

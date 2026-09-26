@@ -45,31 +45,47 @@ class SchoolFeeController
         $activeYearId = $this->academicYearService->getActiveYearId();
 
         // Filtres
-        $teachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
+        $requestedTeachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
         $cycleId = (int) ($_GET['cycle_id'] ?? 0);
         $sectionId = (int) ($_GET['section_id'] ?? 0);
         $classId = (int) ($_GET['class_id'] ?? 0);
 
         // Données des sélecteurs
-        $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $activeTeachingTypeIds = array_map('intval', array_column($teachingTypes, 'id'));
+        $defaultTeachingTypeId = (int) ($teachingTypes[0]['id'] ?? 0);
+        if (!array_key_exists('teaching_type_id', $_GET) || ($requestedTeachingTypeId > 0 && !in_array($requestedTeachingTypeId, $activeTeachingTypeIds, true))) {
+            $teachingTypeId = $defaultTeachingTypeId;
+        } else {
+            $teachingTypeId = $requestedTeachingTypeId;
+        }
+        $cyclesQuery = "SELECT cy.id, cy.nom FROM cycles cy JOIN teaching_types tt ON tt.id = cy.teaching_type_id WHERE cy.status = 1 AND tt.actif = 1";
+        $cyclesParams = [];
+        if ($teachingTypeId) {
+            $cyclesQuery .= " AND cy.teaching_type_id = ?";
+            $cyclesParams[] = $teachingTypeId;
+        }
+        $cyclesQuery .= " ORDER BY cy.nom ASC";
+        $stmtCycles = $this->db->prepare($cyclesQuery);
+        $stmtCycles->execute($cyclesParams);
+        $cycles = $stmtCycles->fetchAll(PDO::FETCH_ASSOC);
         $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
-        $classesQuery = "SELECT id, nom, cycle_id, section_id, teaching_type_id FROM classes WHERE status = 1";
-        $classesParams = [];
+        $classesQuery = "SELECT c.id, c.nom, c.cycle_id, c.section_id, c.teaching_type_id FROM classes c LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE c.status = 1 AND (c.teaching_type_id IS NULL OR tt.actif = 1) AND EXISTS (SELECT 1 FROM students st WHERE st.class_id = c.id AND st.academic_year_id = ? AND st.status = 'Inscrit' AND st.actif = 1 AND st.is_withdrawn = 0)";
+        $classesParams = [$activeYearId];
         if ($teachingTypeId) {
-            $classesQuery .= " AND teaching_type_id = ?";
+            $classesQuery .= " AND c.teaching_type_id = ?";
             $classesParams[] = $teachingTypeId;
         }
         if ($cycleId) {
-            $classesQuery .= " AND cycle_id = ?";
+            $classesQuery .= " AND c.cycle_id = ?";
             $classesParams[] = $cycleId;
         }
         if ($sectionId) {
-            $classesQuery .= " AND section_id = ?";
+            $classesQuery .= " AND c.section_id = ?";
             $classesParams[] = $sectionId;
         }
-        $classesQuery .= " ORDER BY nom ASC";
+        $classesQuery .= " ORDER BY c.nom ASC";
 
         $stmtClasses = $this->db->prepare($classesQuery);
         $stmtClasses->execute($classesParams);
@@ -1964,7 +1980,8 @@ class SchoolFeeController
 
         try {
             $svc = new \App\Services\Import\ExcelTemplateService($this->db);
-            $content = $svc->generateGrilleTemplate($lang, $teachingTypeId, $cycleId, $sectionId, $classId);
+            $activeYearId = $this->academicYearService->getActiveYearId();
+            $content = $svc->generateGrilleTemplate($lang, $teachingTypeId, $cycleId, $sectionId, $classId, $activeYearId);
             $filename = $lang === 'fr' ? 'Modele_Import_Grille_Scolarite.xlsx' : 'Fees_Grid_Import_Template.xlsx';
             header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             header('Content-Disposition: attachment;filename="' . $filename . '"');

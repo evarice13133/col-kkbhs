@@ -305,25 +305,30 @@ class ExcelTemplateService
         $dataSheet->setTitle('SUBJECT_DATASOURCES');
         $dataSheet->setSheetState(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet::SHEETSTATE_VERYHIDDEN);
 
-        $classList = $this->db->query("SELECT nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_COLUMN);
-
         $groupList = $this->db->query("SELECT libelle FROM subject_groups WHERE status = 1 ORDER BY libelle ASC")->fetchAll(PDO::FETCH_COLUMN);
         $groupRange = empty($groupList) ? 'SUBJECT_DATASOURCES!$A$1:$A$1' : 'SUBJECT_DATASOURCES!$A$1:$A$' . count($groupList);
-        $classRange = empty($classList) ? 'SUBJECT_DATASOURCES!$B$1:$B$1' : 'SUBJECT_DATASOURCES!$B$1:$B$' . count($classList);
 
         for ($i = 0; $i < count($groupList); $i++) {
             $dataSheet->setCellValue('A' . ($i + 1), (string) $groupList[$i]);
         }
-        for ($i = 0; $i < count($classList); $i++) {
-            $dataSheet->setCellValue('B' . ($i + 1), (string) $classList[$i]);
-        }
 
         $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($teachingTypes as $tt) {
+        foreach ($teachingTypes as $index => $tt) {
             $ttId = (int) $tt['id'];
             $ttNom = (string) $tt['nom'];
             $sheet = $spreadsheet->createSheet();
             $sheet->setTitle(substr($ttNom, 0, 31));
+
+            $classStmt = $this->db->prepare("SELECT c.nom FROM classes c JOIN teaching_types tt ON tt.id = c.teaching_type_id WHERE c.status = 1 AND tt.actif = 1 AND c.teaching_type_id = ? ORDER BY c.nom ASC");
+            $classStmt->execute([$ttId]);
+            $classList = $classStmt->fetchAll(PDO::FETCH_COLUMN);
+            $classColumn = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($index + 2);
+            foreach ($classList as $classIndex => $className) {
+                $dataSheet->setCellValue($classColumn . ($classIndex + 1), (string) $className);
+            }
+            $classRange = empty($classList)
+                ? "SUBJECT_DATASOURCES!\${$classColumn}\$1:\${$classColumn}\$1"
+                : "SUBJECT_DATASOURCES!\${$classColumn}\$1:\${$classColumn}\$" . count($classList);
 
             $headers = $lang === 'fr'
                 ? [
@@ -742,7 +747,8 @@ class ExcelTemplateService
         int $teachingTypeId = 0,
         int $cycleId = 0,
         int $sectionId = 0,
-        int $classId = 0
+        int $classId = 0,
+        int $activeYearId = 0
     ): string {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
@@ -789,25 +795,25 @@ class ExcelTemplateService
         $sheet->getStyle('A1:W1')->applyFromArray($styleArray);
 
         // Récupérer toutes les classes correspondant aux filtres pour pré-remplir la colonne A
-        $query = "SELECT nom FROM classes WHERE 1=1";
-        $params = [];
+        $query = "SELECT c.nom FROM classes c LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE c.status = 1 AND (c.teaching_type_id IS NULL OR tt.actif = 1) AND EXISTS (SELECT 1 FROM students st WHERE st.class_id = c.id AND st.academic_year_id = ? AND st.status = 'Inscrit' AND st.actif = 1 AND st.is_withdrawn = 0)";
+        $params = [$activeYearId];
         if ($teachingTypeId) {
-            $query .= " AND teaching_type_id = ?";
+            $query .= " AND c.teaching_type_id = ?";
             $params[] = $teachingTypeId;
         }
         if ($cycleId) {
-            $query .= " AND cycle_id = ?";
+            $query .= " AND c.cycle_id = ?";
             $params[] = $cycleId;
         }
         if ($sectionId) {
-            $query .= " AND section_id = ?";
+            $query .= " AND c.section_id = ?";
             $params[] = $sectionId;
         }
         if ($classId) {
-            $query .= " AND id = ?";
+            $query .= " AND c.id = ?";
             $params[] = $classId;
         }
-        $query .= " ORDER BY nom ASC";
+        $query .= " ORDER BY c.nom ASC";
 
         $stmt = $this->db->prepare($query);
         $stmt->execute($params);

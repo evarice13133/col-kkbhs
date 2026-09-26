@@ -133,9 +133,19 @@ $addressLabelEn = $enTranslations['address'] ?? 'Address';
         align-items: center;
         justify-content: center;
         text-align: center;
-        font-size: 26px;
         color: #14347a;
         background: #f4f7fb;
+    }
+    .student-photo-placeholder[hidden],
+    .student-photo-container img[hidden] {
+        display: none !important;
+    }
+    .student-photo-icon {
+        display: block;
+        width: 42px;
+        height: 42px;
+        flex: 0 0 42px;
+        fill: currentColor;
     }
     .student-identity-grid {
         flex: 1 1 auto;
@@ -329,16 +339,44 @@ $addressLabelEn = $enTranslations['address'] ?? 'Address';
             <div class="student-photo-block">
                 <?php if (!empty($student['photo_eleve'])): ?>
                     <?php
-                    $photoPath = $student['photo_eleve'];
-                    if (strpos($photoPath, '/public/uploads/') !== 0 && strpos($photoPath, '/uploads/') === 0) {
+                    $storedPhotoPath = trim((string) $student['photo_eleve']);
+                    $photoPath = parse_url($storedPhotoPath, PHP_URL_PATH) ?: $storedPhotoPath;
+                    $uploadRelativePath = null;
+                    if (strpos($photoPath, '/public/uploads/') === 0) {
+                        $uploadRelativePath = substr($photoPath, strlen('/public/uploads/'));
+                    } elseif (strpos($photoPath, '/uploads/') === 0) {
+                        $uploadRelativePath = substr($photoPath, strlen('/uploads/'));
                         $photoPath = '/public' . $photoPath;
                     }
+                    $uploadRoot = realpath(dirname(__DIR__, 3) . '/public/uploads');
+                    $photoFilePath = $uploadRelativePath !== null && $uploadRoot !== false
+                        ? realpath($uploadRoot . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, rawurldecode($uploadRelativePath)))
+                        : false;
+                    $hasStudentPhoto = $uploadRelativePath === null
+                        || ($photoFilePath !== false
+                            && strpos($photoFilePath, $uploadRoot . DIRECTORY_SEPARATOR) === 0
+                            && is_file($photoFilePath));
                     ?>
                     <div class="student-photo-container">
-                        <img src="<?= $photoPath ?>" alt="Photo de l'élève">
+                        <?php if ($hasStudentPhoto): ?>
+                            <img src="<?= htmlspecialchars($photoPath, ENT_QUOTES, 'UTF-8') ?>" alt="Photo de l'élève" onerror="this.hidden = true; this.nextElementSibling.hidden = false;">
+                        <?php endif; ?>
+                        <div class="student-photo-placeholder" <?= $hasStudentPhoto ? 'hidden' : '' ?> aria-label="Photo de l'élève non renseignée">
+                            <svg class="student-photo-icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+                                <circle cx="24" cy="15" r="9"></circle>
+                                <path d="M7 43c0-9.4 7.6-17 17-17s17 7.6 17 17H7z"></path>
+                            </svg>
+                        </div>
                     </div>
                 <?php else: ?>
-                    <div class="student-photo-container student-photo-placeholder">👤</div>
+                    <div class="student-photo-container">
+                        <div class="student-photo-placeholder" aria-label="Photo de l'élève non renseignée">
+                            <svg class="student-photo-icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+                                <circle cx="24" cy="15" r="9"></circle>
+                                <path d="M7 43c0-9.4 7.6-17 17-17s17 7.6 17 17H7z"></path>
+                            </svg>
+                        </div>
+                    </div>
                 <?php endif; ?>
             </div>
             <div class="student-identity-grid">

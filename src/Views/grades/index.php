@@ -31,8 +31,8 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
 <div class="animate-fade-in grades-workspace py-3 px-md-4">
 
     <!-- EN-TÊTE DE PAGE : Style Glassmorphism Premium avec support Mode Sombre -->
-    <div class="dept-header-card mb-4 p-3 p-md-4 rounded-4 shadow-sm position-relative" style="z-index: 10;">
-        <div class="dept-header-bg rounded-4" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden; pointer-events: none; z-index: 1;"></div>
+    <div class="dept-header-card mb-4 p-3 p-md-4 rounded-4 shadow-sm position-relative overflow-hidden">
+        <div class="dept-header-bg"></div>
         <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between w-100 gap-3 position-relative" style="z-index: 2;">
             <div class="d-flex align-items-center gap-3">
                 <div class="dept-icon-wrapper rounded-4 d-flex align-items-center justify-content-center flex-shrink-0">
@@ -51,7 +51,7 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
             <div class="d-flex flex-row w-100 w-md-auto justify-content-end ms-md-auto gap-2 mt-2 mt-md-0">
                 <!-- Export Panel (Premium Dropdown) -->
                 <div class="dropdown">
-                    <button class="btn btn-primary rounded-pill px-3 py-2 fw-bold d-flex justify-content-center align-items-center gap-2 shadow-sm scale-on-hover" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="min-height: 44px;">
+                    <button class="btn btn-light-theme rounded-pill px-3 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 scale-on-hover" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-printer-fill fs-6"></i>
                         <span><?= __('exports') ?? 'Impression & Exports' ?></span>
                         <i class="bi bi-chevron-down small opacity-75 ms-1"></i>

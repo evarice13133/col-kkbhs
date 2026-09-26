@@ -42,7 +42,7 @@ ob_start();
                     <select name="teaching_type_id" id="filter_teaching_type"
                         class="form-select border-0 bg-white bg-opacity-10 shadow-none py-2 text-main rounded-pill px-3"
                         style="min-width: 150px;" onchange="this.form.submit()">
-                        <option value="">Tous les types</option>
+                        <option value=""><?= __('all_types') ?></option>
                         <?php foreach ($teachingTypes as $tt): ?>
                             <option value="<?= $tt['id'] ?>" <?= (int) ($filters['teaching_type_id'] ?? 0) === (int) $tt['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars((string) $tt['nom']) ?>
