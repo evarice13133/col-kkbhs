@@ -9,7 +9,7 @@
 <?php else: ?>
     <?php foreach ($students as $s): ?>
         <tr class="student-row">
-            <td>
+            <td data-label="<?= htmlspecialchars((string) __('student'), ENT_QUOTES, 'UTF-8') ?>">
                 <div class="d-flex align-items-center gap-2">
                     <div class="avatar-init bg-primary bg-opacity-10 text-primary fw-bold rounded-circle d-flex align-items-center justify-content-center shadow-sm"
                         style="width: 36px; height: 36px; font-size: 1rem; border: 1px solid rgba(var(--primary-rgb), 0.2);">
@@ -25,27 +25,27 @@
                     </div>
                 </div>
             </td>
-            <td>
+            <td data-label="<?= htmlspecialchars((string) __('class'), ENT_QUOTES, 'UTF-8') ?>">
                 <span class="badge bg-primary text-white px-2 py-1 rounded-pill fw-bold shadow-sm" style="font-size: 0.7rem;">
                     <i
                         class="bi bi-door-open-fill me-1"></i><?= htmlspecialchars((string) ($s['classe_nom'] ?: __('no_class'))) ?>
                 </span>
             </td>
-            <td>
+            <td data-label="<?= htmlspecialchars((string) __('section'), ENT_QUOTES, 'UTF-8') ?>">
                 <span
                     class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2 py-1 rounded-pill fw-medium"
                     style="font-size: 0.7rem;">
                     <i class="bi bi-layers-half me-1"></i><?= htmlspecialchars((string) ($s['section_nom'] ?: '-')) ?>
                 </span>
             </td>
-            <td>
+            <td data-label="<?= htmlspecialchars((string) __('teaching_type'), ENT_QUOTES, 'UTF-8') ?>">
                 <span
                     class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1 rounded-pill fw-medium"
                     style="font-size: 0.7rem;">
                     <i class="bi bi-diagram-3 me-1"></i><?= htmlspecialchars((string) ($s['teaching_type_nom'] ?: '-')) ?>
                 </span>
             </td>
-            <td>
+            <td data-label="<?= htmlspecialchars((string) __('department'), ENT_QUOTES, 'UTF-8') ?>">
                 <span
                     class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-1 rounded-pill fw-medium"
                     style="font-size: 0.7rem;">
@@ -56,7 +56,7 @@
             $isEnseignant = (\App\Core\Session::get('user_role') === 'enseignant');
             if (\App\Core\PermissionManager::hasPermission('manage_students') && !$isEnseignant): 
             ?>
-                <td class="text-end pe-4">
+                <td class="text-end pe-4" data-label="<?= htmlspecialchars((string) __('actions'), ENT_QUOTES, 'UTF-8') ?>">
                     <div class="d-flex justify-content-end gap-1 align-items-center table-row-actions">
                         <a href="/students/edit?id=<?= $s['id'] ?>" class="btn btn-sm btn-action-modern text-primary"
                             title="<?= __('edit') ?>">

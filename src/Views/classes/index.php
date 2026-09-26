@@ -25,22 +25,22 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_classes_structur
                 </div>
             </div>
             
-            <div class="d-flex flex-row w-100 w-md-auto justify-content-end ms-md-auto gap-2 mt-2 mt-md-0">
+            <div class="class-header-actions d-flex flex-row w-100 w-md-auto justify-content-end ms-md-auto gap-2 mt-2 mt-md-0">
                 <button type="button"
-                    class="btn btn-light-theme rounded-pill px-3 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 scale-on-hover"
+                    class="class-header-action btn btn-light-theme rounded-pill px-3 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 scale-on-hover"
                     data-bs-toggle="modal" data-bs-target="#importClassesModal">
                     <i class="bi bi-file-earmark-spreadsheet text-success fs-6"></i>
                     <span><?= __('import') ?? 'Importer' ?></span>
                 </button>
                 <?php if ($canManage): ?>
                     <button type="button"
-                        class="btn btn-light-theme rounded-pill px-3 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 scale-on-hover"
+                        class="class-header-action btn btn-light-theme rounded-pill px-3 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 scale-on-hover"
                         data-bs-toggle="modal" data-bs-target="#bulkStatusModal">
                         <i class="bi bi-toggle-on text-warning fs-6"></i>
                         <span><?= __('bulk_class_status_manage') ?></span>
                     </button>
                     <a href="/classes/create"
-                        class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm flex-grow-1 flex-md-grow-0 d-flex justify-content-center align-items-center gap-2 text-nowrap scale-on-hover">
+                        class="class-header-create btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm flex-grow-1 flex-md-grow-0 d-flex justify-content-center align-items-center gap-2 text-nowrap scale-on-hover">
                         <i class="bi bi-plus-lg"></i>
                         <span><?= __('add_class') ?? 'Ajouter une classe' ?></span>
                     </a>
@@ -49,19 +49,24 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_classes_structur
         </div>
     </div>
 
-    <!-- BARRE DE FILTRES ET RECHERCHE INSTANTANÉE -->
+    <!-- BARRE DE FILTRES ET RECHERCHE -->
     <div class="filter-island-container mb-4">
         <div class="filter-island p-3 rounded-4 shadow-sm">
             <form method="GET" action="/classes" id="class-filter-form" class="filter-form w-100 m-0">
                 <div class="d-flex flex-column gap-3">
 
-                    <div class="d-flex flex-column flex-md-row gap-2 align-items-md-center flex-wrap">
-                        <!-- Recherche instantanée -->
-                        <div class="dept-search-pill flex-grow-1 position-relative" style="min-width: 220px;">
+                    <div class="class-filter-controls d-flex flex-column flex-md-row gap-2 align-items-md-center flex-wrap">
+                        <!-- Recherche -->
+                        <div class="dept-search-pill class-search-control position-relative">
                             <i class="bi bi-search search-icon"></i>
                             <input type="text" name="q" id="search-input" class="form-control dept-filter-input ps-5"
                                 value="<?= htmlspecialchars((string) ($filters['q'] ?? '')) ?>"
-                                placeholder="<?= __('search') ?? 'Rechercher' ?> (<?= __('class_name') ?? 'Nom de classe' ?>)...">
+                                placeholder="<?= __('search') ?? 'Rechercher' ?> (<?= __('class_name') ?? 'Nom de classe' ?>)..."
+                                aria-label="<?= htmlspecialchars((string) __('class_name'), ENT_QUOTES, 'UTF-8') ?>"
+                                enterkeyhint="search">
+                            <button type="button" id="clear-class-search" class="class-search-clear" aria-label="<?= htmlspecialchars((string) __('clear_search'), ENT_QUOTES, 'UTF-8') ?>" title="<?= htmlspecialchars((string) __('clear_search'), ENT_QUOTES, 'UTF-8') ?>" <?= ($filters['q'] ?? '') === '' ? 'hidden' : '' ?>>
+                                <i class="bi bi-x-circle-fill" aria-hidden="true"></i>
+                            </button>
                         </div>
 
                         <!-- Type Enseignement -->
@@ -438,6 +443,43 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_classes_structur
         align-items: center;
     }
 
+    .class-search-control {
+        flex: 1 1 320px;
+        min-width: min(100%, 280px);
+    }
+
+    .class-search-control .dept-filter-input {
+        width: 100%;
+        padding-right: 44px !important;
+    }
+
+    .class-search-clear {
+        position: absolute;
+        right: 8px;
+        z-index: 6;
+        display: inline-flex;
+        width: 34px;
+        height: 34px;
+        align-items: center;
+        justify-content: center;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: var(--text-muted, #64748b);
+        cursor: pointer;
+    }
+
+    .class-search-clear[hidden] {
+        display: none;
+    }
+
+    .class-search-clear:hover,
+    .class-search-clear:focus-visible {
+        background: rgba(var(--primary-rgb), 0.1);
+        color: var(--primary-color);
+        outline: none;
+    }
+
     .search-icon {
         position: absolute;
         left: 14px;
@@ -592,18 +634,66 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_classes_structur
     }
 
     .border-dashed { border-style: dashed !important; border-width: 2px !important; }
+
+    @media (max-width: 767.98px) {
+        .class-filter-controls,
+        .class-search-control {
+            width: 100%;
+            min-width: 0;
+        }
+
+        .class-search-control {
+            flex: 0 0 auto;
+        }
+
+        .class-search-control .dept-filter-input {
+            min-height: 46px;
+        }
+
+        .class-filter-controls > .dept-select-wrapper {
+            flex: 0 0 auto !important;
+            width: 100%;
+            min-width: 0 !important;
+            max-width: none !important;
+        }
+
+        .class-filter-controls > .dept-select-wrapper .dept-filter-select {
+            width: 100%;
+            min-height: 44px;
+        }
+
+        .class-header-actions {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            align-items: stretch;
+            width: 100%;
+        }
+
+        .class-header-action {
+            min-width: 0;
+            min-height: 44px;
+            padding-inline: 0.5rem !important;
+            white-space: nowrap;
+        }
+
+        .class-header-create {
+            grid-column: 1 / -1;
+            min-height: 46px;
+            width: 100%;
+        }
+    }
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const filterForm = document.getElementById('class-filter-form');
     const searchInput = document.getElementById('search-input');
+    const clearSearchButton = document.getElementById('clear-class-search');
     const filterTT = document.getElementById('filter_teaching_type');
     const filterCycle = document.getElementById('filter_cycle');
     const filterDept = document.getElementById('filter_department');
     const filterSection = document.getElementById('filter_section');
     const filterLevel = document.getElementById('filter_level');
-    let debounceTimer;
 
     const statusSuccessMessages = {
         activate: {
@@ -703,12 +793,23 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('bulkDeactivateClasses').addEventListener('click', () => submitBulkStatus('deactivate'));
     }
 
-    if (searchInput && filterForm) {
+    if (searchInput && clearSearchButton) {
         searchInput.addEventListener('input', function () {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(() => {
-                filterForm.submit();
-            }, 400);
+            clearSearchButton.hidden = searchInput.value.length === 0;
+        });
+
+        clearSearchButton.addEventListener('click', function () {
+            searchInput.value = '';
+            clearSearchButton.hidden = true;
+            searchInput.focus();
+        });
+
+        searchInput.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && searchInput.value !== '') {
+                event.preventDefault();
+                searchInput.value = '';
+                clearSearchButton.hidden = true;
+            }
         });
     }
 

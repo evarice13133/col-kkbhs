@@ -125,7 +125,7 @@ class SettingsStore
     public function getDefaultTeachingTypeId(): int
     {
         try {
-            $stmt = $this->db->query("SELECT id FROM teaching_types WHERE code = 'SEC00' LIMIT 1");
+            $stmt = $this->db->query("SELECT id FROM teaching_types WHERE code = 'SEC00' AND actif = 1 LIMIT 1");
             $id = $stmt->fetchColumn();
             if ($id) {
                 return (int) $id;

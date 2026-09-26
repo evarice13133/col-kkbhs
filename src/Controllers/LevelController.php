@@ -34,16 +34,11 @@ class LevelController
     public function index()
     {
         $q = trim((string) ($_GET['q'] ?? ''));
-        $teaching_type_id = !empty($_GET['teaching_type_id']) ? (int) $_GET['teaching_type_id'] : null;
+        $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $teaching_type_id = array_key_exists('teaching_type_id', $_GET)
+            ? (!empty($_GET['teaching_type_id']) ? (int) $_GET['teaching_type_id'] : null)
+            : ($this->settingsStore->getDefaultTeachingTypeId() ?: null);
         $status = isset($_GET['status']) && $_GET['status'] !== '' ? (int) $_GET['status'] : null;
-
-        // Recherche du type d'enseignement Supérieur LMD
-        $lmdStmt = $this->db->query("SELECT id FROM teaching_types WHERE code = 'LMD' OR LOWER(nom) LIKE '%lmd%' OR LOWER(nom) LIKE '%supérieur%' ORDER BY id ASC LIMIT 1");
-        $lmdId = $lmdStmt ? (int) $lmdStmt->fetchColumn() : 0;
-
-        if ($teaching_type_id === null && $lmdId > 0) {
-            $teaching_type_id = $lmdId;
-        }
 
         $conditions = [];
         $params = [];
@@ -78,8 +73,6 @@ class LevelController
         $stmt = $this->db->prepare($query);
         $stmt->execute($params);
         $levels = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         include __DIR__ . '/../Views/levels/index.php';
     }

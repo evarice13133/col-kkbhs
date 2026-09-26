@@ -118,7 +118,7 @@ ob_start(); ?>
     <!-- Table Card -->
     <div class="modern-card border-0 shadow-sm overflow-hidden animate-fade-in">
         <div class="table-responsive">
-            <table class="table-modern">
+            <table class="table-modern students-list-table">
                 <thead>
                     <tr>
                         <th><?= __('student') ?></th>
@@ -143,6 +143,119 @@ ob_start(); ?>
         <?php include __DIR__ . '/pagination.php'; ?>
     </div>
 </div>
+
+<style>
+    @media (max-width: 991.98px) {
+        .students-list-table,
+        .students-list-table tbody {
+            display: block;
+            width: 100%;
+        }
+
+        .students-list-table {
+            min-width: 0 !important;
+            table-layout: auto;
+        }
+
+        .students-list-table thead {
+            display: none;
+        }
+
+        .students-list-table tbody {
+            display: grid;
+            gap: 0.75rem;
+            padding: 0.75rem;
+        }
+
+        .students-list-table tbody tr.student-row {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0 0.9rem;
+            min-width: 0;
+            padding: 0.5rem 0.85rem;
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 10px;
+            background: var(--bg-card, #fff);
+        }
+
+        .students-list-table tbody tr.student-row td,
+        .students-list-table tbody tr.student-row td:first-child,
+        .students-list-table tbody tr.student-row td:last-child {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            min-width: 0;
+            padding: 0.65rem 0;
+            border-radius: 0;
+            text-align: left !important;
+        }
+
+        .students-list-table tbody tr.student-row td::before {
+            content: attr(data-label);
+            margin-bottom: 0.2rem;
+            color: var(--text-muted, #64748b);
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .students-list-table tbody tr.student-row td:first-child {
+            grid-column: 1 / -1;
+            padding: 0.6rem 0 0.75rem;
+            border-bottom: 1px solid var(--border-color, #e2e8f0);
+        }
+
+        .students-list-table tbody tr.student-row td:first-child::before {
+            content: none;
+        }
+
+        .students-list-table tbody tr.student-row td .badge {
+            max-width: 100%;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            text-align: left;
+        }
+
+        .students-list-table tbody tr.student-row td:last-child {
+            grid-column: 1 / -1;
+            flex-direction: row;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--border-color, #e2e8f0);
+        }
+
+        .students-list-table tbody tr.student-row td:last-child::before {
+            margin: 0 auto 0 0;
+        }
+
+        .students-list-table .table-row-actions,
+        .students-list-table .table-row-actions .btn {
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        .students-list-table .table-row-actions .btn {
+            width: 40px;
+            height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+    }
+
+    @media (max-width: 420px) {
+        .students-list-table tbody tr.student-row {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .students-list-table tbody tr.student-row td:first-child,
+        .students-list-table tbody tr.student-row td:last-child {
+            grid-column: 1;
+        }
+    }
+</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

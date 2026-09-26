@@ -1,49 +1,56 @@
 <?php $title = __('user_management'); ob_start(); ?>
 
+<?php
+$userRoleOptions = [
+    'superadmin' => __('role_superadmin'),
+    'admin' => __('role_admin'),
+    'direction_academique' => __('role_direction_academique'),
+    'enseignant' => __('role_enseignant'),
+    'caissier' => __('role_caissier'),
+    'comptable' => __('role_comptable'),
+    'it_manager' => __('role_it_manager'),
+];
+if (\App\Core\Session::get('user_role') === 'admin') {
+    unset($userRoleOptions['superadmin'], $userRoleOptions['admin']);
+}
+?>
+
 <div class="animate-fade-in container-fluid py-4">
 
 
     <!-- BARRE D'ACTIONS COMPLÈTE : Style Floating Island -->
     <div class="d-flex justify-content-center mb-5">
         <div class="filter-island px-3 py-2 shadow-lg animate-slide-down" style="min-width: 80%;">
-            <form method="GET" class="d-flex align-items-center gap-2 flex-wrap flex-md-nowrap filter-form w-100">
+            <form method="GET" class="d-flex align-items-center gap-2 flex-wrap flex-md-nowrap filter-form users-filter-form w-100">
                 
                 <!-- Boutons d'Action Principaux -->
-                <div class="d-flex gap-2 pe-3 border-end border-opacity-10 border-secondary me-2">
-                    <a href="/users/create" class="btn btn-primary rounded-pill px-3 fw-bold shadow-sm text-nowrap">
+                <div class="d-flex gap-2 pe-3 border-end border-opacity-10 border-secondary me-2 user-create-action">
+                    <a href="/users/create" class="btn btn-primary rounded-pill px-3 fw-bold shadow-sm text-nowrap user-create-button">
                         <i class="bi bi-person-plus-fill me-1"></i> <?= __('add_user') ?>
                     </a>
                 </div>
 
                 <!-- Barre de Recherche et Filtre Rôle -->
-                <div class="flex-grow-1 d-flex gap-2">
-                    <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-2">
+                <div class="flex-grow-1 d-flex gap-2 user-search-role-group">
+                    <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-2 user-search-pill">
                         <span class="input-group-text border-0 bg-transparent text-primary">
                             <i class="bi bi-search"></i>
                         </span>
-                        <input type="text" name="q" class="form-control border-0 bg-transparent shadow-none py-2 text-main"
+                        <input type="text" name="q" class="form-control border-0 bg-transparent shadow-none py-2 text-main user-search-input"
                             value="<?= htmlspecialchars((string) $filters['q']) ?>"
-                            placeholder="<?= __('search_placeholder') ?>..." style="min-width: 200px;">
+                            placeholder="<?= __('search_placeholder') ?>..." aria-label="<?= htmlspecialchars((string) __('search_placeholder'), ENT_QUOTES, 'UTF-8') ?>">
                     </div>
                     
-                    <select name="role" class="form-select border-0 bg-white bg-opacity-10 shadow-none py-2 text-main rounded-pill px-3" style="max-width: 180px;">
+                    <select name="role" class="form-select border-0 bg-white bg-opacity-10 shadow-none py-2 text-main rounded-pill px-3 user-role-select" aria-label="<?= htmlspecialchars((string) __('all_roles'), ENT_QUOTES, 'UTF-8') ?>">
                         <option value=""><?= __('all_roles') ?></option>
-                        <?php foreach ([
-                            'superadmin'           => __('role_superadmin'),
-                            'admin'                => __('role_admin'),
-                            'direction_academique' => __('role_direction_academique'),
-                            'enseignant'           => __('role_enseignant'),
-                            'caissier'             => __('role_caissier'),
-                            'comptable'            => __('role_comptable'),
-                            'it_manager'           => __('role_it_manager'),
-                        ] as $roleValue => $roleLabel): ?>
+                        <?php foreach ($userRoleOptions as $roleValue => $roleLabel): ?>
                             <option value="<?= $roleValue ?>" <?= $filters['role'] === $roleValue ? 'selected' : '' ?>><?= $roleLabel ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
 
                 <!-- Filtres et Utilitaires -->
-                <div class="d-flex gap-2 align-items-center ps-2">
+                <div class="d-flex gap-2 align-items-center ps-2 user-filter-actions">
                     <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm"><?= __('filter') ?></button>
                     <a href="/users" class="btn btn-light rounded-circle p-2 d-flex align-items-center justify-content-center reset-btn" style="width: 40px; height: 40px;" title="<?= __('reset') ?>">
                         <i class="bi bi-arrow-counterclockwise"></i>
@@ -161,6 +168,22 @@
         transform: translateY(-2px);
     }
 
+    .user-search-role-group,
+    .user-search-pill,
+    .user-search-input {
+        min-width: 0;
+    }
+
+    .user-search-pill {
+        flex: 1 1 auto;
+    }
+
+    .user-role-select {
+        flex: 0 0 180px;
+        width: 180px;
+        max-width: 180px;
+    }
+
     .btn-export-minimal {
         width: 40px;
         height: 40px;
@@ -253,8 +276,77 @@
     @media (max-width: 767.98px) {
         .filter-island {
             border-radius: 24px;
-            min-width: 100%;
+            min-width: 0 !important;
             padding: 1rem !important;
+            width: 100%;
+        }
+
+        .users-filter-form {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 0.65rem !important;
+            width: 100%;
+        }
+
+        .users-filter-form > * {
+            min-width: 0;
+            width: 100%;
+        }
+
+        .user-create-action {
+            padding: 0 !important;
+            margin: 0 !important;
+            border: 0 !important;
+        }
+
+        .user-create-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 44px;
+            width: 100%;
+        }
+
+        .user-search-role-group {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 0.6rem !important;
+            width: 100%;
+        }
+
+        .user-search-pill,
+        .user-role-select {
+            width: 100% !important;
+            max-width: none !important;
+            min-height: 44px;
+        }
+
+        .user-search-input {
+            width: 100%;
+        }
+
+        .user-filter-actions {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) 44px 44px;
+            gap: 0.5rem !important;
+            padding: 0 !important;
+            width: 100%;
+        }
+
+        .user-filter-actions > button {
+            min-height: 44px;
+        }
+
+        .user-filter-actions .reset-btn,
+        .user-filter-actions .btn-export-minimal {
+            width: 44px !important;
+            height: 44px !important;
+            padding: 0 !important;
+            border-radius: 12px !important;
+        }
+
+        .user-filter-actions > div {
+            margin: 0 !important;
         }
     }
 </style>

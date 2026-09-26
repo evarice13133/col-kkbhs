@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\Database;
 use App\Core\Session;
 use App\Core\PermissionManager;
+use App\Services\SettingsStore;
 use PDO;
 
 /**
@@ -35,7 +36,10 @@ class DepartmentController
         PermissionManager::requirePermission('manage_departments');
 
         $q = trim((string) ($_GET['q'] ?? ''));
-        $teaching_type_id = !empty($_GET['teaching_type_id']) ? (int) $_GET['teaching_type_id'] : null;
+        $teachingTypes = $this->db->query("SELECT * FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $teaching_type_id = array_key_exists('teaching_type_id', $_GET)
+            ? (!empty($_GET['teaching_type_id']) ? (int) $_GET['teaching_type_id'] : null)
+            : ((new SettingsStore($this->db))->getDefaultTeachingTypeId() ?: null);
         $teaching_form_id = !empty($_GET['teaching_form_id']) ? (int) $_GET['teaching_form_id'] : null;
 
         $conditions = [];
@@ -66,7 +70,6 @@ class DepartmentController
         $stmt->execute($params);
         $departments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $teachingTypes = $this->db->query("SELECT * FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $teachingForms = $this->db->query("SELECT * FROM teaching_forms WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $teachingFormsByType = [];
         foreach ($teachingForms as $form) {

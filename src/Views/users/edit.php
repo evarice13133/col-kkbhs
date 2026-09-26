@@ -1,12 +1,12 @@
 <?php $title = __('user_editing'); ob_start(); ?>
 
-<div class="animate-fade-in container-fluid py-4">
-    <div class="d-flex align-items-center justify-content-between mb-4">
+<div class="animate-fade-in container-fluid py-3 py-md-4 px-3 px-md-4 user-edit-page">
+    <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-3 mb-4">
         <div>
             <h2 class="fw-black text-main-theme mb-0 fs-4"><?= __('edit_user') ?></h2>
             <p class="text-muted-theme small mb-0"><?= __('user_editing_subtitle') ?></p>
         </div>
-        <a href="/users" class="btn btn-sm btn-light-theme rounded-pill px-3 border-theme-light shadow-sm">
+        <a href="/users" class="btn btn-sm btn-light-theme rounded-pill px-3 border-theme-light shadow-sm user-edit-back-link">
             <i class="bi bi-arrow-left me-1"></i> <?= __('back_to_list') ?>
         </a>
     </div>
@@ -14,7 +14,7 @@
     <div class="row">
         <div class="col-lg-7">
             <div class="modern-card border-0 shadow-sm overflow-hidden mb-4 bg-glass-theme">
-                <div class="card-body p-4 p-md-5 position-relative">
+                <div class="card-body p-3 p-sm-4 p-md-5 position-relative">
                     
                     <?php if ($error = App\Core\Session::getFlash('error')): ?>
                         <div class="alert alert-danger border-0 shadow-sm rounded-4 mb-4 py-3 d-flex align-items-center animate-fade-in">
@@ -23,13 +23,13 @@
                         </div>
                     <?php endif; ?>
 
-                    <form action="/users/update?id=<?= $user['id'] ?>" method="POST">
+                    <form action="/users/update?id=<?= $user['id'] ?>" method="POST" id="user-edit-form">
                         <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
                         
                         <!-- Identification -->
-                        <div class="row g-4 mb-4">
+                        <div class="row g-3 mb-4">
                             <div class="col-12 border-bottom border-theme-light pb-2 mb-2">
-                                <h6 class="fw-black text-primary m-0 text-uppercase letter-spacing-1" style="font-size: 0.75rem;"><?= __('user_identity') ?></h6>
+                                <h6 class="fw-black text-primary m-0 text-uppercase letter-spacing-1"><?= __('user_identity') ?></h6>
                             </div>
                             
                             <div class="col-md-6 mt-0">
@@ -43,9 +43,9 @@
                         </div>
                         
                         <!-- Account Details -->
-                        <div class="row g-4 mb-4">
+                        <div class="row g-3 mb-4">
                             <div class="col-12 border-bottom border-theme-light pb-2 mb-2">
-                                <h6 class="fw-black text-primary m-0 text-uppercase letter-spacing-1" style="font-size: 0.75rem;"><?= __('account_credentials') ?></h6>
+                                <h6 class="fw-black text-primary m-0 text-uppercase letter-spacing-1"><?= __('account_credentials') ?></h6>
                             </div>
                             
                             <div class="col-md-6 mt-0">
@@ -64,13 +64,17 @@
                             </div>
                         </div>
 
-                        <div class="row g-4 mb-4">
+                        <div class="row g-3 mb-4">
                             <div class="col-md-6 mt-0">
                                 <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('password_edit_label') ?></label>
-                                <div class="input-group shadow-sm-hover rounded-3">
+                                <div class="input-group shadow-sm-hover rounded-3 user-edit-password-group">
                                     <span class="input-group-text border-theme-light bg-soft-danger text-danger"><i class="bi bi-key-fill"></i></span>
-                                    <input type="password" name="password" class="form-control premium-input" placeholder="<?= __('leave_blank_to_keep_current') ?>">
+                                    <input type="password" name="password" id="user-edit-password" class="form-control premium-input" autocomplete="new-password" aria-describedby="user-edit-password-help">
+                                    <button type="button" class="btn btn-outline-secondary user-edit-password-toggle" id="user-edit-password-toggle" aria-label="<?= htmlspecialchars((string) __('show_password'), ENT_QUOTES, 'UTF-8') ?>" title="<?= htmlspecialchars((string) __('show_password'), ENT_QUOTES, 'UTF-8') ?>" aria-controls="user-edit-password" data-show-label="<?= htmlspecialchars((string) __('show_password'), ENT_QUOTES, 'UTF-8') ?>" data-hide-label="<?= htmlspecialchars((string) __('hide_password'), ENT_QUOTES, 'UTF-8') ?>">
+                                        <i class="bi bi-eye" aria-hidden="true"></i>
+                                    </button>
                                 </div>
+                                <div class="form-text" id="user-edit-password-help"><?= __('leave_blank_to_keep_current') ?></div>
                             </div>
                             <div class="col-md-6 mt-0">
                                 <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('user_role_label') ?></label>
@@ -79,29 +83,31 @@
                                     <option value="direction_academique" <?= $user['role'] === 'direction_academique' ? 'selected' : '' ?>><?= __('direction_academique_role_label') ?></option>
                                     <option value="caissier" <?= $user['role'] === 'caissier' ? 'selected' : '' ?>><?= __('role_caissier_option') ?></option>
                                     <option value="comptable" <?= $user['role'] === 'comptable' ? 'selected' : '' ?>><?= __('role_comptable_option') ?></option>
-                                    <option value="admin" <?= $user['role'] === 'admin' ? 'selected' : '' ?>><?= __('admin_restricted') ?></option>
+                                    <?php if (\App\Core\Session::get('user_role') !== 'admin'): ?>
+                                        <option value="admin" <?= $user['role'] === 'admin' ? 'selected' : '' ?>><?= __('admin_restricted') ?></option>
+                                    <?php endif; ?>
                                     <option value="it_manager" <?= $user['role'] === 'it_manager' ? 'selected' : '' ?>><?= __('role_it_manager_option') ?></option>
-                                    <?php if (\App\Core\PermissionManager::hasPermission('manage_rbac')): ?>
+                                    <?php if (\App\Core\Session::get('user_role') !== 'admin' && \App\Core\PermissionManager::hasPermission('manage_rbac')): ?>
                                         <option value="superadmin" <?= $user['role'] === 'superadmin' ? 'selected' : '' ?>><?= __('superadmin_max') ?></option>
                                     <?php endif; ?>
                                 </select>
                             </div>
                         </div>
 
-                        <div class="alert bg-soft-warning border-0 rounded-4 p-4 mt-2 shadow-none border border-warning border-opacity-10">
-                            <div class="d-flex align-items-center">
-                                <div class="avatar-sm bg-warning bg-opacity-20 text-warning rounded-circle d-flex align-items-center justify-content-center me-3 flex-shrink-0">
-                                    <i class="bi bi-shield-lock-fill fs-5"></i>
+                        <div class="alert bg-soft-warning border border-warning border-opacity-10 rounded-3 p-3 mt-2 mb-3 user-edit-warning" role="note">
+                            <div class="d-flex align-items-start gap-3">
+                                <div class="avatar-sm bg-warning bg-opacity-20 text-warning rounded-2 d-flex align-items-center justify-content-center flex-shrink-0">
+                                    <i class="bi bi-shield-exclamation fs-5"></i>
                                 </div>
                                 <div>
                                     <h6 class="fw-bold text-warning-emphasis mb-1"><?= __('modification_warning') ?></h6>
-                                    <p class="text-muted-theme extra-small mb-0 opacity-75"><?= __('role_access_warning') ?></p>
+                                    <p class="text-muted-theme small mb-0"><?= __('role_access_warning') ?></p>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="d-flex justify-content-end border-top border-theme-light pt-4 mt-4">
-                            <button type="submit" class="btn btn-primary rounded-pill px-5 py-2 fw-bold shadow-sm transition-base scale-on-hover">
+                        <div class="d-flex justify-content-end border-top border-theme-light pt-3 pt-sm-4 mt-3 mt-sm-4">
+                            <button type="submit" class="btn btn-primary rounded-pill px-4 px-sm-5 py-2 fw-bold shadow-sm transition-base scale-on-hover user-edit-submit">
                                 <i class="bi bi-check-circle-fill me-2"></i> <?= __('update_account') ?>
                             </button>
                         </div>
@@ -141,8 +147,35 @@
     .avatar-sm { width: 40px; height: 40px; }
     .scale-on-hover { transition: transform 0.2s ease; }
     .scale-on-hover:hover { transform: scale(1.02); }
-    .letter-spacing-1 { letter-spacing: 1px; }
+    .user-edit-page .letter-spacing-1 { letter-spacing: 0; font-size: 0.82rem; }
+    .user-edit-password-toggle { min-width: 44px; }
+    .user-edit-password-group .form-control { min-width: 0; }
+
+    @media (max-width: 575.98px) {
+        .user-edit-back-link,
+        .user-edit-submit { width: 100%; }
+
+        .user-edit-warning { padding: 0.9rem !important; }
+    }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const passwordInput = document.getElementById('user-edit-password');
+    const passwordToggle = document.getElementById('user-edit-password-toggle');
+
+    if (!passwordInput || !passwordToggle) return;
+
+    passwordToggle.addEventListener('click', function () {
+        const shouldReveal = passwordInput.type === 'password';
+        const label = shouldReveal ? passwordToggle.dataset.hideLabel : passwordToggle.dataset.showLabel;
+        passwordInput.type = shouldReveal ? 'text' : 'password';
+        passwordToggle.setAttribute('aria-label', label);
+        passwordToggle.title = label;
+        passwordToggle.querySelector('i').className = shouldReveal ? 'bi bi-eye-slash' : 'bi bi-eye';
+    });
+});
+</script>
 
 <?php 
 $content = ob_get_clean(); 
