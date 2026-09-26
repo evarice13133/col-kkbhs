@@ -101,7 +101,7 @@ class BulletinController
         }
 
         // Classes are now shared across years, no year filtering
-        $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $classes = $this->db->query("SELECT id, nom FROM classes WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $classId = (int) ($_GET['class_id'] ?? 0);
         $term = (int) ($_GET['term'] ?? 1);
         if (!in_array($term, [1, 2, 3], true)) {
@@ -1400,7 +1400,7 @@ class BulletinController
     {
         // Classes are now shared across years, no year filtering
         if (in_array(Session::get('user_role'), ['superadmin', 'admin'], true)) {
-            $stmt = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC");
+            $stmt = $this->db->query("SELECT id, nom FROM classes WHERE status = 1 ORDER BY nom ASC");
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
@@ -1408,7 +1408,7 @@ class BulletinController
         $stmt = $this->db->prepare("SELECT DISTINCT c.id, c.nom
             FROM teacher_assignments ta
             JOIN classes c ON c.id = ta.class_id
-            WHERE ta.user_id = ? AND ta.academic_year_id = ?
+            WHERE ta.user_id = ? AND ta.academic_year_id = ? AND c.status = 1
             ORDER BY c.nom ASC");
         $stmt->execute([(int) Session::get('user_id'), $academicYearId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -1426,7 +1426,7 @@ class BulletinController
                          LEFT JOIN cycles cy ON c.cycle_id = cy.id
                          LEFT JOIN sections sec ON c.section_id = sec.id
                          LEFT JOIN departments d ON c.department_id = d.id
-                         WHERE (c.teaching_type_id IS NULL OR tt.actif = 1)
+                         WHERE c.status = 1 AND (c.teaching_type_id IS NULL OR tt.actif = 1)
                            AND (c.cycle_id IS NULL OR cy.status = 1)
                            AND (c.section_id IS NULL OR sec.status = 1)
                                                      AND (c.department_id IS NULL OR d.status = 1)

@@ -33,7 +33,10 @@ class SubjectGroupController
     public function index()
     {
         $q = trim((string) ($_GET['q'] ?? ''));
-        $teaching_type_id = !empty($_GET['teaching_type_id']) ? (int) $_GET['teaching_type_id'] : null;
+        $teachingTypes = $this->db->query("SELECT id, nom, code FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $teaching_type_id = array_key_exists('teaching_type_id', $_GET)
+            ? (!empty($_GET['teaching_type_id']) ? (int) $_GET['teaching_type_id'] : null)
+            : (!empty($teachingTypes) ? (int) $teachingTypes[0]['id'] : null);
 
         // Détecter si la colonne teaching_form_id existe (migration peut ne pas avoir encore été exécutée)
         $colCheck = $this->db->query("SHOW COLUMNS FROM subject_groups LIKE 'teaching_form_id'")->fetchColumn();
@@ -89,7 +92,6 @@ class SubjectGroupController
             $groups = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
-        $teachingTypes = $this->db->query("SELECT id, nom, code FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         // Formes d'enseignement actives pour la modale (si la table existe)
         $tfTableCheck = $this->db->query("SHOW TABLES LIKE 'teaching_forms'")->fetchColumn();
         if ($tfTableCheck) {

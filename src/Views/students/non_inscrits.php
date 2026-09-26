@@ -338,14 +338,14 @@ document.addEventListener('DOMContentLoaded', function() {
             if (studentIds.length === 0) return;
 
             Swal.fire({
-                title: 'Confirmer la validation ?',
-                text: `Vous êtes sur le point de valider l'inscription de ${studentIds.length} élève(s).`,
+                title: <?= json_encode(__('bulk_validate_enrollment_title'), JSON_UNESCAPED_UNICODE) ?>,
+                text: <?= json_encode(__('bulk_validate_enrollment_text'), JSON_UNESCAPED_UNICODE) ?>.replace(':count', studentIds.length),
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#28a745',
                 cancelButtonColor: '#bdc3c7',
-                confirmButtonText: 'Oui, valider',
-                cancelButtonText: 'Annuler'
+                confirmButtonText: <?= json_encode(__('bulk_validate_enrollment_action'), JSON_UNESCAPED_UNICODE) ?>,
+                cancelButtonText: <?= json_encode(__('cancel'), JSON_UNESCAPED_UNICODE) ?>
             }).then((result) => {
                 if (result.isConfirmed) {
                     const formData = new FormData();
@@ -359,18 +359,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     .then(res => res.json())
                     .then(data => {
                         if (data.success) {
-                            Swal.fire('Succès !', data.message, 'success').then(() => {
+                            Swal.fire(<?= json_encode(__('success_title'), JSON_UNESCAPED_UNICODE) ?>, data.message, 'success').then(() => {
                                 handleFilterChange(false);
                                 if(selectAllCheckbox) selectAllCheckbox.checked = false;
                                 updateBulkActionsVisibility();
                             });
                         } else {
-                            Swal.fire('Erreur', data.message || 'Une erreur est survenue.', 'error');
+                            Swal.fire(<?= json_encode(__('error_title'), JSON_UNESCAPED_UNICODE) ?>, data.message || <?= json_encode(__('error_generic'), JSON_UNESCAPED_UNICODE) ?>, 'error');
                         }
                     })
                     .catch(err => {
                         console.error("Erreur de validation en masse :", err);
-                        Swal.fire('Erreur', 'Impossible de joindre le serveur.', 'error');
+                        Swal.fire(<?= json_encode(__('error_title'), JSON_UNESCAPED_UNICODE) ?>, <?= json_encode(__('communication_error'), JSON_UNESCAPED_UNICODE) ?>, 'error');
                     });
                 }
             });
@@ -384,14 +384,14 @@ document.addEventListener('DOMContentLoaded', function() {
 // Confirmation dialog for withdraw
 function confirmWithdraw(url) {
     Swal.fire({
-        title: 'Êtes-vous sûr ?',
-        text: "Marquer cet élève comme démissionnaire empêchera son inscription.",
+        title: <?= json_encode(__('are_you_sure'), JSON_UNESCAPED_UNICODE) ?>,
+        text: <?= json_encode(__('withdraw_student_confirm'), JSON_UNESCAPED_UNICODE) ?>,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#e74c3c',
         cancelButtonColor: '#bdc3c7',
-        confirmButtonText: 'Oui, démissionner',
-        cancelButtonText: 'Annuler'
+        confirmButtonText: <?= json_encode(__('confirm_withdraw_action'), JSON_UNESCAPED_UNICODE) ?>,
+        cancelButtonText: <?= json_encode(__('cancel'), JSON_UNESCAPED_UNICODE) ?>
     }).then((result) => {
         if (result.isConfirmed) {
             window.location.href = url;
@@ -402,14 +402,14 @@ function confirmWithdraw(url) {
 // Confirmation dialog for restore
 function confirmRestore(url) {
     Swal.fire({
-        title: 'Restaurer cet élève ?',
-        text: "Cet élève sera restauré et placé à son statut initial.",
+        title: <?= json_encode(__('confirm_restore_title'), JSON_UNESCAPED_UNICODE) ?>,
+        text: <?= json_encode(__('confirm_restore_text'), JSON_UNESCAPED_UNICODE) ?>,
         icon: 'question',
         showCancelButton: true,
         confirmButtonColor: '#2ecc71',
         cancelButtonColor: '#bdc3c7',
-        confirmButtonText: 'Oui, restaurer',
-        cancelButtonText: 'Annuler'
+        confirmButtonText: <?= json_encode(__('confirm_restore_action'), JSON_UNESCAPED_UNICODE) ?>,
+        cancelButtonText: <?= json_encode(__('cancel'), JSON_UNESCAPED_UNICODE) ?>
     }).then((result) => {
         if (result.isConfirmed) {
             window.location.href = url;

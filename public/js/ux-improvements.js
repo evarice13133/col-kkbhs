@@ -262,7 +262,7 @@ const UX = (function () {
                     }
 
                     const url = deleteTrigger.getAttribute('href');
-                    const message = deleteTrigger.dataset.confirm || t('confirm_delete_text', 'Cette action est irréversible.');
+                    const message = deleteTrigger.dataset.confirm || t('action_irreversible', 'This action cannot be undone.');
 
                     AlertService.confirmDelete(
                         t('warning_title', 'Attention'),
@@ -280,12 +280,12 @@ const UX = (function () {
                 if (withdrawTrigger) {
                     e.preventDefault();
                     const url = withdrawTrigger.getAttribute('href');
-                    const message = withdrawTrigger.dataset.confirm || t('confirm_withdraw_text', 'Marquer cet élève comme démissionnaire ?');
+                    const message = withdrawTrigger.dataset.confirm || t('are_you_sure', 'Are you sure?');
 
                     AlertService.confirmDelete(
                         t('warning_title', 'Attention'),
                         message,
-                        { confirmText: t('confirm_withdraw_action', 'Oui, démissionner') }
+                        { confirmText: withdrawTrigger.dataset.confirmAction || t('confirm', 'Confirm') }
                     ).then((result) => {
                         if (result.isConfirmed) {
                             window.location.href = url;
@@ -299,13 +299,13 @@ const UX = (function () {
                 if (restoreTrigger) {
                     e.preventDefault();
                     const url = restoreTrigger.getAttribute('href');
-                    const message = restoreTrigger.dataset.confirm || t('confirm_restore_text', 'Restaurer cet élève dans sa classe ?');
+                    const message = restoreTrigger.dataset.confirm || t('are_you_sure', 'Are you sure?');
 
                     AlertService.confirmDelete(
                         t('info_title', 'Information'),
                         message,
                         { 
-                            confirmText: t('confirm_restore_action', 'Oui, restaurer'),
+                            confirmText: restoreTrigger.dataset.confirmAction || t('confirm', 'Confirm'),
                             icon: 'info'
                         }
                     ).then((result) => {
@@ -321,7 +321,7 @@ const UX = (function () {
                 if (toggleTrigger) {
                     e.preventDefault();
                     const url = toggleTrigger.getAttribute('href');
-                    const message = toggleTrigger.dataset.confirm || t('confirm_toggle_text', 'Voulez-vous modifier le statut de cet élément ?');
+                    const message = toggleTrigger.dataset.confirm || t('confirmation', 'Confirmation');
 
                     AlertService.confirm({
                         title: t('confirmation', 'Confirmation'),

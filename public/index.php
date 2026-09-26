@@ -454,6 +454,10 @@ elseif (strpos($path, '/cycles') === 0) {
         $c->manageTeam($_GET['id'] ?? 0);
     elseif ($path === '/classes/set-main-teacher' && $method === 'POST')
         $c->setMainTeacher($_GET['id'] ?? 0);
+    elseif ($path === '/classes/toggle')
+        $c->toggleStatus($_GET['id'] ?? 0);
+    elseif ($path === '/classes/bulk-toggle' && $method === 'POST')
+        $c->bulkToggleStatus();
 } elseif (strpos($path, '/sequences') === 0) {
     if (!Session::isLogged() || (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'direction_academique'], true) && !\App\Core\PermissionManager::hasPermission('manage_sequences'))) {
         header('Location: /');

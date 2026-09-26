@@ -124,7 +124,12 @@ class SubjectController
         $limit = 16;
         $offset = ($page - 1) * $limit;
 
-        [$subjects, $filters, $totalCount] = $this->fetchSubjectsFromFilters($limit, $offset);
+        $teachingTypes = $this->db->query("SELECT id, nom, code FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $defaultTeachingTypeId = !array_key_exists('teaching_type_id', $_GET) && !empty($teachingTypes)
+            ? (int) $teachingTypes[0]['id']
+            : null;
+
+        [$subjects, $filters, $totalCount] = $this->fetchSubjectsFromFilters($limit, $offset, $defaultTeachingTypeId);
         $totalPages = (int) ceil($totalCount / $limit);
 
         if ($page > $totalPages && $totalCount > 0) {
@@ -132,8 +137,7 @@ class SubjectController
             exit;
         }
 
-        $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id, c.teaching_form_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $teachingTypes = $this->db->query("SELECT id, nom, code FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id, c.teaching_form_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE c.status = 1 AND (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $teachingForms = $this->db->query("SELECT id, nom, code, teaching_type_id FROM teaching_forms WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $departments = $this->db->query("SELECT d.id, d.nom, d.teaching_type_id, d.teaching_form_id FROM departments d LEFT JOIN teaching_types tt ON d.teaching_type_id = tt.id WHERE d.status = 1 AND (d.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY d.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         include __DIR__ . '/../Views/subjects/index.php';
@@ -344,7 +348,7 @@ class SubjectController
         // Sécurité RBAC : Accès réservé aux administrateurs
         PermissionManager::requirePermission('manage_subjects');
         
-        $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id, c.teaching_form_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id, c.teaching_form_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE c.status = 1 AND (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $teachingTypes = $this->db->query("SELECT id, nom, code FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $teachingForms = $this->db->query("SELECT id, nom, code, teaching_type_id FROM teaching_forms WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $deptQuery = "SELECT d.id, d.nom, d.teaching_type_id, d.teaching_form_id FROM departments d LEFT JOIN teaching_types tt ON d.teaching_type_id = tt.id WHERE d.status = 1 AND (d.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY d.nom ASC";
@@ -405,7 +409,7 @@ class SubjectController
 
         $reloadCreateView = function (?string $errorMessage) use ($nom, $coeff, $vhm, $vhp, $th_max, $observations, $subject_group_id, $teaching_type_id, $teaching_form_id, $classes_ids, $code_uv, $code_ue) {
             $error = $errorMessage;
-            $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id, c.teaching_form_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+            $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id, c.teaching_form_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE c.status = 1 AND (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
             $teachingTypes = $this->db->query("SELECT id, nom, code FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
             $teachingForms = $this->db->query("SELECT id, nom, code, teaching_type_id FROM teaching_forms WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
             $deptQuery = "SELECT d.id, d.nom, d.teaching_type_id, d.teaching_form_id FROM departments d LEFT JOIN teaching_types tt ON d.teaching_type_id = tt.id WHERE d.status = 1 AND (d.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY d.nom ASC";
@@ -460,7 +464,7 @@ class SubjectController
         $groupe = $grpData['libelle'];
 
         $placeholders = implode(',', array_fill(0, count($classes_ids), '?'));
-        $stmtCheckClasses = $this->db->prepare("SELECT id, nom, teaching_type_id, teaching_form_id FROM classes WHERE id IN ($placeholders)");
+        $stmtCheckClasses = $this->db->prepare("SELECT id, nom, teaching_type_id, teaching_form_id FROM classes WHERE status = 1 AND id IN ($placeholders)");
         $stmtCheckClasses->execute($classes_ids);
         $fetchedClasses = $stmtCheckClasses->fetchAll(PDO::FETCH_ASSOC);
         if (count($fetchedClasses) !== count($classes_ids)) {
@@ -577,11 +581,11 @@ class SubjectController
         $academicYears = $this->db->query("SELECT id, nom, is_active FROM academic_years ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
 
         // Récupérer les classes assignées pour l'année sélectionnée
-        $stmt_assoc = $this->db->prepare("SELECT class_id FROM subject_classes WHERE subject_id = ? AND academic_year_id = ?");
+        $stmt_assoc = $this->db->prepare("SELECT sc.class_id FROM subject_classes sc JOIN classes c ON c.id = sc.class_id AND c.status = 1 WHERE sc.subject_id = ? AND sc.academic_year_id = ?");
         $stmt_assoc->execute([$id, $selectedYearId]);
         $assigned_classes = $stmt_assoc->fetchAll(PDO::FETCH_COLUMN);
 
-        $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE c.status = 1 AND (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $teachingTypes = $this->db->query("SELECT id, nom, code FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $deptQuery = "SELECT d.id, d.nom, d.teaching_type_id FROM departments d LEFT JOIN teaching_types tt ON d.teaching_type_id = tt.id WHERE d.status = 1 AND (d.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY d.nom ASC";
         $departments = $this->db->query($deptQuery)->fetchAll(PDO::FETCH_ASSOC);
@@ -637,7 +641,7 @@ class SubjectController
                 $error = \__('subject_name_and_one_class_required');
                 $subject = ['id' => $id, 'nom' => $nom, 'coefficient' => $coeff, 'groupe' => $groupe, 'subject_group_id' => $subject_group_id, 'teaching_type_id' => $teaching_type_id, 'code_uv' => $code_uv, 'code_ue' => $code_ue, 'vhm' => $vhm, 'vhp' => $vhp, 'th_max' => $th_max, 'observations' => $observations];
                 $assigned_classes = $classes_ids;
-                $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE c.status = 1 AND (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $teachingTypes = $this->db->query("SELECT id, nom, code FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $academicYears = $this->db->query("SELECT id, nom, is_active FROM academic_years ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
                 $deptQuery = "SELECT d.id, d.nom, d.teaching_type_id FROM departments d LEFT JOIN teaching_types tt ON d.teaching_type_id = tt.id WHERE d.status = 1 AND (d.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY d.nom ASC";
@@ -652,7 +656,7 @@ class SubjectController
                 $error = \__('subject_already_exists_in_classes', ['classes' => implode(', ', $duplicateClasses)]);
                 $subject = ['id' => $id, 'nom' => $nom, 'coefficient' => $coeff, 'groupe' => $groupe, 'subject_group_id' => $subject_group_id, 'teaching_type_id' => $teaching_type_id, 'code_uv' => $code_uv, 'code_ue' => $code_ue, 'vhm' => $vhm, 'vhp' => $vhp, 'th_max' => $th_max, 'observations' => $observations];
                 $assigned_classes = $classes_ids;
-                $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE c.status = 1 AND (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $teachingTypes = $this->db->query("SELECT id, nom, code FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $academicYears = $this->db->query("SELECT id, nom, is_active FROM academic_years ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
                 $deptQuery = "SELECT d.id, d.nom, d.teaching_type_id FROM departments d LEFT JOIN teaching_types tt ON d.teaching_type_id = tt.id WHERE d.status = 1 AND (d.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY d.nom ASC";
@@ -666,22 +670,15 @@ class SubjectController
                 $this->db->beginTransaction();
 
                 $subjectFieldSql = ['nom = ?', 'coefficient = ?', 'groupe = ?', 'subject_group_id = ?', 'teaching_type_id = ?'];
-                if ($this->hasColumn('subjects', 'teaching_form_id')) {
-                    $subjectFieldSql[] = 'teaching_form_id = ?';
-                }
                 $subjectFieldSql[] = 'code_uv = ?';
                 $subjectFieldSql[] = 'code_ue = ?';
                 $subjectFieldSql[] = 'vhm = ?';
                 $subjectFieldSql[] = 'vhp = ?';
                 $subjectFieldSql[] = 'th_max = ?';
                 $subjectFieldSql[] = 'observations = ?';
-                $subjectFieldSql[] = 'WHERE id = ?';
                 $updateValues = [$nom, $coeff, $groupe, $subject_group_id, $teaching_type_id];
-                if ($this->hasColumn('subjects', 'teaching_form_id')) {
-                    $updateValues[] = $teaching_form_id;
-                }
                 $updateValues = array_merge($updateValues, [$code_uv, $code_ue, $vhm, $vhp, $th_max, $observations, $id]);
-                $stmt = $this->db->prepare("UPDATE subjects SET " . implode(', ', $subjectFieldSql));
+                $stmt = $this->db->prepare("UPDATE subjects SET " . implode(', ', $subjectFieldSql) . ' WHERE id = ?');
                 $stmt->execute($updateValues);
 
                 $stmt_del = $this->db->prepare("DELETE FROM subject_classes WHERE subject_id = ? AND academic_year_id = ?");
@@ -727,7 +724,7 @@ class SubjectController
                 $error = \__('server_error_subject_update');
                 $subject = ['id' => $id, 'nom' => $nom, 'coefficient' => $coeff, 'groupe' => $groupe, 'teaching_type_id' => $teaching_type_id, 'vhm' => $vhm, 'vhp' => $vhp, 'th_max' => $th_max, 'observations' => $observations];
                 $assigned_classes = $classes_ids;
-                $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $classes = $this->db->query("SELECT id, nom FROM classes WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $academicYears = $this->db->query("SELECT id, nom, is_active FROM academic_years ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
                 include __DIR__ . '/../Views/subjects/edit.php';
@@ -865,11 +862,13 @@ class SubjectController
         include __DIR__ . '/../Views/subjects/import.php';
     }
 
-    private function fetchSubjectsFromFilters($limit = null, $offset = null)
+    private function fetchSubjectsFromFilters($limit = null, $offset = null, ?int $defaultTeachingTypeId = null)
     {
         $search = trim($_GET['q'] ?? '');
         $classId = (int) ($_GET['class_id'] ?? 0);
-        $teachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
+        $teachingTypeId = array_key_exists('teaching_type_id', $_GET)
+            ? (int) $_GET['teaching_type_id']
+            : (int) ($defaultTeachingTypeId ?? 0);
         $departmentId = (int) ($_GET['department_id'] ?? 0);
 
         // 1. Count total
@@ -880,7 +879,7 @@ class SubjectController
             $countParams[] = '%' . $search . '%';
         }
         if ($classId > 0) {
-            $countSql .= " AND EXISTS (SELECT 1 FROM subject_classes sc2 WHERE sc2.subject_id = s.id AND sc2.class_id = ?)";
+            $countSql .= " AND EXISTS (SELECT 1 FROM subject_classes sc2 JOIN classes c2 ON c2.id = sc2.class_id WHERE sc2.subject_id = s.id AND sc2.class_id = ? AND c2.status = 1)";
             $countParams[] = $classId;
         }
         if ($teachingTypeId > 0) {
@@ -888,7 +887,7 @@ class SubjectController
             $countParams[] = $teachingTypeId;
         }
         if ($departmentId > 0) {
-            $countSql .= " AND EXISTS (SELECT 1 FROM subject_classes sc3 JOIN classes c3 ON c3.id = sc3.class_id WHERE sc3.subject_id = s.id AND c3.department_id = ?)";
+            $countSql .= " AND EXISTS (SELECT 1 FROM subject_classes sc3 JOIN classes c3 ON c3.id = sc3.class_id WHERE sc3.subject_id = s.id AND c3.status = 1 AND c3.department_id = ?)";
             $countParams[] = $departmentId;
         }
 
@@ -913,7 +912,7 @@ class SubjectController
                 GROUP_CONCAT(DISTINCT c.nom SEPARATOR ', ') as classes_list
                 FROM subjects s
                 LEFT JOIN subject_classes sc ON s.id = sc.subject_id
-                LEFT JOIN classes c ON sc.class_id = c.id
+                LEFT JOIN classes c ON sc.class_id = c.id AND c.status = 1
                 LEFT JOIN teaching_types tt ON s.teaching_type_id = tt.id
                 LEFT JOIN subject_groups sg ON s.subject_group_id = sg.id
                 WHERE (tt.actif = 1 OR s.teaching_type_id IS NULL)";
@@ -927,6 +926,7 @@ class SubjectController
         if ($classId > 0) {
             $sql .= " AND EXISTS (
                 SELECT 1 FROM subject_classes sc2
+                JOIN classes c2 ON c2.id = sc2.class_id AND c2.status = 1
                 WHERE sc2.subject_id = s.id AND sc2.class_id = ?
             )";
             $params[] = $classId;
@@ -938,7 +938,7 @@ class SubjectController
         }
 
         if ($departmentId > 0) {
-            $sql .= " AND EXISTS (SELECT 1 FROM subject_classes sc3 JOIN classes c3 ON c3.id = sc3.class_id WHERE sc3.subject_id = s.id AND c3.department_id = ?)";
+            $sql .= " AND EXISTS (SELECT 1 FROM subject_classes sc3 JOIN classes c3 ON c3.id = sc3.class_id WHERE sc3.subject_id = s.id AND c3.status = 1 AND c3.department_id = ?)";
             $params[] = $departmentId;
         }
 

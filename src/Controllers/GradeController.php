@@ -1526,7 +1526,7 @@ class GradeController
 
                                      LEFT JOIN users u ON ta.user_id = u.id
 
-                                     WHERE s.status = 1 AND (tt.actif = 1 OR COALESCE(s.teaching_type_id, c.teaching_type_id) IS NULL)
+                                     WHERE s.status = 1 AND c.status = 1 AND (tt.actif = 1 OR COALESCE(s.teaching_type_id, c.teaching_type_id) IS NULL)
 
                                      ORDER BY c.nom ASC, s.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -1550,7 +1550,7 @@ class GradeController
 
                                     JOIN users u ON ta.user_id = u.id
 
-                                    WHERE ta.user_id = ? AND s.status = 1 AND (tt.actif = 1 OR COALESCE(s.teaching_type_id, c.teaching_type_id) IS NULL)
+                                    WHERE ta.user_id = ? AND s.status = 1 AND c.status = 1 AND (tt.actif = 1 OR COALESCE(s.teaching_type_id, c.teaching_type_id) IS NULL)
 
                                     ORDER BY c.nom ASC, s.nom ASC");
 

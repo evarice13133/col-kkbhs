@@ -55,7 +55,7 @@ class SmartDeleteService
             }
             return [
                 'success' => false,
-                'message' => "Erreur lors du traitement de la suppression : " . $e->getMessage()
+                'message' => __('impact_delete_processing_failed')
             ];
         }
     }
@@ -64,7 +64,7 @@ class SmartDeleteService
     {
         $targetId = (int)($options['target_id'] ?? 0);
         if ($targetId <= 0 || $targetId === $sourceId) {
-            throw new Exception("Veuillez sélectionner un élément de destination valide dans la liste déroulante pour effectuer le transfert.");
+            throw new Exception(__('impact_delete_invalid_transfer_target'));
         }
 
         $transferredDetails = [];
@@ -181,7 +181,7 @@ class SmartDeleteService
                 break;
 
             default:
-                throw new Exception("Le transfert n'est pas configuré pour ce type d'élément ('$type').");
+                throw new Exception(__('impact_delete_transfer_unavailable'));
         }
 
         $this->tracker->recordEvent('smart_delete_transfer', 'system', [
@@ -193,7 +193,7 @@ class SmartDeleteService
 
         return [
             'success' => true,
-            'message' => "Transfert réussi des dépendances vers la cible #$targetId et suppression de la source.",
+            'message' => __('impact_delete_transfer_success', ['target' => $targetId]),
             'transferred_details' => $transferredDetails
         ];
     }
@@ -212,7 +212,7 @@ class SmartDeleteService
         $table = $tableMap[$type] ?? null;
 
         if (!$table) {
-            throw new Exception("L'archivage/désactivation n'est pas disponible pour l'entité '$type'.");
+            throw new Exception(__('impact_delete_archive_unavailable'));
         }
 
         // Vérifier les colonnes existantes (status, is_active, active)
@@ -229,7 +229,7 @@ class SmartDeleteService
             $stmt = $this->db->prepare("UPDATE `$table` SET active = 0 WHERE id = ?");
             $stmt->execute([$id]);
         } else {
-            throw new Exception("L'entité '$type' ne possède pas de champ de statut/d'état modifiable.");
+            throw new Exception(__('impact_delete_status_unavailable'));
         }
 
         $this->tracker->recordEvent('entity_' . $action, 'system', [
@@ -240,7 +240,10 @@ class SmartDeleteService
 
         return [
             'success' => true,
-            'message' => "L'élément de type '$type' (#$id) a été " . ($action === 'archive' ? 'archivé' : 'désactivé') . " avec succès."
+            'message' => __('impact_delete_status_success', [
+                'id' => $id,
+                'action' => __($action === 'archive' ? 'impact_archive_action' : 'impact_deactivate_action')
+            ])
         ];
     }
 
@@ -437,7 +440,7 @@ class SmartDeleteService
                 break;
 
             default:
-                throw new Exception("La suppression n'est pas gérée pour le type '$type'.");
+                throw new Exception(__('impact_delete_unsupported'));
         }
 
         $this->tracker->recordEvent('direct_delete_executed', 'system', [
@@ -447,7 +450,7 @@ class SmartDeleteService
 
         return [
             'success' => true,
-            'message' => "L'élément de type '$type' (#$id) a été définitivement supprimé."
+            'message' => __('impact_delete_success', ['id' => $id])
         ];
     }
 }

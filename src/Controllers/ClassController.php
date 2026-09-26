@@ -51,8 +51,13 @@ class ClassController
         $limit = 16;
         $offset = ($page - 1) * $limit;
 
+        $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $defaultTeachingTypeId = !array_key_exists('teaching_type_id', $_GET) && !empty($teachingTypes)
+            ? (int) $teachingTypes[0]['id']
+            : null;
+
         // Récupération des données selon les filtres actifs (Recherche, Cycle, Section)
-        [$classes, $filters, $totalCount] = $this->fetchClassesFromFilters($limit, $offset);
+        [$classes, $filters, $totalCount] = $this->fetchClassesFromFilters($limit, $offset, $defaultTeachingTypeId);
         $totalPages = (int) ceil($totalCount / $limit);
 
         if ($page > $totalPages && $totalCount > 0) {
@@ -63,11 +68,12 @@ class ClassController
         // Listes pour alimenter les menus déroulants de filtrage dans la vue
         $cycles = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id FROM cycles c LEFT JOIN teaching_types t ON c.teaching_type_id = t.id WHERE c.status = 1 AND (t.actif = 1 OR c.teaching_type_id IS NULL) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $sections = $this->db->query("SELECT id, nom FROM sections WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $levels = $this->db->query("SELECT l.id, l.code, l.libelle_fr, l.libelle_en, l.teaching_type_id FROM levels l LEFT JOIN teaching_types tt ON l.teaching_type_id = tt.id WHERE l.status = 1 AND (tt.actif = 1 OR l.teaching_type_id IS NULL) ORDER BY l.code ASC, l.libelle_fr ASC")->fetchAll(PDO::FETCH_ASSOC);
         
         // Seuls les départements actifs sont visibles pour le filtrage usuel
         $departments = $this->db->query("SELECT d.id, d.nom, d.teaching_type_id FROM departments d LEFT JOIN teaching_types t ON d.teaching_type_id = t.id WHERE d.status = 1 AND (t.actif = 1 OR d.teaching_type_id IS NULL) ORDER BY d.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+        $statusClasses = $this->db->query("SELECT id, nom, status FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         
         include __DIR__ . '/../Views/classes/index.php';
     }
@@ -633,7 +639,7 @@ class ClassController
         
         // Liste de toutes les classes pour le sélecteur
         // Classes are now shared across years, no year filtering
-        $allClasses = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $allClasses = $this->db->query("SELECT id, nom FROM classes WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         
         $class = null;
         $teachers = [];
@@ -789,13 +795,15 @@ class ClassController
      * 
      * @return array [Données des classes, États des filtres]
      */
-    private function fetchClassesFromFilters($limit = null, $offset = null)
+    private function fetchClassesFromFilters($limit = null, $offset = null, ?int $defaultTeachingTypeId = null)
     {
         $search = trim((string)($_GET['q'] ?? ''));
         $cycleId = (int) ($_GET['cycle_id'] ?? 0);
         $sectionId = (int) ($_GET['section_id'] ?? 0);
         $departmentId = (int) ($_GET['department_id'] ?? 0);
-        $teachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
+        $teachingTypeId = array_key_exists('teaching_type_id', $_GET)
+            ? (int) $_GET['teaching_type_id']
+            : (int) ($defaultTeachingTypeId ?? 0);
         $levelId = (int) ($_GET['level_id'] ?? 0);
         // Classes are now shared across years, no year filtering needed
 
@@ -846,7 +854,7 @@ class ClassController
         // 2. Fetch data
         // Jointures pour récupérer les noms des cycles, sections, départements, niveaux et du professeur principal
         $academicYearId = $this->academicYearService->getActiveYearId();
-        $sql = "SELECT c.id, c.nom, c.level_id, cy.nom as cycle_nom, s.nom as section_nom, d.nom as department_nom, tt.nom as teaching_type_nom,
+        $sql = "SELECT c.id, c.nom, c.status, c.level_id, cy.nom as cycle_nom, s.nom as section_nom, d.nom as department_nom, tt.nom as teaching_type_nom,
                        lvl.code as level_code, lvl.libelle_fr as level_libelle_fr, lvl.libelle_en as level_libelle_en,
                        u.nom as main_teacher_nom, u.prenom as main_teacher_prenom,
                        (SELECT COUNT(*) FROM students WHERE class_id = c.id AND academic_year_id = {$academicYearId} AND is_withdrawn = 0 AND actif = 1) as student_count
@@ -904,5 +912,67 @@ class ClassController
         $stmt->execute($params);
 
         return [$stmt->fetchAll(PDO::FETCH_ASSOC), ['q' => $search, 'cycle_id' => $cycleId, 'section_id' => $sectionId, 'department_id' => $departmentId, 'teaching_type_id' => $teachingTypeId, 'level_id' => $levelId], $totalCount];
+    }
+
+    public function toggleStatus($id)
+    {
+        \App\Core\PermissionManager::requirePermission('manage_classes_structure');
+        $id = (int)$id;
+        if ($id <= 0) {
+            echo json_encode(['success' => false, 'message' => __('invalid_id') ?? 'ID invalide.']);
+            exit;
+        }
+
+        $stmt = $this->db->prepare("SELECT status FROM classes WHERE id = ?");
+        $stmt->execute([$id]);
+        $currentStatus = $stmt->fetchColumn();
+
+        if ($currentStatus !== false) {
+            $newStatus = $currentStatus == 1 ? 0 : 1;
+            $upd = $this->db->prepare("UPDATE classes SET status = ? WHERE id = ?");
+            $upd->execute([$newStatus, $id]);
+
+            echo json_encode(['success' => true, 'newStatus' => $newStatus]);
+        } else {
+            echo json_encode(['success' => false, 'message' => __('class_not_found') ?? 'Classe non trouvée.']);
+        }
+        exit;
+    }
+
+    public function bulkToggleStatus()
+    {
+        \App\Core\PermissionManager::requirePermission('manage_classes_structure');
+        header('Content-Type: application/json');
+
+        if (!Session::verifyCsrfToken($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '')) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => __('session_expired_retry') ?? 'Session expirée ou requête invalide.']);
+            exit;
+        }
+
+        $data = json_decode(file_get_contents('php://input'), true);
+        $ids = array_values(array_unique(array_filter(array_map('intval', (array) ($data['ids'] ?? [])), static fn($id) => $id > 0)));
+        $action = $data['action'] ?? '';
+
+        if (empty($ids) || !in_array($action, ['activate', 'deactivate'])) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => __('bulk_class_status_invalid_data')]);
+            exit;
+        }
+
+        $newStatus = $action === 'activate' ? 1 : 0;
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $sql = "UPDATE classes SET status = ? WHERE id IN ($placeholders)";
+        $params = array_merge([$newStatus], $ids);
+
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            echo json_encode(['success' => true, 'updated' => $stmt->rowCount()]);
+        } catch (\Throwable $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => __('bulk_class_status_update_failed')]);
+        }
+        exit;
     }
 }

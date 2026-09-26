@@ -1438,11 +1438,11 @@ $timetablesByClass = $gridData['timetablesByClass'];
         const subjectName = subjectSelect.options[subjectSelect.selectedIndex]?.text || 'Matière sélectionnée';
 
         if (!name) {
-            alert('Veuillez saisir le nom du nouvel enseignant.');
+            alert(<?= json_encode(__('timetables_teacher_name_required'), JSON_UNESCAPED_UNICODE) ?>);
             return;
         }
         if (!subjectSelect.value) {
-            alert('Veuillez d\'abord sélectionner la matière.');
+            alert(<?= json_encode(__('timetables_subject_required'), JSON_UNESCAPED_UNICODE) ?>);
             return;
         }
 
@@ -1519,7 +1519,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
 
                     checkRealtimeConflict();
                 } else {
-                    alert(res.message || 'Erreur lors de la création de l\'enseignant.');
+                    alert(res.message || <?= json_encode(__('timetables_quick_teacher_error'), JSON_UNESCAPED_UNICODE) ?>);
                 }
             });
     }
@@ -1555,7 +1555,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
 
     function saveAssignment(skipAttachmentCheck = false) {
         if (selectedClasses.length === 0) {
-            alert('Veuillez sélectionner au moins une classe pour pouvoir programmer ce cours.');
+            alert(<?= json_encode(__('timetables_class_required'), JSON_UNESCAPED_UNICODE) ?>);
             return;
         }
 
@@ -1577,12 +1577,12 @@ $timetablesByClass = $gridData['timetablesByClass'];
         };
 
         if (payload.teacher_id === 'NEW_TEACHER') {
-            alert('Veuillez finaliser la création du nouvel enseignant.');
+            alert(<?= json_encode(__('timetables_teacher_creation_pending'), JSON_UNESCAPED_UNICODE) ?>);
             return;
         }
 
         if (!payload.subject_id || !payload.teacher_id || !payload.room_id) {
-            alert('Veuillez remplir tous les champs obligatoires (matière, enseignant, salle).');
+            alert(<?= json_encode(__('timetables_assignment_fields_required'), JSON_UNESCAPED_UNICODE) ?>);
             return;
         }
 
@@ -1621,7 +1621,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
                 }
             })
             .catch(err => {
-                alert('Erreur réseau lors de l\'enregistrement.');
+                alert(<?= json_encode(__('timetables_save_network_error'), JSON_UNESCAPED_UNICODE) ?>);
             });
     }
 
@@ -1650,7 +1650,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
                 if (res.success) {
                     location.reload();
                 } else {
-                    alert(res.message || 'Erreur lors de la suppression');
+                    alert(res.message || <?= json_encode(__('timetables_delete_entry_error'), JSON_UNESCAPED_UNICODE) ?>);
                 }
             });
     }
@@ -2656,7 +2656,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
         const colorHex = document.getElementById('bulk_color_hex').value;
 
         if (!subjectId || !teacherId || days.length === 0 || slotIds.length === 0 || classIds.length === 0) {
-            alert('Veuillez renseigner tous les champs obligatoires (Matière, Enseignant, au moins 1 Jour, 1 Créneau et 1 Classe).');
+            alert(<?= json_encode(__('timetables_bulk_fields_required'), JSON_UNESCAPED_UNICODE) ?>);
             return;
         }
 
@@ -2688,7 +2688,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
                 btn.innerHTML = `<i class="bi bi-magic me-1"></i>Analyser & Prévisualiser (Étape 2)`;
 
                 if (!data.success) {
-                    alert(data.message || 'Erreur lors de l\'analyse des cours.');
+                    alert(data.message || <?= json_encode(__('timetables_bulk_analysis_error'), JSON_UNESCAPED_UNICODE) ?>);
                     return;
                 }
 
@@ -2710,7 +2710,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
             .catch(err => {
                 btn.disabled = false;
                 btn.innerHTML = `<i class="bi bi-magic me-1"></i>Analyser & Prévisualiser (Étape 2)`;
-                alert('Erreur réseau lors de la communication avec le serveur.');
+                alert(<?= json_encode(__('timetables_bulk_network_error'), JSON_UNESCAPED_UNICODE) ?>);
             });
     }
 
@@ -2819,7 +2819,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
         });
 
         if (schedulesToSave.length === 0) {
-            alert('Aucune programmation valide sélectionnée pour l\'enregistrement.');
+            alert(<?= json_encode(__('timetables_bulk_no_valid_schedule'), JSON_UNESCAPED_UNICODE) ?>);
             return;
         }
 
@@ -2844,13 +2844,13 @@ $timetablesByClass = $gridData['timetablesByClass'];
 
                     window.location.reload();
                 } else {
-                    alert(data.message || 'Erreur lors de l\'enregistrement des cours.');
+                    alert(data.message || <?= json_encode(__('timetables_bulk_save_error'), JSON_UNESCAPED_UNICODE) ?>);
                 }
             })
             .catch(err => {
                 btnSave.disabled = false;
                 btnSave.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i>Enregistrer les programmations valides`;
-                alert('Erreur de connexion lors de l\'enregistrement.');
+                alert(<?= json_encode(__('timetables_bulk_network_error'), JSON_UNESCAPED_UNICODE) ?>);
             });
     }
 </script>

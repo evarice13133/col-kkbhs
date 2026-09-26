@@ -8,6 +8,11 @@
  */
 
 const AlertService = {
+    text(key, fallbackFr, fallbackEn) {
+        const lang = (window.NM_I18N?.lang || document.documentElement.lang || 'fr').toLowerCase();
+        return window.NM_I18N?.[key] || (lang === 'en' ? fallbackEn : fallbackFr);
+    },
+
     /**
      * Configuration par défaut pour toutes les alertes.
      * Applique les classes CSS personnalisées définies dans alerts-premium.css.
@@ -52,7 +57,7 @@ const AlertService = {
             icon: 'success',
             title: title,
             html: message,
-            confirmButtonText: (window.NM_I18N && window.NM_I18N.continue) || 'Continuer',
+            confirmButtonText: this.text('continue', 'Continuer', 'Continue'),
             confirmButtonColor: '#1ea896' // nm-teal
         });
     },
@@ -70,7 +75,7 @@ const AlertService = {
             icon: 'error',
             title: title,
             html: message,
-            confirmButtonText: (window.NM_I18N && window.NM_I18N.close) || 'Fermer',
+            confirmButtonText: this.text('close', 'Fermer', 'Close'),
             confirmButtonColor: '#d1495b' // nm-red
         });
     },
@@ -88,7 +93,7 @@ const AlertService = {
             icon: 'warning',
             title: title,
             html: message,
-            confirmButtonText: (window.NM_I18N && window.NM_I18N.understood) || 'Compris',
+            confirmButtonText: this.text('understood', 'Compris', 'Understood'),
             confirmButtonColor: '#f4b942' // nm-gold
         });
     },
@@ -103,7 +108,7 @@ const AlertService = {
             icon: 'info',
             title: title,
             html: message,
-            confirmButtonText: (window.NM_I18N && window.NM_I18N.ok) || 'Ok',
+            confirmButtonText: this.text('ok', 'OK', 'OK'),
             confirmButtonColor: '#2f6fed' // nm-blue
         });
     },
@@ -116,18 +121,19 @@ const AlertService = {
      * @returns {Promise} Résultat de SweetAlert2
      */
     confirm(options = {}) {
+        const { message, text, ...configOptions } = options;
         const config = {
-            title: options.title || (window.NM_I18N && window.NM_I18N.are_you_sure) || 'Êtes-vous sûr ?',
-            html: options.message || (window.NM_I18N && window.NM_I18N.action_irreversible) || 'Cette action ne pourra pas être annulée.',
+            title: options.title || this.text('are_you_sure', 'Êtes-vous sûr ?', 'Are you sure?'),
+            html: options.html || message || text || this.text('action_irreversible', 'Cette action ne pourra pas être annulée.', 'This action cannot be undone.'),
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonText: options.confirmText || (window.NM_I18N && window.NM_I18N.confirm) || 'Confirmer',
-            cancelButtonText: options.cancelText || (window.NM_I18N && window.NM_I18N.cancel) || 'Annuler',
+            confirmButtonText: options.confirmText || this.text('confirm', 'Confirmer', 'Confirm'),
+            cancelButtonText: options.cancelText || this.text('cancel', 'Annuler', 'Cancel'),
             confirmButtonColor: '#d1495b', // Défaut rouge si critique
             cancelButtonColor: '#eef4fb',
             reverseButtons: true, // Annuler à gauche, Confirmer à droite (plus standard)
             ...this.baseConfig,
-            ...options
+            ...configOptions
         };
 
         return Swal.fire(config);
@@ -141,8 +147,8 @@ const AlertService = {
             title: title,
             html: `<div style="color: #000; font-size: 0.9rem;">${message}</div>`,
             icon: 'warning',
-            confirmText: (window.NM_I18N && window.NM_I18N.delete) || 'Supprimer',
-            cancelText: (window.NM_I18N && window.NM_I18N.cancel) || 'Annuler',
+            confirmText: this.text('delete', 'Supprimer', 'Delete'),
+            cancelText: this.text('cancel', 'Annuler', 'Cancel'),
             confirmButtonColor: '#000000', // Noir sur Blanc
             background: '#ffffff',
             width: '320px',
@@ -187,8 +193,8 @@ const AlertService = {
      * Affiche une alerte persistante lors d'un CHARGEMENT long.
      */
     loading(title, message) {
-        const defaultTitle = (window.NM_I18N && window.NM_I18N.processing) || 'Traitement en cours...';
-        const defaultMsg = (window.NM_I18N && window.NM_I18N.please_wait) || 'Veuillez patienter';
+        const defaultTitle = this.text('processing', 'Traitement en cours...', 'Processing...');
+        const defaultMsg = this.text('please_wait', 'Veuillez patienter', 'Please wait');
         Swal.fire({
             title: title || defaultTitle,
             html: message || defaultMsg,

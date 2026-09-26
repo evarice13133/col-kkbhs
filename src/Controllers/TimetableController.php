@@ -120,6 +120,7 @@ class TimetableController
         $classes = $this->db->query("
             SELECT c.id, c.nom 
             FROM classes c
+            WHERE c.status = 1
             ORDER BY c.nom ASC
         ")->fetchAll(PDO::FETCH_ASSOC);
         $weeks = $selectedYear ? $this->weekModel->getByAcademicYear($selectedYear) : $this->weekModel->getAll();
@@ -141,7 +142,7 @@ class TimetableController
     {
         PermissionManager::requirePermission('manage_timetables');
         if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
-            Session::setFlash('error', 'Jeton de sécurité CSRF invalide.');
+            Session::setFlash('error', __('timetables_csrf_invalid'));
             header('Location: /timetables/slots');
             exit;
         }
@@ -152,19 +153,19 @@ class TimetableController
         $ordre = (int)($_POST['ordre_affichage'] ?? 1);
 
         if (empty($debut) || empty($fin)) {
-            Session::setFlash('error', 'Les heures de début et de fin sont obligatoires.');
+            Session::setFlash('error', __('timetables_slot_times_required'));
             header('Location: /timetables/slots');
             exit;
         }
 
         if (strtotime("1970-01-01 $fin") <= strtotime("1970-01-01 $debut")) {
-            Session::setFlash('error', 'L\'heure de fin doit être supérieure à l\'heure de début.');
+            Session::setFlash('error', __('timetables_slot_end_after_start'));
             header('Location: /timetables/slots');
             exit;
         }
 
         if ($this->slotModel->hasOverlap($debut, $fin)) {
-            Session::setFlash('error', 'Conflit détecté : Ce créneau chevauche un créneau horaire existant.');
+            Session::setFlash('error', __('timetables_slot_overlap_create'));
             header('Location: /timetables/slots');
             exit;
         }
@@ -176,7 +177,7 @@ class TimetableController
             'ordre_affichage' => $ordre
         ]);
 
-        Session::setFlash('success', 'Créneau horaire ajouté avec succès.');
+        Session::setFlash('success', __('timetables_slot_created'));
         header('Location: /timetables/slots');
         exit;
     }
@@ -185,7 +186,7 @@ class TimetableController
     {
         PermissionManager::requirePermission('manage_timetables');
         if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
-            Session::setFlash('error', 'Jeton CSRF invalide.');
+            Session::setFlash('error', __('timetables_csrf_invalid'));
             header('Location: /timetables/slots');
             exit;
         }
@@ -197,7 +198,7 @@ class TimetableController
         $ordre = (int)($_POST['ordre_affichage'] ?? 1);
 
         if ($this->slotModel->hasOverlap($debut, $fin, $id)) {
-            Session::setFlash('error', 'Conflit de chevauchement détecté pour la modification de ce créneau.');
+            Session::setFlash('error', __('timetables_slot_overlap_update'));
             header('Location: /timetables/slots');
             exit;
         }
@@ -209,7 +210,7 @@ class TimetableController
             'ordre_affichage' => $ordre
         ]);
 
-        Session::setFlash('success', 'Créneau horaire mis à jour.');
+        Session::setFlash('success', __('timetables_slot_updated'));
         header('Location: /timetables/slots');
         exit;
     }
@@ -218,7 +219,7 @@ class TimetableController
     {
         PermissionManager::requirePermission('manage_timetables');
         if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
-            Session::setFlash('error', 'Jeton CSRF invalide.');
+            Session::setFlash('error', __('timetables_csrf_invalid'));
             header('Location: /timetables/slots');
             exit;
         }
@@ -226,7 +227,7 @@ class TimetableController
         $id = (int)($_POST['id'] ?? 0);
         $this->slotModel->delete($id);
 
-        Session::setFlash('success', 'Créneau horaire supprimé.');
+        Session::setFlash('success', __('timetables_slot_deleted'));
         header('Location: /timetables/slots');
         exit;
     }
@@ -245,7 +246,7 @@ class TimetableController
     {
         PermissionManager::requirePermission('manage_timetables');
         if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
-            Session::setFlash('error', 'Jeton CSRF invalide.');
+            Session::setFlash('error', __('timetables_csrf_invalid'));
             header('Location: /timetables/rooms');
             exit;
         }
@@ -256,7 +257,7 @@ class TimetableController
         $desc = trim($_POST['description'] ?? '');
 
         if (empty($nom) || empty($code)) {
-            Session::setFlash('error', 'Le nom et le code de la salle sont obligatoires.');
+            Session::setFlash('error', __('timetables_room_name_code_required'));
             header('Location: /timetables/rooms');
             exit;
         }
@@ -269,9 +270,9 @@ class TimetableController
                 'description' => $desc,
                 'status' => 1
             ]);
-            Session::setFlash('success', 'Salle de classe ajoutée avec succès.');
+            Session::setFlash('success', __('timetables_room_created'));
         } catch (\Throwable $e) {
-            Session::setFlash('error', 'Erreur : Le code de la salle existe déjà.');
+            Session::setFlash('error', __('timetables_room_code_exists'));
         }
 
         header('Location: /timetables/rooms');
@@ -282,7 +283,7 @@ class TimetableController
     {
         PermissionManager::requirePermission('manage_timetables');
         if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
-            Session::setFlash('error', 'Jeton CSRF invalide.');
+            Session::setFlash('error', __('timetables_csrf_invalid'));
             header('Location: /timetables/rooms');
             exit;
         }
@@ -302,7 +303,7 @@ class TimetableController
             'status' => $status
         ]);
 
-        Session::setFlash('success', 'Salle de classe mise à jour.');
+        Session::setFlash('success', __('timetables_room_updated'));
         header('Location: /timetables/rooms');
         exit;
     }
@@ -311,7 +312,7 @@ class TimetableController
     {
         PermissionManager::requirePermission('manage_timetables');
         if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
-            Session::setFlash('error', 'Jeton CSRF invalide.');
+            Session::setFlash('error', __('timetables_csrf_invalid'));
             header('Location: /timetables/rooms');
             exit;
         }
@@ -319,7 +320,7 @@ class TimetableController
         $id = (int)($_POST['id'] ?? 0);
         $this->roomModel->delete($id);
 
-        Session::setFlash('success', 'Salle de classe supprimée.');
+        Session::setFlash('success', __('timetables_room_deleted'));
         header('Location: /timetables/rooms');
         exit;
     }
@@ -346,7 +347,7 @@ class TimetableController
     {
         PermissionManager::requirePermission('manage_timetables');
         if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
-            Session::setFlash('error', 'Jeton CSRF invalide.');
+            Session::setFlash('error', __('timetables_csrf_invalid'));
             header('Location: /timetables/weeks');
             exit;
         }
@@ -357,7 +358,7 @@ class TimetableController
         $end = trim($_POST['date_fin'] ?? '');
 
         if (empty($libelle) || empty($start) || empty($end) || !$yearId) {
-            Session::setFlash('error', 'Tous les champs sont requis pour créer une semaine.');
+            Session::setFlash('error', __('timetables_week_fields_required'));
             header('Location: /timetables/weeks');
             exit;
         }
@@ -366,26 +367,26 @@ class TimetableController
             $startDateObj = new \DateTime($start);
             $endDateObj = new \DateTime($end);
         } catch (\Throwable $e) {
-            Session::setFlash('error', 'Format de date invalide.');
+            Session::setFlash('error', __('timetables_week_date_invalid'));
             header('Location: /timetables/weeks');
             exit;
         }
 
         if ($endDateObj < $startDateObj) {
-            Session::setFlash('error', 'La date de fin ne peut pas être antérieure à la date de début.');
+            Session::setFlash('error', __('timetables_week_end_before_start'));
             header('Location: /timetables/weeks');
             exit;
         }
 
         $daysCount = $startDateObj->diff($endDateObj)->days + 1;
         if ($daysCount > 7) {
-            Session::setFlash('error', 'Une semaine de cours ne peut pas contenir plus de 7 jours (période maximale de 7 jours).');
+            Session::setFlash('error', __('timetables_week_max_seven_days'));
             header('Location: /timetables/weeks');
             exit;
         }
 
         if ($this->weekModel->hasOverlap($yearId, $start, $end)) {
-            Session::setFlash('error', 'Chevauchement de périodes : Une autre semaine existe déjà dans cette plage de dates pour cette année académique.');
+            Session::setFlash('error', __('timetables_week_overlap_create'));
             header('Location: /timetables/weeks');
             exit;
         }
@@ -397,9 +398,9 @@ class TimetableController
                 'date_debut' => $start,
                 'date_fin' => $end
             ]);
-            Session::setFlash('success', 'Semaine de cours enregistrée.');
+            Session::setFlash('success', __('timetables_week_created'));
         } catch (\Throwable $e) {
-            Session::setFlash('error', 'Une semaine avec la même date de début existe déjà pour cette année académique.');
+            Session::setFlash('error', __('timetables_week_duplicate_start'));
         }
 
         header('Location: /timetables/weeks');
@@ -410,7 +411,7 @@ class TimetableController
     {
         PermissionManager::requirePermission('manage_timetables');
         if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
-            Session::setFlash('error', 'Jeton CSRF invalide.');
+            Session::setFlash('error', __('timetables_csrf_invalid'));
             header('Location: /timetables/weeks');
             exit;
         }
@@ -422,7 +423,7 @@ class TimetableController
         $end = trim($_POST['date_fin'] ?? '');
 
         if (empty($libelle) || empty($start) || empty($end) || !$yearId) {
-            Session::setFlash('error', 'Tous les champs sont requis.');
+            Session::setFlash('error', __('timetables_week_update_fields_required'));
             header('Location: /timetables/weeks');
             exit;
         }
@@ -431,26 +432,26 @@ class TimetableController
             $startDateObj = new \DateTime($start);
             $endDateObj = new \DateTime($end);
         } catch (\Throwable $e) {
-            Session::setFlash('error', 'Format de date invalide.');
+            Session::setFlash('error', __('timetables_week_date_invalid'));
             header('Location: /timetables/weeks');
             exit;
         }
 
         if ($endDateObj < $startDateObj) {
-            Session::setFlash('error', 'La date de fin ne peut pas être antérieure à la date de début.');
+            Session::setFlash('error', __('timetables_week_end_before_start'));
             header('Location: /timetables/weeks');
             exit;
         }
 
         $daysCount = $startDateObj->diff($endDateObj)->days + 1;
         if ($daysCount > 7) {
-            Session::setFlash('error', 'Une semaine de cours ne peut pas contenir plus de 7 jours (période maximale de 7 jours).');
+            Session::setFlash('error', __('timetables_week_max_seven_days'));
             header('Location: /timetables/weeks');
             exit;
         }
 
         if ($this->weekModel->hasOverlap($yearId, $start, $end, $id)) {
-            Session::setFlash('error', 'Chevauchement de dates détecté lors de la modification de la semaine.');
+            Session::setFlash('error', __('timetables_week_overlap_update'));
             header('Location: /timetables/weeks');
             exit;
         }
@@ -462,7 +463,7 @@ class TimetableController
             'date_fin' => $end
         ]);
 
-        Session::setFlash('success', 'Semaine de cours mise à jour.');
+        Session::setFlash('success', __('timetables_week_updated'));
         header('Location: /timetables/weeks');
         exit;
     }
@@ -471,7 +472,7 @@ class TimetableController
     {
         PermissionManager::requirePermission('manage_timetables');
         if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
-            Session::setFlash('error', 'Jeton CSRF invalide.');
+            Session::setFlash('error', __('timetables_csrf_invalid'));
             header('Location: /timetables/weeks');
             exit;
         }
@@ -479,7 +480,7 @@ class TimetableController
         $id = (int)($_POST['id'] ?? 0);
         $this->weekModel->delete($id);
 
-        Session::setFlash('success', 'Semaine de cours supprimée.');
+        Session::setFlash('success', __('timetables_week_deleted'));
         header('Location: /timetables/weeks');
         exit;
     }
@@ -561,7 +562,7 @@ class TimetableController
     {
         PermissionManager::requirePermission('manage_timetables');
         if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
-            Session::setFlash('error', 'Jeton CSRF invalide.');
+            Session::setFlash('error', __('timetables_csrf_invalid'));
             header('Location: /timetables/wizard');
             exit;
         }
@@ -575,7 +576,7 @@ class TimetableController
         $weekId = (int)($_POST['week_id'] ?? 0);
 
         if (!$activeYearId || !$cycleId || !$weekId) {
-            Session::setFlash('error', 'Veuillez sélectionner au moins le cycle et la semaine.');
+            Session::setFlash('error', __('timetables_cycle_week_required'));
             header('Location: /timetables/wizard');
             exit;
         }
@@ -588,7 +589,7 @@ class TimetableController
         ");
         $validCycleStmt->execute(['cycle_id' => $cycleId]);
         if (!$validCycleStmt->fetch()) {
-            Session::setFlash('error', 'Le cycle sélectionné n\'est pas valide.');
+            Session::setFlash('error', __('timetables_cycle_invalid'));
             header('Location: /timetables/wizard');
             exit;
         }
@@ -641,7 +642,7 @@ class TimetableController
         }
 
         if (!$cycleId || !$weekId) {
-            Session::setFlash('error', 'Semaine et cycle obligatoires pour afficher la grille.');
+            Session::setFlash('error', __('timetables_grid_cycle_week_required'));
             header('Location: /timetables');
             exit;
         }
@@ -708,7 +709,7 @@ class TimetableController
         $userId = (int)Session::get('user_id');
 
         if (empty($classIds) || !$weekId || !$slotId || !$subjectId || !$teacherId || !$roomId) {
-            echo json_encode(['success' => false, 'message' => 'Paramètres invalides. Veuillez vous assurer d\'avoir sélectionné au moins une classe.']);
+            echo json_encode(['success' => false, 'message' => __('timetables_invalid_request')]);
             exit;
         }
 
@@ -886,7 +887,7 @@ class TimetableController
         $classId = (int)($input['class_id'] ?? 0);
 
         if (empty($name) || !$subjectId) {
-            echo json_encode(['success' => false, 'message' => 'Veuillez saisir le nom de l\'enseignant et sélectionner une matière.']);
+            echo json_encode(['success' => false, 'message' => __('timetables_teacher_details_required')]);
             exit;
         }
 
@@ -1010,7 +1011,7 @@ class TimetableController
                 ]
             ]);
         } catch (\Throwable $e) {
-            echo json_encode(['success' => false, 'message' => 'Erreur lors de la création : ' . $e->getMessage()]);
+            echo json_encode(['success' => false, 'message' => __('timetables_quick_teacher_error')]);
         }
         exit;
     }
@@ -1029,12 +1030,15 @@ class TimetableController
 
         $timetable = $this->timetableModel->find($timetableId);
         if (!$timetable || !$this->lockService->canModify($timetable)) {
-            echo json_encode(['success' => false, 'message' => 'Action non autorisée ou emploi du temps verrouillé.']);
+            echo json_encode(['success' => false, 'message' => __('timetables_entry_locked')]);
             exit;
         }
 
         $deleted = $this->entryModel->deleteEntry($timetableId, $slotId, $dayOfWeek);
-        echo json_encode(['success' => $deleted, 'message' => $deleted ? 'Créneau libéré.' : 'Échec de suppression.']);
+        echo json_encode([
+            'success' => $deleted,
+            'message' => $deleted ? __('timetables_entry_released') : __('timetables_entry_release_failed')
+        ]);
         exit;
     }
 
@@ -1116,7 +1120,7 @@ class TimetableController
     {
         PermissionManager::requireRole('superadmin');
         if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
-            Session::setFlash('error', 'Jeton CSRF invalide.');
+            Session::setFlash('error', __('timetables_csrf_invalid'));
             header('Location: /timetables');
             exit;
         }
@@ -1127,9 +1131,9 @@ class TimetableController
         $unlocked = $this->lockService->unlockBySuperAdmin($id, $reason);
 
         if ($unlocked) {
-            Session::setFlash('success', 'L\'emploi du temps a été déverrouillé avec succès.');
+            Session::setFlash('success', __('timetables_unlock_success'));
         } else {
-            Session::setFlash('error', 'Échec du déverrouillage.');
+            Session::setFlash('error', __('timetables_unlock_failed'));
         }
 
         header('Location: /timetables/grid?id=' . $id);
@@ -1143,7 +1147,7 @@ class TimetableController
     {
         PermissionManager::requirePermission('manage_timetables');
         if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
-            Session::setFlash('error', 'Jeton CSRF invalide.');
+            Session::setFlash('error', __('timetables_csrf_invalid'));
             header('Location: /timetables');
             exit;
         }
@@ -1152,7 +1156,7 @@ class TimetableController
         $ids = array_filter(array_map('intval', explode(',', (string)$rawIds)));
 
         if (empty($ids)) {
-            Session::setFlash('error', 'Emploi du temps introuvable.');
+            Session::setFlash('error', __('timetables_not_found'));
             header('Location: /timetables');
             exit;
         }
@@ -1165,9 +1169,9 @@ class TimetableController
                 $this->auditLogModel->logAction($ttId, $userId, 'publie', 'Publication officielle de l\'emploi du temps.', $ip);
             }
             Security::log("Publication de " . count($ids) . " emploi(s) du temps par l'utilisateur #{$userId}.");
-            Session::setFlash('success', 'L\'emploi du temps a été publié avec succès et est désormais actif sur les dashboards enseignants.');
+            Session::setFlash('success', __('timetables_publish_success'));
         } else {
-            Session::setFlash('error', 'Échec de la publication de l\'emploi du temps.');
+            Session::setFlash('error', __('timetables_publish_failed'));
         }
 
         header('Location: /timetables');
@@ -1181,7 +1185,7 @@ class TimetableController
     {
         PermissionManager::requirePermission('manage_timetables');
         if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
-            Session::setFlash('error', 'Jeton CSRF invalide.');
+            Session::setFlash('error', __('timetables_csrf_invalid'));
             header('Location: /timetables');
             exit;
         }
@@ -1190,7 +1194,7 @@ class TimetableController
         $ids = array_filter(array_map('intval', explode(',', (string)$rawIds)));
 
         if (empty($ids)) {
-            Session::setFlash('error', 'Emploi du temps introuvable.');
+            Session::setFlash('error', __('timetables_not_found'));
             header('Location: /timetables');
             exit;
         }
@@ -1203,9 +1207,9 @@ class TimetableController
                 $this->auditLogModel->logAction($ttId, $userId, 'unpublie', 'Dépublication de l\'emploi du temps (remise en brouillon).', $ip);
             }
             Security::log("Dépublication de " . count($ids) . " emploi(s) du temps par l'utilisateur #{$userId}.");
-            Session::setFlash('success', 'L\'emploi du temps a été dépublié. Il n\'est plus visible sur les dashboards enseignants.');
+            Session::setFlash('success', __('timetables_unpublish_success'));
         } else {
-            Session::setFlash('error', 'Échec de la dépublication de l\'emploi du temps.');
+            Session::setFlash('error', __('timetables_unpublish_failed'));
         }
 
         header('Location: /timetables');
@@ -1219,7 +1223,7 @@ class TimetableController
     {
         PermissionManager::requirePermission('manage_timetables');
         if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
-            Session::setFlash('error', 'Jeton CSRF invalide.');
+            Session::setFlash('error', __('timetables_csrf_invalid'));
             header('Location: /timetables');
             exit;
         }
@@ -1228,7 +1232,7 @@ class TimetableController
         $ids = array_filter(array_map('intval', explode(',', (string)$rawIds)));
 
         if (empty($ids)) {
-            Session::setFlash('error', 'Emploi du temps introuvable.');
+            Session::setFlash('error', __('timetables_not_found'));
             header('Location: /timetables');
             exit;
         }
@@ -1249,9 +1253,9 @@ class TimetableController
 
         if ($deletedCount > 0) {
             Security::log("Suppression de {$deletedCount} grille(s) d'emploi du temps par l'utilisateur #{$userId}.");
-            Session::setFlash('success', 'L\'emploi du temps regroupé a été supprimé avec succès.');
+            Session::setFlash('success', __('timetables_delete_success'));
         } else {
-            Session::setFlash('error', 'Échec de la suppression de l\'emploi du temps.');
+            Session::setFlash('error', __('timetables_delete_failed'));
         }
 
         header('Location: /timetables');
@@ -1291,7 +1295,7 @@ class TimetableController
         }
 
         if (!$cycleId || !$weekId) {
-            Session::setFlash('error', 'Aucun emploi du temps disponible pour la prévisualisation.');
+            Session::setFlash('error', __('timetables_preview_unavailable'));
             header('Location: /timetables');
             exit;
         }
@@ -1301,7 +1305,7 @@ class TimetableController
             $stmtPubCheck = $this->db->prepare("SELECT COUNT(*) FROM timetables WHERE cycle_id <=> ? AND week_id <=> ? AND statut = 'publie'");
             $stmtPubCheck->execute([$cycleId, $weekId]);
             if ((int)$stmtPubCheck->fetchColumn() === 0) {
-                Session::setFlash('error', 'Accès refusé : Cet emploi du temps n\'a pas encore été publié.');
+                Session::setFlash('error', __('timetables_not_published_access'));
                 header('Location: /timetables');
                 exit;
             }

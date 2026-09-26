@@ -14,7 +14,7 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_classes_structur
             <div class="d-flex align-items-center gap-3">
                 <div class="dept-icon-wrapper rounded-4 d-flex align-items-center justify-content-center flex-shrink-0">
                     <i class="bi bi-door-open-fill fs-4 text-primary"></i>
-                </div>
+        ?>
                 <div>
                     <h1 class="fw-black fs-4 text-main-theme mb-1 lh-1">
                         <?= __('classes') ?? 'Salles de Classe' ?>
@@ -31,6 +31,10 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_classes_structur
                     <span><?= __('import') ?? 'Importer' ?></span>
                 </button>
                 <?php if ($canManage): ?>
+                <button type="button" class="btn btn-warning rounded-pill px-4 py-2 fw-bold shadow-sm flex-grow-1 flex-md-grow-0 d-flex justify-content-center align-items-center gap-2 text-nowrap scale-on-hover" data-bs-toggle="modal" data-bs-target="#bulkStatusModal">
+                    <i class="bi bi-toggle-on"></i>
+                    <span><?= __('bulk_class_status_manage') ?></span>
+                </button>
                 <a href="/classes/create" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm flex-grow-1 flex-md-grow-0 d-flex justify-content-center align-items-center gap-2 text-nowrap scale-on-hover">
                     <i class="bi bi-plus-lg"></i> 
                     <span><?= __('add_class') ?? 'Ajouter une classe' ?></span>
@@ -128,7 +132,7 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_classes_structur
         <div class="row g-4">
             <?php foreach ($classes as $c): ?>
                 <div class="col-12 col-md-6 col-xl-4 class-card-item">
-                    <div class="subject-card-compact border-theme-dynamic h-100 position-relative">
+                    <div class="subject-card-compact border-theme-dynamic h-100 position-relative <?= (int)$c['status'] === 0 ? 'opacity-50 bg-light' : '' ?>">
                         <div class="subject-card-glow"></div>
                         <div class="card-body p-4 position-relative d-flex flex-column justify-content-between h-100" style="z-index: 1;">
                             <div>
@@ -173,6 +177,15 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_classes_structur
                                             </li>
                                             <?php endif; ?>
                                             <?php if (in_array(App\Core\Session::get('user_role'), ['superadmin', 'admin'])): ?>
+                                            <li>
+                                                <button type="button" class="dropdown-item dropdown-item-modern border-0 bg-transparent text-start w-100 toggle-status-btn" data-id="<?= $c['id'] ?>">
+                                                    <?php if ((int)$c['status'] === 1): ?>
+                                                        <i class="bi bi-x-circle text-warning"></i> <?= __('deactivate') ?? 'Désactiver' ?>
+                                                    <?php else: ?>
+                                                        <i class="bi bi-check-circle text-success"></i> <?= __('activate') ?? 'Activer' ?>
+                                                    <?php endif; ?>
+                                                </button>
+                                            </li>
                                             <li>
                                                 <button type="button"
                                                     class="dropdown-item dropdown-item-modern text-danger border-0 bg-transparent text-start w-100"
@@ -317,6 +330,49 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_classes_structur
             </div>
         </div>
     </div>
+
+    <?php if ($canManage): ?>
+    <div class="modal fade" id="bulkStatusModal" tabindex="-1" aria-labelledby="bulkStatusModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content rounded-4 border-0 shadow-lg" style="background: var(--bg-card);">
+                <div class="modal-header border-bottom border-theme-light">
+                    <div>
+                        <h5 class="modal-title fw-bold text-main-theme" id="bulkStatusModalLabel"><?= __('bulk_class_status_title') ?></h5>
+                        <p class="small text-muted mb-0"><?= __('bulk_class_status_description') ?></p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= __('bulk_class_status_close') ?>"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                        <input type="search" class="form-control flex-grow-1" id="statusClassSearch" placeholder="<?= __('bulk_class_status_search') ?>" aria-label="<?= __('bulk_class_status_search') ?>">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="selectAllStatusClasses"><?= __('bulk_class_status_select_all') ?></button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="clearStatusClasses"><?= __('bulk_class_status_deselect_all') ?></button>
+                    </div>
+                    <div class="small text-muted mb-2"><span id="statusClassSelectionCount">0</span> <span id="statusClassSelectionLabel"><?= __('bulk_class_status_selected_many') ?></span></div>
+                    <div class="list-group" id="statusClassList" style="max-height: 50vh; overflow-y: auto;">
+                        <?php foreach ($statusClasses as $statusClass): ?>
+                            <label class="list-group-item d-flex align-items-center gap-3 status-class-option" data-class-name="<?= htmlspecialchars(mb_strtolower((string) $statusClass['nom']), ENT_QUOTES, 'UTF-8') ?>">
+                                <input class="form-check-input m-0 status-class-checkbox" type="checkbox" value="<?= (int) $statusClass['id'] ?>">
+                                <span class="flex-grow-1"><?= htmlspecialchars((string) $statusClass['nom']) ?></span>
+                                <?php if ((int) $statusClass['status'] === 1): ?>
+                                    <span class="badge text-bg-success"><?= __('bulk_class_status_active') ?></span>
+                                <?php else: ?>
+                                    <span class="badge text-bg-secondary"><?= __('bulk_class_status_inactive') ?></span>
+                                <?php endif; ?>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <div class="modal-footer border-top border-theme-light">
+                    <input type="hidden" id="bulkStatusCsrfToken" value="<?= htmlspecialchars(\App\Core\Session::generateCsrfToken(), ENT_QUOTES, 'UTF-8') ?>">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?= __('bulk_class_status_cancel') ?></button>
+                    <button type="button" class="btn btn-outline-danger" id="bulkDeactivateClasses"><i class="bi bi-toggle-off me-1"></i><?= __('deactivate') ?></button>
+                    <button type="button" class="btn btn-success" id="bulkActivateClasses"><i class="bi bi-toggle-on me-1"></i><?= __('activate') ?></button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
 </div>
 
 <style>
@@ -544,6 +600,104 @@ document.addEventListener('DOMContentLoaded', function() {
     const filterLevel = document.getElementById('filter_level');
     let debounceTimer;
 
+    const statusSuccessMessages = {
+        activate: {
+            title: <?= json_encode(__('bulk_class_status_success_activate_title'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>,
+            one: <?= json_encode(__('bulk_class_status_success_activate_one'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>,
+            many: <?= json_encode(__('bulk_class_status_success_activate_many'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>
+        },
+        deactivate: {
+            title: <?= json_encode(__('bulk_class_status_success_deactivate_title'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>,
+            one: <?= json_encode(__('bulk_class_status_success_deactivate_one'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>,
+            many: <?= json_encode(__('bulk_class_status_success_deactivate_many'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>
+        }
+    };
+
+    const showStatusSuccess = (action, count) => {
+        const messages = statusSuccessMessages[action];
+        const message = count === 1 ? messages.one : messages.many.replace(':count', String(count));
+        if (typeof AlertService !== 'undefined' && typeof AlertService.success === 'function') {
+            AlertService.success(messages.title, message).then(() => window.location.reload());
+        } else {
+            alert(messages.title + '\n' + message);
+            window.location.reload();
+        }
+    };
+
+    const statusModal = document.getElementById('bulkStatusModal');
+    if (statusModal) {
+        const statusSearch = document.getElementById('statusClassSearch');
+        const statusOptions = Array.from(statusModal.querySelectorAll('.status-class-option'));
+        const statusCheckboxes = Array.from(statusModal.querySelectorAll('.status-class-checkbox'));
+        const selectedCount = document.getElementById('statusClassSelectionCount');
+        const selectedLabel = document.getElementById('statusClassSelectionLabel');
+        const closeStatusModal = () => new Promise(resolve => {
+            const modalInstance = bootstrap.Modal.getInstance(statusModal);
+            if (!modalInstance || !statusModal.classList.contains('show')) {
+                resolve();
+                return;
+            }
+            statusModal.addEventListener('hidden.bs.modal', resolve, { once: true });
+            modalInstance.hide();
+        });
+        const updateSelectionCount = () => {
+            const count = statusCheckboxes.filter(checkbox => checkbox.checked).length;
+            selectedCount.textContent = String(count);
+            selectedLabel.textContent = count === 1
+                ? <?= json_encode(__('bulk_class_status_selected_one'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>
+                : <?= json_encode(__('bulk_class_status_selected_many'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+        };
+
+        statusCheckboxes.forEach(checkbox => checkbox.addEventListener('change', updateSelectionCount));
+        statusSearch.addEventListener('input', function() {
+            const query = statusSearch.value.trim().toLocaleLowerCase();
+            statusOptions.forEach(option => {
+                option.classList.toggle('d-none', !option.dataset.className.includes(query));
+            });
+        });
+        document.getElementById('selectAllStatusClasses').addEventListener('click', function() {
+            statusOptions.filter(option => !option.classList.contains('d-none')).forEach(option => {
+                option.querySelector('.status-class-checkbox').checked = true;
+            });
+            updateSelectionCount();
+        });
+        document.getElementById('clearStatusClasses').addEventListener('click', function() {
+            statusCheckboxes.forEach(checkbox => checkbox.checked = false);
+            updateSelectionCount();
+        });
+
+        const submitBulkStatus = async action => {
+            const ids = statusCheckboxes.filter(checkbox => checkbox.checked).map(checkbox => Number(checkbox.value));
+            if (!ids.length) {
+                if (typeof AlertService !== 'undefined') AlertService.toast('warning', <?= json_encode(__('bulk_class_status_select_required'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>);
+                return;
+            }
+            const buttons = [document.getElementById('bulkActivateClasses'), document.getElementById('bulkDeactivateClasses')];
+            buttons.forEach(button => button.disabled = true);
+            try {
+                const response = await fetch('/classes/bulk-toggle', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': document.getElementById('bulkStatusCsrfToken').value
+                    },
+                    body: JSON.stringify({ ids, action })
+                });
+                const result = await response.json();
+                if (!response.ok || !result.success) throw new Error(result.message || <?= json_encode(__('bulk_class_status_update_failed'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>);
+                await closeStatusModal();
+                showStatusSuccess(action, ids.length);
+            } catch (error) {
+                if (typeof AlertService !== 'undefined') AlertService.toast('error', error.message);
+                else alert(error.message);
+            } finally {
+                buttons.forEach(button => button.disabled = false);
+            }
+        };
+        document.getElementById('bulkActivateClasses').addEventListener('click', () => submitBulkStatus('activate'));
+        document.getElementById('bulkDeactivateClasses').addEventListener('click', () => submitBulkStatus('deactivate'));
+    }
+
     if (searchInput && filterForm) {
         searchInput.addEventListener('input', function () {
             clearTimeout(debounceTimer);
@@ -695,12 +849,29 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(err => console.error('Error refreshing classes list:', err));
     }
+
+    document.addEventListener('click', async function(event) {
+        const toggleButton = event.target.closest('.toggle-status-btn');
+        if (!toggleButton) return;
+        toggleButton.disabled = true;
+        try {
+            const response = await fetch('/classes/toggle?id=' + encodeURIComponent(toggleButton.dataset.id), {
+                headers: { 'Accept': 'application/json' }
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) throw new Error(result.message || <?= json_encode(__('bulk_class_status_update_failed'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>);
+            const action = Number(result.newStatus) === 1 ? 'activate' : 'deactivate';
+            showStatusSuccess(action, 1);
+        } catch (error) {
+            toggleButton.disabled = false;
+            if (typeof AlertService !== 'undefined') AlertService.toast('error', error.message);
+            else alert(error.message);
+        }
+    });
 });
 </script>
 
 <?php
 $content = ob_get_clean();
 include __DIR__ . '/../templates/layout.php';
-?>
-hp';
 ?>

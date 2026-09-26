@@ -54,6 +54,12 @@ ob_start();
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    ['teaching-type-filter', 'teacher-assignment-type'].forEach(id => {
+        const select = document.getElementById(id);
+        const firstActiveType = select?.querySelector('option:not([value=""])');
+        if (firstActiveType) select.value = firstActiveType.value;
+    });
+
     const translations = <?= json_encode([
         'Saisie des notes' => __('notes_entry'),
         'Grade entry' => __('notes_entry'),

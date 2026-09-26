@@ -506,9 +506,9 @@ ob_start(); ?>
 
         AlertService.confirm({
             title: <?= json_encode(__('cancel_assignment') ?? 'Annuler l\'affectation', JSON_UNESCAPED_UNICODE) ?>,
-            html: `Voulez-vous vraiment annuler l'affectation de la matière <strong>${subjectName}</strong> pour la classe <strong>${className}</strong> ?`,
+            html: <?= json_encode(__('cancel_assignment_confirm_text'), JSON_UNESCAPED_UNICODE) ?>.replace(':subject', `<strong>${subjectName}</strong>`).replace(':class', `<strong>${className}</strong>`),
             icon: 'warning',
-            confirmText: <?= json_encode(__('confirm') ?? 'Oui, annuler', JSON_UNESCAPED_UNICODE) ?>,
+            confirmText: <?= json_encode(__('cancel_assignment_confirm_action'), JSON_UNESCAPED_UNICODE) ?>,
             cancelText: <?= json_encode(__('cancel') ?? 'Annuler', JSON_UNESCAPED_UNICODE) ?>,
             customClass: {
                 confirmButton: 'btn btn-danger btn-sm rounded-pill px-4 me-2',

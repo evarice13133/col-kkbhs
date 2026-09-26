@@ -3,7 +3,6 @@
 namespace App\Controllers;
 
 use App\Core\Session;
-use App\Core\Security;
 use App\Services\ImpactAnalysisService;
 use App\Services\SmartDeleteService;
 
@@ -27,7 +26,7 @@ class ImpactAnalysisController
 
         if (!Session::isLogged()) {
             http_response_code(401);
-            echo json_encode(['error' => true, 'message' => 'Session expirée ou utilisateur non connecté.']);
+            echo json_encode(['error' => true, 'message' => __('impact_session_expired')]);
             return;
         }
 
@@ -36,7 +35,7 @@ class ImpactAnalysisController
 
         if (empty($type) || $id <= 0) {
             http_response_code(400);
-            echo json_encode(['error' => true, 'message' => 'Paramètres entité ou identifiant invalides.']);
+            echo json_encode(['error' => true, 'message' => __('impact_invalid_parameters')]);
             return;
         }
 
@@ -45,7 +44,7 @@ class ImpactAnalysisController
             echo json_encode($analysis);
         } catch (\Throwable $e) {
             http_response_code(500);
-            echo json_encode(['error' => true, 'message' => 'Erreur serveur lors de l\'analyse : ' . $e->getMessage()]);
+            echo json_encode(['error' => true, 'message' => __('impact_analysis_server_failure')]);
         }
     }
 
@@ -58,7 +57,7 @@ class ImpactAnalysisController
 
         if (!Session::isLogged()) {
             http_response_code(401);
-            echo json_encode(['success' => false, 'message' => 'Session non authentifiée.']);
+            echo json_encode(['success' => false, 'message' => __('impact_unauthenticated')]);
             return;
         }
 
@@ -66,7 +65,7 @@ class ImpactAnalysisController
         $csrfToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['csrf_token'] ?? '';
         if (!empty($csrfToken) && !Session::verifyCsrfToken($csrfToken)) {
             http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'Jeton de sécurité CSRF invalide.']);
+            echo json_encode(['success' => false, 'message' => __('impact_invalid_csrf')]);
             return;
         }
 
@@ -78,7 +77,7 @@ class ImpactAnalysisController
 
         if (empty($type) || $id <= 0) {
             http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Type d\'entité ou ID d\'élément manquant.']);
+            echo json_encode(['success' => false, 'message' => __('impact_missing_entity')]);
             return;
         }
 
@@ -92,7 +91,7 @@ class ImpactAnalysisController
             echo json_encode($result);
         } catch (\Throwable $e) {
             http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Erreur lors du traitement : ' . $e->getMessage()]);
+            echo json_encode(['success' => false, 'message' => __('impact_delete_server_failure')]);
         }
     }
 }
