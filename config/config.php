@@ -5,7 +5,7 @@
  * Ce fichier contient les identifiants de base de données et les constantes d'environnement.
  * Il est recommandé de garder ce fichier hors de la vue du public.
  */
-/* paramettres de configuration du serveur de données en ligne*/ 
+/* paramettres de configuration du serveur de données en ligne */
 
   define('DB_HOST', 'localhost');
    define('DB_NAME', 'u290233073_col_kkbhs_db');
@@ -18,7 +18,7 @@
    define('DEBUG_MODE', false);   //evite l'affichage des erreures PHP au utilisateurs en production
 
 
-/* en developpement pour la configuration locale     
+/* en developpement pour la configuration locale   
    
    define('DB_HOST', 'localhost');
     define('DB_NAME', 'u290233073_col_col_kkbhs_db1');
@@ -28,7 +28,7 @@
     define('APP_URL', 'http://localhost:8000');
 
     define('APP_ENV', 'development');
-    define('DEBUG_MODE', true);*/ //affichage des erreures PHP au developpeur
+    define('DEBUG_MODE', true); */  //affichage des erreures PHP au developpeur
 
 /* Force error display for debugging     
   
