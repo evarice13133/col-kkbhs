@@ -72,13 +72,17 @@ ob_start();
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-uppercase text-muted-theme mb-2"><?= __('subject') ?? 'Matière' ?></label>
                                 <select id="importSubjectSelect" class="form-select premium-input">
-                                    <option value="0">Sélectionnez une matière</option>
+                                    <option value="0"><?= __('select_subject') ?></option>
                                 </select>
                             </div>
                         <?php endif; ?>
 
-                        <input type="file" id="grade-import-file" name="import_file" class="form-control mb-3"
-                            accept=".xlsx" required>
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <input type="file" id="grade-import-file" name="import_file" class="visually-hidden"
+                                accept=".xlsx" required>
+                            <label for="grade-import-file" class="btn btn-outline-secondary mb-0"><?= __('choose_file') ?></label>
+                            <span id="grade-import-file-name" class="text-secondary text-truncate"><?= __('no_file_chosen') ?></span>
+                        </div>
                         <button type="submit" id="grade-import-submit"
                             class="btn btn-outline-success w-100 fw-bold rounded-3 py-3" disabled>
                             <i class="bi bi-cloud-upload me-2"></i> <?= __('validate_import_final') ?>
@@ -102,6 +106,8 @@ ob_start();
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const importFile = document.getElementById('grade-import-file');
+        const importFileName = document.getElementById('grade-import-file-name');
+        const defaultImportFileName = importFileName ? importFileName.textContent : '';
         const importSubmit = document.getElementById('grade-import-submit');
         const importSubjectSelect = document.getElementById('importSubjectSelect');
         const importSubjectId = document.getElementById('importSubjectId');
@@ -109,6 +115,9 @@ ob_start();
         if (importFile && importSubmit) {
             importFile.addEventListener('change', function () {
                 importSubmit.disabled = importFile.files.length === 0;
+                if (importFileName) {
+                    importFileName.textContent = importFile.files.length > 0 ? importFile.files[0].name : defaultImportFileName;
+                }
             });
         }
 

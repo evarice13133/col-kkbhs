@@ -103,6 +103,13 @@ $statisticsPercentage = static function ($value) use ($statisticsTotalStudents) 
 $statisticsDiscipline = (array) ($discipline ?? []);
 $statisticsAbsences = (array) ($statisticsDiscipline['absences'] ?? []);
 $statisticsCouncilDecision = $councilDecision ?? __('average_level');
+$studentAcquisitionLevel = (string) ($overallAcquisitionLevel ?? '-');
+$studentAcquisitionDescription = match ($studentAcquisitionLevel) {
+    'CNA' => __('cna_desc'),
+    'CEA' => __('cea_desc'),
+    'CA' => __('ca_desc'),
+    default => '-',
+};
 $statisticsColumnCount = count($visibleTopRows) + 2;
 $statisticsSideColumnWidth = 18;
 $statisticsEvaluationColumnWidth = (100 - (2 * $statisticsSideColumnWidth)) / max(1, $statisticsColumnCount - 2);
@@ -118,6 +125,11 @@ $statisticsEvaluationColumnWidth = (100 - (2 * $statisticsSideColumnWidth)) / ma
     .bulletin-statistics .statistics-label { text-align: left; font-weight: 700; white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
     .bulletin-statistics .statistics-value { text-align: center; font-weight: 700; }
     .bulletin-statistics .statistics-remarks { width: 23%; height: 100%; min-height: 74px; vertical-align: top; text-align: left; }
+    .bulletin-statistics .statistics-acquisition-result { min-height: 145px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; padding: 8px; text-align: center; color: #14347a; }
+    .bulletin-statistics .statistics-acquisition-title { font-size: 10px; font-weight: 700; }
+    .bulletin-statistics .statistics-acquisition-code { font-size: 24px; line-height: 1; font-weight: 800; }
+    .bulletin-statistics .statistics-acquisition-description { max-width: 100%; font-size: 9px; line-height: 1.2; }
+    .bulletin-statistics .statistics-acquisition-average { font-size: 10px; font-weight: 700; }
     .bulletin-statistics .statistics-main-cell { width: 77%; vertical-align: top; padding: 0; }
     .bulletin-statistics .statistics-remarks-cell { width: 23%; vertical-align: top; padding: 0; }
     .bulletin-statistics .statistics-footer-spacer { width: 28%; padding: 0; border: 0; }
@@ -241,7 +253,14 @@ $statisticsEvaluationColumnWidth = (100 - (2 * $statisticsSideColumnWidth)) / ma
                     <td class="statistics-value"><?= htmlspecialchars((string) $statisticsCouncilDecision) ?></td>
                     <td><?= __('highest_average') ?></td>
                     <td class="statistics-value"><?= formatSimple($classStats['max'] ?? null) ?></td>
-                    <td class="statistics-remarks" colspan="2" rowspan="<?= ($bulletinPeriod ?? '') === 'annuel' ? 17 : 15 ?>"></td>
+                    <td class="statistics-remarks" colspan="2" rowspan="<?= ($bulletinPeriod ?? '') === 'annuel' ? 17 : 15 ?>">
+                        <div class="statistics-acquisition-result">
+                            <span class="statistics-acquisition-title"><?= __('student_competency_result') ?></span>
+                            <strong class="statistics-acquisition-code"><?= htmlspecialchars($studentAcquisitionLevel, ENT_QUOTES, 'UTF-8') ?></strong>
+                            <span class="statistics-acquisition-description"><?= htmlspecialchars($studentAcquisitionDescription, ENT_QUOTES, 'UTF-8') ?></span>
+                            <span class="statistics-acquisition-average"><?= __('average') ?> : <?= $statisticsDisplayValue($average ?? null) ?>/20</span>
+                        </div>
+                    </td>
                 </tr>
                 <tr>
                     <td rowspan="2" class="statistics-label"><?= __('absences') ?></td>

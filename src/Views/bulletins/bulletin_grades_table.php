@@ -142,11 +142,9 @@ if ($reportCardLogo === '' && !empty($institution['school_logo'])) {
     </table>
     <div class="report-card-legend">
         <strong><?= __('competency_level_key') ?></strong>
-        <span><b>CTBA</b> : <?= __('ctba_desc') ?></span>
-        <span><b>CBA</b> : <?= __('cba_desc') ?></span>
-        <span><b>CA</b> : <?= __('ca_desc') ?></span>
-        <span><b>CMA</b> : <?= __('cma_desc') ?></span>
+        <span><b>CEA</b> : <?= __('cea_desc') ?></span>
         <span><b>CNA</b> : <?= __('cna_desc') ?></span>
+        <span><b>CA</b> : <?= __('ca_desc') ?></span>
     </div>
     <?php
     $profile = $classStats['profile'] ?? [];

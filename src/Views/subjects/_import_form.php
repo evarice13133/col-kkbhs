@@ -38,7 +38,11 @@
             <div class="card-body p-4 pt-2">
                 <form action="/subjects/upload" method="POST" enctype="multipart/form-data" id="subjectImportForm">
                     <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
-                    <input type="file" id="subject-import-file" name="import_file" class="form-control mb-3" accept=".xlsx" required onchange="document.getElementById('subject-import-submit').disabled = this.files.length === 0;">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <input type="file" id="subject-import-file" name="import_file" class="visually-hidden" accept=".xlsx" required>
+                        <label for="subject-import-file" class="btn btn-outline-secondary mb-0"><?= __('choose_file') ?></label>
+                        <span id="subject-import-file-name" class="text-secondary text-truncate"><?= __('no_file_chosen') ?></span>
+                    </div>
                     <button type="submit" id="subject-import-submit" class="btn btn-outline-success w-100 fw-bold rounded-3 py-3" disabled>
                         <i class="bi bi-cloud-upload me-2"></i> <?= __('validate_import_final') ?>
                     </button>
@@ -49,20 +53,20 @@
     </div>
     <div class="col-lg-4">
         <div class="modern-card border-0 shadow-sm p-4 rounded-4 mb-3">
-            <h6 class="fw-bold text-primary mb-2"><i class="bi bi-arrow-repeat me-2"></i>Compatibilité Export / Import</h6>
+            <h6 class="fw-bold text-primary mb-2"><i class="bi bi-arrow-repeat me-2"></i><?= __('subject_import_compatibility_title') ?></h6>
             <p class="small text-secondary text-main-theme mb-2">
-                Le fichier d'exportation <code>matieres_etablissement.xlsx</code> peut être réimporté directement après modification.
+                <?= __('subject_import_compatibility_description', ['filename' => '<code>matieres_etablissement.xlsx</code>']) ?>
             </p>
             <hr class="my-2 border-theme-light">
-            <h6 class="fw-bold text-body text-main-theme mb-2">Colonnes Reconnues</h6>
+            <h6 class="fw-bold text-body text-main-theme mb-2"><?= __('subject_import_recognized_columns') ?></h6>
             <ul class="small text-muted mb-0 ps-3">
-                <li><strong>Matière</strong> (Obligatoire)</li>
-                <li><strong>Coef</strong> (Optionnel, défaut: 1)</li>
-                <li><strong>Groupe</strong> (Optionnel)</li>
-                <li><strong>Classe 1 à Classe 5</strong> (5 colonnes pour associer la matière à plusieurs classes)</li>
-                <li><strong>Compétence 1 à Compétence 7</strong> (7 colonnes pour importer les compétences de la matière)</li>
-                <li><strong>VHm, VHp, TH(Max)</strong> (Nombres optionnels)</li>
-                <li><strong>Observations</strong> (Texte optionnel)</li>
+                <li><strong><?= __('subject_import_column_subject') ?></strong> (<?= __('subject_import_required') ?>)</li>
+                <li><strong><?= __('subject_import_column_coefficient') ?></strong> (<?= __('subject_import_default_coefficient') ?>)</li>
+                <li><strong><?= __('subject_import_column_group') ?></strong> (<?= __('subject_import_optional') ?>)</li>
+                <li><strong><?= __('subject_import_columns_classes') ?></strong> (<?= __('subject_import_classes_hint') ?>)</li>
+                <li><strong><?= __('subject_import_columns_competencies') ?></strong> (<?= __('subject_import_competencies_hint') ?>)</li>
+                <li><strong><?= __('subject_import_columns_hours') ?></strong> (<?= __('subject_import_optional_numbers') ?>)</li>
+                <li><strong><?= __('subject_import_column_observations') ?></strong> (<?= __('subject_import_optional_text') ?>)</li>
             </ul>
         </div>
         <div class="modern-card border-0 shadow-sm p-4 rounded-4">

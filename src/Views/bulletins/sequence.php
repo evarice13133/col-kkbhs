@@ -470,8 +470,7 @@ if (isset($styleOnly)) {
                     style="padding: 3px; font-size: 8.5px; line-height: 1.1; background-color: #fafafa;">
                     <span
                         style="font-weight: bold; text-decoration: underline;"><?= __('legend_appreciation') ?>:</span>
-                    CTBA : <?= __('ctba_desc') ?> | CBA : <?= __('cba_desc') ?> | CA : <?= __('ca_desc') ?> |
-                    CMA : <?= __('cma_desc') ?> | CNA : <?= __('cna_desc') ?> |
+                    CEA : <?= __('cea_desc') ?> | CNA : <?= __('cna_desc') ?> | CA : <?= __('ca_desc') ?> |
                     <strong><?= __('mgp_group') ?></strong>
                 </td>
             </tr>

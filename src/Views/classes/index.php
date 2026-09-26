@@ -14,7 +14,7 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_classes_structur
             <div class="d-flex align-items-center gap-3">
                 <div class="dept-icon-wrapper rounded-4 d-flex align-items-center justify-content-center flex-shrink-0">
                     <i class="bi bi-door-open-fill fs-4 text-primary"></i>
-        ?>
+                </div>
                 <div>
                     <h1 class="fw-black fs-4 text-main-theme mb-1 lh-1">
                         <?= __('classes') ?? 'Salles de Classe' ?>
@@ -26,19 +26,24 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_classes_structur
             </div>
             
             <div class="d-flex flex-row w-100 w-md-auto justify-content-end ms-md-auto gap-2 mt-2 mt-md-0">
-                <button type="button" class="btn btn-light-theme rounded-pill px-3 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 scale-on-hover" data-bs-toggle="modal" data-bs-target="#importClassesModal">
-                    <i class="bi bi-file-earmark-spreadsheet text-success fs-6"></i> 
+                <button type="button"
+                    class="btn btn-light-theme rounded-pill px-3 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 scale-on-hover"
+                    data-bs-toggle="modal" data-bs-target="#importClassesModal">
+                    <i class="bi bi-file-earmark-spreadsheet text-success fs-6"></i>
                     <span><?= __('import') ?? 'Importer' ?></span>
                 </button>
                 <?php if ($canManage): ?>
-                <button type="button" class="btn btn-warning rounded-pill px-4 py-2 fw-bold shadow-sm flex-grow-1 flex-md-grow-0 d-flex justify-content-center align-items-center gap-2 text-nowrap scale-on-hover" data-bs-toggle="modal" data-bs-target="#bulkStatusModal">
-                    <i class="bi bi-toggle-on"></i>
-                    <span><?= __('bulk_class_status_manage') ?></span>
-                </button>
-                <a href="/classes/create" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm flex-grow-1 flex-md-grow-0 d-flex justify-content-center align-items-center gap-2 text-nowrap scale-on-hover">
-                    <i class="bi bi-plus-lg"></i> 
-                    <span><?= __('add_class') ?? 'Ajouter une classe' ?></span>
-                </a>
+                    <button type="button"
+                        class="btn btn-light-theme rounded-pill px-3 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 scale-on-hover"
+                        data-bs-toggle="modal" data-bs-target="#bulkStatusModal">
+                        <i class="bi bi-toggle-on text-warning fs-6"></i>
+                        <span><?= __('bulk_class_status_manage') ?></span>
+                    </button>
+                    <a href="/classes/create"
+                        class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm flex-grow-1 flex-md-grow-0 d-flex justify-content-center align-items-center gap-2 text-nowrap scale-on-hover">
+                        <i class="bi bi-plus-lg"></i>
+                        <span><?= __('add_class') ?? 'Ajouter une classe' ?></span>
+                    </a>
                 <?php endif; ?>
             </div>
         </div>
@@ -765,11 +770,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const importModalEl = document.getElementById('importClassesModal');
     const importForm = document.getElementById('classImportForm');
     const importFileInput = document.getElementById('class-import-file');
+    const importFileName = document.getElementById('class-import-file-name');
+    const defaultImportFileName = importFileName ? importFileName.textContent : '';
     const importSubmitBtn = document.getElementById('class-import-submit');
 
     if (importFileInput && importSubmitBtn) {
         importFileInput.addEventListener('change', function() {
             importSubmitBtn.disabled = importFileInput.files.length === 0;
+            if (importFileName) {
+                importFileName.textContent = importFileInput.files.length > 0 ? importFileInput.files[0].name : defaultImportFileName;
+            }
         });
     }
 

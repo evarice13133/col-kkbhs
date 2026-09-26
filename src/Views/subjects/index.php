@@ -623,10 +623,15 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_subjects');
 
             // L'import ne doit pas dependre de la presence des filtres de la liste.
             const earlyImportFileInput = document.getElementById('subject-import-file');
+            const earlyImportFileName = document.getElementById('subject-import-file-name');
+            const defaultEarlyImportFileName = earlyImportFileName ? earlyImportFileName.textContent : '';
             const earlyImportSubmitBtn = document.getElementById('subject-import-submit');
             if (earlyImportFileInput && earlyImportSubmitBtn) {
                 earlyImportFileInput.addEventListener('change', function () {
                     earlyImportSubmitBtn.disabled = earlyImportFileInput.files.length === 0;
+                    if (earlyImportFileName) {
+                        earlyImportFileName.textContent = earlyImportFileInput.files.length > 0 ? earlyImportFileInput.files[0].name : defaultEarlyImportFileName;
+                    }
                 });
             }
 

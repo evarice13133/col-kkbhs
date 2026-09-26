@@ -38,7 +38,11 @@
             <div class="card-body p-4 pt-2">
                 <form action="/classes/upload" method="POST" enctype="multipart/form-data" id="classImportForm">
                     <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
-                    <input type="file" id="class-import-file" name="import_file" class="form-control mb-3" accept=".xlsx" required>
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <input type="file" id="class-import-file" name="import_file" class="visually-hidden" accept=".xlsx" required>
+                        <label for="class-import-file" class="btn btn-outline-secondary mb-0"><?= __('choose_file') ?></label>
+                        <span id="class-import-file-name" class="text-secondary text-truncate"><?= __('no_file_chosen') ?></span>
+                    </div>
                     <button type="submit" id="class-import-submit" class="btn btn-outline-success w-100 fw-bold rounded-3 py-3" disabled>
                         <i class="bi bi-cloud-upload me-2"></i> <?= __('validate_import_final') ?>
                     </button>

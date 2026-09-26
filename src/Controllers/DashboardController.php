@@ -659,7 +659,8 @@ class DashboardController
             SELECT s.class_id, COUNT(*) 
             FROM students s 
             JOIN classes c ON s.class_id = c.id 
-            WHERE s.is_withdrawn = 0 AND s.actif = 1 AND s.academic_year_id = {$activeYearId} {$andClass}
+            JOIN teaching_types tt ON tt.id = c.teaching_type_id AND tt.actif = 1
+            WHERE c.status = 1 AND s.is_withdrawn = 0 AND s.actif = 1 AND s.academic_year_id = {$activeYearId} {$andClass}
             GROUP BY s.class_id
         ");
         $allClassCounts = $classCountsStmt ? $classCountsStmt->fetchAll(PDO::FETCH_KEY_PAIR) : [];
@@ -668,7 +669,9 @@ class DashboardController
         $assignmentsQuery = "
             SELECT ta.user_id, ta.class_id, ta.subject_id, c.nom as class_nom 
             FROM teacher_assignments ta 
-            JOIN classes c ON c.id = ta.class_id AND ta.academic_year_id = {$activeYearId} {$andClass}
+            JOIN classes c ON c.id = ta.class_id
+            JOIN teaching_types tt ON tt.id = c.teaching_type_id AND tt.actif = 1
+            WHERE ta.academic_year_id = {$activeYearId} AND c.status = 1 {$andClass}
         ";
         $allAssignments = $this->db->query($assignmentsQuery)->fetchAll(PDO::FETCH_GROUP | PDO::FETCH_ASSOC) ?: [];
 
@@ -684,7 +687,8 @@ class DashboardController
             FROM subject_classes sc
             JOIN subjects s ON s.id = sc.subject_id
             JOIN classes c ON c.id = sc.class_id
-            WHERE sc.academic_year_id = {$activeYearId} AND s.status = 1 {$andClass}
+            JOIN teaching_types tt ON tt.id = c.teaching_type_id AND tt.actif = 1
+            WHERE sc.academic_year_id = {$activeYearId} AND c.status = 1 AND s.status = 1 {$andClass}
         ";
         $allSubjectClasses = $this->db->query($subjectClassesQuery)->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
@@ -710,7 +714,8 @@ class DashboardController
             FROM users u 
             JOIN teacher_assignments ta ON ta.user_id = u.id 
             JOIN classes c ON c.id = ta.class_id 
-            WHERE u.role = 'enseignant' AND ta.academic_year_id = {$activeYearId} {$andClass}
+            JOIN teaching_types tt ON tt.id = c.teaching_type_id AND tt.actif = 1
+            WHERE u.role = 'enseignant' AND ta.academic_year_id = {$activeYearId} AND c.status = 1 {$andClass}
             ORDER BY u.nom ASC
         ";
         $teachers = $this->db->query($teachersQuery)->fetchAll(PDO::FETCH_ASSOC) ?: [];
