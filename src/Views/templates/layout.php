@@ -113,6 +113,7 @@ $ribbon_structure = [
                 'items' => [
                     ['icon' => 'bi-pencil-square', 'label' => __('enter_marks'), 'url' => '/notes', 'permission' => 'manage_marks', 'desc' => __('layout_desc_enter_marks')],
                     ['icon' => 'bi-people', 'label' => __('my_students'), 'url' => '/students', 'permission' => 'view_students', 'desc' => __('layout_desc_my_students')],
+                    ['icon' => 'bi-list-check', 'label' => __('competencies_menu'), 'url' => '/competencies/teacher', 'roles' => ['enseignant'], 'desc' => __('teacher_competencies_intro')],
                     ['icon' => 'bi-question-circle', 'label' => __('help'), 'url' => '/documentation', 'desc' => __('layout_desc_help')],
 
 

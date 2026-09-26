@@ -100,9 +100,24 @@ class BulletinController
             $academicYearId = (int) ($activeYear['id'] ?? 0);
         }
 
-        // Classes are now shared across years, no year filtering
-        $classes = $this->db->query("SELECT id, nom FROM classes WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $classesStmt = $this->db->prepare("SELECT c.id, c.nom
+                                                                                     FROM classes c
+                                                                                     WHERE c.status = 1
+                                                                                         AND EXISTS (
+                                                                                                 SELECT 1 FROM students st
+                                                                                                 WHERE st.class_id = c.id
+                                                                                                     AND st.academic_year_id = ?
+                                                                                                     AND st.status = 'Inscrit'
+                                                                                                     AND st.actif = 1
+                                                                                                     AND st.is_withdrawn = 0
+                                                                                         )
+                                                                                     ORDER BY c.nom ASC");
+                $classesStmt->execute([$academicYearId]);
+                $classes = $classesStmt->fetchAll(PDO::FETCH_ASSOC);
         $classId = (int) ($_GET['class_id'] ?? 0);
+                if ($classId > 0 && !in_array($classId, array_map('intval', array_column($classes, 'id')), true)) {
+                        $classId = 0;
+                }
         $term = (int) ($_GET['term'] ?? 1);
         if (!in_array($term, [1, 2, 3], true)) {
             $term = 1;
@@ -1371,7 +1386,7 @@ class BulletinController
         if ($academicYearId <= 0) {
             $academicYearId = (int) ($this->getActiveAcademicYear()['id'] ?? 0);
         }
-        $stmt = $this->db->prepare("SELECT st.*, c.nom AS class_nom, d.nom AS department_nom FROM students st JOIN classes c ON c.id = st.class_id LEFT JOIN departments d ON d.id = c.department_id WHERE st.class_id = ? AND st.academic_year_id = ? AND st.is_withdrawn = 0 AND st.actif = 1 ORDER BY st.nom ASC, st.prenom ASC");
+        $stmt = $this->db->prepare("SELECT st.*, c.nom AS class_nom, d.nom AS department_nom FROM students st JOIN classes c ON c.id = st.class_id LEFT JOIN departments d ON d.id = c.department_id WHERE st.class_id = ? AND st.academic_year_id = ? AND st.status = 'Inscrit' AND st.is_withdrawn = 0 AND st.actif = 1 ORDER BY st.nom ASC, st.prenom ASC");
         $stmt->execute([$classId, $academicYearId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }

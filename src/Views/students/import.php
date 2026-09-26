@@ -41,7 +41,7 @@ ob_start();
                     </div>
                 </div>
                 <div class="card-body p-4 pt-2">
-                    <p class="small text-secondary text-main-theme mb-3">Sélectionnez le type d'enseignement pour filtrer les classes lors de l'import.</p>
+                    <p class="small text-secondary text-main-theme mb-3"><?= __('import_students_teaching_type_desc') ?></p>
                     <select id="teaching-type-select" class="form-select form-select-lg mb-3">
                         <option value="" selected disabled><?= __('select_teaching_type') ?? 'Sélectionner le type' ?></option>
                         <?php foreach ($teachingTypes as $tt): ?>
