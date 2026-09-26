@@ -9,7 +9,7 @@
 
   define('DB_HOST', 'localhost');
    define('DB_NAME', 'u290233073_col_kkbhs_db');
-   define('DB_USER', 'u290233073_root_kkbhs');
+   define('DB_USER', 'u290233073_col_kkbhs');
    define('DB_PASS', 'Tezempa13133!!');
    define('DB_CHARSET', 'utf8mb4');
    define('APP_URL', 'https://futura.camertech.com');
