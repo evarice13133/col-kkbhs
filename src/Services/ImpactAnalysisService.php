@@ -129,7 +129,7 @@ class ImpactAnalysisService
 
         $name = trim(($teacher['prenom'] ?? '') . ' ' . ($teacher['nom'] ?? ''));
         if (empty($name)) {
-            $name = $teacher['username'] ?? "Enseignant #$id";
+            $name = $teacher['username'] ?? __('impact_teacher_name_fallback', ['id' => $id]);
         }
 
         // Classes titulaire
@@ -188,28 +188,28 @@ class ImpactAnalysisService
         return [
             'entity' => [
                 'type' => 'teacher',
-                'type_label' => 'Enseignant',
+                'type_label' => __('impact_teacher_type_label'),
                 'id' => $id,
                 'name' => $name,
-                'subtext' => 'Email: ' . ($teacher['email'] ?: 'N/A')
+                'subtext' => __('impact_email_subtext', ['value' => $teacher['email'] ?: __('impact_value_unavailable')])
             ],
             'risk_level' => $risk,
             'recommended_action' => $recommendedAction,
             'can_direct_delete' => ($gradesCount === 0),
             'stats' => [
-                ['label' => 'Notes attribuées', 'count' => $gradesCount, 'icon' => 'fas fa-graduation-cap', 'severity' => $gradesCount > 0 ? 'danger' : 'success'],
-                ['label' => 'Classes sous tutelle', 'count' => $mainClassesCount, 'icon' => 'fas fa-chalkboard-teacher', 'severity' => $mainClassesCount > 0 ? 'warning' : 'neutral'],
-                ['label' => 'Matières affectées', 'count' => $assignedSubjectsCount, 'icon' => 'fas fa-book', 'severity' => $assignedSubjectsCount > 0 ? 'warning' : 'neutral'],
-                ['label' => 'Séances d\'emploi du temps', 'count' => $timetableEntriesCount, 'icon' => 'fas fa-calendar-alt', 'severity' => $timetableEntriesCount > 0 ? 'warning' : 'neutral'],
+                ['label' => __('impact_teacher_grades'), 'count' => $gradesCount, 'icon' => 'fas fa-graduation-cap', 'severity' => $gradesCount > 0 ? 'danger' : 'success'],
+                ['label' => __('impact_teacher_classes'), 'count' => $mainClassesCount, 'icon' => 'fas fa-chalkboard-teacher', 'severity' => $mainClassesCount > 0 ? 'warning' : 'neutral'],
+                ['label' => __('impact_teacher_subjects'), 'count' => $assignedSubjectsCount, 'icon' => 'fas fa-book', 'severity' => $assignedSubjectsCount > 0 ? 'warning' : 'neutral'],
+                ['label' => __('impact_teacher_timetable'), 'count' => $timetableEntriesCount, 'icon' => 'fas fa-calendar-alt', 'severity' => $timetableEntriesCount > 0 ? 'warning' : 'neutral'],
             ],
             'impact_summary' => [
-                'direct_deletion' => "Le profil de l'enseignant $name.",
-                'dependencies' => "$assignedSubjectsCount affectations de cours, $timetableEntriesCount créneaux de cours.",
-                'historical_data' => "$gradesCount notes seront conservées (référence enseignant conservée ou anonymisée).",
-                'invalid_references' => $mainClassesCount > 0 ? "$mainClassesCount classes se retrouveront sans professeur principal." : "Aucune."
+                'direct_deletion' => __('impact_teacher_direct', ['name' => $name]),
+                'dependencies' => __('impact_teacher_dependencies', ['assignments' => $assignedSubjectsCount, 'entries' => $timetableEntriesCount]),
+                'historical_data' => __('impact_teacher_history', ['count' => $gradesCount]),
+                'invalid_references' => $mainClassesCount > 0 ? __('impact_teacher_invalid_classes', ['count' => $mainClassesCount]) : __('impact_none_period')
             ],
             'transfer_options' => [
-                'label' => 'Transférer la tutelle, les cours et créneaux vers :',
+                'label' => __('impact_teacher_transfer_label'),
                 'param_name' => 'target_id',
                 'items' => $transferTargets
             ]
@@ -258,25 +258,25 @@ class ImpactAnalysisService
         return [
             'entity' => [
                 'type' => 'student',
-                'type_label' => 'Élève',
+                'type_label' => __('impact_student_type_label'),
                 'id' => $id,
                 'name' => $name,
-                'subtext' => 'Matricule: ' . ($student['matricule'] ?: 'N/A')
+                'subtext' => __('impact_student_id_subtext', ['value' => $student['matricule'] ?: __('impact_value_unavailable')])
             ],
             'risk_level' => $risk,
             'recommended_action' => $recommendedAction,
             'can_direct_delete' => ($gradesCount === 0 && $paymentsCount === 0),
             'stats' => [
-                ['label' => 'Notes & Évaluations', 'count' => $gradesCount, 'icon' => 'fas fa-pen-nib', 'severity' => $gradesCount > 0 ? 'danger' : 'neutral'],
-                ['label' => 'Versements / Paiements', 'count' => $paymentsCount, 'icon' => 'fas fa-receipt', 'severity' => $paymentsCount > 0 ? 'danger' : 'neutral'],
-                ['label' => 'Inscriptions (Années)', 'count' => $enrollmentsCount, 'icon' => 'fas fa-user-graduate', 'severity' => $enrollmentsCount > 0 ? 'warning' : 'neutral'],
-                ['label' => 'Absences enregistrées', 'count' => $absencesCount, 'icon' => 'fas fa-user-clock', 'severity' => 'neutral'],
+                ['label' => __('impact_student_grades'), 'count' => $gradesCount, 'icon' => 'fas fa-pen-nib', 'severity' => $gradesCount > 0 ? 'danger' : 'neutral'],
+                ['label' => __('impact_student_payments'), 'count' => $paymentsCount, 'icon' => 'fas fa-receipt', 'severity' => $paymentsCount > 0 ? 'danger' : 'neutral'],
+                ['label' => __('impact_student_enrollments'), 'count' => $enrollmentsCount, 'icon' => 'fas fa-user-graduate', 'severity' => $enrollmentsCount > 0 ? 'warning' : 'neutral'],
+                ['label' => __('impact_student_absences'), 'count' => $absencesCount, 'icon' => 'fas fa-user-clock', 'severity' => 'neutral'],
             ],
             'impact_summary' => [
-                'direct_deletion' => "Dossier scolaire complet de $name.",
-                'dependencies' => "Historique d'inscription, bulletin et soumissions de devoirs.",
-                'historical_data' => "$paymentsCount paiements comptables et $gradesCount notes associées.",
-                'invalid_references' => "Les bulletins et relevés imprimés feront référence à un élève archivé."
+                'direct_deletion' => __('impact_student_direct', ['name' => $name]),
+                'dependencies' => __('impact_student_dependencies'),
+                'historical_data' => __('impact_student_history', ['payments' => $paymentsCount, 'grades' => $gradesCount]),
+                'invalid_references' => __('impact_student_references')
             ],
             'transfer_options' => null
         ];
@@ -337,28 +337,28 @@ class ImpactAnalysisService
         return [
             'entity' => [
                 'type' => 'class',
-                'type_label' => 'Classe',
+                'type_label' => __('impact_class_type_label'),
                 'id' => $id,
                 'name' => $class['nom'],
-                'subtext' => "Classe ID #$id"
+                'subtext' => __('impact_class_id_subtext', ['id' => $id])
             ],
             'risk_level' => $risk,
             'recommended_action' => $recommendedAction,
             'can_direct_delete' => ($studentsCount === 0 && $bulletinsCount === 0),
             'stats' => [
-                ['label' => 'Élèves inscrits', 'count' => $studentsCount, 'icon' => 'fas fa-users', 'severity' => $studentsCount > 0 ? 'danger' : 'success'],
-                ['label' => 'Matières & Cours affectés', 'count' => $subjectsCount, 'icon' => 'fas fa-book-open', 'severity' => $subjectsCount > 0 ? 'warning' : 'neutral'],
-                ['label' => 'Bulletins générés', 'count' => $bulletinsCount, 'icon' => 'fas fa-file-alt', 'severity' => $bulletinsCount > 0 ? 'danger' : 'neutral'],
-                ['label' => 'Emplois du temps', 'count' => $timetablesCount, 'icon' => 'fas fa-calendar-alt', 'severity' => $timetablesCount > 0 ? 'warning' : 'neutral'],
+                ['label' => __('impact_class_students'), 'count' => $studentsCount, 'icon' => 'fas fa-users', 'severity' => $studentsCount > 0 ? 'danger' : 'success'],
+                ['label' => __('impact_class_subjects'), 'count' => $subjectsCount, 'icon' => 'fas fa-book-open', 'severity' => $subjectsCount > 0 ? 'warning' : 'neutral'],
+                ['label' => __('impact_class_bulletins'), 'count' => $bulletinsCount, 'icon' => 'fas fa-file-alt', 'severity' => $bulletinsCount > 0 ? 'danger' : 'neutral'],
+                ['label' => __('impact_class_timetables'), 'count' => $timetablesCount, 'icon' => 'fas fa-calendar-alt', 'severity' => $timetablesCount > 0 ? 'warning' : 'neutral'],
             ],
             'impact_summary' => [
-                'direct_deletion' => "La classe " . $class['nom'] . ".",
-                'dependencies' => "$subjectsCount cours programmés, $timetablesCount grilles d'emploi du temps.",
-                'historical_data' => "$bulletinsCount bulletins officiels et historiques de notes.",
-                'invalid_references' => $studentsCount > 0 ? "$studentsCount élèves seront désinscrits et n'auront plus de classe d'affectation." : "Aucune."
+                'direct_deletion' => __('impact_class_direct', ['name' => $class['nom']]),
+                'dependencies' => __('impact_class_dependencies', ['subjects' => $subjectsCount, 'timetables' => $timetablesCount]),
+                'historical_data' => __('impact_class_history', ['count' => $bulletinsCount]),
+                'invalid_references' => $studentsCount > 0 ? __('impact_class_invalid_students', ['count' => $studentsCount]) : __('impact_none_period')
             ],
             'transfer_options' => [
-                'label' => 'Réaffecter automatiquement les élèves et cours vers la classe :',
+                'label' => __('impact_class_transfer_label'),
                 'param_name' => 'target_id',
                 'items' => $transferTargets
             ]
@@ -411,27 +411,27 @@ class ImpactAnalysisService
         return [
             'entity' => [
                 'type' => 'subject',
-                'type_label' => 'Matière / Cours',
+                'type_label' => __('impact_subject_type_label'),
                 'id' => $id,
                 'name' => $sub['nom'],
-                'subtext' => 'Matière ID #' . $id
+                'subtext' => __('impact_subject_id_subtext', ['id' => $id])
             ],
             'risk_level' => $risk,
             'recommended_action' => $recommendedAction,
             'can_direct_delete' => ($gradesCount === 0),
             'stats' => [
-                ['label' => 'Notes saisies', 'count' => $gradesCount, 'icon' => 'fas fa-star', 'severity' => $gradesCount > 0 ? 'danger' : 'success'],
-                ['label' => 'Enseignants affectés', 'count' => $assignedCount, 'icon' => 'fas fa-chalkboard-teacher', 'severity' => $assignedCount > 0 ? 'warning' : 'neutral'],
-                ['label' => 'Créneaux d\'emploi du temps', 'count' => $timetableEntries, 'icon' => 'fas fa-clock', 'severity' => $timetableEntries > 0 ? 'warning' : 'neutral'],
+                ['label' => __('impact_subject_grades'), 'count' => $gradesCount, 'icon' => 'fas fa-star', 'severity' => $gradesCount > 0 ? 'danger' : 'success'],
+                ['label' => __('impact_subject_teachers'), 'count' => $assignedCount, 'icon' => 'fas fa-chalkboard-teacher', 'severity' => $assignedCount > 0 ? 'warning' : 'neutral'],
+                ['label' => __('impact_subject_timetable'), 'count' => $timetableEntries, 'icon' => 'fas fa-clock', 'severity' => $timetableEntries > 0 ? 'warning' : 'neutral'],
             ],
             'impact_summary' => [
-                'direct_deletion' => "La matière " . $sub['nom'] . ".",
-                'dependencies' => "$assignedCount cours dans le programme d'études, $timetableEntries plages horaires.",
-                'historical_data' => "$gradesCount notes de contrôles et examens.",
-                'invalid_references' => "Moyennes et bulletins d'anciens semestres."
+                'direct_deletion' => __('impact_subject_direct', ['name' => $sub['nom']]),
+                'dependencies' => __('impact_subject_dependencies', ['assignments' => $assignedCount, 'entries' => $timetableEntries]),
+                'historical_data' => __('impact_subject_history', ['count' => $gradesCount]),
+                'invalid_references' => __('impact_subject_references')
             ],
             'transfer_options' => [
-                'label' => 'Fusionner / Transférer les notes et cours vers :',
+                'label' => __('impact_subject_transfer_label'),
                 'param_name' => 'target_id',
                 'items' => $transferTargets
             ]
@@ -470,31 +470,31 @@ class ImpactAnalysisService
         $stmtTargets->execute([$id]);
         $transferTargets = $stmtTargets->fetchAll(PDO::FETCH_ASSOC);
 
-        $codeText = !empty($room['code']) ? 'Code: ' . $room['code'] . ' | ' : '';
-        $typeText = !empty($room['type_salle']) ? ' | Type: ' . $room['type_salle'] : '';
+        $codeText = !empty($room['code']) ? __('impact_room_code', ['code' => $room['code']]) . ' | ' : '';
+        $typeText = !empty($room['type_salle']) ? ' | ' . __('impact_room_type', ['type' => $room['type_salle']]) : '';
 
         return [
             'entity' => [
                 'type' => 'room',
-                'type_label' => 'Salle de classe',
+                'type_label' => __('impact_room_type_label'),
                 'id' => $id,
                 'name' => $room['nom'],
-                'subtext' => $codeText . 'Capacité: ' . ($room['capacite'] ?? 0) . ' places' . $typeText
+                'subtext' => $codeText . __('impact_room_capacity', ['capacity' => $room['capacite'] ?? 0]) . $typeText
             ],
             'risk_level' => $risk,
             'recommended_action' => $recommendedAction,
             'can_direct_delete' => true,
             'stats' => [
-                ['label' => 'Créneaux horaires occupés', 'count' => $entriesCount, 'icon' => 'fas fa-door-open', 'severity' => $entriesCount > 0 ? 'warning' : 'success'],
+                ['label' => __('impact_room_occupied_slots'), 'count' => $entriesCount, 'icon' => 'fas fa-door-open', 'severity' => $entriesCount > 0 ? 'warning' : 'success'],
             ],
             'impact_summary' => [
-                'direct_deletion' => "La salle " . $room['nom'] . ".",
-                'dependencies' => "$entriesCount créneaux de l'emploi du temps.",
-                'historical_data' => "Aucune altération des notes ni des inscriptions.",
-                'invalid_references' => $entriesCount > 0 ? "$entriesCount séances de cours se retrouveront sans salle assignée." : "Aucune."
+                'direct_deletion' => __('impact_room_direct', ['name' => $room['nom']]),
+                'dependencies' => __('impact_room_dependencies', ['count' => $entriesCount]),
+                'historical_data' => __('impact_room_history'),
+                'invalid_references' => $entriesCount > 0 ? __('impact_room_invalid_sessions', ['count' => $entriesCount]) : __('impact_none_period')
             ],
             'transfer_options' => [
-                'label' => 'Réaffecter tous les créneaux occupés vers la salle :',
+                'label' => __('impact_room_transfer_label'),
                 'param_name' => 'target_id',
                 'items' => $transferTargets
             ]
@@ -520,19 +520,19 @@ class ImpactAnalysisService
         $risk = ($classesCount > 0 || $levelsCount > 0) ? 'critical' : 'low';
 
         return [
-            'entity' => ['type' => 'cycle', 'type_label' => 'Cycle Scolaire', 'id' => $id, 'name' => $cycle['nom']],
+            'entity' => ['type' => 'cycle', 'type_label' => __('impact_cycle_type_label'), 'id' => $id, 'name' => $cycle['nom']],
             'risk_level' => $risk,
             'recommended_action' => $classesCount > 0 ? 'deactivate' : 'delete',
             'can_direct_delete' => ($classesCount === 0 && $levelsCount === 0),
             'stats' => [
-                ['label' => 'Niveaux d\'études', 'count' => $levelsCount, 'icon' => 'fas fa-layer-group', 'severity' => $levelsCount > 0 ? 'danger' : 'neutral'],
-                ['label' => 'Classes rattachées', 'count' => $classesCount, 'icon' => 'fas fa-school', 'severity' => $classesCount > 0 ? 'danger' : 'neutral'],
+                ['label' => __('impact_cycle_levels'), 'count' => $levelsCount, 'icon' => 'fas fa-layer-group', 'severity' => $levelsCount > 0 ? 'danger' : 'neutral'],
+                ['label' => __('impact_cycle_classes'), 'count' => $classesCount, 'icon' => 'fas fa-school', 'severity' => $classesCount > 0 ? 'danger' : 'neutral'],
             ],
             'impact_summary' => [
-                'direct_deletion' => "Le cycle " . $cycle['nom'] . ".",
-                'dependencies' => "$levelsCount niveaux et $classesCount classes associées.",
-                'historical_data' => "Structure de scolarité globale de l'établissement.",
-                'invalid_references' => "$classesCount classes risquent d'être orphelines de leur cycle."
+                'direct_deletion' => __('impact_cycle_direct', ['name' => $cycle['nom']]),
+                'dependencies' => __('impact_cycle_dependencies', ['levels' => $levelsCount, 'classes' => $classesCount]),
+                'historical_data' => __('impact_cycle_history'),
+                'invalid_references' => __('impact_cycle_invalid_classes', ['count' => $classesCount])
             ]
         ];
     }
@@ -552,18 +552,18 @@ class ImpactAnalysisService
         $risk = $classesCount > 0 ? 'high' : 'low';
 
         return [
-            'entity' => ['type' => 'level', 'type_label' => 'Niveau d\'étude', 'id' => $id, 'name' => $level['nom']],
+            'entity' => ['type' => 'level', 'type_label' => __('impact_level_type_label'), 'id' => $id, 'name' => $level['nom']],
             'risk_level' => $risk,
             'recommended_action' => $classesCount > 0 ? 'deactivate' : 'delete',
             'can_direct_delete' => ($classesCount === 0),
             'stats' => [
-                ['label' => 'Classes du niveau', 'count' => $classesCount, 'icon' => 'fas fa-graduation-cap', 'severity' => $classesCount > 0 ? 'warning' : 'neutral']
+                ['label' => __('impact_level_classes'), 'count' => $classesCount, 'icon' => 'fas fa-graduation-cap', 'severity' => $classesCount > 0 ? 'warning' : 'neutral']
             ],
             'impact_summary' => [
-                'direct_deletion' => "Le niveau " . $level['nom'] . ".",
-                'dependencies' => "$classesCount classes.",
-                'historical_data' => "Paramétrage des frais et des relevés.",
-                'invalid_references' => "Aucune si réaffecté."
+                'direct_deletion' => __('impact_level_direct', ['name' => $level['nom']]),
+                'dependencies' => __('impact_level_dependencies', ['count' => $classesCount]),
+                'historical_data' => __('impact_level_history'),
+                'invalid_references' => __('impact_level_references')
             ]
         ];
     }
@@ -583,18 +583,18 @@ class ImpactAnalysisService
         $risk = strtolower($user['role']) === 'superadministrateur' ? 'critical' : 'medium';
 
         return [
-            'entity' => ['type' => 'user', 'type_label' => 'Compte Utilisateur', 'id' => $id, 'name' => $user['username'], 'subtext' => 'Rôle: ' . strtoupper($user['role'])],
+            'entity' => ['type' => 'user', 'type_label' => __('impact_user_type_label'), 'id' => $id, 'name' => $user['username'], 'subtext' => __('impact_user_role', ['role' => strtoupper($user['role'])])],
             'risk_level' => $risk,
             'recommended_action' => 'deactivate',
             'can_direct_delete' => strtolower($user['role']) !== 'superadministrateur',
             'stats' => [
-                ['label' => 'Journaux d\'activité', 'count' => $logsCount, 'icon' => 'fas fa-history', 'severity' => 'neutral']
+                ['label' => __('impact_user_activity_logs'), 'count' => $logsCount, 'icon' => 'fas fa-history', 'severity' => 'neutral']
             ],
             'impact_summary' => [
-                'direct_deletion' => "Le compte utilisateur " . $user['username'] . ".",
-                'dependencies' => "Accès et jetons de connexion.",
-                'historical_data' => "$logsCount entrées de journaux d'audit.",
-                'invalid_references' => "Les actions passées seront conservées avec la mention 'Utilisateur supprimé'."
+                'direct_deletion' => __('impact_user_direct', ['name' => $user['username']]),
+                'dependencies' => __('impact_user_dependencies'),
+                'historical_data' => __('impact_user_history', ['count' => $logsCount]),
+                'invalid_references' => __('impact_user_references')
             ]
         ];
     }
@@ -641,24 +641,36 @@ class ImpactAnalysisService
         $stmtClasses->execute($groupTimetableIds);
         $classesCount = (int)$stmtClasses->fetchColumn();
 
-        $name = "Emploi du temps (" . ($tt['cycle_name'] ?: 'Cycle') . " - " . ($tt['week_name'] ?: 'Semaine') . ")";
+        $name = __('impact_timetable_name', [
+            'cycle' => $tt['cycle_name'] ?: __('impact_cycle_fallback'),
+            'week' => $tt['week_name'] ?: __('impact_week_fallback')
+        ]);
 
         return [
-            'entity' => ['type' => 'timetable', 'type_label' => 'Emploi du temps', 'id' => $id, 'name' => $name],
+            'entity' => ['type' => 'timetable', 'type_label' => __('impact_timetable_type'), 'id' => $id, 'name' => $name],
             'risk_level' => $entriesCount > 0 ? 'medium' : 'low',
             'recommended_action' => 'delete',
             'can_direct_delete' => true,
             'stats' => [
-                ['label' => 'Séances / Programmations', 'count' => $entriesCount, 'icon' => 'fas fa-calendar-day', 'severity' => $entriesCount > 0 ? 'warning' : 'neutral'],
-                ['label' => 'Enseignants impactés', 'count' => $teachersCount, 'icon' => 'fas fa-chalkboard-teacher', 'severity' => $teachersCount > 0 ? 'warning' : 'neutral'],
-                ['label' => 'Classes concernées', 'count' => $classesCount, 'icon' => 'fas fa-school', 'severity' => $classesCount > 0 ? 'warning' : 'neutral'],
-                ['label' => 'Salles occupées', 'count' => $roomsCount, 'icon' => 'fas fa-building', 'severity' => $roomsCount > 0 ? 'warning' : 'neutral'],
+                ['label' => __('impact_timetable_sessions'), 'count' => $entriesCount, 'icon' => 'fas fa-calendar-day', 'severity' => $entriesCount > 0 ? 'warning' : 'neutral'],
+                ['label' => __('impact_timetable_teachers'), 'count' => $teachersCount, 'icon' => 'fas fa-chalkboard-teacher', 'severity' => $teachersCount > 0 ? 'warning' : 'neutral'],
+                ['label' => __('impact_timetable_classes'), 'count' => $classesCount, 'icon' => 'fas fa-school', 'severity' => $classesCount > 0 ? 'warning' : 'neutral'],
+                ['label' => __('impact_timetable_rooms'), 'count' => $roomsCount, 'icon' => 'fas fa-building', 'severity' => $roomsCount > 0 ? 'warning' : 'neutral'],
             ],
             'impact_summary' => [
-                'direct_deletion' => "L'emploi du temps $name.",
-                'dependencies' => "$entriesCount programmations de cours, $teachersCount enseignants, $classesCount classes et $roomsCount salles affectées.",
-                'historical_data' => "Historique des affectations de créneaux.",
-                'invalid_references' => "Aucune (les séances seront retirées des planning enseignants)."
+                'direct_deletion' => __('impact_timetable_direct', ['name' => $name]),
+                'dependencies' => __('impact_timetable_dependencies', [
+                    'entries' => $entriesCount,
+                    'entry_label' => __('impact_timetable_entry_' . ($entriesCount === 1 ? 'one' : 'many')),
+                    'teachers' => $teachersCount,
+                    'teacher_label' => __('impact_timetable_teacher_' . ($teachersCount === 1 ? 'one' : 'many')),
+                    'classes' => $classesCount,
+                    'class_label' => __('impact_timetable_class_' . ($classesCount === 1 ? 'one' : 'many')),
+                    'rooms' => $roomsCount,
+                    'room_label' => __('impact_timetable_rooms_affected_' . ($roomsCount === 1 ? 'one' : 'many'))
+                ]),
+                'historical_data' => __('impact_timetable_history'),
+                'invalid_references' => __('impact_timetable_references')
             ]
         ];
     }
@@ -676,21 +688,25 @@ class ImpactAnalysisService
         $stmtEntries->execute([$id]);
         $entriesCount = (int)$stmtEntries->fetchColumn();
 
-        $name = ($slot['label'] ?: 'Créneau') . " (" . substr($slot['heure_debut'], 0, 5) . " - " . substr($slot['heure_fin'], 0, 5) . ")";
+        $name = __('impact_slot_name', [
+            'label' => $slot['label'] ?: __('impact_slot_fallback'),
+            'start' => substr($slot['heure_debut'], 0, 5),
+            'end' => substr($slot['heure_fin'], 0, 5)
+        ]);
 
         return [
-            'entity' => ['type' => 'timetable_slot', 'type_label' => 'Créneau Horaire', 'id' => $id, 'name' => $name],
+            'entity' => ['type' => 'timetable_slot', 'type_label' => __('impact_slot_type'), 'id' => $id, 'name' => $name],
             'risk_level' => $entriesCount > 0 ? 'high' : 'low',
             'recommended_action' => $entriesCount > 0 ? 'deactivate' : 'delete',
             'can_direct_delete' => true,
             'stats' => [
-                ['label' => 'Cours dans ce créneau', 'count' => $entriesCount, 'icon' => 'fas fa-clock', 'severity' => $entriesCount > 0 ? 'warning' : 'neutral']
+                ['label' => __('impact_slot_sessions'), 'count' => $entriesCount, 'icon' => 'fas fa-clock', 'severity' => $entriesCount > 0 ? 'warning' : 'neutral']
             ],
             'impact_summary' => [
-                'direct_deletion' => "Le créneau horaire $name.",
-                'dependencies' => "$entriesCount séances associées à cette plage dans les emplois du temps.",
-                'historical_data' => "Plages de cours.",
-                'invalid_references' => "$entriesCount cours perdront leur créneau horaire."
+                'direct_deletion' => __('impact_slot_direct', ['name' => $name]),
+                'dependencies' => __('impact_slot_dependencies_' . ($entriesCount === 1 ? 'one' : 'many'), ['count' => $entriesCount]),
+                'historical_data' => __('impact_slot_history'),
+                'invalid_references' => __('impact_slot_references_' . ($entriesCount === 1 ? 'one' : 'many'), ['count' => $entriesCount])
             ]
         ];
     }
@@ -703,7 +719,7 @@ class ImpactAnalysisService
 
         if (!$week) return $this->notFoundResponse('timetable_week', $id);
 
-        $weekName = !empty($week['libelle']) ? $week['libelle'] : 'Semaine du ' . date('d/m/Y', strtotime($week['date_debut']));
+        $weekName = !empty($week['libelle']) ? $week['libelle'] : __('impact_week_from', ['date' => date('d/m/Y', strtotime($week['date_debut']))]);
 
         $stmtTT = $this->db->prepare("SELECT COUNT(*) FROM timetables WHERE week_id = ?");
         $stmtTT->execute([$id]);
@@ -712,22 +728,25 @@ class ImpactAnalysisService
         return [
             'entity' => [
                 'type' => 'timetable_week',
-                'type_label' => 'Semaine Emploi du Temps',
+                'type_label' => __('impact_week_type'),
                 'id' => $id,
                 'name' => $weekName,
-                'subtext' => 'Du ' . date('d/m/Y', strtotime($week['date_debut'])) . ' au ' . date('d/m/Y', strtotime($week['date_fin']))
+                'subtext' => __('impact_week_dates', [
+                    'start' => date('d/m/Y', strtotime($week['date_debut'])),
+                    'end' => date('d/m/Y', strtotime($week['date_fin']))
+                ])
             ],
             'risk_level' => $ttCount > 0 ? 'high' : 'low',
             'recommended_action' => $ttCount > 0 ? 'deactivate' : 'delete',
             'can_direct_delete' => true,
             'stats' => [
-                ['label' => 'Emplois du temps associés', 'count' => $ttCount, 'icon' => 'fas fa-calendar-week', 'severity' => $ttCount > 0 ? 'warning' : 'neutral']
+                ['label' => __('impact_week_timetables'), 'count' => $ttCount, 'icon' => 'fas fa-calendar-week', 'severity' => $ttCount > 0 ? 'warning' : 'neutral']
             ],
             'impact_summary' => [
-                'direct_deletion' => "La semaine de planning " . $weekName . ".",
-                'dependencies' => "$ttCount grilles d'emploi du temps.",
-                'historical_data' => "Dates de début et de fin de semaine.",
-                'invalid_references' => "Aucune."
+                'direct_deletion' => __('impact_week_direct', ['name' => $weekName]),
+                'dependencies' => __('impact_week_dependencies_' . ($ttCount === 1 ? 'one' : 'many'), ['count' => $ttCount]),
+                'historical_data' => __('impact_week_history'),
+                'invalid_references' => __('impact_none') . '.'
             ]
         ];
     }
@@ -745,18 +764,18 @@ class ImpactAnalysisService
         $subsCount = (int)$stmtSubs->fetchColumn();
 
         return [
-            'entity' => ['type' => 'subject_group', 'type_label' => 'Groupe de Matières (UE)', 'id' => $id, 'name' => $group['nom']],
+            'entity' => ['type' => 'subject_group', 'type_label' => __('impact_subject_group_type_label'), 'id' => $id, 'name' => $group['nom']],
             'risk_level' => $subsCount > 0 ? 'medium' : 'low',
             'recommended_action' => $subsCount > 0 ? 'deactivate' : 'delete',
             'can_direct_delete' => true,
             'stats' => [
-                ['label' => 'Matières rattachées', 'count' => $subsCount, 'icon' => 'fas fa-boxes', 'severity' => $subsCount > 0 ? 'warning' : 'neutral']
+                ['label' => __('impact_subject_group_subjects'), 'count' => $subsCount, 'icon' => 'fas fa-boxes', 'severity' => $subsCount > 0 ? 'warning' : 'neutral']
             ],
             'impact_summary' => [
-                'direct_deletion' => "Le groupe de matières " . $group['nom'] . ".",
-                'dependencies' => "$subsCount matières rattachées à ce groupe.",
-                'historical_data' => "Coefficients d'UE sur les bulletins.",
-                'invalid_references' => "Les matières seront dissociées de tout groupe."
+                'direct_deletion' => __('impact_subject_group_direct', ['name' => $group['nom']]),
+                'dependencies' => __('impact_subject_group_dependencies', ['count' => $subsCount]),
+                'historical_data' => __('impact_subject_group_history'),
+                'invalid_references' => __('impact_subject_group_references')
             ]
         ];
     }
@@ -774,16 +793,16 @@ class ImpactAnalysisService
         $usage->execute([$id]);
         $usageCount = (int) $usage->fetchColumn();
         return [
-            'entity' => ['type' => 'competency', 'type_label' => 'Compétence', 'id' => $id, 'name' => $competency['libelle'], 'subtext' => 'Matière : ' . ($competency['subject_nom'] ?? 'Transversale')],
+            'entity' => ['type' => 'competency', 'type_label' => __('impact_competency_type_label'), 'id' => $id, 'name' => $competency['libelle'], 'subtext' => __('impact_competency_subject', ['name' => $competency['subject_nom'] ?? __('impact_competency_cross_subject')])],
             'risk_level' => $usageCount > 0 ? 'critical' : 'low',
             'recommended_action' => $usageCount > 0 ? 'deactivate' : 'delete',
             'can_direct_delete' => $usageCount === 0,
-            'stats' => [['label' => 'Évaluations utilisant cette compétence', 'count' => $usageCount, 'icon' => 'fas fa-clipboard-check', 'severity' => $usageCount > 0 ? 'danger' : 'success']],
+            'stats' => [['label' => __('impact_competency_usages'), 'count' => $usageCount, 'icon' => 'fas fa-clipboard-check', 'severity' => $usageCount > 0 ? 'danger' : 'success']],
             'impact_summary' => [
-                'direct_deletion' => 'La compétence « ' . $competency['libelle'] . ' » sera supprimée.',
-                'dependencies' => $usageCount . ' association(s) d’évaluation seront concernées.',
-                'historical_data' => 'Les notes restent conservées, mais la compétence ne sera plus disponible.',
-                'invalid_references' => $usageCount > 0 ? 'Suppression directe bloquée pour préserver les évaluations.' : 'Aucune.'
+                'direct_deletion' => __('impact_competency_direct', ['name' => $competency['libelle']]),
+                'dependencies' => __('impact_competency_dependencies', ['count' => $usageCount]),
+                'historical_data' => __('impact_competency_history'),
+                'invalid_references' => $usageCount > 0 ? __('impact_competency_blocked') : __('impact_none_period')
             ]
         ];
     }
@@ -801,18 +820,18 @@ class ImpactAnalysisService
         $classesCount = (int)$stmtClasses->fetchColumn();
 
         return [
-            'entity' => ['type' => 'department', 'type_label' => 'Département', 'id' => $id, 'name' => $dept['nom']],
+            'entity' => ['type' => 'department', 'type_label' => __('impact_department_type_label'), 'id' => $id, 'name' => $dept['nom']],
             'risk_level' => $classesCount > 0 ? 'medium' : 'low',
             'recommended_action' => 'delete',
             'can_direct_delete' => true,
             'stats' => [
-                ['label' => 'Classes du département', 'count' => $classesCount, 'icon' => 'fas fa-building', 'severity' => $classesCount > 0 ? 'warning' : 'neutral']
+                ['label' => __('impact_department_classes'), 'count' => $classesCount, 'icon' => 'fas fa-building', 'severity' => $classesCount > 0 ? 'warning' : 'neutral']
             ],
             'impact_summary' => [
-                'direct_deletion' => "Le département " . $dept['nom'] . ".",
-                'dependencies' => "$classesCount classes.",
-                'historical_data' => "Filières et spécialités.",
-                'invalid_references' => "Les classes perdront l'association avec ce département."
+                'direct_deletion' => __('impact_department_direct', ['name' => $dept['nom']]),
+                'dependencies' => __('impact_department_dependencies', ['count' => $classesCount]),
+                'historical_data' => __('impact_department_history'),
+                'invalid_references' => __('impact_department_references')
             ]
         ];
     }
@@ -830,18 +849,18 @@ class ImpactAnalysisService
         $classesCount = (int)$stmtClasses->fetchColumn();
 
         return [
-            'entity' => ['type' => 'section', 'type_label' => 'Section', 'id' => $id, 'name' => $sec['nom']],
+            'entity' => ['type' => 'section', 'type_label' => __('impact_section_type_label'), 'id' => $id, 'name' => $sec['nom']],
             'risk_level' => $classesCount > 0 ? 'medium' : 'low',
             'recommended_action' => 'delete',
             'can_direct_delete' => true,
             'stats' => [
-                ['label' => 'Classes dans la section', 'count' => $classesCount, 'icon' => 'fas fa-flag', 'severity' => $classesCount > 0 ? 'warning' : 'neutral']
+                ['label' => __('impact_section_classes'), 'count' => $classesCount, 'icon' => 'fas fa-flag', 'severity' => $classesCount > 0 ? 'warning' : 'neutral']
             ],
             'impact_summary' => [
-                'direct_deletion' => "La section " . $sec['nom'] . ".",
-                'dependencies' => "$classesCount classes.",
-                'historical_data' => "Section linguistique ou académique.",
-                'invalid_references' => "Aucune."
+                'direct_deletion' => __('impact_section_direct', ['name' => $sec['nom']]),
+                'dependencies' => __('impact_section_dependencies', ['count' => $classesCount]),
+                'historical_data' => __('impact_section_history'),
+                'invalid_references' => __('impact_none_period')
             ]
         ];
     }
@@ -865,19 +884,19 @@ class ImpactAnalysisService
         $risk = ($year['is_active'] || $enrollmentsCount > 0 || $gradesCount > 0) ? 'critical' : 'medium';
 
         return [
-            'entity' => ['type' => 'academic_year', 'type_label' => 'Année Académique', 'id' => $id, 'name' => $year['nom']],
+            'entity' => ['type' => 'academic_year', 'type_label' => __('impact_academic_year_type_label'), 'id' => $id, 'name' => $year['nom']],
             'risk_level' => $risk,
             'recommended_action' => 'deactivate',
             'can_direct_delete' => ($enrollmentsCount === 0 && $gradesCount === 0 && !$year['is_active']),
             'stats' => [
-                ['label' => 'Notes de l\'année', 'count' => $gradesCount, 'icon' => 'fas fa-graduation-cap', 'severity' => $gradesCount > 0 ? 'danger' : 'neutral'],
-                ['label' => 'Inscriptions totales', 'count' => $enrollmentsCount, 'icon' => 'fas fa-user-graduate', 'severity' => $enrollmentsCount > 0 ? 'danger' : 'neutral'],
+                ['label' => __('impact_academic_year_grades'), 'count' => $gradesCount, 'icon' => 'fas fa-graduation-cap', 'severity' => $gradesCount > 0 ? 'danger' : 'neutral'],
+                ['label' => __('impact_academic_year_enrollments'), 'count' => $enrollmentsCount, 'icon' => 'fas fa-user-graduate', 'severity' => $enrollmentsCount > 0 ? 'danger' : 'neutral'],
             ],
             'impact_summary' => [
-                'direct_deletion' => "L'année académique " . $year['nom'] . ".",
-                'dependencies' => "Toutes les inscriptions, devoirs et bulletins de cette année.",
-                'historical_data' => "$gradesCount notes et $enrollmentsCount dossiers d'élèves.",
-                'invalid_references' => "Pertes irréversibles des données d'évaluation de l'année."
+                'direct_deletion' => __('impact_academic_year_direct', ['name' => $year['nom']]),
+                'dependencies' => __('impact_academic_year_dependencies'),
+                'historical_data' => __('impact_academic_year_history', ['grades' => $gradesCount, 'enrollments' => $enrollmentsCount]),
+                'invalid_references' => __('impact_academic_year_references')
             ]
         ];
     }
@@ -895,18 +914,18 @@ class ImpactAnalysisService
         $gradesCount = (int)$stmtGrades->fetchColumn();
 
         return [
-            'entity' => ['type' => 'sequence', 'type_label' => 'Séquence d\'Évaluation', 'id' => $id, 'name' => $seq['nom']],
+            'entity' => ['type' => 'sequence', 'type_label' => __('impact_sequence_type_label'), 'id' => $id, 'name' => $seq['nom']],
             'risk_level' => $gradesCount > 0 ? 'critical' : 'low',
             'recommended_action' => $gradesCount > 0 ? 'deactivate' : 'delete',
             'can_direct_delete' => ($gradesCount === 0),
             'stats' => [
-                ['label' => 'Notes associées', 'count' => $gradesCount, 'icon' => 'fas fa-star-half-alt', 'severity' => $gradesCount > 0 ? 'danger' : 'neutral']
+                ['label' => __('impact_sequence_grades'), 'count' => $gradesCount, 'icon' => 'fas fa-star-half-alt', 'severity' => $gradesCount > 0 ? 'danger' : 'neutral']
             ],
             'impact_summary' => [
-                'direct_deletion' => "La séquence " . $seq['nom'] . ".",
-                'dependencies' => "$gradesCount notes enregistrées.",
-                'historical_data' => "Bulletins et calculs des moyennes séquentielles.",
-                'invalid_references' => "Altération des moyennes de sous-période."
+                'direct_deletion' => __('impact_sequence_direct', ['name' => $seq['nom']]),
+                'dependencies' => __('impact_sequence_dependencies', ['count' => $gradesCount]),
+                'historical_data' => __('impact_sequence_history'),
+                'invalid_references' => __('impact_sequence_references')
             ]
         ];
     }
@@ -924,18 +943,18 @@ class ImpactAnalysisService
         $classesCount = (int)$stmtClasses->fetchColumn();
 
         return [
-            'entity' => ['type' => 'teaching_type', 'type_label' => 'Type d\'Enseignement', 'id' => $id, 'name' => $type['nom']],
+            'entity' => ['type' => 'teaching_type', 'type_label' => __('impact_teaching_type_label'), 'id' => $id, 'name' => $type['nom']],
             'risk_level' => $classesCount > 0 ? 'high' : 'low',
             'recommended_action' => 'deactivate',
             'can_direct_delete' => ($classesCount === 0),
             'stats' => [
-                ['label' => 'Classes associées', 'count' => $classesCount, 'icon' => 'fas fa-school', 'severity' => $classesCount > 0 ? 'warning' : 'neutral']
+                ['label' => __('impact_teaching_type_classes'), 'count' => $classesCount, 'icon' => 'fas fa-school', 'severity' => $classesCount > 0 ? 'warning' : 'neutral']
             ],
             'impact_summary' => [
-                'direct_deletion' => "Le type d'enseignement " . $type['nom'] . ".",
-                'dependencies' => "$classesCount classes configurées.",
-                'historical_data' => "Logique LMD / Secondaire.",
-                'invalid_references' => "Classes sans type d'enseignement assigné."
+                'direct_deletion' => __('impact_teaching_type_direct', ['name' => $type['nom']]),
+                'dependencies' => __('impact_teaching_type_dependencies', ['count' => $classesCount]),
+                'historical_data' => __('impact_teaching_type_history'),
+                'invalid_references' => __('impact_teaching_type_references')
             ]
         ];
     }
@@ -945,19 +964,19 @@ class ImpactAnalysisService
         return [
             'entity' => [
                 'type' => $type,
-                'type_label' => ucfirst($type),
+                'type_label' => __('impact_generic_type_label', ['type' => ucfirst($type)]),
                 'id' => $id,
-                'name' => ucfirst($type) . " #" . $id
+                'name' => __('impact_generic_name', ['type' => ucfirst($type), 'id' => $id])
             ],
             'risk_level' => 'medium',
             'recommended_action' => 'delete',
             'can_direct_delete' => true,
             'stats' => [],
             'impact_summary' => [
-                'direct_deletion' => "L'élément de type $type (#$id).",
-                'dependencies' => "Aucune dépendance majeure détectée.",
-                'historical_data' => "Aucune donnée critique.",
-                'invalid_references' => "Aucune."
+                'direct_deletion' => __('impact_generic_direct', ['type' => $type, 'id' => $id]),
+                'dependencies' => __('impact_generic_dependencies'),
+                'historical_data' => __('impact_generic_history'),
+                'invalid_references' => __('impact_none_period')
             ]
         ];
     }
@@ -966,7 +985,7 @@ class ImpactAnalysisService
     {
         return [
             'error' => true,
-            'message' => "L'élément de type '$type' avec l'identifiant #$id n'existe pas.",
+            'message' => __('impact_entity_not_found', ['type' => $type, 'id' => $id]),
             'entity' => ['type' => $type, 'id' => $id, 'name' => 'Introuvable']
         ];
     }

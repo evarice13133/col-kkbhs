@@ -320,20 +320,20 @@ document.getElementById('contactForm').addEventListener('submit', function(e) {
     .then(data => {
         if (data.success) {
             Swal.fire({
-                title: 'Merci !',
-                text: 'Votre demande a été transmise avec succès. Notre équipe vous contactera.',
+                title: <?= json_encode(__('contact_form_success_title'), JSON_UNESCAPED_UNICODE) ?>,
+                text: <?= json_encode(__('contact_form_success_text'), JSON_UNESCAPED_UNICODE) ?>,
                 icon: 'success',
                 confirmButtonColor: '#2563eb'
             });
             form.reset();
         } else {
-            throw new Error(data.error || 'Erreur inconnue');
+            throw new Error(data.error || <?= json_encode(__('error_generic'), JSON_UNESCAPED_UNICODE) ?>);
         }
     })
     .catch(error => {
         Swal.fire({
-            title: 'Oups...',
-            text: 'Une erreur est survenue : ' + error.message,
+            title: <?= json_encode(__('error_title'), JSON_UNESCAPED_UNICODE) ?>,
+            text: error.message,
             icon: 'error'
         });
     })

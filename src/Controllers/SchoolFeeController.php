@@ -55,7 +55,7 @@ class SchoolFeeController
         $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
-        $classesQuery = "SELECT id, nom, cycle_id, section_id, teaching_type_id FROM classes WHERE 1=1";
+        $classesQuery = "SELECT id, nom, cycle_id, section_id, teaching_type_id FROM classes WHERE status = 1";
         $classesParams = [];
         if ($teachingTypeId) {
             $classesQuery .= " AND teaching_type_id = ?";
@@ -385,7 +385,7 @@ class SchoolFeeController
         }
 
         // Récupérer les classes, cycles, types d'enseignement
-        $classes = $this->db->query("SELECT id, nom, cycle_id, teaching_type_id FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $classes = $this->db->query("SELECT id, nom, cycle_id, teaching_type_id FROM classes WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -626,7 +626,7 @@ class SchoolFeeController
                 $teachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
                 $cycleId = (int) ($_GET['cycle_id'] ?? 0);
                 $sectionId = (int) ($_GET['section_id'] ?? 0);
-                $sql = "SELECT id, nom FROM classes WHERE 1=1";
+                $sql = "SELECT id, nom FROM classes WHERE status = 1";
                 $params = [];
                 if ($teachingTypeId > 0) {
                     $sql .= " AND teaching_type_id = ?";
@@ -864,7 +864,7 @@ class SchoolFeeController
         }
 
         if ($filters['teaching_type_id'] > 0 || $filters['cycle_id'] > 0 || $filters['section_id'] > 0) {
-            $sqlCla = "SELECT id, nom FROM classes WHERE 1=1";
+            $sqlCla = "SELECT id, nom FROM classes WHERE status = 1";
             $paramsCla = [];
             if ($filters['teaching_type_id'] > 0) {
                 $sqlCla .= " AND teaching_type_id = ?";
@@ -883,7 +883,7 @@ class SchoolFeeController
             $stmtCla->execute($paramsCla);
             $classes = $stmtCla->fetchAll(PDO::FETCH_ASSOC);
         } else {
-            $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+            $classes = $this->db->query("SELECT id, nom FROM classes WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         }
 
         $tranches = [];
@@ -1622,7 +1622,7 @@ class SchoolFeeController
         $filtersDescription = empty($filterTexts) ? "Toutes les classes" : implode(" | ", $filterTexts);
 
         // Récupérer les classes concernées
-        $classesQuery = "SELECT id, nom, cycle_id, section_id, teaching_type_id FROM classes WHERE 1=1";
+        $classesQuery = "SELECT id, nom, cycle_id, section_id, teaching_type_id FROM classes WHERE status = 1";
         $classesParams = [];
         if ($teachingTypeId) {
             $classesQuery .= " AND teaching_type_id = ?";

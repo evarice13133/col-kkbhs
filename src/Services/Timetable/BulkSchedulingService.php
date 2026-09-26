@@ -48,7 +48,7 @@ class BulkSchedulingService
         if (!$weekId || !$subjectId || !$teacherId || empty($classIds) || empty($days) || empty($slotIds)) {
             return [
                 'success' => false,
-                'message' => 'Paramètres incomplets pour l\'analyse de la planification.',
+                'message' => __('timetables_bulk_fields_required'),
                 'schedules' => [],
                 'total_generated' => 0,
                 'valid_count' => 0,
@@ -273,7 +273,7 @@ class BulkSchedulingService
         if (empty($schedules)) {
             return [
                 'success' => false,
-                'message' => 'Aucune programmation à enregistrer.',
+                'message' => __('timetables_bulk_no_valid_schedule'),
                 'saved_count' => 0
             ];
         }
@@ -387,7 +387,7 @@ class BulkSchedulingService
             }
             return [
                 'success' => false,
-                'message' => 'Erreur lors de la sauvegarde en masse : ' . $e->getMessage(),
+                'message' => __('timetables_bulk_save_error'),
                 'saved_count' => 0
             ];
         }

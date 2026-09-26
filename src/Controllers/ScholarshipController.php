@@ -66,7 +66,7 @@ class ScholarshipController
             ORDER BY s.nom ASC, s.prenom ASC
         ")->fetchAll(PDO::FETCH_ASSOC);
 
-        $classes = $this->db->query("SELECT id, nom, teaching_type_id, section_id, cycle_id FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $classes = $this->db->query("SELECT id, nom, teaching_type_id, section_id, cycle_id FROM classes WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);

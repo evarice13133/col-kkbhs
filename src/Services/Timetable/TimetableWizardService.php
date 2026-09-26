@@ -138,7 +138,7 @@ class TimetableWizardService
             SELECT c.id, c.nom, c.level_id, c.cycle_id,
                    (SELECT COUNT(*) FROM students s WHERE s.class_id = c.id AND s.is_withdrawn = 0 AND s.actif = 1) as effectif
             FROM classes c
-            WHERE (c.cycle_id = ? OR ? = 0)
+            WHERE c.status = 1 AND (c.cycle_id = ? OR ? = 0)
               AND (c.level_id = ? OR ? = 0)
             ORDER BY c.nom ASC
         ");
@@ -151,7 +151,7 @@ class TimetableWizardService
                 SELECT c.id, c.nom, c.level_id, c.cycle_id,
                        (SELECT COUNT(*) FROM students s WHERE s.class_id = c.id AND s.is_withdrawn = 0 AND s.actif = 1) as effectif
                 FROM classes c
-                WHERE c.cycle_id = ?
+                WHERE c.status = 1 AND c.cycle_id = ?
                 ORDER BY c.nom ASC
             ");
             $stmt->execute([$cycleId]);
@@ -192,7 +192,7 @@ class TimetableWizardService
 
         if (empty($classes)) {
             // S'il n'y a aucune classe rattachée au niveau, récupérer toutes les classes du cycle
-            $stmt = $this->db->prepare("SELECT id, nom FROM classes WHERE cycle_id = ? ORDER BY nom ASC");
+            $stmt = $this->db->prepare("SELECT id, nom FROM classes WHERE status = 1 AND cycle_id = ? ORDER BY nom ASC");
             $stmt->execute([$cycleId]);
             $classes = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
@@ -205,7 +205,8 @@ class TimetableWizardService
             $stmtSub = $this->db->query("
                 SELECT DISTINCT s.id, s.nom, COALESCE(s.code_uv, s.code_ue, '') as code, '#3b82f6' as couleur_hex
                 FROM subject_classes sc
-                JOIN subjects s ON sc.subject_id = s.id
+                JOIN subjects s ON sc.subject_id = s.id AND s.status = 1
+                JOIN classes c ON c.id = sc.class_id AND c.status = 1
                 WHERE sc.class_id IN ($inClause)
                 ORDER BY s.nom ASC
             ");
@@ -380,6 +381,8 @@ class TimetableWizardService
                    IF(sc.subject_id IS NOT NULL, 1, 0) as is_attached
             FROM subjects s
             JOIN subject_classes sc ON sc.subject_id = s.id AND sc.class_id = ?
+            JOIN classes c ON c.id = sc.class_id AND c.status = 1
+            WHERE s.status = 1
             ORDER BY s.nom ASC
         ");
         $stmt->execute([$classId]);

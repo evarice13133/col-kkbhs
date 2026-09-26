@@ -102,7 +102,7 @@ class FinancialHistoryController
         }
 
         $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $classes = $this->db->query("SELECT id, nom FROM classes WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         include __DIR__ . '/../Views/financial_history/index.php';
     }
@@ -144,7 +144,7 @@ class FinancialHistoryController
         }
 
         // Charger la liste des classes pour la correspondance des filtres
-        $classesList = $this->db->query("SELECT id, nom FROM classes")->fetchAll(PDO::FETCH_ASSOC);
+        $classesList = $this->db->query("SELECT id, nom FROM classes WHERE status = 1")->fetchAll(PDO::FETCH_ASSOC);
         $classesMap = [];
         foreach ($classesList as $c) {
             $classesMap[$c['id']] = $c['nom'];

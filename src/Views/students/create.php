@@ -746,8 +746,8 @@ document.addEventListener('DOMContentLoaded', function () {
             e.preventDefault();
             Swal.fire({
                 icon: 'error',
-                title: 'Validation des frais d\'inscription',
-                text: `Le montant versé (${formatNumber(paidFee)} FCFA) doit être exactement égal au montant attendu (${formatNumber(expectedFee)} FCFA) pour cette classe et ce statut.`,
+                title: <?= json_encode(__('registration_fee_validation_title'), JSON_UNESCAPED_UNICODE) ?>,
+                text: <?= json_encode(__('registration_fee_validation_text'), JSON_UNESCAPED_UNICODE) ?>.replace(':paid', formatNumber(paidFee)).replace(':expected', formatNumber(expectedFee)),
                 confirmButtonColor: '#2563EB'
             });
             currentStep = 4;

@@ -280,7 +280,7 @@ ob_start();
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </div>
-                                        <button class="btn btn-sm btn-link p-0 text-accent fw-bold text-decoration-none small" onclick="Swal.fire({title: '<?= addslashes((string) __('message_from')) ?> ' + '<?= h(addslashes($notif['name'])) ?>', text: '<?= h(addslashes($notif['message'])) ?>', footer: 'Contact: <?= h(addslashes($notif['email'])) ?>'})"><?= __('read') ?></button>
+                                        <button class="btn btn-sm btn-link p-0 text-accent fw-bold text-decoration-none small" onclick="Swal.fire({title: '<?= addslashes((string) __('message_from')) ?> ' + '<?= h(addslashes($notif['name'])) ?>', text: '<?= h(addslashes($notif['message'])) ?>', footer: '<?= addslashes((string) __('contact')) ?>: <?= h(addslashes($notif['email'])) ?>'})"><?= __('read') ?></button>
                                     </div>
                                 </div>
                             <?php endforeach; ?>

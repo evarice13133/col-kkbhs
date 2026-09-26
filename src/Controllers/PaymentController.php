@@ -43,7 +43,7 @@ class PaymentController
         $status = trim((string) ($_GET['status'] ?? '')); // 'paid', 'unpaid', 'debt' (reste à payer > 0)
 
         // Récupérer les classes pour le sélecteur
-        $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $classes = $this->db->query("SELECT id, nom FROM classes WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         // Requête principale
         $sql = "SELECT s.id, s.nom, s.prenom, s.email as matricule, c.nom as classe_nom, 

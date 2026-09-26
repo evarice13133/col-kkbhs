@@ -110,7 +110,7 @@ ob_start(); ?>
                                         <?php if ((int) $g['subjects_count'] == 0 && (int)$g['id'] > 0): ?>
                                             <a href="/subject-groups/delete?id=<?= $g['id'] ?>"
                                                 class="btn btn-sm btn-action-modern text-danger btn-confirm-delete"
-                                                data-confirm="Voulez-vous vraiment supprimer ce groupe de modules ?"
+                                                data-confirm="<?= __('confirm_delete_subject_group') ?>"
                                                 title="<?= __('delete') ?>">
                                                 <i class="bi bi-trash fs-5"></i>
                                             </a>

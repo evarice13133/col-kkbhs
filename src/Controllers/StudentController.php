@@ -90,11 +90,11 @@ class StudentController
 
             $academicYearId = $this->academicYearService->getActiveYearId();
             if (Session::get('user_role') === 'enseignant') {
-                $stmt = $this->db->prepare("SELECT id, nom FROM classes WHERE id IN (SELECT DISTINCT class_id FROM teacher_assignments WHERE user_id = ? AND academic_year_id = ?) ORDER BY nom ASC");
+                $stmt = $this->db->prepare("SELECT c.id, c.nom FROM classes c WHERE c.status = 1 AND c.id IN (SELECT DISTINCT class_id FROM teacher_assignments WHERE user_id = ? AND academic_year_id = ?) ORDER BY c.nom ASC");
                 $stmt->execute([Session::get('user_id'), $academicYearId]);
                 $classes = $stmt->fetchAll(PDO::FETCH_ASSOC);
             } else {
-                $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $classes = $this->db->query("SELECT id, nom FROM classes WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
             }
             $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -129,7 +129,7 @@ class StudentController
                               LEFT JOIN cycles cy ON c.cycle_id = cy.id
                               LEFT JOIN sections sec ON c.section_id = sec.id
                               LEFT JOIN departments d ON c.department_id = d.id
-                              WHERE (c.teaching_type_id IS NULL OR tt.actif = 1)
+                              WHERE c.status = 1 AND (c.teaching_type_id IS NULL OR tt.actif = 1)
                                 AND (c.cycle_id IS NULL OR cy.status = 1)
                                 AND (c.section_id IS NULL OR sec.status = 1)
                                 AND (c.department_id IS NULL OR d.status = 1)";
@@ -181,7 +181,7 @@ class StudentController
                               LEFT JOIN cycles cy ON c.cycle_id = cy.id
                               LEFT JOIN sections sec ON c.section_id = sec.id
                               LEFT JOIN departments d ON c.department_id = d.id
-                              WHERE (c.teaching_type_id IS NULL OR tt.actif = 1)
+                              WHERE c.status = 1 AND (c.teaching_type_id IS NULL OR tt.actif = 1)
                                 AND (c.cycle_id IS NULL OR cy.status = 1)
                                 AND (c.section_id IS NULL OR sec.status = 1)
                                 AND (c.department_id IS NULL OR d.status = 1)";
@@ -541,7 +541,7 @@ class StudentController
         \App\Core\PermissionManager::requirePermission('manage_students');
 
         // Classes are now shared across years, no year filtering
-        $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id, teaching_type_id, frais_inscription, frais_inscription_reinscription, frais_scolarite_brut FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id, teaching_type_id, frais_inscription, frais_inscription_reinscription, frais_scolarite_brut FROM classes WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         $cycles = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id FROM cycles c LEFT JOIN teaching_types t ON c.teaching_type_id = t.id WHERE c.status = 1 AND (t.actif = 1 OR c.teaching_type_id IS NULL) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -614,7 +614,7 @@ class StudentController
         \App\Core\PermissionManager::requirePermission('manage_students');
 
         // Classes are now shared across years, no year filtering
-        $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $classes = $this->db->query("SELECT id, nom FROM classes WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         include __DIR__ . '/../Views/students/import.php';
@@ -746,7 +746,7 @@ class StudentController
             }
 
             // On reload with errors
-            $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+            $classes = $this->db->query("SELECT id, nom FROM classes WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
             $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
             include __DIR__ . '/../Views/students/import.php';
         }
@@ -860,7 +860,7 @@ class StudentController
 
             if ($hasError) {
                 // Rendre les variables nécessaires pour ré-afficher le formulaire create.php
-                $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id, teaching_type_id, frais_inscription, frais_inscription_reinscription, frais_scolarite_brut FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id, teaching_type_id, frais_inscription, frais_inscription_reinscription, frais_scolarite_brut FROM classes WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -1130,7 +1130,7 @@ class StudentController
         }
 
         // Classes are now shared across years, no year filtering
-        $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id, teaching_type_id, frais_inscription, frais_inscription_reinscription, frais_scolarite_brut FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id, teaching_type_id, frais_inscription, frais_inscription_reinscription, frais_scolarite_brut FROM classes WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -1335,7 +1335,7 @@ class StudentController
                 ];
 
                 // Classes are now shared across years, no year filtering
-                $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id, teaching_type_id FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id, teaching_type_id FROM classes WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
                 $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 

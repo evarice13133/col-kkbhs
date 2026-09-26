@@ -65,12 +65,14 @@
                         <?php if ($filters['withdrawn'] ?? 0): ?>
                             <a href="/students/restore?id=<?= $s['id'] ?>&csrf_token=<?= \App\Core\Session::generateCsrfToken() ?>"
                                 class="btn btn-sm btn-action-modern text-success btn-confirm-restore"
+                                data-confirm-action="<?= __('confirm_restore_action') ?>"
                                 data-confirm="<?= __('restore_student_confirm') ?>" title="<?= __('restore') ?>">
                                 <i class="bi bi-arrow-counterclockwise fs-5"></i>
                             </a>
                         <?php else: ?>
                             <a href="/students/withdraw?id=<?= $s['id'] ?>&csrf_token=<?= \App\Core\Session::generateCsrfToken() ?>"
                                 class="btn btn-sm btn-action-modern text-warning btn-confirm-withdraw"
+                                data-confirm-action="<?= __('confirm_withdraw_action') ?>"
                                 data-confirm="<?= __('withdraw_student_confirm') ?>" title="<?= __('withdraw') ?>">
                                 <i class="bi bi-person-x fs-5"></i>
                             </a>
@@ -87,4 +89,4 @@
             <?php endif; ?>
         </tr>
     <?php endforeach; ?>
-<?php endif; ?>
+<?php endif; ?>

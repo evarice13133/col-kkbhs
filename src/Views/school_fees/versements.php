@@ -137,23 +137,23 @@ ob_start();
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-4 border-0 shadow-lg">
             <div class="modal-header border-bottom-0 pb-0 px-4 pt-4">
-                <h5 class="modal-title fw-black text-danger">Annuler le versement</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title fw-black text-danger"><?= __('cancel_versement_modal_title') ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= __('close') ?>"></button>
             </div>
             <form action="/school_fees/versements/delete" method="POST" id="cancelVersementForm">
                 <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
                 <input type="hidden" name="id" id="cancelVersementId" value="">
                 <div class="modal-body p-4">
-                    <p class="text-muted">Veuillez indiquer le motif d'annulation (obligatoire). Le montant sera déduit du solde payé de l'élève.</p>
+                    <p class="text-muted"><?= __('cancel_versement_modal_message') ?></p>
                     <div class="mb-3">
-                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Motif d'annulation</label>
-                        <textarea name="motive" class="form-control premium-input" rows="3" required placeholder="Saisir le motif détaillé..."></textarea>
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('cancel_reason') ?></label>
+                        <textarea name="motive" class="form-control premium-input" rows="3" required placeholder="<?= __('cancel_versement_reason_placeholder') ?>"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer border-top-0 pt-0 px-4 pb-4">
-                    <button type="button" class="btn btn-light-theme rounded-pill px-4" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-light-theme rounded-pill px-4" data-bs-dismiss="modal"><?= __('cancel_btn') ?></button>
                     <button type="submit" class="btn btn-danger rounded-pill px-5 fw-bold shadow-sm">
-                        <i class="bi bi-trash-fill me-2"></i>Confirmer l'annulation
+                        <i class="bi bi-trash-fill me-2"></i><?= __('cancel_versement_confirm') ?>
                     </button>
                 </div>
             </form>

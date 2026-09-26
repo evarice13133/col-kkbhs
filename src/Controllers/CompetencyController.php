@@ -101,7 +101,7 @@ class CompetencyController
             $subjects = $subjects->fetchAll(PDO::FETCH_ASSOC);
         }
 
-        $classes = $this->db->query("SELECT id, nom FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $classes = $this->db->query("SELECT id, nom FROM classes WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $teachingTypes = $this->db->query("SELECT id, nom, code FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $hasTeachingFormColumn = (bool) $this->db->query("SHOW COLUMNS FROM subject_groups LIKE 'teaching_form_id'")->fetchColumn();
         $groupsSql = "SELECT id, libelle, teaching_type_id" . ($hasTeachingFormColumn ? ", teaching_form_id" : ", NULL AS teaching_form_id") . " FROM subject_groups WHERE status = 1 ORDER BY libelle ASC";
@@ -117,10 +117,10 @@ class CompetencyController
                                          LEFT JOIN subject_groups sg ON sg.id = s.subject_group_id
                                          WHERE s.status = 1 ORDER BY s.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $activeYearId = $this->academicYearService->getActiveYearId();
-        $subjectClassSql = "SELECT DISTINCT subject_id, class_id FROM subject_classes";
+        $subjectClassSql = "SELECT DISTINCT sc.subject_id, sc.class_id FROM subject_classes sc JOIN classes c ON c.id = sc.class_id AND c.status = 1";
         $subjectClassParams = [];
         if ($activeYearId > 0) {
-            $subjectClassSql .= " WHERE academic_year_id = ?";
+            $subjectClassSql .= " WHERE sc.academic_year_id = ?";
             $subjectClassParams[] = $activeYearId;
         }
         $subjectClassStmt = $this->db->prepare($subjectClassSql);
