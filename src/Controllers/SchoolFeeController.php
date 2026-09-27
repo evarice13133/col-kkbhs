@@ -720,7 +720,7 @@ class SchoolFeeController
 
                     if (empty($insolvents)) {
                         $tbody = '
-                        <tr>
+                        <tr class="insolvent-empty-row">
                             <td colspan="7" class="text-center py-5 text-success">
                                 <i class="bi bi-check-circle-fill fs-3 d-block mb-2 text-success"></i>
                                 ' . __('congrats_no_insolvent') . '
@@ -739,17 +739,17 @@ class SchoolFeeController
                             }
 
                             $tbody .= '
-                            <tr>
-                                <td class="ps-4 text-center fw-bold">' . $idx++ . '</td>
-                                <td><code class="small text-secondary">' . htmlspecialchars($row['student_matricule'] ?? '-') . '</code></td>
-                                <td>
+                            <tr class="insolvent-row">
+                                <td class="ps-4 text-center fw-bold" data-label="N°">' . $idx++ . '</td>
+                                <td data-label="' . htmlspecialchars((string) __('matricule'), ENT_QUOTES, 'UTF-8') . '"><code class="small text-secondary">' . htmlspecialchars($row['student_matricule'] ?? '-') . '</code></td>
+                                <td class="insolvent-identity-cell" data-label="' . htmlspecialchars((string) __('student'), ENT_QUOTES, 'UTF-8') . '">
                                     <div class="fw-bold text-main-theme" style="font-size: 0.85rem;">' . htmlspecialchars($row['student_nom']) . '</div>
                                     <div class="text-muted opacity-75" style="font-size: 0.72rem;">' . htmlspecialchars($row['student_prenom']) . '</div>
                                 </td>
-                                <td class="text-end fw-bold">' . number_format($row['amount_planned'], 0, '.', ' ') . ' <span class="extra-small">FCFA</span></td>
-                                <td class="text-end fw-bold text-success">' . number_format($row['amount_paid'], 0, '.', ' ') . ' <span class="extra-small">FCFA</span></td>
-                                <td class="text-end fw-black text-danger">' . number_format($row['reste_a_payer'], 0, '.', ' ') . ' <span class="extra-small">FCFA</span></td>
-                                <td class="text-center pe-4">' . $statusBadge . '</td>
+                                <td class="text-end fw-bold insolvent-money-cell" data-label="' . htmlspecialchars((string) __('col_installment_amount'), ENT_QUOTES, 'UTF-8') . '">' . number_format($row['amount_planned'], 0, '.', ' ') . ' <span class="extra-small">FCFA</span></td>
+                                <td class="text-end fw-bold text-success insolvent-money-cell" data-label="' . htmlspecialchars((string) __('col_amount_allocated'), ENT_QUOTES, 'UTF-8') . '">' . number_format($row['amount_paid'], 0, '.', ' ') . ' <span class="extra-small">FCFA</span></td>
+                                <td class="text-end fw-black text-danger insolvent-money-cell" data-label="' . htmlspecialchars((string) __('col_remaining_to_pay'), ENT_QUOTES, 'UTF-8') . '">' . number_format($row['reste_a_payer'], 0, '.', ' ') . ' <span class="extra-small">FCFA</span></td>
+                                <td class="text-center pe-4" data-label="' . htmlspecialchars((string) __('status'), ENT_QUOTES, 'UTF-8') . '">' . $statusBadge . '</td>
                             </tr>';
                         }
                     }
@@ -793,7 +793,7 @@ class SchoolFeeController
                     $tbody = '';
                     if (empty($insolventStudents)) {
                         $tbody = '
-                        <tr>
+                        <tr class="insolvent-empty-row">
                             <td colspan="8" class="text-center py-5 text-success">
                                 <i class="bi bi-check-circle-fill fs-3 d-block mb-2 text-success"></i>
                                 ' . __('congrats_no_insolvent') . '
@@ -807,8 +807,8 @@ class SchoolFeeController
                             $deadlineFormatted = $row['last_overdue_deadline'] ? date('d/m/Y', strtotime($row['last_overdue_deadline'])) : '-';
 
                             $tbody .= '
-                            <tr>
-                                <td class="ps-4">
+                            <tr class="insolvent-row">
+                                <td class="ps-4 insolvent-identity-cell" data-label="' . htmlspecialchars((string) __('student'), ENT_QUOTES, 'UTF-8') . '">
                                     <div class="d-flex align-items-center gap-2">
                                         <div class="avatar-init bg-danger bg-opacity-10 text-danger fw-bold rounded-circle d-flex align-items-center justify-content-center shadow-sm"
                                              style="width: 32px; height: 32px; font-size: 0.85rem; border: 1px solid rgba(220, 53, 69, 0.2);">
@@ -820,25 +820,25 @@ class SchoolFeeController
                                         </div>
                                     </div>
                                 </td>
-                                <td>
+                                <td data-label="' . htmlspecialchars((string) __('class'), ENT_QUOTES, 'UTF-8') . '">
                                     <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-15 px-2 py-0.5 rounded-pill small">
                                         ' . htmlspecialchars($row['class_name'] ?: '-') . '
                                     </span>
                                 </td>
-                                <td>' . htmlspecialchars($row['section_name'] ?: '-') . '</td>
-                                <td>' . htmlspecialchars($row['teaching_type_name'] ?: '-') . '</td>
-                                <td class="text-end fw-black text-danger">' . number_format($row['amount_due'], 0, '.', ' ') . ' <span class="extra-small">FCFA</span></td>
-                                <td class="text-center fw-bold">
+                                <td data-label="' . htmlspecialchars((string) __('class_section'), ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($row['section_name'] ?: '-') . '</td>
+                                <td data-label="' . htmlspecialchars((string) __('teaching_type'), ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($row['teaching_type_name'] ?: '-') . '</td>
+                                <td class="text-end fw-black text-danger insolvent-money-cell" data-label="' . htmlspecialchars((string) __('col_amount_due'), ENT_QUOTES, 'UTF-8') . '">' . number_format($row['amount_due'], 0, '.', ' ') . ' <span class="extra-small">FCFA</span></td>
+                                <td class="text-center fw-bold" data-label="' . htmlspecialchars((string) __('col_unpaid_tranches'), ENT_QUOTES, 'UTF-8') . '">
                                     <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-15 px-2.5 py-0.5 rounded-pill">
                                         ' . $row['unpaid_installments_count'] . ' ' . __('unpaid_tranches_suffix') . '
                                     </span>
                                 </td>
-                                <td>
+                                <td data-label="' . htmlspecialchars((string) __('col_last_overdue'), ENT_QUOTES, 'UTF-8') . '">
                                     <span class="badge-premium badge-premium-danger">
                                         <i class="bi bi-exclamation-triangle-fill me-1"></i>' . $deadlineFormatted . '
                                     </span>
                                 </td>
-                                <td class="text-end fw-bold pe-4 text-muted">' . number_format($row['total_reste_a_payer'], 0, '.', ' ') . ' FCFA</td>
+                                <td class="text-end fw-bold pe-4 text-muted insolvent-money-cell" data-label="' . htmlspecialchars((string) __('col_remaining_total'), ENT_QUOTES, 'UTF-8') . '">' . number_format($row['total_reste_a_payer'], 0, '.', ' ') . ' FCFA</td>
                             </tr>';
                         }
                     }

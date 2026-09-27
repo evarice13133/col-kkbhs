@@ -150,8 +150,8 @@ ob_start();
                 <div class="pt-4 px-4 pb-2 border-bottom border-theme-dynamic">
                     <h5 class="fw-black text-secondary m-0 text-uppercase letter-spacing-1 fs-6"><?= __('recent_versements') ?></h5>
                 </div>
-                <div class="table-responsive">
-                    <table class="table-modern">
+                <div class="table-responsive payment-history-wrapper">
+                    <table class="table-modern payment-history-table">
                         <thead>
                             <tr>
                                 <th class="ps-4"><?= __('col_date') ?></th>
@@ -164,26 +164,26 @@ ob_start();
                         </thead>
                         <tbody>
                             <?php if (empty($payments)): ?>
-                                <tr>
+                                <tr class="payment-history-empty-row">
                                     <td colspan="6" class="text-center py-5 text-muted small">
                                         <?= __('payment_history_year') ?>
                                     </td>
                                 </tr>
                             <?php else: ?>
                                 <?php foreach ($payments as $p): ?>
-                                    <tr class="student-row <?= ($p['status'] === 'annule') ? 'opacity-50 bg-light' : '' ?>">
-                                        <td class="ps-4">
+                                    <tr class="student-row payment-history-row <?= ($p['status'] === 'annule') ? 'opacity-50 bg-light' : '' ?>">
+                                        <td class="ps-4 payment-date-cell" data-label="<?= htmlspecialchars((string) __('col_date'), ENT_QUOTES, 'UTF-8') ?>">
                                             <div class="fw-bold <?= ($p['status'] === 'annule') ? 'text-decoration-line-through text-muted' : 'text-main-theme' ?>"><?= date('d/m/Y', strtotime($p['payment_date'])) ?></div>
                                         </td>
-                                        <td>
+                                        <td data-label="<?= htmlspecialchars((string) __('type_field'), ENT_QUOTES, 'UTF-8') ?>">
                                             <?php if ($p['type'] === 'inscription'): ?>
                                                 <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-1 rounded-pill"><?= __('registration') ?></span>
                                             <?php else: ?>
                                                 <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1 rounded-pill"><?= __('tuition') ?></span>
                                             <?php endif; ?>
                                         </td>
-                                        <td class="text-end fw-black <?= ($p['status'] === 'annule') ? 'text-decoration-line-through text-muted' : 'text-main-theme' ?>"><?= number_format($p['amount'], 0, '.', ' ') ?> FCFA</td>
-                                        <td>
+                                        <td class="fw-black payment-history-amount <?= ($p['status'] === 'annule') ? 'text-decoration-line-through text-muted' : 'text-main-theme' ?>" data-label="<?= htmlspecialchars((string) __('col_amount'), ENT_QUOTES, 'UTF-8') ?>"><?= number_format($p['amount'], 0, '.', ' ') ?> FCFA</td>
+                                        <td class="payment-history-method" data-label="<?= htmlspecialchars((string) __('col_method'), ENT_QUOTES, 'UTF-8') ?>">
                                             <?php 
                                             $method = strtoupper($p['payment_method']);
                                             if ($method === 'CASH') {
@@ -201,7 +201,7 @@ ob_start();
                                             }
                                             ?>
                                         </td>
-                                        <td>
+                                        <td class="payment-history-reference" data-label="<?= htmlspecialchars((string) __('col_reference'), ENT_QUOTES, 'UTF-8') ?>">
                                             <div class="text-truncate" style="max-width: 150px;" title="<?= h($p['reference'] ?: '') ?>">
                                                 <?= h($p['reference'] ?: ($p['commentaire'] ?: '-')) ?>
                                             </div>
@@ -209,7 +209,7 @@ ob_start();
                                                 <div class="text-danger small mt-1" title="<?= h($p['cancellation_motive'] ?? '') ?>"><i class="bi bi-info-circle"></i> Annulé</div>
                                             <?php endif; ?>
                                         </td>
-                                        <td class="pe-4 text-center">
+                                        <td class="pe-4 text-center payment-history-action" data-label="<?= htmlspecialchars((string) __('print_receipt'), ENT_QUOTES, 'UTF-8') ?>">
                                             <div class="d-flex gap-1 justify-content-center">
                                                 <?php if ($p['type'] === 'inscription'): ?>
                                                     <a href="/payments/receipt?id=<?= $p['id'] ?>" target="_blank" class="btn btn-sm btn-action-modern text-primary" title="<?= __('print_receipt') ?>">
@@ -434,6 +434,160 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+
+<style>
+    @media (max-width: 991.98px) {
+        .payment-history-wrapper {
+            overflow: visible !important;
+        }
+
+        .payment-history-table,
+        .payment-history-table tbody {
+            display: block;
+            width: 100%;
+        }
+
+        .payment-history-table {
+            min-width: 0 !important;
+            table-layout: auto;
+        }
+
+        .payment-history-table thead {
+            display: none;
+        }
+
+        .payment-history-table tbody {
+            display: grid;
+            gap: 0.75rem;
+            padding: 0.75rem;
+        }
+
+        .payment-history-table tbody tr.payment-history-row {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0 0.9rem;
+            min-width: 0;
+            padding: 0.5rem 0.85rem;
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 10px;
+            background: var(--bg-card, #fff);
+        }
+
+        .payment-history-table tbody tr.payment-history-row td {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            width: 100%;
+            min-width: 0;
+            padding: 0.65rem 0.1rem !important;
+            border-radius: 0;
+            text-align: left !important;
+        }
+
+        .payment-history-table tbody tr.payment-history-row td::before {
+            content: attr(data-label);
+            margin-bottom: 0.2rem;
+            color: var(--text-muted, #64748b);
+            font-size: 0.75rem;
+            font-weight: 700;
+            line-height: 1.25;
+            text-transform: uppercase;
+        }
+
+        .payment-history-table tbody tr.payment-history-row td.payment-date-cell {
+            grid-column: 1 / -1;
+            padding: 0.6rem 0 0.75rem !important;
+            border-bottom: 1px solid var(--border-color, #e2e8f0);
+        }
+
+        .payment-history-table tbody tr.payment-history-row td.payment-date-cell::before {
+            content: none;
+        }
+
+        .payment-history-table .payment-date-cell .fw-bold {
+            font-size: 1rem;
+        }
+
+        .payment-history-table .payment-history-amount {
+            font-size: 0.95rem;
+            overflow-wrap: anywhere;
+        }
+
+        .payment-history-table .payment-history-method .badge {
+            max-width: 100%;
+            white-space: normal;
+            overflow-wrap: anywhere;
+        }
+
+        .payment-history-table .payment-history-reference .text-truncate {
+            max-width: none !important;
+            overflow: visible;
+            text-overflow: clip;
+            white-space: normal;
+            overflow-wrap: anywhere;
+        }
+
+        .payment-history-table tbody tr.payment-history-row td.payment-history-action {
+            grid-column: 1 / -1;
+            flex-direction: row;
+            justify-content: flex-end;
+            padding-top: 0.5rem !important;
+            border-top: 1px solid var(--border-color, #e2e8f0);
+        }
+
+        .payment-history-table tbody tr.payment-history-row td.payment-history-action::before {
+            margin: 0 auto 0 0;
+        }
+
+        .payment-history-table .payment-history-action .btn {
+            width: 48px;
+            height: 48px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .payment-history-table tbody tr.payment-history-empty-row {
+            display: block;
+            padding: 0;
+            border: 0;
+            background: transparent;
+        }
+
+        .payment-history-table tbody tr.payment-history-empty-row td {
+            display: block;
+            text-align: center !important;
+        }
+    }
+
+    @media (max-width: 359.98px) {
+        .payment-history-table tbody tr.payment-history-row {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .payment-history-table tbody tr.payment-history-row td.payment-date-cell,
+        .payment-history-table tbody tr.payment-history-row td.payment-history-action {
+            grid-column: 1;
+        }
+    }
+
+    .payment-history-table .payment-history-action .btn {
+        width: 48px;
+        min-width: 48px;
+        height: 48px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .payment-history-table .payment-history-action .btn i {
+        font-size: 1.5rem !important;
+        line-height: 1;
+    }
+</style>
 
 <?php
 $content = ob_get_clean();

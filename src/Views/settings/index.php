@@ -1,6 +1,6 @@
 <?php $title = __('system_configuration'); ob_start(); ?>
 
-<div class="animate-fade-in container-fluid pt-0 pb-4 px-3 px-md-4">
+<div class="animate-fade-in container-fluid pt-0 pb-4 px-3 px-md-4 settings-page-container">
     <!-- EN-TÊTE DE SECTION & BARRE D'ACTIONS COMPLÈTE -->
     <div class="settings-header-card mb-3 p-3 p-md-4 rounded-4 shadow-sm border-theme-light">
         <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
@@ -78,7 +78,7 @@
     <?php endif; ?>
 
     <!-- ONGLETS DE NAVIGATION DESIGN PRO -->
-    <div class="mb-4 settings-tabs-wrapper overflow-auto pb-1">
+    <div class="mb-3 settings-tabs-wrapper overflow-auto pb-1" aria-label="<?= htmlspecialchars((string) __('settings_navigation'), ENT_QUOTES, 'UTF-8') ?>">
         <ul class="nav nav-pills custom-settings-tabs flex-nowrap" id="settingsTabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="general-tab" data-bs-toggle="pill" data-bs-target="#tab-general"
@@ -119,6 +119,17 @@
             </li>
             <?php endif; ?>
         </ul>
+    </div>
+
+    <div class="settings-save-dock" role="region" aria-label="<?= htmlspecialchars((string) __('settings_save_actions'), ENT_QUOTES, 'UTF-8') ?>">
+        <span class="settings-save-dock-context">
+            <i class="bi bi-sliders2-vertical" aria-hidden="true"></i>
+            <span><?= __('system_configuration') ?></span>
+        </span>
+        <button type="submit" form="settingsForm" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm d-inline-flex align-items-center justify-content-center gap-2">
+            <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+            <span><?= __('save') ?></span>
+        </button>
     </div>
 
     <form action="/settings/store" method="POST" enctype="multipart/form-data" id="settingsForm">
@@ -249,6 +260,105 @@
         justify-content: center;
         font-size: 1.05rem;
     }
+
+    .settings-tabs-wrapper {
+        position: relative;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(var(--primary-rgb), 0.35) transparent;
+        scroll-behavior: smooth;
+        scroll-padding-inline: 0.5rem;
+    }
+
+    .custom-settings-tabs .nav-item {
+        flex: 0 0 auto;
+        scroll-snap-align: start;
+    }
+
+    .custom-settings-tabs .nav-link:focus-visible {
+        outline: 2px solid var(--primary-color, #7c3aed);
+        outline-offset: 2px;
+    }
+
+    .settings-save-dock {
+        position: fixed;
+        inset-inline-start: auto;
+        inset-inline-end: 1rem;
+        bottom: 0.75rem;
+        z-index: 1040;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 1rem;
+        width: max-content;
+        max-width: calc(100vw - 1.5rem);
+        margin: 0;
+        padding: 0.65rem 1rem;
+        border: 1px solid var(--border-color, #e2e8f0);
+        border-radius: 12px;
+        background: color-mix(in srgb, var(--bg-card, #fff) 92%, transparent);
+        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+        backdrop-filter: blur(12px);
+    }
+
+    [data-theme="dark"] .settings-save-dock {
+        background: rgba(15, 23, 42, 0.94);
+        border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .settings-save-dock-context {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        color: var(--text-muted, #64748b);
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .settings-save-dock-context i {
+        color: var(--primary-color, #7c3aed);
+        font-size: 1rem;
+    }
+
+    .settings-page-container {
+        padding-bottom: 6rem !important;
+    }
+
+    @media (max-width: 1024px) {
+        .settings-save-dock {
+            inset-inline-end: 0.75rem;
+        }
+    }
+
+    #settingsForm .form-control:not([type="color"]),
+    #settingsForm .form-select {
+        min-height: 44px;
+        font-size: 0.95rem;
+    }
+
+    #settingsForm textarea.form-control {
+        min-height: 76px;
+    }
+
+    #settingsForm .form-label {
+        font-size: 0.76rem;
+        line-height: 1.4;
+    }
+
+    @media (max-width: 575.98px) {
+        .settings-save-dock {
+            bottom: max(0.5rem, env(safe-area-inset-bottom));
+            padding: 0.5rem;
+        }
+
+        .settings-save-dock-context {
+            display: none;
+        }
+
+        .settings-save-dock .btn {
+            min-height: 44px;
+            min-width: 132px;
+        }
+    }
 </style>
 
 <script>
@@ -289,6 +399,18 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+        const saveDock = document.querySelector('.settings-save-dock');
+        if (saveDock) {
+            document.body.appendChild(saveDock);
+        }
+
+        const tabButtons = document.querySelectorAll('#settingsTabs [data-bs-toggle="pill"]');
+        tabButtons.forEach(button => {
+            button.addEventListener('shown.bs.tab', () => {
+                button.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+            });
+        });
+
         const hash = window.location.hash;
         if (!hash) {
             return;

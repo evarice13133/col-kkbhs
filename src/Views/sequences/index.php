@@ -85,8 +85,8 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_sequences');
 
     <!-- LISTE DES ÉVALUATIONS / SÉQUENCES -->
     <div class="modern-card border-0 shadow-sm overflow-hidden animate-fade-in">
-        <div class="table-responsive">
-            <table class="table-modern">
+        <div class="table-responsive sequences-table-wrapper">
+            <table class="table-modern sequences-table">
                 <thead>
                     <tr>
                         <th class="ps-4" style="width: 110px;"><?= __('code') ?></th>
@@ -101,7 +101,7 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_sequences');
                 </thead>
                 <tbody>
                     <?php if (empty($sequences)): ?>
-                        <tr>
+                        <tr class="sequence-empty-row">
                             <td colspan="8" class="text-center py-5">
                                 <i class="bi bi-calendar-x fs-1 opacity-25 mb-3 d-block"></i>
                                 <span class="text-muted-theme"><?= __('no_data') ?></span>
@@ -109,28 +109,28 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_sequences');
                         </tr>
                     <?php else: ?>
                         <?php foreach ($sequences as $s): ?>
-                            <tr>
-                                <td class="ps-4">
+                            <tr class="sequence-row">
+                                <td class="ps-4" data-label="<?= htmlspecialchars((string) __('code'), ENT_QUOTES, 'UTF-8') ?>">
                                     <span class="badge bg-primary bg-opacity-10 text-primary fw-bold px-3 py-1 rounded-3">
                                         <?= htmlspecialchars((string) $s['code']) ?>
                                     </span>
                                 </td>
-                                <td>
+                                <td data-label="Type d'Enseignement">
                                     <span
                                         class="badge bg-secondary bg-opacity-10 text-secondary fw-bold px-3 py-1 rounded-pill small">
                                         <i
                                             class="bi bi-diagram-3 me-1"></i><?= htmlspecialchars((string) ($s['teaching_type_nom'] ?? 'N/A')) ?>
                                     </span>
                                 </td>
-                                <td>
+                                <td data-label="<?= htmlspecialchars((string) __('label'), ENT_QUOTES, 'UTF-8') ?>">
                                     <span class="fw-bold text-main-theme"><?= htmlspecialchars((string) $s['label']) ?></span>
                                 </td>
-                                <td>
+                                <td data-label="<?= htmlspecialchars((string) __('Short_Label'), ENT_QUOTES, 'UTF-8') ?>">
                                     <span class="badge bg-light text-main-theme border fw-bold px-3 py-1 rounded-3">
                                         <?= htmlspecialchars((string) ($s['short_label'] ?? '')) ?>
                                     </span>
                                 </td>
-                                <td>
+                                <td data-label="Période / Trimestre">
                                     <?php
                                     $isSecondary = empty($s['teaching_type_code']) || in_array(strtoupper((string) $s['teaching_type_code']), ['ESG', 'EST', 'SEC'], true) || stripos((string) ($s['teaching_type_nom'] ?? ''), 'secondaire') !== false;
                                     ?>
@@ -149,10 +149,10 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_sequences');
                                         <span class="text-muted small">N/A</span>
                                     <?php endif; ?>
                                 </td>
-                                <td>
+                                <td data-label="Ordre">
                                     <span class="text-muted small">Pos. <?= (int) $s['position'] ?></span>
                                 </td>
-                                <td>
+                                <td data-label="<?= htmlspecialchars((string) __('status'), ENT_QUOTES, 'UTF-8') ?>">
                                     <?php if ((int) $s['is_active'] === 1): ?>
                                         <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1 fw-bold">
                                             <i class="bi bi-check-circle-fill me-1"></i><?= __('active') ?>
@@ -163,7 +163,7 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_sequences');
                                         </span>
                                     <?php endif; ?>
                                 </td>
-                                <td class="text-end pe-4">
+                                <td class="text-end pe-4" data-label="<?= htmlspecialchars((string) __('action'), ENT_QUOTES, 'UTF-8') ?>">
                                     <div class="d-flex justify-content-end gap-1 align-items-center table-row-actions">
                                         <a href="/sequences/toggle?id=<?= $s['id'] ?>"
                                             class="btn btn-sm btn-action-modern <?= (int) $s['is_active'] === 1 ? 'text-warning' : 'text-success' ?>"
@@ -388,6 +388,136 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_sequences');
 </div>
 
 <style>
+    @media (max-width: 991.98px) {
+        .sequences-table-wrapper {
+            overflow: visible !important;
+        }
+
+        .sequences-table,
+        .sequences-table tbody {
+            display: block;
+            width: 100%;
+        }
+
+        .sequences-table {
+            min-width: 0 !important;
+            table-layout: auto;
+        }
+
+        .sequences-table thead {
+            display: none;
+        }
+
+        .sequences-table tbody {
+            display: grid;
+            gap: 0.75rem;
+            padding: 0.75rem;
+        }
+
+        .sequences-table tbody tr.sequence-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 0 0.9rem;
+            min-width: 0;
+            padding: 0.5rem 0.85rem;
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 10px;
+            background: var(--bg-card, #fff);
+        }
+
+        .sequences-table tbody tr.sequence-row td {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            min-width: 0;
+            padding: 0.65rem 0 !important;
+            border-radius: 0;
+            text-align: left !important;
+        }
+
+        .sequences-table tbody tr.sequence-row td::before {
+            content: attr(data-label);
+            margin-bottom: 0.2rem;
+            color: var(--text-muted, #64748b);
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .sequences-table tbody tr.sequence-row td:nth-child(3) {
+            grid-column: 1 / -1;
+            padding: 0.6rem 0 0.75rem !important;
+            border-bottom: 1px solid var(--border-color, #e2e8f0);
+        }
+
+        .sequences-table tbody tr.sequence-row td:nth-child(3)::before {
+            content: none;
+        }
+
+        .sequences-table tbody tr.sequence-row td:nth-child(3) .fw-bold {
+            font-size: 1rem;
+        }
+
+        .sequences-table tbody tr.sequence-row td .badge {
+            max-width: 100%;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            text-align: left;
+        }
+
+        .sequences-table tbody tr.sequence-row td:nth-child(8) {
+            grid-column: 1 / -1;
+            flex-direction: row;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            padding-top: 0.5rem !important;
+            border-top: 1px solid var(--border-color, #e2e8f0);
+        }
+
+        .sequences-table tbody tr.sequence-row td:nth-child(8)::before {
+            margin: 0 auto 0 0;
+        }
+
+        .sequences-table .table-row-actions,
+        .sequences-table .table-row-actions .btn {
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        .sequences-table .table-row-actions .btn {
+            width: 40px;
+            height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sequences-table tbody tr.sequence-row td:nth-child(1),
+        .sequences-table tbody tr.sequence-row td:nth-child(2),
+        .sequences-table tbody tr.sequence-row td:nth-child(4),
+        .sequences-table tbody tr.sequence-row td:nth-child(6) {
+            display: none;
+        }
+
+        .sequences-table tbody tr.sequence-empty-row {
+            display: block;
+            padding: 0;
+            border: 0;
+            background: transparent;
+        }
+
+        .sequences-table tbody tr.sequence-empty-row td {
+            display: block;
+            text-align: center !important;
+        }
+    }
+
+    .sequences-table .table-row-actions .btn i {
+        font-size: 1.5rem !important;
+        line-height: 1;
+    }
+
     /* Floating Island Filters */
     .filter-island {
         background: rgba(var(--bg-card-rgb), 0.7);

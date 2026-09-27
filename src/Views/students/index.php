@@ -255,6 +255,11 @@ ob_start(); ?>
             grid-column: 1;
         }
     }
+
+    .students-list-table .table-row-actions .btn i {
+        font-size: 1.5rem !important;
+        line-height: 1;
+    }
 </style>
 
 <script>
