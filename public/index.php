@@ -43,6 +43,7 @@ use App\Controllers\LevelController;
 use App\Controllers\TranscriptController;
 use App\Controllers\TimetableController;
 use App\Controllers\CompetencyController;
+use App\Controllers\AccessCardController;
 
 
 
@@ -609,6 +610,12 @@ elseif (strpos($path, '/teachers') === 0) {
         $c->discipline();
     elseif ($path === '/bulletins/discipline/save' && $method === 'POST')
         $c->saveDiscipline();
+} elseif (strpos($path, '/access-cards') === 0) {
+    $c = new AccessCardController();
+    if ($path === '/access-cards')
+        $c->index();
+    elseif ($path === '/access-cards/print')
+        $c->print();
 } elseif (strpos($path, '/honors') === 0) {
     if (!Session::isLogged()) {
         header('Location: /login');

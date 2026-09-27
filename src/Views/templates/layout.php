@@ -272,6 +272,7 @@ $ribbon_structure = [
                 'title' => __('layout_publishing_documents'),
                 'items' => [
                     ['icon' => 'bi-file-earmark-pdf', 'label' => __('bulletins'), 'url' => '/bulletins', 'permission' => 'manage_bulletins', 'roles' => ['superadmin', 'admin'], 'desc' => __('layout_desc_bulletins')],
+                    ['icon' => 'bi-person-vcard', 'label' => __('access_cards'), 'url' => '/access-cards', 'permission' => 'manage_bulletins', 'roles' => ['superadmin', 'admin'], 'desc' => __('layout_desc_access_cards')],
                     ['icon' => 'bi-calendar3-week', 'label' => __('layout_timetables_print'), 'url' => '/timetables/print', 'permission' => 'view_timetables', 'desc' => __('layout_desc_timetables_print')],
                     ['icon' => 'bi-award', 'label' => __('honor_roll_title'), 'url' => '/honors', 'permission' => 'manage_bulletins', 'roles' => ['superadmin', 'admin'], 'desc' => __('layout_desc_honor_roll')],
                     ['icon' => 'bi-file-earmark-text', 'label' => __('proces_verbaux'), 'url' => '/proces-verbal', 'permission' => 'manage_bulletins', 'roles' => ['superadmin', 'admin'], 'desc' => __('layout_desc_proces_verbaux')],
