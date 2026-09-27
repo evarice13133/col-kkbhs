@@ -5,7 +5,7 @@
  * Ce fichier contient les identifiants de base de données et les constantes d'environnement.
  * Il est recommandé de garder ce fichier hors de la vue du public.
  */
-/* paramettres de configuration du serveur de données en ligne
+/* paramettres de configuration du serveur de données en ligne*/
 
   define('DB_HOST', 'localhost');
    define('DB_NAME', 'u290233073_col_kkbhs_db');
@@ -15,7 +15,7 @@
    define('APP_URL', 'https://futura.camertech.com');
 
    define('APP_ENV', 'production');
-   define('DEBUG_MODE', false);*/    //evite l'affichage des erreures PHP au utilisateurs en production
+   define('DEBUG_MODE', false);    //evite l'affichage des erreures PHP au utilisateurs en production
 
 
 /* en developpement pour la configuration locale      
