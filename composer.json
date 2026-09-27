@@ -11,6 +11,7 @@
     "require": {
         "php": ">=8.0",
         "dompdf/dompdf": "^3.1",
+        "endroid/qr-code": "4.8",
         "phpoffice/phpspreadsheet": "~1.29",
         "thecodingmachine/safe": "^2.5"
     },
