@@ -108,15 +108,15 @@ ob_start(); ?>
         </div>
 
         <div class="table-responsive">
-            <table class="table-modern">
+            <table class="table-modern" id="unregistered-students-table">
                 <thead>
                     <tr>
-                        <th style="width: 40px;">
-                            <input type="checkbox" id="selectAll" class="form-check-input">
+                        <th>
+                            <div class="d-flex align-items-center gap-2">
+                                <input type="checkbox" id="selectAll" class="form-check-input">
+                                <span><?= __('student') ?></span>
+                            </div>
                         </th>
-                        <th>Matricule</th>
-                        <th><?= __('student') ?></th>
-                        <th>Sexe</th>
                         <th><?= __('class') ?></th>
                         <th><?= __('section') ?></th>
                         <th>Cycle</th>
@@ -140,6 +140,128 @@ ob_start(); ?>
         <?php include __DIR__ . '/pagination.php'; ?>
     </div>
 </div>
+
+<style>
+    #unregistered-students-table .form-check-input {
+        display: inline-block;
+        margin: 0;
+        vertical-align: middle;
+    }
+
+    @media (max-width: 767.98px) {
+        #unregistered-students-table,
+        #unregistered-students-table tbody {
+            display: block;
+            width: 100%;
+        }
+
+        #unregistered-students-table {
+            min-width: 0 !important;
+            table-layout: auto;
+        }
+
+        #unregistered-students-table thead,
+        #unregistered-students-table thead tr {
+            display: block;
+        }
+
+        #unregistered-students-table thead th:not(:first-child) {
+            display: none;
+        }
+
+        #unregistered-students-table thead th:first-child {
+            display: block;
+            padding: 0.75rem 1rem;
+            border-radius: 0;
+        }
+
+        #unregistered-students-table tbody {
+            padding: 0.75rem;
+        }
+
+        #unregistered-students-table tbody tr.student-row {
+            display: grid;
+            width: 100%;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0 0.75rem;
+            margin-bottom: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 10px;
+            background: var(--bg-card, #fff);
+        }
+
+        #unregistered-students-table tbody tr.student-row:last-child {
+            margin-bottom: 0;
+        }
+
+        #unregistered-students-table tbody tr.student-row td,
+        #unregistered-students-table tbody tr.student-row td:first-child,
+        #unregistered-students-table tbody tr.student-row td:last-child {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            min-width: 0;
+            padding: 0.65rem 0;
+            border-radius: 0;
+            text-align: left !important;
+        }
+
+        #unregistered-students-table tbody tr.student-row td::before {
+            content: attr(data-label);
+            flex: 0 0 auto;
+            color: var(--text-muted, #64748b);
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        #unregistered-students-table tbody tr.student-row td.student-identity-cell {
+            grid-column: 1 / -1;
+            justify-content: flex-start;
+            padding: 0.6rem 0 0.75rem;
+            border-bottom: 1px solid var(--border-color, #e2e8f0);
+        }
+
+        #unregistered-students-table tbody tr.student-row td.student-identity-cell::before {
+            content: none;
+        }
+
+        #unregistered-students-table tbody tr.student-row td[data-label="Actions"] {
+            grid-column: 1 / -1;
+            flex-direction: row;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--border-color, #e2e8f0);
+        }
+
+        #unregistered-students-table tbody tr.student-row td[data-label="Actions"]::before {
+            margin-right: auto;
+        }
+
+        #unregistered-students-table tbody tr.student-row td[data-label="Actions"] a,
+        #unregistered-students-table tbody tr.student-row td[data-label="Actions"] button {
+            min-height: 40px;
+        }
+
+        #bulk-actions-bar {
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        #bulk-actions-bar > div:last-child,
+        #btn-bulk-validate {
+            width: 100%;
+        }
+
+        #btn-bulk-validate {
+            justify-content: center;
+            min-height: 42px;
+        }
+    }
+</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

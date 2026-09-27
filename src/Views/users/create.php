@@ -1,4 +1,9 @@
-<?php $title = __('user_creation'); ob_start(); ?>
+<?php
+$title = __('user_creation');
+$formData = $formData ?? [];
+$errorField = $errorField ?? '';
+ob_start();
+?>
 
 <div class="animate-fade-in container-fluid py-4">
     <div class="d-flex align-items-center justify-content-between mb-4">
@@ -34,11 +39,11 @@
                             
                             <div class="col-md-6 mt-0">
                                 <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('name') ?></label>
-                                <input type="text" name="nom" class="form-control premium-input" placeholder="Doe" required autofocus>
+                                <input type="text" name="nom" class="form-control premium-input" placeholder="Doe" value="<?= htmlspecialchars((string) ($formData['nom'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required <?= $errorField === '' || $errorField === 'nom' ? 'autofocus' : '' ?>>
                             </div>
                             <div class="col-md-6 mt-0">
                                 <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('first_name') ?></label>
-                                <input type="text" name="prenom" class="form-control premium-input" placeholder="John" required>
+                                <input type="text" name="prenom" class="form-control premium-input" placeholder="John" value="<?= htmlspecialchars((string) ($formData['prenom'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required>
                             </div>
                         </div>
                         
@@ -52,14 +57,14 @@
                                 <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('username_login') ?></label>
                                 <div class="input-group">
                                     <span class="input-group-text border-theme-light bg-soft-primary text-primary"><i class="bi bi-person-fill"></i></span>
-                                    <input type="text" name="username" class="form-control premium-input" placeholder="john.doe" required>
+                                    <input type="text" name="username" class="form-control premium-input <?= $errorField === 'username' ? 'is-invalid' : '' ?>" placeholder="john.doe" value="<?= htmlspecialchars((string) ($formData['username'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required <?= $errorField === 'username' ? 'autofocus aria-invalid="true"' : '' ?>>
                                 </div>
                             </div>
                             <div class="col-md-6 mt-0">
                                 <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('email_address_optional') ?></label>
                                 <div class="input-group">
                                     <span class="input-group-text border-theme-light bg-soft-info text-info"><i class="bi bi-envelope-at-fill"></i></span>
-                                    <input type="email" name="email" class="form-control premium-input" placeholder="john@example.com">
+                                    <input type="email" name="email" class="form-control premium-input" placeholder="john@example.com" value="<?= htmlspecialchars((string) ($formData['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
                                 </div>
                             </div>
                         </div>
@@ -69,19 +74,24 @@
                                 <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('password_required_label') ?></label>
                                 <div class="input-group shadow-sm-hover rounded-3">
                                     <span class="input-group-text border-theme-light bg-soft-danger text-danger"><i class="bi bi-key-fill"></i></span>
-                                    <input type="password" name="password" class="form-control premium-input" placeholder="********" required>
+                                    <input type="password" name="password" id="user-create-password" class="form-control premium-input" placeholder="********" autocomplete="new-password" required>
+                                    <button type="button" class="btn btn-outline-secondary user-create-password-toggle" id="user-create-password-toggle" aria-label="<?= htmlspecialchars((string) __('show_password'), ENT_QUOTES, 'UTF-8') ?>" title="<?= htmlspecialchars((string) __('show_password'), ENT_QUOTES, 'UTF-8') ?>" aria-controls="user-create-password" data-show-label="<?= htmlspecialchars((string) __('show_password'), ENT_QUOTES, 'UTF-8') ?>" data-hide-label="<?= htmlspecialchars((string) __('hide_password'), ENT_QUOTES, 'UTF-8') ?>">
+                                        <i class="bi bi-eye" aria-hidden="true"></i>
+                                    </button>
                                 </div>
                             </div>
                             <div class="col-md-6 mt-0">
                                 <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('user_role_label') ?></label>
                                 <select name="role" class="form-select premium-select">
-                                    <option value="enseignant"><?= __('teacher_classic') ?></option>
-                                    <option value="direction_academique"><?= __('direction_academique_role_label') ?></option>
-                                    <option value="caissier"><?= __('role_caissier_option') ?></option>
-                                    <option value="comptable"><?= __('role_comptable_option') ?></option>
-                                    <option value="admin"><?= __('admin_restricted') ?></option>
-                                    <option value="it_manager"><?= __('role_it_manager_option') ?></option>
-                                    <?php if (\App\Core\PermissionManager::hasPermission('manage_rbac')): ?>
+                                    <option value="enseignant" <?= ($formData['role'] ?? 'enseignant') === 'enseignant' ? 'selected' : '' ?>><?= __('teacher_classic') ?></option>
+                                    <option value="direction_academique" <?= ($formData['role'] ?? '') === 'direction_academique' ? 'selected' : '' ?>><?= __('direction_academique_role_label') ?></option>
+                                    <option value="caissier" <?= ($formData['role'] ?? '') === 'caissier' ? 'selected' : '' ?>><?= __('role_caissier_option') ?></option>
+                                    <option value="comptable" <?= ($formData['role'] ?? '') === 'comptable' ? 'selected' : '' ?>><?= __('role_comptable_option') ?></option>
+                                    <?php if (\App\Core\Session::get('user_role') !== 'admin'): ?>
+                                        <option value="admin"><?= __('admin_restricted') ?></option>
+                                    <?php endif; ?>
+                                    <option value="it_manager" <?= ($formData['role'] ?? '') === 'it_manager' ? 'selected' : '' ?>><?= __('role_it_manager_option') ?></option>
+                                    <?php if (\App\Core\Session::get('user_role') !== 'admin' && \App\Core\PermissionManager::hasPermission('manage_rbac')): ?>
                                         <option value="superadmin"><?= __('superadmin_max') ?></option>
                                     <?php endif; ?>
                                 </select>
@@ -129,7 +139,26 @@
     .scale-on-hover { transition: transform 0.2s ease; }
     .scale-on-hover:hover { transform: scale(1.02); }
     .letter-spacing-1 { letter-spacing: 1px; }
+    .user-create-password-toggle { min-width: 44px; }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const passwordInput = document.getElementById('user-create-password');
+    const passwordToggle = document.getElementById('user-create-password-toggle');
+
+    if (!passwordInput || !passwordToggle) return;
+
+    passwordToggle.addEventListener('click', function () {
+        const shouldReveal = passwordInput.type === 'password';
+        const label = shouldReveal ? passwordToggle.dataset.hideLabel : passwordToggle.dataset.showLabel;
+        passwordInput.type = shouldReveal ? 'text' : 'password';
+        passwordToggle.setAttribute('aria-label', label);
+        passwordToggle.title = label;
+        passwordToggle.querySelector('i').className = shouldReveal ? 'bi bi-eye-slash' : 'bi bi-eye';
+    });
+});
+</script>
 
 <?php 
 $content = ob_get_clean(); 

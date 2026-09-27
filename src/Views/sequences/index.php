@@ -506,6 +506,13 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_sequences');
             document.getElementById('eval_short_label_sup').required = false;
             document.getElementById('eval_position_sup').required = false;
         }
+
+        [blocSec, blocSup].forEach(bloc => {
+            const isHidden = bloc.classList.contains('d-none');
+            bloc.querySelectorAll('input, select, textarea').forEach(control => {
+                control.disabled = isHidden;
+            });
+        });
     }
 
     function openCreateEvaluationModal() {

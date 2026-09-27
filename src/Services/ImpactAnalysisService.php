@@ -218,7 +218,7 @@ class ImpactAnalysisService
 
     private function analyzeStudent(int $id): array
     {
-        $stmt = $this->db->prepare("SELECT id, nom, prenom, matricule FROM students WHERE id = ?");
+        $stmt = $this->db->prepare("SELECT id, nom, prenom, email AS matricule FROM students WHERE id = ?");
         $stmt->execute([$id]);
         $student = $stmt->fetch(PDO::FETCH_ASSOC);
 

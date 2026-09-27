@@ -251,13 +251,27 @@
             // Validation de nom pour risques élevés
             let nameConfirmHtml = '';
             if (risk === 'critical' || risk === 'high') {
+                const confirmationCodes = new Set();
+                while (confirmationCodes.size < 2) {
+                    const randomValues = new Uint16Array(1);
+                    window.crypto.getRandomValues(randomValues);
+                    confirmationCodes.add(String(randomValues[0] % 1000).padStart(3, '0'));
+                }
+                const [confirmationCode, alternativeCode] = confirmationCodes;
+                const codeOptions = Math.random() < 0.5
+                    ? [confirmationCode, alternativeCode]
+                    : [alternativeCode, confirmationCode];
+
                 nameConfirmHtml = `
                     <div class="mb-3 p-3 bg-danger-subtle rounded-3 border border-danger">
                         <label class="form-label fw-bold text-danger small">
                             <i class="fas fa-lock me-1"></i> ${this.text('explicitConfirmation', 'Confirmation explicite requise pour le niveau :', 'Explicit confirmation required for the :risk risk level:').replace(':risk', riskBadgeLabel)}
                         </label>
-                        <p class="small text-muted mb-2">${this.text('enterName', 'Veuillez saisir exactement', 'Enter exactly')} <strong>${entity.name}</strong> ${this.text('toAuthorizeDelete', 'pour autoriser la suppression directe :', 'to authorize direct deletion:')}</p>
-                        <input type="text" class="form-control" id="impactConfirmName" placeholder="${entity.name}">
+                        <label for="impactConfirmCode" class="form-label small text-muted mb-2">${this.text('confirmationChoiceInstruction', 'Sélectionnez ce code pour confirmer la suppression directe :', 'Select this code to confirm direct deletion:')} <strong>${confirmationCode}</strong></label>
+                        <select class="form-select" id="impactConfirmCode" data-confirm-code="${confirmationCode}">
+                            <option value="">${this.text('confirmationChoicePlaceholder', 'Choisir un code...', 'Choose a code...')}</option>
+                            ${codeOptions.map(code => `<option value="${code}">${code}</option>`).join('')}
+                        </select>
                     </div>
                 `;
             }
@@ -377,12 +391,11 @@
             const btnDirect = document.getElementById('btnExecuteDirect');
             if (btnDirect) {
                 btnDirect.addEventListener('click', function () {
-                    const nameInput = document.getElementById('impactConfirmName');
-                    if (nameInput) {
-                        if (nameInput.value.trim() !== data.entity.name.trim()) {
-                            self.showAlert('warning', self.text('wrongConfirmationName', 'Nom de confirmation incorrect', 'Incorrect confirmation name'), self.text('nameMismatch', 'Le nom saisi ne correspond pas exactement à l\'élément visé.', 'The entered name does not exactly match the target item.'));
-                            return;
-                        }
+                    const codeSelect = document.getElementById('impactConfirmCode');
+                    if (codeSelect && codeSelect.value !== codeSelect.dataset.confirmCode) {
+                        self.showAlert('warning', self.text('wrongConfirmationName', 'Confirmation requise', 'Confirmation required'), self.text('nameMismatch', 'Veuillez sélectionner le code affiché pour confirmer.', 'Select the displayed code to confirm.'));
+                        codeSelect.focus();
+                        return;
                     }
 
                     self.showConfirm(self.text('deleteConfirmation', 'Confirmation de suppression', 'Confirm deletion'), self.text('sureDelete', 'Êtes-vous absolument sûr de vouloir supprimer cet élément ? Cette action est irréversible.', 'Are you absolutely sure you want to delete this item? This action cannot be undone.'), function () {

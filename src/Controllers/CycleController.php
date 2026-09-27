@@ -38,15 +38,10 @@ class CycleController
     public function index()
     {
         $q = trim((string) ($_GET['q'] ?? ''));
-        $teaching_type_id = !empty($_GET['teaching_type_id']) ? (int) $_GET['teaching_type_id'] : null;
-
-        // Recherche du type d'enseignement Supérieur LMD
-        $lmdStmt = $this->db->query("SELECT id FROM teaching_types WHERE code = 'LMD' OR LOWER(nom) LIKE '%lmd%' OR LOWER(nom) LIKE '%supérieur%' ORDER BY id ASC LIMIT 1");
-        $lmdId = $lmdStmt ? (int) $lmdStmt->fetchColumn() : 0;
-
-        if ($teaching_type_id === null && $lmdId > 0) {
-            $teaching_type_id = $lmdId;
-        }
+        $teachingTypes = $this->db->query("SELECT * FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $teaching_type_id = array_key_exists('teaching_type_id', $_GET)
+            ? (!empty($_GET['teaching_type_id']) ? (int) $_GET['teaching_type_id'] : null)
+            : ($this->settingsStore->getDefaultTeachingTypeId() ?: null);
 
         $conditions = [];
         $params = [];
@@ -85,7 +80,6 @@ class CycleController
             $c['level_ids'] = array_column($c['levels'], 'id');
         }
 
-        $teachingTypes = $this->db->query("SELECT * FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $allLevels = $this->db->query("SELECT id, COALESCE(NULLIF(libelle_fr, ''), NULLIF(libelle_en, ''), CONCAT('Niveau ', code)) as nom, code FROM levels WHERE status = 1 ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         $filters = [

@@ -64,15 +64,18 @@ class UserController
             $email = trim($_POST['email'] ?? '');
             $password = $_POST['password'] ?? '';
             $role = $_POST['role'] ?? 'enseignant';
+            $formData = compact('nom', 'prenom', 'username', 'email', 'role');
             //verification de la permission
-            if (Session::get('user_role') === 'admin' && $role === 'superadmin') {
-                $error = \__('admin_cannot_create_superadmin');
+            if (Session::get('user_role') === 'admin' && in_array($role, ['admin', 'superadmin'], true)) {
+                $error = \__('admin_cannot_manage_admin_roles');
+                $errorField = 'role';
                 include __DIR__ . '/../Views/users/create.php';
                 return;
             }
             // verification des champs
             if (empty($nom) || empty($prenom) || empty($username) || empty($password)) {
                 $error = \__('user_required_fields');
+                $errorField = empty($nom) ? 'nom' : (empty($prenom) ? 'prenom' : (empty($username) ? 'username' : 'password'));
                 include __DIR__ . '/../Views/users/create.php';
                 return;
             }
@@ -93,7 +96,9 @@ class UserController
                 header("Location: /users");
                 exit;
             } catch (\PDOException $e) {
-                $error = strpos($e->getMessage(), 'Duplicate') !== false ? \__('username_taken') : \__('internal_db_error');
+                $isDuplicate = strpos($e->getMessage(), 'Duplicate') !== false;
+                $error = $isDuplicate ? \__('username_taken') : \__('internal_db_error');
+                $errorField = $isDuplicate ? 'username' : '';
                 include __DIR__ . '/../Views/users/create.php';
                 return;
             }
@@ -111,8 +116,8 @@ class UserController
             exit;
         }
 
-        // Sécurité : Un admin ne peut pas éditer un superadmin
-        if (Session::get('user_role') === 'admin' && $user['role'] === 'superadmin') {
+        // Un admin ne peut pas consulter ou modifier des comptes admin privilégiés.
+        if (Session::get('user_role') === 'admin' && in_array($user['role'], ['admin', 'superadmin'], true)) {
             header("Location: /users");
             exit;
         }
@@ -136,17 +141,18 @@ class UserController
             $password = $_POST['password'] ?? '';
             $role = $_POST['role'] ?? 'enseignant';
 
-            // Sécurité : Un admin ne peut pas s'attribuer le rôle superadmin ou modifier un superadmin
+            // Un admin ne peut pas attribuer ni modifier les rôles admin privilégiés.
             $stmt = $this->db->prepare("SELECT role FROM users WHERE id = ?");
             $stmt->execute([$id]);
             $currentUser = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if (Session::get('user_role') === 'admin') {
-                if ($role === 'superadmin' || ($currentUser && $currentUser['role'] === 'superadmin')) {
-                    Session::setFlash('error', \__('admin_cannot_assign_superadmin'));
-                    header("Location: /users/edit?id=" . $id);
-                    exit;
-                }
+            if (Session::get('user_role') === 'admin' && (
+                in_array($role, ['admin', 'superadmin'], true)
+                || ($currentUser && in_array($currentUser['role'], ['admin', 'superadmin'], true))
+            )) {
+                Session::setFlash('error', \__('admin_cannot_manage_admin_roles'));
+                header("Location: /users");
+                exit;
             }
 
             try {
@@ -218,8 +224,12 @@ class UserController
         $search = trim($_GET['q'] ?? '');
         $roleFilter = trim($_GET['role'] ?? '');
 
+        if (Session::get('user_role') === 'admin' && in_array($roleFilter, ['superadmin', 'admin'], true)) {
+            $roleFilter = '';
+        }
+
         if (Session::get('user_role') === 'admin') {
-            $sql = "SELECT id, nom, prenom, username, email, role FROM users WHERE role != 'superadmin'";
+            $sql = "SELECT id, nom, prenom, username, email, role FROM users WHERE role NOT IN ('superadmin', 'admin')";
         } else {
             $sql = "SELECT id, nom, prenom, username, email, role FROM users WHERE 1=1";
         }

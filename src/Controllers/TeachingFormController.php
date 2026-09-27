@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\Database;
 use App\Core\PermissionManager;
 use App\Core\Session;
+use App\Services\SettingsStore;
 use PDO;
 
 class TeachingFormController
@@ -24,7 +25,10 @@ class TeachingFormController
     public function index()
     {
         $q = trim((string) ($_GET['q'] ?? ''));
-        $teaching_type_id = !empty($_GET['teaching_type_id']) ? (int) $_GET['teaching_type_id'] : null;
+        $teachingTypes = $this->db->query('SELECT * FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC')->fetchAll(PDO::FETCH_ASSOC);
+        $teaching_type_id = array_key_exists('teaching_type_id', $_GET)
+            ? (!empty($_GET['teaching_type_id']) ? (int) $_GET['teaching_type_id'] : null)
+            : ((new SettingsStore($this->db))->getDefaultTeachingTypeId() ?: null);
 
         $conditions = [];
         $params = [];
@@ -47,8 +51,6 @@ class TeachingFormController
         $stmt = $this->db->prepare($query);
         $stmt->execute($params);
         $teachingForms = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        $teachingTypes = $this->db->query('SELECT * FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC')->fetchAll(PDO::FETCH_ASSOC);
 
         include __DIR__ . '/../Views/teaching_forms/index.php';
     }

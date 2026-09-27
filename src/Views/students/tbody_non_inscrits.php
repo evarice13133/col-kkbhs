@@ -1,6 +1,6 @@
 <?php if (empty($students)): ?>
     <tr>
-        <td colspan="10" class="text-center py-5 text-muted">
+        <td colspan="<?= \App\Core\PermissionManager::hasPermission('manage_students') ? 8 : 7 ?>" class="text-center py-5 text-muted">
             <i class="bi bi-info-circle fs-4 d-block mb-2 text-secondary"></i>
             <?= __('no_students_found') ?: 'Aucun élève trouvé' ?>
         </td>
@@ -8,18 +8,12 @@
 <?php else: ?>
     <?php foreach ($students as $s): ?>
         <tr class="student-row">
-            <td>
-                <?php if ($s['status'] === 'Non inscrit'): ?>
-                <input type="checkbox" class="form-check-input student-checkbox" value="<?= $s['id'] ?>">
-                <?php endif; ?>
-            </td>
-            <!-- Matricule -->
-            <td>
-                <span class="fw-bold text-main-theme small"><?= htmlspecialchars((string) ($s['email'] ?: '-')) ?></span>
-            </td>
             <!-- Nom et prénom -->
-            <td>
+            <td class="student-identity-cell">
                 <div class="d-flex align-items-center gap-2">
+                    <?php if ($s['status'] === 'Non inscrit'): ?>
+                        <input type="checkbox" class="form-check-input student-checkbox flex-shrink-0" value="<?= $s['id'] ?>">
+                    <?php endif; ?>
                     <div class="avatar-init bg-primary bg-opacity-10 text-primary fw-bold rounded-circle d-flex align-items-center justify-content-center shadow-sm"
                         style="width: 36px; height: 36px; font-size: 1rem; border: 1px solid rgba(var(--primary-rgb), 0.2);">
                         <?= strtoupper(substr((string) $s['nom'], 0, 1)) ?>
@@ -34,40 +28,36 @@
                     </div>
                 </div>
             </td>
-            <!-- Sexe -->
-            <td>
-                <span class="small fw-semibold"><?= htmlspecialchars((string) $s['sexe']) ?></span>
-            </td>
             <!-- Classe -->
-            <td>
+            <td data-label="Classe">
                 <span class="badge bg-primary text-white px-2 py-1 rounded-pill fw-bold shadow-sm" style="font-size: 0.7rem;">
                     <i class="bi bi-door-open-fill me-1"></i><?= htmlspecialchars((string) ($s['classe_nom'] ?: __('no_class'))) ?>
                 </span>
             </td>
             <!-- Section -->
-            <td>
+            <td data-label="Section">
                 <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2 py-1 rounded-pill fw-medium" style="font-size: 0.7rem;">
                     <i class="bi bi-layers-half me-1"></i><?= htmlspecialchars((string) ($s['section_nom'] ?: '-')) ?>
                 </span>
             </td>
             <!-- Cycle -->
-            <td>
+            <td data-label="Cycle">
                 <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-1 rounded-pill fw-medium" style="font-size: 0.7rem;">
                     <i class="bi bi-layers me-1"></i><?= htmlspecialchars((string) ($s['cycle_nom'] ?: '-')) ?>
                 </span>
             </td>
             <!-- Type d'enseignement -->
-            <td>
+            <td data-label="Type d’enseignement">
                 <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1 rounded-pill fw-medium" style="font-size: 0.7rem;">
                     <i class="bi bi-diagram-3 me-1"></i><?= htmlspecialchars((string) ($s['teaching_type_nom'] ?: '-')) ?>
                 </span>
             </td>
             <!-- Date d'importation -->
-            <td>
+            <td data-label="Importé le">
                 <span class="small text-muted-theme"><?= $s['created_at'] ? date('d/m/Y H:i', strtotime($s['created_at'])) : '-' ?></span>
             </td>
             <!-- Statut -->
-            <td>
+            <td data-label="Statut">
                 <?php if ($s['status'] === 'Non inscrit'): ?>
                     <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 rounded-pill px-2.5 py-1 small fw-bold">
                         Non inscrit
@@ -84,7 +74,7 @@
             </td>
             <!-- Actions -->
             <?php if (\App\Core\PermissionManager::hasPermission('manage_students')): ?>
-            <td class="text-end pe-4">
+            <td class="text-end pe-4" data-label="Actions">
                 <div class="d-flex justify-content-end align-items-center gap-2">
                     <?php if ($s['status'] === 'Non inscrit'): ?>
                         <!-- Inscrire -->

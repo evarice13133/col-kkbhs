@@ -64,6 +64,15 @@ class SequenceController
         include __DIR__ . '/../Views/sequences/create.php';
     }
 
+    private function requireCompleteSequence(string $code, string $label, string $shortLabel, int $position): void
+    {
+        if ($code === '' || $label === '' || $shortLabel === '' || $position < 1) {
+            Session::setFlash('error', 'Le code, le libellé, le libellé court et un ordre positif sont obligatoires.');
+            header('Location: /sequences');
+            exit;
+        }
+    }
+
     /**
      * Enregistre une nouvelle séquence / évaluation
      */
@@ -77,6 +86,8 @@ class SequenceController
         $position = (int) ($_POST['position'] ?? 1);
         $start_date = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
         $end_date = !empty($_POST['end_date']) ? $_POST['end_date'] : null;
+
+        $this->requireCompleteSequence($code, $label, $short_label, $position);
 
         $stmt = $this->db->prepare("INSERT INTO sequences (teaching_type_id, code, label, short_label, trimestre, position, start_date, end_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([$teaching_type_id, $code, $label, $short_label, $trimestre, $position, $start_date, $end_date]);
@@ -118,6 +129,8 @@ class SequenceController
         $start_date = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
         $end_date = !empty($_POST['end_date']) ? $_POST['end_date'] : null;
         $is_active = isset($_POST['is_active']) ? 1 : 0;
+
+        $this->requireCompleteSequence($code, $label, $short_label, $position);
 
         $stmt = $this->db->prepare("UPDATE sequences SET teaching_type_id = ?, code = ?, label = ?, short_label = ?, trimestre = ?, position = ?, start_date = ?, end_date = ?, is_active = ? WHERE id = ?");
         $stmt->execute([$teaching_type_id, $code, $label, $short_label, $trimestre, $position, $start_date, $end_date, $is_active, (int) $id]);
