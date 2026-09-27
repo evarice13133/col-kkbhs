@@ -28,7 +28,7 @@
     define('APP_URL', 'http://localhost:8000');
 
     define('APP_ENV', 'development');
-    define('DEBUG_MODE', true); */  //affichage des erreures PHP au developpeur
+    define('DEBUG_MODE', true);*/  //affichage des erreures PHP au developpeur
 
 /* Force error display for debugging    
   
