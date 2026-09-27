@@ -73,21 +73,18 @@ ob_start(); ?>
         </style>
     <?php endif; ?>
 
-    <!-- TOGGLE AFFICHAGE NOMS ENSEIGNANTS SUR BULLETINS -->
-    <div class="d-flex justify-content-end mb-3">
-        <div class="d-flex align-items-center gap-2 bg-white bg-opacity-10 px-4 py-2 rounded-pill shadow-sm"
-            style="border: 1px solid rgba(var(--primary-rgb), 0.15);">
-            <span class="text-muted small fw-medium"><?= __('show_teacher_names_on_bulletins') ?></span>
-            <label class="form-check form-switch mb-0" style="cursor: pointer;">
-                <input class="form-check-input" type="checkbox" id="toggleTeacherNames" <?= $showTeacherNamesOnBulletins ? 'checked' : '' ?> onchange="toggleTeacherNamesOnBulletins(this)">
-                <span class="form-check-label"></span>
-            </label>
-        </div>
-    </div>
-
-    <!-- BARRE D'ACTIONS COMPLÈTE : Style Floating Island -->
-    <div class="d-flex justify-content-center mb-5">
-        <div class="filter-island px-3 py-2 shadow-lg animate-slide-down" style="min-width: 85%;">
+    <!-- BARRE D'ACTIONS ET OPTIONS D'AFFICHAGE -->
+    <div class="d-flex justify-content-center mb-4 px-2">
+        <div class="filter-island teacher-tools-panel px-3 py-3 shadow-lg animate-slide-down w-100">
+            <div class="teacher-display-setting d-flex justify-content-end mb-3">
+                <div class="d-flex align-items-center gap-2 bg-white bg-opacity-10 px-3 py-2 rounded-pill shadow-sm">
+                    <span class="text-muted small fw-medium"><?= __('show_teacher_names_on_bulletins') ?></span>
+                    <label class="form-check form-switch mb-0" style="cursor: pointer;">
+                        <input class="form-check-input" type="checkbox" id="toggleTeacherNames" <?= $showTeacherNamesOnBulletins ? 'checked' : '' ?> onchange="toggleTeacherNamesOnBulletins(this)">
+                        <span class="form-check-label"></span>
+                    </label>
+                </div>
+            </div>
             <form method="GET" class="d-flex align-items-center gap-2 flex-wrap flex-md-nowrap filter-form w-100">
 
                 <!-- Boutons d'Action Principaux -->
@@ -139,7 +136,7 @@ ob_start(); ?>
     <div id="teachersListContainer">
         <div class="modern-card border-0 shadow-sm overflow-hidden animate-fade-in">
             <div class="table-responsive">
-                <table class="table-modern">
+                <table class="table-modern teacher-list-table">
                     <thead>
                         <tr>
                             <th class="ps-4"><?= __('teacher') ?></th>
@@ -159,8 +156,8 @@ ob_start(); ?>
                             </tr>
                         <?php else: ?>
                             <?php foreach ($teachers as $t): ?>
-                                <tr>
-                                    <td class="ps-4">
+                                <tr class="teacher-list-row">
+                                    <td class="ps-4 teacher-identity-cell">
                                         <div class="d-flex align-items-center gap-2">
                                             <div class="avatar-init bg-primary bg-opacity-10 text-primary fw-bold rounded-circle d-flex align-items-center justify-content-center shadow-sm"
                                                 style="width: 36px; height: 36px; font-size: 1rem; border: 1px solid rgba(var(--primary-rgb), 0.2);">
@@ -176,21 +173,21 @@ ob_start(); ?>
                                             </div>
                                         </div>
                                     </td>
-                                    <td>
+                                    <td data-label="<?= htmlspecialchars((string) __('username'), ENT_QUOTES, 'UTF-8') ?>">
                                         <span class="badge bg-primary bg-opacity-10 text-primary fw-bold px-3 py-1 rounded-3">
                                             <?= htmlspecialchars((string) $t['username']) ?>
                                         </span>
                                     </td>
-                                    <td>
+                                    <td data-label="<?= htmlspecialchars((string) __('subjects'), ENT_QUOTES, 'UTF-8') ?>">
                                         <span class="badge bg-info bg-opacity-10 text-info fw-bold px-3 py-1 rounded-3">
                                             <?= (int) $t['subjects_count'] ?>
                                         </span>
                                     </td>
-                                    <td>
+                                    <td data-label="<?= htmlspecialchars((string) __('classes'), ENT_QUOTES, 'UTF-8') ?>">
                                         <span
                                             class="text-muted small"><?= htmlspecialchars((string) ($t['classes_list'] ?: '-')) ?></span>
                                     </td>
-                                    <td class="text-end pe-4">
+                                    <td class="text-end pe-4" data-label="<?= htmlspecialchars((string) __('actions'), ENT_QUOTES, 'UTF-8') ?>">
                                          <div class="d-flex justify-content-end gap-1 align-items-center table-row-actions">
                                             <?php if (!$assignContext): ?>
                                                 <a href="/teachers/edit?id=<?= $t['id'] ?>"
@@ -347,6 +344,12 @@ ob_start(); ?>
             transform: translateY(-2px);
         }
 
+        .teacher-tools-panel {
+            max-width: 1320px;
+            min-width: 0 !important;
+            border-radius: 18px;
+        }
+
         .btn-export-minimal {
             width: 40px;
             height: 40px;
@@ -472,6 +475,159 @@ ob_start(); ?>
                 min-width: 100%;
                 padding: 1rem !important;
             }
+
+            .teacher-tools-panel.filter-island {
+                padding: 0.85rem !important;
+                border-radius: 16px;
+            }
+
+            .teacher-display-setting {
+                justify-content: stretch !important;
+            }
+
+            .teacher-display-setting > div {
+                width: 100%;
+                justify-content: space-between;
+                border-radius: 12px !important;
+                padding: 0.65rem 0.85rem !important;
+            }
+
+            .teacher-tools-panel .filter-form > div:first-child {
+                flex: 1 1 100%;
+                flex-wrap: wrap;
+                justify-content: flex-start;
+                padding: 0 0 0.75rem !important;
+                margin: 0 !important;
+                border-right: 0 !important;
+                border-bottom: 1px solid rgba(var(--border-color-rgb, 148, 163, 184), 0.2);
+            }
+
+            .teacher-tools-panel .filter-form > div:nth-child(2) {
+                flex: 1 1 100%;
+                min-width: 0;
+            }
+
+            .teacher-tools-panel .filter-form .search-pill {
+                width: 100%;
+                margin: 0;
+            }
+
+            .teacher-tools-panel .filter-form > div:nth-child(3) {
+                width: 100%;
+                justify-content: flex-end;
+                padding-left: 0 !important;
+            }
+
+            .teacher-list-table,
+            .teacher-list-table tbody {
+                display: block;
+                width: 100%;
+            }
+
+            .teacher-list-table {
+                min-width: 0 !important;
+                table-layout: auto;
+            }
+
+            .teacher-list-table thead {
+                display: none;
+            }
+
+            .teacher-list-table tbody {
+                display: grid;
+                gap: 0.75rem;
+                padding: 0.75rem;
+            }
+
+            .teacher-list-table tbody tr.teacher-list-row {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0 0.75rem;
+                min-width: 0;
+                padding: 0.5rem 0.85rem;
+                border: 1px solid var(--border-color, #e2e8f0);
+                border-radius: 10px;
+                background: var(--bg-card, #fff);
+            }
+
+            .teacher-list-table tbody tr.teacher-list-row td,
+            .teacher-list-table tbody tr.teacher-list-row td:first-child,
+            .teacher-list-table tbody tr.teacher-list-row td:last-child {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                justify-content: center;
+                min-width: 0;
+                padding: 0.65rem 0;
+                border-radius: 0;
+                text-align: left !important;
+            }
+
+            .teacher-list-table tbody tr.teacher-list-row td::before {
+                content: attr(data-label);
+                margin-bottom: 0.2rem;
+                color: var(--text-muted, #64748b);
+                font-size: 0.68rem;
+                font-weight: 700;
+                text-transform: uppercase;
+            }
+
+            .teacher-list-table tbody tr.teacher-list-row td.teacher-identity-cell {
+                grid-column: 1 / -1;
+                padding: 0.6rem 0 0.75rem;
+                border-bottom: 1px solid var(--border-color, #e2e8f0);
+            }
+
+            .teacher-list-table tbody tr.teacher-list-row td.teacher-identity-cell::before {
+                content: none;
+            }
+
+            .teacher-list-table tbody tr.teacher-list-row td:nth-child(4) {
+                overflow-wrap: anywhere;
+            }
+
+            .teacher-list-table tbody tr.teacher-list-row td:last-child {
+                grid-column: 1 / -1;
+                flex-direction: row;
+                justify-content: flex-end;
+                gap: 0.5rem;
+                padding-top: 0.5rem;
+                border-top: 1px solid var(--border-color, #e2e8f0);
+            }
+
+            .teacher-list-table tbody tr.teacher-list-row td:last-child::before {
+                margin: 0 auto 0 0;
+            }
+
+            .teacher-list-table .table-row-actions,
+            .teacher-list-table .table-row-actions .btn {
+                visibility: visible !important;
+                opacity: 1 !important;
+            }
+
+            .teacher-list-table .table-row-actions .btn {
+                width: 40px;
+                height: 40px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .teacher-list-table tbody tr.teacher-list-row {
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            .teacher-list-table tbody tr.teacher-list-row td.teacher-identity-cell,
+            .teacher-list-table tbody tr.teacher-list-row td:last-child {
+                grid-column: 1;
+            }
+        }
+
+        .teacher-list-table .table-row-actions .btn i {
+            font-size: 1.5rem !important;
+            line-height: 1;
         }
 
         /* Thème sombre pour le tableau des enseignants */

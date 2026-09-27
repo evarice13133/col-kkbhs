@@ -35,14 +35,14 @@ ob_start();
 
                     <div class="col-md-3">
                         <label
-                            class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('subject_official_name') ?> *</label>
+                            class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('subject_official_name') ?> <span class="text-danger required-field-marker" aria-hidden="true">*</span></label>
                         <input type="text" name="nom" class="form-control premium-input"
                             placeholder="<?= __('subject_name_placeholder') ?>" value="<?= h($nom ?? '') ?>" required
                             autofocus>
                     </div>
 
                     <div class="col-md-3">
-                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Type Enseignement *</label>
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Type Enseignement <span class="text-danger required-field-marker" aria-hidden="true">*</span></label>
                         <select name="teaching_type_id" id="teaching_type_id" class="form-select premium-input border-primary border-opacity-25" required>
                             <option value=""><?= __('select_teaching_type') ?? 'Sélectionner un type...' ?></option>
                             <?php foreach ($teachingTypes as $tt): ?>
@@ -52,7 +52,7 @@ ob_start();
                     </div>
 
                     <div class="col-md-3">
-                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Forme d’enseignement *</label>
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Forme d’enseignement <span class="text-danger required-field-marker" aria-hidden="true">*</span></label>
                         <select name="teaching_form_id" id="teaching_form_id" class="form-select premium-input border-primary border-opacity-25" required>
                             <option value="">Sélectionner une forme...</option>
                             <?php foreach ($teachingForms as $tf): ?>
@@ -63,7 +63,7 @@ ob_start();
 
                     <div class="col-md-3">
                         <label
-                            class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('subject_group') ?> *</label>
+                            class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('subject_group') ?> <span class="text-danger required-field-marker" aria-hidden="true">*</span></label>
                         <select name="subject_group_id" id="subject_group_id" class="form-select premium-input border-primary border-opacity-25" required>
                             <option value="">Sélectionner un groupe de matières...</option>
                             <?php foreach ($subjectGroups as $grp): ?>
@@ -76,7 +76,7 @@ ob_start();
 
                     <div class="col-md-3">
                         <label
-                            class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('base_coefficient') ?></label>
+                            class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('base_coefficient') ?> <span class="text-danger required-field-marker" aria-hidden="true">*</span></label>
                         <input type="number" name="coefficient" class="form-control premium-input text-center"
                             value="<?= h($coeff ?? 1) ?>" min="1" required>
                     </div>
@@ -99,7 +99,7 @@ ob_start();
                             value="<?= h($th_max ?? '') ?>" min="0" step="any" placeholder="Ex: 30">
                     </div>
 
-                    <div class="col-12 col-md-3">
+                    <div class="col-12">
                         <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Observations</label>
                         <input type="text" name="observations" class="form-control premium-input"
                             value="<?= h($observations ?? '') ?>" placeholder="Remarques ou détails...">
@@ -130,11 +130,11 @@ ob_start();
                     <div class="col-12 border-bottom border-theme-light pb-2 mb-2">
                         <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 gap-md-3">
                             <h6 class="fw-black text-success m-0 text-uppercase letter-spacing-1">
-                                <i class="bi bi-building me-2"></i><?= __('impacted_classes') ?> *
+                                <i class="bi bi-building me-2"></i><?= __('impacted_classes') ?> <span class="text-danger required-field-marker" aria-hidden="true">*</span>
                             </h6>
                             
-                            <div class="d-flex align-items-center gap-2 w-100 w-md-auto">
-                                <div class="flex-grow-1" style="max-width: 250px;">
+                            <div class="d-flex align-items-center gap-2 w-100 w-md-auto class-selection-toolbar">
+                                <div class="flex-grow-1 class-search-control">
                                     <div class="input-group input-group-sm">
                                         <span class="input-group-text bg-transparent border-end-0 rounded-start-pill border-theme-light ps-3">
                                             <i class="bi bi-search text-muted-theme"></i>
@@ -146,7 +146,7 @@ ob_start();
 
                                 <div class="form-check form-switch m-0 flex-shrink-0">
                                     <input class="form-check-input" type="checkbox" id="selectAllClasses">
-                                    <label class="form-check-label extra-small fw-bold text-muted-theme ms-1 d-none d-sm-inline"
+                                    <label class="form-check-label extra-small fw-bold text-muted-theme ms-1"
                                         for="selectAllClasses"><?= __('all') ?></label>
                                 </div>
                             </div>
@@ -628,45 +628,85 @@ ob_start();
 </script>
 
 <style>
+    .required-field-marker {
+        font-size: 1.2rem;
+        font-weight: 800;
+        line-height: 1;
+        vertical-align: middle;
+    }
+
     /* Styles pour améliorer la présentation mobile */
     @media (max-width: 767.98px) {
         .mobile-compact {
-            padding: 0.5rem !important;
+            min-height: 64px;
+            padding: 0.75rem !important;
         }
         
         .mobile-compact .form-check-input {
-            width: 1.1em;
-            height: 1.1em;
+            width: 1.25rem;
+            height: 1.25rem;
             margin-top: 0.1em;
         }
         
         .mobile-compact label {
-            font-size: 0.75rem;
+            font-size: 0.85rem;
+            line-height: 1.3;
         }
         
         .mobile-compact .text-truncate {
-            max-width: 80px !important;
+            max-width: none !important;
+            overflow: visible;
+            text-overflow: clip;
+            white-space: normal;
+            font-size: 0.88rem !important;
+            line-height: 1.25;
         }
         
         .extra-small {
-            font-size: 0.65rem;
+            font-size: 0.75rem !important;
+            line-height: 1.25;
         }
         
-        /* Réduire les espacements entre les éléments de formulaire */
         .form-label {
-            margin-bottom: 0.25rem;
-            font-size: 0.7rem;
+            margin-bottom: 0.35rem;
+            font-size: 0.78rem;
         }
         
         .premium-input {
-            padding: 0.5rem 0.75rem;
-            font-size: 0.9rem;
+            min-height: 44px;
+            padding: 0.65rem 0.75rem;
+            font-size: 0.95rem;
         }
         
-        /* Optimiser le switch sur mobile */
-        .form-check-input[type="checkbox"] {
+        .form-switch .form-check-input[type="checkbox"] {
             width: 2.5em;
             height: 1.3em;
+        }
+
+        .class-selection-toolbar {
+            flex-wrap: wrap;
+        }
+
+        .class-search-control {
+            flex: 1 1 100%;
+            width: 100%;
+            max-width: none !important;
+        }
+
+        .class-search-control .input-group,
+        .class-search-control #classSearchInput {
+            width: 100%;
+        }
+
+        .class-search-control #classSearchInput {
+            min-height: 40px;
+            font-size: 0.85rem !important;
+        }
+    }
+
+    @media (max-width: 359.98px) {
+        #classesGridContainer .class-wrapper {
+            width: 100% !important;
         }
     }
     

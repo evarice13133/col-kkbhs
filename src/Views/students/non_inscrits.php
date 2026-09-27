@@ -261,6 +261,11 @@ ob_start(); ?>
             min-height: 42px;
         }
     }
+
+    #unregistered-students-table .btn-action-modern > i {
+        font-size: 1.5rem !important;
+        line-height: 1;
+    }
 </style>
 
 <script>

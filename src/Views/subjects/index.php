@@ -3,6 +3,7 @@ $title = __('subjects') ?? 'Matières';
 ob_start();
 
 $canManage = \App\Core\PermissionManager::hasPermission('manage_subjects');
+$hasActiveSubjectFilters = !empty($filters['q']) || !empty($filters['teaching_type_id']) || !empty($filters['department_id']) || !empty($filters['class_id']);
 ?>
 
 <div class="animate-fade-in container-fluid py-3 px-md-4">
@@ -31,13 +32,13 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_subjects');
                     class="btn btn-light-theme rounded-pill px-3 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 scale-on-hover"
                     title="<?= __('export_list') ?? 'Exporter PDF' ?>">
                     <i class="bi bi-file-earmark-pdf text-danger fs-6"></i>
-                    <span class="d-none d-sm-inline"><?= __('export') ?? 'Exporter PDF' ?></span>
+                    <span><?= __('lang') === 'en' ? 'Export PDF' : 'Exporter PDF' ?></span>
                 </a>
                 <a id="btn-export-excel" href="/subjects/exportExcel?<?= http_build_query($filters) ?>"
                     class="btn btn-success rounded-pill px-3 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 scale-on-hover"
                     title="Exporter au format Excel (.xlsx)">
                     <i class="bi bi-file-earmark-excel fs-6"></i>
-                    <span class="d-none d-sm-inline">Exporter Excel</span>
+                    <span><?= __('lang') === 'en' ? 'Export Excel' : 'Exporter Excel' ?></span>
                 </a>
                 <?php if ($canManage): ?>
                     <button type="button"
@@ -58,21 +59,25 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_subjects');
 
     <!-- BARRE DE FILTRES ET RECHERCHE INSTANTANÉE -->
     <div class="filter-island-container mb-4">
-        <div class="filter-island p-3 rounded-4 shadow-sm">
+        <div class="filter-island subjects-filter-panel p-3 rounded-4 shadow-sm">
             <form method="GET" action="/subjects" id="subject-filter-form" class="filter-form w-100 m-0">
-                <div class="d-flex flex-column flex-md-row gap-3 align-items-md-center justify-content-between">
+                <div class="d-flex flex-column flex-md-row gap-3 align-items-md-center justify-content-between subjects-filter-layout">
 
-                    <div class="d-flex flex-column flex-sm-row gap-2 flex-grow-1 flex-wrap">
+                    <div class="d-flex flex-column flex-sm-row gap-2 flex-grow-1 flex-wrap subjects-filter-fields">
                         <!-- Recherche instantanée -->
-                        <div class="dept-search-pill flex-grow-1 position-relative" style="min-width: 200px;">
-                            <i class="bi bi-search search-icon"></i>
-                            <input type="text" name="q" id="search-input" class="form-control dept-filter-input ps-5"
-                                value="<?= htmlspecialchars((string) ($filters['q'] ?? '')) ?>"
-                                placeholder="<?= __('search') ?? 'Rechercher' ?> (<?= __('subject_name') ?? 'Intitulé de la matière' ?>)...">
+                        <div class="subjects-filter-search-field">
+                            <label class="subjects-filter-label" for="search-input"><?= htmlspecialchars((string) __('subject'), ENT_QUOTES, 'UTF-8') ?></label>
+                            <div class="dept-search-pill position-relative">
+                                <i class="bi bi-search search-icon"></i>
+                                <input type="text" name="q" id="search-input" class="form-control dept-filter-input ps-5"
+                                    value="<?= htmlspecialchars((string) ($filters['q'] ?? '')) ?>"
+                                    placeholder="<?= __('search') ?? 'Rechercher' ?> (<?= __('subject_name') ?? 'Intitulé de la matière' ?>)...">
+                            </div>
                         </div>
 
                         <!-- Type Enseignement -->
-                        <div class="dept-select-wrapper flex-grow-1" style="min-width: 150px; max-width: 190px;">
+                        <div class="dept-select-wrapper">
+                            <label class="subjects-filter-label" for="filter_teaching_type"><?= htmlspecialchars((string) __('teaching_type'), ENT_QUOTES, 'UTF-8') ?></label>
                             <select name="teaching_type_id" id="filter_teaching_type"
                                 class="form-select dept-filter-select">
                                 <option value=""><?= __('all_teaching_types') ?? 'Tous les Types' ?></option>
@@ -83,7 +88,8 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_subjects');
                         </div>
 
                         <!-- Département -->
-                        <div class="dept-select-wrapper flex-grow-1" style="min-width: 150px; max-width: 190px;">
+                        <div class="dept-select-wrapper">
+                            <label class="subjects-filter-label" for="filter_department"><?= htmlspecialchars((string) __('department'), ENT_QUOTES, 'UTF-8') ?></label>
                             <select name="department_id" id="filter_department" class="form-select dept-filter-select">
                                 <option value=""><?= __('all_departments') ?? 'Tous les départements' ?></option>
                                 <?php foreach ($departments as $dept): ?>
@@ -95,7 +101,8 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_subjects');
                         </div>
 
                         <!-- Classe -->
-                        <div class="dept-select-wrapper flex-grow-1" style="min-width: 150px; max-width: 190px;">
+                        <div class="dept-select-wrapper">
+                            <label class="subjects-filter-label" for="filter_class"><?= htmlspecialchars((string) __('class'), ENT_QUOTES, 'UTF-8') ?></label>
                             <select name="class_id" id="filter_class" class="form-select dept-filter-select">
                                 <option value=""><?= __('all_classes') ?? 'Toutes les classes' ?></option>
                                 <?php foreach ($classes as $class): ?>
@@ -108,7 +115,7 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_subjects');
                     </div>
 
                     <!-- Actions Filtre -->
-                    <div class="d-flex gap-2 align-items-center justify-content-end">
+                    <div class="d-flex gap-2 align-items-center justify-content-end subjects-filter-actions">
                         <button type="submit"
                             class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm text-nowrap scale-on-hover">
                             <i class="bi bi-funnel-fill me-1"></i> <?= __('filter') ?? 'Filtrer' ?>
@@ -128,8 +135,8 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_subjects');
     <!-- LISTE ET PAGINATION DES MATIÈRES -->
     <div id="subjectsListContainer">
         <div class="modern-card border-0 shadow-sm overflow-hidden animate-fade-in">
-            <div class="table-responsive">
-                <table class="table-modern">
+            <div class="table-responsive subjects-table-wrapper">
+                <table class="table-modern subjects-list-table">
                     <thead>
                         <tr>
                             <th class="ps-4 col-subject"><?= __('subject') ?></th>
@@ -144,18 +151,30 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_subjects');
                     </thead>
                     <tbody>
                         <?php if (empty($subjects)): ?>
-                            <tr>
-                                <td colspan="5" class="text-center py-5">
+                            <tr class="subject-empty-row">
+                                <td colspan="<?= $canManage ? 6 : 5 ?>" class="text-center py-5">
                                     <i class="bi bi-book fs-1 opacity-25 mb-3 d-block"></i>
-                                    <span class="opacity-50"><?= __('no_data') ?></span>
+                                    <span class="opacity-50">
+                                        <?= $hasActiveSubjectFilters
+                                            ? (__('lang') === 'en' ? 'No subjects match these filters.' : 'Aucune matière ne correspond aux filtres sélectionnés.')
+                                            : __('no_data') ?>
+                                    </span>
+                                    <?php if ($hasActiveSubjectFilters): ?>
+                                        <div>
+                                            <a href="/subjects" class="btn btn-sm btn-light-theme rounded-pill px-3 py-2 mt-3">
+                                                <i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>
+                                                <?= __('lang') === 'en' ? 'Clear filters' : 'Réinitialiser les filtres' ?>
+                                            </a>
+                                        </div>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                         <?php else: ?>
                             <?php foreach ($subjects as $s):
                                 $isActive = (int) ($s['status'] ?? 1) === 1;
                                 ?>
-                                <tr class="<?= !$isActive ? 'opacity-50 grayscale bg-light' : '' ?>">
-                                    <td class="ps-4 col-subject">
+                                <tr class="subject-row <?= !$isActive ? 'opacity-50 grayscale bg-light' : '' ?>">
+                                    <td class="ps-4 col-subject" data-label="<?= htmlspecialchars((string) __('subject'), ENT_QUOTES, 'UTF-8') ?>">
                                         <div class="d-flex align-items-center gap-2">
                                             <div class="avatar-init bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center shadow-sm"
                                                 style="width: 36px; height: 36px; border: 1px solid rgba(var(--primary-rgb), 0.2);">
@@ -166,7 +185,7 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_subjects');
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="col-classes">
+                                    <td class="col-classes" data-label="<?= htmlspecialchars((string) (__('classes') ?? 'Classes concernées'), ENT_QUOTES, 'UTF-8') ?>">
                                         <?php
                                         $classNames = [];
                                         if (!empty($s['classes_list'])) {
@@ -186,7 +205,7 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_subjects');
                                             </div>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="col-coefficient">
+                                    <td class="col-coefficient" data-label="<?= htmlspecialchars((string) __('coefficient'), ENT_QUOTES, 'UTF-8') ?>">
                                         <span class="badge bg-primary bg-opacity-10 text-primary fw-bold px-3 py-1 rounded-3">
                                             <?= __('coef') ?>: <?= (int) $s['coefficient'] ?>
                                         </span>
@@ -235,12 +254,12 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_subjects');
                                             </div>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="col-group">
+                                    <td class="col-group" data-label="<?= htmlspecialchars((string) __('group'), ENT_QUOTES, 'UTF-8') ?>">
                                         <span class="badge bg-success bg-opacity-10 text-success fw-bold px-3 py-1 rounded-3">
                                             <?= htmlspecialchars((string) (($s['group_list'] ?? '') ?: ($s['subject_group_libelle'] ?? $s['groupe'] ?? 'Groupe 1'))) ?>
                                         </span>
                                     </td>
-                                    <td class="col-status">
+                                    <td class="col-status" data-label="<?= htmlspecialchars((string) __('status'), ENT_QUOTES, 'UTF-8') ?>">
                                         <?php if ($isActive): ?>
                                             <span
                                                 class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-2 py-1"
@@ -256,9 +275,9 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_subjects');
                                         <?php endif; ?>
                                     </td>
                                     <?php if (\App\Core\PermissionManager::hasPermission('manage_subjects')): ?>
-                                        <td class="text-end pe-4 col-actions">
+                                        <td class="text-end pe-4 col-actions" data-label="<?= htmlspecialchars((string) __('actions'), ENT_QUOTES, 'UTF-8') ?>">
                                             <div class="d-flex justify-content-end gap-1 align-items-center table-row-actions">
-                                                <?php if (\App\Core\PermissionManager::hasPermission('manage_subjects')): ?>
+                                                <?php if (\App\Core\Session::get('user_role') === 'superadmin'): ?>
                                                     <a href="/subjects/toggleStatus?id=<?= $s['id'] ?>"
                                                         class="btn btn-sm btn-action-modern btn-confirm-toggle <?= $isActive ? 'text-warning' : 'text-success' ?>"
                                                         data-confirm="<?= $isActive ? __('deactivate_subject_confirm', ['name' => $s['nom']]) : __('activate_subject_confirm', ['name' => $s['nom']]) ?>"
@@ -505,6 +524,112 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_subjects');
             border-color: rgba(255, 255, 255, 0.12);
         }
 
+        .filter-island.subjects-filter-panel {
+            width: 100%;
+            max-width: none !important;
+            padding: 1rem !important;
+            border-radius: 14px !important;
+        }
+
+        .subjects-filter-layout {
+            gap: 1rem !important;
+        }
+
+        .subjects-filter-label {
+            display: block;
+            margin: 0 0 0.35rem;
+            color: var(--text-muted, #64748b);
+            font-size: 0.75rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .subjects-filter-search-field,
+        .subjects-filter-fields .dept-select-wrapper {
+            width: 100%;
+            min-width: 0 !important;
+            max-width: none !important;
+        }
+
+        .subjects-filter-search-field .dept-search-pill {
+            width: 100%;
+            min-width: 0;
+        }
+
+        #subject-filter-form .dept-filter-input,
+        #subject-filter-form .dept-filter-select {
+            min-height: 44px;
+            border-radius: 10px !important;
+        }
+
+        #subject-filter-form .dept-filter-select {
+            padding: 10px 14px !important;
+        }
+
+        .subjects-filter-actions {
+            align-self: end;
+            flex-wrap: nowrap;
+        }
+
+        .subjects-filter-actions .reset-btn {
+            width: 44px !important;
+            height: 44px !important;
+            flex: 0 0 44px;
+        }
+
+        @media (min-width: 992px) {
+            .subjects-filter-layout {
+                display: grid !important;
+                grid-template-columns: minmax(0, 1fr) auto;
+            }
+
+            .subjects-filter-fields {
+                display: grid !important;
+                grid-template-columns: minmax(240px, 1.65fr) repeat(3, minmax(145px, 1fr));
+                gap: 0.75rem !important;
+                min-width: 0;
+            }
+        }
+
+        @media (min-width: 576px) and (max-width: 991.98px) {
+            .subjects-filter-layout {
+                display: grid !important;
+                grid-template-columns: minmax(0, 1fr) auto;
+            }
+
+            .subjects-filter-fields {
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.75rem !important;
+                min-width: 0;
+            }
+
+            .subjects-filter-search-field {
+                grid-column: 1 / -1;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .filter-island.subjects-filter-panel {
+                padding: 0.9rem !important;
+            }
+
+            .subjects-filter-layout,
+            .subjects-filter-fields {
+                display: grid !important;
+                grid-template-columns: minmax(0, 1fr);
+                gap: 0.75rem !important;
+            }
+
+            .subjects-filter-actions {
+                width: 100%;
+            }
+
+            .subjects-filter-actions .btn-primary {
+                flex: 1 1 auto;
+            }
+        }
+
         /* Animations */
         .animate-slide-down {
             animation: slideDown 0.6s cubic-bezier(0.23, 1, 0.32, 1);
@@ -591,6 +716,176 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_subjects');
                 border-radius: 24px;
                 min-width: 100%;
                 padding: 1rem !important;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .dept-header-card .d-flex.flex-row.w-100.w-md-auto {
+                flex-wrap: wrap;
+                justify-content: flex-start !important;
+            }
+
+            .dept-header-card .d-flex.flex-row.w-100.w-md-auto > a[href="/subjects/create"] {
+                flex: 1 1 100%;
+            }
+        }
+
+        .table-modern .col-actions .table-row-actions .btn i {
+            font-size: 1.5rem !important;
+            line-height: 1;
+        }
+
+        @media (max-width: 991.98px) {
+            #subjectsListContainer .subjects-table-wrapper {
+                overflow: visible !important;
+            }
+
+            #subjectsListContainer .subjects-list-table,
+            #subjectsListContainer .subjects-list-table tbody {
+                display: block;
+                width: 100%;
+            }
+
+            #subjectsListContainer .subjects-list-table {
+                min-width: 0 !important;
+                table-layout: auto;
+            }
+
+            #subjectsListContainer .subjects-list-table thead {
+                display: none;
+            }
+
+            #subjectsListContainer .subjects-list-table tbody {
+                display: grid;
+                gap: 0.75rem;
+                padding: 0.75rem;
+            }
+
+            #subjectsListContainer .subjects-list-table tbody tr.subject-row {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0 0.9rem;
+                min-width: 0;
+                padding: 0.5rem 0.85rem;
+                border: 1px solid var(--border-color, #e2e8f0);
+                border-radius: 10px;
+                background: var(--bg-card, #fff);
+            }
+
+            #subjectsListContainer .subjects-list-table tbody tr.subject-row td {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                justify-content: center;
+                min-width: 0;
+                width: 100%;
+                gap: 0.25rem;
+                padding: 0.75rem 0.15rem !important;
+                border-radius: 0;
+                text-align: left !important;
+                font-size: 0.95rem;
+            }
+
+            #subjectsListContainer .subjects-list-table tbody tr.subject-row td::before {
+                content: attr(data-label);
+                margin-bottom: 0.1rem;
+                color: var(--text-muted, #64748b);
+                font-size: 0.8rem;
+                font-weight: 700;
+                line-height: 1.25;
+                text-transform: uppercase;
+            }
+
+            #subjectsListContainer .subjects-list-table tbody tr.subject-row td.col-subject {
+                grid-column: 1 / -1;
+                padding: 0.6rem 0 0.75rem !important;
+                border-bottom: 1px solid var(--border-color, #e2e8f0);
+            }
+
+            #subjectsListContainer .subjects-list-table tbody tr.subject-row td.col-subject::before {
+                content: none;
+            }
+
+            #subjectsListContainer .subjects-list-table tbody tr.subject-row td.col-subject > div {
+                width: 100%;
+                min-width: 0;
+            }
+
+            #subjectsListContainer .subjects-list-table tbody tr.subject-row td.col-subject .fw-bold {
+                font-size: 1.05rem;
+                line-height: 1.3;
+                overflow-wrap: anywhere;
+            }
+
+            #subjectsListContainer .subjects-list-table tbody tr.subject-row td.col-classes .badge,
+            #subjectsListContainer .subjects-list-table tbody tr.subject-row td.col-coefficient .badge,
+            #subjectsListContainer .subjects-list-table tbody tr.subject-row td.col-group .badge,
+            #subjectsListContainer .subjects-list-table tbody tr.subject-row td.col-status .badge {
+                padding: 0.4rem 0.6rem !important;
+                font-size: 0.85rem !important;
+                line-height: 1.35;
+            }
+
+            #subjectsListContainer .subjects-list-table tbody tr.subject-row td.col-coefficient .extra-small {
+                font-size: 0.82rem !important;
+            }
+
+            #subjectsListContainer .subjects-list-table tbody tr.subject-row td .badge {
+                max-width: 100%;
+                white-space: normal !important;
+                overflow-wrap: anywhere;
+                text-align: left;
+            }
+
+            #subjectsListContainer .subjects-list-table tbody tr.subject-row td.col-actions {
+                grid-column: 1 / -1;
+                flex-direction: row;
+                justify-content: flex-end;
+                gap: 0.5rem;
+                padding-top: 0.5rem !important;
+                border-top: 1px solid var(--border-color, #e2e8f0);
+            }
+
+            #subjectsListContainer .subjects-list-table tbody tr.subject-row td.col-actions::before {
+                margin: 0 auto 0 0;
+            }
+
+            #subjectsListContainer .subjects-list-table .table-row-actions,
+            #subjectsListContainer .subjects-list-table .table-row-actions .btn {
+                visibility: visible !important;
+                opacity: 1 !important;
+                transform: none;
+            }
+
+            #subjectsListContainer .subjects-list-table .table-row-actions .btn {
+                width: 40px;
+                height: 40px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            #subjectsListContainer .subjects-list-table tbody tr.subject-empty-row {
+                display: block;
+                padding: 0;
+                border: 0;
+                background: transparent;
+            }
+
+            #subjectsListContainer .subjects-list-table tbody tr.subject-empty-row td {
+                display: block;
+                text-align: center !important;
+            }
+        }
+
+        @media (max-width: 359.98px) {
+            #subjectsListContainer .subjects-list-table tbody tr.subject-row {
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            #subjectsListContainer .subjects-list-table tbody tr.subject-row td.col-subject,
+            #subjectsListContainer .subjects-list-table tbody tr.subject-row td.col-actions {
+                grid-column: 1;
             }
         }
     </style>
@@ -709,7 +1004,6 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_subjects');
             filterTT.addEventListener('change', updateDependentFilters);
             if (filterDept) filterDept.addEventListener('change', updateExportLinks);
             if (filterClass) filterClass.addEventListener('change', updateExportLinks);
-            const searchInput = document.getElementById('search-input');
             if (searchInput) searchInput.addEventListener('input', updateExportLinks);
 
             updateDependentFilters();
@@ -803,8 +1097,6 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_subjects');
                     .catch(err => console.error('Error refreshing subjects list:', err));
             }
         });
-    </script> }
-    });
     </script>
 
     <?php $content = ob_get_clean(); ?>

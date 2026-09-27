@@ -113,8 +113,8 @@ ob_start();
 
     <!-- Table Card -->
     <div class="modern-card border-0 shadow-sm overflow-hidden animate-fade-in">
-        <div class="table-responsive">
-            <table class="table-modern">
+        <div class="table-responsive payments-table-wrapper">
+            <table class="table-modern payments-list-table">
                 <thead>
                     <tr>
                         <th class="ps-4"><?= __('grade_export_student') ?></th>
@@ -131,7 +131,7 @@ ob_start();
                 </thead>
                 <tbody>
                     <?php if (empty($students)): ?>
-                        <tr>
+                        <tr class="payment-empty-row">
                             <td colspan="10" class="text-center py-5 text-muted">
                                 <i class="bi bi-info-circle fs-3 d-block mb-2 text-secondary"></i>
                                 <?= __('no_student_found') ?>
@@ -144,8 +144,8 @@ ob_start();
                             $net = (float)$s['scolarite_nette'];
                             $paye = (float)$s['total_paye'];
                             ?>
-                            <tr class="student-row">
-                                <td class="ps-4">
+                            <tr class="student-row payment-row">
+                                <td class="ps-4 payment-identity-cell" data-label="<?= htmlspecialchars((string) __('grade_export_student'), ENT_QUOTES, 'UTF-8') ?>">
                                     <div class="d-flex align-items-center gap-2">
                                         <div class="avatar-init bg-primary bg-opacity-10 text-primary fw-bold rounded-circle d-flex align-items-center justify-content-center shadow-sm"
                                              style="width: 36px; height: 36px; font-size: 1rem; border: 1px solid rgba(var(--primary-rgb), 0.2);">
@@ -161,14 +161,14 @@ ob_start();
                                         </div>
                                     </div>
                                 </td>
-                                <td><code class="small text-secondary"><?= h($s['matricule']) ?></code></td>
-                                <td>
+                                <td class="payment-matricule-cell" data-label="<?= htmlspecialchars((string) __('matricule'), ENT_QUOTES, 'UTF-8') ?>"><code class="small text-secondary"><?= h($s['matricule']) ?></code></td>
+                                <td data-label="<?= htmlspecialchars((string) __('class'), ENT_QUOTES, 'UTF-8') ?>">
                                     <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2.5 py-1 rounded-pill fw-medium" style="font-size: 0.7rem;">
                                         <i class="bi bi-door-open-fill me-1"></i><?= h($s['classe_nom'] ?: __('no_class')) ?>
                                     </span>
                                 </td>
-                                <td class="text-end text-muted"><?= number_format($s['frais_scolarite_brut'], 0, '.', ' ') ?> <span style="font-size: 0.7rem;">FCFA</span></td>
-                                <td class="text-end">
+                                <td class="text-end text-muted payment-amount-cell" data-label="<?= htmlspecialchars((string) __('col_tuition_gross'), ENT_QUOTES, 'UTF-8') ?>"><?= number_format($s['frais_scolarite_brut'], 0, '.', ' ') ?> <span style="font-size: 0.7rem;">FCFA</span></td>
+                                <td class="text-end payment-amount-cell" data-label="<?= htmlspecialchars((string) __('discounts'), ENT_QUOTES, 'UTF-8') ?>">
                                     <?php if ($s['total_reductions'] > 0): ?>
                                         <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-10 px-2 py-0.5 rounded small fw-bold" style="font-size: 0.7rem;">
                                             -<?= number_format($s['total_reductions'], 0, '.', ' ') ?> <span style="font-size: 0.6rem; font-weight: normal;">FCFA</span>
@@ -177,7 +177,7 @@ ob_start();
                                         <span class="text-muted opacity-50">-</span>
                                     <?php endif; ?>
                                 </td>
-                                <td class="text-end">
+                                <td class="text-end payment-amount-cell" data-label="<?= htmlspecialchars((string) __('scholarships'), ENT_QUOTES, 'UTF-8') ?>">
                                     <?php if ($s['total_bourses'] > 0): ?>
                                         <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-10 px-2 py-0.5 rounded small fw-bold" style="font-size: 0.7rem;">
                                             -<?= number_format($s['total_bourses'], 0, '.', ' ') ?> <span style="font-size: 0.6rem; font-weight: normal;">FCFA</span>
@@ -186,9 +186,9 @@ ob_start();
                                         <span class="text-muted opacity-50">-</span>
                                     <?php endif; ?>
                                 </td>
-                                <td class="text-end text-primary fw-black"><?= number_format($net, 0, '.', ' ') ?> <span style="font-size: 0.75rem; font-weight: normal;">FCFA</span></td>
-                                <td class="text-end text-success fw-bold"><?= number_format($paye, 0, '.', ' ') ?> <span style="font-size: 0.75rem; font-weight: normal;">FCFA</span></td>
-                                <td class="text-end">
+                                <td class="text-end text-primary fw-black payment-net-cell" data-label="<?= htmlspecialchars((string) __('col_net_to_pay'), ENT_QUOTES, 'UTF-8') ?>"><?= number_format($net, 0, '.', ' ') ?> <span style="font-size: 0.75rem; font-weight: normal;">FCFA</span></td>
+                                <td class="text-end text-success fw-bold payment-amount-cell" data-label="<?= htmlspecialchars((string) __('col_total_paid'), ENT_QUOTES, 'UTF-8') ?>"><?= number_format($paye, 0, '.', ' ') ?> <span style="font-size: 0.75rem; font-weight: normal;">FCFA</span></td>
+                                <td class="text-end payment-amount-cell" data-label="<?= htmlspecialchars((string) __('col_remaining_to_pay'), ENT_QUOTES, 'UTF-8') ?>">
                                     <?php if ($reste > 0): ?>
                                         <span class="badge-premium badge-premium-danger" style="font-size: 0.72rem;">
                                             <i class="bi bi-hourglass-split"></i> <?= number_format($reste, 0, '.', ' ') ?> <span class="fw-normal" style="font-size: 0.6rem;">FCFA</span>
@@ -199,7 +199,7 @@ ob_start();
                                         </span>
                                     <?php endif; ?>
                                 </td>
-                                <td class="pe-4 text-center">
+                                <td class="pe-4 text-center payment-action-cell" data-label="<?= htmlspecialchars((string) __('action_label'), ENT_QUOTES, 'UTF-8') ?>">
                                     <a href="/payments/student?id=<?= $s['id'] ?>" class="btn btn-sm btn-action-modern text-primary" title="<?= __('financial_sheet') ?>">
                                         <i class="bi bi-credit-card-2-back-fill fs-5"></i>
                                     </a>
@@ -249,6 +249,178 @@ ob_start();
             border-radius: 24px;
             min-width: 100%;
             padding: 1rem !important;
+        }
+    }
+
+    @media (min-width: 992px) {
+        .payments-list-table thead th:first-child,
+        .payments-list-table tbody td:first-child {
+            width: 20%;
+        }
+    }
+
+    @media (max-width: 991.98px) {
+        .payments-table-wrapper {
+            overflow: visible !important;
+        }
+
+        .payments-list-table,
+        .payments-list-table tbody {
+            display: block;
+            width: 100%;
+        }
+
+        .payments-list-table {
+            min-width: 0 !important;
+            table-layout: auto;
+        }
+
+        .payments-list-table thead {
+            display: none;
+        }
+
+        .payments-list-table tbody {
+            display: grid;
+            gap: 0.75rem;
+            padding: 0.75rem;
+        }
+
+        .payments-list-table tbody tr.payment-row {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0 0.9rem;
+            min-width: 0;
+            padding: 0.5rem 0.85rem;
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 10px;
+            background: var(--bg-card, #fff);
+        }
+
+        .payments-list-table tbody tr.payment-row td {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            width: 100%;
+            min-width: 0;
+            padding: 0.65rem 0.1rem !important;
+            border-radius: 0;
+            text-align: left !important;
+            font-size: 0.9rem;
+        }
+
+        .payments-list-table tbody tr.payment-row td::before {
+            content: attr(data-label);
+            margin-bottom: 0.2rem;
+            color: var(--text-muted, #64748b);
+            font-size: 0.75rem;
+            font-weight: 700;
+            line-height: 1.25;
+            text-transform: uppercase;
+        }
+
+        .payments-list-table tbody tr.payment-row td.payment-identity-cell {
+            grid-column: 1 / -1;
+            padding: 0.6rem 0 0.75rem !important;
+            border-bottom: 1px solid var(--border-color, #e2e8f0);
+        }
+
+        .payments-list-table tbody tr.payment-row td.payment-identity-cell::before {
+            content: none;
+        }
+
+        .payments-list-table .payment-identity-cell .fw-bold {
+            font-size: 1rem !important;
+            overflow-wrap: anywhere;
+        }
+
+        .payments-list-table .payment-matricule-cell code {
+            white-space: normal;
+            overflow-wrap: anywhere;
+            font-size: 0.78rem;
+        }
+
+        .payments-list-table .payment-amount-cell {
+            font-size: 0.9rem;
+            font-weight: 600;
+            overflow-wrap: anywhere;
+        }
+
+        .payments-list-table tbody tr.payment-row td.payment-net-cell {
+            padding: 0.6rem 0.5rem !important;
+            border-radius: 8px;
+            background: rgba(var(--primary-rgb, 59, 130, 246), 0.08);
+            font-size: 1rem;
+        }
+
+        .payments-list-table tbody tr.payment-row td.payment-action-cell {
+            grid-column: 1 / -1;
+            flex-direction: row;
+            justify-content: flex-end;
+            padding-top: 0.5rem !important;
+            border-top: 1px solid var(--border-color, #e2e8f0);
+        }
+
+        .payments-list-table tbody tr.payment-row td.payment-action-cell::before {
+            margin: 0 auto 0 0;
+        }
+
+        .payments-list-table .payment-action-cell .btn {
+            height: 48px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .payments-list-table tbody tr.payment-empty-row {
+            display: block;
+            padding: 0;
+            border: 0;
+            background: transparent;
+        }
+
+        .payments-list-table tbody tr.payment-empty-row td {
+            display: block;
+            text-align: center !important;
+        }
+    }
+
+    @media (max-width: 359.98px) {
+        .payments-list-table tbody tr.payment-row {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .payments-list-table tbody tr.payment-row td.payment-identity-cell,
+        .payments-list-table tbody tr.payment-row td.payment-action-cell {
+            grid-column: 1;
+        }
+    }
+
+    .payments-list-table .payment-action-cell .btn i {
+        display: flex;
+        width: 100%;
+        height: 100%;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.4rem !important;
+        line-height: 1;
+    }
+
+    .payments-list-table .payment-action-cell .btn {
+        width: 56px;
+        min-width: 56px;
+        height: 42px;
+        padding: 0;
+    }
+
+    @media (max-width: 991.98px) {
+        .payments-list-table .payment-action-cell .btn {
+            height: 48px;
+        }
+
+        .payments-list-table .payment-action-cell .btn i {
+            font-size: 2.7rem !important;
         }
     }
 

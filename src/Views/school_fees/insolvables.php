@@ -123,8 +123,8 @@ ob_start();
 
     <!-- Insolvables Table Card -->
     <div class="modern-card border-0 shadow-sm overflow-hidden animate-fade-in">
-        <div class="table-responsive">
-            <table class="table-modern" id="insolvables-table">
+        <div class="table-responsive insolvables-table-wrapper">
+            <table class="table-modern insolvables-table" id="insolvables-table">
                 <thead>
                     <tr>
                         <th class="ps-4"><?= __('student') ?></th>
@@ -139,7 +139,7 @@ ob_start();
                 </thead>
                 <tbody>
                     <?php if (empty($insolventStudents)): ?>
-                        <tr>
+                        <tr class="insolvent-empty-row">
                             <td colspan="8" class="text-center py-5 text-success">
                                 <i class="bi bi-check-circle-fill fs-3 d-block mb-2 text-success"></i>
                                 <?= __('congrats_no_insolvent') ?>
@@ -147,8 +147,8 @@ ob_start();
                         </tr>
                     <?php else: ?>
                         <?php foreach ($insolventStudents as $row): ?>
-                            <tr>
-                                <td class="ps-4">
+                            <tr class="insolvent-row">
+                                <td class="ps-4 insolvent-identity-cell" data-label="<?= htmlspecialchars((string) __('student'), ENT_QUOTES, 'UTF-8') ?>">
                                     <div class="d-flex align-items-center gap-2">
                                         <div class="avatar-init bg-danger bg-opacity-10 text-danger fw-bold rounded-circle d-flex align-items-center justify-content-center shadow-sm"
                                              style="width: 32px; height: 32px; font-size: 0.85rem; border: 1px solid rgba(220, 53, 69, 0.2);">
@@ -164,27 +164,27 @@ ob_start();
                                         </div>
                                     </div>
                                 </td>
-                                <td>
+                                <td data-label="<?= htmlspecialchars((string) __('class'), ENT_QUOTES, 'UTF-8') ?>">
                                     <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-15 px-2 py-0.5 rounded-pill small">
                                         <?= h($row['class_name'] ?: '-') ?>
                                     </span>
                                 </td>
-                                <td><?= h($row['section_name'] ?: '-') ?></td>
-                                <td><?= h($row['teaching_type_name'] ?: '-') ?></td>
-                                <td class="text-end fw-black text-danger">
+                                <td data-label="<?= htmlspecialchars((string) __('class_section'), ENT_QUOTES, 'UTF-8') ?>"><?= h($row['section_name'] ?: '-') ?></td>
+                                <td data-label="<?= htmlspecialchars((string) __('teaching_type'), ENT_QUOTES, 'UTF-8') ?>"><?= h($row['teaching_type_name'] ?: '-') ?></td>
+                                <td class="text-end fw-black text-danger insolvent-money-cell" data-label="<?= htmlspecialchars((string) __('col_amount_due'), ENT_QUOTES, 'UTF-8') ?>">
                                     <?= number_format($row['amount_due'], 0, '.', ' ') ?> <span class="extra-small">FCFA</span>
                                 </td>
-                                <td class="text-center fw-bold">
+                                <td class="text-center fw-bold" data-label="<?= htmlspecialchars((string) __('col_unpaid_tranches'), ENT_QUOTES, 'UTF-8') ?>">
                                     <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-15 px-2.5 py-0.5 rounded-pill">
                                         <?= $row['unpaid_installments_count'] ?> <?= __('unpaid_tranches_suffix') ?>
                                     </span>
                                 </td>
-                                <td>
+                                <td data-label="<?= htmlspecialchars((string) __('col_last_overdue'), ENT_QUOTES, 'UTF-8') ?>">
                                     <span class="badge-premium badge-premium-danger">
                                         <i class="bi bi-exclamation-triangle-fill me-1"></i><?= $row['last_overdue_deadline'] ? date('d/m/Y', strtotime($row['last_overdue_deadline'])) : '-' ?>
                                     </span>
                                 </td>
-                                <td class="text-end fw-bold pe-4 text-muted">
+                                <td class="text-end fw-bold pe-4 text-muted insolvent-money-cell" data-label="<?= htmlspecialchars((string) __('col_remaining_total'), ENT_QUOTES, 'UTF-8') ?>">
                                     <?= number_format($row['total_reste_a_payer'], 0, '.', ' ') ?> FCFA
                                 </td>
                             </tr>
@@ -367,6 +367,116 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
+@media (max-width: 991.98px) {
+    .insolvables-table-wrapper {
+        overflow: visible !important;
+    }
+
+    #insolvables-table,
+    #insolvables-table tbody {
+        display: block;
+        width: 100%;
+    }
+
+    #insolvables-table {
+        min-width: 0 !important;
+        table-layout: auto;
+    }
+
+    #insolvables-table thead {
+        display: none;
+    }
+
+    #insolvables-table tbody {
+        display: grid;
+        gap: 0.75rem;
+        padding: 0.75rem;
+    }
+
+    #insolvables-table tbody tr.insolvent-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0 0.9rem;
+        min-width: 0;
+        padding: 0.5rem 0.85rem;
+        border: 1px solid var(--border-color, #e2e8f0);
+        border-radius: 10px;
+        background: var(--bg-card, #fff);
+    }
+
+    #insolvables-table tbody tr.insolvent-row td {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+        width: 100%;
+        min-width: 0;
+        padding: 0.65rem 0.1rem !important;
+        border-radius: 0;
+        text-align: left !important;
+    }
+
+    #insolvables-table tbody tr.insolvent-row td::before {
+        content: attr(data-label);
+        margin-bottom: 0.2rem;
+        color: var(--text-muted, #64748b);
+        font-size: 0.75rem;
+        font-weight: 700;
+        line-height: 1.25;
+        text-transform: uppercase;
+    }
+
+    #insolvables-table tbody tr.insolvent-row td.insolvent-identity-cell {
+        grid-column: 1 / -1;
+        padding: 0.6rem 0 0.75rem !important;
+        border-bottom: 1px solid var(--border-color, #e2e8f0);
+    }
+
+    #insolvables-table tbody tr.insolvent-row td.insolvent-identity-cell::before {
+        content: none;
+    }
+
+    #insolvables-table tbody tr.insolvent-row td.insolvent-identity-cell .fw-bold {
+        font-size: 1rem !important;
+        overflow-wrap: anywhere;
+    }
+
+    #insolvables-table tbody tr.insolvent-row td .badge,
+    #insolvables-table tbody tr.insolvent-row td .badge-premium {
+        max-width: 100%;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        text-align: left;
+    }
+
+    #insolvables-table tbody tr.insolvent-row td.insolvent-money-cell {
+        font-size: 0.95rem;
+        overflow-wrap: anywhere;
+    }
+
+    #insolvables-table tbody tr.insolvent-empty-row {
+        display: block;
+        padding: 0;
+        border: 0;
+        background: transparent;
+    }
+
+    #insolvables-table tbody tr.insolvent-empty-row td {
+        display: block;
+        text-align: center !important;
+    }
+}
+
+@media (max-width: 359.98px) {
+    #insolvables-table tbody tr.insolvent-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    #insolvables-table tbody tr.insolvent-row td.insolvent-identity-cell {
+        grid-column: 1;
+    }
+}
+
 @media print {
     .topbar, .sidebar, .topbar-glass, main.main-area header, .btn, form {
         display: none !important;

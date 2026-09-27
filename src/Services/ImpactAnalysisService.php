@@ -180,9 +180,12 @@ class ImpactAnalysisService
         $transferTargets = $stmtTargets->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($transferTargets)) {
-            $stmtAltT = $this->db->prepare("SELECT id, CONCAT(IFNULL(prenom,''), ' ', IFNULL(nom,'')) as name FROM teachers WHERE id != ? ORDER BY nom, prenom");
-            $stmtAltT->execute([$id]);
-            $transferTargets = $stmtAltT->fetchAll(PDO::FETCH_ASSOC);
+            $stmtHasTeachersTable = $this->db->query("SHOW TABLES LIKE 'teachers'");
+            if ($stmtHasTeachersTable->fetch()) {
+                $stmtAltT = $this->db->prepare("SELECT id, CONCAT(IFNULL(prenom,''), ' ', IFNULL(nom,'')) as name FROM teachers WHERE id != ? ORDER BY nom, prenom");
+                $stmtAltT->execute([$id]);
+                $transferTargets = $stmtAltT->fetchAll(PDO::FETCH_ASSOC);
+            }
         }
 
         return [

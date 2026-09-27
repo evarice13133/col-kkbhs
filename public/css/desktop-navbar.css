@@ -34,6 +34,7 @@
 .desktop-nav-menu-bar {
     display: flex;
     align-items: center;
+    min-width: 0;
     padding: 0.35rem 1rem;
     background: #f8fafc;
     border-top: 1px solid rgba(226, 232, 240, 0.7);
@@ -50,6 +51,8 @@
     display: flex;
     align-items: center;
     gap: 0.35rem;
+    min-width: 0;
+    width: 100%;
 }
 
 /* Base Nav Item Trigger Button */
@@ -92,6 +95,12 @@
 
 .nav-item-btn:hover i {
     color: var(--primary-color, #7c3aed);
+}
+
+.nav-item-btn:focus-visible {
+    outline: 2px solid var(--primary-color, #7c3aed);
+    outline-offset: 2px;
+    background-color: rgba(124, 58, 237, 0.08);
 }
 
 /* Active Page Route / Active Tab State */
@@ -368,16 +377,29 @@
 }
 
 /* Responsive adjustments */
-@media (max-width: 1200px) {
+@media (max-width: 1450px) {
+    .desktop-nav-menu-bar {
+        align-items: flex-start;
+    }
+
+    .desktop-nav-items-wrapper {
+        flex-wrap: wrap;
+        row-gap: 0.2rem;
+    }
+
+    .nav-dropdown-wrapper {
+        flex: 0 0 auto;
+    }
+
     .nav-item-btn {
         padding: 0.4rem 0.55rem;
-        font-size: 0.8rem;
+        font-size: 0.78rem;
     }
     
     .nav-item-btn span {
-        max-width: 110px;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        max-width: none;
+        overflow: visible;
+        text-overflow: clip;
         white-space: nowrap;
     }
 }
