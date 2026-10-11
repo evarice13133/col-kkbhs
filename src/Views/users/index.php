@@ -6,6 +6,7 @@ $userRoleOptions = [
     'admin' => __('role_admin'),
     'direction_academique' => __('role_direction_academique'),
     'enseignant' => __('role_enseignant'),
+    'personnel' => __('role_personnel_access'),
     'caissier' => __('role_caissier'),
     'comptable' => __('role_comptable'),
     'it_manager' => __('role_it_manager'),
@@ -46,6 +47,10 @@ if (\App\Core\Session::get('user_role') === 'admin') {
                         <?php foreach ($userRoleOptions as $roleValue => $roleLabel): ?>
                             <option value="<?= $roleValue ?>" <?= $filters['role'] === $roleValue ? 'selected' : '' ?>><?= $roleLabel ?></option>
                         <?php endforeach; ?>
+                    </select>
+                    <select name="staff" class="form-select border-0 bg-white bg-opacity-10 shadow-none py-2 text-main rounded-pill px-3 user-staff-select" aria-label="<?= htmlspecialchars((string) __('staff_filter'), ENT_QUOTES, 'UTF-8') ?>">
+                        <option value=""><?= __('all_accounts') ?></option>
+                        <option value="1" <?= ($filters['staff'] ?? null) === 1 ? 'selected' : '' ?>><?= __('staff_only') ?></option>
                     </select>
                 </div>
 
@@ -94,16 +99,25 @@ if (\App\Core\Session::get('user_role') === 'admin') {
                                         </div>
                                     </div>
                                     <div class="d-flex gap-1 align-items-center">
+                                        <?php if (\App\Core\PermissionManager::hasPermission('manage_rbac')): ?>
+                                            <a href="/pilotage/rbac?tab=users&user_id=<?= (int)$user['id'] ?>"
+                                                class="btn-icon-action text-success position-relative"
+                                                style="z-index: 10;"
+                                                title="<?= htmlspecialchars((string) __('manage_user_permissions'), ENT_QUOTES, 'UTF-8') ?>"
+                                                aria-label="<?= htmlspecialchars((string) __('manage_user_permissions'), ENT_QUOTES, 'UTF-8') ?>">
+                                                <i class="bi bi-shield-lock-fill"></i>
+                                            </a>
+                                        <?php endif; ?>
                                         <a href="/users/edit?id=<?= $user['id'] ?>"
                                             class="btn-icon-action text-primary position-relative stretched-link"
-                                            style="z-index: 10; width: 28px; height: 28px; font-size: 0.8rem;"
+                                            style="z-index: 10;"
                                             title="<?= __('edit') ?>">
                                             <i class="bi bi-pencil-fill"></i>
                                         </a>
                                         <?php if (App\Core\Session::get('user_id') != $user['id']): ?>
                                             <button type="button"
                                                 class="btn-icon-action text-danger position-relative"
-                                                style="z-index: 10; width: 28px; height: 28px; font-size: 0.8rem;"
+                                                style="z-index: 10;"
                                                 data-impact-delete="user"
                                                 data-id="<?= $user['id'] ?>"
                                                 title="<?= __('delete') ?>">
@@ -116,8 +130,13 @@ if (\App\Core\Session::get('user_role') === 'admin') {
                                 <!-- Info Badge Row -->
                                 <div class="mt-1 d-flex flex-wrap gap-1 align-items-center">
                                     <div class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-10 extra-small px-2 py-1 rounded-pill fw-bold">
-                                        <i class="bi bi-shield-lock-fill me-1"></i><?= htmlspecialchars(ucfirst((string) $user['role'])) ?>
+                                        <i class="bi bi-shield-lock-fill me-1"></i><?= htmlspecialchars($userRoleOptions[$user['role']] ?? ucfirst((string) $user['role'])) ?>
                                     </div>
+                                    <?php if (!empty($user['is_staff']) && !empty($user['job_title'])): ?>
+                                        <div class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-10 extra-small px-2 py-1 rounded-pill fw-bold text-truncate" title="<?= htmlspecialchars((string) $user['job_title'], ENT_QUOTES, 'UTF-8') ?>">
+                                            <i class="bi bi-briefcase-fill me-1"></i><?= htmlspecialchars((string) $user['job_title']) ?>
+                                        </div>
+                                    <?php endif; ?>
                                     <div class="extra-small text-muted-theme opacity-50 d-none d-md-block text-truncate" style="font-size: 0.6rem; max-width: 100px;">
                                         <?= htmlspecialchars((string) ($user['email'] ?: '')) ?>
                                     </div>
@@ -249,15 +268,21 @@ if (\App\Core\Session::get('user_role') === 'admin') {
     }
 
     .btn-icon-action {
-        width: 32px;
-        height: 32px;
+        width: 36px;
+        height: 42px;
         display: flex;
         align-items: center;
         justify-content: center;
         border-radius: 10px;
+        padding: 8px;
         background: rgba(var(--primary-rgb), 0.05);
         transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         text-decoration: none !important;
+    }
+
+    .btn-icon-action i {
+        font-size: 1.5rem !important;
+        line-height: 1;
     }
 
     .btn-icon-action:hover {
@@ -274,6 +299,12 @@ if (\App\Core\Session::get('user_role') === 'admin') {
     }
 
     @media (max-width: 767.98px) {
+        .btn-icon-action {
+            width: 40px;
+            flex: 0 0 40px;
+            height: 40px;
+        }
+
         .filter-island {
             border-radius: 24px;
             min-width: 0 !important;

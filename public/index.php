@@ -44,10 +44,10 @@ use App\Controllers\TranscriptController;
 use App\Controllers\TimetableController;
 use App\Controllers\CompetencyController;
 use App\Controllers\AccessCardController;
-
-
+use App\Controllers\StudioPhotoController;
 
 use App\Controllers\RbacController;
+use App\Controllers\WhatsAppController;
 
 Security::applyHeaders();
 
@@ -79,6 +79,15 @@ $method = $_SERVER['REQUEST_METHOD'];
 // BARRAGE DE SÉCURITÉ GLOBAL (Middleware)
 // Redirige ABSOLUMENT tout visiteur non-authentifié ou session expirée vers l'écran de connexion.
 if (!in_array($path, ['/', '/login', '/logout', '/register-teacher', '/sitemap.xml', '/contact/send', '/payments/verify']) && strpos($path, '/verify-receipt') !== 0 && !Security::validateSession()) {
+    if (strpos($path, '/api/whatsapp/') === 0) {
+        header('Content-Type: application/json; charset=utf-8');
+        http_response_code(401);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Votre session a expiré. Reconnectez-vous, puis rechargez la page WhatsApp.',
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
     header('Location: /login');
     exit;
 }
@@ -174,6 +183,63 @@ if (strpos($path, '/pilotage/rbac') === 0 || strpos($path, '/api/rbac') === 0) {
         $c->createBackup();
     } elseif ($path === '/api/rbac/backups/restore' && $method === 'POST') {
         $c->restoreBackup();
+    }
+    exit;
+}
+
+// ====== ROUTES: GESTION DES NOTIFICATIONS WHATSAPP ======
+if (strpos($path, '/pilotage/whatsapp') === 0 || strpos($path, '/api/whatsapp') === 0) {
+    if (!Session::isLogged()) {
+        if (strpos($path, '/api/whatsapp/') === 0) {
+            header('Content-Type: application/json; charset=utf-8');
+            http_response_code(401);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Connectez-vous pour continuer. Rechargez la page après la connexion.',
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+        header('Location: /login');
+        exit;
+    }
+    if ($method === 'POST' && !Session::verifyCsrfToken($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '')) {
+        header('Content-Type: application/json; charset=utf-8');
+        http_response_code(403);
+        echo json_encode(['success' => false, 'message' => 'Jeton de sécurité invalide ou expiré.']);
+        exit;
+    }
+    $c = new WhatsAppController();
+
+    if ($path !== '/api/whatsapp/module-status' || $method !== 'POST') {
+        $c->requireModuleAccess(strpos($path, '/api/whatsapp') === 0);
+    }
+
+    if ($path === '/pilotage/whatsapp') {
+        $c->index();
+    } elseif ($path === '/api/whatsapp/module-status' && $method === 'POST') {
+        $c->updateModuleStatus();
+    } elseif ($path === '/api/whatsapp/config' && $method === 'GET') {
+        $c->getConfig();
+    } elseif ($path === '/api/whatsapp/config' && $method === 'POST') {
+        $c->saveConfig();
+    } elseif ($path === '/api/whatsapp/students' && $method === 'GET') {
+        $c->searchStudents();
+    } elseif ($path === '/api/whatsapp/filters' && $method === 'GET') {
+        $c->targetOptions();
+    } elseif ($path === '/api/whatsapp/targets' && $method === 'POST') {
+        $c->searchTargets();
+    } elseif ($path === '/api/whatsapp/preview' && $method === 'POST') {
+        $c->previewRecipients();
+    } elseif ($path === '/api/whatsapp/test' && $method === 'POST') {
+        $c->sendTest();
+    } elseif ($path === '/api/whatsapp/verify' && $method === 'POST') {
+        $c->verifyMetaConnection();
+    } elseif ($path === '/api/whatsapp/send' && $method === 'POST') {
+        $c->sendBulk();
+    } elseif ($path === '/api/whatsapp/consent' && $method === 'POST') {
+        $c->saveConsent();
+    } elseif ($path === '/api/whatsapp/logs' && $method === 'GET') {
+        $c->logs();
     }
     exit;
 }
@@ -338,6 +404,23 @@ elseif (strpos($path, '/students') === 0) {
         $c->restore($_GET['id'] ?? 0);
     } else {
         header('Location: /students');
+        exit;
+    }
+} elseif (strpos($path, '/studio-photo') === 0) {
+    if (!Session::isLogged()) {
+        header('Location: /login');
+        exit;
+    }
+
+    $c = new StudioPhotoController();
+    if ($path === '/studio-photo') {
+        $c->index();
+    } elseif ($path === '/studio-photo/students' && $method === 'GET') {
+        $c->students();
+    } elseif ($path === '/studio-photo/save' && $method === 'POST') {
+        $c->savePhoto();
+    } else {
+        header('Location: /studio-photo');
         exit;
     }
 }
@@ -616,6 +699,12 @@ elseif (strpos($path, '/teachers') === 0) {
         $c->index();
     elseif ($path === '/access-cards/print')
         $c->print();
+} elseif (strpos($path, '/identity-cards') === 0) {
+    $c = new AccessCardController();
+    if ($path === '/identity-cards')
+        $c->index(true);
+    elseif ($path === '/identity-cards/print')
+        $c->print(true);
 } elseif (strpos($path, '/honors') === 0) {
     if (!Session::isLogged()) {
         header('Location: /login');
@@ -846,8 +935,8 @@ elseif (strpos($path, '/payments') === 0) {
 }
 
 elseif (strpos($path, '/discounts') === 0) {
-    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
-        header('Location: /');
+    if (!Session::isLogged()) {
+        header('Location: /login');
         exit;
     }
     $c = new DiscountController();
@@ -862,8 +951,8 @@ elseif (strpos($path, '/discounts') === 0) {
 }
 
 elseif (strpos($path, '/discount_types') === 0) {
-    if (!Session::isLogged() || !in_array(Session::get('user_role'), ['superadmin', 'admin', 'caissier', 'comptable'])) {
-        header('Location: /');
+    if (!Session::isLogged()) {
+        header('Location: /login');
         exit;
     }
     $c = new DiscountTypeController();

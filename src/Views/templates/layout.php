@@ -9,6 +9,15 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
 
 // Load settings for logo and school identity
 $db = \App\Core\Database::getInstance()->getConnection();
+$whatsappTableExists = $db->query("SHOW TABLES LIKE 'whatsapp_settings'")->fetchColumn() !== false;
+$whatsappModuleEnabled = true;
+if ($whatsappTableExists) {
+    $whatsappModuleStmt = $db->query(
+        "SELECT setting_value FROM whatsapp_settings WHERE setting_key = 'whatsapp_module_enabled' LIMIT 1"
+    );
+    $whatsappModuleValue = $whatsappModuleStmt->fetchColumn();
+    $whatsappModuleEnabled = (string) $whatsappModuleValue !== '0';
+}
 $settingsStore = new \App\Services\SettingsStore($db);
 $logoManager = \App\Core\LogoManager::getInstance($db);
 $school_name = $settingsStore->get('school_name', 'NotesMaster');
@@ -75,7 +84,15 @@ $isUrlActive = function ($itemUrl) use ($current_path, $current_uri) {
     return true;
 };
 
-$isItemAllowed = function ($item) use ($user_role) {
+$isItemAllowed = function ($item) use ($user_role, $whatsappModuleEnabled) {
+    if (
+        ($item['url'] ?? '') === '/pilotage/whatsapp'
+        && !$whatsappModuleEnabled
+        && $user_role !== 'superadmin'
+    ) {
+        return false;
+    }
+
     if ($user_role === 'enseignant') {
         $restrictedUrls = ['/students/create', '/students/non-inscrits', '/classes', '/sequences', '/subjects', '/subject-groups', '/bulletins/discipline', '/users', '/users/caissiers', '/teachers', '/payments', '/discounts', '/scholarships', '/discount_types', '/financial-history', '/expenses', '/expenses/categories', '/expenses/audit', '/bulletins', '/honors', '/proces-verbal', '/transcripts', '/pilotage/rbac', '/academic_years', '/teaching_types', '/levels', '/cycles', '/sections', '/departments', '/settings'];
         if (isset($item['url']) && in_array($item['url'], $restrictedUrls, true)) {
@@ -131,13 +148,14 @@ $ribbon_structure = [
     ],
     [
         'id' => 'tab-pilotage',
-        'title' => __('centre_de_pilotage'),
+        'title' => __('nav_title_pilotage'),
         'icon' => 'bi-sliders2',
         'groups' => [
             [
                 'title' => __('layout_security_rights'),
                 'items' => [
                     ['icon' => 'bi-shield-lock-fill', 'label' => __('layout_permissions_management'), 'url' => '/pilotage/rbac', 'permission' => 'manage_rbac', 'roles' => ['superadmin', 'admin', 'it_manager'], 'desc' => __('layout_permissions_management_desc')],
+                    ['icon' => 'bi-whatsapp', 'label' => 'WhatsApp', 'url' => '/pilotage/whatsapp', 'permission' => 'manage_settings', 'roles' => ['superadmin', 'admin', 'it_manager'], 'desc' => 'Notifications WhatsApp sécurisées et contrôlées.'],
                 ]
             ],
             [
@@ -163,7 +181,7 @@ $ribbon_structure = [
     ],
     [
         'id' => 'tab-timetables',
-        'title' => __('timetables_menu'),
+        'title' => __('nav_title_timetables'),
         'icon' => 'bi-calendar3-week',
         'groups' => [
             [
@@ -181,7 +199,7 @@ $ribbon_structure = [
     ],
     [
         'id' => 'tab-rh',
-        'title' => __('ressources_humaines'),
+        'title' => __('nav_title_students'),
         'icon' => 'bi-people',
         'groups' => [
             [
@@ -191,13 +209,14 @@ $ribbon_structure = [
                     ['icon' => 'bi-people', 'label' => __('registered_students_menu'), 'url' => '/students', 'permission' => 'view_students', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => __('layout_desc_registered_students')],
                     ['icon' => 'bi-person-dash', 'label' => __('unregistered_students_menu'), 'url' => '/students/non-inscrits', 'permission' => 'view_students', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => __('layout_desc_unregistered_students')],
                     ['icon' => 'bi-person-check', 'label' => __('my_registrations_menu'), 'url' => '/students?only_mine=1', 'permission' => 'view_students', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => __('layout_desc_my_registrations')],
+                    ['icon' => 'bi-camera', 'label' => __('studio_photo_title'), 'url' => '/studio-photo', 'permission' => 'manage_students', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => __('studio_photo_nav_description')],
                 ]
             ]
         ]
     ],
     [
         'id' => 'tab-users',
-        'title' => __('users_management_menu'),
+        'title' => __('nav_title_users'),
         'icon' => 'bi-person-gear',
         'groups' => [
             [
@@ -212,7 +231,7 @@ $ribbon_structure = [
     ],
     [
         'id' => 'tab-finances',
-        'title' => __('financial_management'),
+        'title' => __('nav_title_tuition'),
         'icon' => 'bi-wallet2',
         'groups' => [
             [
@@ -233,6 +252,13 @@ $ribbon_structure = [
                     ['icon' => 'bi-tags', 'label' => __('discount_types_title'), 'url' => '/discount_types', 'permission' => 'manage_discounts', 'roles' => ['superadmin', 'admin', 'caissier', 'comptable'], 'desc' => __('layout_desc_discount_types')],
                 ]
             ],
+        ]
+    ],
+    [
+        'id' => 'tab-expenses',
+        'title' => __('nav_title_expenses'),
+        'icon' => 'bi-folder2-open',
+        'groups' => [
             [
                 'title' => __('expenses_menu'),
                 'items' => [
@@ -246,7 +272,7 @@ $ribbon_structure = [
     ],
     [
         'id' => 'tab-notes',
-        'title' => __('gestion_des_notes'),
+        'title' => __('nav_title_grades'),
         'icon' => 'bi-journal-check',
         'groups' => [
             [
@@ -273,6 +299,7 @@ $ribbon_structure = [
                 'items' => [
                     ['icon' => 'bi-file-earmark-pdf', 'label' => __('bulletins'), 'url' => '/bulletins', 'permission' => 'manage_bulletins', 'roles' => ['superadmin', 'admin'], 'desc' => __('layout_desc_bulletins')],
                     ['icon' => 'bi-person-vcard', 'label' => __('access_cards'), 'url' => '/access-cards', 'permission' => 'manage_bulletins', 'roles' => ['superadmin', 'admin'], 'desc' => __('layout_desc_access_cards')],
+                    ['icon' => 'bi-person-badge', 'label' => __('identity_cards'), 'url' => '/identity-cards', 'permission' => 'manage_bulletins', 'roles' => ['superadmin', 'admin'], 'desc' => __('layout_desc_identity_cards')],
                     ['icon' => 'bi-calendar3-week', 'label' => __('layout_timetables_print'), 'url' => '/timetables/print', 'permission' => 'view_timetables', 'desc' => __('layout_desc_timetables_print')],
                     ['icon' => 'bi-award', 'label' => __('honor_roll_title'), 'url' => '/honors', 'permission' => 'manage_bulletins', 'roles' => ['superadmin', 'admin'], 'desc' => __('layout_desc_honor_roll')],
                     ['icon' => 'bi-file-earmark-text', 'label' => __('proces_verbaux'), 'url' => '/proces-verbal', 'permission' => 'manage_bulletins', 'roles' => ['superadmin', 'admin'], 'desc' => __('layout_desc_proces_verbaux')],
@@ -328,8 +355,34 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script>
         (function () {
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            document.documentElement.setAttribute('data-theme', savedTheme);
+            const mediaQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+            const getPreferredTheme = () => {
+                const savedTheme = localStorage.getItem('theme');
+                if (savedTheme === 'light' || savedTheme === 'dark') {
+                    return savedTheme;
+                }
+                return mediaQuery && mediaQuery.matches ? 'dark' : 'light';
+            };
+
+            const applyTheme = () => {
+                document.documentElement.setAttribute('data-theme', getPreferredTheme());
+            };
+
+            applyTheme();
+
+            if (mediaQuery && typeof mediaQuery.addEventListener === 'function') {
+                mediaQuery.addEventListener('change', () => {
+                    if (!localStorage.getItem('theme')) {
+                        applyTheme();
+                    }
+                });
+            } else if (mediaQuery && typeof mediaQuery.addListener === 'function') {
+                mediaQuery.addListener(() => {
+                    if (!localStorage.getItem('theme')) {
+                        applyTheme();
+                    }
+                });
+            }
         })();
 
         // --- TRANSLATIONS, COMMANDS & ONBOARDING DATA FOR JAVASCRIPT ---
@@ -762,6 +815,11 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                             <?php if (\App\Core\PermissionManager::hasPermission('manage_students')): ?>
                                 <a href="/students/create" class="ribbon-qat-btn <?= strpos($current_path, '/students/create') === 0 ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-html="true" title="<div class='tooltip-rich-title'><i class='bi bi-person-plus'></i> <?= addslashes((string) __('register_student_menu')) ?></div><div class='tooltip-rich-desc'><?= addslashes((string) __('layout_desc_register_student')) ?></div>">
                                     <i class="bi bi-person-plus"></i>
+                                </a>
+                            <?php endif; ?>
+                            <?php if (\App\Core\PermissionManager::hasPermission('manage_students')): ?>
+                                <a href="/studio-photo" class="ribbon-qat-btn square-icon-btn <?= strpos($current_path, '/studio-photo') === 0 ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-html="true" title="<div class='tooltip-rich-title'><i class='bi bi-camera'></i> <?= h(__('studio_photo_title')) ?></div><div class='tooltip-rich-desc'><?= h(__('studio_photo_nav_description')) ?></div>">
+                                    <i class="bi bi-camera"></i>
                                 </a>
                             <?php endif; ?>
                             <?php if (\App\Core\PermissionManager::hasPermission('manage_bulletins')): ?>

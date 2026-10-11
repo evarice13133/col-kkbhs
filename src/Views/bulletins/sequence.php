@@ -313,7 +313,7 @@ if (isset($styleOnly)) {
         </div>
 
         <!-- E. RÉSULTATS GLOBAUX, RÉCAPITULATIF ET DÉCISION DU CONSEIL (TABLEAU UNIFIÉ À 3 COLONNES HORIZONTALES) -->
-        <div class="grades-table-wrap">
+        <div class="grades-table-wrap legacy-summary-table">
             <table class="grades-table-header">
                 <colgroup>
                     <col style="width:22%;">

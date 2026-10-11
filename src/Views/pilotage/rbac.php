@@ -323,6 +323,169 @@ ob_start();
 </div>
 
 <style>
+.rbac-container {
+    --rbac-surface: var(--bg-card, var(--bs-body-bg, #ffffff));
+    --rbac-raised-surface: var(--bg-body, var(--bs-tertiary-bg, #f8fafc));
+    --rbac-text: var(--text-main, var(--bs-body-color, #212529));
+    --rbac-muted: var(--text-muted, #64748b);
+    --rbac-border: var(--border-color, var(--bs-border-color, #dee2e6));
+    color: var(--rbac-text);
+}
+
+.rbac-container .card,
+.rbac-container .accordion-item {
+    background-color: var(--rbac-surface);
+    border-color: var(--rbac-border) !important;
+    color: var(--rbac-text);
+}
+
+.rbac-container .bg-body,
+.rbac-container .bg-white {
+    background-color: var(--rbac-surface) !important;
+}
+
+.rbac-container .bg-body-tertiary,
+.rbac-container .bg-light {
+    background-color: var(--rbac-raised-surface) !important;
+}
+
+.rbac-container .text-body,
+.rbac-container .text-dark {
+    color: var(--rbac-text) !important;
+}
+
+.rbac-container .text-secondary,
+.rbac-container .text-muted {
+    color: var(--rbac-muted) !important;
+}
+
+.rbac-container .bg-secondary-subtle {
+    background-color: var(--rbac-raised-surface) !important;
+    color: var(--rbac-text) !important;
+}
+
+.rbac-container .custom-m365-tabs .nav-link.active {
+    background-color: var(--rbac-surface) !important;
+    color: var(--bs-primary) !important;
+}
+
+.rbac-container .border,
+.rbac-container .border-bottom,
+.rbac-container .input-group-text {
+    border-color: var(--rbac-border) !important;
+}
+
+.rbac-container .form-control,
+.rbac-container .form-select,
+.rbac-container .input-group-text {
+    background-color: var(--rbac-surface) !important;
+    color: var(--rbac-text) !important;
+    border-color: var(--rbac-border) !important;
+}
+
+.rbac-container .form-control:focus,
+.rbac-container .form-select:focus {
+    background-color: var(--rbac-surface) !important;
+    color: var(--rbac-text) !important;
+    border-color: var(--bs-primary) !important;
+}
+
+.rbac-container .accordion-button {
+    background-color: var(--rbac-raised-surface) !important;
+    color: var(--rbac-text) !important;
+}
+
+.rbac-container .accordion-button:not(.collapsed) {
+    background-color: var(--rbac-surface) !important;
+    color: var(--rbac-text) !important;
+}
+
+.rbac-container .accordion-button::after {
+    filter: var(--rbac-accordion-icon-filter, none);
+}
+
+.rbac-container .table {
+    --bs-table-color: var(--rbac-text);
+    --bs-table-bg: var(--rbac-surface);
+    --bs-table-border-color: var(--rbac-border);
+    color: var(--rbac-text);
+}
+
+.rbac-container .table-light {
+    --bs-table-color: var(--rbac-text);
+    --bs-table-bg: var(--rbac-raised-surface);
+    --bs-table-border-color: var(--rbac-border);
+}
+
+.rbac-container .table > :not(caption) > * > * {
+    background-color: var(--rbac-surface);
+    border-color: var(--rbac-border);
+    color: var(--rbac-text);
+}
+
+.rbac-container .table-light > * > * {
+    background-color: var(--rbac-raised-surface) !important;
+}
+
+.rbac-container .list-group-item {
+    background-color: var(--rbac-surface);
+    border-color: var(--rbac-border);
+    color: var(--rbac-text);
+}
+
+.rbac-container .perm-card-checkbox {
+    background-color: var(--rbac-surface);
+    border-color: var(--rbac-border);
+    color: var(--rbac-text);
+}
+
+.rbac-container .perm-card-checkbox.active {
+    background-color: var(--primary-soft, rgba(59, 130, 246, 0.08));
+}
+
+[data-theme="dark"] .rbac-container {
+    --rbac-surface: #0f172a;
+    --rbac-raised-surface: #111c30;
+    --rbac-text: #f8fafc;
+    --rbac-muted: #a8b5c7;
+    --rbac-border: #334155;
+    --rbac-accordion-icon-filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+[data-theme="dark"] .rbac-container .table-hover tbody tr:hover > * {
+    background-color: #172338;
+}
+
+[data-theme="dark"] .rbac-container .alert-primary-subtle {
+    background-color: #172554;
+    color: #dbeafe;
+}
+
+[data-theme="dark"] .rbac-container .alert-info {
+    background-color: #082f49;
+    color: #cffafe;
+}
+
+[data-theme="dark"] .rbac-container .bg-primary-subtle {
+    background-color: #1e3a8a !important;
+    color: #bfdbfe !important;
+}
+
+[data-theme="dark"] .rbac-container .bg-success-subtle {
+    background-color: #064e3b !important;
+    color: #a7f3d0 !important;
+}
+
+[data-theme="dark"] .rbac-container .bg-secondary-subtle {
+    background-color: #334155 !important;
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .rbac-container .badge-critical-low { color: #34d399; }
+[data-theme="dark"] .rbac-container .badge-critical-medium { color: #fbbf24; }
+[data-theme="dark"] .rbac-container .badge-critical-high { color: #f87171; }
+[data-theme="dark"] .rbac-container .badge-critical-critical { color: #c4b5fd; }
+
 .rbac-header {
     background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(37, 99, 235, 0.02) 100%);
     border-left: 4px solid var(--bs-primary) !important;
@@ -376,6 +539,15 @@ document.addEventListener('DOMContentLoaded', function() {
     loadAuditLogs();
     loadBackupsList();
 
+    const queryParams = new URLSearchParams(window.location.search);
+    if (queryParams.get('tab') === 'users') {
+        bootstrap.Tab.getOrCreateInstance(document.getElementById('users-tab')).show();
+        const selectedUserId = parseInt(queryParams.get('user_id') || '0', 10);
+        if (selectedUserId > 0) {
+            selectUserPermissions(selectedUserId);
+        }
+    }
+
     // Event Listeners Filtres Catalogue
     document.getElementById('search-perm').addEventListener('input', renderCatalogTree);
     document.getElementById('filter-module').addEventListener('change', renderCatalogTree);
@@ -396,6 +568,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     state.permissions = data.data;
                     document.getElementById('count-catalog-perms').textContent = state.permissions.length;
                     renderCatalogTree();
+                    if (state.selectedUserId) renderUserPermissionsList();
                 }
             });
     }
@@ -793,6 +966,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const uId = parseInt(this.value);
         if (!uId) return;
 
+        selectUserPermissions(uId);
+    });
+
+    function selectUserPermissions(uId) {
         fetch(`/api/rbac/users/permissions?user_id=${uId}`)
             .then(res => res.json())
             .then(data => {
@@ -807,9 +984,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     document.getElementById('user-override-container').style.display = 'block';
                     renderUserPermissionsList();
+                    const select = document.getElementById('select-user-result');
+                    if (!Array.from(select.options).some(option => parseInt(option.value, 10) === uId)) {
+                        const option = document.createElement('option');
+                        option.value = String(uId);
+                        option.textContent = `${data.user.name} (${data.user.role_name || data.user.role})`;
+                        select.appendChild(option);
+                    }
+                    select.value = String(uId);
                 }
             });
-    });
+    }
 
     function renderUserPermissionsList() {
         const container = document.getElementById('user-permissions-list');

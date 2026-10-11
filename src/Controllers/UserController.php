@@ -36,7 +36,8 @@ class UserController
         $exportColumns = ['ID', 'Nom', 'Prenom', 'Login', 'Email', 'Role'];
         $exportRows = array_map(function ($user) {
             //mapping des utilisateurs
-            return [$user['id'], $user['nom'], $user['prenom'], $user['username'], $user['email'] ?: 'N/A', ucfirst($user['role'])];
+            $roleLabel = $user['role'] === 'personnel' ? \__('role_personnel') : ucfirst($user['role']);
+            return [$user['id'], $user['nom'], $user['prenom'], $user['username'], $user['email'] ?: 'N/A', $roleLabel];
         }, $users);
 
         include __DIR__ . '/../Views/templates/export.php';
@@ -63,10 +64,11 @@ class UserController
             $username = trim($_POST['username'] ?? '');
             $email = trim($_POST['email'] ?? '');
             $password = $_POST['password'] ?? '';
-            $role = $_POST['role'] ?? 'enseignant';
-            $formData = compact('nom', 'prenom', 'username', 'email', 'role');
+            $role = is_string($_POST['role'] ?? null) ? $_POST['role'] : 'enseignant';
+            $personnelData = $this->getPersonnelDataFromRequest($role);
+            $formData = array_merge(compact('nom', 'prenom', 'username', 'email', 'role'), $personnelData);
             //verification de la permission
-            if (Session::get('user_role') === 'admin' && in_array($role, ['admin', 'superadmin'], true)) {
+            if (Session::get('user_role') === 'admin' && in_array($role, ['superadmin'], true)) {
                 $error = \__('admin_cannot_manage_admin_roles');
                 $errorField = 'role';
                 include __DIR__ . '/../Views/users/create.php';
@@ -80,11 +82,18 @@ class UserController
                 return;
             }
 
+            if ($personnelData['is_staff'] && ($validationError = $this->validatePersonnelData($personnelData))) {
+                $error = \__($validationError['message']);
+                $errorField = $validationError['field'];
+                include __DIR__ . '/../Views/users/create.php';
+                return;
+            }
+
             $user = new User($nom, $prenom, $username, $email ?: null, $password, $role);
             $user->setPassword($password);
 
             try {
-                $stmt = $this->db->prepare("INSERT INTO users (nom, prenom, username, email, password, role) VALUES (?, ?, ?, ?, ?, ?)");
+                $stmt = $this->db->prepare("INSERT INTO users (nom, prenom, username, email, password, role, is_staff, cni_number, job_title, base_salary, nui_number) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 $stmt->execute([
                     $user->getNom(),
                     $user->getPrenom(),
@@ -92,13 +101,22 @@ class UserController
                     $user->getEmail(),
                     $user->getPassword(),
                     $user->getRole(),
+                    $personnelData['is_staff'],
+                    $personnelData['cni_number'],
+                    $personnelData['job_title'],
+                    $personnelData['base_salary'],
+                    $personnelData['nui_number'],
                 ]);
                 header("Location: /users");
                 exit;
             } catch (\PDOException $e) {
-                $isDuplicate = strpos($e->getMessage(), 'Duplicate') !== false;
-                $error = $isDuplicate ? \__('username_taken') : \__('internal_db_error');
-                $errorField = $isDuplicate ? 'username' : '';
+                $duplicate = $this->getDuplicateField($e);
+                $error = $duplicate === 'cni_number'
+                    ? \__('staff_cni_taken')
+                    : ($duplicate === 'nui_number'
+                        ? \__('staff_nui_taken')
+                        : (strpos($e->getMessage(), 'Duplicate') !== false ? \__('username_taken') : \__('internal_db_error')));
+                $errorField = $duplicate ?? (strpos($e->getMessage(), 'Duplicate') !== false ? 'username' : '');
                 include __DIR__ . '/../Views/users/create.php';
                 return;
             }
@@ -116,8 +134,8 @@ class UserController
             exit;
         }
 
-        // Un admin ne peut pas consulter ou modifier des comptes admin privilégiés.
-        if (Session::get('user_role') === 'admin' && in_array($user['role'], ['admin', 'superadmin'], true)) {
+        // Un admin ne peut pas consulter ni modifier le compte Super Administrateur.
+        if (Session::get('user_role') === 'admin' && $user['role'] === 'superadmin') {
             header("Location: /users");
             exit;
         }
@@ -139,20 +157,37 @@ class UserController
             $username = trim($_POST['username'] ?? '');
             $email = trim($_POST['email'] ?? '');
             $password = $_POST['password'] ?? '';
-            $role = $_POST['role'] ?? 'enseignant';
+            $role = is_string($_POST['role'] ?? null) ? $_POST['role'] : 'enseignant';
 
             // Un admin ne peut pas attribuer ni modifier les rôles admin privilégiés.
-            $stmt = $this->db->prepare("SELECT role FROM users WHERE id = ?");
+            $stmt = $this->db->prepare("SELECT * FROM users WHERE id = ?");
             $stmt->execute([$id]);
             $currentUser = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$currentUser) {
+                header("Location: /users");
+                exit;
+            }
 
-            if (Session::get('user_role') === 'admin' && (
-                in_array($role, ['admin', 'superadmin'], true)
-                || ($currentUser && in_array($currentUser['role'], ['admin', 'superadmin'], true))
-            )) {
+            if (Session::get('user_role') === 'admin' && in_array($role, ['superadmin'], true)) {
                 Session::setFlash('error', \__('admin_cannot_manage_admin_roles'));
                 header("Location: /users");
                 exit;
+            }
+
+            if (Session::get('user_role') === 'admin' && $currentUser && $currentUser['role'] === 'superadmin') {
+                Session::setFlash('error', \__('admin_cannot_manage_admin_roles'));
+                header("Location: /users");
+                exit;
+            }
+
+            $personnelData = $this->getPersonnelDataFromRequest($role);
+            $submittedUser = array_merge($currentUser, compact('nom', 'prenom', 'username', 'email', 'role'), $personnelData);
+            if ($personnelData['is_staff'] && ($validationError = $this->validatePersonnelData($personnelData, (int)$id))) {
+                Session::setFlash('error', \__($validationError['message']));
+                $errorField = $validationError['field'];
+                $user = $submittedUser;
+                include __DIR__ . '/../Views/users/edit.php';
+                return;
             }
 
             try {
@@ -162,11 +197,11 @@ class UserController
                     $dummyUser->setPassword($password);
                     $hashedPassword = $dummyUser->getPassword();
 
-                    $stmt = $this->db->prepare("UPDATE users SET nom = ?, prenom = ?, username = ?, email = ?, password = ?, role = ? WHERE id = ?");
-                    $stmt->execute([$nom, $prenom, $username, $email ?: null, $hashedPassword, $role, $id]);
+                    $stmt = $this->db->prepare("UPDATE users SET nom = ?, prenom = ?, username = ?, email = ?, password = ?, role = ?, is_staff = ?, cni_number = ?, job_title = ?, base_salary = ?, nui_number = ? WHERE id = ?");
+                    $stmt->execute([$nom, $prenom, $username, $email ?: null, $hashedPassword, $role, $personnelData['is_staff'], $personnelData['cni_number'], $personnelData['job_title'], $personnelData['base_salary'], $personnelData['nui_number'], $id]);
                 } else {
-                    $stmt = $this->db->prepare("UPDATE users SET nom = ?, prenom = ?, username = ?, email = ?, role = ? WHERE id = ?");
-                    $stmt->execute([$nom, $prenom, $username, $email ?: null, $role, $id]);
+                    $stmt = $this->db->prepare("UPDATE users SET nom = ?, prenom = ?, username = ?, email = ?, role = ?, is_staff = ?, cni_number = ?, job_title = ?, base_salary = ?, nui_number = ? WHERE id = ?");
+                    $stmt->execute([$nom, $prenom, $username, $email ?: null, $role, $personnelData['is_staff'], $personnelData['cni_number'], $personnelData['job_title'], $personnelData['base_salary'], $personnelData['nui_number'], $id]);
                 }
 
                 $stmt = $this->db->prepare("SELECT role FROM users WHERE id = ?");
@@ -181,6 +216,14 @@ class UserController
                 }
                 exit;
             } catch (\PDOException $e) {
+                $duplicate = $this->getDuplicateField($e);
+                if ($duplicate === 'cni_number' || $duplicate === 'nui_number') {
+                    Session::setFlash('error', \__($duplicate === 'cni_number' ? 'staff_cni_taken' : 'staff_nui_taken'));
+                    $errorField = $duplicate;
+                    $user = $submittedUser;
+                    include __DIR__ . '/../Views/users/edit.php';
+                    return;
+                }
                 Session::setFlash('error', strpos($e->getMessage(), 'Duplicate') !== false ? \__('username_taken') : \__('internal_db_error'));
                 header("Location: /users/edit?id=" . $id);
                 exit;
@@ -223,15 +266,16 @@ class UserController
     {
         $search = trim($_GET['q'] ?? '');
         $roleFilter = trim($_GET['role'] ?? '');
+        $staffFilter = isset($_GET['staff']) && $_GET['staff'] === '1' ? 1 : null;
 
         if (Session::get('user_role') === 'admin' && in_array($roleFilter, ['superadmin', 'admin'], true)) {
             $roleFilter = '';
         }
 
         if (Session::get('user_role') === 'admin') {
-            $sql = "SELECT id, nom, prenom, username, email, role FROM users WHERE role NOT IN ('superadmin', 'admin')";
+            $sql = "SELECT id, nom, prenom, username, email, role, is_staff, job_title FROM users WHERE role NOT IN ('superadmin', 'admin')";
         } else {
-            $sql = "SELECT id, nom, prenom, username, email, role FROM users WHERE 1=1";
+            $sql = "SELECT id, nom, prenom, username, email, role, is_staff, job_title FROM users WHERE 1=1";
         }
 
         $params = [];
@@ -249,12 +293,82 @@ class UserController
             $sql .= " AND role = ?";
             $params[] = $roleFilter;
         }
+        if ($staffFilter !== null) {
+            $sql .= " AND is_staff = ?";
+            $params[] = $staffFilter;
+        }
 
         $sql .= " ORDER BY nom ASC, prenom ASC";
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
 
-        return [$stmt->fetchAll(PDO::FETCH_ASSOC), ['q' => $search, 'role' => $roleFilter]];
+        return [$stmt->fetchAll(PDO::FETCH_ASSOC), ['q' => $search, 'role' => $roleFilter, 'staff' => $staffFilter]];
+    }
+
+    private function getPersonnelDataFromRequest(string $role): array
+    {
+        $isStaff = isset($_POST['is_staff']) && $_POST['is_staff'] === '1';
+        if ($role === 'personnel') {
+            $isStaff = true;
+        }
+        if (!$isStaff) {
+            return [
+                'is_staff' => 0,
+                'cni_number' => null,
+                'job_title' => null,
+                'base_salary' => null,
+                'nui_number' => null,
+            ];
+        }
+
+        return [
+            'is_staff' => 1,
+            'cni_number' => trim((string)($_POST['cni_number'] ?? '')),
+            'job_title' => trim((string)($_POST['job_title'] ?? '')),
+            'base_salary' => trim((string)($_POST['base_salary'] ?? '')),
+            'nui_number' => trim((string)($_POST['nui_number'] ?? '')),
+        ];
+    }
+
+    private function validatePersonnelData(array $data, ?int $userId = null): ?array
+    {
+        foreach (['cni_number', 'job_title', 'base_salary', 'nui_number'] as $field) {
+            if ($data[$field] === '') {
+                return ['message' => 'staff_required_fields', 'field' => $field];
+            }
+        }
+
+        if (!is_numeric($data['base_salary']) || (float)$data['base_salary'] < 0) {
+            return ['message' => 'staff_invalid_salary', 'field' => 'base_salary'];
+        }
+
+        foreach (['cni_number' => 'staff_cni_taken', 'nui_number' => 'staff_nui_taken'] as $field => $message) {
+            $sql = "SELECT id FROM users WHERE {$field} = ?";
+            $params = [$data[$field]];
+            if ($userId !== null) {
+                $sql .= " AND id <> ?";
+                $params[] = $userId;
+            }
+            $stmt = $this->db->prepare($sql . " LIMIT 1");
+            $stmt->execute($params);
+            if ($stmt->fetchColumn()) {
+                return ['message' => $message, 'field' => $field];
+            }
+        }
+
+        return null;
+    }
+
+    private function getDuplicateField(\PDOException $exception): ?string
+    {
+        $message = strtolower($exception->getMessage());
+        if (strpos($message, 'uq_users_cni_number') !== false) {
+            return 'cni_number';
+        }
+        if (strpos($message, 'uq_users_nui_number') !== false) {
+            return 'nui_number';
+        }
+        return null;
     }
 
     public function createCaissier()

@@ -141,7 +141,14 @@ class AuthController
 
             // Échec de l'authentification
             \App\Core\Security::log("Échec de connexion pour l'utilisateur : $username");
-            $error = "Identifiant ou mot de passe incorrect.";
+
+            $remainingAttempts = \App\Core\Security::getRemainingAttempts('login', 5, 300);
+            if ($remainingAttempts > 0) {
+                $error = "Identifiant ou mot de passe incorrect. Il vous reste {$remainingAttempts} tentative(s) avant blocage.";
+            } else {
+                $error = "Trop de tentatives de connexion. Veuillez patienter 5 minutes.";
+            }
+
             $this->renderLoginView($error);
         }
     }

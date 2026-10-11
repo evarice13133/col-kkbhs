@@ -81,9 +81,10 @@ ob_start();
                                 </div>
                             </div>
                             <div class="col-md-6 mt-0">
-                                <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('user_role_label') ?></label>
-                                <select name="role" class="form-select premium-select">
+                                <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('access_profile') ?></label>
+                                <select name="role" id="user-create-role" class="form-select premium-select">
                                     <option value="enseignant" <?= ($formData['role'] ?? 'enseignant') === 'enseignant' ? 'selected' : '' ?>><?= __('teacher_classic') ?></option>
+                                    <option value="personnel" <?= ($formData['role'] ?? '') === 'personnel' ? 'selected' : '' ?>><?= __('role_personnel_access') ?></option>
                                     <option value="direction_academique" <?= ($formData['role'] ?? '') === 'direction_academique' ? 'selected' : '' ?>><?= __('direction_academique_role_label') ?></option>
                                     <option value="caissier" <?= ($formData['role'] ?? '') === 'caissier' ? 'selected' : '' ?>><?= __('role_caissier_option') ?></option>
                                     <option value="comptable" <?= ($formData['role'] ?? '') === 'comptable' ? 'selected' : '' ?>><?= __('role_comptable_option') ?></option>
@@ -95,8 +96,36 @@ ob_start();
                                         <option value="superadmin"><?= __('superadmin_max') ?></option>
                                     <?php endif; ?>
                                 </select>
+                                <div class="form-text"><?= __('user_role_access_help') ?></div>
                             </div>
                         </div>
+
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" name="is_staff" id="user-create-is-staff" value="1" <?= !empty($formData['is_staff']) || in_array($formData['role'] ?? 'enseignant', ['enseignant', 'personnel'], true) ? 'checked' : '' ?>>
+                            <label class="form-check-label fw-semibold" for="user-create-is-staff"><?= __('user_is_staff') ?></label>
+                        </div>
+                        <fieldset id="user-create-personnel-fields" class="row g-3 mb-4" <?= !empty($formData['is_staff']) || in_array($formData['role'] ?? 'enseignant', ['enseignant', 'personnel'], true) ? '' : 'hidden disabled' ?>>
+                            <legend class="col-12 border-bottom border-theme-light pb-2 mb-2">
+                                <span class="fw-black text-primary text-uppercase letter-spacing-1" style="font-size: 0.75rem;"><?= __('staff_information') ?></span>
+                            </legend>
+                            <div class="col-md-6 mt-0">
+                                <label for="user-create-cni" class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('staff_cni_number') ?></label>
+                                <input id="user-create-cni" type="text" name="cni_number" class="form-control premium-input <?= $errorField === 'cni_number' ? 'is-invalid' : '' ?>" maxlength="64" value="<?= htmlspecialchars((string) ($formData['cni_number'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required>
+                            </div>
+                            <div class="col-md-6 mt-0">
+                                <label for="user-create-nui" class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('staff_nui_number') ?></label>
+                                <input id="user-create-nui" type="text" name="nui_number" class="form-control premium-input <?= $errorField === 'nui_number' ? 'is-invalid' : '' ?>" maxlength="64" value="<?= htmlspecialchars((string) ($formData['nui_number'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required>
+                                <div class="form-text"><?= __('staff_nui_help') ?></div>
+                            </div>
+                            <div class="col-md-6 mt-0">
+                                <label for="user-create-job-title" class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('staff_job_title') ?></label>
+                                <input id="user-create-job-title" type="text" name="job_title" class="form-control premium-input <?= $errorField === 'job_title' ? 'is-invalid' : '' ?>" maxlength="150" value="<?= htmlspecialchars((string) ($formData['job_title'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required>
+                            </div>
+                            <div class="col-md-6 mt-0">
+                                <label for="user-create-salary" class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('staff_base_salary') ?></label>
+                                <input id="user-create-salary" type="number" name="base_salary" class="form-control premium-input <?= $errorField === 'base_salary' ? 'is-invalid' : '' ?>" min="0" step="0.01" value="<?= htmlspecialchars((string) ($formData['base_salary'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required>
+                            </div>
+                        </fieldset>
 
                         <div class="d-flex justify-content-end border-top border-theme-light pt-4 mt-4">
                             <button type="submit" class="btn btn-primary rounded-pill px-5 py-2 fw-bold shadow-sm transition-base scale-on-hover">
@@ -140,23 +169,43 @@ ob_start();
     .scale-on-hover:hover { transform: scale(1.02); }
     .letter-spacing-1 { letter-spacing: 1px; }
     .user-create-password-toggle { min-width: 44px; }
+    #user-create-personnel-fields[hidden] { display: none !important; }
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const passwordInput = document.getElementById('user-create-password');
     const passwordToggle = document.getElementById('user-create-password-toggle');
+    const roleSelect = document.getElementById('user-create-role');
+    const staffToggle = document.getElementById('user-create-is-staff');
+    const personnelFields = document.getElementById('user-create-personnel-fields');
 
-    if (!passwordInput || !passwordToggle) return;
+    if (passwordInput && passwordToggle) {
+        passwordToggle.addEventListener('click', function () {
+            const shouldReveal = passwordInput.type === 'password';
+            const label = shouldReveal ? passwordToggle.dataset.hideLabel : passwordToggle.dataset.showLabel;
+            passwordInput.type = shouldReveal ? 'text' : 'password';
+            passwordToggle.setAttribute('aria-label', label);
+            passwordToggle.title = label;
+            passwordToggle.querySelector('i').className = shouldReveal ? 'bi bi-eye-slash' : 'bi bi-eye';
+        });
+    }
 
-    passwordToggle.addEventListener('click', function () {
-        const shouldReveal = passwordInput.type === 'password';
-        const label = shouldReveal ? passwordToggle.dataset.hideLabel : passwordToggle.dataset.showLabel;
-        passwordInput.type = shouldReveal ? 'text' : 'password';
-        passwordToggle.setAttribute('aria-label', label);
-        passwordToggle.title = label;
-        passwordToggle.querySelector('i').className = shouldReveal ? 'bi bi-eye-slash' : 'bi bi-eye';
-    });
+    if (roleSelect && staffToggle && personnelFields) {
+        const updatePersonnelFields = function () {
+            const isStaff = staffToggle.checked;
+            personnelFields.hidden = !isStaff;
+            personnelFields.disabled = !isStaff;
+        };
+        staffToggle.addEventListener('change', updatePersonnelFields);
+        roleSelect.addEventListener('change', function () {
+            if (roleSelect.value === 'enseignant' || roleSelect.value === 'personnel') {
+                staffToggle.checked = true;
+                updatePersonnelFields();
+            }
+        });
+        updatePersonnelFields();
+    }
 });
 </script>
 
