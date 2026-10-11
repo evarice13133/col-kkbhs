@@ -9,8 +9,30 @@ $app_lang = \App\Core\Session::get('app_lang', 'fr');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script>
         (function () {
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            document.documentElement.setAttribute('data-theme', savedTheme);
+            const mediaQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+            const getPreferredTheme = () => {
+                const savedTheme = localStorage.getItem('theme');
+                if (savedTheme === 'light' || savedTheme === 'dark') {
+                    return savedTheme;
+                }
+                return mediaQuery && mediaQuery.matches ? 'dark' : 'light';
+            };
+
+            document.documentElement.setAttribute('data-theme', getPreferredTheme());
+
+            if (mediaQuery && typeof mediaQuery.addEventListener === 'function') {
+                mediaQuery.addEventListener('change', () => {
+                    if (!localStorage.getItem('theme')) {
+                        document.documentElement.setAttribute('data-theme', mediaQuery.matches ? 'dark' : 'light');
+                    }
+                });
+            } else if (mediaQuery && typeof mediaQuery.addListener === 'function') {
+                mediaQuery.addListener(() => {
+                    if (!localStorage.getItem('theme')) {
+                        document.documentElement.setAttribute('data-theme', mediaQuery.matches ? 'dark' : 'light');
+                    }
+                });
+            }
         })();
     </script>
     <title><?= $title ?></title>

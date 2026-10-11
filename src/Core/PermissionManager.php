@@ -183,8 +183,9 @@ class PermissionManager
      */
     public static function getPermissionsForRoleCode(string $roleCode): array
     {
-        if (isset(self::$rolePermissionsCache[$roleCode])) {
-            return self::$rolePermissionsCache[$roleCode];
+        $normalizedRoleCode = (string) $roleCode;
+        if (isset(self::$rolePermissionsCache[$normalizedRoleCode])) {
+            return self::$rolePermissionsCache[$normalizedRoleCode];
         }
 
         try {
@@ -196,13 +197,62 @@ class PermissionManager
                 JOIN permissions p ON rp.permission_id = p.id
                 WHERE r.role_code = ? AND p.status = 'active'
             ");
-            $stmt->execute([$roleCode]);
+            $stmt->execute([$normalizedRoleCode]);
             $perms = $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
-            self::$rolePermissionsCache[$roleCode] = $perms;
+            $perms = array_values(array_unique(array_diff($perms, self::getForbiddenPermissionsForRole($normalizedRoleCode))));
+            self::$rolePermissionsCache[$normalizedRoleCode] = $perms;
             return $perms;
         } catch (\Throwable $e) {
             return [];
         }
+    }
+
+    public static function getForbiddenPermissionsForRole(string $roleCode): array
+    {
+        $roleCode = strtolower(trim((string) $roleCode));
+
+        $forbidden = [
+            'admin' => ['manage_rbac', 'manage_academic_years'],
+            'superadmin' => [],
+        ];
+
+        return $forbidden[$roleCode] ?? [];
+    }
+
+    public static function canViewHiddenRole(string $roleCode, ?int $userId = null): bool
+    {
+        $roleCode = strtolower(trim((string) $roleCode));
+        if ($roleCode !== 'superadmin') {
+            return true;
+        }
+
+        if ($userId !== null) {
+            $actorRole = self::getUserRoleById($userId);
+        } else {
+            $actorRole = Session::isLogged() ? Session::get('user_role') : null;
+        }
+
+        return $actorRole === 'superadmin';
+    }
+
+    public static function canManageRoleAssignment(string $targetRoleCode, ?int $actorUserId = null): bool
+    {
+        $targetRoleCode = strtolower(trim((string) $targetRoleCode));
+        $actorRole = $actorUserId !== null ? self::getUserRoleById($actorUserId) : (Session::isLogged() ? Session::get('user_role') : null);
+
+        if ($actorRole === 'superadmin') {
+            return true;
+        }
+
+        if ($targetRoleCode === 'superadmin') {
+            return false;
+        }
+
+        if ($actorRole === 'admin') {
+            return true;
+        }
+
+        return false;
     }
 
     /**

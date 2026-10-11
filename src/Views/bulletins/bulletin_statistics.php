@@ -48,7 +48,8 @@ foreach ($statisticsLabels as $index => $label) {
     ];
 }
 $statisticsTopRows = array_values($statisticsRows);
-$showSecondTerm = ($bulletinPeriod ?? '') !== 'trimestre' || (int) ($term ?? 1) >= 2;
+$showSecondTerm = ($bulletinPeriod ?? '') === 'annuel'
+    || (($bulletinPeriod ?? '') === 'trimestre' && (int) ($term ?? 1) >= 2);
 $visibleTopRows = $showSecondTerm ? $statisticsTopRows : array_slice($statisticsTopRows, 0, 3);
 $firstTermColumnCount = max(2, count((array) ($previousTermEvaluationLabels ?? [])));
 $secondTermColumnCount = max(1, count((array) ($evaluationLabels ?? [])));
@@ -118,6 +119,7 @@ $statisticsEvaluationColumnWidth = (100 - (2 * $statisticsSideColumnWidth)) / ma
     .bulletin-statistics { width: 100%; margin: 1px 0 0; font-size: 9px; line-height: 1.05; page-break-inside: avoid; }
     .bulletin-statistics table { width: 100%; margin: 0 !important; border-collapse: collapse; table-layout: fixed; }
     .bulletin-statistics td { border: 1px solid #14347a; padding: 0 2px; height: 10px; font-size: 9px; line-height: 1; }
+    .bulletin-statistics-tall-cells td { height: 13px; }
     .bulletin-statistics th { padding: 0 1px; font-size: 9px; line-height: 1; }
     .bulletin-sheet .bulletin-statistics td,
     .bulletin-sheet .bulletin-statistics th { padding: 0 2px !important; font-size: 9px !important; line-height: 1 !important; }
@@ -141,7 +143,7 @@ $statisticsEvaluationColumnWidth = (100 - (2 * $statisticsSideColumnWidth)) / ma
     @media print { .bulletin-statistics { page-break-inside: avoid; } }
 </style>
 
-<div class="bulletin-statistics">
+<div class="bulletin-statistics<?= in_array(($bulletinPeriod ?? ''), ['sequence', 'trimestre', 'annuel'], true) ? ' bulletin-statistics-tall-cells' : '' ?>">
 <table class="statistics-single-table">
     <colgroup>
         <?php if (!$showSecondTerm): ?>
@@ -152,6 +154,25 @@ $statisticsEvaluationColumnWidth = (100 - (2 * $statisticsSideColumnWidth)) / ma
             <col style="width:8%;"><col style="width:8%;"><col style="width:16%;"><col style="width:29%;">
         <?php endif; ?>
     </colgroup>
+    <?php if (($bulletinPeriod ?? '') === 'sequence'): ?>
+    <tr>
+        <td class="statistics-head" colspan="5"><?= __('evaluation_list') ?></td>
+        <td class="statistics-head" colspan="4"><?= __('subjects_passed') ?></td>
+    </tr>
+    <tr>
+        <td class="statistics-label"><?= __('test_label') ?></td>
+        <td class="statistics-value" colspan="4"><?= htmlspecialchars(implode(', ', array_map(static fn ($row) => (string) ($row['label'] ?? ''), $statisticsRows)) ?: '-', ENT_QUOTES, 'UTF-8') ?></td>
+        <td class="statistics-value" colspan="4" rowspan="3"><?= $statisticsPassed ?> / <?= $statisticsTotal ?></td>
+    </tr>
+    <tr>
+        <td class="statistics-label"><?= __('average') ?></td>
+        <td class="statistics-value" colspan="4" style="<?= $statisticsAverageStyle($average ?? null) ?>"><?= $statisticsDisplayValue($average ?? null) ?></td>
+    </tr>
+    <tr>
+        <td class="statistics-label"><?= __('rank') ?></td>
+        <td class="statistics-value" colspan="4"><?= htmlspecialchars((string) ($rank ?? '-'), ENT_QUOTES, 'UTF-8') ?></td>
+    </tr>
+    <?php else: ?>
     <tr>
         <td class="statistics-head"></td>
         <?php if (($bulletinPeriod ?? '') === 'annuel'): ?>
@@ -239,6 +260,7 @@ $statisticsEvaluationColumnWidth = (100 - (2 * $statisticsSideColumnWidth)) / ma
             <td class="statistics-value"><?= $statisticsDisplayValue($secondEvaluationAverage) ?></td>
         <?php endif; ?>
     </tr>
+    <?php endif; ?>
 
     <tr>
                 <td class="statistics-head" colspan="3"><?= __('discipline') ?></td>

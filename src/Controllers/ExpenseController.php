@@ -92,8 +92,11 @@ class ExpenseController
 
         // Appliquer la recherche textuelle
         if ($search !== '') {
-            $sql .= " AND (e.reference LIKE :search OR e.motive LIKE :search OR e.description LIKE :search)";
-            $params[':search'] = '%' . $search . '%';
+            $sql .= " AND (e.reference LIKE :search_reference OR e.motive LIKE :search_motive OR e.description LIKE :search_description)";
+            $searchParam = '%' . $search . '%';
+            $params[':search_reference'] = $searchParam;
+            $params[':search_motive'] = $searchParam;
+            $params[':search_description'] = $searchParam;
         }
 
         // Tri
@@ -131,6 +134,11 @@ class ExpenseController
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
         $expenses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $disbursementsByExpense = $this->getExpenseDisbursements(array_column($expenses, 'id'));
+        foreach ($expenses as &$expense) {
+            $expense['disbursements'] = $disbursementsByExpense[(int)$expense['id']] ?? [];
+        }
+        unset($expense);
 
         // 3. Charger les filtres dropdown (catégories et utilisateurs habilités aux dépenses)
         $categories = $this->db->query("SELECT * FROM expense_categories ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -142,19 +150,26 @@ class ExpenseController
             WHERE u.role IN ('admin', 'caissier', 'comptable')
             ORDER BY u.nom ASC, u.prenom ASC
         ")->fetchAll(PDO::FETCH_ASSOC);
+        $disbursingUsers = $this->db->query("
+            SELECT id, nom, prenom
+            FROM users
+            WHERE status = 1
+            ORDER BY nom ASC, prenom ASC
+        ")->fetchAll(PDO::FETCH_ASSOC);
 
         // Total des dépenses filtrées (somme des montants affichés selon filtres, hors annulés/inactifs si souhaité, mais ici global filtre)
-        $sumSql = "SELECT COALESCE(SUM(amount), 0) FROM expenses e WHERE e.academic_year_id = :academic_year_id AND e.status = 'active'";
-        $sumParams = [':academic_year_id' => $activeYearId];
-        // si des filtres sont appliqués, on calcule le total sur les dépenses filtrées actives
-        $sumFilteredSql = "SELECT COALESCE(SUM(e.amount), 0) FROM expenses e JOIN expense_categories ec ON e.category_id = ec.id WHERE e.academic_year_id = :academic_year_id AND e.status = 'active'";
+        // Calculer le total avec les mêmes filtres que la liste.
+        $sumFilteredSql = "SELECT COALESCE(SUM(e.amount), 0) FROM expenses e JOIN expense_categories ec ON e.category_id = ec.id WHERE e.academic_year_id = :academic_year_id";
         if (!empty($filters['start_date'])) { $sumFilteredSql .= " AND e.expense_date >= :start_date"; }
         if (!empty($filters['end_date'])) { $sumFilteredSql .= " AND e.expense_date <= :end_date"; }
         if (!empty($filters['category'])) { $sumFilteredSql .= " AND e.category_id = :category_id"; }
         if (!empty($filters['user'])) { $sumFilteredSql .= " AND e.user_id = :user_id"; }
         if (!empty($filters['min_amount'])) { $sumFilteredSql .= " AND e.amount >= :min_amount"; }
         if (!empty($filters['max_amount'])) { $sumFilteredSql .= " AND e.amount <= :max_amount"; }
-        if ($search !== '') { $sumFilteredSql .= " AND (e.reference LIKE :search OR e.motive LIKE :search OR e.description LIKE :search)"; }
+        if (!empty($filters['status'])) { $sumFilteredSql .= " AND e.status = :status"; }
+        if ($search !== '') {
+            $sumFilteredSql .= " AND (e.reference LIKE :search_reference OR e.motive LIKE :search_motive OR e.description LIKE :search_description)";
+        }
         
         $stmtSum = $this->db->prepare($sumFilteredSql);
         $stmtSum->execute($params);
@@ -177,14 +192,20 @@ class ExpenseController
 
             $category_id = (int)($_POST['category_id'] ?? 0);
             $expense_date = trim((string)($_POST['expense_date'] ?? date('Y-m-d')));
-            $amount = (float)($_POST['amount'] ?? 0.0);
+            $amountInput = trim((string)($_POST['amount'] ?? ''));
+            $amount = (float)$amountInput;
             $motive = trim((string)($_POST['motive'] ?? ''));
             $description = trim((string)($_POST['description'] ?? ''));
             $activeYearId = $this->academicYearService->getActiveYearId();
             $userId = (int)Session::get('user_id');
+            $allocation = $this->validateDisbursements($_POST['disbursements'] ?? [], $amountInput);
 
-            if ($category_id <= 0 || $amount <= 0 || empty($motive)) {
-                Session::setFlash('error', "Veuillez remplir tous les champs obligatoires (Catégorie, Montant, Motif).");
+            if ($category_id <= 0 || $amount <= 0 || empty($motive) || $allocation['error'] !== null) {
+                if ($allocation['error'] !== null) {
+                    Session::setFlash('error', __($allocation['error'], $allocation['params']));
+                } else {
+                    Session::setFlash('error', "Veuillez remplir tous les champs obligatoires (Catégorie, Montant, Motif).");
+                }
                 header("Location: /expenses");
                 exit;
             }
@@ -232,6 +253,7 @@ class ExpenseController
                     $activeYearId
                 ]);
                 $expenseId = (int)$this->db->lastInsertId();
+                $this->saveExpenseDisbursements($expenseId, $allocation['disbursements']);
 
                 // Journal d'audit
                 $newValues = [
@@ -240,7 +262,8 @@ class ExpenseController
                     'category_id' => $category_id,
                     'amount' => $amount,
                     'motive' => $motive,
-                    'description' => $description
+                    'description' => $description,
+                    'disbursements' => $allocation['disbursements']
                 ];
                 $this->logExpenseAudit($expenseId, null, $userId, 'create', null, $newValues);
 
@@ -273,13 +296,19 @@ class ExpenseController
             $id = (int)($_POST['id'] ?? 0);
             $category_id = (int)($_POST['category_id'] ?? 0);
             $expense_date = trim((string)($_POST['expense_date'] ?? date('Y-m-d')));
-            $amount = (float)($_POST['amount'] ?? 0.0);
+            $amountInput = trim((string)($_POST['amount'] ?? ''));
+            $amount = (float)$amountInput;
             $motive = trim((string)($_POST['motive'] ?? ''));
             $description = trim((string)($_POST['description'] ?? ''));
             $userId = (int)Session::get('user_id');
+            $allocation = $this->validateDisbursements($_POST['disbursements'] ?? [], $amountInput);
 
-            if ($id <= 0 || $category_id <= 0 || $amount <= 0 || empty($motive)) {
-                Session::setFlash('error', "Veuillez remplir tous les champs obligatoires.");
+            if ($id <= 0 || $category_id <= 0 || $amount <= 0 || empty($motive) || $allocation['error'] !== null) {
+                if ($allocation['error'] !== null) {
+                    Session::setFlash('error', __($allocation['error'], $allocation['params']));
+                } else {
+                    Session::setFlash('error', "Veuillez remplir tous les champs obligatoires.");
+                }
                 header("Location: /expenses");
                 exit;
             }
@@ -300,6 +329,7 @@ class ExpenseController
                 header("Location: /expenses");
                 exit;
             }
+            $oldDisbursements = $this->getExpenseDisbursements([$id])[$id] ?? [];
 
             try {
                 $this->db->beginTransaction();
@@ -317,6 +347,7 @@ class ExpenseController
                     $description ?: null,
                     $id
                 ]);
+                $this->saveExpenseDisbursements($id, $allocation['disbursements']);
 
                 // Journal d'audit
                 $oldValues = [
@@ -324,14 +355,16 @@ class ExpenseController
                     'expense_date' => $oldExpense['expense_date'],
                     'amount' => (float)$oldExpense['amount'],
                     'motive' => $oldExpense['motive'],
-                    'description' => $oldExpense['description']
+                    'description' => $oldExpense['description'],
+                    'disbursements' => $oldDisbursements
                 ];
                 $newValues = [
                     'category_id' => $category_id,
                     'expense_date' => $expense_date,
                     'amount' => $amount,
                     'motive' => $motive,
-                    'description' => $description
+                    'description' => $description,
+                    'disbursements' => $allocation['disbursements']
                 ];
 
                 $this->logExpenseAudit($id, null, $userId, 'update', $oldValues, $newValues);
@@ -474,8 +507,11 @@ class ExpenseController
             $params[':status'] = $filters['status'];
         }
         if ($search !== '') {
-            $sql .= " AND (e.reference LIKE :search OR e.motive LIKE :search OR e.description LIKE :search)";
-            $params[':search'] = '%' . $search . '%';
+            $sql .= " AND (e.reference LIKE :search_reference OR e.motive LIKE :search_motive OR e.description LIKE :search_description)";
+            $searchParam = '%' . $search . '%';
+            $params[':search_reference'] = $searchParam;
+            $params[':search_motive'] = $searchParam;
+            $params[':search_description'] = $searchParam;
         }
 
         $sql .= " ORDER BY e.expense_date DESC, e.id DESC";
@@ -483,6 +519,11 @@ class ExpenseController
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         $expenses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $disbursementsByExpense = $this->getExpenseDisbursements(array_column($expenses, 'id'));
+        foreach ($expenses as &$expense) {
+            $expense['disbursements'] = $disbursementsByExpense[(int)$expense['id']] ?? [];
+        }
+        unset($expense);
 
         // Calcul totaux
         $totalCount = count($expenses);
@@ -705,16 +746,17 @@ class ExpenseController
             <table class="table-list">
                 <thead>
                     <tr>
-                        <th style="width: 15%;">Référence</th>
-                        <th style="width: 12%;">Date</th>
-                        <th style="width: 18%;">Catégorie</th>
-                        <th style="width: 35%;">Motif</th>
-                        <th class="text-end" style="width: 20%;">Montant</th>
+                        <th style="width: 13%;">Référence</th>
+                        <th style="width: 10%;">Date</th>
+                        <th style="width: 15%;">Catégorie</th>
+                        <th style="width: 27%;">Motif</th>
+                        <th style="width: 20%;">Décaissé par</th>
+                        <th class="text-end" style="width: 15%;">Montant</th>
                     </tr>
                 </thead>
                 <tbody>';
         if (empty($expenses)) {
-            $html .= '<tr><td colspan="5" class="text-center py-4">Aucune dépense enregistrée.</td></tr>';
+            $html .= '<tr><td colspan="6" class="text-center py-4">Aucune dépense enregistrée.</td></tr>';
         } else {
             foreach ($expenses as $row) {
                 $classAttr = $row['status'] === 'cancelled' ? ' class="cancelled-row"' : '';
@@ -722,12 +764,18 @@ class ExpenseController
                 if ($row['status'] === 'cancelled') {
                     $amountText .= ' (Annulé)';
                 }
+                $disbursedBy = empty($row['disbursements'])
+                    ? 'Non renseigné'
+                    : implode(', ', array_map(function ($disbursement) {
+                        return $disbursement['user_name'] . ' (' . number_format((float)$disbursement['amount'], 0, '.', ' ') . ' FCFA)';
+                    }, $row['disbursements']));
                 $html .= '
                 <tr' . $classAttr . '>
                     <td>' . htmlspecialchars($row['reference']) . '</td>
                     <td>' . date('d/m/Y', strtotime($row['expense_date'])) . '</td>
                     <td>' . htmlspecialchars($row['category_name']) . '</td>
                     <td>' . htmlspecialchars($row['motive']) . '</td>
+                    <td>' . htmlspecialchars($disbursedBy) . '</td>
                     <td class="text-end fw-bold">' . $amountText . '</td>
                 </tr>';
             }
@@ -736,7 +784,7 @@ class ExpenseController
                 </tbody>
                 <tfoot>
                     <tr class="fw-bold" style="background-color: #f3f4f6;">
-                        <td colspan="4" class="text-end">TOTAL ACTIF :</td>
+                        <td colspan="5" class="text-end">TOTAL ACTIF :</td>
                         <td class="text-end">' . number_format($totalAmount, 0, '.', ' ') . ' FCFA</td>
                     </tr>
                 </tfoot>
@@ -957,6 +1005,151 @@ class ExpenseController
         $logs = $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 
         include __DIR__ . '/../Views/expenses/audit.php';
+    }
+
+    /**
+     * Valide les personnes qui ont participé au décaissement et leurs parts.
+     */
+    private function validateDisbursements($rows, string $expenseAmount): array
+    {
+        $result = ['disbursements' => [], 'error' => null, 'params' => []];
+        $expenseCents = $this->amountToCents($expenseAmount);
+        if ($expenseCents === null || $expenseCents <= 0) {
+            $result['error'] = 'expense_disbursement_invalid';
+            return $result;
+        }
+        if (!is_array($rows) || $rows === []) {
+            $result['error'] = 'expense_disbursement_required';
+            return $result;
+        }
+
+        $totalCents = 0;
+        $userIds = [];
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                $result['error'] = 'expense_disbursement_invalid';
+                return $result;
+            }
+
+            $userId = filter_var($row['user_id'] ?? null, FILTER_VALIDATE_INT);
+            $amountValue = $this->amountToCents($row['amount'] ?? '');
+            if (!$userId || $userId <= 0 || $amountValue === null) {
+                $result['error'] = 'expense_disbursement_invalid';
+                return $result;
+            }
+            if (isset($userIds[$userId])) {
+                $result['error'] = 'expense_disbursement_duplicate';
+                return $result;
+            }
+
+            if ($amountValue <= 0) {
+                $result['error'] = 'expense_disbursement_invalid';
+                return $result;
+            }
+
+            $userIds[$userId] = true;
+            $totalCents += $amountValue;
+            $result['disbursements'][] = [
+                'user_id' => (int)$userId,
+                'amount' => number_format($amountValue / 100, 2, '.', '')
+            ];
+        }
+
+        $validUsers = array_keys($userIds);
+        $placeholders = implode(',', array_fill(0, count($validUsers), '?'));
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM users WHERE status = 1 AND id IN ($placeholders)");
+        $stmt->execute($validUsers);
+        if ((int)$stmt->fetchColumn() !== count($validUsers)) {
+            $result['error'] = 'expense_disbursement_user_invalid';
+            $result['disbursements'] = [];
+            return $result;
+        }
+
+        if ($totalCents !== $expenseCents) {
+            $result['error'] = 'expense_disbursement_total_mismatch';
+            $result['params'] = [
+                'amount' => number_format($expenseCents / 100, 2, ',', ' '),
+                'allocated' => number_format($totalCents / 100, 2, ',', ' ')
+            ];
+            $result['disbursements'] = [];
+        }
+
+        return $result;
+    }
+
+    private function amountToCents($value): ?int
+    {
+        $value = trim((string)$value);
+        if (!preg_match('/^(?:\d+(?:\.\d{1,2})?|\.\d{1,2})$/D', $value)) {
+            return null;
+        }
+
+        if (substr($value, 0, 1) === '.') {
+            $whole = '0';
+            $fraction = substr($value, 1);
+        } else {
+            [$whole, $fraction] = array_pad(explode('.', $value, 2), 2, '');
+        }
+
+        $whole = ltrim($whole, '0');
+        if (strlen($whole) > 13) {
+            return null;
+        }
+
+        return ((int)($whole === '' ? '0' : $whole) * 100)
+            + (int)str_pad($fraction, 2, '0');
+    }
+
+    /**
+     * Remplace toutes les parts de décaissement enregistrées pour une dépense.
+     */
+    private function saveExpenseDisbursements(int $expenseId, array $disbursements): void
+    {
+        $stmt = $this->db->prepare("DELETE FROM expense_disbursements WHERE expense_id = ?");
+        $stmt->execute([$expenseId]);
+
+        $stmt = $this->db->prepare("
+            INSERT INTO expense_disbursements (expense_id, user_id, amount)
+            VALUES (?, ?, ?)
+        ");
+        foreach ($disbursements as $disbursement) {
+            $stmt->execute([$expenseId, $disbursement['user_id'], $disbursement['amount']]);
+        }
+    }
+
+    /**
+     * Charge les montants décaissés par utilisateur pour une liste de dépenses.
+     */
+    private function getExpenseDisbursements(array $expenseIds): array
+    {
+        $expenseIds = array_values(array_unique(array_filter(array_map('intval', $expenseIds), function ($id) {
+            return $id > 0;
+        })));
+        if ($expenseIds === []) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($expenseIds), '?'));
+        $stmt = $this->db->prepare("
+            SELECT ed.expense_id, ed.user_id, ed.amount,
+                   CONCAT(u.prenom, ' ', u.nom) AS user_name
+            FROM expense_disbursements ed
+            JOIN users u ON u.id = ed.user_id
+            WHERE ed.expense_id IN ($placeholders)
+            ORDER BY u.nom, u.prenom
+        ");
+        $stmt->execute($expenseIds);
+
+        $disbursements = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $disbursements[(int)$row['expense_id']][] = [
+                'user_id' => (int)$row['user_id'],
+                'user_name' => $row['user_name'],
+                'amount' => $row['amount']
+            ];
+        }
+
+        return $disbursements;
     }
 
     /**

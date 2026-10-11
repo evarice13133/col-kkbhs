@@ -13,6 +13,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let activeTrigger = null;
     let activeDropdown = null;
+    let closeTimer = null;
+    const desktopHover = window.matchMedia('(min-width: 992px) and (hover: hover) and (pointer: fine)');
+
+    function cancelScheduledClose() {
+        if (closeTimer !== null) {
+            window.clearTimeout(closeTimer);
+            closeTimer = null;
+        }
+    }
 
     /**
      * Position & align dropdown relative to viewport
@@ -32,6 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
      * Open specific dropdown menu
      */
     function openDropdown(trigger, dropdown) {
+        cancelScheduledClose();
         if (activeDropdown && activeDropdown !== dropdown) {
             closeActiveDropdown();
         }
@@ -50,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
      * Close currently active dropdown
      */
     function closeActiveDropdown() {
+        cancelScheduledClose();
         if (!activeDropdown) return;
 
         if (activeTrigger) {
@@ -61,6 +72,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         activeTrigger = null;
         activeDropdown = null;
+    }
+
+    function scheduleClose(trigger) {
+        cancelScheduledClose();
+        closeTimer = window.setTimeout(() => {
+            if (activeTrigger === trigger) {
+                closeActiveDropdown();
+            }
+        }, 180);
     }
 
     /**
@@ -76,10 +96,38 @@ document.addEventListener('DOMContentLoaded', () => {
             e.stopPropagation();
             const isOpen = trigger.getAttribute('aria-expanded') === 'true';
 
+            if (desktopHover.matches && e.detail > 0) {
+                openDropdown(trigger, dropdown);
+                return;
+            }
+
             if (isOpen) {
                 closeActiveDropdown();
             } else {
                 openDropdown(trigger, dropdown);
+            }
+        });
+
+        const wrapper = trigger.closest('.nav-dropdown-wrapper');
+        if (!wrapper) return;
+
+        wrapper.addEventListener('pointerenter', (e) => {
+            if (!desktopHover.matches || e.pointerType === 'touch') return;
+            openDropdown(trigger, dropdown);
+        });
+
+        wrapper.addEventListener('pointerleave', (e) => {
+            if (!desktopHover.matches || e.pointerType === 'touch') return;
+            scheduleClose(trigger);
+        });
+
+        wrapper.addEventListener('focusin', () => {
+            openDropdown(trigger, dropdown);
+        });
+
+        wrapper.addEventListener('focusout', (e) => {
+            if (!wrapper.contains(e.relatedTarget)) {
+                scheduleClose(trigger);
             }
         });
     });

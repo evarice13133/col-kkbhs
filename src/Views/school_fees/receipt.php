@@ -29,18 +29,20 @@ try {
             "verify_peer_name" => false,
         ],
         "http" => [
-            "timeout" => 4
+            "timeout" => 10,
+            "user_agent" => "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         ]
     ]);
     $qrImage = @file_get_contents($qrCodeApiUrl, false, $ctx);
     if (!$qrImage) {
         $qrImage = @file_get_contents($qrCodeFallbackUrl, false, $ctx);
     }
-    if ($qrImage) {
+    if ($qrImage && strlen($qrImage) > 100) {
         $qrCodeSrc = 'data:image/png;base64,' . base64_encode($qrImage);
     }
 } catch (\Throwable $e) {
     // Garde le fallback en URL
+    error_log('QR Code generation error: ' . $e->getMessage());
 }
 
 // Déterminer le statut de duplicata

@@ -199,7 +199,7 @@ ob_start();
                                                 <a href="/discounts/toggle?id=<?= $sd['id'] ?>&scope=student" class="btn btn-sm btn-action-modern btn-confirm-toggle <?= $sd['status'] === 'active' ? 'text-warning' : 'text-success' ?>" data-confirm="<?= __('confirm_toggle_discount') ?>" title="<?= $sd['status'] === 'active' ? __('deactivate') : __('activate') ?>">
                                                     <i class="bi bi-power fs-5"></i>
                                                 </a>
-                                                <a href="/discounts/delete?id=<?= $sd['id'] ?>&scope=student" class="btn btn-sm btn-action-modern btn-confirm-delete text-danger" data-confirm="<?= __('confirm_delete_discount') ?>" title="<?= __('delete') ?>">
+                                                <a href="/discounts/delete?id=<?= $sd['id'] ?>&scope=student" class="btn btn-sm btn-action-modern btn-confirm-delete text-danger" data-confirm="<?= __('confirm_delete_discount') ?>" title="<?= __('discount_delete') ?>">
                                                     <i class="bi bi-trash-fill fs-5"></i>
                                                 </a>
                                             </div>
@@ -273,7 +273,7 @@ ob_start();
                                                 <a href="/discounts/toggle?id=<?= $cd['id'] ?>&scope=class" class="btn btn-sm btn-action-modern btn-confirm-toggle <?= $cd['status'] === 'active' ? 'text-warning' : 'text-success' ?>" data-confirm="<?= __('confirm_toggle_coll_discount') ?>" title="<?= $cd['status'] === 'active' ? __('deactivate') : __('activate') ?>">
                                                     <i class="bi bi-power fs-5"></i>
                                                 </a>
-                                                <a href="/discounts/delete?id=<?= $cd['id'] ?>&scope=class" class="btn btn-sm btn-action-modern btn-confirm-delete text-danger" data-confirm="<?= __('confirm_delete_coll_discount') ?>" title="<?= __('delete') ?>">
+                                                <a href="/discounts/delete?id=<?= $cd['id'] ?>&scope=class" class="btn btn-sm btn-action-modern btn-confirm-delete text-danger" data-confirm="<?= __('confirm_delete_coll_discount') ?>" title="<?= __('discount_delete_collective') ?>">
                                                     <i class="bi bi-trash-fill fs-5"></i>
                                                 </a>
                                             </div>

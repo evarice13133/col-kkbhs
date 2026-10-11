@@ -7,6 +7,7 @@
     --sidebar-width: 280px;
     --sidebar-collapsed-width: 70px;
     --topbar-height: 52px;
+    --text-color: var(--text-main, #0f172a);
 
     /* Palette SaaS Premium - Violet Edition (Canva Inspired) */
     --primary-color: #7c3aed;
@@ -120,6 +121,7 @@
     /* Noir pur */
     --bg-topbar: rgba(2, 6, 23, 0.8);
     --text-main: #f8fafc;
+    --text-color: #f8fafc;
     --text-muted: #94a3b8;
     --border-color: #1e293b;
     --card-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.6);
@@ -3206,6 +3208,11 @@ body {
     transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+.ribbon-qat-btn i {
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
 .ribbon-qat-btn:hover {
     color: var(--primary-color);
     background: var(--bg-card);
@@ -4214,5 +4221,4 @@ html, body {
 .export-dropdown-item:hover .export-icon-box {
     transform: scale(1.1);
 }
-
 

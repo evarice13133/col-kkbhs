@@ -376,7 +376,7 @@ ob_start();
     }
 
     .text-main-theme {
-        color: var(--text-color, #1e293b) !important;
+        color: var(--text-main, #1e293b) !important;
     }
 
     .text-muted-theme {

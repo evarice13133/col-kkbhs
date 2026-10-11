@@ -23,6 +23,63 @@ class RbacController
         $this->db = Database::getInstance()->getConnection();
     }
 
+    private function currentUserRole(): ?string
+    {
+        return Session::get('user_role');
+    }
+
+    private function denyForbiddenRoleAssignment(string $targetRoleCode, ?int $targetUserId = null): bool
+    {
+        $actorRole = $this->currentUserRole();
+        if ($actorRole === 'superadmin') {
+            return false;
+        }
+
+        if ($targetRoleCode === 'superadmin') {
+            return true;
+        }
+
+        if ($targetUserId !== null) {
+            $stmt = $this->db->prepare("SELECT role FROM users WHERE id = ?");
+            $stmt->execute([$targetUserId]);
+            $targetRole = $stmt->fetchColumn();
+            if ($targetRole === 'superadmin') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function sanitizePermissionIdsForActor(array $permissionIds): array
+    {
+        if ($this->currentUserRole() !== 'admin') {
+            return array_values(array_map('intval', $permissionIds));
+        }
+
+        $permissionIds = array_values(array_map('intval', $permissionIds));
+        if ($permissionIds === []) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($permissionIds), '?'));
+        $stmt = $this->db->prepare("SELECT id, perm_code FROM permissions WHERE id IN ($placeholders)");
+        $stmt->execute($permissionIds);
+        $codes = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+
+        $forbidden = PermissionManager::getForbiddenPermissionsForRole('admin');
+        $result = [];
+        foreach ($permissionIds as $permId) {
+            $permCode = $codes[$permId] ?? null;
+            if ($permCode !== null && in_array($permCode, $forbidden, true)) {
+                continue;
+            }
+            $result[] = $permId;
+        }
+
+        return $result;
+    }
+
     /**
      * Page principale de l'interface de Gestion des Permissions (M365 Style)
      */
@@ -78,13 +135,23 @@ class RbacController
      */
     public function getRoles(): void
     {
-        $stmt = $this->db->query("
+        $sql = "
             SELECT r.*, 
                    (SELECT COUNT(*) FROM role_permissions rp WHERE rp.role_id = r.id) as perm_count,
                    (SELECT COUNT(*) FROM users u WHERE u.role = r.role_code) as user_count
             FROM roles r
-            ORDER BY r.id ASC
-        ");
+            WHERE 1=1
+        ";
+        $params = [];
+
+        if ($this->currentUserRole() === 'admin') {
+            $sql .= " AND r.role_code <> ?";
+            $params[] = 'superadmin';
+        }
+
+        $sql .= " ORDER BY r.id ASC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
         $roles = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $this->jsonResponse(['success' => true, 'data' => $roles]);
@@ -98,6 +165,18 @@ class RbacController
         $roleId = (int) ($_GET['role_id'] ?? 0);
         if ($roleId <= 0) {
             $this->jsonResponse(['success' => false, 'message' => 'ID de rôle invalide.'], 400);
+            return;
+        }
+
+        $stmtRole = $this->db->prepare("SELECT role_code, role_name FROM roles WHERE id = ?");
+        $stmtRole->execute([$roleId]);
+        $role = $stmtRole->fetch(PDO::FETCH_ASSOC);
+        if (!$role) {
+            $this->jsonResponse(['success' => false, 'message' => 'Rôle introuvable.'], 404);
+            return;
+        }
+        if ($this->currentUserRole() === 'admin' && $role['role_code'] === 'superadmin') {
+            $this->jsonResponse(['success' => false, 'message' => 'Accès refusé.'], 403);
             return;
         }
 
@@ -122,7 +201,6 @@ class RbacController
             return;
         }
 
-        // Récupération informations rôle
         $stmtRole = $this->db->prepare("SELECT * FROM roles WHERE id = ?");
         $stmtRole->execute([$roleId]);
         $role = $stmtRole->fetch(PDO::FETCH_ASSOC);
@@ -132,7 +210,18 @@ class RbacController
             return;
         }
 
-        // Empêcher la suppression accidentelle des droits RBAC du superadmin
+        if ($this->currentUserRole() === 'admin' && $role['role_code'] === 'superadmin') {
+            $this->jsonResponse(['success' => false, 'message' => 'Accès refusé pour le rôle secret.'], 403);
+            return;
+        }
+
+        if ($this->currentUserRole() !== 'superadmin' && $this->denyForbiddenRoleAssignment($role['role_code'])) {
+            $this->jsonResponse(['success' => false, 'message' => 'Permission refusée : tentative de privilège supérieur.'], 403);
+            return;
+        }
+
+        $permissionIds = $this->sanitizePermissionIdsForActor($permissionIds);
+
         if ($role['role_code'] === 'superadmin') {
             $rbacPermId = $this->db->query("SELECT id FROM permissions WHERE perm_code = 'manage_rbac'")->fetchColumn();
             if ($rbacPermId && !in_array($rbacPermId, $permissionIds)) {
@@ -192,7 +281,18 @@ class RbacController
             return;
         }
 
-        // Obtenir permissions source
+        $stmtSourceRole = $this->db->prepare("SELECT role_code FROM roles WHERE id = ?");
+        $stmtSourceRole->execute([$sourceRoleId]);
+        $sourceRoleCode = $stmtSourceRole->fetchColumn();
+        $stmtTargetRole = $this->db->prepare("SELECT role_code FROM roles WHERE id = ?");
+        $stmtTargetRole->execute([$targetRoleId]);
+        $targetRoleCode = $stmtTargetRole->fetchColumn();
+
+        if ($this->currentUserRole() === 'admin' && ($sourceRoleCode === 'superadmin' || $targetRoleCode === 'superadmin')) {
+            $this->jsonResponse(['success' => false, 'message' => 'Accès refusé pour le rôle secret.'], 403);
+            return;
+        }
+
         $stmtSource = $this->db->prepare("SELECT permission_id FROM role_permissions WHERE role_id = ?");
         $stmtSource->execute([$sourceRoleId]);
         $sourcePermIds = $stmtSource->fetchAll(PDO::FETCH_COLUMN);
@@ -296,19 +396,24 @@ class RbacController
     public function searchUsers(): void
     {
         $query = trim($_GET['q'] ?? '');
-        $sql = "SELECT u.id, u.name, u.username, u.email, u.role, r.role_name 
+        $sql = "SELECT u.id, CONCAT(u.prenom, ' ', u.nom) AS name, u.username, u.email, u.role, r.role_name
                 FROM users u
                 LEFT JOIN roles r ON u.role = r.role_code
                 WHERE 1=1";
         $params = [];
 
-        if ($query !== '') {
-            $sql .= " AND (u.name LIKE ? OR u.username LIKE ? OR u.email LIKE ? OR u.role LIKE ?)";
-            $searchTerm = "%{$query}%";
-            $params = [$searchTerm, $searchTerm, $searchTerm, $searchTerm];
+        if ($this->currentUserRole() === 'admin') {
+            $sql .= " AND u.role <> ?";
+            $params[] = 'superadmin';
         }
 
-        $sql .= " ORDER BY u.name ASC LIMIT 50";
+        if ($query !== '') {
+            $sql .= " AND (u.nom LIKE ? OR u.prenom LIKE ? OR u.username LIKE ? OR u.email LIKE ? OR u.role LIKE ?)";
+            $searchTerm = "%{$query}%";
+            $params = array_merge($params, [$searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm]);
+        }
+
+        $sql .= " ORDER BY u.nom ASC, u.prenom ASC LIMIT 50";
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -327,12 +432,23 @@ class RbacController
             return;
         }
 
-        $stmtUser = $this->db->prepare("SELECT u.*, r.role_name FROM users u LEFT JOIN roles r ON u.role = r.role_code WHERE u.id = ?");
+        $stmtUser = $this->db->prepare("
+            SELECT u.id, u.nom, u.prenom, u.username, u.email, u.role,
+                   CONCAT(u.prenom, ' ', u.nom) AS name, r.role_name
+            FROM users u
+            LEFT JOIN roles r ON u.role = r.role_code
+            WHERE u.id = ?
+        ");
         $stmtUser->execute([$userId]);
         $user = $stmtUser->fetch(PDO::FETCH_ASSOC);
 
         if (!$user) {
             $this->jsonResponse(['success' => false, 'message' => 'Utilisateur introuvable.'], 404);
+            return;
+        }
+
+        if ($this->currentUserRole() === 'admin' && $user['role'] === 'superadmin') {
+            $this->jsonResponse(['success' => false, 'message' => 'Accès refusé pour le compte secret.'], 403);
             return;
         }
 
@@ -382,7 +498,37 @@ class RbacController
             return;
         }
 
+        $stmtUser = $this->db->prepare("SELECT role FROM users WHERE id = ?");
+        $stmtUser->execute([$userId]);
+        $targetRole = $stmtUser->fetchColumn();
+        if ($targetRole === 'superadmin' && $this->currentUserRole() === 'admin') {
+            $this->jsonResponse(['success' => false, 'message' => 'Accès refusé pour le compte secret.'], 403);
+            return;
+        }
+
+        if ($this->currentUserRole() === 'admin' && $targetRole === 'superadmin') {
+            $this->jsonResponse(['success' => false, 'message' => 'Accès refusé pour le compte secret.'], 403);
+            return;
+        }
+
         $adminId = Session::get('user_id');
+        $sanitizedOverrides = [];
+        foreach ($overrides as $permId => $status) {
+            $status = (int)$status;
+            if ($status === 1 || $status === 0) {
+                $sanitizedOverrides[(int)$permId] = $status;
+            }
+        }
+
+        if ($this->currentUserRole() === 'admin') {
+            $allowedPermissionIds = $this->sanitizePermissionIdsForActor(array_keys($sanitizedOverrides));
+            $allowedPermissionIds = array_fill_keys(array_map('intval', $allowedPermissionIds), true);
+            $sanitizedOverrides = array_filter(
+                $sanitizedOverrides,
+                static fn(int $permId): bool => isset($allowedPermissionIds[$permId]),
+                ARRAY_FILTER_USE_KEY
+            );
+        }
 
         $this->db->beginTransaction();
         try {
@@ -396,11 +542,8 @@ class RbacController
                 VALUES (?, ?, ?, ?)
             ");
 
-            foreach ($overrides as $permId => $status) {
-                $status = (int)$status;
-                if ($status === 1 || $status === 0) {
-                    $stmtIns->execute([$userId, (int)$permId, $status, $adminId]);
-                }
+            foreach ($sanitizedOverrides as $permId => $status) {
+                $stmtIns->execute([$userId, (int)$permId, $status, $adminId]);
             }
 
             $this->db->commit();

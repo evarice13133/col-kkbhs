@@ -92,6 +92,28 @@ class Security {
     }
 
     /**
+     * Retourne le nombre de tentatives restantes avant blocage pour une action donnée.
+     *
+     * @param string $action
+     * @param int $maxAttempts
+     * @param int $durationSeconds
+     * @return int
+     */
+    public static function getRemainingAttempts($action, $maxAttempts = 5, $durationSeconds = 300) {
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        $key = "rate_limit_{$action}_{$ip}";
+        $attempts = Session::get($key, []);
+        $now = time();
+
+        $attempts = array_filter($attempts, function ($timestamp) use ($now, $durationSeconds) {
+            return $timestamp > ($now - $durationSeconds);
+        });
+
+        $remaining = $maxAttempts - count($attempts);
+        return max(0, $remaining);
+    }
+
+    /**
      * Valide que l'utilisateur a une session valide et n'est pas expiré.
      */
     public static function validateSession() {

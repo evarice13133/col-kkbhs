@@ -3,7 +3,7 @@
 /.env
 /config/config.php
 /logs/
+public/uploads/
 *.zip
 *.log
 scratch/*.xlsx
-

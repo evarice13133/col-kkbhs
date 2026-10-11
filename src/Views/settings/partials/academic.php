@@ -43,21 +43,13 @@
                 </div>
             </div>
 
-            <div class="col-md-6 mt-5">
+            <div class="col-md-12 mt-5">
                 <div class="mb-4">
                     <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('school_year_pdf_format') ?></label>
                     <div class="input-group">
                         <span class="input-group-text border-theme-light bg-soft-primary text-primary"><i class="bi bi-calendar-range-fill"></i></span>
                         <input type="text" name="display_school_year" class="form-control premium-input font-monospace fw-bold"
                             value="<?= htmlspecialchars((string) ($settings['display_school_year'] ?? '')) ?>" placeholder="2025/2026">
-                    </div>
-                </div>
-                <div class="mb-0">
-                    <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('signature_city_label') ?></label>
-                    <div class="input-group">
-                        <span class="input-group-text border-theme-light bg-soft-info text-info"><i class="bi bi-geo-alt-fill"></i></span>
-                        <input type="text" name="school_city" class="form-control premium-input" 
-                            value="<?= htmlspecialchars((string) ($settings['school_city'] ?? '')) ?>" placeholder="<?= __('signature_city_label') ?>">
                     </div>
                 </div>
             </div>
