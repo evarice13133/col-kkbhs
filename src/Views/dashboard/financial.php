@@ -691,7 +691,7 @@ ob_start();
                 <div class="card-header bg-transparent border-0 px-4 pt-4 pb-0 d-flex align-items-center justify-content-between flex-wrap gap-2">
                     <div>
                         <h6 class="fw-black text-main-theme mb-1"><?= __('class_registration_stats') ?></h6>
-                        <p class="text-muted-theme small mb-0"><?= __('dashboard_financial_registration_status_by_class') ?> (<?= __('policy') ?>: <?= htmlspecialchars(ucfirst($policy)) ?>)</p>
+                        <p class="text-muted-theme small mb-0"><?= __('dashboard_financial_registration_status_by_class') ?></p>
                     </div>
                 </div>
                 <div class="card-body p-0">
@@ -701,8 +701,8 @@ ob_start();
                                 <tr class="border-bottom border-theme-light">
                                     <th class="ps-4 py-3 fw-semibold text-muted-theme small text-uppercase"><?= __('dashboard_financial_class') ?></th>
                                     <th class="py-3 fw-semibold text-muted-theme text-center small text-uppercase"><?= __('dashboard_financial_total_students_label') ?></th>
-                                    <th class="py-3 fw-semibold text-muted-theme text-center small text-uppercase"><?= __('dashboard_financial_paid_registrations_label') ?></th>
-                                    <th class="py-3 fw-semibold text-muted-theme text-center small text-uppercase"><?= __('dashboard_financial_unpaid_registrations') ?></th>
+                                    <th class="py-3 fw-semibold text-muted-theme text-center small text-uppercase"><?= __('dashboard_admin_enrolled_status') ?></th>
+                                    <th class="py-3 fw-semibold text-muted-theme text-center small text-uppercase"><?= __('dashboard_admin_unenrolled_status') ?></th>
                                     <th class="py-3 fw-semibold text-muted-theme small text-uppercase"><?= __('dashboard_financial_payment_rate') ?></th>
                                     <th class="pe-4 py-3 fw-semibold text-muted-theme text-end small text-uppercase"><?= __('dashboard_financial_amount_collected') ?></th>
                                 </tr>

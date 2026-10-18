@@ -33,6 +33,15 @@ class ImpactAnalysisController
         $type = $_GET['type'] ?? $_GET['entity'] ?? '';
         $id = (int)($_GET['id'] ?? 0);
 
+        if (
+            in_array(strtolower((string) $type), ['subject', 'subjects', 'matiere'], true)
+            && !\App\Core\PermissionManager::hasPermission('manage_subjects')
+        ) {
+            http_response_code(403);
+            echo json_encode(['error' => true, 'message' => __('unauthorized_action')]);
+            return;
+        }
+
         if (empty($type) || $id <= 0) {
             http_response_code(400);
             echo json_encode(['error' => true, 'message' => __('impact_invalid_parameters')]);
@@ -74,6 +83,15 @@ class ImpactAnalysisController
         $scenario = $_POST['scenario'] ?? 'direct'; // 'transfer', 'archive', 'deactivate', 'direct'
         $targetId = (int)($_POST['target_id'] ?? 0);
         $confirmationName = trim($_POST['confirm_name'] ?? '');
+
+        if (
+            in_array(strtolower((string) $type), ['subject', 'subjects', 'matiere'], true)
+            && !\App\Core\PermissionManager::hasPermission('manage_subjects')
+        ) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => __('unauthorized_action')]);
+            return;
+        }
 
         if (empty($type) || $id <= 0) {
             http_response_code(400);

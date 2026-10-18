@@ -160,6 +160,30 @@ class SubjectController
                                                                                      ORDER BY c.nom ASC");
                 $classesStmt->execute([$academicYearId]);
                 $classes = $classesStmt->fetchAll(PDO::FETCH_ASSOC);
+        $subjectBulkClasses = $this->db->prepare(
+            "SELECT c.id, c.nom
+             FROM classes c
+             LEFT JOIN departments d ON c.department_id = d.id
+             LEFT JOIN cycles cy ON c.cycle_id = cy.id
+             LEFT JOIN sections sec ON c.section_id = sec.id
+             LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id
+             WHERE c.status = 1
+               AND (c.department_id IS NULL OR d.status = 1)
+               AND (c.cycle_id IS NULL OR cy.status = 1)
+               AND (c.section_id IS NULL OR sec.status = 1)
+               AND (c.teaching_type_id IS NULL OR tt.actif = 1)
+                 AND EXISTS (
+                     SELECT 1 FROM students st
+                     WHERE st.class_id = c.id
+                       AND st.academic_year_id = ?
+                       AND st.status = 'Inscrit'
+                       AND st.actif = 1
+                       AND st.is_withdrawn = 0
+                 )
+               ORDER BY c.nom ASC"
+        );
+        $subjectBulkClasses->execute([$academicYearId]);
+        $subjectBulkClasses = $subjectBulkClasses->fetchAll(PDO::FETCH_ASSOC);
         $teachingForms = $this->db->query("SELECT id, nom, code, teaching_type_id FROM teaching_forms WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $departments = $this->db->query("SELECT d.id, d.nom, d.teaching_type_id, d.teaching_form_id FROM departments d LEFT JOIN teaching_types tt ON d.teaching_type_id = tt.id WHERE d.status = 1 AND (d.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY d.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         include __DIR__ . '/../Views/subjects/index.php';
@@ -775,14 +799,71 @@ class SubjectController
     public function delete($id)
     {
         \App\Core\PermissionManager::requirePermission('manage_subjects');
-        $stmt = $this->db->prepare("DELETE FROM subjects WHERE id = ?");
-        if ($stmt->execute([$id])) {
-            Session::setFlash('success', __('subject_deleted_success'));
-        } else {
+        try {
+            $result = (new \App\Services\SmartDeleteService($this->db))
+                ->deleteSubjectsPermanently([(int) $id]);
+            if ($result['success']) {
+                Session::setFlash('success', __('subject_deleted_success'));
+            } else {
+                Session::setFlash('error', __('subject_delete_failed'));
+            }
+        } catch (\Throwable $e) {
+            error_log('[SubjectController] Subject deletion failed: ' . $e->getMessage());
             Session::setFlash('error', __('subject_delete_failed'));
         }
         header("Location: /subjects");
         exit;
+    }
+
+    public function bulkDelete(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+        if (!PermissionManager::hasPermission('manage_subjects')) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => __('unauthorized_action')]);
+            return;
+        }
+
+        if (!Session::verifyCsrfToken($_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['csrf_token'] ?? '')) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => __('unauthorized_action')]);
+            return;
+        }
+
+        $rawIds = $_POST['ids'] ?? [];
+        if (!is_array($rawIds) || $rawIds === [] || count($rawIds) > 100) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => __('subject_delete_failed')]);
+            return;
+        }
+
+        $ids = [];
+        foreach ($rawIds as $rawId) {
+            $id = filter_var($rawId, FILTER_VALIDATE_INT);
+            if ($id === false || $id <= 0) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => __('subject_delete_failed')]);
+                return;
+            }
+            $ids[] = (int) $id;
+        }
+
+        try {
+            $result = (new \App\Services\SmartDeleteService($this->db))
+                ->deleteSubjectsPermanently($ids);
+            $message = $result['deleted_count'] === 1
+                ? __('subject_deleted_success')
+                : __('subjects_deleted_success', ['count' => $result['deleted_count']]);
+            echo json_encode([
+                'success' => true,
+                'deleted_count' => $result['deleted_count'],
+                'message' => $message,
+            ]);
+        } catch (\Throwable $e) {
+            error_log('[SubjectController] Bulk subject deletion failed: ' . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => __('subject_delete_failed')]);
+        }
     }
 
     public function import(): void
@@ -884,33 +965,232 @@ class SubjectController
         include __DIR__ . '/../Views/subjects/import.php';
     }
 
-    private function fetchSubjectsFromFilters($limit = null, $offset = null, ?int $defaultTeachingTypeId = null)
+    public function bulkSelection(): void
     {
-        $search = trim($_GET['q'] ?? '');
-        $classId = (int) ($_GET['class_id'] ?? 0);
-        $teachingTypeId = array_key_exists('teaching_type_id', $_GET)
-            ? (int) $_GET['teaching_type_id']
+        header('Content-Type: application/json; charset=utf-8');
+        if (!PermissionManager::hasPermission('manage_subjects')) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => __('unauthorized_action')]);
+            return;
+        }
+
+        $searchInput = $_GET['q'] ?? '';
+        $classIdInput = $_GET['class_id'] ?? '0';
+        $unassignedInput = $_GET['unassigned'] ?? '0';
+        $pageInput = $_GET['page'] ?? '1';
+        if (!is_string($searchInput) || !is_scalar($classIdInput) || !is_scalar($unassignedInput) || !is_scalar($pageInput)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => __('subject_delete_failed')]);
+            return;
+        }
+        $search = trim($searchInput);
+        $classId = $classIdInput === '' ? 0 : filter_var($classIdInput, FILTER_VALIDATE_INT);
+        $unassigned = filter_var($unassignedInput, FILTER_VALIDATE_INT);
+        $page = filter_var($pageInput, FILTER_VALIDATE_INT);
+        if (strlen($search) > 400 || $classId === false || $classId < 0 || !in_array($unassigned, [0, 1], true) || $page === false || $page < 1) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => __('subject_delete_failed')]);
+            return;
+        }
+
+        $pageSize = 50;
+        [$subjects, , $totalCount] = $this->fetchSubjectsFromFilters(
+            $pageSize,
+            ($page - 1) * $pageSize,
+            null,
+            [
+                'q' => $search,
+                'class_id' => (int) $classId,
+                'teaching_type_id' => 0,
+                'department_id' => 0,
+                'unassigned' => (int) $unassigned,
+            ]
+        );
+        $classAssignments = [];
+        $teacherAssignments = [];
+        if ($subjects !== []) {
+            $activeYearId = $this->academicYearService->getActiveYearId();
+            $subjectIds = array_map(static fn(array $subject): int => (int) $subject['id'], $subjects);
+            $placeholders = implode(',', array_fill(0, count($subjectIds), '?'));
+
+            $classStmt = $this->db->prepare(
+                "SELECT DISTINCT sc.subject_id, c.id AS class_id, c.nom AS class_name
+                 FROM subject_classes sc
+                 JOIN classes c ON c.id = sc.class_id AND c.status = 1
+                 WHERE sc.academic_year_id = ?
+                   AND sc.subject_id IN ($placeholders)
+                   AND (c.department_id IS NULL OR EXISTS (
+                       SELECT 1 FROM departments d
+                       WHERE d.id = c.department_id AND d.status = 1
+                   ))
+                   AND (c.cycle_id IS NULL OR EXISTS (
+                       SELECT 1 FROM cycles cy
+                       WHERE cy.id = c.cycle_id AND cy.status = 1
+                   ))
+                   AND (c.section_id IS NULL OR EXISTS (
+                       SELECT 1 FROM sections sec
+                       WHERE sec.id = c.section_id AND sec.status = 1
+                   ))
+                   AND (c.teaching_type_id IS NULL OR EXISTS (
+                       SELECT 1 FROM teaching_types tt
+                       WHERE tt.id = c.teaching_type_id AND tt.actif = 1
+                   ))
+                   AND EXISTS (
+                       SELECT 1 FROM students st
+                       WHERE st.class_id = c.id
+                         AND st.academic_year_id = sc.academic_year_id
+                         AND st.status = 'Inscrit'
+                         AND st.actif = 1
+                         AND st.is_withdrawn = 0
+                   )
+                 ORDER BY c.nom ASC"
+            );
+            $classStmt->execute(array_merge([$activeYearId], $subjectIds));
+            foreach ($classStmt->fetchAll(PDO::FETCH_ASSOC) as $assignment) {
+                $classAssignments[(int) $assignment['subject_id']][] = (string) $assignment['class_name'];
+            }
+
+            $teacherParams = array_merge([$this->academicYearService->getActiveYearId()], $subjectIds);
+            $teacherStmt = $this->db->prepare(
+                "SELECT DISTINCT ta.subject_id, u.id AS teacher_id,
+                        CONCAT_WS(' ', NULLIF(TRIM(u.prenom), ''), NULLIF(TRIM(u.nom), '')) AS teacher_name
+                 FROM teacher_assignments ta
+                 JOIN users u ON u.id = ta.user_id AND u.role = 'enseignant' AND u.status = 1
+                LEFT JOIN classes c ON c.id = ta.class_id
+                 WHERE (ta.academic_year_id = ? OR ta.academic_year_id IS NULL)
+                  AND (ta.class_id IS NULL OR c.status = 1)
+                  AND ta.subject_id IN ($placeholders)
+                 ORDER BY teacher_name ASC"
+            );
+            $teacherStmt->execute($teacherParams);
+            foreach ($teacherStmt->fetchAll(PDO::FETCH_ASSOC) as $assignment) {
+                $teacherAssignments[(int) $assignment['subject_id']][] = (string) $assignment['teacher_name'];
+            }
+        }
+
+        echo json_encode([
+            'success' => true,
+            'subjects' => array_map(static function (array $subject) use ($classAssignments, $teacherAssignments): array {
+                $id = (int) $subject['id'];
+                $classes = array_values(array_unique($classAssignments[$id] ?? []));
+                $teachers = array_values(array_unique(array_filter($teacherAssignments[$id] ?? [])));
+                return [
+                    'id' => $id,
+                    'name' => (string) $subject['nom'],
+                    'classes' => $classes,
+                    'teachers' => $teachers,
+                ];
+            }, $subjects),
+            'total' => $totalCount,
+            'page' => (int) $page,
+            'page_size' => $pageSize,
+        ]);
+    }
+
+    private function fetchSubjectsFromFilters($limit = null, $offset = null, ?int $defaultTeachingTypeId = null, ?array $filterOverrides = null)
+    {
+        $filters = $filterOverrides ?? $_GET;
+        $activeYearId = $this->academicYearService->getActiveYearId();
+        $search = trim((string) ($filters['q'] ?? ''));
+        $classId = (int) ($filters['class_id'] ?? 0);
+        $teachingTypeId = array_key_exists('teaching_type_id', $filters)
+            ? (int) $filters['teaching_type_id']
             : (int) ($defaultTeachingTypeId ?? 0);
-        $departmentId = (int) ($_GET['department_id'] ?? 0);
+        $departmentId = (int) ($filters['department_id'] ?? 0);
+        $unassigned = !empty($filters['unassigned']);
 
         // 1. Count total
         $countSql = "SELECT COUNT(*) FROM subjects s LEFT JOIN teaching_types tt ON s.teaching_type_id = tt.id WHERE (tt.actif = 1 OR s.teaching_type_id IS NULL)";
-        $countParams = [];
+        $eligibleClassAssignment = "EXISTS (
+            SELECT 1
+            FROM subject_classes sc_active
+            JOIN classes c_active ON c_active.id = sc_active.class_id AND c_active.status = 1
+            WHERE sc_active.subject_id = s.id
+              AND sc_active.academic_year_id = ?
+              AND (c_active.department_id IS NULL OR EXISTS (
+                  SELECT 1 FROM departments d_active
+                  WHERE d_active.id = c_active.department_id AND d_active.status = 1
+              ))
+              AND (c_active.cycle_id IS NULL OR EXISTS (
+                  SELECT 1 FROM cycles cy_active
+                  WHERE cy_active.id = c_active.cycle_id AND cy_active.status = 1
+              ))
+              AND (c_active.section_id IS NULL OR EXISTS (
+                  SELECT 1 FROM sections sec_active
+                  WHERE sec_active.id = c_active.section_id AND sec_active.status = 1
+              ))
+              AND (c_active.teaching_type_id IS NULL OR EXISTS (
+                  SELECT 1 FROM teaching_types tt_active
+                  WHERE tt_active.id = c_active.teaching_type_id AND tt_active.actif = 1
+              ))
+              AND EXISTS (
+                  SELECT 1 FROM students st_active
+                  WHERE st_active.class_id = c_active.id
+                    AND st_active.academic_year_id = ?
+                    AND st_active.status = 'Inscrit'
+                    AND st_active.actif = 1
+                    AND st_active.is_withdrawn = 0
+              )
+        )";
+        $hasNoCurrentClassOrTeacher = "(
+            NOT EXISTS (
+                SELECT 1 FROM subject_classes sc_none
+                WHERE sc_none.subject_id = s.id AND sc_none.academic_year_id = ?
+            )
+            AND NOT EXISTS (
+                SELECT 1
+                FROM teacher_assignments ta_none
+                JOIN users u_none ON u_none.id = ta_none.user_id
+                    AND u_none.role = 'enseignant' AND u_none.status = 1
+                WHERE ta_none.subject_id = s.id
+                  AND (ta_none.academic_year_id = ? OR ta_none.academic_year_id IS NULL)
+            )
+        )";
+        $countSql .= " AND ($eligibleClassAssignment OR $hasNoCurrentClassOrTeacher)";
+        $countParams = [$activeYearId, $activeYearId, $activeYearId, $activeYearId];
         if ($search !== '') {
             $countSql .= " AND s.nom LIKE ?";
             $countParams[] = '%' . $search . '%';
         }
         if ($classId > 0) {
-            $countSql .= " AND EXISTS (SELECT 1 FROM subject_classes sc2 JOIN classes c2 ON c2.id = sc2.class_id WHERE sc2.subject_id = s.id AND sc2.class_id = ? AND c2.status = 1)";
+            $countSql .= " AND EXISTS (
+                SELECT 1 FROM subject_classes sc2
+                JOIN classes c2 ON c2.id = sc2.class_id AND c2.status = 1
+                WHERE sc2.subject_id = s.id AND sc2.academic_year_id = ? AND sc2.class_id = ?
+                  AND EXISTS (
+                      SELECT 1 FROM students st2
+                      WHERE st2.class_id = c2.id AND st2.academic_year_id = ?
+                        AND st2.status = 'Inscrit' AND st2.actif = 1 AND st2.is_withdrawn = 0
+                  )
+            )";
+            $countParams[] = $activeYearId;
             $countParams[] = $classId;
+            $countParams[] = $activeYearId;
+        }
+        if ($unassigned) {
+            $countSql .= " AND $hasNoCurrentClassOrTeacher";
+            $countParams[] = $activeYearId;
+            $countParams[] = $activeYearId;
         }
         if ($teachingTypeId > 0) {
             $countSql .= " AND s.teaching_type_id = ?";
             $countParams[] = $teachingTypeId;
         }
         if ($departmentId > 0) {
-            $countSql .= " AND EXISTS (SELECT 1 FROM subject_classes sc3 JOIN classes c3 ON c3.id = sc3.class_id WHERE sc3.subject_id = s.id AND c3.status = 1 AND c3.department_id = ?)";
+            $countSql .= " AND EXISTS (
+                SELECT 1 FROM subject_classes sc3
+                JOIN classes c3 ON c3.id = sc3.class_id AND c3.status = 1
+                WHERE sc3.subject_id = s.id AND sc3.academic_year_id = ?
+                  AND c3.department_id = ?
+                  AND EXISTS (
+                      SELECT 1 FROM students st3
+                      WHERE st3.class_id = c3.id AND st3.academic_year_id = ?
+                        AND st3.status = 'Inscrit' AND st3.actif = 1 AND st3.is_withdrawn = 0
+                  )
+            )";
+            $countParams[] = $activeYearId;
             $countParams[] = $departmentId;
+            $countParams[] = $activeYearId;
         }
 
         if (Session::get('user_role') !== 'superadmin') {
@@ -933,12 +1213,37 @@ class SubjectController
                 ) AS group_list,
                 GROUP_CONCAT(DISTINCT c.nom SEPARATOR ', ') as classes_list
                 FROM subjects s
-                LEFT JOIN subject_classes sc ON s.id = sc.subject_id
+                LEFT JOIN subject_classes sc ON s.id = sc.subject_id AND sc.academic_year_id = ?
                 LEFT JOIN classes c ON sc.class_id = c.id AND c.status = 1
+                    AND (c.department_id IS NULL OR EXISTS (
+                        SELECT 1 FROM departments d_active
+                        WHERE d_active.id = c.department_id AND d_active.status = 1
+                    ))
+                    AND (c.cycle_id IS NULL OR EXISTS (
+                        SELECT 1 FROM cycles cy_active
+                        WHERE cy_active.id = c.cycle_id AND cy_active.status = 1
+                    ))
+                    AND (c.section_id IS NULL OR EXISTS (
+                        SELECT 1 FROM sections sec_active
+                        WHERE sec_active.id = c.section_id AND sec_active.status = 1
+                    ))
+                    AND (c.teaching_type_id IS NULL OR EXISTS (
+                        SELECT 1 FROM teaching_types tt_active
+                        WHERE tt_active.id = c.teaching_type_id AND tt_active.actif = 1
+                    ))
+                    AND EXISTS (
+                        SELECT 1 FROM students st_active
+                        WHERE st_active.class_id = c.id
+                          AND st_active.academic_year_id = sc.academic_year_id
+                          AND st_active.status = 'Inscrit'
+                          AND st_active.actif = 1
+                          AND st_active.is_withdrawn = 0
+                    )
                 LEFT JOIN teaching_types tt ON s.teaching_type_id = tt.id
                 LEFT JOIN subject_groups sg ON s.subject_group_id = sg.id
                 WHERE (tt.actif = 1 OR s.teaching_type_id IS NULL)";
-        $params = [];
+        $sql .= " AND ($eligibleClassAssignment OR $hasNoCurrentClassOrTeacher)";
+        $params = [$activeYearId, $activeYearId, $activeYearId, $activeYearId, $activeYearId];
 
         if ($search !== '') {
             $sql .= " AND s.nom LIKE ?";
@@ -949,9 +1254,22 @@ class SubjectController
             $sql .= " AND EXISTS (
                 SELECT 1 FROM subject_classes sc2
                 JOIN classes c2 ON c2.id = sc2.class_id AND c2.status = 1
-                WHERE sc2.subject_id = s.id AND sc2.class_id = ?
+                WHERE sc2.subject_id = s.id AND sc2.academic_year_id = ? AND sc2.class_id = ?
+                  AND EXISTS (
+                      SELECT 1 FROM students st2
+                      WHERE st2.class_id = c2.id AND st2.academic_year_id = ?
+                        AND st2.status = 'Inscrit' AND st2.actif = 1 AND st2.is_withdrawn = 0
+                  )
             )";
+            $params[] = $activeYearId;
             $params[] = $classId;
+            $params[] = $activeYearId;
+        }
+
+        if ($unassigned) {
+            $sql .= " AND $hasNoCurrentClassOrTeacher";
+            $params[] = $activeYearId;
+            $params[] = $activeYearId;
         }
 
         if ($teachingTypeId > 0) {
@@ -960,8 +1278,20 @@ class SubjectController
         }
 
         if ($departmentId > 0) {
-            $sql .= " AND EXISTS (SELECT 1 FROM subject_classes sc3 JOIN classes c3 ON c3.id = sc3.class_id WHERE sc3.subject_id = s.id AND c3.status = 1 AND c3.department_id = ?)";
+            $sql .= " AND EXISTS (
+                SELECT 1 FROM subject_classes sc3
+                JOIN classes c3 ON c3.id = sc3.class_id AND c3.status = 1
+                WHERE sc3.subject_id = s.id AND sc3.academic_year_id = ?
+                  AND c3.department_id = ?
+                  AND EXISTS (
+                      SELECT 1 FROM students st3
+                      WHERE st3.class_id = c3.id AND st3.academic_year_id = ?
+                        AND st3.status = 'Inscrit' AND st3.actif = 1 AND st3.is_withdrawn = 0
+                  )
+            )";
+            $params[] = $activeYearId;
             $params[] = $departmentId;
+            $params[] = $activeYearId;
         }
 
         if (Session::get('user_role') !== 'superadmin') {
@@ -978,7 +1308,7 @@ class SubjectController
         $stmt->execute($params);
         $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        return [$data, ['q' => $search, 'class_id' => $classId, 'teaching_type_id' => $teachingTypeId, 'department_id' => $departmentId], $totalCount];
+        return [$data, ['q' => $search, 'class_id' => $classId, 'teaching_type_id' => $teachingTypeId, 'department_id' => $departmentId, 'unassigned' => $unassigned], $totalCount];
     }
 
     private function hasColumn(string $table, string $column): bool

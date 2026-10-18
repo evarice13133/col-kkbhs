@@ -115,7 +115,7 @@ class DashboardController
         }
 
         $totalStudents = (int) $this->db->query(
-            "SELECT COUNT(*) FROM students s JOIN classes c ON s.class_id = c.id WHERE s.is_withdrawn = 0 AND s.actif = 1 AND s.academic_year_id = {$activeYearId} {$andClass}"
+            "SELECT COUNT(*) FROM students s JOIN classes c ON s.class_id = c.id WHERE s.is_withdrawn = 0 AND s.actif = 1 AND s.status = 'Inscrit' AND s.academic_year_id = {$activeYearId} {$andClass}"
         )->fetchColumn();
 
         // Scolarité encaissée
@@ -135,7 +135,7 @@ class DashboardController
         $totalExpectedGross = (float) $this->db->query(
             "SELECT COALESCE(SUM(c.frais_scolarite_brut), 0)
              FROM students s JOIN classes c ON s.class_id = c.id
-             WHERE s.is_withdrawn = 0 AND s.actif = 1 AND s.academic_year_id = {$activeYearId} {$andClass}"
+             WHERE s.is_withdrawn = 0 AND s.actif = 1 AND s.status = 'Inscrit' AND s.academic_year_id = {$activeYearId} {$andClass}"
         )->fetchColumn();
 
         // Réductions accordées sur la scolarité
@@ -144,7 +144,7 @@ class DashboardController
              FROM enrollments e
              JOIN students s ON e.student_id = s.id
              JOIN classes c ON s.class_id = c.id
-             WHERE s.is_withdrawn = 0 AND s.actif = 1 AND e.academic_year_id = {$activeYearId} {$andClass}"
+             WHERE s.is_withdrawn = 0 AND s.actif = 1 AND s.status = 'Inscrit' AND e.academic_year_id = {$activeYearId} {$andClass}"
         )->fetchColumn();
 
         $totalExpected = max(0.0, $totalExpectedGross - $totalReductions);
@@ -154,65 +154,41 @@ class DashboardController
              FROM insolvent_students ins
              JOIN students s ON ins.student_id = s.id
              JOIN classes c ON s.class_id = c.id
-             WHERE ins.academic_year_id = {$activeYearId} {$andClass}"
+             WHERE ins.academic_year_id = {$activeYearId}
+               AND s.is_withdrawn = 0
+               AND s.actif = 1
+               AND s.status = 'Inscrit' {$andClass}"
         )->fetchColumn();
 
         $collectionRate = $totalExpected > 0 ? round(($totalTuitionCollected / $totalExpected) * 100, 1) : 0;
 
-        // Récupérer la politique des frais d'inscription
-        $settingsStore = new \App\Services\SettingsStore($this->db);
-        $policy = $settingsStore->get('registration_fee_policy', 'all');
-
-        $isNewOnly = ($policy === 'new_only') ? 1 : 0;
-        $isByStatus = ($policy === 'by_status') ? 1 : 0;
-
-        // Récupérer les statistiques de rentrée/inscription par classe
+        // Le statut représente la validation de l'inscription; les importés en attente sont "Non inscrit".
         $stmtClassStats = $this->db->prepare("
-            SELECT 
+            SELECT
                 c.id as class_id,
                 c.nom as class_name,
                 COUNT(s.id) as total_students,
-                SUM(CASE WHEN COALESCE(p.paid_amount, 0) >= 
-                    CASE 
-                        WHEN :isNewOnly1 = 1 THEN 
-                            CASE WHEN e.student_status = 'nouveau' THEN c.frais_inscription ELSE 0 END
-                        WHEN :isByStatus1 = 1 THEN 
-                            CASE WHEN e.student_status = 'nouveau' THEN c.frais_inscription ELSE c.frais_inscription_reinscription END
-                        ELSE 
-                            c.frais_inscription
-                    END
-                THEN 1 ELSE 0 END) as enrolled_count,
-                SUM(CASE WHEN COALESCE(p.paid_amount, 0) < 
-                    CASE 
-                        WHEN :isNewOnly2 = 1 THEN 
-                            CASE WHEN e.student_status = 'nouveau' THEN c.frais_inscription ELSE 0 END
-                        WHEN :isByStatus2 = 1 THEN 
-                            CASE WHEN e.student_status = 'nouveau' THEN c.frais_inscription ELSE c.frais_inscription_reinscription END
-                        ELSE 
-                            c.frais_inscription
-                    END
-                THEN 1 ELSE 0 END) as non_enrolled_count,
+                SUM(CASE WHEN s.status = 'Inscrit' THEN 1 ELSE 0 END) as enrolled_count,
+                SUM(CASE WHEN s.status = 'Non inscrit' THEN 1 ELSE 0 END) as non_enrolled_count,
                 SUM(COALESCE(p.paid_amount, 0)) as total_registration_collected
             FROM students s
-            JOIN enrollments e ON s.id = e.student_id AND e.academic_year_id = s.academic_year_id
             JOIN classes c ON s.class_id = c.id
             LEFT JOIN (
-                SELECT student_id, SUM(amount) as paid_amount 
-                FROM payments 
-                WHERE type = 'inscription' AND academic_year_id = :academic_year_id1
+                SELECT student_id, SUM(amount) as paid_amount
+                FROM payments
+                WHERE type = 'inscription' AND academic_year_id = :payments_year_id
                 GROUP BY student_id
-            ) p ON s.id = p.student_id
-            WHERE s.is_withdrawn = 0 AND s.actif = 1 AND s.academic_year_id = :academic_year_id2 {$andClass}
+            ) p ON p.student_id = s.id
+            WHERE s.is_withdrawn = 0
+              AND s.actif = 1
+              AND s.status IN ('Inscrit', 'Non inscrit')
+              AND s.academic_year_id = :academic_year_id {$andClass}
             GROUP BY c.id, c.nom
             ORDER BY c.nom ASC
         ");
         $stmtClassStats->execute([
-            ':isNewOnly1' => $isNewOnly,
-            ':isByStatus1' => $isByStatus,
-            ':isNewOnly2' => $isNewOnly,
-            ':isByStatus2' => $isByStatus,
-            ':academic_year_id1' => $activeYearId,
-            ':academic_year_id2' => $activeYearId
+            ':payments_year_id' => $activeYearId,
+            ':academic_year_id' => $activeYearId,
         ]);
         $classRegistrationStats = $stmtClassStats->fetchAll(\PDO::FETCH_ASSOC) ?: [];
 
@@ -289,7 +265,7 @@ class DashboardController
             'totalStudents', 'totalCollected', 'totalExpected', 'totalExpectedGross', 'totalReductions',
             'totalInsolvent', 'collectionRate', 'monthlyPayments', 'recentPayments',
             'totalRegistrationCollected', 'totalTuitionCollected', 'totalGeneralCollected',
-            'totalEnrolled', 'totalNonEnrolled', 'classRegistrationStats', 'policy',
+            'totalEnrolled', 'totalNonEnrolled', 'classRegistrationStats',
             'totalExpenses', 'dailyExpenses', 'monthlyExpenses', 'annualExpenses', 'netBalance', 
             'expensesByCategory', 'monthlyExpensesHist'
         ), $extraFinData);
@@ -528,21 +504,21 @@ class DashboardController
             SELECT COALESCE(SUM(reste_a_payer), 0)
             FROM enrollments e
             JOIN students s ON e.student_id = s.id
-            WHERE s.is_withdrawn = 0 AND s.actif = 1 AND e.academic_year_id = {$activeYearId}
+            WHERE s.is_withdrawn = 0 AND s.actif = 1 AND s.status = 'Inscrit' AND e.academic_year_id = {$activeYearId}
         ")->fetchColumn();
 
         $totalReductions = (float)$this->db->query("
             SELECT COALESCE(SUM(total_reductions), 0)
             FROM enrollments e
             JOIN students s ON e.student_id = s.id
-            WHERE s.is_withdrawn = 0 AND s.actif = 1 AND e.academic_year_id = {$activeYearId}
+            WHERE s.is_withdrawn = 0 AND s.actif = 1 AND s.status = 'Inscrit' AND e.academic_year_id = {$activeYearId}
         ")->fetchColumn();
 
         $totalScholarships = (float)$this->db->query("
             SELECT COALESCE(SUM(total_bourses), 0)
             FROM enrollments e
             JOIN students s ON e.student_id = s.id
-            WHERE s.is_withdrawn = 0 AND s.actif = 1 AND e.academic_year_id = {$activeYearId}
+            WHERE s.is_withdrawn = 0 AND s.actif = 1 AND s.status = 'Inscrit' AND e.academic_year_id = {$activeYearId}
         ")->fetchColumn();
 
         $stmtPayMethod = $this->db->prepare("
@@ -1368,11 +1344,15 @@ class DashboardController
 
         // 5. Situation des tranches
         $tranchesSituation = $this->db->query("
-            SELECT installment_number, SUM(amount_planned) as total_planned, SUM(amount_paid) as total_paid
-            FROM student_installments
-            WHERE academic_year_id = {$activeYearId}
-            GROUP BY installment_number
-            ORDER BY installment_number ASC
+            SELECT si.installment_number, SUM(si.amount_planned) as total_planned, SUM(si.amount_paid) as total_paid
+            FROM student_installments si
+            JOIN students s ON s.id = si.student_id
+            WHERE si.academic_year_id = {$activeYearId}
+              AND s.is_withdrawn = 0
+              AND s.actif = 1
+              AND s.status = 'Inscrit'
+            GROUP BY si.installment_number
+            ORDER BY si.installment_number ASC
         ")->fetchAll(PDO::FETCH_ASSOC);
 
         // 6. Analyse des insolvables
@@ -1387,6 +1367,9 @@ class DashboardController
             JOIN students s ON ins.student_id = s.id
             JOIN classes c ON s.class_id = c.id
             WHERE ins.academic_year_id = {$activeYearId}
+              AND s.is_withdrawn = 0
+              AND s.actif = 1
+              AND s.status = 'Inscrit'
             GROUP BY c.id, c.nom
             ORDER BY total_due DESC
         ")->fetchAll(PDO::FETCH_ASSOC);
@@ -1675,11 +1658,15 @@ class DashboardController
 
         // 5. Situation des tranches
         $tranchesSituation = $this->db->query("
-            SELECT installment_number, SUM(amount_planned) as total_planned, SUM(amount_paid) as total_paid
-            FROM student_installments
-            WHERE academic_year_id = {$activeYearId}
-            GROUP BY installment_number
-            ORDER BY installment_number ASC
+            SELECT si.installment_number, SUM(si.amount_planned) as total_planned, SUM(si.amount_paid) as total_paid
+            FROM student_installments si
+            JOIN students s ON s.id = si.student_id
+            WHERE si.academic_year_id = {$activeYearId}
+              AND s.is_withdrawn = 0
+              AND s.actif = 1
+              AND s.status = 'Inscrit'
+            GROUP BY si.installment_number
+            ORDER BY si.installment_number ASC
         ")->fetchAll(PDO::FETCH_ASSOC);
 
         // 6. Analyse des insolvables
@@ -1694,6 +1681,9 @@ class DashboardController
             JOIN students s ON ins.student_id = s.id
             JOIN classes c ON s.class_id = c.id
             WHERE ins.academic_year_id = {$activeYearId}
+              AND s.is_withdrawn = 0
+              AND s.actif = 1
+              AND s.status = 'Inscrit'
             GROUP BY c.id, c.nom
             ORDER BY total_due DESC
         ")->fetchAll(PDO::FETCH_ASSOC);

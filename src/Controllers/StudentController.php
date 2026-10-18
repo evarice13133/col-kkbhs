@@ -301,6 +301,116 @@ class StudentController
 
     }
 
+    public function exportWithdrawnFinancialReport(): void
+    {
+        \App\Core\PermissionManager::requirePermission('manage_students');
+
+        $withdrawnCondition = "(s.is_withdrawn = 1 OR s.status IN ('Démission', 'Démissionnaire', 'Abandon'))";
+        $stmtStudents = $this->db->query("
+            SELECT s.id, s.nom, s.prenom, s.email, s.status, c.nom AS current_class
+            FROM students s
+            LEFT JOIN classes c ON c.id = s.class_id
+            WHERE $withdrawnCondition
+            ORDER BY s.nom, s.prenom
+        ");
+        $students = $stmtStudents->fetchAll(PDO::FETCH_ASSOC);
+        $studentFinance = [];
+
+        foreach ($students as $student) {
+            $studentFinance[(int) $student['id']] = ['years' => []];
+        }
+
+        if ($studentFinance) {
+            $settingsStore = new \App\Services\SettingsStore($this->db);
+            $stmtEnrollments = $this->db->query("
+                SELECT e.student_id, e.academic_year_id, ay.nom AS academic_year,
+                       c.nom AS class_name, c.teaching_type_id,
+                       c.frais_inscription, c.frais_inscription_reinscription,
+                       e.student_status, e.frais_scolarite_brut, e.total_reductions,
+                       e.total_bourses, e.reste_a_payer
+                FROM enrollments e
+                JOIN students s ON s.id = e.student_id
+                LEFT JOIN academic_years ay ON ay.id = e.academic_year_id
+                LEFT JOIN classes c ON c.id = e.class_id
+                WHERE $withdrawnCondition
+                ORDER BY e.student_id, ay.nom
+            ");
+
+            foreach ($stmtEnrollments->fetchAll(PDO::FETCH_ASSOC) as $enrollment) {
+                $studentId = (int) $enrollment['student_id'];
+                $yearId = (int) $enrollment['academic_year_id'];
+                $studentFinance[$studentId]['years'][$yearId] = [
+                    'academic_year' => $enrollment['academic_year'] ?? ('Année #' . $yearId),
+                    'class_name' => $enrollment['class_name'] ?? '',
+                    'student_status' => $enrollment['student_status'] ?? '',
+                    'registration_fee_policy' => $settingsStore->get(
+                        'registration_fee_policy',
+                        'all',
+                        (int) ($enrollment['teaching_type_id'] ?? 0)
+                    ),
+                    'frais_inscription' => (float) ($enrollment['frais_inscription'] ?? 0),
+                    'frais_inscription_reinscription' => (float) ($enrollment['frais_inscription_reinscription'] ?? 0),
+                    'frais_scolarite_brut' => (float) $enrollment['frais_scolarite_brut'],
+                    'total_reductions' => (float) $enrollment['total_reductions'],
+                    'total_bourses' => (float) $enrollment['total_bourses'],
+                    'reste_a_payer' => (float) $enrollment['reste_a_payer'],
+                    'registration_paid' => 0.0,
+                    'tuition_paid' => 0.0,
+                    'payments' => [],
+                ];
+            }
+
+            $stmtPayments = $this->db->query("
+                SELECT p.student_id, p.academic_year_id, ay.nom AS academic_year,
+                       p.amount, p.type, p.payment_date, p.payment_method,
+                       p.reference, p.commentaire, u.nom AS creator_nom, u.prenom AS creator_prenom
+                FROM payments p
+                JOIN students s ON s.id = p.student_id
+                LEFT JOIN academic_years ay ON ay.id = p.academic_year_id
+                LEFT JOIN users u ON u.id = p.created_by
+                WHERE $withdrawnCondition
+                ORDER BY p.student_id, p.academic_year_id, p.payment_date, p.id
+            ");
+
+            foreach ($stmtPayments->fetchAll(PDO::FETCH_ASSOC) as $payment) {
+                $studentId = (int) $payment['student_id'];
+                $yearId = (int) $payment['academic_year_id'];
+                if (!isset($studentFinance[$studentId]['years'][$yearId])) {
+                    $studentFinance[$studentId]['years'][$yearId] = [
+                        'academic_year' => $payment['academic_year'] ?? ('Année #' . $yearId),
+                        'class_name' => '',
+                        'student_status' => '',
+                        'frais_inscription' => 0.0,
+                        'frais_inscription_reinscription' => 0.0,
+                        'frais_scolarite_brut' => 0.0,
+                        'total_reductions' => 0.0,
+                        'total_bourses' => 0.0,
+                        'reste_a_payer' => 0.0,
+                        'registration_paid' => 0.0,
+                        'tuition_paid' => 0.0,
+                        'payments' => [],
+                    ];
+                }
+
+                $amount = (float) $payment['amount'];
+                if ($payment['type'] === 'inscription') {
+                    $studentFinance[$studentId]['years'][$yearId]['registration_paid'] += $amount;
+                } elseif ($payment['type'] === 'scolarite') {
+                    $studentFinance[$studentId]['years'][$yearId]['tuition_paid'] += $amount;
+                }
+                $studentFinance[$studentId]['years'][$yearId]['payments'][] = $payment;
+            }
+        }
+
+        $settings = (new \App\Services\SettingsStore($this->db))->all();
+        $generatedAt = date('d/m/Y H:i');
+
+        ob_start();
+        include __DIR__ . '/../Views/students/withdrawn_financial_report.php';
+        $html = ob_get_clean();
+        $this->streamPdf($html, 'Releve_financier_demissionnaires_' . date('Y-m-d') . '.pdf', 'landscape');
+    }
+
 
 
     public function exportExcel()
@@ -488,7 +598,7 @@ class StudentController
 
 
 
-    protected function streamPdf(string $html, string $filename): void
+    protected function streamPdf(string $html, string $filename, string $orientation = 'portrait'): void
     {
 
         while (ob_get_level()) {
@@ -513,7 +623,7 @@ class StudentController
 
         $dompdf->loadHtml($html);
 
-        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->setPaper('A4', $orientation);
 
 
 
@@ -1458,6 +1568,7 @@ class StudentController
 
         $stmt = $this->db->prepare("UPDATE students SET is_withdrawn = 1, status = 'Démissionnaire' WHERE id = ?");
         $stmt->execute([$id]);
+        $this->refreshInsolventCacheForActiveYear();
 
         // Journalisation d'audit
         (new \App\Services\ActivityTracker($this->db))->recordEvent('student_withdrawn', 'student_activity', [
@@ -1500,6 +1611,7 @@ class StudentController
 
         $stmt = $this->db->prepare("UPDATE students SET is_withdrawn = 0, status = ? WHERE id = ?");
         $stmt->execute([$restoredStatus, $id]);
+        $this->refreshInsolventCacheForActiveYear();
 
         // Journalisation d'audit
         (new \App\Services\ActivityTracker($this->db))->recordEvent('student_restored', 'student_activity', [
@@ -1519,6 +1631,118 @@ class StudentController
         } else {
             header("Location: /students?withdrawn=1");
         }
+        exit;
+    }
+
+    public function restoreArchived($id): void
+    {
+        \App\Core\PermissionManager::requirePermission('manage_students');
+
+        if (!Session::verifyCsrfToken($_GET['csrf_token'] ?? '')) {
+            Session::setFlash('error', __('unauthorized_action'));
+            header("Location: /students?archived=1");
+            exit;
+        }
+
+        $stmt = $this->db->prepare("
+            SELECT id, nom, prenom, status, is_withdrawn
+            FROM students s
+            WHERE id = ?
+              AND (
+                    actif = 0
+                    OR status IN ('Archivé', 'archived')
+                    OR (
+                        status = ''
+                        AND EXISTS (
+                            SELECT 1
+                            FROM activity_logs archived_log
+                            WHERE archived_log.entity_type = 'student'
+                              AND archived_log.entity_id = s.id
+                              AND archived_log.event_type = 'entity_archive'
+                        )
+                    )
+              )
+        ");
+        $stmt->execute([(int) $id]);
+        $student = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$student) {
+            Session::setFlash('error', "Élève archivé introuvable.");
+            header("Location: /students?archived=1");
+            exit;
+        }
+
+        $restoredStatus = (string) $student['status'];
+        if (in_array($restoredStatus, ['', 'Archivé', 'archived'], true)) {
+            $archiveLogStmt = $this->db->prepare("
+                SELECT metadata
+                FROM activity_logs
+                WHERE entity_type = 'student'
+                  AND entity_id = ?
+                  AND event_type = 'entity_archive'
+                ORDER BY id DESC
+                LIMIT 1
+            ");
+            $archiveLogStmt->execute([(int) $id]);
+            $archiveMetadata = json_decode((string) $archiveLogStmt->fetchColumn(), true);
+            $previousStatus = is_array($archiveMetadata) ? (string) ($archiveMetadata['status_before'] ?? '') : '';
+            $validStatuses = ['Non inscrit', 'Inscrit', 'Démissionnaire'];
+
+            if (in_array($previousStatus, $validStatuses, true)) {
+                $restoredStatus = $previousStatus;
+            } elseif ((int) $student['is_withdrawn'] === 1) {
+                $restoredStatus = 'Démissionnaire';
+            } else {
+                $activeYearId = $this->academicYearService->getActiveYearId();
+                $enrollmentStmt = $this->db->prepare("
+                    SELECT COUNT(*)
+                    FROM enrollments
+                    WHERE student_id = ?
+                      AND (? = 0 OR academic_year_id = ?)
+                ");
+                $enrollmentStmt->execute([(int) $id, $activeYearId, $activeYearId]);
+                $restoredStatus = (int) $enrollmentStmt->fetchColumn() > 0 ? 'Inscrit' : 'Non inscrit';
+            }
+        }
+        $restoreStmt = $this->db->prepare("
+            UPDATE students
+            SET actif = 1, status = ?
+            WHERE id = ?
+              AND (
+                    actif = 0
+                    OR status IN ('Archivé', 'archived')
+                    OR (
+                        status = ''
+                        AND EXISTS (
+                            SELECT 1
+                            FROM activity_logs archived_log
+                            WHERE archived_log.entity_type = 'student'
+                              AND archived_log.entity_id = students.id
+                              AND archived_log.event_type = 'entity_archive'
+                        )
+                    )
+              )
+        ");
+        $restoreStmt->execute([$restoredStatus, (int) $id]);
+        if ($restoreStmt->rowCount() !== 1) {
+            Session::setFlash('error', "La restauration de l'élève a échoué.");
+            header("Location: /students?archived=1");
+            exit;
+        }
+
+        $this->refreshInsolventCacheForActiveYear();
+        (new \App\Services\ActivityTracker($this->db))->recordEvent('student_unarchived', 'student_activity', [
+            'entity_type' => 'student',
+            'entity_id' => (int) $student['id'],
+            'metadata' => [
+                'nom' => $student['nom'],
+                'prenom' => $student['prenom'],
+                'status' => $student['status'],
+            ],
+        ]);
+
+        Session::setFlash('success', "Élève restauré avec succès.");
+        header("Location: /students?archived=1");
         exit;
     }
 
@@ -1838,6 +2062,7 @@ class StudentController
         $stmt = $this->db->prepare("UPDATE students SET actif = 0 WHERE id = ?");
 
         $stmt->execute([$id]);
+        $this->refreshInsolventCacheForActiveYear();
 
         Session::setFlash('success', __('student_deleted_success'));
 
@@ -1845,6 +2070,14 @@ class StudentController
 
         exit;
 
+    }
+
+    private function refreshInsolventCacheForActiveYear(): void
+    {
+        $academicYearId = $this->academicYearService->getActiveYearId();
+        if ($academicYearId > 0) {
+            (new \App\Models\InsolventStudent())->refreshCache($academicYearId);
+        }
     }
 
 
@@ -1856,22 +2089,38 @@ class StudentController
         $sectionId = (int) ($_GET['section_id'] ?? 0);
         $teachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
         $showWithdrawn = (int) ($_GET['withdrawn'] ?? 0);
+        $showArchived = \App\Core\PermissionManager::hasPermission('manage_students')
+            ? (int) ($_GET['archived'] ?? 0)
+            : 0;
         $onlyMine = (int) ($_GET['only_mine'] ?? 0);
         $statusFilter = $_GET['status'] ?? null;
         $academicYearId = $this->academicYearService->getActiveYearId();
 
         // --- 1. Construction des conditions ---
-        $where = " WHERE s.is_withdrawn = ? AND s.actif = 1 
-                   AND (c.department_id IS NULL OR d.status = 1)
-                   AND (c.cycle_id IS NULL OR cy.status = 1)
-                   AND (c.section_id IS NULL OR sec.status = 1)
-                   AND (c.teaching_type_id IS NULL OR tt.actif = 1)";
-        $params = [$showWithdrawn];
+        $where = " WHERE " . ($showArchived
+            ? "(s.actif = 0
+                OR s.status IN ('Archivé', 'archived')
+                OR (
+                    s.status = ''
+                    AND EXISTS (
+                        SELECT 1
+                        FROM activity_logs archived_log
+                        WHERE archived_log.entity_type = 'student'
+                          AND archived_log.entity_id = s.id
+                          AND archived_log.event_type = 'entity_archive'
+                    )
+                ))"
+            : "s.is_withdrawn = ? AND s.actif = ?") . "
+                   AND (s.actif = 0 OR c.department_id IS NULL OR d.status = 1)
+                   AND (s.actif = 0 OR c.cycle_id IS NULL OR cy.status = 1)
+                   AND (s.actif = 0 OR c.section_id IS NULL OR sec.status = 1)
+                   AND (s.actif = 0 OR c.teaching_type_id IS NULL OR tt.actif = 1)";
+        $params = $showArchived ? [] : [$showWithdrawn, 1];
 
         if ($statusFilter !== null && $statusFilter !== '') {
             $where .= " AND s.status = ?";
             $params[] = $statusFilter;
-        } elseif ($showWithdrawn == 0) {
+        } elseif ($showWithdrawn == 0 && $showArchived === 0) {
             // Par défaut, masquer les élèves non inscrits de la liste générale
             $where .= " AND s.status = 'Inscrit'";
         }
@@ -1882,7 +2131,7 @@ class StudentController
         }
 
         // Filter by academic year
-        if ($academicYearId > 0) {
+        if ($academicYearId > 0 && $showArchived === 0) {
             $where .= " AND s.academic_year_id = ?";
             $params[] = $academicYearId;
         }
@@ -1968,6 +2217,7 @@ class StudentController
                 'section_id' => $sectionId,
                 'teaching_type_id' => $teachingTypeId,
                 'withdrawn' => $showWithdrawn,
+                'archived' => $showArchived,
                 'only_mine' => $onlyMine,
                 'status' => $statusFilter
             ],

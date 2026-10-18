@@ -67,32 +67,42 @@
             ?>
                 <td class="text-end pe-4" data-label="<?= htmlspecialchars((string) __('actions'), ENT_QUOTES, 'UTF-8') ?>">
                     <div class="d-flex justify-content-end gap-1 align-items-center table-row-actions">
-                        <a href="/students/edit?id=<?= $s['id'] ?>" class="btn btn-sm btn-action-modern text-primary"
-                            title="<?= __('edit') ?>">
-                            <i class="bi bi-pencil-square fs-5"></i>
-                        </a>
-                        <?php if ($filters['withdrawn'] ?? 0): ?>
-                            <a href="/students/restore?id=<?= $s['id'] ?>&csrf_token=<?= \App\Core\Session::generateCsrfToken() ?>"
+                        <?php if ($filters['archived'] ?? 0): ?>
+                            <a href="/students/restore-archived?id=<?= $s['id'] ?>&csrf_token=<?= \App\Core\Session::generateCsrfToken() ?>"
                                 class="btn btn-sm btn-action-modern text-success btn-confirm-restore"
                                 data-confirm-action="<?= __('confirm_restore_action') ?>"
-                                data-confirm="<?= __('restore_student_confirm') ?>" title="<?= __('restore') ?>">
-                                <i class="bi bi-arrow-counterclockwise fs-5"></i>
+                                data-confirm="<?= __('restore_archived_student_confirm') ?>"
+                                title="<?= __('unarchive_student') ?>">
+                                <i class="bi bi-archive-fill fs-5"></i>
                             </a>
                         <?php else: ?>
-                            <a href="/students/withdraw?id=<?= $s['id'] ?>&csrf_token=<?= \App\Core\Session::generateCsrfToken() ?>"
-                                class="btn btn-sm btn-action-modern text-warning btn-confirm-withdraw"
-                                data-confirm-action="<?= __('confirm_withdraw_action') ?>"
-                                data-confirm="<?= __('withdraw_student_confirm') ?>" title="<?= __('withdraw') ?>">
-                                <i class="bi bi-person-x fs-5"></i>
+                            <a href="/students/edit?id=<?= $s['id'] ?>" class="btn btn-sm btn-action-modern text-primary"
+                                title="<?= __('edit') ?>">
+                                <i class="bi bi-pencil-square fs-5"></i>
                             </a>
+                            <?php if ($filters['withdrawn'] ?? 0): ?>
+                                <a href="/students/restore?id=<?= $s['id'] ?>&csrf_token=<?= \App\Core\Session::generateCsrfToken() ?>"
+                                    class="btn btn-sm btn-action-modern text-success btn-confirm-restore"
+                                    data-confirm-action="<?= __('confirm_restore_action') ?>"
+                                    data-confirm="<?= __('restore_student_confirm') ?>" title="<?= __('restore') ?>">
+                                    <i class="bi bi-arrow-counterclockwise fs-5"></i>
+                                </a>
+                            <?php else: ?>
+                                <a href="/students/withdraw?id=<?= $s['id'] ?>&csrf_token=<?= \App\Core\Session::generateCsrfToken() ?>"
+                                    class="btn btn-sm btn-action-modern text-warning btn-confirm-withdraw"
+                                    data-confirm-action="<?= __('confirm_withdraw_action') ?>"
+                                    data-confirm="<?= __('withdraw_student_confirm') ?>" title="<?= __('withdraw') ?>">
+                                    <i class="bi bi-person-x fs-5"></i>
+                                </a>
+                            <?php endif; ?>
+                            <button type="button"
+                                class="btn btn-sm btn-action-modern text-danger"
+                                data-impact-delete="student"
+                                data-id="<?= $s['id'] ?>"
+                                title="<?= __('delete') ?>">
+                                <i class="bi bi-trash fs-5"></i>
+                            </button>
                         <?php endif; ?>
-                        <button type="button"
-                            class="btn btn-sm btn-action-modern text-danger"
-                            data-impact-delete="student"
-                            data-id="<?= $s['id'] ?>"
-                            title="<?= __('delete') ?>">
-                            <i class="bi bi-trash fs-5"></i>
-                        </button>
                     </div>
                 </td>
             <?php endif; ?>
