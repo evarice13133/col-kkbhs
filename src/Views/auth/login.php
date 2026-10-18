@@ -13,6 +13,8 @@ $isEn = __('lang') === 'en';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="/public/assets/camertech-logo.png">
+    <link rel="apple-touch-icon" href="/public/assets/camertech-logo.png">
     <title><?= __('login_title_seo') ?> | <?= htmlspecialchars((string) ($brandSettings['school_code'] ?? 'NotesMaster')) ?></title>
     <meta name="description" content="<?= __('meta_description_default') ?>">
 

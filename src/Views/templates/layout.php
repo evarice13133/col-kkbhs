@@ -353,6 +353,8 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="/public/assets/camertech-logo.png">
+    <link rel="apple-touch-icon" href="/public/assets/camertech-logo.png">
     <script>
         (function () {
             const mediaQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
