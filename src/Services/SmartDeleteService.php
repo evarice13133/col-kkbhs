@@ -60,6 +60,96 @@ class SmartDeleteService
         }
     }
 
+    public function deleteSubjectsPermanently(array $subjectIds): array
+    {
+        $subjectIds = array_values(array_unique(array_filter(
+            array_map('intval', $subjectIds),
+            static fn(int $id): bool => $id > 0
+        )));
+        if ($subjectIds === [] || count($subjectIds) > 100) {
+            throw new \InvalidArgumentException('La sélection de matières est invalide.');
+        }
+
+        $this->db->beginTransaction();
+        try {
+            $placeholders = implode(',', array_fill(0, count($subjectIds), '?'));
+            $lockStmt = $this->db->prepare("SELECT id, nom FROM subjects WHERE id IN ($placeholders) FOR UPDATE");
+            $lockStmt->execute($subjectIds);
+            $subjects = $lockStmt->fetchAll(PDO::FETCH_ASSOC);
+            if (count($subjects) !== count($subjectIds)) {
+                throw new \RuntimeException('Une ou plusieurs matières sélectionnées sont introuvables.');
+            }
+
+            $referenceTables = $this->subjectReferenceTables();
+            $deletedCount = 0;
+
+            foreach ($subjects as $subject) {
+                $subjectId = (int) $subject['id'];
+                $impact = [];
+                foreach ($referenceTables as $table) {
+                    $countStmt = $this->db->prepare("SELECT COUNT(*) FROM `$table` WHERE subject_id = ?");
+                    $countStmt->execute([$subjectId]);
+                    $rowCount = (int) $countStmt->fetchColumn();
+                    if ($rowCount > 0) {
+                        $impact[(string) $table] = $rowCount;
+                    }
+                    $deleteStmt = $this->db->prepare("DELETE FROM `$table` WHERE subject_id = ?");
+                    $deleteStmt->execute([$subjectId]);
+                }
+
+                $deleteSubjectStmt = $this->db->prepare("DELETE FROM subjects WHERE id = ?");
+                $deleteSubjectStmt->execute([$subjectId]);
+                if ($deleteSubjectStmt->rowCount() !== 1) {
+                    throw new \RuntimeException("La suppression de la matière {$subjectId} a échoué.");
+                }
+
+                $deletedCount++;
+                $this->tracker->recordEvent('subject_permanently_deleted', 'admin_activity', [
+                    'entity_type' => 'subject',
+                    'entity_id' => $subjectId,
+                    'metadata' => [
+                        'name' => $subject['nom'],
+                        'deleted_related_records' => $impact,
+                    ],
+                ]);
+            }
+
+            $this->db->commit();
+            return ['success' => true, 'deleted_count' => $deletedCount];
+        } catch (\Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    private function purgeSubjectData(int $subjectId): void
+    {
+        foreach ($this->subjectReferenceTables() as $table) {
+            $stmt = $this->db->prepare("DELETE FROM `$table` WHERE subject_id = ?");
+            $stmt->execute([$subjectId]);
+        }
+    }
+
+    private function subjectReferenceTables(): array
+    {
+        $stmt = $this->db->prepare("
+            SELECT c.TABLE_NAME
+            FROM information_schema.COLUMNS c
+            JOIN information_schema.TABLES t
+              ON t.TABLE_SCHEMA = c.TABLE_SCHEMA
+             AND t.TABLE_NAME = c.TABLE_NAME
+            WHERE c.TABLE_SCHEMA = DATABASE()
+              AND c.COLUMN_NAME = 'subject_id'
+              AND c.TABLE_NAME <> 'subjects'
+              AND t.TABLE_TYPE = 'BASE TABLE'
+            ORDER BY c.TABLE_NAME
+        ");
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+
     private function handleTransfer(string $type, int $sourceId, array $options): array
     {
         $targetId = (int)($options['target_id'] ?? 0);
@@ -215,27 +305,47 @@ class SmartDeleteService
             throw new Exception(__('impact_delete_archive_unavailable'));
         }
 
-        // Vérifier les colonnes existantes (status, is_active, active)
-        $columns = $this->db->query("DESCRIBE `$table`")->fetchAll(PDO::FETCH_COLUMN);
+        $metadata = null;
+        if ($table === 'students') {
+            $studentStmt = $this->db->prepare("SELECT status FROM students WHERE id = ?");
+            $studentStmt->execute([$id]);
+            $studentStatus = $studentStmt->fetchColumn();
+            if ($studentStatus === false) {
+                throw new Exception(__('impact_delete_processing_failed'));
+            }
 
-        if (in_array('status', $columns)) {
-            $statusVal = ($action === 'archive') ? 'archived' : 'inactive';
-            $stmt = $this->db->prepare("UPDATE `$table` SET status = ? WHERE id = ?");
-            $stmt->execute([$statusVal, $id]);
-        } elseif (in_array('is_active', $columns)) {
-            $stmt = $this->db->prepare("UPDATE `$table` SET is_active = 0 WHERE id = ?");
-            $stmt->execute([$id]);
-        } elseif (in_array('active', $columns)) {
-            $stmt = $this->db->prepare("UPDATE `$table` SET active = 0 WHERE id = ?");
-            $stmt->execute([$id]);
+            $archiveStmt = $this->db->prepare("UPDATE students SET actif = 0 WHERE id = ?");
+            $archiveStmt->execute([$id]);
+            $metadata = ['status_before' => $studentStatus];
+
+            $academicYearId = (new \App\Services\AcademicYearService($this->db))->getActiveYearId();
+            if ($academicYearId > 0) {
+                (new \App\Models\InsolventStudent())->refreshCache($academicYearId);
+            }
         } else {
-            throw new Exception(__('impact_delete_status_unavailable'));
+            // Vérifier les colonnes existantes (status, is_active, active)
+            $columns = $this->db->query("DESCRIBE `$table`")->fetchAll(PDO::FETCH_COLUMN);
+
+            if (in_array('status', $columns)) {
+                $statusVal = ($action === 'archive') ? 'archived' : 'inactive';
+                $stmt = $this->db->prepare("UPDATE `$table` SET status = ? WHERE id = ?");
+                $stmt->execute([$statusVal, $id]);
+            } elseif (in_array('is_active', $columns)) {
+                $stmt = $this->db->prepare("UPDATE `$table` SET is_active = 0 WHERE id = ?");
+                $stmt->execute([$id]);
+            } elseif (in_array('active', $columns)) {
+                $stmt = $this->db->prepare("UPDATE `$table` SET active = 0 WHERE id = ?");
+                $stmt->execute([$id]);
+            } else {
+                throw new Exception(__('impact_delete_status_unavailable'));
+            }
         }
 
         $this->tracker->recordEvent('entity_' . $action, 'system', [
             'entity_type' => $type,
             'entity_id' => $id,
-            'action' => $action
+            'action' => $action,
+            'metadata' => $metadata,
         ]);
 
         return [
@@ -277,6 +387,14 @@ class SmartDeleteService
             case 'eleve':
                 $this->db->prepare("DELETE FROM enrollments WHERE student_id = ?")->execute([$id]);
                 $stmt = $this->db->prepare("DELETE FROM students WHERE id = ?");
+                $stmt->execute([$id]);
+                break;
+
+            case 'subject':
+            case 'subjects':
+            case 'matiere':
+                $this->purgeSubjectData($id);
+                $stmt = $this->db->prepare("DELETE FROM subjects WHERE id = ?");
                 $stmt->execute([$id]);
                 break;
 

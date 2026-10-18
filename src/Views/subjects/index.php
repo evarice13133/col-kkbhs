@@ -42,6 +42,12 @@ $hasActiveSubjectFilters = !empty($filters['q']) || !empty($filters['teaching_ty
                 </a>
                 <?php if ($canManage): ?>
                     <button type="button"
+                        class="btn btn-outline-danger rounded-pill px-3 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 scale-on-hover"
+                        data-bs-toggle="modal" data-bs-target="#subjectBulkSelectionModal">
+                        <i class="bi bi-trash3"></i>
+                        <span><?= __('lang') === 'en' ? 'Bulk deletion' : 'Suppression groupée' ?></span>
+                    </button>
+                    <button type="button"
                         class="btn btn-light-theme rounded-pill px-3 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 scale-on-hover"
                         data-bs-toggle="modal" data-bs-target="#importSubjectsModal">
                         <i class="bi bi-file-earmark-spreadsheet text-success fs-6"></i>
@@ -139,7 +145,9 @@ $hasActiveSubjectFilters = !empty($filters['q']) || !empty($filters['teaching_ty
                 <table class="table-modern subjects-list-table">
                     <thead>
                         <tr>
-                            <th class="ps-4 col-subject"><?= __('subject') ?></th>
+                            <th class="ps-4 col-subject">
+                                <?= __('subject') ?>
+                            </th>
                             <th class="col-classes"><?= __('classes') ?? 'Classes concernées' ?></th>
                             <th class="col-coefficient"><?= __('coefficient') ?></th>
                             <th class="col-group"><?= __('group') ?></th>
@@ -367,6 +375,109 @@ $hasActiveSubjectFilters = !empty($filters['q']) || !empty($filters['teaching_ty
                 </nav>
             </div>
         <?php endif; ?>
+        <?php if ($canManage): ?>
+            <div class="modal fade" id="subjectBulkSelectionModal" tabindex="-1"
+                aria-labelledby="subjectBulkSelectionModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                    <div class="modal-content subject-bulk-modal-content rounded-4 border-0 shadow-lg">
+                        <div class="modal-header border-bottom border-theme-light">
+                            <div>
+                                <h5 class="modal-title fw-bold text-main-theme" id="subjectBulkSelectionModalLabel">
+                                    <i class="bi bi-trash3 text-danger me-2"></i>
+                                    <?= __('lang') === 'en' ? 'Select subjects to delete' : 'Sélectionner les matières à supprimer' ?>
+                                </h5>
+                                <div class="small text-muted-theme mt-1">
+                                    <?= __('lang') === 'en' ? 'Search, filter by class, and select up to 100 subjects.' : 'Recherchez, filtrez par classe et sélectionnez jusqu’à 100 matières.' ?>
+                                </div>
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                aria-label="<?= __('lang') === 'en' ? 'Close' : 'Fermer' ?>"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row g-2 mb-2">
+                                <div class="col-md-7">
+                                    <label for="subject-bulk-search" class="form-label small fw-semibold">
+                                        <?= __('lang') === 'en' ? 'Search by subject name' : 'Rechercher une matière' ?>
+                                    </label>
+                                    <input type="search" id="subject-bulk-search" class="form-control"
+                                        placeholder="<?= __('lang') === 'en' ? 'Type a subject name…' : 'Saisir le nom d’une matière…' ?>">
+                                </div>
+                                <div class="col-md-5">
+                                    <label for="subject-bulk-class" class="form-label small fw-semibold">
+                                        <?= __('lang') === 'en' ? 'Filter by class' : 'Filtrer par classe' ?>
+                                    </label>
+                                    <select id="subject-bulk-class" class="form-select">
+                                        <option value=""><?= __('lang') === 'en' ? 'All classes' : 'Toutes les classes' ?></option>
+                                        <?php foreach ($subjectBulkClasses as $bulkClass): ?>
+                                            <option value="<?= (int) $bulkClass['id'] ?>">
+                                                <?= htmlspecialchars((string) $bulkClass['nom'], ENT_QUOTES, 'UTF-8') ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                    id="subject-bulk-unassigned">
+                                <label class="form-check-label small fw-semibold" for="subject-bulk-unassigned">
+                                    <?= __('lang') === 'en'
+                                        ? 'Only subjects with no class or teacher assignment'
+                                        : 'Uniquement les matières sans affectation de classe ni d’enseignant' ?>
+                                </label>
+                            </div>
+                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                                <span class="small fw-semibold text-main-theme">
+                                    <?= __('lang') === 'en' ? 'Selected:' : 'Sélection :' ?>
+                                    <span id="subject-bulk-selected-count">0</span>/100
+                                </span>
+                                <button type="button" class="btn btn-sm btn-outline-primary rounded-pill"
+                                    id="subject-bulk-select-visible">
+                                    <?= __('lang') === 'en' ? 'Select visible results' : 'Sélectionner les résultats affichés' ?>
+                                </button>
+                            </div>
+                            <div id="subject-bulk-load-error" class="alert alert-danger py-2 d-none" role="alert"></div>
+                            <div class="table-responsive border rounded-3">
+                                <table class="table table-hover align-middle mb-0 subject-bulk-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 42px;"></th>
+                                            <th><?= __('subject') ?></th>
+                                            <th><?= __('subject_bulk_assigned_classes') ?></th>
+                                            <th><?= __('subject_bulk_assigned_teachers') ?></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="subject-bulk-results">
+                                        <tr><td colspan="4" class="text-center py-4 text-muted-theme">
+                                            <?= __('lang') === 'en' ? 'Loading subjects…' : 'Chargement des matières…' ?>
+                                        </td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <button type="button" class="btn btn-sm btn-light-theme" id="subject-bulk-prev">
+                                    <i class="bi bi-chevron-left"></i>
+                                    <?= __('lang') === 'en' ? 'Previous' : 'Précédent' ?>
+                                </button>
+                                <span class="small text-muted-theme" id="subject-bulk-page-info"></span>
+                                <button type="button" class="btn btn-sm btn-light-theme" id="subject-bulk-next">
+                                    <?= __('lang') === 'en' ? 'Next' : 'Suivant' ?>
+                                    <i class="bi bi-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-top border-theme-light">
+                            <button type="button" class="btn btn-light-theme rounded-pill px-3"
+                                data-bs-dismiss="modal"><?= __('cancel') ?? (__('lang') === 'en' ? 'Cancel' : 'Annuler') ?></button>
+                            <button type="button" class="btn btn-danger rounded-pill px-3 fw-semibold"
+                                id="subject-bulk-review" disabled>
+                                <i class="bi bi-shield-exclamation me-1"></i>
+                                <?= __('lang') === 'en' ? 'Review impact' : 'Vérifier l’impact' ?>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
         <!-- MODALE IMPORT EXCEL MATIÈRES -->
         <div class="modal fade" id="importSubjectsModal" tabindex="-1" aria-labelledby="importSubjectsModalLabel"
             aria-hidden="true">
@@ -389,6 +500,244 @@ $hasActiveSubjectFilters = !empty($filters['q']) || !empty($filters['teaching_ty
     </div>
 
     <style>
+        .subject-bulk-modal-content {
+            background: var(--bg-card);
+            color: var(--text-main);
+        }
+
+        #subjectBulkSelectionModal .subject-bulk-table {
+            --bs-table-bg: var(--bg-card);
+            --bs-table-color: var(--text-main);
+            --bs-table-border-color: var(--border-color);
+            --bs-table-hover-bg: color-mix(in srgb, var(--bg-card) 90%, var(--text-main));
+            color: var(--text-main);
+            background-color: var(--bg-card);
+        }
+
+        #subjectBulkSelectionModal .subject-bulk-table > :not(caption) > * > * {
+            color: var(--text-main);
+            background-color: var(--bg-card);
+            border-color: var(--border-color);
+        }
+
+        #subjectBulkSelectionModal .subject-bulk-table thead th {
+            font-size: 0.8rem;
+            white-space: nowrap;
+        }
+
+        #subjectBulkSelectionModal .subject-bulk-table tbody tr:hover > * {
+            background-color: color-mix(in srgb, var(--bg-card) 90%, var(--text-main));
+        }
+
+        .subject-bulk-count {
+            min-width: 2rem;
+            border: 0;
+            border-radius: 999px;
+            padding: 0.2rem 0.55rem;
+            background: var(--primary-soft);
+            color: var(--primary-color);
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .subject-bulk-count:hover,
+        .subject-bulk-count:focus-visible {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+
+        .subject-assignment-tooltip .tooltip-inner {
+            max-width: 320px;
+            color: #0f172a;
+            background: #fff;
+            border: 1px solid #cbd5e1;
+            text-align: left;
+        }
+
+        [data-theme="dark"] .subject-assignment-tooltip .tooltip-inner {
+            color: #f8fafc;
+            background: #0f172a;
+            border-color: #475569;
+        }
+
+        .subject-bulk-delete-popup {
+            width: min(34rem, calc(100vw - 2rem)) !important;
+            padding: 1.5rem !important;
+            border: 1px solid var(--border-color, #e2e8f0) !important;
+            border-radius: 1.25rem !important;
+            background: var(--bg-card, #fff) !important;
+            color: var(--text-main, #0f172a) !important;
+            backdrop-filter: none !important;
+        }
+
+        [data-theme="dark"] .subject-bulk-delete-popup {
+            border-color: #334155 !important;
+            background: #0f172a !important;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55) !important;
+        }
+
+        .subject-bulk-delete-popup .subject-bulk-delete-title {
+            margin: 0 0 0.75rem !important;
+            color: var(--text-main, #0f172a) !important;
+            font-size: 1.4rem !important;
+            line-height: 1.25 !important;
+        }
+
+        .subject-bulk-delete-popup .premium-swal-icon {
+            width: 3.5rem !important;
+            height: 3.5rem !important;
+            margin: 0.25rem auto 0.75rem !important;
+            border-width: 2px !important;
+            font-size: 2rem !important;
+        }
+
+        .subject-bulk-delete-popup .subject-bulk-delete-html {
+            margin: 0 !important;
+            color: var(--text-muted, #64748b) !important;
+            font-size: 0.92rem !important;
+            line-height: 1.45 !important;
+        }
+
+        .subject-bulk-delete-summary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+            color: var(--text-main, #0f172a);
+            font-weight: 600;
+        }
+
+        .subject-bulk-delete-summary strong {
+            display: inline-flex;
+            min-width: 2rem;
+            height: 2rem;
+            align-items: center;
+            justify-content: center;
+            padding: 0 0.55rem;
+            border-radius: 999px;
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+        }
+
+        .subject-bulk-delete-notice {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.65rem;
+            padding: 0.75rem 0.85rem;
+            border: 1px solid transparent;
+            border-radius: 0.75rem;
+            text-align: left;
+        }
+
+        .subject-bulk-delete-notice i {
+            flex: 0 0 auto;
+            margin-top: 0.12rem;
+        }
+
+        .subject-bulk-delete-notice-success {
+            margin-bottom: 0.75rem;
+            border-color: rgba(25, 135, 84, 0.24);
+            background: rgba(25, 135, 84, 0.08);
+            color: #198754;
+        }
+
+        [data-theme="dark"] .subject-bulk-delete-notice-success {
+            border-color: rgba(74, 222, 128, 0.25);
+            background: rgba(34, 197, 94, 0.12);
+            color: #86efac;
+        }
+
+        .subject-bulk-delete-notice-danger {
+            border-color: rgba(220, 53, 69, 0.25);
+            background: rgba(220, 53, 69, 0.08);
+            color: var(--text-main, #0f172a);
+            font-size: 0.84rem;
+        }
+
+        .subject-bulk-delete-critical-title {
+            margin: 0 0 0.5rem;
+            color: #dc3545;
+            font-weight: 700;
+        }
+
+        .subject-bulk-delete-impact-table {
+            margin-bottom: 0.75rem;
+            color: var(--text-main, #0f172a);
+            border-color: var(--border-color, #e2e8f0);
+        }
+
+        .subject-bulk-delete-impact-table > :not(caption) > * > * {
+            color: inherit;
+            background: var(--bg-card, #fff);
+            border-color: var(--border-color, #e2e8f0);
+        }
+
+        .subject-bulk-delete-popup .subject-bulk-delete-actions {
+            gap: 0.65rem !important;
+            margin-top: 1rem !important;
+        }
+
+        .subject-bulk-delete-popup .subject-bulk-delete-confirm-btn,
+        .subject-bulk-delete-popup .subject-bulk-delete-cancel-btn {
+            min-height: 2.75rem;
+            padding: 0.65rem 1.1rem !important;
+            font-size: 0.86rem !important;
+            letter-spacing: 0 !important;
+            text-transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .subject-bulk-delete-popup .subject-bulk-delete-confirm-btn {
+            border: 1px solid #dc3545 !important;
+            background: #dc3545 !important;
+            color: #fff !important;
+        }
+
+        .subject-bulk-delete-popup .subject-bulk-delete-confirm-btn:hover {
+            border-color: #bb2d3b !important;
+            background: #bb2d3b !important;
+            transform: translateY(-1px) !important;
+        }
+
+        .subject-bulk-delete-popup .subject-bulk-delete-cancel-btn {
+            border: 1px solid var(--border-color, #dce6f0) !important;
+            background: #f8fafc !important;
+            color: var(--text-main, #334155) !important;
+        }
+
+        [data-theme="dark"] .subject-bulk-delete-popup .subject-bulk-delete-cancel-btn {
+            border-color: #334155 !important;
+            background: #020617 !important;
+            color: #f8fafc !important;
+        }
+
+        .subject-bulk-delete-popup .premium-swal-close-btn {
+            color: var(--text-muted, #64748b) !important;
+        }
+
+        @media (max-width: 575.98px) {
+            .subject-bulk-delete-popup {
+                padding: 1.2rem !important;
+            }
+
+            .subject-bulk-delete-popup .subject-bulk-delete-actions {
+                flex-direction: column-reverse !important;
+                align-items: stretch !important;
+            }
+
+            .subject-bulk-delete-popup .subject-bulk-delete-confirm-btn,
+            .subject-bulk-delete-popup .subject-bulk-delete-cancel-btn {
+                width: 100%;
+                margin: 0 !important;
+            }
+        }
+
+        .subject-assignment-tooltip-list {
+            text-align: left;
+            padding-left: 1rem;
+        }
+
         .dept-header-card {
             background: var(--bg-card);
             border: 1px solid var(--border-theme);
@@ -907,6 +1256,292 @@ $hasActiveSubjectFilters = !empty($filters['q']) || !empty($filters['teaching_ty
                     }, 400);
                 });
             }
+
+            const bulkSelectionModalEl = document.getElementById('subjectBulkSelectionModal');
+            const bulkSearchInput = document.getElementById('subject-bulk-search');
+            const bulkClassSelect = document.getElementById('subject-bulk-class');
+            const bulkUnassignedFilter = document.getElementById('subject-bulk-unassigned');
+            const bulkResults = document.getElementById('subject-bulk-results');
+            const bulkLoadError = document.getElementById('subject-bulk-load-error');
+            const bulkPageInfo = document.getElementById('subject-bulk-page-info');
+            const bulkSelectedCount = document.getElementById('subject-bulk-selected-count');
+            const bulkSelectVisible = document.getElementById('subject-bulk-select-visible');
+            const bulkPrevious = document.getElementById('subject-bulk-prev');
+            const bulkNext = document.getElementById('subject-bulk-next');
+            const bulkReviewButton = document.getElementById('subject-bulk-review');
+            const bulkDeleteCsrf = <?= json_encode(\App\Core\Session::generateCsrfToken()) ?>;
+            const bulkDeleteText = {
+                title: <?= json_encode(__('lang') === 'en' ? 'Permanent subject deletion' : 'Suppression définitive des matières') ?>,
+                warning: <?= json_encode(__('lang') === 'en'
+                    ? 'Selected subjects and their linked grades, assignments, timetables and competencies will be permanently deleted.'
+                    : 'Les matières sélectionnées ainsi que leurs notes, affectations, emplois du temps et compétences associés seront définitivement supprimés.') ?>,
+                selected: <?= json_encode(__('lang') === 'en' ? 'Selected subjects:' : 'Matières sélectionnées :') ?>,
+                critical: <?= json_encode(__('lang') === 'en' ? 'Critical impact cases:' : 'Cas à impact critique :') ?>,
+                noCritical: <?= json_encode(__('lang') === 'en'
+                    ? 'No selected subject has grade records (no critical case detected).'
+                    : 'Aucune matière sélectionnée ne possède de notes (aucun cas critique détecté).') ?>,
+                loading: <?= json_encode(__('lang') === 'en' ? 'Loading subjects…' : 'Chargement des matières…') ?>,
+                noResults: <?= json_encode(__('lang') === 'en' ? 'No subjects found for these filters.' : 'Aucune matière trouvée pour ces filtres.') ?>,
+                assignedClasses: <?= json_encode(__('subject_bulk_assigned_classes')) ?>,
+                assignedTeachers: <?= json_encode(__('subject_bulk_assigned_teachers')) ?>,
+                noAssignedClasses: <?= json_encode(__('subject_bulk_no_class')) ?>,
+                noAssignedTeachers: <?= json_encode(__('subject_bulk_no_teacher')) ?>,
+                page: <?= json_encode(__('lang') === 'en' ? 'Page' : 'Page') ?>,
+                of: <?= json_encode(__('lang') === 'en' ? 'of' : 'sur') ?>,
+                selectedLimit: <?= json_encode(__('lang') === 'en' ? 'You can select up to 100 subjects per operation.' : 'Vous pouvez sélectionner jusqu’à 100 matières par opération.') ?>,
+                confirm: <?= json_encode(__('lang') === 'en' ? 'Delete permanently' : 'Supprimer définitivement') ?>,
+                cancel: <?= json_encode(__('lang') === 'en' ? 'Cancel' : 'Annuler') ?>,
+                error: <?= json_encode(__('lang') === 'en' ? 'Unable to delete selected subjects.' : 'Impossible de supprimer les matières sélectionnées.') ?>,
+                success: <?= json_encode(__('lang') === 'en' ? 'Selected subjects were permanently deleted.' : 'Les matières sélectionnées ont été supprimées définitivement.') ?>
+            };
+            const selectedSubjects = new Map();
+            let bulkCurrentPage = 1;
+            let bulkTotalPages = 1;
+            let bulkLoadSequence = 0;
+            let bulkSearchTimer;
+
+            function escapeHtml(value) {
+                return String(value).replace(/[&<>"']/g, character => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+                })[character]);
+            }
+
+            function refreshBulkSelectionState() {
+                if (!bulkSelectedCount || !bulkReviewButton) return;
+                bulkSelectedCount.textContent = String(selectedSubjects.size);
+                bulkReviewButton.disabled = selectedSubjects.size === 0;
+                bulkResults?.querySelectorAll('[data-bulk-subject-id]').forEach(checkbox => {
+                    checkbox.checked = selectedSubjects.has(Number(checkbox.value));
+                    checkbox.disabled = !checkbox.checked && selectedSubjects.size >= 100;
+                });
+            }
+
+            function renderAssignmentTooltip(items, emptyLabel) {
+                if (!items.length) return `<span>${escapeHtml(emptyLabel)}</span>`;
+                return `<ul class="subject-assignment-tooltip-list mb-0">${items
+                    .map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
+            }
+
+            function initializeAssignmentTooltips() {
+                bulkResults?.querySelectorAll('[data-subject-assignment-tooltip]').forEach(element => {
+                    bootstrap.Tooltip.getOrCreateInstance(element, {
+                        html: true,
+                        sanitize: true,
+                        trigger: 'hover focus',
+                        placement: 'top',
+                        customClass: 'subject-assignment-tooltip'
+                    });
+                });
+            }
+
+            async function loadBulkSubjects(page = 1) {
+                if (!bulkResults) return;
+                const sequence = ++bulkLoadSequence;
+                bulkResults.querySelectorAll('[data-subject-assignment-tooltip]').forEach(element => {
+                    bootstrap.Tooltip.getInstance(element)?.dispose();
+                });
+                bulkResults.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted-theme">${escapeHtml(bulkDeleteText.loading)}</td></tr>`;
+                bulkLoadError?.classList.add('d-none');
+                const params = new URLSearchParams({
+                    q: bulkSearchInput?.value.trim() || '',
+                    class_id: bulkUnassignedFilter?.checked ? '' : (bulkClassSelect?.value || ''),
+                    unassigned: bulkUnassignedFilter?.checked ? '1' : '0',
+                    page: String(page)
+                });
+                try {
+                    const response = await fetch(`/subjects/bulk-selection?${params}`, {
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    const data = await response.json();
+                    if (!response.ok || !data.success) {
+                        throw new Error(data.message || bulkDeleteText.error);
+                    }
+                    if (sequence !== bulkLoadSequence) return;
+                    bulkCurrentPage = Number(data.page);
+                    bulkTotalPages = Math.max(1, Math.ceil(Number(data.total) / Number(data.page_size)));
+                    if (!data.subjects.length) {
+                        bulkResults.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted-theme">${escapeHtml(bulkDeleteText.noResults)}</td></tr>`;
+                    } else {
+                        bulkResults.innerHTML = data.subjects.map(subject => `
+                            <tr>
+                                <td><input type="checkbox" class="form-check-input" data-bulk-subject-id
+                                    value="${Number(subject.id)}" aria-label="${escapeHtml(subject.name)}"></td>
+                                <td class="fw-semibold text-main-theme">${escapeHtml(subject.name)}</td>
+                                <td>
+                                    <button type="button" class="subject-bulk-count" data-subject-assignment-tooltip
+                                        data-bs-title="" aria-label="${escapeHtml(bulkDeleteText.assignedClasses)}: ${subject.classes.length}">
+                                        ${subject.classes.length}
+                                    </button>
+                                </td>
+                                <td>
+                                    <button type="button" class="subject-bulk-count" data-subject-assignment-tooltip
+                                        data-bs-title="" aria-label="${escapeHtml(bulkDeleteText.assignedTeachers)}: ${subject.teachers.length}">
+                                        ${subject.teachers.length}
+                                    </button>
+                                </td>
+                            </tr>`).join('');
+                        data.subjects.forEach((subject, index) => {
+                            const row = bulkResults.children[index];
+                            const tooltipButtons = row.querySelectorAll('[data-subject-assignment-tooltip]');
+                            tooltipButtons[0].setAttribute('data-bs-title',
+                                renderAssignmentTooltip(subject.classes, bulkDeleteText.noAssignedClasses));
+                            tooltipButtons[1].setAttribute('data-bs-title',
+                                renderAssignmentTooltip(subject.teachers, bulkDeleteText.noAssignedTeachers));
+                        });
+                        initializeAssignmentTooltips();
+                    }
+                    const start = data.total === 0 ? 0 : ((bulkCurrentPage - 1) * Number(data.page_size)) + 1;
+                    const end = Math.min(bulkCurrentPage * Number(data.page_size), Number(data.total));
+                    bulkPageInfo.textContent = `${start}-${end} / ${data.total} · ${bulkDeleteText.page} ${bulkCurrentPage} ${bulkDeleteText.of} ${bulkTotalPages}`;
+                    bulkPrevious.disabled = bulkCurrentPage <= 1;
+                    bulkNext.disabled = bulkCurrentPage >= bulkTotalPages;
+                    refreshBulkSelectionState();
+                } catch (error) {
+                    if (sequence !== bulkLoadSequence) return;
+                    bulkResults.innerHTML = '';
+                    bulkLoadError.textContent = error.message || bulkDeleteText.error;
+                    bulkLoadError.classList.remove('d-none');
+                }
+            }
+
+            if (bulkSelectionModalEl) {
+                bulkSelectionModalEl.addEventListener('show.bs.modal', () => loadBulkSubjects(1));
+            }
+            bulkSearchInput?.addEventListener('input', () => {
+                clearTimeout(bulkSearchTimer);
+                bulkSearchTimer = setTimeout(() => loadBulkSubjects(1), 300);
+            });
+            bulkClassSelect?.addEventListener('change', () => loadBulkSubjects(1));
+            bulkUnassignedFilter?.addEventListener('change', () => {
+                if (bulkClassSelect) {
+                    bulkClassSelect.disabled = bulkUnassignedFilter.checked;
+                    if (bulkUnassignedFilter.checked) bulkClassSelect.value = '';
+                }
+                loadBulkSubjects(1);
+            });
+            bulkPrevious?.addEventListener('click', () => loadBulkSubjects(Math.max(1, bulkCurrentPage - 1)));
+            bulkNext?.addEventListener('click', () => loadBulkSubjects(Math.min(bulkTotalPages, bulkCurrentPage + 1)));
+
+            bulkResults?.addEventListener('change', event => {
+                const checkbox = event.target.closest('[data-bulk-subject-id]');
+                if (!checkbox) return;
+                const id = Number(checkbox.value);
+                if (checkbox.checked && selectedSubjects.size >= 100) {
+                    checkbox.checked = false;
+                    AlertService.toast('warning', bulkDeleteText.selectedLimit);
+                    return;
+                }
+                if (checkbox.checked) {
+                    const row = checkbox.closest('tr');
+                    selectedSubjects.set(id, row.querySelector('td:nth-child(2)').textContent.trim());
+                } else {
+                    selectedSubjects.delete(id);
+                }
+                refreshBulkSelectionState();
+            });
+            bulkSelectVisible?.addEventListener('click', () => {
+                bulkResults?.querySelectorAll('[data-bulk-subject-id]').forEach(checkbox => {
+                    if (selectedSubjects.size >= 100) return;
+                    const id = Number(checkbox.value);
+                    const row = checkbox.closest('tr');
+                    selectedSubjects.set(id, row.querySelector('td:nth-child(2)').textContent.trim());
+                });
+                refreshBulkSelectionState();
+                if (selectedSubjects.size >= 100) AlertService.toast('warning', bulkDeleteText.selectedLimit);
+            });
+
+            bulkReviewButton?.addEventListener('click', async () => {
+                const subjectIds = Array.from(selectedSubjects.keys());
+                if (!subjectIds.length) return;
+                bulkReviewButton.disabled = true;
+                bootstrap.Modal.getInstance(bulkSelectionModalEl)?.hide();
+                try {
+                    const analyses = [];
+                    for (let i = 0; i < subjectIds.length; i += 10) {
+                        const batch = subjectIds.slice(i, i + 10);
+                        const results = await Promise.all(batch.map(async id => {
+                            const response = await fetch(`/api/impact-analysis?type=subject&id=${encodeURIComponent(id)}`, {
+                                headers: { 'Accept': 'application/json' }
+                            });
+                            const data = await response.json();
+                            if (!response.ok || data.error) throw new Error(data.message || bulkDeleteText.error);
+                            return data;
+                        }));
+                        analyses.push(...results);
+                    }
+
+                    const criticalCases = analyses.filter(analysis => analysis.risk_level === 'critical');
+                    const criticalRows = criticalCases.map(analysis => {
+                        const stats = (analysis.stats || []).map(stat =>
+                            `<li>${escapeHtml(stat.label)} : <strong>${escapeHtml(stat.count)}</strong></li>`
+                        ).join('');
+                        return `<tr><td>${escapeHtml(analysis.entity.name)}</td><td><ul class="mb-0 ps-3">${stats}</ul></td></tr>`;
+                    }).join('');
+                    const criticalReport = criticalCases.length
+                        ? `<p class="subject-bulk-delete-critical-title">${escapeHtml(bulkDeleteText.critical)} ${criticalCases.length}</p>
+                           <div class="table-responsive"><table class="table table-sm subject-bulk-delete-impact-table">
+                             <thead><tr><th><?= addslashes(__('lang') === 'en' ? 'Subject' : 'Matière') ?></th>
+                               <th><?= addslashes(__('lang') === 'en' ? 'Impact details' : 'Détails de l’impact') ?></th></tr></thead>
+                             <tbody>${criticalRows}</tbody>
+                           </table></div>`
+                        : `<div class="subject-bulk-delete-notice subject-bulk-delete-notice-success">
+                             <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+                             <span>${escapeHtml(bulkDeleteText.noCritical)}</span>
+                           </div>`;
+                    const confirmation = await AlertService.confirm({
+                        title: bulkDeleteText.title,
+                        html: `<div class="subject-bulk-delete-content">
+                            <div class="subject-bulk-delete-summary">
+                                <span>${escapeHtml(bulkDeleteText.selected)}</span>
+                                <strong>${subjectIds.length}</strong>
+                            </div>
+                            ${criticalReport}
+                            <div class="subject-bulk-delete-notice subject-bulk-delete-notice-danger">
+                                <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+                                <span>${escapeHtml(bulkDeleteText.warning)}</span>
+                            </div>
+                        </div>`,
+                        icon: 'warning',
+                        confirmText: bulkDeleteText.confirm,
+                        cancelText: bulkDeleteText.cancel,
+                        confirmButtonColor: '#dc3545',
+                        customClass: {
+                            popup: 'premium-swal-popup subject-bulk-delete-popup',
+                            title: 'premium-swal-title subject-bulk-delete-title',
+                            closeButton: 'premium-swal-close-btn',
+                            icon: 'premium-swal-icon',
+                            htmlContainer: 'premium-swal-html subject-bulk-delete-html',
+                            actions: 'premium-swal-actions subject-bulk-delete-actions',
+                            confirmButton: 'premium-swal-confirm-btn subject-bulk-delete-confirm-btn',
+                            cancelButton: 'premium-swal-cancel-btn subject-bulk-delete-cancel-btn'
+                        }
+                    });
+                    if (!confirmation.isConfirmed) {
+                        bulkReviewButton.disabled = false;
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    subjectIds.forEach(id => formData.append('ids[]', String(id)));
+                    formData.append('csrf_token', bulkDeleteCsrf);
+                    const response = await fetch('/subjects/bulk-delete', {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': bulkDeleteCsrf, 'Accept': 'application/json' },
+                        body: formData
+                    });
+                    const result = await response.json();
+                    if (!response.ok || !result.success) throw new Error(result.message || bulkDeleteText.error);
+                    AlertService.toast('success', result.message || bulkDeleteText.success);
+                    window.location.reload();
+                } catch (error) {
+                    console.error('Bulk subject deletion failed:', error);
+                    AlertService.error(bulkDeleteText.title, error.message || bulkDeleteText.error);
+                    if (bulkSelectionModalEl && !bulkSelectionModalEl.classList.contains('show')) {
+                        bootstrap.Modal.getOrCreateInstance(bulkSelectionModalEl).show();
+                    }
+                    bulkReviewButton.disabled = false;
+                }
+            });
 
             [filterTT, filterDept, filterClass].forEach(selectEl => {
                 if (selectEl && filterForm) {

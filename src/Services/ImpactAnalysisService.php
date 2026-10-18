@@ -403,13 +403,18 @@ class ImpactAnalysisService
         $stmtEntries->execute([$id]);
         $timetableEntries = (int)$stmtEntries->fetchColumn();
 
-        $risk = $gradesCount > 0 ? 'critical' : ($assignedCount > 0 || $timetableEntries > 0 ? 'high' : 'low');
-        $recommendedAction = $gradesCount > 0 ? 'deactivate' : ($assignedCount > 0 ? 'transfer' : 'delete');
+        $classAssignments = $this->countSubjectReferences('subject_classes', $id);
+        $competenciesCount = $this->countSubjectReferences('competencies', $id)
+            + $this->countSubjectReferences('evaluation_competencies', $id)
+            + $this->countSubjectReferences('teacher_class_competencies', $id);
+        $groupAssignments = $this->countSubjectReferences('subject_group_assignments', $id);
 
-        // Autres matières pour transfert
-        $stmtTargets = $this->db->prepare("SELECT id, nom as name FROM subjects WHERE id != ? ORDER BY nom");
-        $stmtTargets->execute([$id]);
-        $transferTargets = $stmtTargets->fetchAll(PDO::FETCH_ASSOC);
+        $risk = $gradesCount > 0
+            ? 'critical'
+            : ($assignedCount > 0 || $timetableEntries > 0 || $classAssignments > 0 || $competenciesCount > 0 || $groupAssignments > 0
+                ? 'high'
+                : 'low');
+        $recommendedAction = 'delete';
 
         return [
             'entity' => [
@@ -421,11 +426,14 @@ class ImpactAnalysisService
             ],
             'risk_level' => $risk,
             'recommended_action' => $recommendedAction,
-            'can_direct_delete' => ($gradesCount === 0),
+            'can_direct_delete' => true,
             'stats' => [
                 ['label' => __('impact_subject_grades'), 'count' => $gradesCount, 'icon' => 'fas fa-star', 'severity' => $gradesCount > 0 ? 'danger' : 'success'],
                 ['label' => __('impact_subject_teachers'), 'count' => $assignedCount, 'icon' => 'fas fa-chalkboard-teacher', 'severity' => $assignedCount > 0 ? 'warning' : 'neutral'],
                 ['label' => __('impact_subject_timetable'), 'count' => $timetableEntries, 'icon' => 'fas fa-clock', 'severity' => $timetableEntries > 0 ? 'warning' : 'neutral'],
+                ['label' => __('impact_subject_classes'), 'count' => $classAssignments, 'icon' => 'fas fa-users', 'severity' => $classAssignments > 0 ? 'warning' : 'neutral'],
+                ['label' => __('impact_subject_competencies'), 'count' => $competenciesCount, 'icon' => 'fas fa-list-check', 'severity' => $competenciesCount > 0 ? 'warning' : 'neutral'],
+                ['label' => __('impact_subject_groups'), 'count' => $groupAssignments, 'icon' => 'fas fa-layer-group', 'severity' => $groupAssignments > 0 ? 'warning' : 'neutral'],
             ],
             'impact_summary' => [
                 'direct_deletion' => __('impact_subject_direct', ['name' => $sub['nom']]),
@@ -433,12 +441,25 @@ class ImpactAnalysisService
                 'historical_data' => __('impact_subject_history', ['count' => $gradesCount]),
                 'invalid_references' => __('impact_subject_references')
             ],
-            'transfer_options' => [
-                'label' => __('impact_subject_transfer_label'),
-                'param_name' => 'target_id',
-                'items' => $transferTargets
-            ]
+            'transfer_options' => null
         ];
+    }
+
+    private function countSubjectReferences(string $table, int $subjectId): int
+    {
+        $existsStmt = $this->db->prepare("
+            SELECT COUNT(*)
+            FROM information_schema.TABLES
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?
+        ");
+        $existsStmt->execute([$table]);
+        if ((int) $existsStmt->fetchColumn() === 0) {
+            return 0;
+        }
+
+        $countStmt = $this->db->prepare("SELECT COUNT(*) FROM `$table` WHERE subject_id = ?");
+        $countStmt->execute([$subjectId]);
+        return (int) $countStmt->fetchColumn();
     }
 
     private function analyzeRoom(int $id): array

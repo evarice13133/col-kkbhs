@@ -3,6 +3,7 @@ $hasActiveFilters = (!empty($filters['q']))
     || ((int)($filters['teaching_type_id'] ?? 0) > 0) 
     || ((int)($filters['class_id'] ?? 0) > 0) 
     || (!empty($filters['withdrawn']))
+    || (!empty($filters['archived']))
     || (!empty($filters['only_mine']));
 ?>
 <?php if ($hasActiveFilters): ?>
@@ -63,6 +64,13 @@ $hasActiveFilters = (!empty($filters['q']))
             <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-20 rounded-pill px-3 py-1.5 d-flex align-items-center gap-2 small">
                 <span><strong><?= __('show_withdrawn') ?? 'Démissionnaires uniquement' ?></strong></span>
                 <a href="javascript:void(0)" onclick="resetFilter('withdrawn')" class="text-danger hover-danger text-decoration-none fw-bold" style="font-size: 1.1em; line-height: 1;">&times;</a>
+            </span>
+        <?php endif; ?>
+
+        <?php if (!empty($filters['archived'])): ?>
+            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-20 rounded-pill px-3 py-1.5 d-flex align-items-center gap-2 small">
+                <span><strong><?= __('show_archived_students') ?></strong></span>
+                <a href="javascript:void(0)" onclick="resetFilter('archived')" class="text-secondary hover-danger text-decoration-none fw-bold" style="font-size: 1.1em; line-height: 1;">&times;</a>
             </span>
         <?php endif; ?>
 

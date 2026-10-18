@@ -31,7 +31,10 @@ class InsolventStudent extends BaseModel
             LEFT JOIN cycles cy ON c.cycle_id = cy.id
             LEFT JOIN sections sec ON c.section_id = sec.id
             LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id
-            WHERE ins.academic_year_id = ? AND s.is_withdrawn = 0 AND s.actif = 1 AND s.status != 'Démission' AND s.status != 'Démissionnaire' AND s.status != 'Abandon'
+            WHERE ins.academic_year_id = ?
+              AND s.is_withdrawn = 0
+              AND s.actif = 1
+              AND s.status = 'Inscrit'
         ";
 
         $params = [$academicYearId];
@@ -76,12 +79,17 @@ class InsolventStudent extends BaseModel
         $stmtDel->execute([$academicYearId]);
 
         // Sélectionner toutes les inscriptions de l'année
-        $enrollments = $this->db->query("
+        $stmtEnrollments = $this->db->prepare("
             SELECT e.student_id, e.class_id, e.reste_a_payer 
             FROM enrollments e
             JOIN students s ON e.student_id = s.id
-            WHERE e.academic_year_id = $academicYearId AND s.is_withdrawn = 0 AND s.actif = 1 AND s.status != 'Démission' AND s.status != 'Démissionnaire' AND s.status != 'Abandon'
-        ")->fetchAll(PDO::FETCH_ASSOC);
+            WHERE e.academic_year_id = ?
+              AND s.is_withdrawn = 0
+              AND s.actif = 1
+              AND s.status = 'Inscrit'
+        ");
+        $stmtEnrollments->execute([$academicYearId]);
+        $enrollments = $stmtEnrollments->fetchAll(PDO::FETCH_ASSOC);
 
         $stmtInst = $this->db->prepare("
             SELECT id, installment_number, amount_planned, amount_paid 
@@ -204,9 +212,7 @@ class InsolventStudent extends BaseModel
             WHERE e.academic_year_id = :academic_year_id
               AND s.is_withdrawn = 0
               AND s.actif = 1
-              AND s.status != 'Démission'
-              AND s.status != 'Démissionnaire'
-              AND s.status != 'Abandon'
+              AND s.status = 'Inscrit'
               AND s.class_id = :class_id
             ORDER BY s.nom ASC, s.prenom ASC
         ";

@@ -396,6 +396,8 @@ elseif (strpos($path, '/students') === 0) {
         $c->update($_GET['id'] ?? 0);
     } elseif ($path === '/students/export') {
         $c->export();
+    } elseif ($path === '/students/withdrawn-financial-report' && in_array($role, ['superadmin', 'admin', 'caissier', 'comptable'], true)) {
+        $c->exportWithdrawnFinancialReport();
     } elseif ($path === '/students/exportExcel') {
         $c->exportExcel();
     } elseif ($path === '/students/delete' && in_array($role, ['superadmin', 'admin', 'caissier', 'comptable'])) {
@@ -404,6 +406,8 @@ elseif (strpos($path, '/students') === 0) {
         $c->withdraw($_GET['id'] ?? 0);
     } elseif ($path === '/students/restore' && in_array($role, ['superadmin', 'admin', 'caissier', 'comptable'])) {
         $c->restore($_GET['id'] ?? 0);
+    } elseif ($path === '/students/restore-archived' && in_array($role, ['superadmin', 'admin', 'caissier', 'comptable'], true)) {
+        $c->restoreArchived($_GET['id'] ?? 0);
     } else {
         header('Location: /students');
         exit;
@@ -804,6 +808,10 @@ elseif (strpos($path, '/subjects') === 0) {
         $c->edit($_GET['id'] ?? 0);
     elseif ($path === '/subjects/update' && $method === 'POST')
         $c->update($_GET['id'] ?? 0);
+    elseif ($path === '/subjects/bulk-selection' && $method === 'GET')
+        $c->bulkSelection();
+    elseif ($path === '/subjects/bulk-delete' && $method === 'POST')
+        $c->bulkDelete();
     elseif ($path === '/subjects/delete')
         $c->delete($_GET['id'] ?? 0);
     elseif ($path === '/subjects/toggleStatus')

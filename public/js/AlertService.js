@@ -121,14 +121,14 @@ const AlertService = {
      * @returns {Promise} Résultat de SweetAlert2
      */
     confirm(options = {}) {
-        const { message, text, ...configOptions } = options;
+        const { message, text, confirmText, cancelText, ...configOptions } = options;
         const config = {
             title: options.title || this.text('are_you_sure', 'Êtes-vous sûr ?', 'Are you sure?'),
             html: options.html || message || text || this.text('action_irreversible', 'Cette action ne pourra pas être annulée.', 'This action cannot be undone.'),
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonText: options.confirmText || this.text('confirm', 'Confirmer', 'Confirm'),
-            cancelButtonText: options.cancelText || this.text('cancel', 'Annuler', 'Cancel'),
+            confirmButtonText: confirmText || this.text('confirm', 'Confirmer', 'Confirm'),
+            cancelButtonText: cancelText || this.text('cancel', 'Annuler', 'Cancel'),
             confirmButtonColor: '#d1495b', // Défaut rouge si critique
             cancelButtonColor: '#eef4fb',
             reverseButtons: true, // Annuler à gauche, Confirmer à droite (plus standard)

@@ -31,6 +31,7 @@ ob_start(); ?>
                     if ((int)($filters['teaching_type_id'] ?? 0) > 0) $advActiveCount++;
                     if ((int)($filters['class_id'] ?? 0) > 0) $advActiveCount++;
                     if (!empty($filters['withdrawn'])) $advActiveCount++;
+                    if (!empty($filters['archived'])) $advActiveCount++;
                     ?>
                     
                     <!-- Advanced Filters Toggle Button -->
@@ -48,6 +49,12 @@ ob_start(); ?>
                     </a>
 
                     <?php if (\App\Core\PermissionManager::hasPermission('manage_students')): ?>
+                        <a href="<?= !empty($filters['archived']) ? '/students' : '/students?archived=1' ?>"
+                            class="btn btn-outline-secondary rounded-pill px-3 fw-bold d-flex align-items-center gap-2"
+                            style="height: 42px;">
+                            <i class="bi bi-archive"></i>
+                            <span><?= !empty($filters['archived']) ? __('return_to_students') : __('show_archived_students') ?></span>
+                        </a>
                         <a href="/students/financial-resync" class="btn btn-outline-warning rounded-pill px-3 fw-bold d-flex align-items-center gap-2" style="height: 42px;" title="Vérifier et réparer les frais importés">
                             <i class="bi bi-arrow-repeat"></i>
                             <span class="d-none d-xl-inline">Resynchroniser les frais</span>
@@ -56,6 +63,14 @@ ob_start(); ?>
 
                     <!-- Export Actions -->
                     <div class="d-flex gap-2">
+                        <?php if (\App\Core\PermissionManager::hasPermission('manage_students')): ?>
+                            <a href="/students/withdrawn-financial-report"
+                                class="btn btn-outline-danger rounded-pill px-3 fw-bold"
+                                title="Exporter le relevé financier des élèves démissionnaires en PDF">
+                                <i class="bi bi-file-earmark-pdf me-1"></i>
+                                <span class="d-none d-xl-inline">Démissionnaires</span>
+                            </a>
+                        <?php endif; ?>
                         <a id="btn-export-excel" href="/students/exportExcel?<?= http_build_query($filters) ?>"
                             class="btn-export-minimal shadow-sm" title="<?= __('export_excel') ?>">
                             <i class="bi bi-file-earmark-spreadsheet"></i>
@@ -103,6 +118,16 @@ ob_start(); ?>
                                 </label>
                             </div>
                         </div>
+                        <?php if (\App\Core\PermissionManager::hasPermission('manage_students')): ?>
+                            <div class="col-md-4">
+                                <div class="form-check form-switch mb-2">
+                                    <input type="checkbox" name="archived" value="1" id="archived-checkbox" class="form-check-input" <?= ($filters['archived'] ?? 0) ? 'checked' : '' ?>>
+                                    <label class="form-check-label fw-bold text-muted-theme small text-uppercase" for="archived-checkbox">
+                                        <?= __('show_archived_students') ?>
+                                    </label>
+                                </div>
+                            </div>
+                        <?php endif; ?>
                         <div class="col-md-4">
                             <div class="form-check form-switch mb-2">
                                 <input type="checkbox" name="only_mine" value="1" id="only-mine-checkbox" class="form-check-input" <?= ($filters['only_mine'] ?? 0) ? 'checked' : '' ?>>
@@ -277,6 +302,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const classSelect = document.getElementById('class-select');
     const teachingTypeSelect = document.getElementById('teaching-type-select');
     const withdrawnCheckbox = document.getElementById('withdrawn-checkbox');
+    const archivedCheckbox = document.getElementById('archived-checkbox');
     const onlyMineCheckbox = document.getElementById('only-mine-checkbox');
     
     const btnExportExcel = document.getElementById('btn-export-excel');
@@ -290,6 +316,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (classSelect && classSelect.value !== '') count++;
         if (teachingTypeSelect && teachingTypeSelect.value !== '') count++;
         if (withdrawnCheckbox && withdrawnCheckbox.checked) count++;
+        if (archivedCheckbox && archivedCheckbox.checked) count++;
         if (onlyMineCheckbox && onlyMineCheckbox.checked) count++;
         
         const badge = document.getElementById('adv-filter-count');
@@ -305,6 +332,7 @@ document.addEventListener('DOMContentLoaded', function() {
             class_id: classSelect ? classSelect.value : '',
             teaching_type_id: teachingTypeSelect ? teachingTypeSelect.value : '',
             withdrawn: withdrawnCheckbox && withdrawnCheckbox.checked ? '1' : '0',
+            archived: archivedCheckbox && archivedCheckbox.checked ? '1' : '0',
             only_mine: onlyMineCheckbox && onlyMineCheckbox.checked ? '1' : '0'
         });
         
@@ -330,6 +358,7 @@ document.addEventListener('DOMContentLoaded', function() {
             class_id: classSelect ? classSelect.value : '',
             teaching_type_id: teachingTypeSelect ? teachingTypeSelect.value : '',
             withdrawn: withdrawnCheckbox && withdrawnCheckbox.checked ? '1' : '0',
+            archived: archivedCheckbox && archivedCheckbox.checked ? '1' : '0',
             only_mine: onlyMineCheckbox && onlyMineCheckbox.checked ? '1' : '0',
             page: currentPage,
             ajax: 1
@@ -397,7 +426,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (classSelect) classSelect.addEventListener('change', () => handleFilterChange(true));
     if (teachingTypeSelect) teachingTypeSelect.addEventListener('change', () => handleFilterChange(true));
-    if (withdrawnCheckbox) withdrawnCheckbox.addEventListener('change', () => handleFilterChange(true));
+    if (withdrawnCheckbox) withdrawnCheckbox.addEventListener('change', () => {
+        if (withdrawnCheckbox.checked && archivedCheckbox) archivedCheckbox.checked = false;
+        handleFilterChange(true);
+    });
+    if (archivedCheckbox) archivedCheckbox.addEventListener('change', () => {
+        if (archivedCheckbox.checked && withdrawnCheckbox) withdrawnCheckbox.checked = false;
+        handleFilterChange(true);
+    });
     if (onlyMineCheckbox) onlyMineCheckbox.addEventListener('change', () => handleFilterChange(true));
 
     filtersForm.addEventListener('submit', function(e) {
@@ -418,6 +454,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (teachingTypeSelect) teachingTypeSelect.value = '';
         } else if (type === 'withdrawn') {
             if (withdrawnCheckbox) withdrawnCheckbox.checked = false;
+        } else if (type === 'archived') {
+            if (archivedCheckbox) archivedCheckbox.checked = false;
         } else if (type === 'only_mine') {
             if (onlyMineCheckbox) onlyMineCheckbox.checked = false;
         }
