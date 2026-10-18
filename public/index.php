@@ -376,6 +376,8 @@ elseif (strpos($path, '/students') === 0) {
         $c->index();
     } elseif ($path === '/students/non-inscrits') {
         $c->nonInscrits();
+    } elseif ($path === '/students/financial-resync' && in_array($role, ['superadmin', 'admin', 'caissier', 'comptable'], true)) {
+        $c->financialResync();
     } elseif ($path === '/students/bulk-validate' && $method === 'POST' && in_array($role, ['superadmin', 'admin', 'caissier', 'comptable'])) {
         $c->bulkValidate();
     } elseif ($path === '/students/create' && in_array($role, ['superadmin', 'admin', 'caissier', 'comptable'])) {

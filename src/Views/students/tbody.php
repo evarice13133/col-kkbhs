@@ -23,6 +23,15 @@
                             <?= htmlspecialchars((string) $s['prenom']) ?>
                         </div>
                     </div>
+                    <?php if (!empty($s['financial_resync_needed']) && \App\Core\PermissionManager::hasPermission('manage_students')): ?>
+                        <a href="/students/financial-resync?student_id=<?= (int) $s['id'] ?>"
+                            class="text-warning d-inline-flex align-items-center justify-content-center rounded-circle"
+                            style="width: 28px; height: 28px; flex: 0 0 auto;"
+                            title="Frais non synchronisés : cliquer pour synchroniser les frais et compléter l'inscription."
+                            aria-label="Synchroniser les frais pour compléter l'inscription de <?= htmlspecialchars((string) ($s['nom'] . ' ' . $s['prenom']), ENT_QUOTES, 'UTF-8') ?>">
+                            <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                        </a>
+                    <?php endif; ?>
                 </div>
             </td>
             <td data-label="<?= htmlspecialchars((string) __('class'), ENT_QUOTES, 'UTF-8') ?>">

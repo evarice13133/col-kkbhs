@@ -1555,6 +1555,8 @@ class StudentController
             $checkEnrollmentStmt = $this->db->prepare("SELECT COUNT(*) FROM enrollments WHERE student_id = ? AND academic_year_id = ?");
             $getStudentInfoStmt = $this->db->prepare("SELECT class_id, is_redoublant FROM students WHERE id = ?");
             $insertEnrollmentStmt = $this->db->prepare("INSERT INTO enrollments (student_id, class_id, academic_year_id, student_status, frais_scolarite_brut, total_reductions, total_bourses, total_paye, reste_a_payer) VALUES (?, ?, ?, ?, 0.00, 0.00, 0.00, 0.00, 0.00)");
+            $updateEnrollmentStmt = $this->db->prepare("UPDATE enrollments SET class_id = ?, student_status = ? WHERE student_id = ? AND academic_year_id = ?");
+            $financialService = new \App\Services\FinancialService($this->db);
 
             foreach ($ids as $id) {
                 $id = (int) $id;
@@ -1564,19 +1566,27 @@ class StudentController
                 if ($updateStudentStmt->rowCount() > 0) {
                     // Check if enrollment already exists
                     $checkEnrollmentStmt->execute([$id, $academicYearId]);
-                    if ((int) $checkEnrollmentStmt->fetchColumn() === 0) {
-                        // Get class_id and is_redoublant
-                        $getStudentInfoStmt->execute([$id]);
-                        $studentInfo = $getStudentInfoStmt->fetch(PDO::FETCH_ASSOC);
-                        
-                        if ($studentInfo && !empty($studentInfo['class_id'])) {
-                            $studentStatus = $studentInfo['is_redoublant'] ? 'ancien' : 'nouveau';
-                            $insertEnrollmentStmt->execute([$id, $studentInfo['class_id'], $academicYearId, $studentStatus]);
-                            $successCount++;
-                        }
-                    } else {
-                        $successCount++;
+                    $getStudentInfoStmt->execute([$id]);
+                    $studentInfo = $getStudentInfoStmt->fetch(PDO::FETCH_ASSOC);
+
+                    if (!$studentInfo || empty($studentInfo['class_id'])) {
+                        throw new \Exception("Impossible de valider l'élève #$id : aucune classe n'est affectée.");
                     }
+
+                    $studentStatus = $studentInfo['is_redoublant'] ? 'ancien' : 'nouveau';
+                    if ((int) $checkEnrollmentStmt->fetchColumn() === 0) {
+                        $insertEnrollmentStmt->execute([$id, $studentInfo['class_id'], $academicYearId, $studentStatus]);
+                    } else {
+                        $updateEnrollmentStmt->execute([$studentInfo['class_id'], $studentStatus, $id, $academicYearId]);
+                    }
+
+                    $syncResult = $financialService->syncStudentFinancials($id, $academicYearId);
+                    if (empty($syncResult['success'])) {
+                        $message = $syncResult['message'] ?? 'Erreur inconnue.';
+                        throw new \Exception("Échec de la synchronisation financière de l'élève #$id : $message");
+                    }
+
+                    $successCount++;
                 }
             }
 
@@ -1595,6 +1605,209 @@ class StudentController
             ]);
         }
         exit;
+    }
+
+    public function financialResync(): void
+    {
+        \App\Core\PermissionManager::requirePermission('manage_students');
+
+        $academicYearId = $this->academicYearService->getActiveYearId();
+        $requestedStudentId = max(0, (int) ($_GET['student_id'] ?? 0));
+        $candidates = $academicYearId ? $this->findFinancialResyncCandidates($academicYearId) : [];
+        if ($requestedStudentId > 0) {
+            $candidates = array_values(array_filter(
+                $candidates,
+                static fn(array $candidate): bool => (int) $candidate['id'] === $requestedStudentId
+            ));
+        }
+        $execution = null;
+        $error = null;
+        $backupFilename = null;
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+                $error = __('unauthorized_action');
+            } elseif (!$academicYearId) {
+                $error = "Aucune année scolaire active n'a été trouvée.";
+            } else {
+                try {
+                    if (empty($candidates)) {
+                        $execution = [
+                            'count' => 0,
+                            'backup_filename' => null,
+                            'students' => [],
+                        ];
+                    } else {
+                        $backup = (new \App\Services\BackupService($this->db))->createArchive('student_financial_resync');
+                        $backupFilename = (string) ($backup['filename'] ?? '');
+                        $this->verifyFinancialResyncBackup($backup['archive_path'] ?? '');
+
+                        $candidateIds = array_fill_keys(array_map(
+                            static fn(array $candidate): int => (int) $candidate['id'],
+                            $candidates
+                        ), true);
+                        $this->db->beginTransaction();
+
+                        $latestCandidates = [];
+                        foreach ($this->findFinancialResyncCandidates($academicYearId) as $candidate) {
+                            if (isset($candidateIds[(int) $candidate['id']])) {
+                                $latestCandidates[(int) $candidate['id']] = $candidate;
+                            }
+                        }
+
+                        $financialService = new \App\Services\FinancialService($this->db);
+                        $after = [];
+                        $stmt = $this->db->prepare("
+                            SELECT frais_scolarite_brut, total_reductions, total_bourses, total_paye, reste_a_payer
+                            FROM enrollments
+                            WHERE student_id = ? AND academic_year_id = ?
+                        ");
+
+                        foreach ($candidates as $before) {
+                            $studentId = (int) $before['id'];
+                            if (!isset($latestCandidates[$studentId])) {
+                                continue;
+                            }
+
+                            $syncResult = $financialService->syncStudentFinancials($studentId, $academicYearId);
+                            if (empty($syncResult['success'])) {
+                                $message = $syncResult['message'] ?? 'Erreur inconnue.';
+                                throw new \RuntimeException("Synchronisation échouée pour {$before['nom']} {$before['prenom']} : $message");
+                            }
+
+                            $stmt->execute([$studentId, $academicYearId]);
+                            $updated = $stmt->fetch(PDO::FETCH_ASSOC);
+                            if (
+                                !$updated
+                                || abs((float) $updated['frais_scolarite_brut'] - (float) $latestCandidates[$studentId]['expected_amount']) > 0.01
+                            ) {
+                                throw new \RuntimeException("Le montant recalculé ne correspond pas au tarif applicable pour {$before['nom']} {$before['prenom']}.");
+                            }
+
+                            $after[] = [
+                                'id' => $studentId,
+                                'nom' => $before['nom'],
+                                'prenom' => $before['prenom'],
+                                'classe_nom' => $before['classe_nom'],
+                                'before' => $before,
+                                'after' => $updated,
+                            ];
+                        }
+
+                        $this->db->commit();
+                        $execution = [
+                            'count' => count($after),
+                            'backup_filename' => $backupFilename,
+                            'students' => $after,
+                        ];
+                    }
+                } catch (\Throwable $e) {
+                    if ($this->db->inTransaction()) {
+                        $this->db->rollBack();
+                    }
+                    $error = "Resynchronisation annulée : " . $e->getMessage();
+                }
+            }
+
+            $candidates = $academicYearId ? $this->findFinancialResyncCandidates($academicYearId) : [];
+            if ($requestedStudentId > 0) {
+                $candidates = array_values(array_filter(
+                    $candidates,
+                    static fn(array $candidate): bool => (int) $candidate['id'] === $requestedStudentId
+                ));
+            }
+        }
+
+        $title = 'Resynchronisation financière';
+        include __DIR__ . '/../Views/students/financial_resync.php';
+    }
+
+    private function findFinancialResyncCandidates(int $academicYearId): array
+    {
+        $stmt = $this->db->prepare("
+            SELECT s.id, s.nom, s.prenom, s.class_id, c.nom AS classe_nom,
+                   e.frais_scolarite_brut, e.total_reductions, e.total_bourses, e.total_paye, e.reste_a_payer
+            FROM students s
+            JOIN enrollments e ON e.student_id = s.id AND e.academic_year_id = ?
+            JOIN classes c ON c.id = s.class_id
+            WHERE s.status = 'Inscrit'
+              AND s.is_withdrawn = 0
+              AND s.actif = 1
+              AND COALESCE(e.frais_scolarite_brut, 0) <= 0
+            ORDER BY c.nom, s.nom, s.prenom
+        ");
+        $stmt->execute([$academicYearId]);
+
+        $schoolFeeModel = new \App\Models\SchoolFee();
+        $candidates = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $student) {
+            $expectedAmount = $schoolFeeModel->resolveAmount($academicYearId, (int) $student['class_id']);
+            if ($expectedAmount <= 0) {
+                continue;
+            }
+
+            $student['expected_amount'] = $expectedAmount;
+            $candidates[] = $student;
+        }
+
+        return $candidates;
+    }
+
+    private function verifyFinancialResyncBackup(string $archivePath): void
+    {
+        if (!class_exists(\ZipArchive::class) || $archivePath === '' || !is_file($archivePath) || filesize($archivePath) <= 0) {
+            throw new \RuntimeException("La sauvegarde de la base de données est absente ou vide.");
+        }
+
+        $archive = new \ZipArchive();
+        if ($archive->open($archivePath, \ZipArchive::CHECKCONS) !== true) {
+            throw new \RuntimeException("La sauvegarde créée n'est pas une archive ZIP valide.");
+        }
+
+        $validDumpFound = false;
+        for ($index = 0; $index < $archive->numFiles; $index++) {
+            $stat = $archive->statIndex($index);
+            if (!$stat || substr((string) $stat['name'], -4) !== '.sql' || (int) $stat['size'] <= 0) {
+                continue;
+            }
+
+            $stream = $archive->getStream((string) $stat['name']);
+            if (!is_resource($stream)) {
+                continue;
+            }
+
+            $header = '';
+            $tail = '';
+            $bytesRead = 0;
+            while (!feof($stream)) {
+                $chunk = fread($stream, 8192);
+                if ($chunk === false) {
+                    fclose($stream);
+                    $archive->close();
+                    throw new \RuntimeException("Impossible de vérifier le dump SQL de la sauvegarde.");
+                }
+                $bytesRead += strlen($chunk);
+                if (strlen($header) < 128) {
+                    $header .= substr($chunk, 0, 128 - strlen($header));
+                }
+                $tail = substr($tail . $chunk, -128);
+            }
+            fclose($stream);
+
+            if (
+                $bytesRead === (int) $stat['size']
+                && strpos($header, '-- NotesMaster automated backup') === 0
+                && strpos($tail, 'SET FOREIGN_KEY_CHECKS = 1;') !== false
+            ) {
+                $validDumpFound = true;
+                break;
+            }
+        }
+
+        $archive->close();
+        if (!$validDumpFound) {
+            throw new \RuntimeException("Le dump SQL attendu est absent ou invalide dans la sauvegarde.");
+        }
     }
 
 
@@ -1735,8 +1948,20 @@ class StudentController
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
 
+        $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if ($academicYearId > 0 && \App\Core\PermissionManager::hasPermission('manage_students')) {
+            $resyncStudentIds = array_fill_keys(array_map(
+                static fn(array $candidate): int => (int) $candidate['id'],
+                $this->findFinancialResyncCandidates($academicYearId)
+            ), true);
+            foreach ($students as &$student) {
+                $student['financial_resync_needed'] = isset($resyncStudentIds[(int) $student['id']]);
+            }
+            unset($student);
+        }
+
         return [
-            $stmt->fetchAll(PDO::FETCH_ASSOC),
+            $students,
             [
                 'q' => $search,
                 'class_id' => $classId,
@@ -2032,4 +2257,3 @@ class StudentController
     }
 
 }
-

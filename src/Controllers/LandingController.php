@@ -25,8 +25,8 @@ class LandingController
         $school_name = $this->settingsStore->get('school_name', 'NoteMaster');
         
         // Variables SEO optimisées pour Camertech & NoteMaster
-        $title = "Camertech - NoteMaster : Logiciel de Gestion Scolaire de Référence au Cameroun";
-        $meta_description = "Découvrez NoteMaster par Camertech : la solution pour la gestion de votre établissement scolaire au Cameroun. Saisie des notes, bulletins automatiques et suivi complet.";
+        $title = "Logiciel de gestion scolaire au Cameroun";
+        $meta_description = "Centralisez inscriptions, notes, bulletins, absences, emplois du temps et finances avec NoteMaster, la plateforme bilingue des écoles au Cameroun.";
         
         include __DIR__ . '/../Views/landing/index.php';
     }

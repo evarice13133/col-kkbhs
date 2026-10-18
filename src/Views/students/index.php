@@ -47,6 +47,13 @@ ob_start(); ?>
                         <i class="bi bi-arrow-counterclockwise fs-5"></i>
                     </a>
 
+                    <?php if (\App\Core\PermissionManager::hasPermission('manage_students')): ?>
+                        <a href="/students/financial-resync" class="btn btn-outline-warning rounded-pill px-3 fw-bold d-flex align-items-center gap-2" style="height: 42px;" title="Vérifier et réparer les frais importés">
+                            <i class="bi bi-arrow-repeat"></i>
+                            <span class="d-none d-xl-inline">Resynchroniser les frais</span>
+                        </a>
+                    <?php endif; ?>
+
                     <!-- Export Actions -->
                     <div class="d-flex gap-2">
                         <a id="btn-export-excel" href="/students/exportExcel?<?= http_build_query($filters) ?>"
