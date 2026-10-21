@@ -37,8 +37,15 @@ class SubjectGroupController
         $teaching_type_id = array_key_exists('teaching_type_id', $_GET)
             ? (!empty($_GET['teaching_type_id']) ? (int) $_GET['teaching_type_id'] : null)
             : (!empty($teachingTypes) ? (int) $teachingTypes[0]['id'] : null);
-        $section_id = !empty($_GET['section_id']) ? (int) $_GET['section_id'] : null;
-        $sections = $this->db->query("SELECT id, nom FROM sections WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+        $sectionsTableExists = (bool) $this->db->query("SHOW TABLES LIKE 'sections'")->fetchColumn();
+        $sections = $sectionsTableExists
+            ? $this->db->query("SELECT id, nom FROM sections WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC)
+            : [];
+        $sectionColumn = $this->db->query("SHOW COLUMNS FROM subject_groups LIKE 'section_id'")->fetchColumn();
+        $hasSectionCol = $sectionsTableExists && !empty($sectionColumn);
+        $section_id = $hasSectionCol && !empty($_GET['section_id']) ? (int) $_GET['section_id'] : null;
+
         $hasAssignmentTable = (bool) $this->db->query("SHOW TABLES LIKE 'subject_group_assignments'")->fetchColumn();
         $additionalAssignedSubjects = $hasAssignmentTable
             ? " + (SELECT COUNT(*) FROM subject_group_assignments sga
@@ -49,73 +56,72 @@ class SubjectGroupController
                      ))"
             : '';
 
-        // Détecter si la colonne teaching_form_id existe (migration peut ne pas avoir encore été exécutée)
-        $colCheck = $this->db->query("SHOW COLUMNS FROM subject_groups LIKE 'teaching_form_id'")->fetchColumn();
-        $hasTeachingFormCol = !empty($colCheck);
+        $teachingFormsTableExists = (bool) $this->db->query("SHOW TABLES LIKE 'teaching_forms'")->fetchColumn();
+        $teachingFormColumn = $this->db->query("SHOW COLUMNS FROM subject_groups LIKE 'teaching_form_id'")->fetchColumn();
+        $hasTeachingFormCol = $teachingFormsTableExists && !empty($teachingFormColumn);
+        $positionColumn = $this->db->query("SHOW COLUMNS FROM subject_groups LIKE 'position'")->fetchColumn();
+        $hasPositionCol = !empty($positionColumn);
 
         $params = [];
+        $selectTeachingForm = $hasTeachingFormCol
+            ? 'tf.nom AS teaching_form_nom, tf.id AS teaching_form_id'
+            : 'NULL AS teaching_form_nom, NULL AS teaching_form_id';
+        $selectSection = $hasSectionCol ? 'sec.nom AS section_nom' : 'NULL AS section_nom';
+        $joins = [
+            'LEFT JOIN teaching_types tt ON sg.teaching_type_id = tt.id',
+        ];
+        $conditions = ['tt.actif = 1'];
+
         if ($hasTeachingFormCol) {
-                 // Sélectionne la forme associée (si existante) et le type via la colonne dédiée pour affichage
-                 // Affiche uniquement les groupes dont le Type d'enseignement est actif. Si une forme est rattachée elle doit être active.
-                  $sql = "SELECT sg.*, tf.nom as teaching_form_nom, tf.id as teaching_form_id, tt.nom as teaching_type_nom, tt.code as teaching_type_code, sec.nom AS section_nom,
-                          ((SELECT COUNT(*) FROM subjects s WHERE s.subject_group_id = sg.id){$additionalAssignedSubjects}) as subjects_count
-                      FROM subject_groups sg
-                      LEFT JOIN teaching_forms tf ON sg.teaching_form_id = tf.id
-                      LEFT JOIN teaching_types tt ON sg.teaching_type_id = tt.id
-                      LEFT JOIN sections sec ON sec.id = sg.section_id
-                      WHERE tt.actif = 1 AND (tf.status = 1 OR sg.teaching_form_id IS NULL) AND (sec.status = 1 OR sg.section_id IS NULL)";
-
-            if ($q !== '') {
-                $sql .= " AND LOWER(sg.libelle) LIKE ?";
-                $params[] = '%' . strtolower($q) . '%';
-            }
-            if ($teaching_type_id) {
-                // Filtre par type d'enseignement via la colonne teaching_type_id
-                $sql .= " AND sg.teaching_type_id = ?";
-                $params[] = $teaching_type_id;
-            }
-            if ($section_id) {
-                $sql .= " AND sg.section_id = ?";
-                $params[] = $section_id;
-            }
-
-            $sql .= " ORDER BY sg.section_id ASC, sg.teaching_form_id IS NULL ASC, sg.teaching_form_id ASC, sg.position ASC, sg.id ASC";
-
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute($params);
-            $groups = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } else {
-                 // Mode compatibilité si la migration n'a pas encore été appliquée
-                 // Affiche uniquement les groupes dont le Type d'enseignement est actif (compatibilité legacy)
-                  $sql = "SELECT sg.*, tt.nom as teaching_type_nom, tt.code as teaching_type_code, sec.nom AS section_nom,
-                          ((SELECT COUNT(*) FROM subjects s WHERE s.subject_group_id = sg.id){$additionalAssignedSubjects}) as subjects_count
-                      FROM subject_groups sg
-                      LEFT JOIN teaching_types tt ON sg.teaching_type_id = tt.id
-                      LEFT JOIN sections sec ON sec.id = sg.section_id
-                      WHERE tt.actif = 1";
-
-            if ($q !== '') {
-                $sql .= " AND LOWER(sg.libelle) LIKE ?";
-                $params[] = '%' . strtolower($q) . '%';
-            }
-            if ($teaching_type_id) {
-                $sql .= " AND sg.teaching_type_id = ?";
-                $params[] = $teaching_type_id;
-            }
-            if ($section_id) {
-                $sql .= " AND sg.section_id = ?";
-                $params[] = $section_id;
-            }
-
-            $sql .= " ORDER BY sg.teaching_type_id ASC, sg.position ASC, sg.id ASC";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute($params);
-            $groups = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $joins[] = 'LEFT JOIN teaching_forms tf ON sg.teaching_form_id = tf.id';
+            $conditions[] = '(tf.status = 1 OR sg.teaching_form_id IS NULL)';
+        }
+        if ($hasSectionCol) {
+            $joins[] = 'LEFT JOIN sections sec ON sec.id = sg.section_id';
+            $conditions[] = '(sec.status = 1 OR sg.section_id IS NULL)';
         }
 
+        $sql = "SELECT sg.*, {$selectTeachingForm}, tt.nom AS teaching_type_nom, tt.code AS teaching_type_code, {$selectSection},
+                       ((SELECT COUNT(*) FROM subjects s WHERE s.subject_group_id = sg.id){$additionalAssignedSubjects}) AS subjects_count
+                FROM subject_groups sg
+                " . implode("\n                ", $joins) . "
+                WHERE " . implode(' AND ', $conditions);
+
+        if ($q !== '') {
+            $sql .= " AND LOWER(sg.libelle) LIKE ?";
+            $params[] = '%' . strtolower($q) . '%';
+        }
+        if ($teaching_type_id) {
+            $sql .= " AND sg.teaching_type_id = ?";
+            $params[] = $teaching_type_id;
+        }
+        if ($section_id !== null) {
+            $sql .= " AND sg.section_id = ?";
+            $params[] = $section_id;
+        }
+
+        $orderBy = [];
+        if ($hasSectionCol) {
+            $orderBy[] = 'sg.section_id ASC';
+        }
+        if ($hasTeachingFormCol) {
+            $orderBy[] = 'sg.teaching_form_id IS NULL ASC';
+            $orderBy[] = 'sg.teaching_form_id ASC';
+        } else {
+            $orderBy[] = 'sg.teaching_type_id ASC';
+        }
+        if ($hasPositionCol) {
+            $orderBy[] = 'sg.position ASC';
+        }
+        $orderBy[] = 'sg.id ASC';
+        $sql .= ' ORDER BY ' . implode(', ', $orderBy);
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        $groups = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
         // Formes d'enseignement actives pour la modale (si la table existe)
-        $tfTableCheck = $this->db->query("SHOW TABLES LIKE 'teaching_forms'")->fetchColumn();
-        if ($tfTableCheck) {
+        if ($teachingFormsTableExists) {
             $teachingForms = $this->db->query("SELECT id, nom, teaching_type_id FROM teaching_forms WHERE status = 1 ORDER BY teaching_type_id ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         } else {
             $teachingForms = [];
@@ -123,16 +129,24 @@ class SubjectGroupController
 
         // Récupérer les classes utilisant chaque groupe pour afficher les formes d'enseignement compatibles
         $groupClasses = [];
+        $classTeachingFormColumn = $this->db->query("SHOW COLUMNS FROM classes LIKE 'teaching_form_id'")->fetchColumn();
+        $hasClassTeachingFormCol = $teachingFormsTableExists && !empty($classTeachingFormColumn);
         if (!empty($groups)) {
             $groupIds = array_column($groups, 'id');
             if (!empty($groupIds)) {
                 $placeholders = implode(',', array_fill(0, count($groupIds), '?'));
+                $classTeachingFormSelect = $hasClassTeachingFormCol
+                    ? 'c.teaching_form_id, tf.nom AS teaching_form_nom'
+                    : 'NULL AS teaching_form_id, NULL AS teaching_form_nom';
+                $classTeachingFormJoin = $hasClassTeachingFormCol
+                    ? 'LEFT JOIN teaching_forms tf ON tf.id = c.teaching_form_id'
+                    : '';
                 $classQuery = $this->db->prepare("
-                    SELECT DISTINCT s.subject_group_id, c.id as class_id, c.nom as class_nom, c.teaching_form_id, tf.nom as teaching_form_nom
+                    SELECT DISTINCT s.subject_group_id, c.id as class_id, c.nom as class_nom, {$classTeachingFormSelect}
                     FROM subjects s
                     JOIN subject_classes sc ON sc.subject_id = s.id
                     JOIN classes c ON c.id = sc.class_id
-                    LEFT JOIN teaching_forms tf ON tf.id = c.teaching_form_id
+                    {$classTeachingFormJoin}
                     WHERE s.subject_group_id IN ({$placeholders})
                     AND c.status = 1
                     ORDER BY s.subject_group_id, c.nom
