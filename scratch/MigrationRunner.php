@@ -92,9 +92,13 @@ try {
         echo "Running: $migration\n";
         
         // Include and execute migration (they already have their own DB setup)
-        $output = shell_exec("php " . escapeshellarg($path) . " 2>&1");
-        if ($output) {
-            echo $output;
+        $output = [];
+        exec("php " . escapeshellarg($path) . " 2>&1", $output, $exitCode);
+        if ($output !== []) {
+            echo implode(PHP_EOL, $output) . PHP_EOL;
+        }
+        if ($exitCode !== 0) {
+            throw new RuntimeException("Migration failed with exit code {$exitCode}: {$migration}");
         }
 
         // Record migration

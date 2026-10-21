@@ -262,6 +262,7 @@ const UX = (function () {
                     }
 
                     const url = deleteTrigger.getAttribute('href');
+                    const form = deleteTrigger.closest('form');
                     const message = deleteTrigger.dataset.confirm || t('action_irreversible', 'This action cannot be undone.');
 
                     AlertService.confirmDelete(
@@ -269,7 +270,11 @@ const UX = (function () {
                         message
                     ).then((result) => {
                         if (result.isConfirmed) {
-                            window.location.href = url;
+                            if (form) {
+                                form.submit();
+                            } else if (url) {
+                                window.location.href = url;
+                            }
                         }
                     });
                     return;

@@ -76,7 +76,7 @@ class BackupService
         }
     }
 
-    public function createArchive(string $trigger = 'manual'): array
+    public function createArchive(string $trigger = 'manual', bool $prune = true): array
     {
         $paths = $this->getStoragePaths();
         foreach ($paths as $path) {
@@ -116,7 +116,9 @@ class BackupService
 
         @unlink($sqlPath);
         @unlink($manifestPath);
-        $this->pruneArchives($paths['archives'], $this->settingsStore->getInt('backup_retention_count', 12));
+        if ($prune) {
+            $this->pruneArchives($paths['archives'], $this->settingsStore->getInt('backup_retention_count', 12));
+        }
 
         return [
             'filename' => $archiveName,

@@ -8,25 +8,33 @@
 | `manage_settings` | Gérer les paramètres | Administration | Configurer l'identité de l'école, logos et paramètres globaux. | `superadmin`, `admin` |
 | `view_system_logs` | Consulter les journaux | Administration | Visualiser les logs d'audit et d'activité système. | `superadmin`, `admin`, `it_manager` |
 | `manage_rbac` | Gérer la sécurité RBAC | Administration | Configurer les rôles et affecter des permissions. | `superadmin` |
+| `view_pilotage` | Accéder au Centre de Pilotage | Administration | Accéder aux tableaux de bord analytiques et bilans d'impact. | `superadmin`, `admin`, `it_manager`, `direction_academique` |
 | `view_classes` | Consulter les classes | Pédagogie | Visualiser la liste des classes et leurs effectifs. | `superadmin`, `admin`, `it_manager`, `comptable`, `caissier`, `enseignant` |
 | `manage_classes_structure` | Gérer la structure des classes | Pédagogie | Créer, modifier la structure des niveaux et classes. | `superadmin`, `admin`, `it_manager` |
 | `manage_teaching_types` | Gérer les types d'enseignement | Structure | Créer et configurer les types d'enseignement. | `superadmin`, `admin`, `it_manager` |
+| `manage_teaching_forms` | Gérer les formes d'enseignement | Structure | Créer et modifier les formes d'enseignement. | `superadmin`, `admin`, `direction_academique` |
 | `manage_cycles` | Gérer les cycles | Structure | Créer et modifier les cycles académiques. | `superadmin`, `admin`, `it_manager` |
+| `manage_levels` | Gérer les niveaux d'étude | Structure | Configurer les niveaux d'étude. | `superadmin`, `admin`, `it_manager`, `direction_academique` |
 | `manage_sections` | Gérer les sections | Structure | Créer et modifier les sections d'études. | `superadmin`, `admin`, `it_manager` |
 | `manage_departments` | Gérer les départements | Structure | Créer et modifier les départements d'enseignement. | `superadmin`, `admin`, `it_manager` |
 | `manage_subjects` | Gérer les matières | Pédagogie | Gérer le catalogue des matières, groupes (UE) et coefficients. | `superadmin`, `admin`, `it_manager` |
+| `manage_subject_groups` | Gérer les groupes de matières | Pédagogie | Organiser les matières en groupes/UE. | `superadmin`, `admin`, `it_manager`, `direction_academique` |
 | `manage_teachers` | Gérer les enseignants | RH | Gérer le registre des enseignants et leurs affectations. | `superadmin`, `admin`, `it_manager` |
 | `manage_timetables` | Gérer les emplois du temps | Pédagogie | Établir et modifier les emplois du temps. | `superadmin`, `admin`, `it_manager` |
+| `view_timetables` | Consulter les emplois du temps | Pédagogie | Visualiser, partager et imprimer les emplois du temps. | `superadmin`, `admin`, `it_manager`, `direction_academique`, `enseignant` |
+| `unlock_timetables` | Déverrouiller les emplois du temps | Pédagogie | Déverrouiller un emploi du temps verrouillé. | `superadmin` |
 | `manage_academic_years` | Gérer les années scolaires | Structure | Créer, activer, clôturer et archiver des années académiques. | `superadmin`, `it_manager` |
 | `manage_sequences` | Gérer les séquences | Évaluations | Configurer les évaluations, séquences et périodes. | `superadmin`, `admin`, `it_manager` |
 | `view_students` | Consulter les élèves | Élèves | Visualiser les registres et fiches des élèves. | `superadmin`, `admin`, `it_manager`, `comptable`, `caissier`, `enseignant` |
 | `manage_students` | Gérer les élèves | Élèves | Inscrire, modifier les profils, réintégrer ou retirer des élèves. | `superadmin`, `admin`, `it_manager`, `comptable`, `caissier` |
+| `export_students` | Exporter les données élèves | Élèves | Exporter les registres élèves au format Excel/PDF. | `superadmin`, `admin`, `it_manager` |
 | `manage_marks` | Gérer les notes | Évaluations | Saisir, importer et modifier des notes d'évaluation. | `superadmin`, `admin`, `it_manager`, `enseignant` |
 | `manage_bulletins` | Gérer les bulletins et PV | Éditions | Calculer les moyennes, générer des bulletins, PV et diplômes. | `superadmin`, `admin`, `it_manager` |
 | `manage_absences` | Gérer les absences | Discipline | Saisir et suivre les absences et la discipline. | `superadmin`, `admin`, `it_manager` |
 | `manage_staff` | Gérer le personnel | RH | Gérer les fiches du personnel et employés. | `superadmin`, `admin`, `it_manager`, `comptable` |
 | `manage_contracts` | Gérer les contrats | RH | Établir et suivre les contrats de travail du personnel. | `superadmin`, `admin`, `it_manager`, `comptable` |
 | `manage_fees` | Gérer la scolarité | Finances | Accéder aux modules de scolarité et paramétrage des frais. | `superadmin`, `admin`, `comptable`, `caissier` |
+| `manage_expenses` | Gérer les dépenses d'établissement | Finances | Saisir et approuver les dépenses et frais d'exploitation. | `superadmin`, `admin`, `comptable`, `caissier` |
 | `view_class_finances` | Consulter les finances de classe | Finances | Voir les grilles tarifaires et tranches d'une classe. | `superadmin`, `admin`, `comptable`, `caissier` |
 | `edit_class_finances` | Modifier les finances de classe | Finances | Définir la scolarité et les tranches tarifaires d'une classe. | `superadmin`, `admin`, `comptable` |
 | `manage_payments` | Gérer les paiements et reçus | Finances | Enregistrer les versements et imprimer des reçus de caisse. | `superadmin`, `admin`, `comptable`, `caissier` |
@@ -34,12 +42,14 @@
 | `manage_scholarships` | Gérer les bourses | Finances | Attribuer et paramétrer les bourses scolaires. | `superadmin`, `admin`, `comptable`, `caissier` |
 | `view_financial_history` | Consulter l'historique financier | Finances | Consulter le journal d'audit financier et l'historique comptable. | `superadmin`, `admin`, `comptable`, `caissier` |
 | `view_financial_reports` | Consulter les rapports financiers | Finances | Consulter les statistiques financières et la liste des insolvables. | `superadmin`, `admin`, `comptable`, `caissier` |
-| `view_transcripts` | Consulter les relevés de notes | Éditions | Visualiser et prévisualiser les relevés de notes des élèves. | `superadmin`, `admin`, `it_manager` |
-| `manage_transcripts` | Gérer les relevés de notes | Éditions | Générer, exporter en PDF et imprimer les relevés de notes. | `superadmin`, `admin` |
+| `view_transcripts` | Consulter les relevés de notes | Éditions | Visualiser et prévisualiser les relevés de notes des élèves. | `superadmin`, `admin`, `it_manager`, `direction_academique` |
+| `manage_transcripts` | Gérer les relevés de notes | Éditions | Générer, exporter en PDF et imprimer les relevés de notes. | `superadmin`, `admin`, `it_manager`, `direction_academique` |
 
 ---
 
 ## 2. Matrice Rôles vs Permissions
+
+Le rôle `direction_academique` n'est pas représenté dans cette matrice synthétique ; ses attributions sont indiquées dans le dictionnaire et définies par les mappings RBAC.
 
 | Permission Code | Superadmin | Admin | IT Manager | Comptable | Caissier | Enseignant |
 |---|---|---|---|---|---|---|
@@ -47,25 +57,33 @@
 | `manage_settings` | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | `view_system_logs` | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | `manage_rbac` | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| `view_pilotage` | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | `view_classes` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `manage_classes_structure` | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | `manage_teaching_types` | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| `manage_teaching_forms` | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 | `manage_cycles` | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| `manage_levels` | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | `manage_sections` | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | `manage_departments` | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | `manage_subjects` | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| `manage_subject_groups` | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | `manage_teachers` | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | `manage_timetables` | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| `view_timetables` | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ |
+| `unlock_timetables` | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | `manage_academic_years` | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ |
 | `manage_sequences` | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | `view_students` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `manage_students` | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| `export_students` | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | `manage_marks` | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ |
 | `manage_bulletins` | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | `manage_absences` | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | `manage_staff` | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
 | `manage_contracts` | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
 | `manage_fees` | ✅ | ✅ | ❌ | ✅ | ✅ | ❌ |
+| `manage_expenses` | ✅ | ✅ | ❌ | ✅ | ✅ | ❌ |
 | `view_class_finances` | ✅ | ✅ | ❌ | ✅ | ✅ | ❌ |
 | `edit_class_finances` | ✅ | ✅ | ❌ | ✅ | ❌ | ❌ |
 | `manage_payments` | ✅ | ✅ | ❌ | ✅ | ✅ | ❌ |

@@ -24,6 +24,15 @@ ob_start(); ?>
                     </option>
                 <?php endforeach; ?>
             </select>
+            <select name="section_id" class="form-select rounded-pill px-3 py-2 border-theme-light"
+                style="max-width: 220px;" onchange="this.form.submit()">
+                <option value=""><?= __('all_sections') ?></option>
+                <?php foreach ($sections as $section): ?>
+                    <option value="<?= (int) $section['id'] ?>" <?= (int) ($filters['section_id'] ?? 0) === (int) $section['id'] ? 'selected' : '' ?>>
+                        <?= htmlspecialchars((string) $section['nom']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
         </form>
 
         <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm scale-on-hover text-nowrap"
@@ -40,6 +49,7 @@ ob_start(); ?>
                     <tr>
                         <th class="ps-4">Libellé du Groupe</th>
                         <th><?= __('subject_group_position') ?? 'Position' ?></th>
+                        <th><?= __('section') ?></th>
                         <th><?= __('teaching_form') ?? 'Forme d\'enseignement' ?> <span class="text-muted small">/ <?= __('teaching_type') ?? 'Type' ?></span></th>
                         <th>Nombre de Matières</th>
                         <th>Statut</th>
@@ -49,7 +59,7 @@ ob_start(); ?>
                 <tbody>
                     <?php if (empty($groups)): ?>
                         <tr>
-                            <td colspan="6" class="text-center py-5">
+                            <td colspan="7" class="text-center py-5">
                                 <i class="bi bi-collection fs-1 opacity-25 mb-3 d-block"></i>
                                 <span class="text-muted-theme"><?= __('no_data') ?></span>
                             </td>
@@ -62,6 +72,13 @@ ob_start(); ?>
                                         class="fw-bold text-main-theme group-libelle"><?= htmlspecialchars((string) $g['libelle']) ?></span>
                                 </td>
                                 <td><span class="badge bg-primary bg-opacity-10 text-primary fw-bold px-3 py-1 rounded-pill"><?= (int) ($g['position'] ?? 0) ?></span></td>
+                                <td>
+                                    <?php if (!empty($g['section_nom'])): ?>
+                                        <span class="badge bg-info bg-opacity-10 text-info fw-bold px-3 py-1 rounded-pill"><?= htmlspecialchars((string) $g['section_nom']) ?></span>
+                                    <?php else: ?>
+                                        <span class="badge bg-warning bg-opacity-10 text-warning-emphasis fw-bold px-3 py-1 rounded-pill"><?= __('section_unassigned') ?></span>
+                                    <?php endif; ?>
+                                </td>
                                 <td>
                                     <div>
                                         <span class="badge bg-secondary bg-opacity-10 text-secondary fw-bold px-3 py-1 rounded-pill small me-1">
@@ -90,30 +107,37 @@ ob_start(); ?>
                                 </td>
                                 <td class="text-end pe-4">
                                     <div class="d-flex justify-content-end gap-1 align-items-center table-row-actions">
-                                        <a href="/subject-groups/toggle?id=<?= $g['id'] ?>"
-                                            class="btn btn-sm btn-action-modern <?= (int) $g['status'] === 1 ? 'text-warning' : 'text-success' ?>"
-                                            title="<?= (int) $g['status'] === 1 ? __('deactivate') : __('activate') ?>">
-                                            <i
-                                                class="bi <?= (int) $g['status'] === 1 ? 'bi-pause-circle' : 'bi-play-circle' ?> fs-5"></i>
-                                        </a>
+                                        <form action="/subject-groups/toggle?id=<?= (int) $g['id'] ?>" method="POST" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
+                                            <button type="submit"
+                                                class="btn btn-sm btn-action-modern <?= (int) $g['status'] === 1 ? 'text-warning' : 'text-success' ?>"
+                                                title="<?= (int) $g['status'] === 1 ? __('deactivate') : __('activate') ?>">
+                                                <i class="bi <?= (int) $g['status'] === 1 ? 'bi-pause-circle' : 'bi-play-circle' ?> fs-5"></i>
+                                            </button>
+                                        </form>
                                         <button type="button"
                                             class="btn btn-sm btn-action-modern text-primary border-0 bg-transparent" onclick="openEditGroupModal(<?= htmlspecialchars(json_encode([
                                                 'id' => (int) $g['id'],
                                                 'libelle' => $g['libelle'],
                                                 'position' => (int) ($g['position'] ?? 0),
                                                 'teaching_form_id' => (int) ($g['teaching_form_id'] ?? 0),
+                                                'section_id' => (int) ($g['section_id'] ?? 0),
                                                 'teaching_type_id' => (int) ($g['teaching_type_id'] ?? 0),
-                                                'status' => (int) $g['status']
+                                                'status' => (int) $g['status'],
+                                                'subjects_count' => (int) $g['subjects_count'],
+                                                'classes' => $groupClasses[(int) $g['id']] ?? []
                                             ]), ENT_QUOTES, 'UTF-8') ?>)" title="<?= __('edit') ?>">
                                             <i class="bi bi-pencil-square fs-5"></i>
                                         </button>
                                         <?php if ((int) $g['subjects_count'] == 0 && (int)$g['id'] > 0): ?>
-                                            <a href="/subject-groups/delete?id=<?= $g['id'] ?>"
-                                                class="btn btn-sm btn-action-modern text-danger btn-confirm-delete"
-                                                data-confirm="<?= __('confirm_delete_subject_group') ?>"
-                                                title="<?= __('delete') ?>">
-                                                <i class="bi bi-trash fs-5"></i>
-                                            </a>
+                                            <form action="/subject-groups/delete?id=<?= (int) $g['id'] ?>" method="POST" class="d-inline">
+                                                <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
+                                                <button type="submit" class="btn btn-sm btn-action-modern text-danger btn-confirm-delete"
+                                                    data-confirm="<?= __('confirm_delete_subject_group') ?>"
+                                                    title="<?= __('delete') ?>">
+                                                    <i class="bi bi-trash fs-5"></i>
+                                                </button>
+                                            </form>
                                         <?php endif; ?>
                                     </div>
                                 </td>
@@ -152,6 +176,18 @@ ob_start(); ?>
 
                     <div class="mb-3">
                         <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">
+                            Libellé du Groupe <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group-modern">
+                            <span class="input-group-text-modern"><i class="bi bi-fonts"></i></span>
+                            <input type="text" name="libelle" id="group_libelle" class="form-control premium-input"
+                                placeholder="Ex: Groupe 1 - Matières Littéraires" required>
+                        </div>
+                        <small class="text-muted small mt-1">Le libellé s'affiche sur les bulletins et peut être modifié librement.</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">
                             <?= __('subject_group_position') ?? 'Position' ?> <span class="text-danger">*</span>
                         </label>
                         <div class="input-group-modern">
@@ -162,12 +198,16 @@ ob_start(); ?>
 
                     <div class="mb-3">
                         <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">
-                            Libellé du Groupe <span class="text-danger">*</span>
+                            <?= __('section') ?> <span class="text-danger">*</span>
                         </label>
                         <div class="input-group-modern">
-                            <span class="input-group-text-modern"><i class="bi bi-fonts"></i></span>
-                            <input type="text" name="libelle" id="group_libelle" class="form-control premium-input"
-                                placeholder="Ex: Groupe 1 - Matières Littéraires" required>
+                            <span class="input-group-text-modern"><i class="bi bi-translate"></i></span>
+                            <select name="section_id" id="group_section_id" class="form-select premium-input" required>
+                                <option value="" disabled selected><?= __('select_subject_section') ?></option>
+                                <?php foreach ($sections as $section): ?>
+                                    <option value="<?= (int) $section['id'] ?>"><?= htmlspecialchars((string) $section['nom']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
                     </div>
 
@@ -184,6 +224,14 @@ ob_start(); ?>
                                     <option value="<?= $tf['id'] ?>"><?= htmlspecialchars((string) $tf['nom']) ?></option>
                                 <?php endforeach; ?>
                             </select>
+                        </div>
+                        <div id="teaching_form_warning" class="alert alert-warning mt-2 d-none" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <span id="teaching_form_warning_text"></span>
+                        </div>
+                        <div id="classes_using_group" class="mt-2 d-none">
+                            <small class="text-muted fw-bold">Classes utilisant ce groupe :</small>
+                            <ul class="list-unstyled small mt-1 mb-0" id="classes_list"></ul>
                         </div>
                     </div>
 
@@ -308,6 +356,8 @@ ob_start(); ?>
         if (tfSelect && tfSelect.options.length > 1) tfSelect.selectedIndex = 1;
         const ttSelect = document.getElementById('group_teaching_type_id');
         if (ttSelect && ttSelect.options.length > 1) ttSelect.selectedIndex = 1;
+        const sectionSelect = document.getElementById('group_section_id');
+        if (sectionSelect) sectionSelect.value = '';
         document.getElementById('group_status').checked = true;
 
         const modal = new bootstrap.Modal(document.getElementById('subjectGroupModal'));
@@ -332,7 +382,68 @@ ob_start(); ?>
         if (data.teaching_type_id && ttSelect) {
             ttSelect.value = data.teaching_type_id;
         }
+        const sectionSelect = document.getElementById('group_section_id');
+        if (sectionSelect) sectionSelect.value = data.section_id || '';
         document.getElementById('group_status').checked = data.status == 1;
+
+        // Afficher les classes utilisant ce groupe et vérifier la compatibilité
+        const classesDiv = document.getElementById('classes_using_group');
+        const classesList = document.getElementById('classes_list');
+        const warningDiv = document.getElementById('teaching_form_warning');
+        const warningText = document.getElementById('teaching_form_warning_text');
+
+        classesList.innerHTML = '';
+        warningDiv.classList.add('d-none');
+
+        if (data.classes && data.classes.length > 0) {
+            classesDiv.classList.remove('d-none');
+
+            // Récupérer les formes d'enseignement uniques utilisées par les classes
+            const classTeachingForms = [...new Set(data.classes.map(c => c.teaching_form_id).filter(id => id !== null))];
+            const selectedTeachingFormId = parseInt(data.teaching_form_id || 0);
+
+            // Vérifier si la forme sélectionnée est compatible
+            let isCompatible = true;
+            if (selectedTeachingFormId > 0 && classTeachingForms.length > 0) {
+                isCompatible = classTeachingForms.includes(selectedTeachingFormId);
+            }
+
+            // Afficher l'avertissement si incompatible
+            if (!isCompatible && selectedTeachingFormId > 0) {
+                warningDiv.classList.remove('d-none');
+                warningText.textContent = 'Attention : La forme d\'enseignement sélectionnée ne correspond pas à celle des classes utilisant ce groupe. Le groupe pourrait ne pas apparaître sur les bulletins.';
+            }
+
+            // Afficher la liste des classes
+            data.classes.forEach(c => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span class="badge bg-light text-dark me-1">${c.class_nom}</span>
+                    ${c.teaching_form_nom ? `<small class="text-muted">(Forme: ${c.teaching_form_nom})</small>` : '<small class="text-muted">(Pas de forme)</small>'}`;
+                classesList.appendChild(li);
+            });
+        } else {
+            classesDiv.classList.add('d-none');
+        }
+
+        // Ajouter un écouteur d'événement pour vérifier la compatibilité quand la forme change
+        tfSelect.onchange = function() {
+            if (data.classes && data.classes.length > 0) {
+                const classTeachingForms = [...new Set(data.classes.map(c => c.teaching_form_id).filter(id => id !== null))];
+                const newFormId = parseInt(this.value || 0);
+
+                if (newFormId > 0 && classTeachingForms.length > 0) {
+                    const isCompatible = classTeachingForms.includes(newFormId);
+                    if (!isCompatible) {
+                        warningDiv.classList.remove('d-none');
+                        warningText.textContent = 'Attention : La forme d\'enseignement sélectionnée ne correspond pas à celle des classes utilisant ce groupe. Le groupe pourrait ne pas apparaître sur les bulletins.';
+                    } else {
+                        warningDiv.classList.add('d-none');
+                    }
+                } else {
+                    warningDiv.classList.add('d-none');
+                }
+            }
+        };
 
         const modal = new bootstrap.Modal(document.getElementById('subjectGroupModal'));
         modal.show();

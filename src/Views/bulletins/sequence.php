@@ -21,7 +21,7 @@ $total_coef_valide = $total_coef_valide ?? 0;  // Somme des coefficients où la 
 $sequence = $sequence ?? [];                   // Détails de la séquence concernée (ex: Séquence 1)
 $globalAppreciation = $globalAppreciation ?? '-'; // Appréciation globale du conseil
 
-$lang = \App\Core\Session::get('app_lang', 'fr');
+$lang = $lang ?? \App\Core\Session::get('app_lang', 'fr');
 $i = $institution;
 $contactLabels = [
     'bp' => __('bp'),

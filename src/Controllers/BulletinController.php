@@ -12,6 +12,7 @@ class BulletinController
 {
     protected $db;
     protected $cache = [];
+    private ?bool $departmentTeachingFormColumnExists = null;
 
     private const DEFAULT_SEQUENCES = [
         ['code' => 'SEQ1', 'label' => 'Trimestre 1 - Sequence 1', 'trimestre' => 1, 'position' => 1],
@@ -271,11 +272,12 @@ class BulletinController
         }
 
         // Détection automatique de la langue selon la section (Anglophone -> English)
-        $this->detectAndApplyBulletinLanguage((int)$student['class_id']);
+        $lang = $this->detectAndApplyBulletinLanguage((int) $student['class_id']);
 
         $academicYear = $this->resolveAcademicYear($academicYearId);
         $ranking = $this->computeSequenceRanking((int) $student['class_id'], $sequence['label'], (int) $academicYear['id']);
         $data = $this->buildSequenceBulletinData($student, $sequence, $academicYear, $ranking);
+        $data['lang'] = $lang;
         $pdf_filename = $this->buildPdfFileNameStudent($student, $sequence['label']);
         $data['pdf_filename'] = $pdf_filename;
         
@@ -311,12 +313,13 @@ class BulletinController
         }
 
         // Détection automatique de la langue selon la section (Anglophone -> English)
-        $this->detectAndApplyBulletinLanguage((int)$student['class_id']);
+        $lang = $this->detectAndApplyBulletinLanguage((int) $student['class_id']);
 
         $academicYear = $this->resolveAcademicYear($academicYearId);
         $termSequences = $this->getActiveSequencesByTerm($term);
         $ranking = $this->computeTrimesterRanking((int) $student['class_id'], $termSequences, (int) $academicYear['id']);
         $data = $this->buildTrimesterBulletinData($student, $term, $academicYear, $ranking);
+        $data['lang'] = $lang;
         $pdf_filename = $this->buildPdfFileNameStudent($student, 'TRIMESTRE ' . $term);
         $data['pdf_filename'] = $pdf_filename;
         
@@ -358,7 +361,7 @@ class BulletinController
         }
 
         // Détection automatique de la langue selon la section (Anglophone -> English)
-        $this->detectAndApplyBulletinLanguage($classId);
+        $lang = $this->detectAndApplyBulletinLanguage($classId);
 
         $ranking = $this->computeSequenceRanking($classId, $sequence['label'], (int) $academicYear['id'], true);
         $students = $this->sortStudentsByRanking($students, $ranking);
@@ -421,7 +424,7 @@ class BulletinController
         }
 
         // Détection automatique de la langue selon la section (Anglophone -> English)
-        $this->detectAndApplyBulletinLanguage($classId);
+        $lang = $this->detectAndApplyBulletinLanguage($classId);
 
         $termSequences = $this->getActiveSequencesByTerm($term);
         $ranking = $this->computeTrimesterRanking($classId, $termSequences, (int) $academicYear['id'], true);
@@ -486,7 +489,7 @@ class BulletinController
         }
 
         // Détection automatique de la langue selon la section (Anglophone -> English)
-        $this->detectAndApplyBulletinLanguage((int)$student['class_id']);
+        $lang = $this->detectAndApplyBulletinLanguage((int) $student['class_id']);
 
         $academicYear = $this->resolveAcademicYear($academicYearId);
         $termSequencesByTerm = [
@@ -496,6 +499,7 @@ class BulletinController
         ];
         $ranking = $this->computeAnnualRanking((int) $student['class_id'], $termSequencesByTerm, (int) $academicYear['id']);
         $data = $this->buildAnnualBulletinData($student, $academicYear, $ranking);
+        $data['lang'] = $lang;
         $pdf_filename = $this->buildPdfFileNameStudent($student, 'ANNUEL');
         $data['pdf_filename'] = $pdf_filename;
         
@@ -534,7 +538,7 @@ class BulletinController
         }
 
         // Détection automatique de la langue selon la section (Anglophone -> English)
-        $this->detectAndApplyBulletinLanguage($classId);
+        $lang = $this->detectAndApplyBulletinLanguage($classId);
 
         $termSequencesByTerm = [
             1 => $this->getActiveSequencesByTerm(1),
@@ -1545,7 +1549,7 @@ class BulletinController
      * Si la section est "Anglophone", le bulletin passe en Anglais.
      * Sinon, il repasse en Français par défaut pour garantir la cohérence.
      */
-    protected function detectAndApplyBulletinLanguage(int $classId): void
+    protected function detectAndApplyBulletinLanguage(int $classId): string
     {
         $stmt = $this->db->prepare("
             SELECT s.nom
@@ -1556,11 +1560,12 @@ class BulletinController
         $stmt->execute([$classId]);
         $sectionName = (string) $stmt->fetchColumn();
 
-        if (stripos($sectionName, 'Anglophone') !== false || stripos($sectionName, 'English') !== false) {
-            \App\Core\Locale::set('en');
-        } else {
-            \App\Core\Locale::set('fr');
-        }
+        $language = stripos($sectionName, 'Anglophone') !== false || stripos($sectionName, 'English') !== false
+            ? 'en'
+            : 'fr';
+        \App\Core\Translator::load($language);
+
+        return $language;
     }
 
     /**
@@ -1629,6 +1634,7 @@ class BulletinController
     protected function getClassSubjects(int $classId)
     {
         // Les matières du bulletin suivent la forme portée par le département de la classe.
+        $departmentTeachingFormId = $this->departmentTeachingFormIdExpression();
         $sql = "SELECT DISTINCT s.id, s.nom, s.coefficient, sg.libelle AS groupe, sg.position AS group_position,
                                     (SELECT CONCAT(u.nom, ' ', u.prenom)
                                      FROM teacher_assignments ta
@@ -1643,14 +1649,22 @@ class BulletinController
             LEFT JOIN teaching_forms tf ON tf.id = sg.teaching_form_id
             WHERE sc.class_id = ? AND s.status = 1
               AND sg.status = 1
+                            AND sg.section_id = c.section_id
               AND (
-                    (d.teaching_form_id IS NOT NULL
-                        AND sg.teaching_form_id = d.teaching_form_id
+                    ({$departmentTeachingFormId} IS NOT NULL
+                        AND sg.teaching_form_id = {$departmentTeachingFormId}
                         AND tf.status = 1)
                     OR
-                    ((d.id IS NULL OR d.teaching_form_id IS NULL)
-                        AND sg.teaching_form_id IS NULL
+                    ((d.id IS NULL OR {$departmentTeachingFormId} IS NULL)
+                        AND c.teaching_form_id IS NOT NULL
+                        AND sg.teaching_form_id = c.teaching_form_id
+                        AND tf.status = 1
                         AND sg.teaching_type_id = c.teaching_type_id)
+                    OR
+                    ((d.id IS NULL OR {$departmentTeachingFormId} IS NULL)
+                        AND c.teaching_form_id IS NULL
+                        AND sg.teaching_type_id = c.teaching_type_id
+                        AND (tf.status = 1 OR sg.teaching_form_id IS NULL))
               )
             ORDER BY s.nom ASC";
 
@@ -1669,6 +1683,7 @@ class BulletinController
             return [];
         }
 
+        $departmentTeachingFormId = $this->departmentTeachingFormIdExpression();
         $placeholders = implode(', ', array_fill(0, count($periodLabels), '?'));
         $sql = "SELECT DISTINCT s.id, s.nom, s.coefficient, sg.libelle AS groupe, sg.position AS group_position,
                                     (SELECT CONCAT(u.nom, ' ', u.prenom)
@@ -1685,14 +1700,22 @@ class BulletinController
             JOIN grades g ON g.subject_id = s.id
             WHERE sc.class_id = ? AND s.status = 1
               AND sg.status = 1
+                            AND sg.section_id = c.section_id
               AND (
-                    (d.teaching_form_id IS NOT NULL
-                        AND sg.teaching_form_id = d.teaching_form_id
+                    ({$departmentTeachingFormId} IS NOT NULL
+                        AND sg.teaching_form_id = {$departmentTeachingFormId}
                         AND tf.status = 1)
                     OR
-                    ((d.id IS NULL OR d.teaching_form_id IS NULL)
-                        AND sg.teaching_form_id IS NULL
+                    ((d.id IS NULL OR {$departmentTeachingFormId} IS NULL)
+                        AND c.teaching_form_id IS NOT NULL
+                        AND sg.teaching_form_id = c.teaching_form_id
+                        AND tf.status = 1
                         AND sg.teaching_type_id = c.teaching_type_id)
+                    OR
+                    ((d.id IS NULL OR {$departmentTeachingFormId} IS NULL)
+                        AND c.teaching_form_id IS NULL
+                        AND sg.teaching_type_id = c.teaching_type_id
+                        AND (tf.status = 1 OR sg.teaching_form_id IS NULL))
               )
               AND g.periode IN ($placeholders) AND g.academic_year_id = ?
             ORDER BY s.nom ASC";
@@ -1701,6 +1724,16 @@ class BulletinController
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    private function departmentTeachingFormIdExpression(): string
+    {
+        if ($this->departmentTeachingFormColumnExists === null) {
+            $column = $this->db->query("SHOW COLUMNS FROM departments LIKE 'teaching_form_id'")->fetchColumn();
+            $this->departmentTeachingFormColumnExists = !empty($column);
+        }
+
+        return $this->departmentTeachingFormColumnExists ? 'd.teaching_form_id' : 'NULL';
     }
 
     protected function getStudentSequenceNotesMap(int $studentId, int $classId, array $sequenceLabels, int $academicYearId)

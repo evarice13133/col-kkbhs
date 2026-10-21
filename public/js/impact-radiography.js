@@ -164,7 +164,8 @@
             const risk = data.risk_level || 'low';
             const stats = data.stats || [];
             const summary = data.impact_summary || {};
-            const transfer = data.transfer_options;
+            const isSubject = ['subject', 'subjects', 'matiere'].includes(entity.type);
+            const transfer = isSubject ? null : data.transfer_options;
             const canDirectDelete = data.can_direct_delete;
 
             let riskBadgeClass = 'risk-low';
@@ -302,11 +303,13 @@
                                 <i class="fas fa-magic me-1"></i> 1. ${this.text('smartDelete', 'Suppression intelligente (recommandée)', 'Smart delete (recommended)')}
                             </button>
                         </li>
+                        ${isSubject ? '' : `
                         <li class="nav-item">
                             <button class="nav-link nav-direct" id="tab-direct" data-bs-toggle="tab" data-bs-target="#content-direct" type="button">
                                 <i class="fas fa-trash-alt me-1"></i> 2. ${this.text('directDelete', 'Suppression directe', 'Direct deletion')}
                             </button>
                         </li>
+                        `}
                     </ul>
 
                     <div class="tab-content">
@@ -331,6 +334,7 @@
                             </div>
                         </div>
 
+                        ${isSubject ? '' : `
                         <!-- Scenario 2: Direct Delete -->
                         <div class="tab-pane fade" id="content-direct">
                             ${!canDirectDelete ? `
@@ -343,6 +347,7 @@
                                 <i class="fas fa-trash-alt me-1"></i> ${this.text('confirmPermanentDelete', 'Confirmer la suppression définitive', 'Confirm permanent deletion')}
                             </button>
                         </div>
+                        `}
                     </div>
                 </div>
 
@@ -398,7 +403,11 @@
                         return;
                     }
 
-                    self.showConfirm(self.text('deleteConfirmation', 'Confirmation de suppression', 'Confirm deletion'), self.text('sureDelete', 'Êtes-vous absolument sûr de vouloir supprimer cet élément ? Cette action est irréversible.', 'Are you absolutely sure you want to delete this item? This action cannot be undone.'), function () {
+                    const isSubject = ['subject', 'subjects', 'matiere'].includes(self.currentEntity);
+                    const confirmationText = isSubject
+                        ? self.text('subjectArchiveConfirmation', 'La matière sera placée dans la corbeille. Ses notes, groupes et rattachements seront conservés et pourront être restaurés.', 'The subject will be moved to the recycle bin. Its grades, groups and assignments will be kept and can be restored.')
+                        : self.text('sureDelete', 'Êtes-vous absolument sûr de vouloir supprimer cet élément ? Cette action est irréversible.', 'Are you absolutely sure you want to delete this item? This action cannot be undone.');
+                    self.showConfirm(self.text('deleteConfirmation', 'Confirmation de suppression', 'Confirm deletion'), confirmationText, function () {
                         self.submitAction('direct');
                     });
                 });

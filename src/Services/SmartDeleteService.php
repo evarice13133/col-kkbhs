@@ -60,7 +60,7 @@ class SmartDeleteService
         }
     }
 
-    public function deleteSubjectsPermanently(array $subjectIds): array
+    public function archiveSubjects(array $subjectIds): array
     {
         $subjectIds = array_values(array_unique(array_filter(
             array_map('intval', $subjectIds),
@@ -80,74 +80,31 @@ class SmartDeleteService
                 throw new \RuntimeException('Une ou plusieurs matières sélectionnées sont introuvables.');
             }
 
-            $referenceTables = $this->subjectReferenceTables();
-            $deletedCount = 0;
-
+            $archivedCount = 0;
             foreach ($subjects as $subject) {
                 $subjectId = (int) $subject['id'];
-                $impact = [];
-                foreach ($referenceTables as $table) {
-                    $countStmt = $this->db->prepare("SELECT COUNT(*) FROM `$table` WHERE subject_id = ?");
-                    $countStmt->execute([$subjectId]);
-                    $rowCount = (int) $countStmt->fetchColumn();
-                    if ($rowCount > 0) {
-                        $impact[(string) $table] = $rowCount;
-                    }
-                    $deleteStmt = $this->db->prepare("DELETE FROM `$table` WHERE subject_id = ?");
-                    $deleteStmt->execute([$subjectId]);
+                $archiveStmt = $this->db->prepare('UPDATE subjects SET status = 0 WHERE id = ? AND status = 1');
+                $archiveStmt->execute([$subjectId]);
+                if ($archiveStmt->rowCount() !== 1) {
+                    throw new \RuntimeException("La mise en corbeille de la matière {$subjectId} a échoué.");
                 }
 
-                $deleteSubjectStmt = $this->db->prepare("DELETE FROM subjects WHERE id = ?");
-                $deleteSubjectStmt->execute([$subjectId]);
-                if ($deleteSubjectStmt->rowCount() !== 1) {
-                    throw new \RuntimeException("La suppression de la matière {$subjectId} a échoué.");
-                }
-
-                $deletedCount++;
-                $this->tracker->recordEvent('subject_permanently_deleted', 'admin_activity', [
+                $archivedCount++;
+                $this->tracker->recordEvent('subject_archived', 'admin_activity', [
                     'entity_type' => 'subject',
                     'entity_id' => $subjectId,
-                    'metadata' => [
-                        'name' => $subject['nom'],
-                        'deleted_related_records' => $impact,
-                    ],
+                    'metadata' => ['name' => $subject['nom']],
                 ]);
             }
 
             $this->db->commit();
-            return ['success' => true, 'deleted_count' => $deletedCount];
+            return ['success' => true, 'archived_count' => $archivedCount];
         } catch (\Throwable $e) {
             if ($this->db->inTransaction()) {
                 $this->db->rollBack();
             }
             throw $e;
         }
-    }
-
-    private function purgeSubjectData(int $subjectId): void
-    {
-        foreach ($this->subjectReferenceTables() as $table) {
-            $stmt = $this->db->prepare("DELETE FROM `$table` WHERE subject_id = ?");
-            $stmt->execute([$subjectId]);
-        }
-    }
-
-    private function subjectReferenceTables(): array
-    {
-        $stmt = $this->db->prepare("
-            SELECT c.TABLE_NAME
-            FROM information_schema.COLUMNS c
-            JOIN information_schema.TABLES t
-              ON t.TABLE_SCHEMA = c.TABLE_SCHEMA
-             AND t.TABLE_NAME = c.TABLE_NAME
-            WHERE c.TABLE_SCHEMA = DATABASE()
-              AND c.COLUMN_NAME = 'subject_id'
-              AND c.TABLE_NAME <> 'subjects'
-              AND t.TABLE_TYPE = 'BASE TABLE'
-            ORDER BY c.TABLE_NAME
-        ");
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
 
     private function handleTransfer(string $type, int $sourceId, array $options): array
@@ -214,40 +171,7 @@ class SmartDeleteService
             case 'subject':
             case 'subjects':
             case 'matiere':
-                // 1. Transfert des affectations
-                $stmtHasST = $this->db->query("SHOW TABLES LIKE 'subject_teacher'");
-                if ($stmtHasST->fetch()) {
-                    $stmtST = $this->db->prepare("UPDATE IGNORE subject_teacher SET subject_id = ? WHERE subject_id = ?");
-                    $stmtST->execute([$targetId, $sourceId]);
-                    $transferredDetails['teacher_assignments'] = $stmtST->rowCount();
-                }
-                $stmtHasTA = $this->db->query("SHOW TABLES LIKE 'teacher_assignments'");
-                if ($stmtHasTA->fetch()) {
-                    $stmtTA = $this->db->prepare("UPDATE IGNORE teacher_assignments SET subject_id = ? WHERE subject_id = ?");
-                    $stmtTA->execute([$targetId, $sourceId]);
-                    $transferredDetails['teacher_assignments'] = ($transferredDetails['teacher_assignments'] ?? 0) + $stmtTA->rowCount();
-                }
-                $stmtHasSC = $this->db->query("SHOW TABLES LIKE 'subject_classes'");
-                if ($stmtHasSC->fetch()) {
-                    $stmtSC = $this->db->prepare("UPDATE IGNORE subject_classes SET subject_id = ? WHERE subject_id = ?");
-                    $stmtSC->execute([$targetId, $sourceId]);
-                }
-
-                // 2. Transfert des créneaux
-                $stmtHasTT = $this->db->query("SHOW TABLES LIKE 'timetable_entries'");
-                if ($stmtHasTT->fetch()) {
-                    $stmtTT = $this->db->prepare("UPDATE timetable_entries SET subject_id = ? WHERE subject_id = ?");
-                    $stmtTT->execute([$targetId, $sourceId]);
-                    $transferredDetails['timetable_entries'] = $stmtTT->rowCount();
-                }
-
-                // 3. Transfert/Fusion des notes
-                $stmtGrades = $this->db->prepare("UPDATE grades SET subject_id = ? WHERE subject_id = ?");
-                $stmtGrades->execute([$targetId, $sourceId]);
-                $transferredDetails['grades'] = $stmtGrades->rowCount();
-
-                $this->db->prepare("DELETE FROM subjects WHERE id = ?")->execute([$sourceId]);
-                break;
+                throw new Exception('Le transfert de données entre matières indépendantes est désactivé pour préserver leurs historiques respectifs.');
 
             case 'room':
             case 'rooms':
@@ -322,6 +246,17 @@ class SmartDeleteService
             if ($academicYearId > 0) {
                 (new \App\Models\InsolventStudent())->refreshCache($academicYearId);
             }
+        } elseif ($table === 'subjects') {
+            $subjectStmt = $this->db->prepare("SELECT status FROM subjects WHERE id = ?");
+            $subjectStmt->execute([$id]);
+            $subjectStatus = $subjectStmt->fetchColumn();
+            if ($subjectStatus === false) {
+                throw new Exception(__('impact_delete_processing_failed'));
+            }
+
+            $archiveStmt = $this->db->prepare("UPDATE subjects SET status = 0 WHERE id = ?");
+            $archiveStmt->execute([$id]);
+            $metadata = ['status_before' => (int) $subjectStatus];
         } else {
             // Vérifier les colonnes existantes (status, is_active, active)
             $columns = $this->db->query("DESCRIBE `$table`")->fetchAll(PDO::FETCH_COLUMN);
@@ -393,9 +328,11 @@ class SmartDeleteService
             case 'subject':
             case 'subjects':
             case 'matiere':
-                $this->purgeSubjectData($id);
-                $stmt = $this->db->prepare("DELETE FROM subjects WHERE id = ?");
+                $stmt = $this->db->prepare("UPDATE subjects SET status = 0 WHERE id = ? AND status = 1");
                 $stmt->execute([$id]);
+                if ($stmt->rowCount() !== 1) {
+                    throw new Exception(__('impact_delete_processing_failed'));
+                }
                 break;
 
             case 'class':
@@ -417,29 +354,6 @@ class SmartDeleteService
                     $this->db->prepare("DELETE FROM timetables WHERE class_id = ?")->execute([$id]);
                 }
                 $stmt = $this->db->prepare("DELETE FROM classes WHERE id = ?");
-                $stmt->execute([$id]);
-                break;
-
-            case 'subject':
-            case 'subjects':
-            case 'matiere':
-                $stmtHasST = $this->db->query("SHOW TABLES LIKE 'subject_teacher'");
-                if ($stmtHasST->fetch()) {
-                    $this->db->prepare("DELETE FROM subject_teacher WHERE subject_id = ?")->execute([$id]);
-                }
-                $stmtHasTA = $this->db->query("SHOW TABLES LIKE 'teacher_assignments'");
-                if ($stmtHasTA->fetch()) {
-                    $this->db->prepare("DELETE FROM teacher_assignments WHERE subject_id = ?")->execute([$id]);
-                }
-                $stmtHasSC = $this->db->query("SHOW TABLES LIKE 'subject_classes'");
-                if ($stmtHasSC->fetch()) {
-                    $this->db->prepare("DELETE FROM subject_classes WHERE subject_id = ?")->execute([$id]);
-                }
-                $stmtHasTT = $this->db->query("SHOW TABLES LIKE 'timetable_entries'");
-                if ($stmtHasTT->fetch()) {
-                    $this->db->prepare("DELETE FROM timetable_entries WHERE subject_id = ?")->execute([$id]);
-                }
-                $stmt = $this->db->prepare("DELETE FROM subjects WHERE id = ?");
                 $stmt->execute([$id]);
                 break;
 
@@ -519,9 +433,11 @@ class SmartDeleteService
 
             case 'subject_group':
             case 'subject_groups':
-                $this->db->prepare("UPDATE subjects SET group_id = NULL WHERE group_id = ?")->execute([$id]);
-                $stmt = $this->db->prepare("DELETE FROM subject_groups WHERE id = ?");
+                $stmt = $this->db->prepare('UPDATE subject_groups SET status = 0 WHERE id = ? AND status = 1');
                 $stmt->execute([$id]);
+                if ($stmt->rowCount() !== 1) {
+                    throw new Exception(__('impact_delete_processing_failed'));
+                }
                 break;
 
             case 'department':
@@ -568,7 +484,9 @@ class SmartDeleteService
 
         return [
             'success' => true,
-            'message' => __('impact_delete_success', ['id' => $id])
+            'message' => in_array($type, ['subject', 'subjects', 'matiere'], true)
+                ? 'Matière placée dans la corbeille; ses notes et rattachements sont conservés.'
+                : __('impact_delete_success', ['id' => $id])
         ];
     }
 }

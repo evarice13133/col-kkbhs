@@ -20,7 +20,7 @@
 - **Niveaux & Cycles** : Organisation des niveaux scolaires (ex: 6ème à Tle, Form 1 to Upper Sixth) et des cycles d'études (Premier cycle, Second cycle).
 - **Sections & Départements** : Découpage en sections (Francophone, Anglophone) et départements disciplinaires.
 - **Classes & Affectations** : Gestion des effectifs, attribution du professeur principal et association de l'équipe enseignante.
-- **Catalogue des Matières & Groupes (UE)** : Configuration des matières, coefficients, groupes de modules (Unités d'Enseignement) et codes UV/UE.
+- **Catalogue des Matières & Groupes (UE)** : Créez les groupes dans le périmètre section/type/forme, puis associez chaque matière à un groupe. L'import Excel crée les groupes manquants par section/type/forme; les classes référencées doivent exister. Une sélection de plusieurs classes crée une fiche indépendante par classe; le même nom est bloqué pour une même classe et une même année, mais reste possible dans une autre classe. Les suppressions placent les fiches en corbeille sans effacer leurs notes ni leur historique; une restauration est possible tant qu'elle ne crée pas de doublon.
 
 ### 2.3 Module Gestion des Élèves (RH Élèves)
 - **Inscriptions & Matricules** : Immatriculation automatique ou manuelle des élèves, affectation aux classes et suivi des dossiers.
