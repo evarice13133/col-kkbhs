@@ -21,11 +21,11 @@ class PermissionManager
      * 
      * Logique de priorité :
      * 1. Superadmin -> Accès complet (true)
-     * 2. Surcharge Utilisateur explicite (user_permissions) :
+     * 2. Attribution via le Rôle (role_permissions) :
+     *    - présent et permission active -> AUTORISÉ (true)
+     * 3. Surcharge Utilisateur explicite (user_permissions) :
      *    - is_granted = 1 -> AUTORISÉ (true)
      *    - is_granted = 0 -> INTERDIT (false)
-     * 3. Attribution via le Rôle (role_permissions) :
-     *    - présent et permission active -> AUTORISÉ (true)
      * 4. Par défaut -> INTERDIT (false)
      * 
      * @param string $permissionCode Code unique de la permission (ex: 'manage_rbac')
@@ -156,12 +156,12 @@ class PermissionManager
             // 4. Calcul du statut final par permission selon la priorité
             $effectiveMap = [];
             foreach ($catalog as $permId => $permCode) {
-                if (isset($userOverrides[$permCode])) {
+                if ($roleCode === 'superadmin') {
+                    // Les surcharges individuelles ne peuvent pas limiter le superadmin.
+                    $effectiveMap[$permCode] = true;
+                } elseif (isset($userOverrides[$permCode])) {
                     // Surcharge explicite utilisateur (DENY or ALLOW)
                     $effectiveMap[$permCode] = ((int)$userOverrides[$permCode] === 1);
-                } elseif ($roleCode === 'superadmin') {
-                    // Superadmin par défaut
-                    $effectiveMap[$permCode] = true;
                 } else {
                     // Rôle
                     $effectiveMap[$permCode] = in_array($permCode, $rolePerms, true);

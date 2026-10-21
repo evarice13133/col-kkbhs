@@ -45,7 +45,7 @@ if ($subjectCount >= 10 && $subjectCount <= 12) {
     $logoSize = '80px';
 }
 
-$lang = \App\Core\Session::get('app_lang', 'fr');
+$lang = $lang ?? \App\Core\Session::get('app_lang', 'fr');
 $i = $institution;
 $contactLabels = [
     'bp' => __('bp'),

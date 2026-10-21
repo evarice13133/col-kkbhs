@@ -28,6 +28,15 @@ ob_start();
         <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
         <input type="hidden" name="academic_year_id" value="<?= $selectedYearId ?>">
 
+        <?php if (!empty($error)): ?>
+            <div class="alert alert-danger d-flex align-items-start gap-2" role="alert">
+                <i class="bi bi-exclamation-octagon-fill mt-1"></i>
+                <div class="flex-grow-1">
+                    <div><?= h($error) ?></div>
+                </div>
+            </div>
+        <?php endif; ?>
+
         <div class="modern-card border-0 shadow-sm overflow-hidden mb-3 mb-md-4">
             <div class="card-body p-3 p-md-4">
                 
@@ -57,10 +66,10 @@ ob_start();
 
                     <div class="col-md-4">
                         <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('subject_group') ?></label>
-                        <select name="subject_group_id" id="subject_group_id" class="form-select premium-input">
+                        <select name="subject_group_id" id="subject_group_id" class="form-select premium-input" required>
                             <option value="">Sélectionner un groupe de modules...</option>
                             <?php foreach ($subjectGroups as $grp): ?>
-                                <option value="<?= $grp['id'] ?>" data-teaching-type-id="<?= $grp['teaching_type_id'] ?>" <?= ((int)($subject['subject_group_id'] ?? 0) === (int)$grp['id']) ? 'selected' : '' ?>>
+                                <option value="<?= $grp['id'] ?>" data-teaching-type-id="<?= $grp['teaching_type_id'] ?>" data-teaching-form-id="<?= $grp['teaching_form_id'] ?? '' ?>" data-section-id="<?= $grp['section_id'] ?? '' ?>" <?= ((int)($subject['subject_group_id'] ?? 0) === (int)$grp['id']) ? 'selected' : '' ?>>
                                     <?= h($grp['libelle']) ?>
                                 </option>
                             <?php endforeach; ?>
@@ -189,8 +198,7 @@ ob_start();
                                 </div>
 
                                 <div class="form-check form-switch m-0 flex-shrink-0">
-                                    <input class="form-check-input" type="checkbox" id="selectAllClasses">
-                                    <label class="form-check-label extra-small fw-bold text-muted-theme ms-1" for="selectAllClasses"><?= __('all') ?></label>
+                                    <span class="form-text extra-small text-muted-theme">Une fiche de matière correspond à une seule classe.</span>
                                 </div>
                             </div>
                         </div>
@@ -210,11 +218,11 @@ ob_start();
                             foreach($classes as $c): 
                             ?>
                                 <?php $isChecked = in_array($c['id'], $assigned_classes ?? []); ?>
-                                <div class="col-6 col-sm-4 col-md-3 col-xl-2 class-wrapper" data-teaching-type-id="<?= $c['teaching_type_id'] ?? '' ?>">
+                                <div class="col-6 col-sm-4 col-md-3 col-xl-2 class-wrapper" data-teaching-type-id="<?= $c['teaching_type_id'] ?? '' ?>" data-teaching-form-id="<?= $c['teaching_form_id'] ?? '' ?>" data-section-id="<?= $c['section_id'] ?? '' ?>">
                                     <div class="class-selection-item d-flex align-items-center p-2 rounded-3 border border-theme-light h-100 transition-base mobile-compact">
                                         <div class="form-check mb-0">
-                                            <input class="form-check-input border-primary class-checkbox" 
-                                                   type="checkbox" name="classes[]" 
+                                            <input class="form-check-input border-primary class-checkbox"
+                                                   type="radio" name="classes[]"
                                                    value="<?= $c['id'] ?>" 
                                                    id="class_<?= $c['id'] ?>" 
                                                    <?= $isChecked ? 'checked' : '' ?>>
@@ -262,29 +270,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    const selectAll = document.getElementById('selectAllClasses');
     const checkboxes = document.querySelectorAll('.class-checkbox');
-
-    if (selectAll) {
-        selectAll.addEventListener('change', function() {
-            checkboxes.forEach(cb => {
-                const wrapper = cb.closest('.class-wrapper');
-                if (!wrapper || !wrapper.classList.contains('d-none')) {
-                    cb.checked = selectAll.checked;
-                }
-            });
-        });
-    }
-
-    checkboxes.forEach(cb => {
-        cb.addEventListener('change', function () {
-            const visibleCheckboxes = Array.from(checkboxes).filter(c => !c.closest('.class-wrapper').classList.contains('d-none'));
-            const allChecked = visibleCheckboxes.every(c => c.checked);
-            const noneChecked = visibleCheckboxes.every(c => !c.checked);
-            selectAll.checked = allChecked;
-            selectAll.indeterminate = !allChecked && !noneChecked;
-        });
-    });
 
     // Instant Search Logic
     const searchInput = document.getElementById('classSearchInput');
@@ -409,10 +395,17 @@ document.addEventListener('DOMContentLoaded', function() {
             if (groupSelect) {
                 const originalGrpVal = groupSelect.value;
                 let grpValid = false;
+                const selectedClassWrappers = Array.from(classWrappers).filter(wrapper => wrapper.querySelector('.class-checkbox')?.checked);
+                const selectedSections = selectedClassWrappers.map(wrapper => wrapper.getAttribute('data-section-id')).filter((value, index, values) => value && values.indexOf(value) === index);
+                const selectedForms = selectedClassWrappers.map(wrapper => wrapper.getAttribute('data-teaching-form-id')).filter((value, index, values) => value && values.indexOf(value) === index);
+                const selectedSection = selectedSections.length === 1 ? selectedSections[0] : '';
+                const selectedForm = selectedForms.length === 1 ? selectedForms[0] : '';
                 Array.from(groupSelect.options).forEach(opt => {
                     if (!opt.value) return;
                     const optTT = opt.getAttribute('data-teaching-type-id');
-                    if (!selectedTT || !optTT || optTT === selectedTT) {
+                    const optTF = opt.getAttribute('data-teaching-form-id');
+                    const optSection = opt.getAttribute('data-section-id');
+                    if ((!selectedTT || optTT === selectedTT) && selectedSection && optSection === selectedSection && selectedForm && optTF === selectedForm) {
                         opt.style.display = '';
                         if (opt.value === originalGrpVal) grpValid = true;
                     } else {
@@ -439,6 +432,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         teachingTypeSelect.addEventListener('change', filterDeptAndClasses);
+        classWrappers.forEach(wrapper => {
+            wrapper.querySelector('.class-checkbox')?.addEventListener('change', filterDeptAndClasses);
+        });
         filterDeptAndClasses();
     }
 });

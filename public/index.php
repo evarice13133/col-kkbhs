@@ -602,9 +602,9 @@ elseif (strpos($path, '/cycles') === 0) {
         $c->store();
     elseif ($path === '/subject-groups/update' && $method === 'POST')
         $c->update($_GET['id'] ?? 0);
-    elseif ($path === '/subject-groups/toggle')
+    elseif ($path === '/subject-groups/toggle' && $method === 'POST')
         $c->toggle($_GET['id'] ?? 0);
-    elseif ($path === '/subject-groups/delete')
+    elseif ($path === '/subject-groups/delete' && $method === 'POST')
         $c->delete($_GET['id'] ?? 0);
 } elseif (strpos($path, '/levels') === 0) {
     if (!Session::isLogged() || (!in_array(Session::get('user_role'), ['superadmin', 'admin', 'direction_academique'], true) && !\App\Core\PermissionManager::hasPermission('manage_classes_structure'))) {
@@ -812,8 +812,10 @@ elseif (strpos($path, '/subjects') === 0) {
         $c->bulkSelection();
     elseif ($path === '/subjects/bulk-delete' && $method === 'POST')
         $c->bulkDelete();
-    elseif ($path === '/subjects/delete')
+    elseif ($path === '/subjects/delete' && $method === 'POST')
         $c->delete($_GET['id'] ?? 0);
+    elseif ($path === '/subjects/restore' && $method === 'POST')
+        $c->restore($_GET['id'] ?? 0);
     elseif ($path === '/subjects/toggleStatus')
         $c->toggleStatus($_GET['id'] ?? 0);
 }

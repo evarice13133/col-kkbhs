@@ -23,7 +23,7 @@ $seqAverages = $seqAverages ?? [];             // Moyennes séquentielles pour l
 $seqRanks = $seqRanks ?? [];                // Rangs séquentiels pour le rappel
 $globalAppreciation = $globalAppreciation ?? '-';
 
-$lang = \App\Core\Session::get('app_lang', 'fr');
+$lang = $lang ?? \App\Core\Session::get('app_lang', 'fr');
 $i = $institution;
 $contactLabels = [
     'bp' => __('bp'),

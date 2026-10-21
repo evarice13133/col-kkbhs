@@ -3,6 +3,7 @@ $title = __('subjects') ?? 'Matières';
 ob_start();
 
 $canManage = \App\Core\PermissionManager::hasPermission('manage_subjects');
+$isArchivedView = !empty($filters['archived']);
 $hasActiveSubjectFilters = !empty($filters['q']) || !empty($filters['teaching_type_id']) || !empty($filters['department_id']) || !empty($filters['class_id']);
 ?>
 
@@ -41,12 +42,20 @@ $hasActiveSubjectFilters = !empty($filters['q']) || !empty($filters['teaching_ty
                     <span><?= __('lang') === 'en' ? 'Export Excel' : 'Exporter Excel' ?></span>
                 </a>
                 <?php if ($canManage): ?>
+                    <a href="/subjects<?= $isArchivedView ? '' : '?archived=1' ?>"
+                        class="btn btn-outline-secondary rounded-pill px-3 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 scale-on-hover">
+                        <i class="bi bi-archive"></i>
+                        <span><?= $isArchivedView ? (__('lang') === 'en' ? 'Active subjects' : 'Matières actives') : (__('lang') === 'en' ? 'Recycle bin' : 'Corbeille') ?></span>
+                    </a>
+                    <?php if (!$isArchivedView): ?>
                     <button type="button"
                         class="btn btn-outline-danger rounded-pill px-3 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 scale-on-hover"
                         data-bs-toggle="modal" data-bs-target="#subjectBulkSelectionModal">
                         <i class="bi bi-trash3"></i>
-                        <span><?= __('lang') === 'en' ? 'Bulk deletion' : 'Suppression groupée' ?></span>
+                        <span><?= __('lang') === 'en' ? 'Bulk archive' : 'Mise en corbeille groupée' ?></span>
                     </button>
+                    <?php endif; ?>
+                    <?php if (!$isArchivedView): ?>
                     <button type="button"
                         class="btn btn-light-theme rounded-pill px-3 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 scale-on-hover"
                         data-bs-toggle="modal" data-bs-target="#importSubjectsModal">
@@ -58,6 +67,7 @@ $hasActiveSubjectFilters = !empty($filters['q']) || !empty($filters['teaching_ty
                         <i class="bi bi-plus-lg"></i>
                         <span><?= __('add_subject') ?? 'Ajouter une matière' ?></span>
                     </a>
+                    <?php endif; ?>
                 <?php endif; ?>
             </div>
         </div>
@@ -67,6 +77,9 @@ $hasActiveSubjectFilters = !empty($filters['q']) || !empty($filters['teaching_ty
     <div class="filter-island-container mb-4">
         <div class="filter-island subjects-filter-panel p-3 rounded-4 shadow-sm">
             <form method="GET" action="/subjects" id="subject-filter-form" class="filter-form w-100 m-0">
+                <?php if ($isArchivedView): ?>
+                    <input type="hidden" name="archived" value="1">
+                <?php endif; ?>
                 <div class="d-flex flex-column flex-md-row gap-3 align-items-md-center justify-content-between subjects-filter-layout">
 
                     <div class="d-flex flex-column flex-sm-row gap-2 flex-grow-1 flex-wrap subjects-filter-fields">
@@ -285,25 +298,26 @@ $hasActiveSubjectFilters = !empty($filters['q']) || !empty($filters['teaching_ty
                                     <?php if (\App\Core\PermissionManager::hasPermission('manage_subjects')): ?>
                                         <td class="text-end pe-4 col-actions" data-label="<?= htmlspecialchars((string) __('actions'), ENT_QUOTES, 'UTF-8') ?>">
                                             <div class="d-flex justify-content-end gap-1 align-items-center table-row-actions">
-                                                <?php if (\App\Core\Session::get('user_role') === 'superadmin'): ?>
-                                                    <a href="/subjects/toggleStatus?id=<?= $s['id'] ?>"
-                                                        class="btn btn-sm btn-action-modern btn-confirm-toggle <?= $isActive ? 'text-warning' : 'text-success' ?>"
-                                                        data-confirm="<?= $isActive ? __('deactivate_subject_confirm', ['name' => $s['nom']]) : __('activate_subject_confirm', ['name' => $s['nom']]) ?>"
-                                                        title="<?= $isActive ? __('deactivate') : __('activate') ?>">
-                                                        <i class="bi bi-power fs-5"></i>
+                                                <?php if ($isActive): ?>
+                                                    <a href="/subjects/edit?id=<?= $s['id'] ?>"
+                                                        class="btn btn-sm btn-action-modern text-primary" title="<?= __('edit') ?>">
+                                                        <i class="bi bi-pencil-square fs-5"></i>
                                                     </a>
+                                                    <button type="button"
+                                                        class="btn btn-sm btn-action-modern text-danger"
+                                                        data-impact-delete="subject"
+                                                        data-id="<?= $s['id'] ?>"
+                                                        title="<?= __('lang') === 'en' ? 'Archive' : 'Mettre à la corbeille' ?>">
+                                                        <i class="bi bi-archive fs-5"></i>
+                                                    </button>
+                                                <?php else: ?>
+                                                    <form action="/subjects/restore?id=<?= (int) $s['id'] ?>" method="POST" class="d-inline">
+                                                        <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
+                                                        <button type="submit" class="btn btn-sm btn-action-modern text-success" title="<?= __('lang') === 'en' ? 'Restore' : 'Restaurer' ?>">
+                                                            <i class="bi bi-arrow-counterclockwise fs-5"></i>
+                                                        </button>
+                                                    </form>
                                                 <?php endif; ?>
-                                                <a href="/subjects/edit?id=<?= $s['id'] ?>"
-                                                    class="btn btn-sm btn-action-modern text-primary" title="<?= __('edit') ?>">
-                                                    <i class="bi bi-pencil-square fs-5"></i>
-                                                </a>
-                                                 <button type="button"
-                                                     class="btn btn-sm btn-action-modern text-danger"
-                                                     data-impact-delete="subject"
-                                                     data-id="<?= $s['id'] ?>"
-                                                     title="<?= __('delete') ?>">
-                                                     <i class="bi bi-trash fs-5"></i>
-                                                 </button>
                                             </div>
                                         </td>
                                     <?php endif; ?>
@@ -1271,10 +1285,10 @@ $hasActiveSubjectFilters = !empty($filters['q']) || !empty($filters['teaching_ty
             const bulkReviewButton = document.getElementById('subject-bulk-review');
             const bulkDeleteCsrf = <?= json_encode(\App\Core\Session::generateCsrfToken()) ?>;
             const bulkDeleteText = {
-                title: <?= json_encode(__('lang') === 'en' ? 'Permanent subject deletion' : 'Suppression définitive des matières') ?>,
+                title: <?= json_encode(__('lang') === 'en' ? 'Archive subjects' : 'Mise en corbeille des matières') ?>,
                 warning: <?= json_encode(__('lang') === 'en'
-                    ? 'Selected subjects and their linked grades, assignments, timetables and competencies will be permanently deleted.'
-                    : 'Les matières sélectionnées ainsi que leurs notes, affectations, emplois du temps et compétences associés seront définitivement supprimés.') ?>,
+                    ? 'Selected subjects will be hidden from current lists. Grades, assignments, timetable links and competencies will be kept and can be restored.'
+                    : 'Les matières seront masquées des listes actives. Notes, affectations, liens d’emploi du temps et compétences seront conservés et restaurables.') ?>,
                 selected: <?= json_encode(__('lang') === 'en' ? 'Selected subjects:' : 'Matières sélectionnées :') ?>,
                 critical: <?= json_encode(__('lang') === 'en' ? 'Critical impact cases:' : 'Cas à impact critique :') ?>,
                 noCritical: <?= json_encode(__('lang') === 'en'
@@ -1289,10 +1303,10 @@ $hasActiveSubjectFilters = !empty($filters['q']) || !empty($filters['teaching_ty
                 page: <?= json_encode(__('lang') === 'en' ? 'Page' : 'Page') ?>,
                 of: <?= json_encode(__('lang') === 'en' ? 'of' : 'sur') ?>,
                 selectedLimit: <?= json_encode(__('lang') === 'en' ? 'You can select up to 100 subjects per operation.' : 'Vous pouvez sélectionner jusqu’à 100 matières par opération.') ?>,
-                confirm: <?= json_encode(__('lang') === 'en' ? 'Delete permanently' : 'Supprimer définitivement') ?>,
+                confirm: <?= json_encode(__('lang') === 'en' ? 'Move to recycle bin' : 'Mettre à la corbeille') ?>,
                 cancel: <?= json_encode(__('lang') === 'en' ? 'Cancel' : 'Annuler') ?>,
                 error: <?= json_encode(__('lang') === 'en' ? 'Unable to delete selected subjects.' : 'Impossible de supprimer les matières sélectionnées.') ?>,
-                success: <?= json_encode(__('lang') === 'en' ? 'Selected subjects were permanently deleted.' : 'Les matières sélectionnées ont été supprimées définitivement.') ?>
+                success: <?= json_encode(__('lang') === 'en' ? 'Selected subjects were moved to the recycle bin.' : 'Les matières sélectionnées ont été mises à la corbeille.') ?>
             };
             const selectedSubjects = new Map();
             let bulkCurrentPage = 1;

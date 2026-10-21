@@ -231,10 +231,38 @@ class CompetencyController
             echo json_encode(['success' => false, 'error' => 'Sélectionnez au moins une matière et un groupe.']);
             exit;
         }
-        $groupCheck = $this->db->prepare("SELECT id FROM subject_groups WHERE id = ? AND status = 1");
+        $groupCheck = $this->db->prepare("SELECT id, teaching_type_id, teaching_form_id, section_id FROM subject_groups WHERE id = ? AND status = 1");
         $groupCheck->execute([$groupId]);
-        if (!$groupCheck->fetchColumn()) {
+        $group = $groupCheck->fetch(PDO::FETCH_ASSOC);
+        if (!$group) {
             echo json_encode(['success' => false, 'error' => 'Groupe invalide.']);
+            exit;
+        }
+
+        $activeYearId = $this->academicYearService->getActiveYearId();
+        $placeholders = implode(',', array_fill(0, count($subjectIds), '?'));
+        $classStmt = $this->db->prepare("SELECT s.id AS subject_id, c.teaching_type_id, c.teaching_form_id, c.section_id
+                                         FROM subjects s
+                                         LEFT JOIN subject_classes sc ON sc.subject_id = s.id AND sc.academic_year_id = ?
+                                         LEFT JOIN classes c ON c.id = sc.class_id AND c.status = 1
+                                         WHERE s.id IN ($placeholders) AND s.status = 1");
+        $classStmt->execute(array_merge([$activeYearId], $subjectIds));
+        $subjectClasses = [];
+        foreach ($classStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            if ($row['section_id'] === null) {
+                echo json_encode(['success' => false, 'error' => __('subject_group_assignment_needs_class')]);
+                exit;
+            }
+            if ((int) $row['section_id'] !== (int) $group['section_id']
+                || (int) $row['teaching_type_id'] !== (int) $group['teaching_type_id']
+                || (int) $row['teaching_form_id'] !== (int) $group['teaching_form_id']) {
+                echo json_encode(['success' => false, 'error' => __('subject_group_assignment_section_mismatch')]);
+                exit;
+            }
+            $subjectClasses[(int) $row['subject_id']] = true;
+        }
+        if (count($subjectClasses) !== count($subjectIds)) {
+            echo json_encode(['success' => false, 'error' => 'Une matière sélectionnée est introuvable ou inactive.']);
             exit;
         }
         try {

@@ -17,8 +17,10 @@ ob_start();
 
         <?php if (!empty($error)): ?>
             <div class="alert alert-danger d-flex align-items-start gap-2" role="alert">
-                <i class="bi bi-exclamation-triangle-fill mt-1"></i>
-                <div><?= h($error) ?></div>
+                <i class="bi bi-exclamation-octagon-fill mt-1"></i>
+                <div class="flex-grow-1">
+                    <div><?= h($error) ?></div>
+                </div>
             </div>
         <?php endif; ?>
 
@@ -62,12 +64,22 @@ ob_start();
                     </div>
 
                     <div class="col-md-3">
+                        <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('section') ?> <span class="text-danger required-field-marker" aria-hidden="true">*</span></label>
+                        <select name="section_id" id="section_id" class="form-select premium-input" required>
+                            <option value=""><?= __('select_subject_section') ?></option>
+                            <?php foreach ($sections as $section): ?>
+                                <option value="<?= (int) $section['id'] ?>" <?= (int) ($section_id ?? 0) === (int) $section['id'] ? 'selected' : '' ?>><?= h($section['nom']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
                         <label
                             class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('subject_group') ?> <span class="text-danger required-field-marker" aria-hidden="true">*</span></label>
                         <select name="subject_group_id" id="subject_group_id" class="form-select premium-input border-primary border-opacity-25" required>
                             <option value="">Sélectionner un groupe de matières...</option>
                             <?php foreach ($subjectGroups as $grp): ?>
-                                <option value="<?= $grp['id'] ?>" data-teaching-type-id="<?= $grp['teaching_type_id'] ?? '' ?>" data-teaching-form-id="<?= $grp['teaching_form_id'] ?? '' ?>" <?= (int)($subject_group_id ?? 0) === (int)$grp['id'] ? 'selected' : '' ?>>
+                                <option value="<?= $grp['id'] ?>" data-teaching-type-id="<?= $grp['teaching_type_id'] ?? '' ?>" data-teaching-form-id="<?= $grp['teaching_form_id'] ?? '' ?>" data-section-id="<?= $grp['section_id'] ?? '' ?>" <?= (int)($subject_group_id ?? 0) === (int)$grp['id'] ? 'selected' : '' ?>>
                                     <?= h($grp['libelle']) ?>
                                 </option>
                             <?php endforeach; ?>
@@ -181,10 +193,10 @@ ob_start();
                         </div>
 
                         <!-- State 3: Classes Grid Container -->
-                        <div class="row g-2 d-none" id="classesGridContainer">
+                            <div class="row g-2 d-none" id="classesGridContainer">
                             <?php foreach ($classes as $c): ?>
                                 <?php $isChecked = in_array((int) $c['id'], array_map('intval', $classes_ids ?? []), true); ?>
-                                <div class="col-6 col-sm-4 col-md-3 col-xl-2 class-wrapper" data-teaching-type-id="<?= $c['teaching_type_id'] ?? '' ?>" data-teaching-form-id="<?= $c['teaching_form_id'] ?? '' ?>">
+                                <div class="col-6 col-sm-4 col-md-3 col-xl-2 class-wrapper" data-teaching-type-id="<?= $c['teaching_type_id'] ?? '' ?>" data-teaching-form-id="<?= $c['teaching_form_id'] ?? '' ?>" data-section-id="<?= $c['section_id'] ?? '' ?>">
                                     <div
                                         class="class-selection-item d-flex align-items-center p-2 rounded-3 border border-theme-light h-100 transition-base mobile-compact">
                                         <div class="form-check mb-0">
@@ -203,8 +215,12 @@ ob_start();
                                 </div>
                             <?php endforeach; ?>
                         </div>
+                        <div id="classCoefficientsContainer" class="mt-3 d-none">
+                            <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-2"><?= __('class_coefficient') ?></label>
+                            <div class="row g-2" id="classCoefficientsFields"></div>
+                        </div>
                         <div class="form-text extra-small text-muted-theme mt-2">
-                            <i class="bi bi-info-circle me-1"></i>Sélectionnez au moins une classe. Chaque classe recevra sa propre instance autonome.
+                            <i class="bi bi-info-circle me-1"></i>Sélectionnez des classes d’une même section. Chaque classe recevra sa propre matière et son coefficient.
                         </div>
                     </div>
                 </div>
@@ -296,10 +312,46 @@ ob_start();
         const checkboxes = document.querySelectorAll('.class-checkbox');
 
         const previewContainer = document.getElementById('desolidarisation_preview');
+        const coefficientContainer = document.getElementById('classCoefficientsContainer');
+        const coefficientFields = document.getElementById('classCoefficientsFields');
+        const initialClassCoefficients = <?= json_encode($class_coefficients ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+
+        function updateClassCoefficientFields() {
+            if (!coefficientContainer || !coefficientFields) return;
+            const selectedClasses = Array.from(checkboxes).filter(checkbox => checkbox.checked);
+            const existingValues = Object.fromEntries(Object.entries(initialClassCoefficients).map(([id, value]) => [String(id), String(value)]));
+            coefficientFields.querySelectorAll('input[name^="class_coefficients["]').forEach(input => {
+                const classId = input.name.match(/\[(\d+)\]/)?.[1] || '';
+                existingValues[classId] = input.value;
+            });
+            coefficientFields.innerHTML = '';
+            coefficientContainer.classList.toggle('d-none', selectedClasses.length === 0);
+            selectedClasses.forEach(checkbox => {
+                const classId = String(checkbox.value);
+                const className = checkbox.getAttribute('data-class-nom') || `Classe #${classId}`;
+                const column = document.createElement('div');
+                column.className = 'col-12 col-sm-6 col-lg-4';
+                const label = document.createElement('label');
+                label.className = 'form-label text-muted-theme small fw-semibold mb-1';
+                label.htmlFor = `class_coefficient_${classId}`;
+                label.textContent = className;
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.min = '1';
+                input.step = '1';
+                input.required = true;
+                input.name = `class_coefficients[${classId}]`;
+                input.id = `class_coefficient_${classId}`;
+                input.className = 'form-control premium-input';
+                input.value = existingValues[classId] || document.querySelector('input[name="coefficient"]')?.value || '1';
+                column.append(label, input);
+                coefficientFields.appendChild(column);
+            });
+        }
 
         function updateDesolidarisationPreview() {
             if (!previewContainer) return;
-            const checked = Array.from(checkboxes).filter(cb => cb.checked && !cb.closest('.class-wrapper')?.classList.contains('d-none'));
+            const checked = Array.from(checkboxes).filter(cb => cb.checked);
             if (checked.length === 0) {
                 previewContainer.innerHTML = '<span class="badge bg-secondary opacity-75 extra-small">Aucune classe sélectionnée</span>';
             } else {
@@ -310,6 +362,7 @@ ob_start();
                 });
                 previewContainer.innerHTML = html;
             }
+            updateClassCoefficientFields();
         }
 
         if (selectAll) {
@@ -349,17 +402,20 @@ ob_start();
                 const query = this.value.toLowerCase().trim();
                 const selectedTT = document.getElementById('teaching_type_id')?.value;
                 const selectedTF = document.getElementById('teaching_form_id')?.value;
+                const selectedSection = document.getElementById('section_id')?.value;
                 
                 classItems.forEach(item => {
                     const label = item.querySelector('.text-truncate').textContent.toLowerCase();
                     const container = item.closest('.class-wrapper');
                     const classTT = container.getAttribute('data-teaching-type-id');
                     const classTF = container.getAttribute('data-teaching-form-id');
+                    const classSection = container.getAttribute('data-section-id');
                     
                     const matchTT = !selectedTT || !classTT || String(classTT).trim() === String(selectedTT).trim();
                     const matchTF = !selectedTF || !classTF || String(classTF).trim() === String(selectedTF).trim();
+                    const matchSection = selectedSection && String(classSection).trim() === String(selectedSection).trim();
 
-                    if (matchTT && matchTF && label.includes(query)) {
+                    if (matchTT && matchTF && matchSection && label.includes(query)) {
                         container.classList.remove('d-none');
                     } else {
                         container.classList.add('d-none');
@@ -423,6 +479,7 @@ ob_start();
         // Dynamic Cascading Filtering State Controller
         const teachingTypeSelect = document.getElementById('teaching_type_id');
         const teachingFormSelect = document.getElementById('teaching_form_id');
+        const sectionSelect = document.getElementById('section_id');
         const groupSelect = document.getElementById('subject_group_id');
         const classWrappers = document.querySelectorAll('.class-wrapper');
 
@@ -469,8 +526,9 @@ ob_start();
         function filterCascading() {
             const thisToken = ++filterToken;
             const selectedTT = teachingTypeSelect ? String(teachingTypeSelect.value || '').trim() : '';
+            const selectedSection = sectionSelect ? String(sectionSelect.value || '').trim() : '';
+            let selectedTF = teachingFormSelect ? String(teachingFormSelect.value || '').trim() : '';
 
-            // If Type is not selected, prompt selection
             if (!selectedTT) {
                 setClassesState('PROMPT_SELECTION');
                 
@@ -488,6 +546,7 @@ ob_start();
                     const checkbox = wrapper.querySelector('.class-checkbox');
                     if (checkbox) checkbox.checked = false;
                 });
+                updateDesolidarisationPreview();
                 return;
             }
 
@@ -516,7 +575,22 @@ ob_start();
                 teachingFormSelect.disabled = false;
             }
 
-            const selectedTF = teachingFormSelect ? String(teachingFormSelect.value || '').trim() : '';
+            selectedTF = teachingFormSelect ? String(teachingFormSelect.value || '').trim() : '';
+
+            if (!selectedTF || !selectedSection) {
+                setClassesState('PROMPT_SELECTION');
+                if (groupSelect) {
+                    groupSelect.innerHTML = `<option value="" disabled selected>${selectedTF ? 'Sélectionnez d’abord une section...' : 'Sélectionnez d’abord une forme...'}</option>`;
+                    groupSelect.disabled = true;
+                }
+                classWrappers.forEach(wrapper => {
+                    wrapper.classList.add('d-none');
+                    const checkbox = wrapper.querySelector('.class-checkbox');
+                    if (checkbox) checkbox.checked = false;
+                });
+                updateDesolidarisationPreview();
+                return;
+            }
 
             // 2. Filter Subject Groups based on Teaching Type & Form
             if (groupSelect) {
@@ -532,11 +606,13 @@ ob_start();
                     }
                     const optTT = opt.getAttribute('data-teaching-type-id');
                     const optTF = opt.getAttribute('data-teaching-form-id');
+                    const optSection = opt.getAttribute('data-section-id');
 
                     const matchTT = !optTT || String(optTT).trim() === selectedTT;
-                    const matchTF = !selectedTF || !optTF || String(optTF).trim() === selectedTF;
+                    const matchTF = !optTF || String(optTF).trim() === selectedTF;
+                    const matchSection = optSection && String(optSection).trim() === selectedSection;
 
-                    if (matchTT && matchTF) {
+                    if (matchTT && matchTF && matchSection) {
                         const newOpt = opt.cloneNode(true);
                         if (String(newOpt.value).trim() === currentGrpVal) {
                             newOpt.selected = true;
@@ -553,11 +629,13 @@ ob_start();
             classWrappers.forEach(wrapper => {
                 const classTT = wrapper.getAttribute('data-teaching-type-id');
                 const classTF = wrapper.getAttribute('data-teaching-form-id');
+                const classSection = wrapper.getAttribute('data-section-id');
 
                 const matchTT = !classTT || String(classTT).trim() === selectedTT;
-                const matchTF = !selectedTF || !classTF || String(classTF).trim() === selectedTF;
+                const matchTF = !classTF || String(classTF).trim() === selectedTF;
+                const matchSection = classSection && String(classSection).trim() === selectedSection;
 
-                if (matchTT && matchTF) {
+                if (matchTT && matchTF && matchSection) {
                     wrapper.classList.remove('d-none');
                     visibleClassCount++;
                 } else {
@@ -588,6 +666,9 @@ ob_start();
         if (teachingFormSelect) {
             teachingFormSelect.addEventListener('change', filterCascading);
         }
+        if (sectionSelect) {
+            sectionSelect.addEventListener('change', filterCascading);
+        }
         filterCascading();
         if (typeof updateDesolidarisationPreview === 'function') {
             updateDesolidarisationPreview();
@@ -599,6 +680,7 @@ ob_start();
             form.addEventListener('submit', function (e) {
                 const nomVal = document.querySelector('input[name="nom"]')?.value.trim();
                 const ttVal = document.getElementById('teaching_type_id')?.value;
+                const sectionVal = document.getElementById('section_id')?.value;
                 const grpVal = document.getElementById('subject_group_id')?.value;
                 const checkedClasses = document.querySelectorAll('.class-checkbox:checked');
 
@@ -615,6 +697,11 @@ ob_start();
                 if (!grpVal) {
                     e.preventDefault();
                     alert("Veuillez sélectionner un groupe de matières.");
+                    return;
+                }
+                if (!sectionVal) {
+                    e.preventDefault();
+                    alert("Veuillez sélectionner une section.");
                     return;
                 }
                 if (checkedClasses.length === 0) {

@@ -12,6 +12,7 @@ class SubjectImportProcessor
     private array $errors = [];
     private int $successCount = 0;
     private array $classesByName = [];
+    private array $classesById = [];
     private array $teachingTypesByName = [];
     private array $departmentsByName = [];
     private array $cyclesByName = [];
@@ -228,14 +229,10 @@ class SubjectImportProcessor
         // Parsing Groupe
         $groupCol = $colMap['group'] ?? 'C';
         $groupRaw = trim((string) ($row[$groupCol] ?? ''));
-        $subjectGroupId = null;
         $groupe = 'Groupe 1';
-        if ($groupRaw !== '' && $groupRaw !== '-') {
-            $subjectGroupId = $this->resolveSubjectGroupId($groupRaw, $line, $groupCol, $sheetName);
-            if ($subjectGroupId === false) {
-                return; // Erreur enregistrée dans logError
-            }
-            $groupe = $groupRaw;
+        if ($groupRaw === '' || $groupRaw === '-') {
+            $this->logError($line, "Feuille '{$sheetName}', Colonne {$groupCol} (Groupe) : le rattachement à un groupe de modules est obligatoire pour qu'une matière apparaisse dans les bulletins.");
+            return;
         }
 
         // Parsing Classes
@@ -250,6 +247,8 @@ class SubjectImportProcessor
         if (empty($classIds)) {
             return;
         }
+
+        $groupe = $groupRaw;
 
         // Parsing VHm (Volume Horaire Ministériel)
         $vhmCol = $colMap['vhm'] ?? null;  // Pas de fallback à 'E' - E est réservé pour Classe 2
@@ -300,71 +299,80 @@ class SubjectImportProcessor
         }
         $competenceLabels = array_values(array_unique(array_filter($competenceLabels, static fn($value) => trim((string) $value) !== '')));
 
-        // Mode UPSERT : Mise à jour si la matière existe déjà, sinon Insertion sans doublon
         try {
-            $stmtCheck = $this->db->prepare("SELECT id FROM subjects WHERE LOWER(TRIM(nom)) = LOWER(TRIM(?)) LIMIT 1");
-            $stmtCheck->execute([$subjectName]);
-            $existingId = $stmtCheck->fetchColumn();
+            $hasTeachingForm = (bool) $this->db->query("SHOW COLUMNS FROM subjects LIKE 'teaching_form_id'")->fetchColumn();
+            $duplicateStmt = $this->db->prepare(
+                "SELECT c.nom
+                 FROM subject_classes sc
+                 JOIN subjects s ON s.id = sc.subject_id
+                 JOIN classes c ON c.id = sc.class_id
+                 WHERE sc.class_id = ? AND sc.academic_year_id = ? AND s.status = 1
+                   AND LOWER(TRIM(s.nom)) = LOWER(TRIM(?))
+                 LIMIT 1"
+            );
+            $insertFields = ['nom', 'coefficient', 'groupe', 'subject_group_id', 'teaching_type_id'];
+            if ($hasTeachingForm) {
+                $insertFields[] = 'teaching_form_id';
+            }
+            $insertFields = array_merge($insertFields, ['vhm', 'vhp', 'th_max', 'observations', 'status']);
+            $insertValues = array_fill(0, count($insertFields), '?');
+            $insertSubject = $this->db->prepare(
+                'INSERT INTO subjects (' . implode(', ', $insertFields) . ') VALUES (' . implode(', ', $insertValues) . ')'
+            );
+            $insertClass = $this->db->prepare(
+                'INSERT INTO subject_classes (subject_id, class_id, academic_year_id) VALUES (?, ?, ?)'
+            );
+            $insertGroup = $this->db->prepare(
+                'INSERT IGNORE INTO subject_group_assignments (subject_id, subject_group_id) VALUES (?, ?)'
+            );
 
-            if ($existingId) {
-                $subjectId = (int) $existingId;
-                $stmtUpdate = $this->db->prepare("
-                    UPDATE subjects 
-                    SET coefficient = ?, 
-                        groupe = ?, 
-                        subject_group_id = COALESCE(?, subject_group_id), 
-                        vhm = ?, 
-                        vhp = ?, 
-                        th_max = ?, 
-                        observations = ?
-                    WHERE id = ?
-                ");
-                $stmtUpdate->execute([$coefficient, $groupe, $subjectGroupId, $vhm, $vhp, $thMax, $observations, $subjectId]);
-
-                $stmtInsCl = $this->db->prepare("
-                    INSERT INTO subject_classes (subject_id, class_id, academic_year_id) 
-                    VALUES (?, ?, ?) 
-                    ON DUPLICATE KEY UPDATE subject_id = subject_id
-                ");
-                foreach ($classIds as $classId) {
-                    $stmtInsCl->execute([$subjectId, $classId, $this->activeYearId]);
+            foreach ($classIds as $classId) {
+                $classLock = $this->db->prepare('SELECT id FROM classes WHERE id = ? AND status = 1 FOR UPDATE');
+                $classLock->execute([$classId]);
+                if (!$classLock->fetchColumn()) {
+                    $this->logError($line, "Feuille '{$sheetName}' : la classe ID {$classId} est inactive ou introuvable.");
+                    return;
+                }
+                $duplicateStmt->execute([$classId, $this->activeYearId, $subjectName]);
+                $duplicateClass = $duplicateStmt->fetchColumn();
+                if ($duplicateClass !== false) {
+                    $this->logError($line, "Feuille '{$sheetName}' : la matière '{$subjectName}' existe déjà dans la classe '{$duplicateClass}' pour l'année académique active.");
+                    return;
                 }
 
-                $this->saveSubjectCompetencies($subjectId, $competenceLabels, $line, $sheetName, $competenceCol);
-                $this->successCount++;
-            } else {
-                $stmtInsert = $this->db->prepare("
-                    INSERT INTO subjects (nom, coefficient, groupe, subject_group_id, teaching_type_id, vhm, vhp, th_max, observations, status) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
-                ");
-                $stmtInsert->execute([$subjectName, $coefficient, $groupe, $subjectGroupId, $teachingTypeId, $vhm, $vhp, $thMax, $observations]);
+                $class = $this->classesById[$classId] ?? null;
+                if ($class === null) {
+                    $this->logError($line, "Feuille '{$sheetName}' : la classe ID {$classId} n'est plus disponible.");
+                    return;
+                }
+                $classTeachingTypeId = $class['teaching_type_id'] ?? $teachingTypeId;
+                $subjectGroupId = $this->resolveOrCreateSubjectGroupId(
+                    $groupRaw,
+                    $line,
+                    $groupCol,
+                    $sheetName,
+                    $class,
+                    $classTeachingTypeId
+                );
+                if ($subjectGroupId === false) {
+                    return;
+                }
+                $values = [$subjectName, $coefficient, $groupe, $subjectGroupId, $classTeachingTypeId];
+                if ($hasTeachingForm) {
+                    $values[] = $class['teaching_form_id'];
+                }
+                $values = array_merge($values, [$vhm, $vhp, $thMax, $observations, 1]);
+                $insertSubject->execute($values);
                 $subjectId = (int) $this->db->lastInsertId();
-                if ($subjectId <= 1) {
-                    // Fallback basé sur le nom (ordre décroissant d'id)
-                    try {
-                        $fb = $this->db->prepare("SELECT id FROM subjects WHERE LOWER(TRIM(nom)) = LOWER(TRIM(?)) ORDER BY id DESC LIMIT 1");
-                        $fb->execute([$subjectName]);
-                        $found = (int) $fb->fetchColumn();
-                        if ($found > 0) {
-                            $subjectId = $found;
-                        } else {
-                            $this->logError($line, "Impossible de récupérer l'ID pour la matière '{$subjectName}' après insertion.");
-                        }
-                    } catch (\Throwable $e) {
-                        $this->logError($line, "Fallback select id échoué: " . $e->getMessage());
-                    }
+                if ($subjectId <= 0) {
+                    throw new \RuntimeException("Impossible de récupérer l'identifiant de la matière '{$subjectName}'.");
                 }
 
-                $stmtInsCl = $this->db->prepare("
-                    INSERT INTO subject_classes (subject_id, class_id, academic_year_id) 
-                    VALUES (?, ?, ?) 
-                    ON DUPLICATE KEY UPDATE subject_id = subject_id
-                ");
-                foreach ($classIds as $classId) {
-                    $stmtInsCl->execute([$subjectId, $classId, $this->activeYearId]);
+                $insertClass->execute([$subjectId, $classId, $this->activeYearId]);
+                if ($subjectGroupId !== null) {
+                    $insertGroup->execute([$subjectId, $subjectGroupId]);
                 }
-
-                $this->saveSubjectCompetencies($subjectId, $competenceLabels, $line, $sheetName, $competenceCol);
+                $this->saveSubjectCompetencies($subjectId, $competenceLabels);
                 $this->successCount++;
             }
         } catch (\Throwable $e) {
@@ -390,7 +398,7 @@ class SubjectImportProcessor
         return array_values(array_unique($names));
     }
 
-    private function saveSubjectCompetencies(int $subjectId, array $labels, int $line, string $sheetName, string $competenceCol): void
+    private function saveSubjectCompetencies(int $subjectId, array $labels): void
     {
         $deleteStmt = $this->db->prepare("DELETE FROM competencies WHERE subject_id = ?");
         $deleteStmt->execute([$subjectId]);
@@ -483,28 +491,83 @@ class SubjectImportProcessor
     /**
      * @return int|false
      */
-    private function resolveSubjectGroupId(string $name, int $line, string $colLetter, string $sheetName)
-    {
-        $key = mb_strtolower(trim($name));
-        if (isset($this->subjectGroupsByName[$key])) {
-            return $this->subjectGroupsByName[$key]['id'];
+    private function resolveOrCreateSubjectGroupId(
+        string $name,
+        int $line,
+        string $colLetter,
+        string $sheetName,
+        array $class,
+        ?int $teachingTypeId
+    ) {
+        $sectionId = (int) ($class['section_id'] ?? 0);
+        $teachingFormId = (int) ($class['teaching_form_id'] ?? 0);
+        $teachingTypeId = (int) ($teachingTypeId ?? 0);
+        if ($sectionId <= 0 || $teachingFormId <= 0 || $teachingTypeId <= 0) {
+            $this->logError($line, "Feuille '{$sheetName}', Colonne {$colLetter} (Groupe) : la classe '{$class['nom']}' doit avoir une section, une forme et un type d'enseignement valides.");
+            return false;
         }
-        
-        $this->logError($line, "Feuille '{$sheetName}', Colonne {$colLetter} (Groupe) : Groupe de modules introuvable : '{$name}'. Correction attendue : Saisir un nom de groupe valide.");
-        return false;
+
+        $key = mb_strtolower(trim($name));
+        foreach ($this->subjectGroupsByName[$key] ?? [] as $candidate) {
+            if ((int) ($candidate['section_id'] ?? 0) === $sectionId
+                && (int) ($candidate['teaching_type_id'] ?? 0) === $teachingTypeId
+                && (int) ($candidate['teaching_form_id'] ?? 0) === $teachingFormId) {
+                return (int) $candidate['id'];
+            }
+        }
+
+        $existingGroupStmt = $this->db->prepare(
+            "SELECT id FROM subject_groups
+             WHERE status = 1 AND LOWER(TRIM(libelle)) = LOWER(TRIM(?))
+               AND section_id = ? AND teaching_type_id = ? AND teaching_form_id = ?
+             LIMIT 1"
+        );
+        $existingGroupStmt->execute([$name, $sectionId, $teachingTypeId, $teachingFormId]);
+        $groupId = (int) $existingGroupStmt->fetchColumn();
+        if ($groupId <= 0) {
+            $positionStmt = $this->db->prepare(
+                "SELECT COALESCE(MAX(position), 0) + 1
+                 FROM subject_groups
+                 WHERE section_id = ? AND teaching_form_id = ?"
+            );
+            $positionStmt->execute([$sectionId, $teachingFormId]);
+            $position = (int) $positionStmt->fetchColumn();
+
+            $insertGroupStmt = $this->db->prepare(
+                "INSERT INTO subject_groups
+                    (libelle, teaching_type_id, teaching_form_id, section_id, position, status)
+                 VALUES (?, ?, ?, ?, ?, 1)"
+            );
+            $insertGroupStmt->execute([$name, $teachingTypeId, $teachingFormId, $sectionId, $position]);
+            $groupId = (int) $this->db->lastInsertId();
+        }
+
+        if ($groupId <= 0) {
+            throw new \RuntimeException("Impossible de créer ou retrouver le groupe '{$name}'.");
+        }
+
+        $this->subjectGroupsByName[$key][] = [
+            'id' => $groupId,
+            'teaching_type_id' => $teachingTypeId,
+            'teaching_form_id' => $teachingFormId,
+            'section_id' => $sectionId,
+        ];
+
+        return $groupId;
     }
 
     private function warmupData(): void
     {
         // Récupérer toutes les classes actives
         $rows = $this->db->query("
-            SELECT c.id, c.nom, c.teaching_type_id, c.cycle_id 
+            SELECT c.id, c.nom, c.teaching_type_id, c.teaching_form_id, c.section_id, c.cycle_id
             FROM classes c
             LEFT JOIN departments d ON c.department_id = d.id
             LEFT JOIN cycles cy ON c.cycle_id = cy.id
             LEFT JOIN sections sec ON c.section_id = sec.id
             LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id
-            WHERE (c.department_id IS NULL OR d.status = 1)
+            WHERE c.status = 1
+              AND (c.department_id IS NULL OR d.status = 1)
               AND (c.cycle_id IS NULL OR cy.status = 1)
               AND (c.section_id IS NULL OR sec.status = 1)
               AND (c.teaching_type_id IS NULL OR tt.actif = 1)
@@ -512,9 +575,13 @@ class SubjectImportProcessor
         foreach ($rows as $row) {
             $this->classesByName[mb_strtolower(trim((string) $row['nom']))] = [
                 'id' => (int) $row['id'],
+                'nom' => (string) $row['nom'],
                 'teaching_type_id' => $row['teaching_type_id'] !== null ? (int) $row['teaching_type_id'] : null,
+                'teaching_form_id' => $row['teaching_form_id'] !== null ? (int) $row['teaching_form_id'] : null,
+                'section_id' => $row['section_id'] !== null ? (int) $row['section_id'] : null,
                 'cycle_id' => $row['cycle_id'] !== null ? (int) $row['cycle_id'] : null
             ];
+            $this->classesById[(int) $row['id']] = $this->classesByName[mb_strtolower(trim((string) $row['nom']))];
         }
 
         // Récupérer les types d'enseignement actifs
@@ -553,15 +620,17 @@ class SubjectImportProcessor
 
         // Récupérer les groupes de modules actifs
         $groups = $this->db->query("
-            SELECT sg.id, sg.libelle, sg.teaching_type_id 
+            SELECT sg.id, sg.libelle, sg.teaching_type_id, sg.teaching_form_id, sg.section_id
             FROM subject_groups sg
             LEFT JOIN teaching_types tt ON sg.teaching_type_id = tt.id
             WHERE sg.status = 1 AND (sg.teaching_type_id IS NULL OR tt.actif = 1)
         ")->fetchAll(PDO::FETCH_ASSOC);
         foreach ($groups as $g) {
-            $this->subjectGroupsByName[mb_strtolower(trim((string) $g['libelle']))] = [
+            $this->subjectGroupsByName[mb_strtolower(trim((string) $g['libelle']))][] = [
                 'id' => (int) $g['id'],
-                'teaching_type_id' => $g['teaching_type_id'] !== null ? (int) $g['teaching_type_id'] : null
+                'teaching_type_id' => $g['teaching_type_id'] !== null ? (int) $g['teaching_type_id'] : null,
+                'teaching_form_id' => $g['teaching_form_id'] !== null ? (int) $g['teaching_form_id'] : null,
+                'section_id' => $g['section_id'] !== null ? (int) $g['section_id'] : null
             ];
         }
     }
