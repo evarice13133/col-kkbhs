@@ -230,6 +230,15 @@ class GradeController
 
         $isAdmin = in_array($userRole, ['admin', 'superadmin'], true);
 
+        $assignmentTeachers = [];
+        if ($isAdmin) {
+            $assignmentTeachers = $this->db->query("
+                SELECT id, nom, prenom
+                FROM users
+                WHERE role = 'enseignant' AND status = 1
+                ORDER BY nom ASC, prenom ASC
+            ")->fetchAll(PDO::FETCH_ASSOC);
+        }
 
 
 
@@ -896,6 +905,11 @@ class GradeController
             die(__('no_active_evaluation_available'));
         }
 
+        $entryModal = !empty($_GET['entry_modal']);
+        $missingEvaluations = $entryModal
+            ? $this->getMissingEvaluationsForAssignment($class_id, $subject_id, (int) $classInfo['teaching_type_id'], (int) $activeYear['id'])
+            : [];
+
         // Récupération enrichie des élèves de la classe avec leurs notes existantes si saisies
         // Exclut les élèves supprimés (actif = 0) et démissionnaires/abondon
         $sql = "SELECT st.id as student_id, st.nom, st.prenom,
@@ -1015,13 +1029,11 @@ class GradeController
 
         $class_id = (int) ($_POST['class_id'] ?? 0);
 
-
-
         $subject_id = (int) ($_POST['subject_id'] ?? 0);
 
-
-
-        $periode = trim($_POST['periode'] ?? '');
+        $periode = trim((string) ($_POST['periode'] ?? ''));
+        $entryModal = !empty($_POST['entry_modal']);
+        $entryModalQuery = $entryModal ? '&entry_modal=1' : '';
 
 
 
@@ -1065,7 +1077,7 @@ class GradeController
             $competencyIds = $this->normalizeAndValidateCompetencySelection($class_id, $subject_id, $periode, $rawCompetencyIds);
         } catch (\InvalidArgumentException $e) {
             Session::setFlash('error', $e->getMessage());
-            header("Location: /notes/saisie?class_id={$class_id}&subject_id={$subject_id}");
+            header("Location: /notes/saisie?class_id={$class_id}&subject_id={$subject_id}{$entryModalQuery}");
             exit;
         }
 
@@ -1082,7 +1094,7 @@ class GradeController
 
         if ($typeCheck && $typeCheck['class_type'] != $typeCheck['subject_type']) {
             Session::setFlash('error', __('incoherent_teaching_type_grade') ?? 'Erreur : Incohérence de Type d\'Enseignement entre la classe et la matière.');
-            header("Location: /notes/saisie?class_id=$class_id&subject_id=$subject_id");
+            header("Location: /notes/saisie?class_id=$class_id&subject_id=$subject_id{$entryModalQuery}");
             exit;
         }
 
@@ -1120,7 +1132,7 @@ class GradeController
 
 
 
-            header("Location: /notes/saisie?class_id=$class_id&subject_id=$subject_id");
+            header("Location: /notes/saisie?class_id=$class_id&subject_id=$subject_id{$entryModalQuery}");
 
 
 
@@ -1140,7 +1152,7 @@ class GradeController
 
         if (!$activeYear) {
             Session::setFlash('error', __('no_active_academic_year') ?? 'Aucune année académique active');
-            header("Location: /notes/saisie?class_id=$class_id&subject_id=$subject_id");
+            header("Location: /notes/saisie?class_id=$class_id&subject_id=$subject_id{$entryModalQuery}");
             exit;
         }
 
@@ -1160,10 +1172,11 @@ class GradeController
 
         if (empty($competencyIds)) {
             Session::setFlash('error', __('select_at_least_one_competency') ?? 'Veuillez sélectionner au moins une compétence pour cette évaluation.');
-            header("Location: /notes/saisie?class_id=$class_id&subject_id=$subject_id");
+            header("Location: /notes/saisie?class_id=$class_id&subject_id=$subject_id{$entryModalQuery}");
             exit;
         }
 
+        $gradesSaved = false;
         try {
 
             $existingStudentIds = $this->getExistingGradeStudentIds($subject_id, $periode, (int) $activeYear['id'], array_keys($notes));
@@ -1421,6 +1434,7 @@ class GradeController
 
 
             $this->db->commit();
+            $gradesSaved = true;
 
 
 
@@ -1475,6 +1489,23 @@ class GradeController
 
 
 
+
+        if ($entryModal) {
+            if (!$gradesSaved) {
+                header("Location: /notes/saisie?class_id=$class_id&subject_id=$subject_id&periode=" . urlencode($periode) . "&entry_modal=1");
+                exit;
+            }
+
+            $missingEvaluations = $this->getMissingEvaluationsForAssignment($class_id, $subject_id, (int) ($typeCheck['class_type'] ?? 0), (int) $activeYear['id']);
+            if (empty($missingEvaluations)) {
+                header("Location: /notes?grade_entry_complete=1");
+                exit;
+            }
+
+            $nextPeriode = $missingEvaluations[0]['label'];
+            header("Location: /notes/saisie?class_id=$class_id&subject_id=$subject_id&periode=" . urlencode((string) $nextPeriode) . "&entry_modal=1");
+            exit;
+        }
 
         header("Location: /notes/saisie?class_id=$class_id&subject_id=$subject_id&periode=" . urlencode($periode));
 
@@ -1901,6 +1932,61 @@ class GradeController
 
 
 
+    }
+
+    private function getMissingEvaluationsForAssignment(int $classId, int $subjectId, int $teachingTypeId, int $academicYearId): array
+    {
+        $evaluationSql = "
+            SELECT s.label
+            FROM sequences s
+            LEFT JOIN teaching_types tt ON s.teaching_type_id = tt.id
+            WHERE s.is_active = 1
+              AND (tt.actif = 1 OR s.teaching_type_id IS NULL)
+        ";
+        $evaluationParams = [];
+        if ($teachingTypeId > 0) {
+            $evaluationSql .= " AND s.teaching_type_id = ?";
+            $evaluationParams[] = $teachingTypeId;
+        }
+        $evaluationSql .= " ORDER BY s.position ASC";
+
+        $evaluationStmt = $this->db->prepare($evaluationSql);
+        $evaluationStmt->execute($evaluationParams);
+        $evaluations = array_map('strval', $evaluationStmt->fetchAll(PDO::FETCH_COLUMN));
+        if (empty($evaluations)) {
+            return [];
+        }
+
+        $stmt = $this->db->prepare("
+            SELECT COUNT(*)
+            FROM students st
+            LEFT JOIN grades g
+                ON g.student_id = st.id
+                AND g.subject_id = ?
+                AND g.academic_year_id = ?
+                AND g.periode = ?
+            WHERE st.class_id = ?
+              AND st.academic_year_id = ?
+              AND st.actif = 1
+              AND st.status = 'Inscrit'
+              AND st.is_withdrawn = 0
+              AND st.status NOT IN ('Démission', 'Démissionnaire', 'Abandon')
+              AND g.student_id IS NULL
+        ");
+
+        $missing = [];
+        foreach ($evaluations as $label) {
+            $stmt->execute([$subjectId, $academicYearId, $label, $classId, $academicYearId]);
+            $missingCount = (int) $stmt->fetchColumn();
+            if ($missingCount > 0) {
+                $missing[] = [
+                    'label' => (string) $label,
+                    'missing_count' => $missingCount,
+                ];
+            }
+        }
+
+        return $missing;
     }
 
 
@@ -3329,8 +3415,3 @@ class GradeController
 
 
 }
-
-
-
-
-

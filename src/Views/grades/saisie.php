@@ -347,10 +347,25 @@ $appreciationLabels = [
 
     <!-- Alert Messages (Globally handled by AlertService in layout) -->
 
+    <?php if (!empty($entryModal) && !empty($missingEvaluations)): ?>
+        <div class="alert alert-warning d-flex align-items-start gap-2 rounded-3 mb-3" role="alert">
+            <i class="bi bi-exclamation-triangle-fill mt-1"></i>
+            <div>
+                <strong><?= __('active_sequences_state') ?></strong>
+                <div><?= __('grade_entry_missing_evaluations') ?>:
+                    <?= htmlspecialchars(implode(', ', array_column($missingEvaluations, 'label'))) ?>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <form action="/notes/store" method="POST" id="gradeEntryForm" class="no-loader">
         <input type="hidden" name="class_id" value="<?= $class_id ?>">
         <input type="hidden" name="subject_id" value="<?= $subject_id ?>">
         <input type="hidden" name="periode" value="<?= htmlspecialchars((string) $periode) ?>">
+        <?php if (!empty($entryModal)): ?>
+            <input type="hidden" name="entry_modal" value="1">
+        <?php endif; ?>
 
         <div class="grade-setup-panel">
         <div class="sticky-grade-toolbar">
@@ -360,7 +375,7 @@ $appreciationLabels = [
                 </span>
                 <label class="fw-bold text-muted-theme small text-uppercase flex-shrink-0"><?= __('evaluation') ?></label>
                 <select class="form-select eval-select-pill shadow-none flex-grow-1" style="min-height: 44px;" 
-                        onchange="window.location.href='/notes/saisie?class_id=<?= $class_id ?>&subject_id=<?= $subject_id ?>&periode=' + encodeURIComponent(this.value)">
+                        onchange="window.location.href='/notes/saisie?class_id=<?= $class_id ?>&subject_id=<?= $subject_id ?>&periode=' + encodeURIComponent(this.value) + '<?= !empty($entryModal) ? '&entry_modal=1' : '' ?>'">
                     <?php foreach ($periodes as $p): ?>
                         <option value="<?= htmlspecialchars((string) $p) ?>" <?= $periode === $p ? 'selected' : '' ?>>
                             <?= htmlspecialchars((string) $p) ?>

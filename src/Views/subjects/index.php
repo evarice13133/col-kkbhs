@@ -9,72 +9,51 @@ $hasActiveSubjectFilters = !empty($filters['q']) || !empty($filters['teaching_ty
 
 <div class="animate-fade-in container-fluid py-3 px-md-4">
 
-    <!-- EN-TÊTE DE PAGE : Style Glassmorphism Premium avec support Mode Sombre -->
-    <div class="dept-header-card mb-4 p-3 p-md-4 rounded-4 shadow-sm position-relative overflow-hidden">
-        <div class="dept-header-bg"></div>
-        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between w-100 gap-3 position-relative"
-            style="z-index: 2;">
-            <div class="d-flex align-items-center gap-3">
-                <div class="dept-icon-wrapper rounded-4 d-flex align-items-center justify-content-center flex-shrink-0">
-                    <i class="bi bi-journal-bookmark-fill fs-4 text-primary"></i>
-                </div>
-                <div>
-                    <h1 class="fw-black fs-4 text-main-theme mb-1 lh-1">
-                        <?= __('subjects') ?? 'Matières & Disciplines' ?>
-                    </h1>
-                    <p class="text-muted-theme mb-0 fw-medium opacity-75" style="font-size: 0.88rem;">
-                        <?= __('lang') === 'en' ? 'Manage subjects, coefficients and academic groups' : 'Gérez les matières, coefficients et groupes de cours de l\'établissement' ?>
-                    </p>
-                </div>
+    <div class="subjects-page-heading">
+        <div class="subjects-heading-copy">
+            <div class="subjects-heading-icon"><i class="bi bi-book-half" aria-hidden="true"></i></div>
+            <div>
+                <h1><?= __('lang') === 'en' ? 'Subject management' : 'Gestion des matières' ?></h1>
+                <p><?= __('lang') === 'en' ? 'Organize subjects, coefficients and teaching groups.' : 'Organisez les matières, leurs coefficients et les groupes de cours.' ?></p>
             </div>
-
-            <div class="d-flex flex-row w-100 w-md-auto justify-content-end ms-md-auto gap-2 mt-2 mt-md-0">
-                <a id="btn-export-pdf" href="/subjects/export?<?= http_build_query($filters) ?>"
-                    class="btn btn-light-theme rounded-pill px-3 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 scale-on-hover"
-                    title="<?= __('export_list') ?? 'Exporter PDF' ?>">
-                    <i class="bi bi-file-earmark-pdf text-danger fs-6"></i>
-                    <span><?= __('lang') === 'en' ? 'Export PDF' : 'Exporter PDF' ?></span>
+        </div>
+        <div class="subjects-heading-actions">
+            <?php if (!empty($academicYear['nom'])): ?>
+                <span class="subjects-year-badge"><i class="bi bi-calendar3" aria-hidden="true"></i><?= htmlspecialchars((string) $academicYear['nom']) ?></span>
+            <?php endif; ?>
+            <?php if ($canManage && !$isArchivedView): ?>
+                <a href="/subjects/create" class="btn btn-primary subjects-create-button">
+                    <i class="bi bi-plus-lg" aria-hidden="true"></i>
+                    <span><?= __('add_subject') ?? 'Ajouter une matière' ?></span>
                 </a>
-                <a id="btn-export-excel" href="/subjects/exportExcel?<?= http_build_query($filters) ?>"
-                    class="btn btn-success rounded-pill px-3 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 scale-on-hover"
-                    title="Exporter au format Excel (.xlsx)">
-                    <i class="bi bi-file-earmark-excel fs-6"></i>
-                    <span><?= __('lang') === 'en' ? 'Export Excel' : 'Exporter Excel' ?></span>
-                </a>
-                <?php if ($canManage): ?>
-                    <a href="/subjects<?= $isArchivedView ? '' : '?archived=1' ?>"
-                        class="btn btn-outline-secondary rounded-pill px-3 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 scale-on-hover">
-                        <i class="bi bi-archive"></i>
-                        <span><?= $isArchivedView ? (__('lang') === 'en' ? 'Active subjects' : 'Matières actives') : (__('lang') === 'en' ? 'Recycle bin' : 'Corbeille') ?></span>
-                    </a>
-                    <?php if (!$isArchivedView): ?>
-                    <button type="button"
-                        class="btn btn-outline-danger rounded-pill px-3 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 scale-on-hover"
-                        data-bs-toggle="modal" data-bs-target="#subjectBulkSelectionModal">
-                        <i class="bi bi-trash3"></i>
-                        <span><?= __('lang') === 'en' ? 'Bulk archive' : 'Mise en corbeille groupée' ?></span>
-                    </button>
-                    <?php endif; ?>
-                    <?php if (!$isArchivedView): ?>
-                    <button type="button"
-                        class="btn btn-light-theme rounded-pill px-3 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 scale-on-hover"
-                        data-bs-toggle="modal" data-bs-target="#importSubjectsModal">
-                        <i class="bi bi-file-earmark-spreadsheet text-success fs-6"></i>
-                        <span><?= __('import') ?? 'Importer' ?></span>
-                    </button>
-                    <a href="/subjects/create"
-                        class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm flex-grow-1 flex-md-grow-0 d-flex justify-content-center align-items-center gap-2 text-nowrap scale-on-hover">
-                        <i class="bi bi-plus-lg"></i>
-                        <span><?= __('add_subject') ?? 'Ajouter une matière' ?></span>
-                    </a>
-                    <?php endif; ?>
-                <?php endif; ?>
-            </div>
+            <?php endif; ?>
         </div>
     </div>
 
+    <section class="subjects-stats-grid" aria-label="<?= __('lang') === 'en' ? 'Subject summary' : 'Résumé des matières' ?>">
+        <?php
+        $subjectStatCards = [
+            ['icon' => 'bi-book-half', 'label' => __('lang') === 'en' ? 'Total subjects' : 'Total des matières', 'value' => $subjectStats['total_subjects'] ?? 0, 'detail' => __('lang') === 'en' ? 'In the catalog' : 'Dans le catalogue', 'tone' => 'blue'],
+            ['icon' => 'bi-check-circle-fill', 'label' => __('lang') === 'en' ? 'Active subjects' : 'Matières actives', 'value' => $subjectStats['active_subjects'] ?? 0, 'detail' => __('lang') === 'en' ? 'Available for use' : 'Disponibles à l’utilisation', 'tone' => 'green'],
+            ['icon' => 'bi-people-fill', 'label' => __('lang') === 'en' ? 'Subject groups' : 'Groupes de matières', 'value' => $subjectStats['subject_groups'] ?? 0, 'detail' => __('lang') === 'en' ? 'Configured groups' : 'Groupes configurés', 'tone' => 'purple'],
+            ['icon' => 'bi-mortarboard-fill', 'label' => __('lang') === 'en' ? 'Associated classes' : 'Classes associées', 'value' => $subjectStats['associated_classes'] ?? 0, 'detail' => __('lang') === 'en' ? 'For the active year' : 'Pour l’année en cours', 'tone' => 'cyan'],
+        ];
+        ?>
+        <?php foreach ($subjectStatCards as $stat): ?>
+            <article class="subjects-stat-card subjects-stat-<?= $stat['tone'] ?>">
+                <span class="subjects-stat-icon"><i class="bi <?= $stat['icon'] ?>" aria-hidden="true"></i></span>
+                <div class="subjects-stat-content">
+                    <span class="subjects-stat-label"><?= $stat['label'] ?></span>
+                    <strong><?= number_format((int) $stat['value'], 0, ',', ' ') ?></strong>
+                    <span class="subjects-stat-detail"><?= $stat['detail'] ?></span>
+                </div>
+            </article>
+        <?php endforeach; ?>
+    </section>
+
+    <div id="subjectsListContainer" class="subjects-list-shell mb-4">
     <!-- BARRE DE FILTRES ET RECHERCHE INSTANTANÉE -->
-    <div class="filter-island-container mb-4">
+    <div class="filter-island-container">
         <div class="filter-island subjects-filter-panel p-3 rounded-4 shadow-sm">
             <form method="GET" action="/subjects" id="subject-filter-form" class="filter-form w-100 m-0">
                 <?php if ($isArchivedView): ?>
@@ -135,24 +114,65 @@ $hasActiveSubjectFilters = !empty($filters['q']) || !empty($filters['teaching_ty
 
                     <!-- Actions Filtre -->
                     <div class="d-flex gap-2 align-items-center justify-content-end subjects-filter-actions">
-                        <button type="submit"
-                            class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm text-nowrap scale-on-hover">
-                            <i class="bi bi-funnel-fill me-1"></i> <?= __('filter') ?? 'Filtrer' ?>
-                        </button>
-                        <a href="/subjects"
+                        <a href="/subjects<?= $isArchivedView ? '?archived=1' : '' ?>"
                             class="btn btn-light-theme rounded-circle p-2 d-flex align-items-center justify-content-center reset-btn scale-on-hover"
-                            style="width: 42px; height: 42px;" title="<?= __('reset') ?? 'Réinitialiser' ?>">
+                            style="width: 42px; height: 42px;" title="<?= __('reset') ?? 'Réinitialiser' ?>" aria-label="<?= __('reset') ?? 'Réinitialiser' ?>">
                             <i class="bi bi-arrow-counterclockwise fs-5"></i>
                         </a>
                     </div>
 
                 </div>
             </form>
+            <div class="subjects-list-toolbar">
+                <span class="subjects-results-count">
+                    <?= __('showing_count', [
+                        'start' => $totalCount > 0 ? $offset + 1 : 0,
+                        'end' => min($offset + $limit, $totalCount),
+                        'total' => $totalCount
+                    ]) ?>
+                </span>
+                <div class="subjects-toolbar-actions">
+                    <a id="btn-export-excel" href="/subjects/exportExcel?<?= http_build_query($filters) ?>" class="btn subjects-export-excel">
+                        <i class="bi bi-file-earmark-excel" aria-hidden="true"></i>
+                        <span><?= __('lang') === 'en' ? 'Export Excel' : 'Exporter Excel' ?></span>
+                    </a>
+                    <a id="btn-export-pdf" href="/subjects/export?<?= http_build_query($filters) ?>" class="btn subjects-export-pdf">
+                        <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i>
+                        <span><?= __('lang') === 'en' ? 'Export PDF' : 'Exporter PDF' ?></span>
+                    </a>
+                    <?php if ($canManage): ?>
+                        <div class="dropdown">
+                            <button type="button" class="btn subjects-more-actions dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                <?= __('lang') === 'en' ? 'More actions' : 'Plus d’actions' ?>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                <li>
+                                    <a href="/subjects<?= $isArchivedView ? '' : '?archived=1' ?>" class="dropdown-item">
+                                        <i class="bi bi-archive me-2" aria-hidden="true"></i>
+                                        <?= $isArchivedView ? (__('lang') === 'en' ? 'Active subjects' : 'Matières actives') : (__('lang') === 'en' ? 'Recycle bin' : 'Corbeille') ?>
+                                    </a>
+                                </li>
+                                <?php if (!$isArchivedView): ?>
+                                    <li>
+                                        <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#importSubjectsModal">
+                                            <i class="bi bi-file-earmark-spreadsheet me-2" aria-hidden="true"></i><?= __('import') ?? 'Importer' ?>
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button type="button" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#subjectBulkSelectionModal">
+                                            <i class="bi bi-trash3 me-2" aria-hidden="true"></i><?= __('lang') === 'en' ? 'Bulk archive' : 'Mise en corbeille groupée' ?>
+                                        </button>
+                                    </li>
+                                <?php endif; ?>
+                            </ul>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- LISTE ET PAGINATION DES MATIÈRES -->
-    <div id="subjectsListContainer">
         <div class="modern-card border-0 shadow-sm overflow-hidden animate-fade-in">
             <div class="table-responsive subjects-table-wrapper">
                 <table class="table-modern subjects-list-table">
@@ -331,7 +351,7 @@ $hasActiveSubjectFilters = !empty($filters['q']) || !empty($filters['teaching_ty
 
         <!-- PAGINATION -->
         <?php if ($totalPages > 1): ?>
-            <div class="d-flex justify-content-between align-items-center mt-5 mb-4 flex-wrap gap-3">
+            <div class="subjects-pagination d-flex justify-content-between align-items-center flex-wrap gap-3">
                 <div class="text-muted small">
                     <?= __('showing_count', [
                         'start' => $offset + 1,
@@ -389,6 +409,7 @@ $hasActiveSubjectFilters = !empty($filters['q']) || !empty($filters['teaching_ty
                 </nav>
             </div>
         <?php endif; ?>
+    </div>
         <?php if ($canManage): ?>
             <div class="modal fade" id="subjectBulkSelectionModal" tabindex="-1"
                 aria-labelledby="subjectBulkSelectionModalLabel" aria-hidden="true">
@@ -752,16 +773,384 @@ $hasActiveSubjectFilters = !empty($filters['q']) || !empty($filters['teaching_ty
             padding-left: 1rem;
         }
 
+        .subjects-page-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.25rem;
+            margin: 0 0 1.15rem;
+        }
+
+        .subjects-heading-copy,
+        .subjects-heading-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+        }
+
+        .subjects-heading-copy {
+            min-width: 0;
+        }
+
+        .subjects-heading-icon {
+            display: grid;
+            width: 46px;
+            height: 46px;
+            flex: 0 0 46px;
+            place-items: center;
+            border-radius: 12px;
+            background: rgba(var(--primary-rgb, 59, 130, 246), 0.12);
+            color: #315bff;
+            font-size: 1.35rem;
+        }
+
+        .subjects-page-heading h1 {
+            margin: 0 0 0.2rem;
+            color: var(--text-main, #0f172a);
+            font-size: clamp(1.25rem, 2vw, 1.65rem);
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .subjects-page-heading p {
+            margin: 0;
+            color: var(--text-muted, #64748b);
+            font-size: 0.85rem;
+        }
+
+        .subjects-heading-actions {
+            flex: 0 0 auto;
+        }
+
+        .subjects-year-badge,
+        .subjects-create-button {
+            display: inline-flex;
+            min-height: 40px;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.55rem 0.85rem;
+            border: 1px solid var(--border-theme, #dbe3ef);
+            border-radius: 9px;
+            background: var(--bg-card, #fff);
+            color: var(--text-main, #0f172a);
+            font-size: 0.8rem;
+            font-weight: 650;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .subjects-year-badge {
+            color: var(--text-muted, #475569);
+        }
+
+        .subjects-create-button {
+            padding-inline: 1rem;
+            border-color: #315bff;
+            background: #315bff;
+            color: #fff;
+            box-shadow: 0 4px 10px rgba(49, 91, 255, 0.2);
+        }
+
+        .subjects-create-button:hover,
+        .subjects-create-button:focus-visible {
+            border-color: #2449df;
+            background: #2449df;
+            color: #fff;
+        }
+
+        .subjects-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .subjects-stat-card {
+            display: flex;
+            min-width: 0;
+            min-height: 88px;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.8rem 0.95rem;
+            border: 1px solid var(--border-theme, #e4eaf3);
+            border-radius: 10px;
+            background: var(--bg-card, #fff);
+            box-shadow: 0 3px 12px rgba(15, 23, 42, 0.035);
+        }
+
+        .subjects-stat-icon {
+            display: grid;
+            width: 42px;
+            height: 42px;
+            flex: 0 0 42px;
+            place-items: center;
+            border-radius: 50%;
+            font-size: 1.05rem;
+        }
+
+        .subjects-stat-content {
+            display: flex;
+            min-width: 0;
+            flex-direction: column;
+            gap: 0.06rem;
+        }
+
+        .subjects-stat-label {
+            overflow: hidden;
+            color: var(--text-muted, #64748b);
+            font-size: 0.72rem;
+            font-weight: 650;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .subjects-stat-content strong {
+            color: var(--text-main, #0f172a);
+            font-size: 1.25rem;
+            line-height: 1.25;
+        }
+
+        .subjects-stat-detail {
+            overflow: hidden;
+            color: var(--text-muted, #94a3b8);
+            font-size: 0.66rem;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .subjects-stat-blue .subjects-stat-icon { background: #eaf0ff; color: #315bff; }
+        .subjects-stat-green .subjects-stat-icon { background: #e5f8ef; color: #12a568; }
+        .subjects-stat-purple .subjects-stat-icon { background: #f2eaff; color: #8b3dce; }
+        .subjects-stat-cyan .subjects-stat-icon { background: #e2f8fb; color: #08a4b7; }
+
+        [data-theme="dark"] .subjects-stat-blue .subjects-stat-icon { background: rgba(49, 91, 255, 0.18); }
+        [data-theme="dark"] .subjects-stat-green .subjects-stat-icon { background: rgba(18, 165, 104, 0.18); }
+        [data-theme="dark"] .subjects-stat-purple .subjects-stat-icon { background: rgba(139, 61, 206, 0.18); }
+        [data-theme="dark"] .subjects-stat-cyan .subjects-stat-icon { background: rgba(8, 164, 183, 0.18); }
+
+        [data-theme="dark"] .subjects-stat-card {
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        #subjectsListContainer.subjects-list-shell {
+            position: relative;
+            overflow: visible;
+            border: 1px solid var(--border-theme, #e4eaf3);
+            border-radius: 13px;
+            background: var(--bg-card, #fff);
+            box-shadow: 0 5px 18px rgba(15, 23, 42, 0.045);
+        }
+
+        [data-theme="dark"] #subjectsListContainer.subjects-list-shell {
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        [data-theme="dark"] #subjectsListContainer .filter-island.subjects-filter-panel {
+            background: transparent;
+        }
+
+        #subjectsListContainer .filter-island-container {
+            position: relative;
+            z-index: 5;
+            margin: 0 !important;
+            overflow: visible;
+        }
+
+        #subjectsListContainer .filter-island.subjects-filter-panel {
+            border: 0;
+            border-radius: 0 !important;
+            background: transparent;
+            box-shadow: none;
+        }
+
+        .subjects-list-toolbar {
+            position: relative;
+            z-index: 6;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-top: 1rem;
+            padding-top: 0.8rem;
+            border-top: 1px solid var(--border-theme, #e8edf5);
+        }
+
+        .subjects-results-count {
+            color: var(--text-muted, #64748b);
+            font-size: 0.76rem;
+            white-space: nowrap;
+        }
+
+        .subjects-toolbar-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.55rem;
+        }
+
+        .subjects-toolbar-actions .btn {
+            display: inline-flex;
+            min-height: 36px;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            padding: 0.45rem 0.8rem;
+            border: 1px solid transparent;
+            border-radius: 7px;
+            font-size: 0.76rem;
+            font-weight: 650;
+            white-space: nowrap;
+        }
+
+        .subjects-toolbar-actions .dropdown.show {
+            position: relative;
+            z-index: 8;
+        }
+
+        .subjects-toolbar-actions .subjects-export-excel {
+            background: #e8f8ef;
+            color: #128353;
+        }
+
+        .subjects-toolbar-actions .subjects-export-pdf {
+            background: #fff0f1;
+            color: #d92d3a;
+        }
+
+        .subjects-toolbar-actions .subjects-more-actions {
+            border-color: var(--border-theme, #e0e6ef);
+            background: var(--bg-card, #fff);
+            color: var(--text-main, #334155);
+        }
+
+        .subjects-toolbar-actions .dropdown-menu {
+            min-width: 12rem;
+            padding: 0.4rem;
+            border: 1px solid var(--border-theme, #e0e6ef);
+            border-radius: 9px;
+            background: var(--bg-card, #fff);
+        }
+
+        .subjects-toolbar-actions .dropdown-item {
+            padding: 0.55rem 0.65rem;
+            border-radius: 6px;
+            color: var(--text-main, #334155);
+            font-size: 0.8rem;
+        }
+
+        .subjects-toolbar-actions .dropdown-item:hover,
+        .subjects-toolbar-actions .dropdown-item:focus {
+            background: var(--bg-body, #f1f5f9);
+        }
+
+        #subjectsListContainer > .modern-card {
+            position: relative;
+            z-index: 1;
+            overflow: visible !important;
+            border-top: 1px solid var(--border-theme, #e8edf5) !important;
+            border-radius: 0 !important;
+            background: transparent;
+            box-shadow: none !important;
+            transform: none !important;
+        }
+
+        #subjectsListContainer .subjects-table-wrapper {
+            overflow-x: auto;
+        }
+
+        .subjects-list-table thead th {
+            padding-top: 0.8rem;
+            padding-bottom: 0.8rem;
+            background: color-mix(in srgb, var(--bg-body, #f8fafc) 55%, var(--bg-card, #fff));
+            font-size: 0.72rem;
+            font-weight: 750;
+            white-space: nowrap;
+        }
+
+        .subjects-list-table tbody tr {
+            border-bottom: 1px solid var(--border-theme, #edf1f7);
+        }
+
+        .subjects-list-table tbody tr:last-child {
+            border-bottom: 0;
+        }
+
+        .subjects-list-table tbody td {
+            padding-top: 0.62rem;
+            padding-bottom: 0.62rem;
+            vertical-align: middle;
+        }
+
+        .subjects-list-table tbody tr:hover {
+            background: color-mix(in srgb, var(--primary-color, #315bff) 3%, transparent);
+        }
+
+        .subjects-pagination {
+            padding: 0.8rem 1rem;
+            border-top: 1px solid var(--border-theme, #e8edf5);
+        }
+
         .dept-header-card {
             background: var(--bg-card);
             border: 1px solid var(--border-theme);
             backdrop-filter: blur(16px);
-            transition: all 0.3s ease;
+            box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06) !important;
         }
 
         [data-theme="dark"] .dept-header-card {
             background: rgba(30, 41, 59, 0.7);
             border-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18) !important;
+        }
+
+        .subjects-header-content {
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .subjects-header-title {
+            min-width: 0;
+        }
+
+        .subjects-header-title h1 {
+            font-size: clamp(1.25rem, 2vw, 1.65rem);
+            font-weight: 800;
+            line-height: 1.2 !important;
+        }
+
+        .subjects-header-title p {
+            max-width: 48rem;
+            line-height: 1.5;
+        }
+
+        .subjects-header-actions {
+            display: flex;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 0.55rem;
+        }
+
+        .subjects-header-action-group {
+            display: contents;
+        }
+
+        .subjects-header-actions .btn {
+            min-height: 42px;
+            flex: 0 0 auto;
+            white-space: nowrap;
+        }
+
+        .subjects-header-management {
+            display: contents;
+        }
+
+        .subjects-header-actions .btn-primary {
+            padding-inline: 1.15rem !important;
         }
 
         .dept-header-bg {
@@ -973,6 +1362,65 @@ $hasActiveSubjectFilters = !empty($filters['q']) || !empty($filters['teaching_ty
         }
 
         @media (max-width: 575.98px) {
+            .subjects-page-heading {
+                align-items: flex-start;
+                gap: 0.8rem;
+            }
+
+            .subjects-heading-actions {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.45rem;
+            }
+
+            .subjects-year-badge,
+            .subjects-create-button {
+                min-height: 36px;
+                padding: 0.45rem 0.6rem;
+                font-size: 0.72rem;
+            }
+
+            .subjects-stats-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.55rem;
+            }
+
+            .subjects-stat-card {
+                min-height: 76px;
+                gap: 0.55rem;
+                padding: 0.65rem;
+            }
+
+            .subjects-stat-icon {
+                width: 34px;
+                height: 34px;
+                flex-basis: 34px;
+                font-size: 0.9rem;
+            }
+
+            .subjects-stat-label {
+                font-size: 0.65rem;
+            }
+
+            .subjects-stat-detail {
+                font-size: 0.6rem;
+            }
+
+            .subjects-list-toolbar {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .subjects-toolbar-actions {
+                width: 100%;
+                justify-content: flex-start;
+                flex-wrap: wrap;
+            }
+
+            .subjects-toolbar-actions .btn {
+                padding-inline: 0.65rem;
+            }
+
             .filter-island.subjects-filter-panel {
                 padding: 0.9rem !important;
             }
@@ -1083,13 +1531,39 @@ $hasActiveSubjectFilters = !empty($filters['q']) || !empty($filters['teaching_ty
         }
 
         @media (max-width: 575.98px) {
-            .dept-header-card .d-flex.flex-row.w-100.w-md-auto {
-                flex-wrap: wrap;
-                justify-content: flex-start !important;
+            .subjects-header-content {
+                gap: 1rem;
             }
 
-            .dept-header-card .d-flex.flex-row.w-100.w-md-auto > a[href="/subjects/create"] {
-                flex: 1 1 100%;
+            .subjects-header-title {
+                align-items: flex-start !important;
+                gap: 0.8rem !important;
+            }
+
+            .subjects-header-title .dept-icon-wrapper {
+                width: 44px;
+                height: 44px;
+            }
+
+            .subjects-header-actions,
+            .subjects-header-action-group {
+                width: 100%;
+            }
+
+            .subjects-header-action-group {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .subjects-header-actions .btn {
+                width: 100%;
+                min-width: 0;
+                padding-inline: 0.65rem !important;
+                font-size: 0.82rem;
+            }
+
+            .subjects-header-actions .btn-primary {
+                grid-column: 1 / -1;
             }
         }
 
