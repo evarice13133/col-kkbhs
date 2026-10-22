@@ -612,12 +612,35 @@ class DashboardController
         ")->fetchColumn();
 
         // 3. Subjects
-        $whereSubjectStatus = $ttIdOrIds !== null ? "WHERE status = 1 {$andSubject}" : "WHERE status = 1";
+        $subjectClassEligibility = "
+            AND EXISTS (
+                SELECT 1
+                FROM subject_classes sc
+                JOIN classes c ON c.id = sc.class_id AND c.status = 1
+                WHERE sc.subject_id = s.id
+                  AND sc.academic_year_id = {$activeYearId}
+                  {$andClass}
+                  AND EXISTS (
+                      SELECT 1
+                      FROM students st
+                      WHERE st.class_id = c.id
+                        AND st.academic_year_id = {$activeYearId}
+                        AND st.status = 'Inscrit'
+                        AND st.actif = 1
+                        AND st.is_withdrawn = 0
+                  )
+            )
+        ";
+        $whereSubjectStatus = $ttIdOrIds !== null
+            ? "WHERE s.status = 1 {$andSubject} {$subjectClassEligibility}"
+            : "WHERE s.status = 1 {$subjectClassEligibility}";
         $stats_subjects = (int) $this->db->query("
             SELECT COUNT(*) FROM subjects s {$whereSubjectStatus}
         ")->fetchColumn();
 
-        $whereSubjectInactive = $ttIdOrIds !== null ? "WHERE status = 0 {$andSubject}" : "WHERE status = 0";
+        $whereSubjectInactive = $ttIdOrIds !== null
+            ? "WHERE s.status = 0 {$andSubject} {$subjectClassEligibility}"
+            : "WHERE s.status = 0 {$subjectClassEligibility}";
         $stats_subjects_inactive = (int) $this->db->query("
             SELECT COUNT(*) FROM subjects s {$whereSubjectInactive}
         ")->fetchColumn();
