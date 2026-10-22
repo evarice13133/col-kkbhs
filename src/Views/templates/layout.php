@@ -533,7 +533,13 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
     <link rel="stylesheet" href="/public/css/alerts-premium.css?v=<?= $asset_version ?>">
     <link rel="stylesheet" href="/public/css/ux-improvements.css?v=<?= $asset_version ?>">
     <link rel="stylesheet" href="/public/css/topbar-onboarding.css?v=<?= $asset_version ?>">
-    <link rel="stylesheet" href="/public/css/desktop-navbar.css?v=<?= $asset_version ?>">
+    <?php
+    $navbar_stylesheet = __DIR__ . '/../../../public/css/desktop-navbar.css';
+    $navbar_asset_version = file_exists($navbar_stylesheet)
+        ? filemtime($navbar_stylesheet) . '-' . filesize($navbar_stylesheet)
+        : $asset_version;
+    ?>
+    <link rel="stylesheet" href="/public/css/desktop-navbar.css?v=<?= $navbar_asset_version ?>">
 
     <style>
         :root {
@@ -1295,7 +1301,7 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
         <!-- Main Content Area -->
         <main class="main-area" id="mainArea">
             <!-- Breadcrumb & Page Info Sub-Header -->
-            <div class="px-3 px-md-4 py-2 border-bottom bg-card bg-opacity-50 d-flex align-items-center justify-content-between">
+            <div class="page-context-bar px-3 px-md-4 py-2 border-bottom bg-card bg-opacity-50 d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center gap-2">
                     <h1 class="page-title fs-5 fw-bold text-main-theme mb-0 text-truncate lh-1">
                         <?= $title ?? __('dashboard') ?>

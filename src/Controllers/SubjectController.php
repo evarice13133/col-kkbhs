@@ -137,7 +137,28 @@ class SubjectController
             exit;
         }
 
-                $academicYearId = $this->academicYearService->getActiveYearId();
+        $academicYear = $this->academicYearService->getActiveYear();
+        $academicYearId = (int) ($academicYear['id'] ?? 0);
+        $statsStmt = $this->db->prepare(
+            "SELECT
+                (SELECT COUNT(*)
+                 FROM subjects s
+                 LEFT JOIN teaching_types tt ON tt.id = s.teaching_type_id
+                 WHERE tt.actif = 1 OR s.teaching_type_id IS NULL) AS total_subjects,
+                (SELECT COUNT(*)
+                 FROM subjects s
+                 LEFT JOIN teaching_types tt ON tt.id = s.teaching_type_id
+                 WHERE s.status = 1 AND (tt.actif = 1 OR s.teaching_type_id IS NULL)) AS active_subjects,
+                (SELECT COUNT(*) FROM subject_groups WHERE status = 1) AS subject_groups,
+                (SELECT COUNT(DISTINCT sc.class_id)
+                 FROM subject_classes sc
+                 JOIN subjects s ON s.id = sc.subject_id AND s.status = 1
+                 JOIN classes c ON c.id = sc.class_id AND c.status = 1
+                 WHERE sc.academic_year_id = ?) AS associated_classes"
+        );
+        $statsStmt->execute([$academicYearId]);
+        $subjectStats = $statsStmt->fetch(PDO::FETCH_ASSOC);
+
                 $classesStmt = $this->db->prepare("SELECT c.id, c.nom, c.teaching_type_id, c.teaching_form_id
                                                                                      FROM classes c
                                                                                      LEFT JOIN departments d ON c.department_id = d.id

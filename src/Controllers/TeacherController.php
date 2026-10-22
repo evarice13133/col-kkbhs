@@ -446,10 +446,11 @@ class TeacherController
         $teacher_id = (int) ($_GET['teacher_id'] ?? 0);
         $subject_id = (int) ($_GET['subject_id'] ?? 0);
         $class_id = (int) ($_GET['class_id'] ?? 0);
+        $redirectUrl = ($_GET['return_to'] ?? '') === 'notes' ? '/notes' : '/';
 
         if (!$teacher_id || !$subject_id || !$class_id) {
             Session::setFlash('error', __('incomplete_assignment_data'));
-            header("Location: /teachers");
+            header("Location: " . $redirectUrl);
             exit;
         }
 
@@ -468,11 +469,11 @@ class TeacherController
             $stmt->execute([$teacher_id, $subject_id, $class_id, $academicYearId]);
 
             Session::setFlash('success', __('teacher_assigned_success'));
-            header("Location: /"); // Retour au dashboard
+            header("Location: " . $redirectUrl);
             exit;
         } catch (\Exception $e) {
             Session::setFlash('error', __('assignment_error') . " : " . $e->getMessage());
-            header("Location: /teachers");
+            header("Location: " . $redirectUrl);
             exit;
         }
     }

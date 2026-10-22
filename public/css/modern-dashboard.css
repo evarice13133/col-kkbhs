@@ -2494,8 +2494,7 @@ small {
 .erp-stat-card::before,
 .erp-stat-card::after,
 .select-card::before,
-.select-card::after,
-.subject-card-glow {
+.select-card::after {
     display: none !important;
     content: none !important;
 }
@@ -4222,3 +4221,283 @@ html, body {
     transform: scale(1.1);
 }
 
+/* Shared data-table presentation for operational lists. Specialized grids and
+   printable/report tables keep their own layouts. */
+.content-inner .table-responsive:has(> table.table-modern:not(.grid-table)) {
+    overflow-x: auto;
+    border: 1px solid var(--border-color, #dce5f2);
+    border-radius: 12px;
+    background: var(--bg-card, #fff);
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+
+.content-inner .table-responsive:has(> table.table-modern:not(.grid-table))::-webkit-scrollbar {
+    height: 6px;
+}
+
+.content-inner .table-responsive:has(> table.table-modern:not(.grid-table))::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background: rgba(52, 120, 246, 0.28);
+}
+
+.content-inner .table-responsive > table.table-modern:not(.grid-table) {
+    width: 100% !important;
+    min-width: 680px;
+    table-layout: auto !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    color: var(--text-main, #17243a);
+    font-size: 0.76rem !important;
+}
+
+.content-inner .table-responsive > table.table-modern:not(.grid-table) thead,
+.content-inner .table-responsive > table.table-modern:not(.grid-table) thead tr,
+.content-inner .table-responsive > table.table-modern:not(.grid-table) thead th {
+    background: #f4f7fb !important;
+}
+
+.content-inner .table-responsive > table.table-modern:not(.grid-table) thead th {
+    padding: 0.7rem 0.8rem !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--border-color, #dce5f2) !important;
+    color: var(--text-muted, #70809a) !important;
+    font-size: 0.68rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.015em !important;
+    line-height: 1.3;
+    text-align: left;
+    text-transform: none !important;
+    vertical-align: middle !important;
+    white-space: nowrap;
+}
+
+.content-inner .table-responsive > table.table-modern:not(.grid-table) tbody tr {
+    background: var(--bg-card, #fff) !important;
+    box-shadow: none !important;
+    transform: none !important;
+    transition: background-color 0.15s ease;
+}
+
+.content-inner .table-responsive > table.table-modern:not(.grid-table) tbody tr:hover {
+    background: #f6f9ff !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.content-inner .table-responsive > table.table-modern:not(.grid-table) tbody td {
+    padding: 0.65rem 0.8rem !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--border-color, #e5ebf3) !important;
+    color: var(--text-main, #17243a) !important;
+    font-size: 0.76rem !important;
+    line-height: 1.4 !important;
+    vertical-align: middle !important;
+}
+
+.content-inner .table-responsive > table.table-modern:not(.grid-table) tbody tr:last-child td {
+    border-bottom: 0 !important;
+}
+
+.content-inner .table-responsive > table.table-modern:not(.grid-table) tbody tr:hover td {
+    background: transparent !important;
+}
+
+.content-inner .table-responsive > table.table-modern:not(.grid-table) input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    accent-color: #3478f6;
+    vertical-align: middle;
+}
+
+.content-inner .table-responsive > table.table-modern:not(.grid-table) .badge {
+    border-radius: 5px !important;
+    font-size: 0.68rem !important;
+    font-weight: 650 !important;
+    letter-spacing: 0 !important;
+    line-height: 1.25;
+    padding: 0.28rem 0.5rem !important;
+    transform: none !important;
+}
+
+.content-inner .table-responsive > table.table-modern:not(.grid-table) .badge:hover {
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.content-inner .table-responsive > table.table-modern:not(.grid-table) .table-row-actions .btn-action-modern,
+.content-inner .table-responsive > table.table-modern:not(.grid-table) .btn-action-modern {
+    min-width: 30px;
+    min-height: 30px;
+    padding: 0.3rem !important;
+    border-radius: 7px !important;
+}
+
+.content-inner .table-responsive > table.table-modern:not(.grid-table) tbody td[colspan] {
+    padding: 2rem 1rem !important;
+    color: var(--text-muted, #70809a) !important;
+    text-align: center !important;
+}
+
+.content-inner .pagination-modern {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+}
+
+.content-inner .pagination-modern .page-link {
+    display: inline-flex;
+    width: 31px;
+    height: 31px;
+    align-items: center;
+    justify-content: center;
+    padding: 0 !important;
+    border: 1px solid var(--border-color, #dce5f2) !important;
+    border-radius: 6px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--text-muted, #70809a) !important;
+    font-size: 0.72rem !important;
+    text-decoration: none;
+}
+
+.content-inner .pagination-modern .page-link:hover:not(.active) {
+    border-color: rgba(52, 120, 246, 0.45) !important;
+    background: rgba(52, 120, 246, 0.08) !important;
+    color: #3478f6 !important;
+}
+
+.content-inner .pagination-modern .page-item.active .page-link {
+    border-color: #3478f6 !important;
+    background: #3478f6 !important;
+    color: #fff !important;
+}
+
+.content-inner .pagination-modern .page-item.disabled .page-link {
+    border-color: transparent !important;
+    background: transparent !important;
+    color: var(--text-muted, #70809a) !important;
+}
+
+.content-inner .filter-form .form-control:not([type="checkbox"]),
+.content-inner .filter-form .form-select,
+.content-inner #filters-form .search-box-container .form-control {
+    min-height: 39px;
+    border: 1px solid var(--border-color, #dce5f2) !important;
+    border-radius: 7px !important;
+    background-color: var(--bg-card, #fff) !important;
+    color: var(--text-main, #17243a) !important;
+    font-size: 0.78rem;
+    box-shadow: none;
+}
+
+.content-inner .filter-form .search-pill,
+.content-inner .filter-form .dept-search-pill {
+    min-height: 39px;
+    border: 1px solid var(--border-color, #dce5f2) !important;
+    border-radius: 7px !important;
+    background: var(--bg-card, #fff) !important;
+}
+
+.content-inner .filter-form .search-pill .form-control,
+.content-inner .filter-form .search-pill .form-select {
+    min-height: 37px;
+    border: 0 !important;
+    border-radius: 6px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.content-inner .filter-form .form-control:focus,
+.content-inner .filter-form .form-select:focus,
+.content-inner #filters-form .search-box-container .form-control:focus {
+    border-color: #3478f6 !important;
+    box-shadow: 0 0 0 3px rgba(52, 120, 246, 0.12) !important;
+    outline: 0;
+}
+
+.content-inner .filter-form button[type="submit"] {
+    min-height: 39px;
+    border-radius: 7px !important;
+}
+
+[data-theme="dark"] .content-inner .table-responsive:has(> table.table-modern:not(.grid-table)) {
+    border-color: rgba(84, 132, 199, 0.24);
+    background: #07172d;
+}
+
+[data-theme="dark"] .content-inner .table-responsive > table.table-modern:not(.grid-table) thead,
+[data-theme="dark"] .content-inner .table-responsive > table.table-modern:not(.grid-table) thead tr,
+[data-theme="dark"] .content-inner .table-responsive > table.table-modern:not(.grid-table) thead th {
+    background: #102a49 !important;
+}
+
+[data-theme="dark"] .content-inner .table-responsive > table.table-modern:not(.grid-table) thead th {
+    border-bottom-color: rgba(79, 128, 191, 0.28) !important;
+    color: #b5c9e7 !important;
+}
+
+[data-theme="dark"] .content-inner .table-responsive > table.table-modern:not(.grid-table) tbody tr,
+[data-theme="dark"] .content-inner .table-responsive > table.table-modern:not(.grid-table) tbody td {
+    background: #091d36 !important;
+    color: #dce8f8 !important;
+}
+
+[data-theme="dark"] .content-inner .table-responsive > table.table-modern:not(.grid-table) tbody td {
+    border-bottom-color: rgba(79, 128, 191, 0.2) !important;
+}
+
+[data-theme="dark"] .content-inner .table-responsive > table.table-modern:not(.grid-table) tbody tr:hover,
+[data-theme="dark"] .content-inner .table-responsive > table.table-modern:not(.grid-table) tbody tr:hover td {
+    background: #112d4f !important;
+}
+
+[data-theme="dark"] .content-inner .table-responsive > table.table-modern:not(.grid-table) tbody tr:last-child td {
+    border-bottom: 0 !important;
+}
+
+[data-theme="dark"] .content-inner .pagination-modern .page-link {
+    border-color: rgba(79, 128, 191, 0.28) !important;
+    color: #b5c9e7 !important;
+}
+
+[data-theme="dark"] .content-inner .pagination-modern .page-item.active .page-link {
+    border-color: #5d9bff !important;
+    background: #3478f6 !important;
+    color: #fff !important;
+}
+
+[data-theme="dark"] .content-inner .filter-form .form-control:not([type="checkbox"]),
+[data-theme="dark"] .content-inner .filter-form .form-select,
+[data-theme="dark"] .content-inner #filters-form .search-box-container .form-control,
+[data-theme="dark"] .content-inner .filter-form .search-pill,
+[data-theme="dark"] .content-inner .filter-form .dept-search-pill {
+    border-color: rgba(92, 137, 197, 0.35) !important;
+    background-color: #0b1e38 !important;
+    color: #dce9ff !important;
+}
+
+[data-theme="dark"] .content-inner .filter-form .search-pill .form-control,
+[data-theme="dark"] .content-inner .filter-form .search-pill .form-select {
+    background: transparent !important;
+    color: #dce9ff !important;
+}
+
+@media (max-width: 575.98px) {
+    .content-inner .table-responsive > table.table-modern:not(.grid-table) {
+        min-width: 640px;
+    }
+
+    .content-inner .table-responsive > table.table-modern:not(.grid-table) thead th,
+    .content-inner .table-responsive > table.table-modern:not(.grid-table) tbody td {
+        padding-right: 0.65rem !important;
+        padding-left: 0.65rem !important;
+    }
+
+    .content-inner .filter-form .form-control:not([type="checkbox"]),
+    .content-inner .filter-form .form-select,
+    .content-inner #filters-form .search-box-container .form-control,
+    .content-inner .filter-form button[type="submit"] {
+        min-height: 42px;
+    }
+}

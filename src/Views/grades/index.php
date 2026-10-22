@@ -28,10 +28,10 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
 
 
 
-<div class="animate-fade-in grades-workspace py-3 px-md-4">
+<div class="animate-fade-in grades-workspace py-3 px-md-4" data-grade-entry-complete-message="<?= htmlspecialchars(__('grade_entry_complete') ?? 'Toutes les évaluations actives ont été saisies.', ENT_QUOTES, 'UTF-8') ?>">
 
     <!-- EN-TÊTE DE PAGE : Style Glassmorphism Premium avec support Mode Sombre -->
-    <div class="dept-header-card mb-4 p-3 p-md-4 rounded-4 shadow-sm position-relative overflow-hidden">
+    <div class="dept-header-card mb-4 p-3 p-md-4 rounded-4 shadow-sm position-relative">
         <div class="dept-header-bg"></div>
         <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between w-100 gap-3 position-relative" style="z-index: 2;">
             <div class="d-flex align-items-center gap-3">
@@ -170,7 +170,7 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
     <?php else: ?>
     <!-- BARRE DE RECHERCHE ENSEIGNANT RESPONSIVE -->
     <div class="filter-island-container mb-4">
-        <div class="filter-island p-3 rounded-4 shadow-sm w-100" style="max-width: 600px; margin: 0 auto;">
+        <div class="filter-island p-3 rounded-4 shadow-sm w-100">
             <form class="filter-form w-100 m-0">
                 <div class="input-group search-pill bg-white bg-opacity-10 rounded-pill px-3 py-1 w-100">
                     <span class="input-group-text border-0 bg-transparent text-primary p-0 me-2">
@@ -190,9 +190,14 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
 
         <!-- Main List Area -->
 
-        <div class="col-lg-8">
+        <div class="col-lg-9 grades-main-column">
 
             <div id="grid-container">
+
+                <?php
+                    $userRole = \App\Core\Session::get('user_role');
+                    $isAdmin = in_array($userRole, ['admin', 'superadmin'], true);
+                ?>
 
                 <?php if (empty($dashboard)): ?>
 
@@ -220,7 +225,7 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
 
                     ?>
 
-                    <div class="class-section animate-slide-up mb-5" data-class="<?= strtolower($class_name) ?>">
+                    <div class="class-section animate-slide-up mb-4" data-class="<?= strtolower($class_name) ?>">
 
                         <div class="class-header-premium mb-4">
 
@@ -237,16 +242,6 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
                                     <div class="d-flex align-items-center gap-2">
 
                                         <h5 class="m-0 fw-black text-main-theme text-uppercase letter-spacing-2"><?= htmlspecialchars((string) $class_name) ?></h5>
-
-                                        <?php if ($isAdmin && $class_id > 0): ?>
-
-                                        <a href="/notes/import?class_id=<?= $class_id ?>&subject_id=0" class="btn btn-outline-success rounded-pill px-2 py-1 small fw-bold shadow-sm text-nowrap" title="<?= __('import_grades') ?>">
-
-                                            <i class="bi bi-upload me-1"></i> <?= __('import') ?>
-
-                                        </a>
-
-                                        <?php endif; ?>
 
                                     </div>
 
@@ -266,33 +261,29 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
 
                             </div>
 
+                            <?php if ($isAdmin && $class_id > 0): ?>
+
+                            <button type="button" class="btn btn-outline-success rounded-pill fw-bold shadow-sm text-nowrap flex-shrink-0 grades-import-button" data-bs-toggle="modal" data-bs-target="#gradeImportModal<?= $class_id ?>">
+
+                                <i class="bi bi-upload me-1"></i> <?= __('import_grades') ?>
+
+                            </button>
+
+                            <?php endif; ?>
+
                         </div>
-
-                        <?php
-
-                        $userRole = \App\Core\Session::get('user_role');
-
-                        $isAdmin = in_array($userRole, ['admin', 'superadmin']);
-
-                        ?>
 
                         <div class="row g-2 g-md-3">
 
                             <?php foreach ($subjectsRaw as $sub): ?>
 
-                                <div class="col-6 col-sm-6 col-xl-4 subject-grid-item"
+                                <div class="col-12 col-md-4 subject-grid-item"
 
                                     data-subject-name="<?= strtolower($sub['subject_nom']) ?>">
 
-                                    <?php if ($sub['teacher_nom']): ?>
+                                    <?php $gradeEntryModalId = 'gradeEntryModal' . (int) $sub['class_id'] . '_' . (int) $sub['subject_id']; ?>
 
-                                    <a href="/notes/saisie?class_id=<?= $sub['class_id'] ?>&subject_id=<?= $sub['subject_id'] ?>" class="subject-card-compact border-theme-dynamic h-100">
-
-                                    <?php else: ?>
-
-                                    <div class="subject-card-compact border-theme-dynamic h-100 is-unassigned">
-
-                                    <?php endif; ?>
+                                    <div class="subject-card-compact border-theme-dynamic h-100 <?= empty($sub['teacher_nom']) ? 'is-unassigned' : '' ?>">
 
                                         <div class="subject-card-glow"></div>
 
@@ -372,19 +363,22 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
 
                                                         <div class="d-flex gap-2 w-100">
 
-                                                            <a href="/teachers?assign_subject=<?= $sub['subject_id'] ?>&assign_class=<?= $sub['class_id'] ?>" class="btn btn-xs btn-outline-warning rounded-pill py-0 px-2 extra-small fw-bold shadow-sm flex-grow-1 text-decoration-none text-center">
-
-                                                                <i class="bi bi-person-plus-fill me-1"></i><?= __('assign') ?>
-
-                                                            </a>
+                                                            <?php if ($isAdmin): ?>
+                                                                <?php $assignmentModalId = 'assignTeacherModal' . (int) $sub['class_id'] . '_' . (int) $sub['subject_id']; ?>
+                                                                <button type="button" class="btn btn-xs btn-outline-warning rounded-pill py-0 px-2 extra-small fw-bold shadow-sm flex-grow-1" data-bs-toggle="modal" data-bs-target="#<?= $assignmentModalId ?>">
+                                                                    <i class="bi bi-person-plus-fill me-1"></i><?= __('assign') ?>
+                                                                </button>
+                                                            <?php else: ?>
+                                                                <a href="/teachers?assign_subject=<?= $sub['subject_id'] ?>&assign_class=<?= $sub['class_id'] ?>" class="btn btn-xs btn-outline-warning rounded-pill py-0 px-2 extra-small fw-bold shadow-sm flex-grow-1 text-decoration-none text-center">
+                                                                    <i class="bi bi-person-plus-fill me-1"></i><?= __('assign') ?>
+                                                                </a>
+                                                            <?php endif; ?>
 
                                                             <?php if ($isAdmin): ?>
 
-                                                            <a href="/notes/saisie?class_id=<?= $sub['class_id'] ?>&subject_id=<?= $sub['subject_id'] ?>" class="btn btn-xs btn-outline-primary rounded-pill py-0 px-2 extra-small fw-bold shadow-sm flex-grow-1 text-decoration-none text-center">
-
+                                                            <button type="button" class="btn btn-xs btn-outline-primary rounded-pill py-0 px-2 extra-small fw-bold shadow-sm flex-grow-1" data-bs-toggle="modal" data-bs-target="#<?= $gradeEntryModalId ?>">
                                                                 <i class="bi bi-pencil-fill me-1"></i><?= __('enter_grades') ?>
-
-                                                            </a>
+                                                            </button>
 
                                                             <?php endif; ?>
 
@@ -450,6 +444,10 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
 
                                                             <?php endif; ?>
 
+                                                            <button type="button" class="btn btn-xs btn-outline-primary rounded-pill py-0 px-2 extra-small fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#<?= $gradeEntryModalId ?>" title="<?= __('enter_grades') ?>">
+                                                                <i class="bi bi-pencil-fill"></i>
+                                                            </button>
+
                                                         </div>
 
                                                     <?php endif; ?>
@@ -466,14 +464,77 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
 
                                         </div>
 
-                                    <?php if ($sub['teacher_nom']): ?>
-
-                                    </a>
-
-                                    <?php else: ?>
-
                                     </div>
 
+                                    <?php if ($isAdmin || !empty($sub['teacher_nom'])): ?>
+                                        <div class="modal fade grade-entry-modal" id="<?= $gradeEntryModalId ?>" tabindex="-1" aria-labelledby="<?= $gradeEntryModalId ?>Label" aria-hidden="true">
+                                            <div class="modal-dialog modal-dialog-centered modal-xl">
+                                                <div class="modal-content border-0 rounded-4 overflow-hidden">
+                                                    <div class="modal-header">
+                                                        <div>
+                                                            <h5 class="modal-title fw-bold" id="<?= $gradeEntryModalId ?>Label">
+                                                                <i class="bi bi-pencil-square text-primary me-2"></i><?= __('enter_grades') ?>
+                                                            </h5>
+                                                            <p class="small text-muted-theme mb-0"><?= htmlspecialchars((string) $sub['subject_nom']) ?> · <?= htmlspecialchars((string) $class_name) ?></p>
+                                                        </div>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= __('close') ?>"></button>
+                                                    </div>
+                                                    <div class="modal-body p-0">
+                                                        <div class="grade-entry-loading d-flex flex-column align-items-center justify-content-center gap-3" role="status">
+                                                            <div class="spinner-border text-primary" aria-hidden="true"></div>
+                                                            <span><?= __('grade_entry_loading') ?></span>
+                                                        </div>
+                                                        <div class="grade-entry-load-error alert alert-danger m-3 d-none" role="alert">
+                                                            <?= __('grade_entry_load_error') ?>
+                                                        </div>
+                                                        <iframe class="grade-entry-frame w-100 border-0" title="<?= htmlspecialchars(__('enter_grades') . ' - ' . $sub['subject_nom'], ENT_QUOTES) ?>" src="about:blank" data-src="/notes/saisie?class_id=<?= (int) $sub['class_id'] ?>&subject_id=<?= (int) $sub['subject_id'] ?>&entry_modal=1" loading="eager"></iframe>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <?php if ($isAdmin && !$sub['teacher_nom']): ?>
+                                        <?php $assignmentModalId = 'assignTeacherModal' . (int) $sub['class_id'] . '_' . (int) $sub['subject_id']; ?>
+                                        <div class="modal fade" id="<?= $assignmentModalId ?>" tabindex="-1" aria-labelledby="<?= $assignmentModalId ?>Label" aria-hidden="true">
+                                            <div class="modal-dialog modal-dialog-centered">
+                                                <div class="modal-content modern-card border-0 rounded-4 overflow-hidden">
+                                                    <div class="modal-header border-bottom">
+                                                        <div>
+                                                            <h5 class="modal-title fw-bold" id="<?= $assignmentModalId ?>Label">
+                                                                <i class="bi bi-person-plus-fill text-warning me-2"></i><?= __('assign') ?>
+                                                            </h5>
+                                                            <p class="small text-muted-theme mb-0">
+                                                                <?= htmlspecialchars((string) $sub['subject_nom']) ?> · <?= htmlspecialchars((string) $class_name) ?>
+                                                            </p>
+                                                        </div>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= __('close') ?? 'Fermer' ?>"></button>
+                                                    </div>
+                                                    <form action="/teachers/direct_assign" method="GET">
+                                                        <input type="hidden" name="subject_id" value="<?= (int) $sub['subject_id'] ?>">
+                                                        <input type="hidden" name="class_id" value="<?= (int) $sub['class_id'] ?>">
+                                                        <input type="hidden" name="return_to" value="notes">
+                                                        <div class="modal-body">
+                                                            <label for="<?= $assignmentModalId ?>Teacher" class="form-label fw-semibold"><?= __('select_teacher') ?></label>
+                                                            <select class="form-select" id="<?= $assignmentModalId ?>Teacher" name="teacher_id" required>
+                                                                <option value=""><?= __('select_teacher') ?></option>
+                                                                <?php foreach ($assignmentTeachers as $assignmentTeacher): ?>
+                                                                    <option value="<?= (int) $assignmentTeacher['id'] ?>">
+                                                                        <?= htmlspecialchars(trim($assignmentTeacher['nom'] . ' ' . $assignmentTeacher['prenom'])) ?>
+                                                                    </option>
+                                                                <?php endforeach; ?>
+                                                            </select>
+                                                        </div>
+                                                        <div class="modal-footer border-top">
+                                                            <button type="button" class="btn btn-light" data-bs-dismiss="modal"><?= __('cancel') ?></button>
+                                                            <button type="submit" class="btn btn-warning fw-bold" <?= empty($assignmentTeachers) ? 'disabled' : '' ?>>
+                                                                <i class="bi bi-check2-circle me-1"></i><?= __('assign') ?>
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
                                     <?php endif; ?>
 
                                 </div>
@@ -481,6 +542,56 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
                             <?php endforeach; ?>
 
                         </div>
+
+                        <?php if ($isAdmin && $class_id > 0): ?>
+                            <?php $importModalId = 'gradeImportModal' . $class_id; ?>
+                            <div class="modal fade" id="<?= $importModalId ?>" tabindex="-1" aria-labelledby="<?= $importModalId ?>Label" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered modal-lg">
+                                    <div class="modal-content modern-card border-0 rounded-4 overflow-hidden">
+                                        <div class="modal-header border-bottom">
+                                            <div>
+                                                <h5 class="modal-title fw-bold" id="<?= $importModalId ?>Label">
+                                                    <i class="bi bi-file-earmark-spreadsheet text-success me-2"></i><?= __('import_grades') ?>
+                                                </h5>
+                                                <p class="small text-muted-theme mb-0"><?= htmlspecialchars((string) $class_name) ?></p>
+                                            </div>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= __('close') ?? 'Fermer' ?>"></button>
+                                        </div>
+                                        <div class="modal-body p-4">
+                                            <p class="text-muted-theme mb-3"><?= __('import_grades_multi_sheet_desc') ?></p>
+                                            <div class="d-flex flex-wrap align-items-end gap-3 mb-4">
+                                                <div class="flex-grow-1">
+                                                    <label class="form-label fw-semibold" for="gradeImportSubject<?= $class_id ?>"><?= __('subject') ?></label>
+                                                    <select id="gradeImportSubject<?= $class_id ?>" class="form-select grade-import-subject">
+                                                        <option value="0"><?= __('all_subjects') ?></option>
+                                                        <?php foreach ($subjectsRaw as $importSubject): ?>
+                                                            <option value="<?= (int) $importSubject['subject_id'] ?>"><?= htmlspecialchars((string) $importSubject['subject_nom']) ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+                                                <a href="/notes/downloadTemplate?class_id=<?= $class_id ?>&subject_id=0" class="btn btn-outline-primary fw-semibold grade-import-template" data-class-id="<?= $class_id ?>">
+                                                    <i class="bi bi-download me-2"></i><?= __('download_template') ?>
+                                                </a>
+                                            </div>
+                                            <form action="/notes/upload" method="POST" enctype="multipart/form-data" class="grade-import-form">
+                                                <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
+                                                <input type="hidden" name="class_id" value="<?= $class_id ?>">
+                                                <input type="hidden" name="subject_id" value="0" class="grade-import-subject-id">
+                                                <label class="form-label fw-semibold" for="gradeImportFile<?= $class_id ?>"><?= __('choose_file') ?></label>
+                                                <input type="file" id="gradeImportFile<?= $class_id ?>" name="import_file" class="form-control grade-import-file mb-3" accept=".xlsx" required>
+                                                <p class="small text-muted-theme mb-0"><?= __('import_grades_integrity_desc') ?></p>
+                                                <div class="modal-footer border-0 px-0 pb-0 mt-3">
+                                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal"><?= __('cancel') ?></button>
+                                                    <button type="submit" class="btn btn-success fw-bold grade-import-submit" disabled>
+                                                        <i class="bi bi-cloud-upload me-2"></i><?= __('validate_import_final') ?>
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endif; ?>
 
                     </div>
 
@@ -496,7 +607,7 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
 
         <?php if (in_array(\App\Core\Session::get('user_role'), ['superadmin', 'admin'])): ?>
 
-        <div class="col-lg-4">
+        <div class="col-lg-3 grades-activity-column">
 
             <h5 class="fw-bold text-main-theme mb-3 px-1 d-flex align-items-center gap-2">
 
@@ -506,13 +617,12 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
 
             </h5>
 
-            <div class="modern-card border-0 shadow-sm glass-card p-0 overflow-hidden">
-
-                <div class="list-group list-group-flush list-group-theme">
+            <div class="modern-card border-0 shadow-sm glass-card p-0 overflow-hidden grades-activity-card">
+                <div class="list-group list-group-flush list-group-theme grades-activity-list">
 
                     <?php foreach (array_slice($recentGrades, 0, 10) as $grade): ?>
 
-                        <div class="list-group-item bg-transparent p-3 border-0 border-bottom border-theme">
+                        <div class="list-group-item bg-transparent p-3 border-0 border-bottom border-theme grades-activity-item">
 
                             <div class="d-flex justify-content-between align-items-start mb-2">
 
@@ -572,7 +682,7 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
 
                 </div>
 
-                <div class="p-3 bg-theme-input text-center">
+                <div class="p-3 bg-theme-input text-center grades-activity-footer">
 
                     <a href="/notes/history" class="small fw-bold text-primary text-decoration-none">
 
@@ -711,8 +821,13 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
     .dept-header-card {
         background: var(--bg-card);
         border: 1px solid var(--border-theme);
+        overflow: visible !important;
         backdrop-filter: blur(16px);
         transition: all 0.3s ease;
+    }
+
+    .dept-header-card.has-open-export-dropdown {
+        z-index: 1061;
     }
 
     [data-theme="dark"] .dept-header-card {
@@ -901,12 +1016,14 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
 
     .subject-card-glow {
         position: absolute;
-        top: 0;
+        bottom: 0;
         left: 0;
-        width: 100%;
-        height: 100%;
-        background: radial-gradient(circle at top right, rgba(var(--primary-rgb), 0.15), transparent 70%);
-        opacity: 0;
+        z-index: 0;
+        width: 85%;
+        height: 80%;
+        background: radial-gradient(ellipse at bottom left, rgba(124, 58, 237, 0.3), transparent 70%);
+        opacity: 1;
+        pointer-events: none;
         transition: opacity 0.4s ease;
     }
 
@@ -918,6 +1035,322 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
 
     .subject-card-compact:hover .subject-card-glow {
         opacity: 1;
+    }
+
+    .grades-workspace {
+        --grades-accent: #7c3aed;
+        --grades-border: rgba(124, 58, 237, 0.2);
+        --grades-surface-muted: rgba(124, 58, 237, 0.035);
+    }
+
+    .grades-workspace .filter-island {
+        width: 100%;
+        max-width: none !important;
+        border-radius: 14px;
+        border-color: var(--border-color, #e2e8f0);
+        box-shadow: 0 3px 12px rgba(15, 23, 42, 0.035);
+    }
+
+    .grades-workspace .filter-island-container,
+    .grades-workspace .filter-form {
+        width: 100%;
+        max-width: none !important;
+    }
+
+    .grades-workspace .search-pill,
+    .grades-workspace .filter-form select {
+        min-height: 42px;
+        border-radius: 8px !important;
+    }
+
+    .grades-workspace .class-section {
+        padding: 1rem;
+        border: 1px solid var(--border-color, #e2e8f0);
+        border-radius: 14px;
+        background: var(--bg-card, #fff);
+    }
+
+    .grades-workspace .class-header-premium {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 54px;
+        padding: 0 0 0.85rem;
+        border-bottom: 1px solid var(--grades-border);
+    }
+
+    .grades-workspace .class-header-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        box-shadow: none;
+        font-size: 1rem;
+    }
+
+    .grades-workspace .class-header-premium h5 {
+        font-size: 0.98rem;
+        letter-spacing: 0.025em;
+    }
+
+    .grades-workspace .class-header-premium .grades-import-button {
+        min-height: 44px;
+        padding: 0.55rem 1rem !important;
+        border-style: solid !important;
+        font-size: 1.05rem !important;
+        line-height: 1.2;
+    }
+
+    .grades-workspace .class-header-premium .grades-import-button:hover,
+    .grades-workspace .class-header-premium .grades-import-button:focus-visible {
+        border-style: solid !important;
+    }
+
+    .grades-workspace .class-header-premium .header-line-accent {
+        display: none;
+    }
+
+    .grade-entry-modal .modal-dialog {
+        max-width: min(1200px, 96vw);
+    }
+
+    .grade-entry-frame {
+        display: none;
+        height: min(78vh, 900px);
+        min-height: 520px;
+        background: var(--bg-body, #f8fafc);
+    }
+
+    .grade-entry-frame.is-ready {
+        display: block;
+    }
+
+    .grade-entry-loading {
+        min-height: min(78vh, 900px);
+        color: var(--text-main);
+        background: var(--bg-card);
+    }
+
+    .grade-entry-load-error {
+        min-height: 120px;
+        align-content: center;
+    }
+
+    .grades-workspace .class-section > .row {
+        --bs-gutter-y: 0.8rem;
+        --bs-gutter-x: 0.8rem;
+    }
+
+    .grades-workspace .subject-grid-item {
+        display: flex;
+    }
+
+    .grades-workspace .subject-card-compact {
+        display: flex;
+        width: 100%;
+        min-height: 150px;
+        flex-direction: column;
+        border: 1px solid var(--grades-border) !important;
+        border-radius: 11px !important;
+        background: var(--bg-card, #fff) !important;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.035) !important;
+        color: var(--text-main);
+        transition: border-color 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease !important;
+    }
+
+    .grades-workspace .subject-card-compact:hover {
+        transform: translateY(-2px) !important;
+        border: 1px solid var(--grades-accent) !important;
+        border-style: solid !important;
+        box-shadow: 0 8px 18px rgba(124, 58, 237, 0.09) !important;
+    }
+
+    .grades-workspace .subject-card-compact.is-unassigned {
+        background: linear-gradient(135deg, var(--bg-card, #fff), var(--grades-surface-muted)) !important;
+    }
+
+    .grades-workspace .subject-card-compact .card-body {
+        flex: 1;
+        padding: 0.9rem !important;
+    }
+
+    .grades-workspace .subject-card-compact .card-body > .d-flex {
+        gap: 0.6rem !important;
+    }
+
+    .grades-workspace .subject-card-compact .rounded-circle {
+        width: 30px !important;
+        height: 30px !important;
+        flex: 0 0 30px;
+        margin-top: 0 !important;
+        border-radius: 8px !important;
+    }
+
+    .grades-workspace .subject-card-compact .rounded-circle i {
+        font-size: 0.85rem !important;
+    }
+
+    .grades-workspace .subject-card-compact .fw-bold.lh-sm {
+        min-height: 2.3em;
+        font-size: 0.86rem !important;
+        line-height: 1.35 !important;
+    }
+
+    .grades-workspace .subject-card-compact .extra-small {
+        font-size: 0.75rem;
+        line-height: 1.35;
+    }
+
+    .grades-workspace .subject-card-compact .mt-auto {
+        padding-top: 0.75rem !important;
+        border-top: 1px solid var(--grades-border);
+    }
+
+    .grades-workspace .subject-card-compact .btn-xs {
+        min-height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.3rem 0.55rem !important;
+        border-radius: 7px !important;
+        font-size: 0.78rem !important;
+        line-height: 1.2;
+        box-shadow: none !important;
+    }
+
+    .grades-workspace .subject-card-compact .btn-outline-primary {
+        border-color: #7c3aed !important;
+        background-color: #7c3aed !important;
+        color: #fff !important;
+    }
+
+    .grades-workspace .subject-card-compact .btn-outline-primary:hover,
+    .grades-workspace .subject-card-compact .btn-outline-primary:focus-visible {
+        border-color: #6d28d9 !important;
+        background-color: #6d28d9 !important;
+        color: #fff !important;
+    }
+
+    .grades-workspace .subject-card-compact .card-arrow-container {
+        display: none;
+    }
+
+    .grades-workspace .grades-activity-column {
+        position: sticky;
+        top: 1rem;
+    }
+
+    .grades-workspace .grades-activity-column > h5 {
+        min-height: 38px;
+        margin-bottom: 0.6rem !important;
+        font-size: 0.9rem;
+    }
+
+    .grades-workspace .grades-activity-card {
+        border: 1px solid var(--border-color, #e2e8f0) !important;
+        border-radius: 14px !important;
+        background: var(--bg-card, #fff) !important;
+        box-shadow: 0 3px 12px rgba(15, 23, 42, 0.035) !important;
+    }
+
+    .grades-workspace .grades-activity-list {
+        max-height: min(66vh, 620px);
+        overflow-y: auto;
+    }
+
+    .grades-workspace .grades-activity-item {
+        padding: 0.8rem !important;
+        border-bottom: 1px solid var(--border-color, #e2e8f0) !important;
+    }
+
+    .grades-workspace .grades-activity-item:last-child {
+        border-bottom: 0 !important;
+    }
+
+    .grades-workspace .grades-activity-item .fw-bold {
+        min-width: 0;
+        line-height: 1.35;
+    }
+
+    .grades-workspace .grades-activity-footer {
+        border-top: 1px solid var(--border-color, #e2e8f0);
+    }
+
+    [data-theme="dark"] .grades-workspace .class-section,
+    [data-theme="dark"] .grades-workspace .subject-card-compact,
+    [data-theme="dark"] .grades-workspace .grades-activity-card {
+        border-color: rgba(139, 92, 246, 0.28) !important;
+        background-color: #0b1a30 !important;
+    }
+
+    [data-theme="dark"] .grades-workspace .subject-card-compact.is-unassigned {
+        background: linear-gradient(135deg, #0b1a30, rgba(124, 58, 237, 0.1)) !important;
+    }
+
+    [data-theme="dark"] .grades-workspace .class-header-premium {
+        border-bottom-color: rgba(139, 92, 246, 0.25);
+    }
+
+    [data-theme="dark"] .grades-workspace .subject-card-compact .mt-auto,
+    [data-theme="dark"] .grades-workspace .grades-activity-item,
+    [data-theme="dark"] .grades-workspace .grades-activity-footer {
+        border-color: rgba(139, 92, 246, 0.2) !important;
+    }
+
+    [data-theme="dark"] .grades-workspace .subject-card-compact:hover {
+        border-color: #a78bfa !important;
+        background-color: #102342 !important;
+    }
+
+    @media (max-width: 991.98px) {
+        .grades-workspace .grades-activity-column {
+            position: static;
+        }
+
+        .grades-workspace .grades-activity-list {
+            max-height: 420px;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .grades-workspace {
+            padding-right: 0.65rem !important;
+            padding-left: 0.65rem !important;
+        }
+
+        .grades-workspace .class-section {
+            padding: 0.75rem;
+            border-radius: 12px;
+        }
+
+        .grades-workspace .class-header-premium {
+            margin-bottom: 0.75rem !important;
+        }
+
+        .grades-workspace .class-header-icon {
+            width: 34px;
+            height: 34px;
+        }
+
+        .grades-workspace .subject-card-compact {
+            min-height: 138px;
+        }
+
+        .grades-workspace .subject-card-compact .card-body {
+            padding: 0.75rem !important;
+        }
+
+        .grades-workspace .grades-activity-column {
+            margin-top: 0.25rem;
+        }
+
+        .grade-entry-frame {
+            height: 76vh;
+            min-height: 420px;
+        }
+
+        .grade-entry-loading {
+            min-height: 76vh;
+        }
     }
 
     @media (max-width: 991.98px) {
@@ -934,9 +1367,29 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
 
     document.addEventListener('DOMContentLoaded', function () {
 
+        const exportDropdown = document.querySelector('.dept-header-card .dropdown');
+        const pageHeader = document.querySelector('.dept-header-card');
+        if (exportDropdown && pageHeader) {
+            exportDropdown.addEventListener('show.bs.dropdown', function () {
+                pageHeader.classList.add('has-open-export-dropdown');
+            });
+            exportDropdown.addEventListener('hidden.bs.dropdown', function () {
+                pageHeader.classList.remove('has-open-export-dropdown');
+            });
+        }
+
         const searchInput = document.getElementById('subject-search');
 
         const sections = document.querySelectorAll('.class-section');
+        const workspace = document.querySelector('.grades-workspace');
+        const currentUrl = new URL(window.location.href);
+        if (currentUrl.searchParams.has('grade_entry_complete')) {
+            if (typeof AlertService !== 'undefined' && workspace) {
+                AlertService.toast('success', workspace.dataset.gradeEntryCompleteMessage);
+            }
+            currentUrl.searchParams.delete('grade_entry_complete');
+            window.history.replaceState({}, '', currentUrl);
+        }
 
 
 
@@ -978,6 +1431,142 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
 
         }
 
+        function syncGradeEntryFrameTheme(frameDocument) {
+            if (!frameDocument) return;
+            const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+            frameDocument.documentElement.setAttribute('data-theme', theme);
+            try {
+                frameDocument.defaultView.localStorage.setItem('theme', theme);
+            } catch (error) {
+                console.error('Unable to synchronize grade-entry theme:', error);
+            }
+        }
+
+        const gradeEntryThemeObserver = new MutationObserver(function () {
+            document.querySelectorAll('.grade-entry-frame').forEach(function (frame) {
+                try {
+                    if (frame.contentDocument && frame.contentWindow.location.pathname !== 'about:blank') {
+                        syncGradeEntryFrameTheme(frame.contentDocument);
+                    }
+                } catch (error) {
+                    console.error('Unable to update grade-entry theme:', error);
+                }
+            });
+        });
+        gradeEntryThemeObserver.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['data-theme']
+        });
+
+        document.querySelectorAll('.grade-entry-modal').forEach(function (modalElement) {
+            const iframe = modalElement.querySelector('.grade-entry-frame');
+            const loadingIndicator = modalElement.querySelector('.grade-entry-loading');
+            const loadError = modalElement.querySelector('.grade-entry-load-error');
+            if (!iframe) return;
+
+            iframe.addEventListener('load', function () {
+                try {
+                    const framePath = iframe.contentWindow.location.pathname;
+                    if (framePath === 'about:blank') return;
+
+                    if (framePath === '/notes') {
+                        bootstrap.Modal.getOrCreateInstance(modalElement).hide();
+                        const frameUrl = new URL(iframe.contentWindow.location.href);
+                        if (frameUrl.searchParams.get('grade_entry_complete') === '1') {
+                            const returnUrl = new URL(window.location.href);
+                            returnUrl.searchParams.set('grade_entry_complete', '1');
+                            window.location.href = returnUrl.href;
+                        }
+                        return;
+                    }
+
+                    const frameDocument = iframe.contentDocument;
+                    if (!frameDocument) {
+                        throw new Error('The grade-entry page returned an empty document.');
+                    }
+
+                    syncGradeEntryFrameTheme(frameDocument);
+
+                    if (!frameDocument.getElementById('grade-entry-embed-styles')) {
+                        const style = frameDocument.createElement('style');
+                        style.id = 'grade-entry-embed-styles';
+                        style.textContent = `
+                            .desktop-navbar-container, .mobile-ribbon-drawer, .page-context-bar,
+                            .footer, #onboardingCard, .command-palette-overlay { display: none !important; }
+                            .dashboard-wrapper { display: block !important; height: 100vh !important; min-height: 0 !important; overflow: hidden !important; }
+                            .main-area { width: 100% !important; height: 100vh !important; max-height: 100vh !important; margin: 0 !important; overflow-y: auto !important; }
+                            .content-inner { width: 100% !important; max-width: none !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; }
+                            .grade-saisie-page { padding: 1rem 1rem 5rem !important; }
+                            .floating-save { position: sticky !important; inset: auto !important; display: block !important; width: fit-content !important; margin: 1rem auto !important; }
+                            body { min-width: 0 !important; overflow: auto !important; }
+                        `;
+                        frameDocument.head.appendChild(style);
+                    }
+
+                    if (!frameDocument.getElementById('gradeEntryForm')) {
+                        throw new Error('The grade-entry form is missing from the loaded page.');
+                    }
+
+                    iframe.classList.add('is-ready');
+                    if (loadingIndicator) loadingIndicator.classList.add('d-none');
+                    if (loadError) loadError.classList.add('d-none');
+                } catch (error) {
+                    console.error('Unable to prepare grade-entry modal content:', error);
+                    iframe.classList.remove('is-ready');
+                    if (loadingIndicator) loadingIndicator.classList.add('d-none');
+                    if (loadError) loadError.classList.remove('d-none');
+                }
+            });
+
+            modalElement.addEventListener('shown.bs.modal', function () {
+                if (loadError) loadError.classList.add('d-none');
+                let framePath = 'about:blank';
+                try {
+                    framePath = iframe.contentWindow.location.pathname;
+                } catch (error) {
+                    console.error('Unable to inspect grade-entry modal:', error);
+                }
+
+                if (framePath !== '/notes/saisie') {
+                    iframe.classList.remove('is-ready');
+                    if (loadingIndicator) loadingIndicator.classList.remove('d-none');
+                    iframe.src = iframe.dataset.src;
+                    return;
+                }
+
+                try {
+                    if (iframe.contentDocument && iframe.contentWindow.location.pathname !== 'about:blank') {
+                        syncGradeEntryFrameTheme(iframe.contentDocument);
+                    }
+                } catch (error) {
+                    console.error('Unable to restore grade-entry modal:', error);
+                }
+            });
+        });
+
+        document.querySelectorAll('.grade-import-subject').forEach(function (subjectSelect) {
+            const modal = subjectSelect.closest('.modal');
+            const subjectIdInput = modal ? modal.querySelector('.grade-import-subject-id') : null;
+            const templateLink = modal ? modal.querySelector('.grade-import-template') : null;
+            const fileInput = modal ? modal.querySelector('.grade-import-file') : null;
+            const submitButton = modal ? modal.querySelector('.grade-import-submit') : null;
+
+            subjectSelect.addEventListener('change', function () {
+                if (subjectIdInput) subjectIdInput.value = subjectSelect.value;
+                if (templateLink) {
+                    templateLink.href = '/notes/downloadTemplate?class_id='
+                        + encodeURIComponent(templateLink.dataset.classId)
+                        + '&subject_id=' + encodeURIComponent(subjectSelect.value);
+                }
+            });
+
+            if (fileInput && submitButton) {
+                fileInput.addEventListener('change', function () {
+                    submitButton.disabled = fileInput.files.length === 0;
+                });
+            }
+        });
+
     });
 
 </script>
@@ -993,4 +1582,3 @@ $content = ob_get_clean();
 include __DIR__ . '/../templates/layout.php';
 
 ?>
-

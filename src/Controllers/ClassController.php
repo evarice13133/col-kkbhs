@@ -74,6 +74,22 @@ class ClassController
         $departments = $this->db->query("SELECT d.id, d.nom, d.teaching_type_id FROM departments d LEFT JOIN teaching_types t ON d.teaching_type_id = t.id WHERE d.status = 1 AND (t.actif = 1 OR d.teaching_type_id IS NULL) ORDER BY d.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         $statusClasses = $this->db->query("SELECT id, nom, status FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $academicYear = $this->academicYearService->getActiveYear();
+        $academicYearId = (int) ($academicYear['id'] ?? 0);
+        $activeClassCount = count(array_filter(
+            $statusClasses,
+            static fn (array $class): bool => (int) $class['status'] === 1
+        ));
+        $studentStatsStmt = $this->db->prepare(
+            'SELECT COUNT(*) FROM students WHERE academic_year_id = ? AND is_withdrawn = 0 AND actif = 1'
+        );
+        $studentStatsStmt->execute([$academicYearId]);
+        $classStats = [
+            'total_classes' => count($statusClasses),
+            'active_classes' => $activeClassCount,
+            'cycles' => count($cycles),
+            'students' => (int) $studentStatsStmt->fetchColumn(),
+        ];
         
         include __DIR__ . '/../Views/classes/index.php';
     }
@@ -805,6 +821,9 @@ class ClassController
             ? (int) $_GET['teaching_type_id']
             : (int) ($defaultTeachingTypeId ?? 0);
         $levelId = (int) ($_GET['level_id'] ?? 0);
+        $status = isset($_GET['status']) && in_array((string) $_GET['status'], ['0', '1'], true)
+            ? (int) $_GET['status']
+            : null;
         // Classes are now shared across years, no year filtering needed
 
         // 1. Count total
@@ -846,6 +865,10 @@ class ClassController
         if ($levelId > 0) {
             $countSql .= " AND c.level_id = ?";
             $countParams[] = $levelId;
+        }
+        if ($status !== null) {
+            $countSql .= " AND c.status = ?";
+            $countParams[] = $status;
         }
         $stmtCount = $this->db->prepare($countSql);
         $stmtCount->execute($countParams);
@@ -901,6 +924,10 @@ class ClassController
             $sql .= " AND c.level_id = ?";
             $params[] = $levelId;
         }
+        if ($status !== null) {
+            $sql .= " AND c.status = ?";
+            $params[] = $status;
+        }
 
         $sql .= " ORDER BY c.nom ASC";
 
@@ -911,7 +938,7 @@ class ClassController
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
 
-        return [$stmt->fetchAll(PDO::FETCH_ASSOC), ['q' => $search, 'cycle_id' => $cycleId, 'section_id' => $sectionId, 'department_id' => $departmentId, 'teaching_type_id' => $teachingTypeId, 'level_id' => $levelId], $totalCount];
+        return [$stmt->fetchAll(PDO::FETCH_ASSOC), ['q' => $search, 'cycle_id' => $cycleId, 'section_id' => $sectionId, 'department_id' => $departmentId, 'teaching_type_id' => $teachingTypeId, 'level_id' => $levelId, 'status' => $status === null ? '' : (string) $status], $totalCount];
     }
 
     public function toggleStatus($id)
