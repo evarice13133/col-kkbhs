@@ -572,7 +572,7 @@ if (isset($styleOnly)) {
     }
     @media print {
     .print-page-frame { display: none !important; }
-    .bulletin-wrapper { box-sizing: border-box; width: calc(100% - 2mm); max-width: none; min-height: 292mm; margin: 0 auto 3px; border: 2px solid #14347a !important; page-break-after: always; page-break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .bulletin-wrapper { box-sizing: border-box; width: calc(100% - 2mm); max-width: none; min-height: 292mm; margin: 0 auto; border: 2px solid #14347a !important; page-break-after: always; page-break-inside: avoid; break-after: page; break-inside: avoid-page; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .bulletin-sheet { page-break-inside: avoid; border: none; padding: 6px 6px 42px; }
     table { page-break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     tr { page-break-inside: avoid; }
