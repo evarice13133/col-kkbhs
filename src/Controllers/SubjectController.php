@@ -394,7 +394,7 @@ class SubjectController
         // Sécurité RBAC : Accès réservé aux administrateurs
         PermissionManager::requirePermission('manage_subjects');
         
-        $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id, c.teaching_form_id, c.section_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE c.status = 1 AND (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id, COALESCE(d.teaching_form_id, c.teaching_form_id) AS teaching_form_id, c.section_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE c.status = 1 AND (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $sections = $this->db->query("SELECT id, nom FROM sections WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $teachingTypes = $this->db->query("SELECT id, nom, code FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $teachingForms = $this->db->query("SELECT id, nom, code, teaching_type_id FROM teaching_forms WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -471,7 +471,7 @@ class SubjectController
             $error = $errorMessage;
             $class_coefficients = $classCoefficients;
             $duplicate_warning = $duplicateWarning;
-            $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id, c.teaching_form_id, c.section_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE c.status = 1 AND (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+            $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id, COALESCE(d.teaching_form_id, c.teaching_form_id) AS teaching_form_id, c.section_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE c.status = 1 AND (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
             $sections = $this->db->query("SELECT id, nom FROM sections WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
             $teachingTypes = $this->db->query("SELECT id, nom, code FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
             $teachingForms = $this->db->query("SELECT id, nom, code, teaching_type_id FROM teaching_forms WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -691,7 +691,7 @@ class SubjectController
         $stmt_assoc->execute([$id, $selectedYearId]);
         $assigned_classes = $stmt_assoc->fetchAll(PDO::FETCH_COLUMN);
 
-        $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id, c.teaching_form_id, c.section_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE c.status = 1 AND (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id, COALESCE(d.teaching_form_id, c.teaching_form_id) AS teaching_form_id, c.section_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE c.status = 1 AND (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $teachingTypes = $this->db->query("SELECT id, nom, code FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
         $deptQuery = "SELECT d.id, d.nom, d.teaching_type_id FROM departments d LEFT JOIN teaching_types tt ON d.teaching_type_id = tt.id WHERE d.status = 1 AND (d.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY d.nom ASC";
         $departments = $this->db->query($deptQuery)->fetchAll(PDO::FETCH_ASSOC);
@@ -730,7 +730,10 @@ class SubjectController
             $vhp = (isset($_POST['vhp']) && $_POST['vhp'] !== '' && is_numeric($_POST['vhp'])) ? (float) $_POST['vhp'] : null;
             $th_max = (isset($_POST['th_max']) && $_POST['th_max'] !== '' && is_numeric($_POST['th_max'])) ? (float) $_POST['th_max'] : null;
             $observations = (isset($_POST['observations']) && trim($_POST['observations']) !== '') ? trim($_POST['observations']) : null;
-            $subject_group_id = !empty($_POST['subject_group_id']) ? (int) $_POST['subject_group_id'] : null;
+            $subject_group_id = !empty($_POST['subject_group_id'])
+                ? (int) $_POST['subject_group_id']
+                : (int) ($subject['subject_group_id'] ?? 0);
+            $subject_group_id = $subject_group_id > 0 ? $subject_group_id : null;
             if (!$subject_group_id) {
                 Session::setFlash('error', 'Le rattachement à un groupe de modules est obligatoire.');
                 header('Location: /subjects/edit?id=' . (int) $id);
@@ -740,6 +743,19 @@ class SubjectController
             $teaching_type_id = !empty($_POST['teaching_type_id']) ? (int) $_POST['teaching_type_id'] : null;
             $classes_ids = array_values(array_unique(array_map('intval', $_POST['classes'] ?? [])));
             $academicYearId = (int) ($_POST['academic_year_id'] ?? $this->academicYearService->getActiveYearId());
+            $legacyAssignmentsStmt = $this->db->prepare(
+                'SELECT class_id, academic_year_id
+                 FROM subject_classes
+                 WHERE subject_id = ?
+                 ORDER BY academic_year_id, class_id'
+            );
+            $legacyAssignmentsStmt->execute([(int) $id]);
+            $legacyAssignments = $legacyAssignmentsStmt->fetchAll(PDO::FETCH_ASSOC);
+            $legacyClassIds = array_values(array_unique(array_map(
+                static fn(array $assignment): int => (int) $assignment['class_id'],
+                $legacyAssignments
+            )));
+            $shouldSplitLegacySubject = count($legacyClassIds) > 1;
 
             $code_uv = !empty($_POST['code_uv']) ? trim($_POST['code_uv']) : null;
             $code_ue = !empty($_POST['code_ue']) ? trim($_POST['code_ue']) : null;
@@ -772,7 +788,7 @@ class SubjectController
                 $error = \__('subject_name_and_one_class_required');
                 $subject = ['id' => $id, 'nom' => $nom, 'coefficient' => $coeff, 'groupe' => $groupe, 'subject_group_id' => $subject_group_id, 'teaching_type_id' => $teaching_type_id, 'code_uv' => $code_uv, 'code_ue' => $code_ue, 'vhm' => $vhm, 'vhp' => $vhp, 'th_max' => $th_max, 'observations' => $observations];
                 $assigned_classes = $classes_ids;
-                $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE c.status = 1 AND (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $classes = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id, COALESCE(d.teaching_form_id, c.teaching_form_id) AS teaching_form_id, c.section_id FROM classes c LEFT JOIN departments d ON c.department_id = d.id LEFT JOIN cycles cy ON c.cycle_id = cy.id LEFT JOIN sections sec ON c.section_id = sec.id LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id WHERE c.status = 1 AND (c.department_id IS NULL OR d.status = 1) AND (c.cycle_id IS NULL OR cy.status = 1) AND (c.section_id IS NULL OR sec.status = 1) AND (c.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $teachingTypes = $this->db->query("SELECT id, nom, code FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $academicYears = $this->db->query("SELECT id, nom, is_active FROM academic_years ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
                 $deptQuery = "SELECT d.id, d.nom, d.teaching_type_id FROM departments d LEFT JOIN teaching_types tt ON d.teaching_type_id = tt.id WHERE d.status = 1 AND (d.teaching_type_id IS NULL OR tt.actif = 1) ORDER BY d.nom ASC";
@@ -789,7 +805,14 @@ class SubjectController
             }
 
             $classPlaceholders = implode(',', array_fill(0, count($classes_ids), '?'));
-            $classStmt = $this->db->prepare("SELECT id, teaching_type_id, teaching_form_id, section_id FROM classes WHERE status = 1 AND id IN ($classPlaceholders)");
+            $classStmt = $this->db->prepare(
+                "SELECT c.id, c.teaching_type_id,
+                        COALESCE(d.teaching_form_id, c.teaching_form_id) AS teaching_form_id,
+                        c.section_id
+                 FROM classes c
+                 LEFT JOIN departments d ON d.id = c.department_id
+                 WHERE c.status = 1 AND c.id IN ($classPlaceholders)"
+            );
             $classStmt->execute($classes_ids);
             $selectedClasses = $classStmt->fetchAll(PDO::FETCH_ASSOC);
             if (count($selectedClasses) !== count($classes_ids)) {
@@ -803,17 +826,36 @@ class SubjectController
                 header('Location: /subjects/edit?id=' . (int) $id);
                 exit;
             }
-            if ($subject_group_id && (
-                (int) $selectedClass['teaching_type_id'] !== (int) $grpData['teaching_type_id']
-                || (int) $selectedClass['teaching_form_id'] !== (int) $grpData['teaching_form_id']
-                || (int) $selectedClass['section_id'] !== (int) $grpData['section_id']
-            )) {
+            if (!$shouldSplitLegacySubject && $subject_group_id
+                && (int) $selectedClass['teaching_type_id'] !== (int) $grpData['teaching_type_id']) {
                 Session::setFlash('error', __('subject_group_scope_mismatch'));
                 header('Location: /subjects/edit?id=' . (int) $id);
                 exit;
             }
 
-            $duplicateClasses = $this->findDuplicateAssignmentsForSubjectName($nom, (int) $id, (int) $classes_ids[0], $academicYearId);
+            $duplicateClasses = [];
+            if ($shouldSplitLegacySubject) {
+                foreach ($legacyAssignments as $assignment) {
+                    $duplicateClasses = array_merge(
+                        $duplicateClasses,
+                        $this->findDuplicateClassesForSubjectName(
+                            $nom,
+                            [(int) $assignment['class_id']],
+                            (int) $id,
+                            (int) $assignment['academic_year_id']
+                        )
+                    );
+                }
+                if (!in_array((int) $classes_ids[0], $legacyClassIds, true)) {
+                    $duplicateClasses = array_merge(
+                        $duplicateClasses,
+                        $this->findDuplicateClassesForSubjectName($nom, [(int) $classes_ids[0]], (int) $id, $academicYearId)
+                    );
+                }
+                $duplicateClasses = array_values(array_unique($duplicateClasses));
+            } else {
+                $duplicateClasses = $this->findDuplicateAssignmentsForSubjectName($nom, (int) $id, (int) $classes_ids[0], $academicYearId);
+            }
             if (!empty($duplicateClasses)) {
                 $error = \__('subject_duplicate_warning', ['classes' => implode(', ', $duplicateClasses)]);
                 $duplicate_warning = false;
@@ -852,18 +894,79 @@ class SubjectController
             try {
                 $this->db->beginTransaction();
 
-                $classLock = $this->db->prepare('SELECT id FROM classes WHERE id = ? AND status = 1 FOR UPDATE');
+                $lockedAssignmentsStmt = $this->db->prepare(
+                    'SELECT class_id, academic_year_id
+                     FROM subject_classes
+                     WHERE subject_id = ?
+                     ORDER BY academic_year_id, class_id
+                     FOR UPDATE'
+                );
+                $lockedAssignmentsStmt->execute([(int) $id]);
+                $currentAssignments = $lockedAssignmentsStmt->fetchAll(PDO::FETCH_ASSOC);
+                $currentClassIds = array_values(array_unique(array_map(
+                    static fn(array $assignment): int => (int) $assignment['class_id'],
+                    $currentAssignments
+                )));
+                $splitLegacy = count($currentClassIds) > 1;
+
+                $classLock = $this->db->prepare(
+                    'SELECT c.id, c.teaching_type_id,
+                            COALESCE(d.teaching_form_id, c.teaching_form_id) AS teaching_form_id,
+                            c.section_id
+                     FROM classes c
+                     LEFT JOIN departments d ON d.id = c.department_id
+                     WHERE c.id = ? AND c.status = 1
+                     FOR UPDATE'
+                );
                 $classLock->execute([(int) $classes_ids[0]]);
-                if (!$classLock->fetchColumn()) {
+                $selectedClass = $classLock->fetch(PDO::FETCH_ASSOC);
+                if (!$selectedClass) {
                     throw new \RuntimeException('La classe sélectionnée est inactive ou introuvable.');
                 }
-                $duplicateClasses = $this->findDuplicateAssignmentsForSubjectName($nom, (int) $id, (int) $classes_ids[0], $academicYearId);
+                if ($splitLegacy !== $shouldSplitLegacySubject) {
+                    throw new \RuntimeException('Les rattachements de la matière ont changé. Rechargez la page avant de réessayer.');
+                }
+                $duplicateClasses = [];
+                if ($splitLegacy) {
+                    foreach ($currentAssignments as $assignment) {
+                        $duplicateClasses = array_merge(
+                            $duplicateClasses,
+                            $this->findDuplicateClassesForSubjectName(
+                                $nom,
+                                [(int) $assignment['class_id']],
+                                (int) $id,
+                                (int) $assignment['academic_year_id']
+                            )
+                        );
+                    }
+                    if (!in_array((int) $classes_ids[0], $currentClassIds, true)) {
+                        $duplicateClasses = array_merge(
+                            $duplicateClasses,
+                            $this->findDuplicateClassesForSubjectName($nom, [(int) $classes_ids[0]], (int) $id, $academicYearId)
+                        );
+                    }
+                    $duplicateClasses = array_values(array_unique($duplicateClasses));
+                } else {
+                    $duplicateClasses = $this->findDuplicateAssignmentsForSubjectName($nom, (int) $id, (int) $classes_ids[0], $academicYearId);
+                }
                 if (!empty($duplicateClasses)) {
                     $this->db->rollBack();
                     Session::setFlash('error', __('subject_duplicate_warning', ['classes' => implode(', ', $duplicateClasses)]));
                     header('Location: /subjects/edit?id=' . (int) $id);
                     exit;
                 }
+
+                $requestedSubjectGroupId = (int) $subject_group_id;
+                $groupByClass = [
+                    (int) $classes_ids[0] => $this->resolveSubjectGroupForClass(
+                        $requestedSubjectGroupId,
+                        $selectedClass,
+                        (int) $teaching_type_id
+                    ),
+                ];
+                $selectedGroup = $groupByClass[(int) $classes_ids[0]];
+                $subject_group_id = (int) $selectedGroup['id'];
+                $groupe = (string) $selectedGroup['libelle'];
 
                 $subjectFieldSql = ['nom = ?', 'coefficient = ?', 'groupe = ?', 'subject_group_id = ?', 'teaching_type_id = ?'];
                 if ($this->hasColumn('subjects', 'teaching_form_id')) {
@@ -877,19 +980,11 @@ class SubjectController
                 $subjectFieldSql[] = 'observations = ?';
                 $updateValues = [$nom, $coeff, $groupe, $subject_group_id, $teaching_type_id];
                 if ($this->hasColumn('subjects', 'teaching_form_id')) {
-                    $updateValues[] = $selectedClass['teaching_form_id'];
+                    $updateValues[] = $selectedGroup['teaching_form_id'];
                 }
                 $updateValues = array_merge($updateValues, [$code_uv, $code_ue, $vhm, $vhp, $th_max, $observations, $id]);
                 $stmt = $this->db->prepare("UPDATE subjects SET " . implode(', ', $subjectFieldSql) . ' WHERE id = ?');
                 $stmt->execute($updateValues);
-
-                $stmt_del = $this->db->prepare("DELETE FROM subject_classes WHERE subject_id = ? AND academic_year_id = ?");
-                $stmt_del->execute([$id, $academicYearId]);
-
-                $stmt_ins = $this->db->prepare("INSERT INTO subject_classes (subject_id, class_id, academic_year_id) VALUES (?, ?, ?)");
-                foreach ($classes_ids as $cid) {
-                    $stmt_ins->execute([$id, (int) $cid, $academicYearId]);
-                }
 
                 $groupLinkDelete = $this->db->prepare("DELETE FROM subject_group_assignments WHERE subject_id = ?");
                 $groupLinkDelete->execute([$id]);
@@ -917,8 +1012,155 @@ class SubjectController
                     }
                 }
 
+                if ($splitLegacy) {
+                    $originalSubjectId = (int) $id;
+                    $classSubjectIds = [(int) $classes_ids[0] => $originalSubjectId];
+                    $classesToLock = array_values(array_unique(array_merge($currentClassIds, [(int) $classes_ids[0]])));
+                    $classPlaceholders = implode(',', array_fill(0, count($classesToLock), '?'));
+                    $classDetailsStmt = $this->db->prepare(
+                        "SELECT c.id, c.teaching_type_id,
+                                COALESCE(d.teaching_form_id, c.teaching_form_id) AS teaching_form_id,
+                                c.section_id
+                         FROM classes c
+                         LEFT JOIN departments d ON d.id = c.department_id
+                         WHERE c.id IN ($classPlaceholders)
+                         ORDER BY c.id
+                         FOR UPDATE"
+                    );
+                    $classDetailsStmt->execute($classesToLock);
+                    $classDetails = [];
+                    foreach ($classDetailsStmt->fetchAll(PDO::FETCH_ASSOC) as $classDetailsRow) {
+                        $classDetails[(int) $classDetailsRow['id']] = $classDetailsRow;
+                    }
+                    if (count($classDetails) !== count($classesToLock)) {
+                        throw new \RuntimeException('Une classe liée à cette matière est introuvable.');
+                    }
+                    foreach ($currentClassIds as $classId) {
+                        if ($classId === (int) $classes_ids[0]) {
+                            continue;
+                        }
+                        $groupByClass[$classId] = $this->resolveSubjectGroupForClass(
+                            $requestedSubjectGroupId,
+                            $classDetails[$classId],
+                            (int) $teaching_type_id
+                        );
+                    }
+                    $updatedSubjectStmt = $this->db->prepare('SELECT * FROM subjects WHERE id = ?');
+                    $updatedSubjectStmt->execute([$originalSubjectId]);
+                    $updatedSubject = $updatedSubjectStmt->fetch(PDO::FETCH_ASSOC);
+                    if (!$updatedSubject) {
+                        throw new \RuntimeException('Impossible de relire la matière après sa mise à jour.');
+                    }
+
+                    $columnMetadata = $this->db->query('SHOW COLUMNS FROM subjects')->fetchAll(PDO::FETCH_ASSOC);
+                    $cloneColumns = [];
+                    foreach ($columnMetadata as $column) {
+                        $field = (string) $column['Field'];
+                        $extra = strtolower((string) ($column['Extra'] ?? ''));
+                        if ($field !== 'id'
+                            && strpos($extra, 'auto_increment') === false
+                            && strpos($extra, 'generated') === false
+                            && !in_array($field, ['created_at', 'updated_at'], true)
+                            && array_key_exists($field, $updatedSubject)) {
+                            $cloneColumns[] = $field;
+                        }
+                    }
+                    if ($cloneColumns === []) {
+                        throw new \RuntimeException('Aucune colonne ne permet de dupliquer la matière.');
+                    }
+                    $cloneInsert = $this->db->prepare(
+                        'INSERT INTO subjects (' . implode(', ', $cloneColumns) . ')
+                         VALUES (' . implode(', ', array_fill(0, count($cloneColumns), '?')) . ')'
+                    );
+                    $cloneGroupLink = $this->db->prepare(
+                        'INSERT IGNORE INTO subject_group_assignments (subject_id, subject_group_id) VALUES (?, ?)'
+                    );
+                    $cloneCompetencies = $this->db->prepare(
+                        'INSERT INTO competencies (subject_id, libelle, description, position, created_by)
+                         SELECT ?, libelle, description, position, created_by
+                         FROM competencies WHERE subject_id = ?'
+                    );
+
+                    foreach ($currentClassIds as $classId) {
+                        if ($classId === (int) $classes_ids[0]) {
+                            continue;
+                        }
+                        $cloneValues = array_map(
+                            static fn(string $column) => $updatedSubject[$column],
+                            $cloneColumns
+                        );
+                        foreach (['teaching_type_id', 'teaching_form_id', 'section_id'] as $classField) {
+                            $columnIndex = array_search($classField, $cloneColumns, true);
+                            if ($columnIndex !== false) {
+                                $cloneValues[$columnIndex] = $classField === 'teaching_type_id'
+                                    ? $groupByClass[$classId]['teaching_type_id']
+                                    : ($classField === 'teaching_form_id'
+                                        ? $groupByClass[$classId]['teaching_form_id']
+                                        : $groupByClass[$classId]['section_id']);
+                            }
+                        }
+                        foreach (['subject_group_id', 'groupe'] as $groupField) {
+                            $columnIndex = array_search($groupField, $cloneColumns, true);
+                            if ($columnIndex !== false) {
+                                $cloneValues[$columnIndex] = $groupByClass[$classId][$groupField === 'groupe' ? 'libelle' : 'id'];
+                            }
+                        }
+                        $cloneInsert->execute($cloneValues);
+                        $classSubjectId = (int) $this->db->lastInsertId();
+                        if ($classSubjectId <= 0) {
+                            throw new \RuntimeException("Impossible de créer la fiche individuelle de la classe ID {$classId}.");
+                        }
+                        $classSubjectIds[$classId] = $classSubjectId;
+
+                        if (!empty($groupByClass[$classId]['id'])) {
+                            $cloneGroupLink->execute([$classSubjectId, $groupByClass[$classId]['id']]);
+                        }
+                        if ($this->hasTable('competencies')) {
+                            $cloneCompetencies->execute([$classSubjectId, $originalSubjectId]);
+                        }
+                    }
+
+                    $this->db->prepare('DELETE FROM subject_classes WHERE subject_id = ?')->execute([$originalSubjectId]);
+                    $insertAssignment = $this->db->prepare(
+                        'INSERT INTO subject_classes (subject_id, class_id, academic_year_id) VALUES (?, ?, ?)'
+                    );
+                    $selectedClassAssigned = false;
+                    foreach ($currentAssignments as $assignment) {
+                        $classId = (int) $assignment['class_id'];
+                        $yearId = (int) $assignment['academic_year_id'];
+                        $insertAssignment->execute([
+                            $classSubjectIds[$classId],
+                            $classId,
+                            $yearId,
+                        ]);
+                        if ($classId === (int) $classes_ids[0] && $yearId === $academicYearId) {
+                            $selectedClassAssigned = true;
+                        }
+                        $this->moveLegacyClassSubjectData(
+                            $originalSubjectId,
+                            $classSubjectIds[$classId],
+                            $classId,
+                            $yearId
+                        );
+                    }
+                    if (!$selectedClassAssigned) {
+                        $insertAssignment->execute([$originalSubjectId, (int) $classes_ids[0], $academicYearId]);
+                    }
+                } else {
+                    $stmt_del = $this->db->prepare("DELETE FROM subject_classes WHERE subject_id = ? AND academic_year_id = ?");
+                    $stmt_del->execute([$id, $academicYearId]);
+
+                    $stmt_ins = $this->db->prepare("INSERT INTO subject_classes (subject_id, class_id, academic_year_id) VALUES (?, ?, ?)");
+                    $stmt_ins->execute([$id, (int) $classes_ids[0], $academicYearId]);
+                }
+
                 $this->db->commit();
-                Session::setFlash('success', __('subject_updated_success'));
+                Session::setFlash(
+                    'success',
+                    $splitLegacy
+                        ? "La matière « {$nom} » a été désolidarisée et enregistrée individuellement pour " . count($currentClassIds) . ' classes.'
+                        : __('subject_updated_success')
+                );
                 header("Location: /subjects");
                 exit;
             } catch (\Throwable $e) {
@@ -1462,8 +1704,8 @@ class SubjectController
                   AND (ta_none.academic_year_id = ? OR ta_none.academic_year_id IS NULL)
             )
         )";
-        $countSql .= " AND ($eligibleClassAssignment OR $hasNoCurrentClassOrTeacher)";
-        $countParams = [$activeYearId, $activeYearId, $activeYearId, $activeYearId];
+        $countSql .= " AND $eligibleClassAssignment";
+        $countParams = [$activeYearId, $activeYearId];
         if ($search !== '') {
             $countSql .= " AND s.nom LIKE ?";
             $countParams[] = '%' . $search . '%';
@@ -1556,8 +1798,8 @@ class SubjectController
                 LEFT JOIN teaching_types tt ON s.teaching_type_id = tt.id
                 LEFT JOIN subject_groups sg ON s.subject_group_id = sg.id
                 WHERE (tt.actif = 1 OR s.teaching_type_id IS NULL)";
-        $sql .= " AND ($eligibleClassAssignment OR $hasNoCurrentClassOrTeacher)";
-        $params = [$activeYearId, $activeYearId, $activeYearId, $activeYearId, $activeYearId];
+        $sql .= " AND $eligibleClassAssignment";
+        $params = [$activeYearId, $activeYearId, $activeYearId];
 
         if ($search !== '') {
             $sql .= " AND s.nom LIKE ?";
@@ -1631,6 +1873,140 @@ class SubjectController
         );
         $stmt->execute([$table, $column]);
         return (bool) $stmt->fetchColumn();
+    }
+
+    private function resolveSubjectGroupForClass(int $groupId, array $class, int $teachingTypeId): array
+    {
+        $sourceStmt = $this->db->prepare(
+            'SELECT id, libelle, teaching_type_id, teaching_form_id, section_id
+             FROM subject_groups
+             WHERE id = ? AND status = 1
+             LIMIT 1'
+        );
+        $sourceStmt->execute([$groupId]);
+        $sourceGroup = $sourceStmt->fetch(PDO::FETCH_ASSOC);
+        if (!$sourceGroup) {
+            throw new \RuntimeException('Le groupe de modules sélectionné est invalide ou inactif.');
+        }
+
+        $classTeachingTypeId = (int) ($class['teaching_type_id'] ?? 0);
+        if ($classTeachingTypeId !== $teachingTypeId || (int) $sourceGroup['teaching_type_id'] !== $teachingTypeId) {
+            throw new \RuntimeException('Le type d’enseignement du groupe ne correspond pas à la classe.');
+        }
+
+        $sectionId = !empty($class['section_id']) ? (int) $class['section_id'] : null;
+        $teachingFormId = !empty($class['teaching_form_id'])
+            ? (int) $class['teaching_form_id']
+            : (!empty($sourceGroup['teaching_form_id']) ? (int) $sourceGroup['teaching_form_id'] : null);
+
+        $targetStmt = $this->db->prepare(
+            'SELECT id, libelle, teaching_type_id, teaching_form_id, section_id
+             FROM subject_groups
+             WHERE libelle = ? AND teaching_type_id = ?
+               AND teaching_form_id <=> ? AND section_id <=> ?
+               AND status = 1
+             ORDER BY id ASC
+             LIMIT 1'
+        );
+        $targetStmt->execute([
+            (string) $sourceGroup['libelle'],
+            $teachingTypeId,
+            $teachingFormId,
+            $sectionId,
+        ]);
+        $targetGroup = $targetStmt->fetch(PDO::FETCH_ASSOC);
+        if ($targetGroup) {
+            return $targetGroup;
+        }
+
+        $positionStmt = $this->db->prepare(
+            'SELECT COALESCE(MAX(position), 0)
+             FROM subject_groups
+             WHERE section_id <=> ? AND teaching_form_id <=> ?'
+        );
+        $positionStmt->execute([$sectionId, $teachingFormId]);
+        $position = (int) $positionStmt->fetchColumn() + 1;
+
+        $insertStmt = $this->db->prepare(
+            'INSERT INTO subject_groups (libelle, teaching_type_id, teaching_form_id, section_id, position, status)
+             VALUES (?, ?, ?, ?, ?, 1)'
+        );
+        $insertStmt->execute([
+            (string) $sourceGroup['libelle'],
+            $teachingTypeId,
+            $teachingFormId,
+            $sectionId,
+            $position,
+        ]);
+
+        return [
+            'id' => (int) $this->db->lastInsertId(),
+            'libelle' => (string) $sourceGroup['libelle'],
+            'teaching_type_id' => $teachingTypeId,
+            'teaching_form_id' => $teachingFormId,
+            'section_id' => $sectionId,
+        ];
+    }
+
+    private function hasTable(string $table): bool
+    {
+        $stmt = $this->db->prepare(
+            'SELECT COUNT(*) FROM information_schema.tables
+             WHERE table_schema = DATABASE() AND table_name = ?'
+        );
+        $stmt->execute([$table]);
+        return (bool) $stmt->fetchColumn();
+    }
+
+    private function moveLegacyClassSubjectData(int $sourceSubjectId, int $targetSubjectId, int $classId, int $academicYearId): void
+    {
+        if ($this->hasTable('grades')
+            && $this->hasTable('enrollments')
+            && $this->hasColumn('grades', 'student_id')
+            && $this->hasColumn('grades', 'academic_year_id')
+            && $this->hasColumn('enrollments', 'student_id')
+            && $this->hasColumn('enrollments', 'class_id')
+            && $this->hasColumn('enrollments', 'academic_year_id')) {
+            $this->db->prepare(
+                'UPDATE grades g
+                 JOIN enrollments e ON e.student_id = g.student_id
+                    AND e.academic_year_id = g.academic_year_id
+                 SET g.subject_id = ?
+                 WHERE g.subject_id = ? AND g.academic_year_id = ?
+                   AND e.class_id = ?'
+            )->execute([$targetSubjectId, $sourceSubjectId, $academicYearId, $classId]);
+        }
+
+        if ($this->hasTable('teacher_assignments')
+            && $this->hasColumn('teacher_assignments', 'class_id')
+            && $this->hasColumn('teacher_assignments', 'academic_year_id')) {
+            $this->db->prepare(
+                'UPDATE teacher_assignments
+                 SET subject_id = ?
+                 WHERE subject_id = ? AND class_id = ? AND academic_year_id = ?'
+            )->execute([$targetSubjectId, $sourceSubjectId, $classId, $academicYearId]);
+        }
+
+        if ($this->hasTable('timetable_entries')
+            && $this->hasTable('timetables')
+            && $this->hasColumn('timetables', 'class_id')
+            && $this->hasColumn('timetables', 'academic_year_id')) {
+            $this->db->prepare(
+                'UPDATE timetable_entries te
+                 JOIN timetables t ON t.id = te.timetable_id
+                 SET te.subject_id = ?
+                 WHERE te.subject_id = ? AND t.class_id = ? AND t.academic_year_id = ?'
+            )->execute([$targetSubjectId, $sourceSubjectId, $classId, $academicYearId]);
+        }
+
+        if ($this->hasTable('teacher_class_competencies')
+            && $this->hasColumn('teacher_class_competencies', 'class_id')) {
+            $this->db->prepare(
+                'UPDATE teacher_class_competencies
+                 SET subject_id = ?
+                 WHERE subject_id = ? AND class_id = ?'
+            )->execute([$targetSubjectId, $sourceSubjectId, $classId]);
+        }
     }
 
     private function findDuplicateClassesForSubjectName(string $nom, array $classIds, ?int $excludeSubjectId = null, ?int $academicYearId = null): array

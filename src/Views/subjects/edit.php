@@ -405,7 +405,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     const optTT = opt.getAttribute('data-teaching-type-id');
                     const optTF = opt.getAttribute('data-teaching-form-id');
                     const optSection = opt.getAttribute('data-section-id');
-                    if ((!selectedTT || optTT === selectedTT) && selectedSection && optSection === selectedSection && selectedForm && optTF === selectedForm) {
+                    const sectionMatches = selectedSection
+                        ? optSection === selectedSection || (opt.value === originalGrpVal && !optSection)
+                        : !optSection || opt.value === originalGrpVal;
+                    const formMatches = !selectedForm || optTF === selectedForm || opt.value === originalGrpVal;
+                    if ((!selectedTT || optTT === selectedTT) && sectionMatches && formMatches) {
                         opt.style.display = '';
                         if (opt.value === originalGrpVal) grpValid = true;
                     } else {
