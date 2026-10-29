@@ -5,6 +5,7 @@
  * On utilise l'opérateur de coalescence (??) pour garantir que le script ne plante pas si une donnée est manquante.
  */
 $embeddedBatch = $embeddedBatch ?? false;       // Si vrai, indique qu'on génère plusieurs bulletins à la suite
+$isLastBulletin = $isLastBulletin ?? !$embeddedBatch;
 $institution = $institution ?? [];              // Informations sur l'école (nom, logo, etc.)
 $activeYear = $activeYear ?? [];               // Année académique en cours
 $student = $student ?? [];                     // Données personnelles de l'élève
@@ -136,7 +137,7 @@ if (isset($styleOnly)) {
         </style>
     </head>
 
-    <body>
+    <body class="<?= (($_GET['show_competences'] ?? '1') === '0') ? 'competences-hidden' : '' ?>">
         <!-- BARRE D'OUTILS (Non visible à l'impression) -->
         <div class="pv-toolbar">
             <div class="pv-toolbar-title">
@@ -159,6 +160,7 @@ if (isset($styleOnly)) {
                 <button class="pv-btn pv-btn-print" onclick="window.print()">
                     <?= __('pv_print_btn') ?>
                 </button>
+                <?php include __DIR__ . '/bulletin_competence_toggle.php'; ?>
                 <a href="<?= $_SERVER['REQUEST_URI'] . (strpos($_SERVER['REQUEST_URI'], '?') !== false ? '&' : '?') ?>format=pdf"
                     class="pv-btn pv-btn-download">
                     <i class="bi bi-file-pdf"></i> <?= __('pv_download_btn') ?>
@@ -167,8 +169,14 @@ if (isset($styleOnly)) {
         </div>
     <?php endif; ?>
 
+    <?php if (!$embeddedBatch && !empty($isPdf)): ?>
+        <style>
+            <?php $styleOnly = true; include __DIR__ . '/bulletin_header.php'; unset($styleOnly); ?>
+        </style>
+    <?php endif; ?>
+
     <div class="print-page-frame" aria-hidden="true"></div>
-    <div class="bulletin-wrapper">
+    <div class="bulletin-wrapper<?= $isLastBulletin ? ' bulletin-wrapper-last' : '' ?>">
         <div class="bulletin-sheet">
         <?php
         /**

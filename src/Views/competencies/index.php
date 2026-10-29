@@ -3,6 +3,44 @@ $title = __('competencies_and_assignments');
 ob_start();
 ?>
 <div class="container-fluid py-4" id="competency-management">
+    <style>
+        #competency-management .nav-tabs { gap: .5rem; border: 0; }
+        #competency-management .nav-tabs .nav-link { border: 1px solid transparent; border-radius: .75rem; color: var(--bs-secondary-color); padding: .75rem 1rem; font-weight: 600; }
+        #competency-management .nav-tabs .nav-link:hover { background: var(--bs-tertiary-bg); }
+        #competency-management .nav-tabs .nav-link.active { color: var(--bs-primary); background: var(--bs-primary-bg-subtle); border-color: var(--bs-primary-border-subtle); }
+        #competency-management .teacher-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 1rem; box-shadow: 0 .25rem 1rem rgba(16, 24, 40, .08); color: #1f2937; }
+        #competency-management .teacher-panel h2 { color: #0f172a; }
+        #competency-management .teacher-panel .text-muted,
+        #competency-management .teacher-panel .form-text { color: #64748b !important; }
+        #competency-management .teacher-panel .form-label { color: #334155; }
+        #teacher-assignment-import-modal .teacher-import-modal-content { background: #fff; color: #1f2937; border: 1px solid #e2e8f0; border-radius: 1rem; }
+        #teacher-assignment-import-modal .teacher-import-modal-content .modal-header,
+        #teacher-assignment-import-modal .teacher-import-modal-content .modal-footer { border-color: #e2e8f0; }
+        #teacher-assignment-import-modal .teacher-import-status-icon { display: grid; width: 3.5rem; height: 3.5rem; margin: 0 auto 1rem; place-items: center; border-radius: 50%; background: #eff6ff; color: #2563eb; font-size: 1.5rem; }
+        #teacher-assignment-import-modal .teacher-import-status-icon.is-success { background: #ecfdf5; color: #059669; }
+        #teacher-assignment-import-modal .teacher-import-status-icon.is-error { background: #fef2f2; color: #dc2626; }
+        #teacher-assignment-import-modal .teacher-import-summary { white-space: pre-line; }
+        [data-theme="dark"] #teacher-assignment-import-modal .teacher-import-modal-content { background-color: #111827 !important; color: #e5e7eb !important; border-color: #334155 !important; }
+        [data-theme="dark"] #teacher-assignment-import-modal .teacher-import-modal-content .modal-header,
+        [data-theme="dark"] #teacher-assignment-import-modal .teacher-import-modal-content .modal-footer { border-color: #334155 !important; }
+        [data-theme="dark"] #teacher-assignment-import-modal .teacher-import-modal-content .modal-title { color: #f8fafc !important; }
+        [data-theme="dark"] #teacher-assignment-import-modal .teacher-import-modal-content .text-muted { color: #94a3b8 !important; }
+        [data-theme="dark"] #teacher-assignment-import-modal .teacher-import-modal-content .btn-close { filter: invert(1) grayscale(100%) brightness(200%); }
+        #competency-management .teacher-panel-heading { display: flex; align-items: flex-start; gap: .85rem; }
+        #competency-management .teacher-step-icon { display: grid; flex: 0 0 2.5rem; width: 2.5rem; height: 2.5rem; place-items: center; border-radius: .75rem; color: var(--bs-primary); background: var(--bs-primary-bg-subtle); font-size: 1.15rem; }
+        #competency-management .teacher-subject-item { height: 100%; }
+        #competency-management .teacher-subject-option { min-height: 3.25rem; height: 100%; margin: 0; padding: .75rem; border: 1px solid var(--bs-border-color); border-radius: .7rem; cursor: pointer; transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease; }
+        #competency-management .teacher-subject-option:hover { border-color: var(--bs-primary); background: var(--bs-primary-bg-subtle); }
+        #competency-management .teacher-subject-option:has(.teacher-subject:checked) { border-color: var(--bs-primary); background: var(--bs-primary-bg-subtle); box-shadow: inset 0 0 0 1px var(--bs-primary); }
+        #competency-management .teacher-subject-name { min-width: 0; overflow-wrap: anywhere; }
+        #competency-management .teacher-subject-conflict { max-width: 45%; }
+        #competency-management .teacher-subject-results { max-height: 34rem; overflow: auto; padding: .15rem; }
+        @media (max-width: 575.98px) {
+            #competency-management .nav-tabs { flex-wrap: nowrap; overflow-x: auto; }
+            #competency-management .nav-tabs .nav-link { white-space: nowrap; }
+            #competency-management .teacher-subject-conflict { max-width: 55%; }
+        }
+    </style>
     <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
         <div>
             <h1 class="page-title mb-1"><?= __('competencies_and_assignments') ?></h1>
@@ -36,16 +74,107 @@ ob_start();
         </section>
 
         <section class="tab-pane fade" id="teacher-assignments-pane">
-            <div class="row g-3 align-items-end mb-4">
-                <div class="col-md-3"><label class="form-label fw-semibold" for="teacher-assignment-class">Classe concernée</label><select id="teacher-assignment-class" class="form-select"><option value="">Sélectionner...</option><?php foreach ($classes as $class): ?><option value="<?= (int) $class['id'] ?>"><?= h($class['nom']) ?></option><?php endforeach; ?></select></div>
-                <div class="col-md-3"><label class="form-label fw-semibold" for="teacher-assignment-type">Type d'enseignement actif</label><select id="teacher-assignment-type" class="form-select"><option value="">Tous les types actifs</option><?php foreach ($teachingTypes as $type): ?><option value="<?= (int) $type['id'] ?>"><?= h($type['nom']) ?><?= !empty($type['code']) ? ' (' . h($type['code']) . ')' : '' ?></option><?php endforeach; ?></select></div>
-                <div class="col-md-4"><label class="form-label fw-semibold" for="teacher-assignment-teacher">Enseignant</label><select id="teacher-assignment-teacher" class="form-select" disabled><option value="">Choisir d'abord la classe et le type...</option></select></div>
-                <div class="col-md-2"><button id="load-teacher-subjects" class="btn btn-primary w-100" disabled><i class="bi bi-arrow-clockwise me-1"></i>Charger</button></div>
+            <div class="d-grid gap-3">
+                <section class="teacher-panel p-3 p-lg-4" aria-labelledby="teacher-step-title">
+                    <div class="teacher-panel-heading mb-3">
+                        <span class="teacher-step-icon" aria-hidden="true"><i class="bi bi-person-workspace"></i></span>
+                        <div>
+                            <h2 class="h5 mb-1" id="teacher-step-title">Choisir le contexte d’affectation</h2>
+                            <p class="small text-muted mb-0">Sélectionnez une classe et un type pour charger les enseignants et leurs matières.</p>
+                        </div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-4"><label class="form-label fw-semibold" for="teacher-assignment-class">Classe concernée</label><select id="teacher-assignment-class" class="form-select"><option value="">Sélectionner une classe...</option><?php foreach ($classes as $class): ?><option value="<?= (int) $class['id'] ?>"><?= h($class['nom']) ?></option><?php endforeach; ?></select></div>
+                        <div class="col-md-4"><label class="form-label fw-semibold" for="teacher-assignment-type">Type d’enseignement</label><select id="teacher-assignment-type" class="form-select"><option value="">Sélectionner un type...</option><?php foreach ($teachingTypes as $type): ?><option value="<?= (int) $type['id'] ?>"><?= h($type['nom']) ?><?= !empty($type['code']) ? ' (' . h($type['code']) . ')' : '' ?></option><?php endforeach; ?></select></div>
+                        <div class="col-md-4"><label class="form-label fw-semibold" for="teacher-assignment-teacher">Enseignant</label><select id="teacher-assignment-teacher" class="form-select" disabled><option value="">Choisissez d’abord la classe et le type...</option></select></div>
+                    </div>
+                </section>
+
+                <section class="teacher-panel p-3 p-lg-4" aria-labelledby="teacher-excel-title">
+                    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+                        <div class="teacher-panel-heading">
+                            <span class="teacher-step-icon text-success bg-success-subtle" aria-hidden="true"><i class="bi bi-file-earmark-spreadsheet"></i></span>
+                            <div>
+                                <h2 class="h5 mb-1" id="teacher-excel-title">Gestion Excel en masse</h2>
+                                <p class="small text-muted mb-0">Téléchargez ou importez un seul classeur pour gérer les classes inscrites.</p>
+                            </div>
+                        </div>
+                        <button type="button" id="export-teacher-assignments" class="btn btn-outline-success">
+                            <i class="bi bi-download me-1"></i> Télécharger le modèle
+                        </button>
+                    </div>
+                    <form id="import-teacher-assignments-form" class="row g-2 align-items-end" enctype="multipart/form-data" data-ajax>
+                        <input type="hidden" name="csrf_token" value="<?= h(\App\Core\Session::generateCsrfToken()) ?>">
+                        <div class="col-lg-8">
+                            <label class="form-label fw-semibold" for="teacher-assignment-file">Classeur Excel (.xlsx)</label>
+                            <input type="file" id="teacher-assignment-file" name="import_file" class="form-control" accept=".xlsx" aria-label="Fichier Excel des affectations" required>
+                            <div id="teacher-assignment-file-name" class="form-text">Aucun fichier sélectionné · maximum 10 Mo</div>
+                        </div>
+                        <div class="col-lg-4 d-grid">
+                            <button type="submit" id="import-teacher-assignments" class="btn btn-primary" disabled>
+                                <i class="bi bi-upload me-1"></i> Importer les affectations
+                            </button>
+                        </div>
+                    </form>
+                    <div class="small text-muted mt-3"><i class="bi bi-info-circle me-1"></i>Une feuille par classe. Les cellules enseignant vides préservent les affectations existantes.</div>
+                </section>
+
+                <div id="teacher-assignment-notice" class="alert alert-info d-none mb-0" role="status" aria-live="polite"></div>
+
+                <section class="teacher-panel p-3 p-lg-4" aria-labelledby="teacher-subjects-title">
+                    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+                        <div class="teacher-panel-heading">
+                            <span class="teacher-step-icon" aria-hidden="true"><i class="bi bi-journal-check"></i></span>
+                            <div>
+                                <div class="d-flex flex-wrap align-items-center gap-2">
+                                    <h2 class="h5 mb-0" id="teacher-subjects-title">Matières de l’enseignant</h2>
+                                    <span id="teacher-subject-total" class="badge text-bg-light">En attente</span>
+                                </div>
+                                <p class="small text-muted mb-0 mt-1">Les coches signalent les matières à affecter ou à remplacer.</p>
+                            </div>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="button" id="select-visible-teacher-subjects" class="btn btn-sm btn-outline-secondary" disabled>Sélectionner les visibles</button>
+                            <button type="button" id="clear-teacher-subjects" class="btn btn-sm btn-outline-secondary" disabled>Tout décocher</button>
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" aria-hidden="true"><i class="bi bi-search"></i></span>
+                        <input type="search" id="teacher-subject-search" class="form-control" placeholder="Rechercher une matière..." aria-label="Rechercher une matière" disabled>
+                    </div>
+                    <div id="teacher-subject-list" class="row g-2 teacher-subject-results">
+                        <div class="col-12 text-center text-muted py-4"><i class="bi bi-hand-index-thumb d-block fs-3 mb-2"></i>Choisissez une classe et un type pour commencer.</div>
+                    </div>
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 border-top mt-3 pt-3">
+                        <span id="teacher-assignment-count" class="small text-muted" aria-live="polite">0 matière sélectionnée</span>
+                        <button id="submit-teacher-assignment" class="btn btn-primary" disabled><i class="bi bi-person-check me-1"></i> Analyser l’affectation</button>
+                    </div>
+                </section>
             </div>
-            <div id="teacher-assignment-notice" class="alert alert-info d-none"></div>
-            <div id="teacher-subject-list" class="row g-2"><div class="col-12 text-muted">Choisissez une classe, un type et un enseignant.</div></div>
-            <div class="d-flex justify-content-between align-items-center mt-3"><span id="teacher-assignment-count" class="small text-muted">0 matière sélectionnée</span><button id="submit-teacher-assignment" class="btn btn-primary" disabled><i class="bi bi-person-check me-1"></i>Valider l'affectation</button></div>
         </section>
+    </div>
+</div>
+
+<div class="modal fade" id="teacher-assignment-import-modal" tabindex="-1" aria-labelledby="teacher-assignment-import-title" aria-describedby="teacher-assignment-import-message" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content teacher-import-modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h5 mb-0" id="teacher-assignment-import-title"></h2>
+                <button type="button" class="btn-close d-none" id="teacher-assignment-import-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <div class="teacher-import-status-icon" id="teacher-assignment-import-icon" aria-hidden="true">
+                    <span class="spinner-border" id="teacher-assignment-import-spinner"></span>
+                    <i class="bi d-none" id="teacher-assignment-import-status-symbol"></i>
+                </div>
+                <p class="fw-semibold mb-2" id="teacher-assignment-import-message" role="status" aria-live="polite"></p>
+                <p class="small text-muted mb-0" id="teacher-assignment-import-detail"></p>
+                <div class="teacher-import-summary small mt-3" id="teacher-assignment-import-summary"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary d-none" id="teacher-assignment-import-done" data-bs-dismiss="modal"></button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -269,11 +398,179 @@ document.addEventListener('DOMContentLoaded', () => {
     preview.addEventListener('click', async () => { pendingAssignment = [...document.querySelectorAll('.assignment-subject:checked')].map(input => Number(input.value)); const data = new FormData(); pendingAssignment.forEach(id => data.append('subject_ids[]', id)); data.append('group_id', group.value); const result = await post('/competencies/api/assignment-impact', data); document.getElementById('impact-title').textContent = 'Impact de l’affectation'; document.getElementById('impact-body').innerHTML = `<p>${esc(result.message || result.error)}</p>${(result.items || []).map(item => `<div class="small border-top py-2"><strong>${esc(item.nom)}</strong> <span class="text-muted">(${esc(item.group_nom || 'Sans groupe')})</span></div>`).join('')}`; document.getElementById('confirm-delete').classList.add('d-none'); document.getElementById('confirm-create').classList.add('d-none'); document.getElementById('confirm-assignment').classList.toggle('d-none', !result.success); impactModal.show(); });
     document.getElementById('confirm-assignment').addEventListener('click', async () => { const data = new FormData(); pendingAssignment.forEach(id => data.append('subject_ids[]', id)); data.append('group_id', group.value); const result = await post('/competencies/api/assign-subjects', data); if (!result.success) return alert(result.error); const targetGroup = group.selectedOptions[0]; impactModal.hide(); assignmentSubjects = assignmentSubjects.map(item => pendingAssignment.includes(Number(item.id)) ? {...item, subject_group_id: Number(group.value), group_nom: targetGroup.text, group_type_id: targetGroup.dataset.type || item.group_type_id, group_form_id: targetGroup.dataset.form || item.group_form_id} : item); renderAssignments(); refreshAssignmentState(); alert(`${result.updated} matière(s) affectée(s).`); });
 
-    const teacherClass = document.getElementById('teacher-assignment-class'); const teacherType = document.getElementById('teacher-assignment-type'); const teacherSelect = document.getElementById('teacher-assignment-teacher'); const teacherList = document.getElementById('teacher-subject-list'); const submitTeacherAssignment = document.getElementById('submit-teacher-assignment');
+    const teacherClass = document.getElementById('teacher-assignment-class'); const teacherType = document.getElementById('teacher-assignment-type'); const teacherSelect = document.getElementById('teacher-assignment-teacher'); const teacherList = document.getElementById('teacher-subject-list'); const submitTeacherAssignment = document.getElementById('submit-teacher-assignment'); const exportTeacherAssignments = document.getElementById('export-teacher-assignments'); const importTeacherAssignmentsForm = document.getElementById('import-teacher-assignments-form'); const teacherAssignmentFile = document.getElementById('teacher-assignment-file'); const importTeacherAssignmentsButton = document.getElementById('import-teacher-assignments'); const teacherAssignmentFileName = document.getElementById('teacher-assignment-file-name'); const teacherSubjectSearch = document.getElementById('teacher-subject-search'); const teacherSubjectTotal = document.getElementById('teacher-subject-total'); const selectVisibleTeacherSubjects = document.getElementById('select-visible-teacher-subjects'); const clearTeacherSubjects = document.getElementById('clear-teacher-subjects');
+    const teacherImportModalElement = document.getElementById('teacher-assignment-import-modal');
+    const teacherImportModal = new bootstrap.Modal(teacherImportModalElement, {backdrop: 'static', keyboard: false});
+    const teacherImportModalTitle = document.getElementById('teacher-assignment-import-title');
+    const teacherImportModalMessage = document.getElementById('teacher-assignment-import-message');
+    const teacherImportModalDetail = document.getElementById('teacher-assignment-import-detail');
+    const teacherImportModalSummary = document.getElementById('teacher-assignment-import-summary');
+    const teacherImportModalIcon = document.getElementById('teacher-assignment-import-icon');
+    const teacherImportModalSpinner = document.getElementById('teacher-assignment-import-spinner');
+    const teacherImportModalSymbol = document.getElementById('teacher-assignment-import-status-symbol');
+    const teacherImportModalClose = document.getElementById('teacher-assignment-import-close');
+    const teacherImportModalDone = document.getElementById('teacher-assignment-import-done');
     let teacherSubjects = []; let pendingTeacherAssignment = null;
-    async function loadTeacherData() { teacherSelect.disabled = true; teacherSelect.innerHTML = '<option value="">Chargement...</option>'; if (!teacherClass.value || !teacherType.value) { teacherSelect.innerHTML = '<option value="">Choisir d’abord la classe et le type...</option>'; teacherList.innerHTML = '<div class="col-12 text-muted">Choisissez une classe et un type d’enseignement.</div>'; return; } const response = await fetch(`/competencies/api/teacher-assignment-data?class_id=${teacherClass.value}&teaching_type_id=${teacherType.value}`); const data = await response.json(); if (!data.success) { teacherSelect.innerHTML = `<option value="">${esc(data.error)}</option>`; return; } teacherSelect.innerHTML = '<option value="">Sélectionner un enseignant...</option>' + data.teachers.map(item => `<option value="${item.id}">${esc(`${item.prenom || ''} ${item.nom || ''}`.trim())}</option>`).join(''); teacherSelect.disabled = !data.teachers.length; teacherSubjects = data.subjects || []; renderTeacherSubjects(); }
-    function renderTeacherSubjects() { const selectedTeacher = Number(teacherSelect.value || 0); teacherList.innerHTML = teacherSubjects.map(item => { const hasAssignedTeacher = Boolean(item.assigned_teacher_id); const conflict = hasAssignedTeacher && selectedTeacher > 0 && Number(item.assigned_teacher_id) !== selectedTeacher; const assignedToSelected = hasAssignedTeacher && selectedTeacher > 0 && Number(item.assigned_teacher_id) === selectedTeacher; return `<div class="col-md-6"><label class="border rounded-2 p-2 d-flex gap-2 align-items-center ${conflict ? 'border-warning bg-warning bg-opacity-10' : ''}"><input type="checkbox" class="teacher-subject" value="${item.id}" ${assignedToSelected ? 'checked' : ''}><span>${esc(item.nom)}</span>${conflict ? `<small class="ms-auto text-warning-emphasis" title="Déjà affectée à cet enseignant">Déjà affectée : ${esc((item.assigned_teacher_name || '').trim())}</small>` : ''}</label></div>`; }).join('') || '<div class="col-12 text-muted">Aucune matière active affectée à cette classe pour ce type.</div>'; refreshTeacherState(); }
-    function refreshTeacherState() { const count = document.querySelectorAll('.teacher-subject:checked').length; document.getElementById('teacher-assignment-count').textContent = `${count} matière${count > 1 ? 's' : ''} sélectionnée${count > 1 ? 's' : ''}`; submitTeacherAssignment.disabled = !teacherSelect.value || !count; }
+    let teacherImportInProgress = false;
+    const teacherImportMessages = {
+        fr: {
+            button: 'Importer les affectations',
+            fileSelected: file => `${file.name} · ${(file.size / (1024 * 1024)).toFixed(2)} Mo`,
+            noFile: 'Aucun fichier sélectionné · maximum 10 Mo',
+            loadingTitle: 'Importation des affectations',
+            loadingMessage: 'Traitement en cours…',
+            loadingDetail: 'Veuillez patienter. Ne fermez pas cette fenêtre.',
+            successTitle: 'Import terminé',
+            successMessage: 'Les affectations ont été importées avec succès.',
+            errorTitle: 'Échec de l’importation',
+            errorMessage: 'Les affectations n’ont pas été importées.',
+            invalidResponse: 'Le serveur a retourné une réponse invalide.',
+            classes: count => `${count} classe(s) traitée(s)`,
+            counts: result => `${result.created} affectation(s) créée(s) · ${result.updated} modifiée(s) · ${result.unchanged} inchangée(s) · ${result.skipped} ligne(s) vide(s) ignorée(s)`,
+            done: 'Terminé',
+            close: 'Fermer'
+        },
+        en: {
+            button: 'Import assignments',
+            fileSelected: file => `${file.name} · ${(file.size / (1024 * 1024)).toFixed(2)} MB`,
+            noFile: 'No file selected · 10 MB maximum',
+            loadingTitle: 'Importing assignments',
+            loadingMessage: 'Processing…',
+            loadingDetail: 'Please wait. Do not close this window.',
+            successTitle: 'Import complete',
+            successMessage: 'The assignments were imported successfully.',
+            errorTitle: 'Import failed',
+            errorMessage: 'The assignments could not be imported.',
+            invalidResponse: 'The server returned an invalid response.',
+            classes: count => `${count} class(es) processed`,
+            counts: result => `${result.created} assignment(s) created · ${result.updated} updated · ${result.unchanged} unchanged · ${result.skipped} blank row(s) skipped`,
+            done: 'Done',
+            close: 'Close'
+        }
+    };
+    const teacherImportText = () => teacherImportMessages[
+        (document.documentElement.lang || window.NM_I18N?.lang || 'fr').toLowerCase().startsWith('en') ? 'en' : 'fr'
+    ];
+    function setTeacherImportModalState(state, result = null, error = '') {
+        const messages = teacherImportText();
+        const loading = state === 'loading';
+        const success = state === 'success';
+        teacherImportModalTitle.textContent = loading ? messages.loadingTitle : success ? messages.successTitle : messages.errorTitle;
+        teacherImportModalMessage.textContent = loading ? messages.loadingMessage : success ? messages.successMessage : messages.errorMessage;
+        teacherImportModalDetail.textContent = loading ? messages.loadingDetail : success ? messages.classes(result.classes) : error || messages.invalidResponse;
+        teacherImportModalSummary.textContent = success ? messages.counts(result) : '';
+        teacherImportModalSpinner.classList.toggle('d-none', !loading);
+        teacherImportModalSymbol.classList.toggle('d-none', loading);
+        teacherImportModalSymbol.className = `bi ${success ? 'bi-check-lg' : 'bi-exclamation-lg'}${loading ? ' d-none' : ''}`;
+        teacherImportModalIcon.classList.toggle('is-success', success);
+        teacherImportModalIcon.classList.toggle('is-error', !loading && !success);
+        teacherImportModalClose.classList.toggle('d-none', loading);
+        teacherImportModalClose.setAttribute('aria-label', messages.close);
+        teacherImportModalDone.textContent = messages.done;
+        teacherImportModalDone.classList.toggle('d-none', loading);
+    }
+    function refreshTeacherExcelActions() {
+        const file = teacherAssignmentFile.files[0];
+        importTeacherAssignmentsButton.disabled = !file || teacherImportInProgress;
+        const messages = teacherImportText();
+        teacherAssignmentFileName.textContent = file ? messages.fileSelected(file) : messages.noFile;
+    }
+    exportTeacherAssignments.addEventListener('click', () => { window.location.href = '/competencies/teacher-assignments/export'; });
+    teacherAssignmentFile.addEventListener('change', refreshTeacherExcelActions);
+    importTeacherAssignmentsForm.addEventListener('submit', async event => {
+        event.preventDefault();
+        if (importTeacherAssignmentsButton.disabled || !teacherAssignmentFile.files.length) return;
+        teacherImportInProgress = true;
+        refreshTeacherExcelActions();
+        const messages = teacherImportText();
+        importTeacherAssignmentsButton.innerHTML = `<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>${messages.loadingMessage}`;
+        setTeacherImportModalState('loading');
+        teacherImportModal.show();
+        const formData = new FormData(importTeacherAssignmentsForm);
+        try {
+            const response = await fetch('/competencies/teacher-assignments/import', {method: 'POST', body: formData});
+            const result = await response.json().catch(() => null);
+            if (!result) throw new Error(messages.invalidResponse);
+            if (!response.ok || !result.success) throw new Error(result.error || messages.errorMessage);
+            setTeacherImportModalState('success', result);
+            if (teacherClass.value && teacherType.value) await loadTeacherData();
+        } catch (error) {
+            setTeacherImportModalState('error', null, error.message || messages.errorMessage);
+        } finally {
+            teacherImportInProgress = false;
+            importTeacherAssignmentsButton.innerHTML = `<i class="bi bi-upload me-1"></i> ${messages.button}`;
+            refreshTeacherExcelActions();
+        }
+    });
+    async function loadTeacherData() {
+        teacherSelect.disabled = true;
+        teacherSelect.innerHTML = '<option value="">Chargement des enseignants...</option>';
+        teacherSubjects = [];
+        teacherSubjectSearch.value = '';
+        if (!teacherClass.value || !teacherType.value) {
+            teacherSelect.innerHTML = '<option value="">Choisissez d’abord la classe et le type...</option>';
+            teacherList.innerHTML = '<div class="col-12 text-center text-muted py-4"><i class="bi bi-hand-index-thumb d-block fs-3 mb-2"></i>Choisissez une classe et un type pour commencer.</div>';
+            refreshTeacherState();
+            return;
+        }
+        teacherList.innerHTML = '<div class="col-12 text-center text-muted py-4"><span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Chargement des matières...</div>';
+        try {
+            const response = await fetch(`/competencies/api/teacher-assignment-data?class_id=${teacherClass.value}&teaching_type_id=${teacherType.value}`);
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.error || 'Impossible de charger les affectations.');
+            teacherSelect.innerHTML = '<option value="">Sélectionner un enseignant...</option>' + data.teachers.map(item => `<option value="${item.id}">${esc(`${item.prenom || ''} ${item.nom || ''}`.trim())}</option>`).join('');
+            teacherSelect.disabled = !data.teachers.length;
+            teacherSubjects = data.subjects || [];
+            renderTeacherSubjects();
+        } catch (error) {
+            teacherSelect.innerHTML = `<option value="">${esc(error.message || 'Erreur de chargement')}</option>`;
+            teacherList.innerHTML = `<div class="col-12"><div class="alert alert-danger mb-0" role="alert">${esc(error.message || 'Impossible de charger les affectations.')}</div></div>`;
+            refreshTeacherState();
+        }
+    }
+    function renderTeacherSubjects() {
+        const selectedTeacher = Number(teacherSelect.value || 0);
+        teacherList.innerHTML = teacherSubjects.map(item => {
+            const hasAssignedTeacher = Boolean(item.assigned_teacher_id);
+            const conflict = hasAssignedTeacher && selectedTeacher > 0 && Number(item.assigned_teacher_id) !== selectedTeacher;
+            const assignedToSelected = hasAssignedTeacher && selectedTeacher > 0 && Number(item.assigned_teacher_id) === selectedTeacher;
+            const searchText = `${item.nom} ${conflict ? item.assigned_teacher_name || '' : ''}`.toLocaleLowerCase();
+            return `<div class="col-sm-6 col-xl-4 teacher-subject-item" data-search="${esc(searchText)}"><label class="teacher-subject-option d-flex gap-2 align-items-center ${conflict ? 'border-warning bg-warning bg-opacity-10' : ''}"><input type="checkbox" class="form-check-input teacher-subject flex-shrink-0" value="${item.id}" ${assignedToSelected ? 'checked' : ''}><span class="teacher-subject-name flex-grow-1">${esc(item.nom)}</span>${conflict ? `<small class="teacher-subject-conflict badge text-bg-warning-subtle text-warning-emphasis" title="Déjà affectée à cet enseignant">Déjà affectée : ${esc((item.assigned_teacher_name || '').trim())}</small>` : ''}</label></div>`;
+        }).join('') || '<div class="col-12 text-center text-muted py-4"><i class="bi bi-journal-x d-block fs-3 mb-2"></i>Aucune matière active pour cette classe et ce type.</div>';
+        teacherList.insertAdjacentHTML('beforeend', '<div id="teacher-subject-no-results" class="col-12 text-center text-muted py-4 d-none"><i class="bi bi-search d-block fs-3 mb-2"></i>Aucune matière ne correspond à cette recherche.</div>');
+        teacherSubjectSearch.disabled = !teacherSubjects.length;
+        applyTeacherSubjectSearch();
+        refreshTeacherState();
+    }
+    function applyTeacherSubjectSearch() {
+        const query = teacherSubjectSearch.value.trim().toLocaleLowerCase();
+        const items = [...document.querySelectorAll('#teacher-subject-list .teacher-subject-item')];
+        items.forEach(item => {
+            item.classList.toggle('d-none', !item.dataset.search.includes(query));
+        });
+        const noResults = document.getElementById('teacher-subject-no-results');
+        if (noResults) noResults.classList.toggle('d-none', !teacherSubjects.length || items.some(item => !item.classList.contains('d-none')));
+        refreshTeacherState();
+    }
+    function refreshTeacherState() {
+        const checkboxes = [...document.querySelectorAll('#teacher-subject-list .teacher-subject')];
+        const selectedCount = checkboxes.filter(input => input.checked).length;
+        const visibleCount = checkboxes.filter(input => !input.closest('.teacher-subject-item').classList.contains('d-none')).length;
+        document.getElementById('teacher-assignment-count').textContent = `${selectedCount} matière${selectedCount > 1 ? 's' : ''} sélectionnée${selectedCount > 1 ? 's' : ''}`;
+        teacherSubjectTotal.textContent = teacherSubjects.length ? `${teacherSubjects.length} matière${teacherSubjects.length > 1 ? 's' : ''}` : 'En attente';
+        selectVisibleTeacherSubjects.disabled = visibleCount === 0;
+        clearTeacherSubjects.disabled = selectedCount === 0;
+        submitTeacherAssignment.disabled = !teacherSelect.value || !selectedCount;
+    }
+    teacherSubjectSearch.addEventListener('input', applyTeacherSubjectSearch);
+    selectVisibleTeacherSubjects.addEventListener('click', () => {
+        document.querySelectorAll('#teacher-subject-list .teacher-subject-item:not(.d-none) .teacher-subject').forEach(input => { input.checked = true; });
+        refreshTeacherState();
+    });
+    clearTeacherSubjects.addEventListener('click', () => {
+        document.querySelectorAll('#teacher-subject-list .teacher-subject:checked').forEach(input => { input.checked = false; });
+        refreshTeacherState();
+    });
     teacherClass.addEventListener('change', loadTeacherData); teacherType.addEventListener('change', loadTeacherData); teacherSelect.addEventListener('change', renderTeacherSubjects); teacherList.addEventListener('change', refreshTeacherState);
     submitTeacherAssignment.addEventListener('click', async () => { const subjectIds = [...document.querySelectorAll('.teacher-subject:checked')].map(input => Number(input.value)); const data = new FormData(); subjectIds.forEach(id => data.append('subject_ids[]', id)); data.append('teacher_id', teacherSelect.value); data.append('class_id', teacherClass.value); const result = await post('/competencies/api/teacher-assignment-impact', data); pendingTeacherAssignment = {teacherId: teacherSelect.value, classId: teacherClass.value, subjectIds}; document.getElementById('impact-title').textContent = 'Radiographie d’impact : affectation enseignant'; document.getElementById('impact-body').innerHTML = result.has_conflicts ? `<div class="alert alert-danger"><strong>Remplacement d’affectation</strong><br>${esc(result.message)}</div>${result.conflicts.map(item => `<div class="border-top py-2"><strong>${esc(item.nom)}</strong><br><span class="text-danger">Ancien enseignant : ${esc((item.teacher_name || '').trim())}</span></div>`).join('')}` : `<div class="alert alert-success">${esc(result.message)}</div><p>Les matières seront affectées à l’enseignant sélectionné pour la classe choisie.</p>`; document.getElementById('confirm-delete').classList.add('d-none'); document.getElementById('confirm-create').classList.add('d-none'); document.getElementById('confirm-assignment').classList.add('d-none'); document.getElementById('confirm-teacher-assignment').classList.remove('d-none'); impactModal.show(); });
     document.getElementById('confirm-teacher-assignment').addEventListener('click', async () => { const data = new FormData(); pendingTeacherAssignment.subjectIds.forEach(id => data.append('subject_ids[]', id)); data.append('teacher_id', pendingTeacherAssignment.teacherId); data.append('class_id', pendingTeacherAssignment.classId); const result = await post('/competencies/api/assign-teacher-subjects', data); if (!result.success) return alert(result.error); impactModal.hide(); const notice = document.getElementById('teacher-assignment-notice'); notice.className = 'alert alert-success'; notice.textContent = `${result.assigned} matière(s) affectée(s) définitivement à l’enseignant sélectionné.`; notice.classList.remove('d-none'); loadTeacherData(); });

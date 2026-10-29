@@ -300,6 +300,7 @@ $ribbon_structure = [
                     ['icon' => 'bi-file-earmark-pdf', 'label' => __('bulletins'), 'url' => '/bulletins', 'permission' => 'manage_bulletins', 'roles' => ['superadmin', 'admin'], 'desc' => __('layout_desc_bulletins')],
                     ['icon' => 'bi-person-vcard', 'label' => __('access_cards'), 'url' => '/access-cards', 'permission' => 'manage_bulletins', 'roles' => ['superadmin', 'admin'], 'desc' => __('layout_desc_access_cards')],
                     ['icon' => 'bi-person-badge', 'label' => __('identity_cards'), 'url' => '/identity-cards', 'permission' => 'manage_bulletins', 'roles' => ['superadmin', 'admin'], 'desc' => __('layout_desc_identity_cards')],
+                    ['icon' => 'bi-person-vcard', 'label' => __('quick_access_badge_title'), 'url' => '/student-passes', 'permission' => 'manage_bulletins', 'roles' => ['superadmin', 'admin'], 'desc' => __('layout_desc_student_passes')],
                     ['icon' => 'bi-calendar3-week', 'label' => __('layout_timetables_print'), 'url' => '/timetables/print', 'permission' => 'view_timetables', 'desc' => __('layout_desc_timetables_print')],
                     ['icon' => 'bi-award', 'label' => __('honor_roll_title'), 'url' => '/honors', 'permission' => 'manage_bulletins', 'roles' => ['superadmin', 'admin'], 'desc' => __('layout_desc_honor_roll')],
                     ['icon' => 'bi-file-earmark-text', 'label' => __('proces_verbaux'), 'url' => '/proces-verbal', 'permission' => 'manage_bulletins', 'roles' => ['superadmin', 'admin'], 'desc' => __('layout_desc_proces_verbaux')],
@@ -315,7 +316,7 @@ $active_tab_id = 'tab-home';
 foreach ($ribbon_structure as $tab) {
     foreach ($tab['groups'] as $group) {
         foreach ($group['items'] as $item) {
-            if ($isItemAllowed($item) && $isUrlActive($item['url'])) {
+            if ($isItemAllowed($item) && isset($item['url']) && $isUrlActive($item['url'])) {
                 $active_tab_id = $tab['id'];
                 break 3;
             }
@@ -328,7 +329,7 @@ $authorized_commands = [];
 foreach ($ribbon_structure as $tab) {
     foreach ($tab['groups'] as $group) {
         foreach ($group['items'] as $item) {
-            if ($isItemAllowed($item)) {
+            if ($isItemAllowed($item) && isset($item['url'])) {
                 $authorized_commands[] = [
                     'tab' => $tab['title'],
                     'group' => $group['title'],
@@ -1034,6 +1035,21 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
             <!-- 2. DESKTOP NAVIGATION BAR (SAAS DROPDOWNS AUTONOMES) -->
             <?php if (\App\Core\Session::isLogged()): ?>
                 <div class="desktop-nav-menu-bar d-none d-lg-flex px-3" id="tourRibbonTabs">
+                    <div class="desktop-nav-sidebar-header">
+                        <div class="desktop-nav-sidebar-heading">
+                            <span class="desktop-nav-sidebar-eyebrow"><?= htmlspecialchars((string) __('layout_workspace_navigation'), ENT_QUOTES, 'UTF-8') ?></span>
+                            <span class="desktop-nav-sidebar-title"><?= htmlspecialchars((string) __('layout_main_navigation'), ENT_QUOTES, 'UTF-8') ?></span>
+                        </div>
+                        <button type="button" class="desktop-nav-collapse-btn" id="desktopNavCollapseToggle"
+                                aria-controls="desktopNavItems" aria-expanded="true"
+                                aria-label="<?= htmlspecialchars((string) __('layout_collapse_navigation'), ENT_QUOTES, 'UTF-8') ?>"
+                                title="<?= htmlspecialchars((string) __('layout_collapse_navigation'), ENT_QUOTES, 'UTF-8') ?>"
+                                data-label-collapse="<?= htmlspecialchars((string) __('layout_collapse_navigation'), ENT_QUOTES, 'UTF-8') ?>"
+                                data-label-expand="<?= htmlspecialchars((string) __('layout_expand_navigation'), ENT_QUOTES, 'UTF-8') ?>">
+                            <i class="bi bi-chevron-bar-left" aria-hidden="true"></i>
+                            <span><?= htmlspecialchars((string) __('layout_collapse_navigation'), ENT_QUOTES, 'UTF-8') ?></span>
+                        </button>
+                    </div>
                     <div class="desktop-nav-items-wrapper flex-grow-1" id="desktopNavItems">
                         <?php foreach ($ribbon_structure as $tab): ?>
                             <?php
@@ -1078,10 +1094,14 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                                                     </div>
                                                     <div class="dropdown-group-links">
                                                         <?php foreach ($group['items'] as $item): ?>
-                                                            <?php $itemActive = $isUrlActive($item['url']); ?>
-                                                            <a href="<?= $item['url'] ?>" 
+                                                            <?php $itemActive = isset($item['url']) && $isUrlActive($item['url']); ?>
+                                                            <?php if (!empty($item['placeholder'])): ?>
+                                                            <div class="dropdown-nav-link dropdown-nav-link--placeholder" role="note">
+                                                            <?php else: ?>
+                                                            <a href="<?= $item['url'] ?>"
                                                                class="dropdown-nav-link <?= $itemActive ? 'active' : '' ?>"
                                                                role="menuitem">
+                                                            <?php endif; ?>
                                                                 <div class="link-icon-box">
                                                                     <i class="bi <?= $item['icon'] ?>"></i>
                                                                 </div>
@@ -1095,8 +1115,15 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                                                                     <?php if (!empty($item['desc'])): ?>
                                                                         <span class="link-desc"><?= htmlspecialchars($item['desc']) ?></span>
                                                                     <?php endif; ?>
+                                                                    <?php if (!empty($item['status'])): ?>
+                                                                        <span class="link-desc"><?= htmlspecialchars($item['status']) ?></span>
+                                                                    <?php endif; ?>
                                                                 </div>
+                                                            <?php if (!empty($item['placeholder'])): ?>
+                                                            </div>
+                                                            <?php else: ?>
                                                             </a>
+                                                            <?php endif; ?>
                                                         <?php endforeach; ?>
                                                     </div>
                                                 </div>
@@ -1171,7 +1198,7 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                             }
                             $hasActiveItem = false;
                             foreach ($tab_items as $item) {
-                                if ($isUrlActive($item['url'])) {
+                                if (isset($item['url']) && $isUrlActive($item['url'])) {
                                     $hasActiveItem = true;
                                     break;
                                 }
@@ -1202,24 +1229,40 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                                         <div class="accordion-body p-1 ps-2">
                                             <div class="d-flex flex-column gap-1">
                                                 <?php foreach ($tab_items as $item): ?>
-                                                    <?php $isActive = $isUrlActive($item['url']); ?>
+                                                    <?php $isActive = isset($item['url']) && $isUrlActive($item['url']); ?>
+                                                    <?php if (!empty($item['placeholder'])): ?>
+                                                    <div class="mobile-drawer-link d-flex align-items-center justify-content-between p-2 rounded-3 text-main transition-all"
+                                                         role="note"
+                                                         data-menu-label="<?= strtolower(htmlspecialchars($item['label'] . ' ' . $tab['title'])) ?>"
+                                                         style="min-height: 44px;">
+                                                    <?php else: ?>
                                                     <a href="<?= $item['url'] ?>" 
                                                        class="mobile-drawer-link <?= $isActive ? 'active' : '' ?> d-flex align-items-center justify-content-between p-2 rounded-3 text-decoration-none text-main transition-all"
                                                        data-menu-label="<?= strtolower(htmlspecialchars($item['label'] . ' ' . $tab['title'])) ?>"
                                                        style="min-height: 44px;">
+                                                    <?php endif; ?>
                                                         <div class="d-flex align-items-center gap-2-5 overflow-hidden">
                                                             <div class="mobile-drawer-icon-box rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 <?= $isActive ? 'bg-primary text-white shadow-sm' : 'bg-primary bg-opacity-10 text-primary' ?>"
                                                                  style="width: 34px; height: 34px; font-size: 0.9rem;">
                                                                 <i class="bi <?= $item['icon'] ?>"></i>
                                                             </div>
-                                                            <span class="fw-medium text-truncate" style="font-size: 0.86rem;"><?= htmlspecialchars($item['label']) ?></span>
+                                                            <span class="d-flex flex-column text-truncate">
+                                                                <span class="fw-medium text-truncate" style="font-size: 0.86rem;"><?= htmlspecialchars($item['label']) ?></span>
+                                                                <?php if (!empty($item['status'])): ?>
+                                                                    <small class="text-muted"><?= htmlspecialchars($item['status']) ?></small>
+                                                                <?php endif; ?>
+                                                            </span>
                                                         </div>
                                                         <?php if ($isActive): ?>
                                                             <i class="bi bi-check-circle-fill text-primary fs-6 me-1 flex-shrink-0"></i>
-                                                        <?php else: ?>
+                                                        <?php elseif (empty($item['placeholder'])): ?>
                                                             <i class="bi bi-chevron-right extra-small text-muted flex-shrink-0 opacity-50"></i>
                                                         <?php endif; ?>
+                                                    <?php if (!empty($item['placeholder'])): ?>
+                                                    </div>
+                                                    <?php else: ?>
                                                     </a>
+                                                    <?php endif; ?>
                                                 <?php endforeach; ?>
                                             </div>
                                         </div>
@@ -1670,7 +1713,13 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
             tooltipTriggerList.map(t => new bootstrap.Tooltip(t));
         });
     </script>
-    <script src="/public/js/desktop-navbar.js?v=<?= $asset_version ?>"></script>
+    <?php
+    $navbar_script = __DIR__ . '/../../../public/js/desktop-navbar.js';
+    $navbar_script_version = file_exists($navbar_script)
+        ? filemtime($navbar_script) . '-' . filesize($navbar_script)
+        : $asset_version;
+    ?>
+    <script src="/public/js/desktop-navbar.js?v=<?= $navbar_script_version ?>"></script>
     <?php include __DIR__ . '/impact_modal.php'; ?>
     <script src="/public/js/impact-radiography.js?v=<?= $asset_version ?? '1.0' ?>"></script>
     <script src="/public/js/topbar-onboarding.js?v=<?= $asset_version ?>"></script>

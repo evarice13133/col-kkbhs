@@ -55,7 +55,8 @@ ob_start();
                 <div>
                     <select name="class_id" id="filter_class"
                         class="form-select border-0 bg-white bg-opacity-10 shadow-none py-2 text-main rounded-pill px-3"
-                        style="min-width: 150px;">
+                        style="min-width: 150px;"
+                        onchange="document.getElementById('filter_subject').value = ''; this.form.submit()">
                         <option value=""><?= __('all_classes') ?></option>
                         <?php foreach ($classes as $class): ?>
                             <option value="<?= $class['id'] ?>" data-teaching-type="<?= $class['teaching_type_id'] ?? '' ?>"
@@ -109,74 +110,101 @@ ob_start();
         </div>
     </div>
 
-    <div class="modern-card border-0 shadow-sm overflow-hidden animate-fade-in">
+    <div class="modern-card border-0 shadow-sm overflow-hidden animate-fade-in grades-history-card">
         <div class="table-responsive">
-            <table class="table-modern">
+            <table class="table-modern grades-history-table">
+                <colgroup>
+                    <col class="grades-history-col-date">
+                    <col class="grades-history-col-student">
+                    <col class="grades-history-col-class">
+                    <col class="grades-history-col-subject">
+                    <col class="grades-history-col-period">
+                    <col class="grades-history-col-grade">
+                    <col class="grades-history-col-appreciation">
+                    <col class="grades-history-col-teacher">
+                    <col class="grades-history-col-actions">
+                </colgroup>
                 <thead>
                     <tr>
-                        <th><?= __('date') ?></th>
-                        <th><?= __('student') ?></th>
-                        <th><?= __('class') ?></th>
-                        <th><?= __('subject') ?></th>
-                        <th><?= __('period') ?></th>
-                        <th><?= __('grade') ?></th>
-                        <th><?= __('appreciation') ?></th>
-                        <th><?= __('teacher') ?></th>
-                        <th class="text-end"><?= __('actions') ?></th>
+                        <th class="grades-history-date"><?= __('date') ?></th>
+                        <th class="grades-history-student"><?= __('student') ?></th>
+                        <th class="grades-history-class"><?= __('class') ?></th>
+                        <th class="grades-history-subject"><?= __('subject') ?></th>
+                        <th class="grades-history-period"><?= __('period') ?></th>
+                        <th class="grades-history-grade"><?= __('grade') ?></th>
+                        <th class="grades-history-appreciation"><?= __('appreciation') ?></th>
+                        <th class="grades-history-teacher"><?= __('teacher') ?></th>
+                        <th class="grades-history-actions text-end"><?= __('actions') ?></th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($grades)): ?>
                         <tr>
-                            <td colspan="9" class="text-center py-5 text-muted">
+                            <td colspan="9" class="grades-history-empty text-center py-5 text-muted">
                                 <i class="bi bi-inbox fs-1 d-block mb-2 opacity-25"></i>
                                 <?= __('no_activity_yet') ?>
                             </td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($grades as $grade): ?>
-                            <tr class="student-row">
-                                <td class="small">
-                                    <?= date('d/m/Y H:i', strtotime($grade['created_at'])) ?>
+                            <tr class="grades-history-row">
+                                <td class="grades-history-date">
+                                    <span class="grades-history-date-day"><?= date('d/m/Y', strtotime($grade['created_at'])) ?></span>
+                                    <span class="grades-history-date-time"><?= date('H:i', strtotime($grade['created_at'])) ?></span>
                                 </td>
-                                <td>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <div class="avatar-init bg-primary bg-opacity-10 text-primary fw-bold rounded-circle d-flex align-items-center justify-content-center shadow-sm"
-                                            style="width: 36px; height: 36px; font-size: 1rem; border: 1px solid rgba(var(--primary-rgb), 0.2);">
-                                            <?= strtoupper(substr((string) $grade['student_nom'], 0, 1)) ?>
+                                <td class="grades-history-student">
+                                    <div class="grades-history-person">
+                                        <div class="grades-history-avatar" aria-hidden="true">
+                                            <?= htmlspecialchars(strtoupper(substr((string) $grade['student_nom'], 0, 1))) ?>
                                         </div>
-                                        <div>
-                                            <div class="fw-bold text-main-theme" style="font-size: 0.9rem;">
+                                        <div class="grades-history-person-copy">
+                                            <div class="grades-history-person-name" title="<?= htmlspecialchars($grade['student_nom'], ENT_QUOTES) ?>">
                                                 <?= htmlspecialchars($grade['student_nom']) ?>
                                             </div>
-                                            <div class="text-muted-theme opacity-75" style="font-size: 0.75rem;">
+                                            <div class="grades-history-person-detail" title="<?= htmlspecialchars($grade['student_prenom'], ENT_QUOTES) ?>">
                                                 <?= htmlspecialchars($grade['student_prenom']) ?>
                                             </div>
                                         </div>
                                     </div>
                                 </td>
-                                <td>
-                                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2 py-1 small">
+                                <td class="grades-history-class">
+                                    <span class="grades-history-badge grades-history-badge--class" title="<?= htmlspecialchars($grade['class_nom'], ENT_QUOTES) ?>">
                                         <?= htmlspecialchars($grade['class_nom']) ?>
                                     </span>
                                 </td>
-                                <td><?= htmlspecialchars($grade['subject_nom']) ?></td>
-                                <td><?= htmlspecialchars($grade['periode']) ?></td>
-                                <td>
-                                    <span class="fw-bold <?= $grade['valeur'] >= 10 ? 'text-success' : 'text-danger' ?>">
+                                <td class="grades-history-subject" title="<?= htmlspecialchars($grade['subject_nom'], ENT_QUOTES) ?>">
+                                    <?= htmlspecialchars($grade['subject_nom']) ?>
+                                </td>
+                                <td class="grades-history-period">
+                                    <span class="grades-history-badge grades-history-badge--period">
+                                        <?= htmlspecialchars($grade['periode']) ?>
+                                    </span>
+                                </td>
+                                <td class="grades-history-grade">
+                                    <span class="grades-history-badge <?= $grade['valeur'] >= 10 ? 'grades-history-badge--success' : 'grades-history-badge--danger' ?>">
                                         <?= number_format((float) $grade['valeur'], 2, ',', ' ') ?>
                                     </span>
                                 </td>
-                                <td class="small"><?= htmlspecialchars($grade['appreciation']) ?></td>
-                                <td class="small">
-                                    <?= htmlspecialchars($grade['teacher_nom'] ?? '') ?>
-                                    <?= htmlspecialchars($grade['teacher_prenom'] ?? '') ?>
+                                <td class="grades-history-appreciation">
+                                    <span class="grades-history-badge <?= $grade['valeur'] >= 10 ? 'grades-history-badge--success' : 'grades-history-badge--danger' ?>"
+                                        title="<?= htmlspecialchars($grade['appreciation'], ENT_QUOTES) ?>">
+                                        <?= htmlspecialchars($grade['appreciation']) ?>
+                                    </span>
                                 </td>
-                                <td class="text-end">
+                                <td class="grades-history-teacher">
+                                    <div class="grades-history-teacher-info">
+                                        <i class="bi bi-person" aria-hidden="true"></i>
+                                        <span title="<?= htmlspecialchars(trim(($grade['teacher_nom'] ?? '') . ' ' . ($grade['teacher_prenom'] ?? '')), ENT_QUOTES) ?>">
+                                            <?= htmlspecialchars(trim(($grade['teacher_nom'] ?? '') . ' ' . ($grade['teacher_prenom'] ?? ''))) ?>
+                                        </span>
+                                    </div>
+                                </td>
+                                <td class="grades-history-actions text-end">
                                     <a href="/notes/saisie?class_id=<?= $grade['class_id'] ?>&subject_id=<?= $grade['subject_id'] ?>&periode=<?= urlencode((string) $grade['periode']) ?>"
-                                        class="btn-icon-pill p-1 px-2 text-primary bg-primary bg-opacity-10 rounded-pill transition-base"
+                                        class="grades-history-action"
                                         title="<?= __('edit_grade') ?>">
-                                        <i class="bi bi-pencil-square"></i>
+                                        <i class="bi bi-pencil-square" aria-hidden="true"></i>
+                                        <span class="visually-hidden"><?= __('edit_grade') ?></span>
                                     </a>
                                 </td>
                             </tr>
@@ -185,9 +213,21 @@ ob_start();
                 </tbody>
             </table>
         </div>
-        <?php if ($totalPages > 1): ?>
-            <div class="card-footer bg-transparent border-top p-3">
-                <nav>
+        <?php if ($total > 0): ?>
+            <?php
+            $firstRecord = (($page - 1) * $perPage) + 1;
+            $lastRecord = (($page - 1) * $perPage) + count($grades);
+            ?>
+            <div class="grades-history-footer">
+                <span class="grades-history-range">
+                    <?= __('showing_records', [
+                        'start' => $firstRecord,
+                        'end' => $lastRecord,
+                        'total' => $total,
+                    ]) ?>
+                </span>
+                <?php if ($totalPages > 1): ?>
+                <nav aria-label="<?= __('pagination') ?>">
                     <ul class="pagination justify-content-center mb-0">
                         <?php
                         $queryParams = http_build_query(array_filter($filters, function ($v) {
@@ -226,6 +266,7 @@ ob_start();
                         <?php endif; ?>
                     </ul>
                 </nav>
+                <?php endif; ?>
             </div>
         <?php endif; ?>
     </div>

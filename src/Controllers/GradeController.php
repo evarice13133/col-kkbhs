@@ -945,9 +945,11 @@ class GradeController
 
         foreach ($students as &$student) {
 
+            $appreciation = trim((string) ($student['appreciation'] ?? ''));
+            $student['appreciation_auto'] = $appreciation === ''
+                || ($student['valeur'] !== null && $this->isGeneratedAppreciation($appreciation));
 
-
-            if (($student['appreciation'] ?? '') === '' && $student['valeur'] !== null) {
+            if ($student['appreciation_auto'] && $student['valeur'] !== null) {
 
 
 
@@ -1042,6 +1044,10 @@ class GradeController
 
 
         $appreciations = $_POST['appreciations'] ?? [];
+        $automaticAppreciations = $_POST['appreciations_auto'] ?? [];
+        if (!is_array($automaticAppreciations)) {
+            $automaticAppreciations = [];
+        }
 
         $rawCompetencyIds = $_POST['competency_ids'] ?? [];
 
@@ -1223,60 +1229,22 @@ class GradeController
 
 
 
-            // Requête optimisée avec ON DUPLICATE KEY UPDATE pour gérer l'Upsert
-
-            // Inclut les snapshots pour archiver les données historiques
-
-
-
-            $stmt = $this->db->prepare("
-
-
-
+            $insertStmt = $this->db->prepare("
                 INSERT INTO grades (student_id, subject_id, teacher_id, academic_year_id, sequence_id, periode, valeur, appreciation, teacher_nom_snapshot, teacher_prenom_snapshot, subject_nom_snapshot, created_by_type)
-
-
-
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-
-
-
-                ON DUPLICATE KEY UPDATE
-
-
-
-                    valeur = VALUES(valeur),
-
-
-
-                    appreciation = VALUES(appreciation),
-
-
-
-                    teacher_id = VALUES(teacher_id),
-
-
-
-                    sequence_id = VALUES(sequence_id),
-
-
-
-                    teacher_nom_snapshot = VALUES(teacher_nom_snapshot),
-
-
-
-                    teacher_prenom_snapshot = VALUES(teacher_prenom_snapshot),
-
-
-
-                    subject_nom_snapshot = VALUES(subject_nom_snapshot),
-
-
-
-                    created_by_type = VALUES(created_by_type)
-
-
-
+            ");
+            $updateStmt = $this->db->prepare("
+                UPDATE grades
+                SET valeur = ?, appreciation = ?, teacher_id = ?, sequence_id = ?,
+                    teacher_nom_snapshot = ?, teacher_prenom_snapshot = ?,
+                    subject_nom_snapshot = ?, created_by_type = ?
+                WHERE student_id = ? AND subject_id = ? AND periode = ? AND academic_year_id = ?
+            ");
+            $verifyStmt = $this->db->prepare("
+                SELECT valeur, appreciation
+                FROM grades
+                WHERE student_id = ? AND subject_id = ? AND periode = ? AND academic_year_id = ?
+                LIMIT 1
             ");
 
 
@@ -1347,10 +1315,7 @@ class GradeController
 
                 $appr = trim((string) ($appreciations[$student_id] ?? ''));
 
-
-
-                if ($appr === '')
-
+                if ($appr === '' || ($automaticAppreciations[$student_id] ?? '') === '1')
 
 
                     $appr = $this->generateAppreciation($valFloat);
@@ -1361,77 +1326,54 @@ class GradeController
 
 
 
-                isset($existingStudentIds[$student_id]) ? $updatedCount++ : $createdCount++;
+                if (isset($existingStudentIds[$student_id])) {
+                    $updateStmt->execute([
+                        $valFloat,
+                        $appr,
+                        $teacher_id,
+                        $sequence_id,
+                        $teacherNom,
+                        $teacherPrenom,
+                        $subjectNom,
+                        $createdByType,
+                        $student_id,
+                        $subject_id,
+                        $periode,
+                        $activeYear['id'],
+                    ]);
+                    $updatedCount++;
+                } else {
+                    $insertStmt->execute([
+                        $student_id,
+                        $subject_id,
+                        $teacher_id,
+                        $activeYear['id'],
+                        $sequence_id,
+                        $periode,
+                        $valFloat,
+                        $appr,
+                        $teacherNom,
+                        $teacherPrenom,
+                        $subjectNom,
+                        $createdByType,
+                    ]);
+                    $createdCount++;
+                }
 
-
-
-
-
-
-
-                $stmt->execute([
-
-
-
-                    $student_id,
-
-
-
-                    $subject_id,
-
-
-
-                    $teacher_id,
-
-
-
-                    $activeYear['id'],
-
-
-
-                    $sequence_id,
-
-
-
-                    $periode,
-
-
-
-                    $valFloat,
-
-
-
-                    $appr,
-
-
-
-                    $teacherNom,
-
-
-
-                    $teacherPrenom,
-
-
-
-                    $subjectNom,
-
-
-
-                    $createdByType
-
-
-
-                ]);
-
-
-
+                $verifyStmt->execute([$student_id, $subject_id, $periode, $activeYear['id']]);
+                $savedGrade = $verifyStmt->fetch(PDO::FETCH_ASSOC);
+                if (
+                    !$savedGrade
+                    || abs((float) $savedGrade['valeur'] - $valFloat) > 0.001
+                    || (string) $savedGrade['appreciation'] !== $appr
+                ) {
+                    throw new \RuntimeException(__('grade_save_verification_failed'));
+                }
             }
 
-
-
-
-
-
+            if ($createdCount + $updatedCount === 0) {
+                throw new \RuntimeException(__('no_grades_to_save'));
+            }
 
             $this->db->commit();
             $gradesSaved = true;
@@ -1459,10 +1401,9 @@ class GradeController
 
 
         } catch (\PDOException $e) {
-
-
-
-            $this->db->rollBack();
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
 
 
 
@@ -2400,6 +2341,26 @@ class GradeController
 
 
 
+    private function isGeneratedAppreciation(string $appreciation): bool
+
+    {
+
+        foreach ([18, 16, 14, 12, 10, 8, 0] as $note) {
+
+            if ($appreciation === $this->generateAppreciation($note)) {
+
+                return true;
+
+            }
+
+        }
+
+        return false;
+
+    }
+
+
+
 
 
 
@@ -3236,6 +3197,10 @@ class GradeController
         $assignments = $this->getAccessibleAssignments();
         $classes = $this->extractAccessibleClasses($assignments, (int) $filters['teaching_type_id']);
         $subjects = $this->extractAccessibleSubjects($assignments, (int) $filters['class_id'], (int) $filters['teaching_type_id']);
+        $availableSubjectIds = array_column($subjects, 'id');
+        if ($filters['subject_id'] > 0 && !in_array($filters['subject_id'], $availableSubjectIds, true)) {
+            $filters['subject_id'] = 0;
+        }
         $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         $activeYear = $this->getActiveAcademicYear();

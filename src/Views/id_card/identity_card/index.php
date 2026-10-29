@@ -7,10 +7,9 @@ $paletteLabels = [
     'border' => __('access_card_palette_border'),
     'text' => __('access_card_palette_text'),
     'muted' => __('access_card_palette_muted'),
-    'tranche1' => __('access_card_palette_tranche_1'),
-    'tranche2' => __('access_card_palette_tranche_2'),
-    'tranche3' => __('access_card_palette_tranche_3'),
 ];
+$paletteKeys = array_keys($paletteLabels);
+$tranchePaletteDefaults = array_intersect_key($paletteDefaults, array_flip(['tranche1', 'tranche2', 'tranche3']));
 $selectedSection = null;
 foreach ($sections as $section) {
     if ((int) $section['id'] === $sectionId) {
@@ -87,8 +86,8 @@ ob_start();
                     </div>
                 <?php endif; ?>
                 <input type="hidden" name="orientation" value="<?= htmlspecialchars($orientation, ENT_QUOTES, 'UTF-8') ?>" id="filterOrientation">
-                <?php foreach ($palette as $key => $color): ?>
-                    <input type="hidden" name="palette[<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>]" value="<?= htmlspecialchars($color, ENT_QUOTES, 'UTF-8') ?>" data-filter-palette="<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>">
+                <?php foreach ($paletteKeys as $key): ?>
+                    <input type="hidden" name="palette[<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>]" value="<?= htmlspecialchars($palette[$key], ENT_QUOTES, 'UTF-8') ?>" data-filter-palette="<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>">
                 <?php endforeach; ?>
             </form>
         </div>
@@ -139,15 +138,37 @@ ob_start();
                             </button>
                         </div>
                         <div class="row g-2">
-                            <?php foreach ($palette as $key => $color): ?>
+                            <?php foreach ($paletteKeys as $key): ?>
                                 <div class="col-6 col-md-3">
                                     <label for="palette_<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>" class="form-label small fw-semibold mb-1"><?= htmlspecialchars($paletteLabels[$key], ENT_QUOTES, 'UTF-8') ?></label>
                                     <div class="d-flex align-items-center gap-2">
-                                        <input type="color" class="form-control form-control-color access-card-color" id="palette_<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>" name="palette[<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>]" value="<?= htmlspecialchars($color, ENT_QUOTES, 'UTF-8') ?>" data-default="<?= htmlspecialchars($paletteDefaults[$key], ENT_QUOTES, 'UTF-8') ?>" title="<?= htmlspecialchars($paletteLabels[$key], ENT_QUOTES, 'UTF-8') ?>">
-                                        <output class="font-monospace small" data-color-value="<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($color, ENT_QUOTES, 'UTF-8') ?></output>
+                                        <input type="color" class="form-control form-control-color access-card-color" id="palette_<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>" name="palette[<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>]" value="<?= htmlspecialchars($palette[$key], ENT_QUOTES, 'UTF-8') ?>" data-default="<?= htmlspecialchars($paletteDefaults[$key], ENT_QUOTES, 'UTF-8') ?>" title="<?= htmlspecialchars($paletteLabels[$key], ENT_QUOTES, 'UTF-8') ?>">
+                                        <output class="font-monospace small" data-color-value="<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($palette[$key], ENT_QUOTES, 'UTF-8') ?></output>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
+                        </div>
+                        <div class="row g-2 align-items-end mt-2">
+                            <div class="col-12 col-md-5">
+                                <label for="identityPaletteName" class="form-label small fw-semibold mb-1"><?= htmlspecialchars(__('student_passes_palette_name'), ENT_QUOTES, 'UTF-8') ?></label>
+                                <input type="text" class="form-control" id="identityPaletteName" maxlength="60" autocomplete="off" placeholder="<?= htmlspecialchars(__('student_passes_palette_name_placeholder'), ENT_QUOTES, 'UTF-8') ?>">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="savedIdentityPalettes" class="form-label small fw-semibold mb-1"><?= htmlspecialchars(__('student_passes_saved_palettes'), ENT_QUOTES, 'UTF-8') ?></label>
+                                <select class="form-select" id="savedIdentityPalettes">
+                                    <option value=""><?= htmlspecialchars(__('student_passes_palette_choose'), ENT_QUOTES, 'UTF-8') ?></option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-3 d-flex gap-2">
+                                <button type="button" class="btn btn-outline-primary flex-fill" id="saveIdentityPalette"><?= htmlspecialchars(__('student_passes_palette_save'), ENT_QUOTES, 'UTF-8') ?></button>
+                                <button type="button" class="btn btn-outline-danger" id="deleteIdentityPalette" aria-label="<?= htmlspecialchars(__('student_passes_palette_delete'), ENT_QUOTES, 'UTF-8') ?>" title="<?= htmlspecialchars(__('student_passes_palette_delete'), ENT_QUOTES, 'UTF-8') ?>" disabled>
+                                    <i class="bi bi-trash" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                            <div class="col-12">
+                                <p class="form-text mb-0"><?= htmlspecialchars(__('student_passes_palette_storage_hint'), ENT_QUOTES, 'UTF-8') ?></p>
+                                <div id="identityPaletteStatus" class="small mt-1" role="status" aria-live="polite"></div>
+                            </div>
                         </div>
                         <div class="row g-3 align-items-center mt-1">
                             <div class="col-12 col-lg-8">
@@ -230,7 +251,59 @@ ob_start();
     const orientationRadios = [...printForm.querySelectorAll('.identity-card-orientation')];
     const pageCountBadge = document.getElementById('identityCardsPerSheet');
     const previewStudentId = <?= (int) $students[0]['id'] ?>;
+    const paletteNameInput = document.getElementById('identityPaletteName');
+    const savedPalettesSelect = document.getElementById('savedIdentityPalettes');
+    const savePaletteButton = document.getElementById('saveIdentityPalette');
+    const deletePaletteButton = document.getElementById('deleteIdentityPalette');
+    const paletteStatus = document.getElementById('identityPaletteStatus');
+    const paletteKeys = colorInputs.map((input) => input.id.replace('palette_', ''));
+    const tranchePaletteDefaults = <?= json_encode($tranchePaletteDefaults, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    const paletteStorageKey = <?= json_encode(
+        'notemaster.studentPassPalettes.v1.' . (int) \App\Core\Session::get('user_id', 0),
+        JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+    ) ?>;
+    let savedPalettes = [];
     let previewTimer;
+
+    const showPaletteStatus = (message, isError = false) => {
+        paletteStatus.textContent = message;
+        paletteStatus.classList.toggle('text-danger', isError);
+        paletteStatus.classList.toggle('text-success', !isError && message !== '');
+    };
+    const currentPalette = () => Object.fromEntries(
+        colorInputs.map((input) => [input.id.replace('palette_', ''), input.value.toUpperCase()])
+    );
+    const isValidPalette = palette => paletteKeys.every(key =>
+        typeof palette?.[key] === 'string' && /^#[0-9a-f]{6}$/i.test(palette[key])
+    );
+    const readSavedPalettes = () => {
+        const stored = localStorage.getItem(paletteStorageKey);
+        if (stored === null) return [];
+
+        const parsed = JSON.parse(stored);
+        if (!Array.isArray(parsed)) throw new Error('invalid_palette_data');
+
+        return parsed.filter(preset =>
+            preset
+            && typeof preset.name === 'string'
+            && preset.name.trim() !== ''
+            && isValidPalette(preset.palette)
+        );
+    };
+    const renderSavedPalettes = (selectedIndex = '') => {
+        savedPalettesSelect.replaceChildren(new Option(
+            <?= json_encode(__('student_passes_palette_choose'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
+            ''
+        ));
+        savedPalettes.forEach((preset, index) => {
+            savedPalettesSelect.add(new Option(preset.name, String(index)));
+        });
+        savedPalettesSelect.value = selectedIndex;
+        deletePaletteButton.disabled = selectedIndex === '';
+    };
+    const persistSavedPalettes = () => {
+        localStorage.setItem(paletteStorageKey, JSON.stringify(savedPalettes));
+    };
 
     filterForm.addEventListener('submit', () => {
         for (const input of colorInputs) {
@@ -248,6 +321,7 @@ ob_start();
         return (values[0] + .05) / (values[1] + .05);
     };
     const updateContrast = palette => {
+        palette = { ...tranchePaletteDefaults, ...palette };
         const textPairs = [
             [palette.text, palette.background], [palette.muted, palette.background],
             [palette.accent, palette.background], [palette.text, palette.tranche1],
@@ -288,6 +362,7 @@ ob_start();
             params.delete('orientation_choice');
             params.set('student_id', studentSelect.value === '0' ? String(previewStudentId) : studentSelect.value);
             params.set('preview', '1');
+            params.set('preview_version', String(Date.now()));
             preview.src = `${printForm.action}?${params.toString()}`;
         }, 180);
     };
@@ -301,8 +376,78 @@ ob_start();
     for (const input of orientationRadios) input.addEventListener('change', updatePreview);
     document.getElementById('resetAccessCardPalette').addEventListener('click', () => {
         for (const input of colorInputs) input.value = input.dataset.default;
+        showPaletteStatus('');
         updatePreview();
     });
+    savedPalettesSelect.addEventListener('change', () => {
+        const index = Number.parseInt(savedPalettesSelect.value, 10);
+        if (!Number.isInteger(index) || !savedPalettes[index]) {
+            deletePaletteButton.disabled = true;
+            return;
+        }
+
+        for (const input of colorInputs) {
+            const key = input.id.replace('palette_', '');
+            input.value = savedPalettes[index].palette[key];
+        }
+        deletePaletteButton.disabled = false;
+        paletteNameInput.value = savedPalettes[index].name;
+        showPaletteStatus(<?= json_encode(__('student_passes_palette_applied'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>);
+        updatePreview();
+    });
+    savePaletteButton.addEventListener('click', () => {
+        const name = paletteNameInput.value.trim();
+        if (!name) {
+            showPaletteStatus(<?= json_encode(__('student_passes_palette_name_required'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>, true);
+            paletteNameInput.focus();
+            return;
+        }
+
+        const existingIndex = savedPalettes.findIndex(preset => preset.name.toLowerCase() === name.toLowerCase());
+        const previousPalettes = savedPalettes;
+        savedPalettes = [...savedPalettes];
+        const preset = { name, palette: currentPalette() };
+        if (existingIndex >= 0) {
+            savedPalettes[existingIndex] = preset;
+        } else {
+            savedPalettes.push(preset);
+        }
+
+        try {
+            persistSavedPalettes();
+            renderSavedPalettes(String(existingIndex >= 0 ? existingIndex : savedPalettes.length - 1));
+            showPaletteStatus(<?= json_encode(__('student_passes_palette_saved'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>);
+        } catch (error) {
+            savedPalettes = previousPalettes;
+            renderSavedPalettes(existingIndex >= 0 ? String(existingIndex) : '');
+            showPaletteStatus(<?= json_encode(__('student_passes_palette_storage_error'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>, true);
+        }
+    });
+    deletePaletteButton.addEventListener('click', () => {
+        const index = Number.parseInt(savedPalettesSelect.value, 10);
+        if (!Number.isInteger(index) || !savedPalettes[index]) return;
+
+        const previousPalettes = savedPalettes;
+        savedPalettes = savedPalettes.filter((preset, presetIndex) => presetIndex !== index);
+        try {
+            persistSavedPalettes();
+            renderSavedPalettes();
+            paletteNameInput.value = '';
+            showPaletteStatus(<?= json_encode(__('student_passes_palette_deleted'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>);
+        } catch (error) {
+            savedPalettes = previousPalettes;
+            renderSavedPalettes(String(index));
+            showPaletteStatus(<?= json_encode(__('student_passes_palette_storage_error'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>, true);
+        }
+    });
+    try {
+        savedPalettes = readSavedPalettes();
+        renderSavedPalettes();
+    } catch (error) {
+        savePaletteButton.disabled = true;
+        deletePaletteButton.disabled = true;
+        showPaletteStatus(<?= json_encode(__('student_passes_palette_storage_error'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>, true);
+    }
     new ResizeObserver(resizePreview).observe(previewStage);
     resizePreview();
     updatePreview();

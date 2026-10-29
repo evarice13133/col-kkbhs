@@ -484,8 +484,11 @@ $appreciationLabels = [
                                     <input type="text" name="appreciations[<?= $st['student_id'] ?>]"
                                         class="form-control border-0 input-appr-modern js-appreciation-input w-100"
                                         data-student-id="<?= $st['student_id'] ?>"
+                                        data-auto-filled="<?= !empty($st['appreciation_auto']) ? 'true' : 'false' ?>"
                                         value="<?= htmlspecialchars((string) ($st['appreciation'] ?? '')) ?>"
                                         placeholder="<?= __('grade_appreciation_placeholder') ?>">
+                                    <input type="hidden" name="appreciations_auto[<?= $st['student_id'] ?>]"
+                                        class="js-appreciation-auto" value="<?= !empty($st['appreciation_auto']) ? '1' : '0' ?>">
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -867,9 +870,10 @@ $appreciationLabels = [
         document.querySelectorAll('.js-note-input').forEach(function (noteInput) {
             const studentId = noteInput.dataset.studentId;
             const appreciationInput = document.querySelector('.js-appreciation-input[data-student-id="' + studentId + '"]');
+            const appreciationAutoInput = document.querySelector('.js-appreciation-auto[name="appreciations_auto[' + studentId + ']"]');
             const row = document.getElementById('row-' + studentId);
 
-            if (!appreciationInput || !row) return;
+            if (!appreciationInput || !appreciationAutoInput || !row) return;
 
             // Initial styling based on value
             function styleNote(val) {
@@ -887,10 +891,11 @@ $appreciationLabels = [
             
             styleNote(noteInput.value);
 
-            appreciationInput.dataset.autoFilled = appreciationInput.value.trim() === '' ? 'true' : 'false';
+            appreciationInput.dataset.autoFilled = appreciationInput.dataset.autoFilled === 'true';
             
             appreciationInput.addEventListener('input', function () {
                 appreciationInput.dataset.autoFilled = 'false';
+                appreciationAutoInput.value = '0';
             });
 
             noteInput.addEventListener('input', function () {

@@ -101,7 +101,7 @@
     </style>
 </head>
 
-<body>
+<body class="<?= (($_GET['show_competences'] ?? '1') === '0') ? 'competences-hidden' : '' ?>">
     <?php if (empty($isPdf)): ?>
         <!-- BARRE D'OUTILS (Non visible à l'impression) -->
         <div class="pv-toolbar">
@@ -125,6 +125,7 @@
                 <button class="pv-btn pv-btn-print" onclick="window.print()">
                     <?= __('pv_print_btn') ?>
                 </button>
+                <?php include __DIR__ . '/bulletin_competence_toggle.php'; ?>
                 <a href="<?= $_SERVER['REQUEST_URI'] . (strpos($_SERVER['REQUEST_URI'], '?') !== false ? '&' : '?') ?>format=pdf" class="pv-btn pv-btn-download">
                     <i class="bi bi-file-pdf"></i> <?= __('pv_download_btn') ?>
                 </a>
@@ -140,6 +141,7 @@
         extract($bulletin);
         // Restore the teacher names setting
         $showTeacherNamesOnBulletins = $savedShowTeacherNames;
+        $isLastBulletin = $index === array_key_last($bulletins);
         include __DIR__ . '/trimestre.php'; ?>
     <?php endforeach; ?>
 

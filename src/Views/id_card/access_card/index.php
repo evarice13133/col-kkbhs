@@ -149,6 +149,28 @@ ob_start();
 									</div>
 								<?php endforeach; ?>
 							</div>
+							<div class="row g-2 align-items-end mt-2">
+								<div class="col-12 col-md-5">
+									<label for="accessPaletteName" class="form-label small fw-semibold mb-1"><?= htmlspecialchars(__('student_passes_palette_name'), ENT_QUOTES, 'UTF-8') ?></label>
+									<input type="text" class="form-control" id="accessPaletteName" maxlength="60" autocomplete="off" placeholder="<?= htmlspecialchars(__('student_passes_palette_name_placeholder'), ENT_QUOTES, 'UTF-8') ?>">
+								</div>
+								<div class="col-12 col-md-4">
+									<label for="savedAccessPalettes" class="form-label small fw-semibold mb-1"><?= htmlspecialchars(__('student_passes_saved_palettes'), ENT_QUOTES, 'UTF-8') ?></label>
+									<select class="form-select" id="savedAccessPalettes">
+										<option value=""><?= htmlspecialchars(__('student_passes_palette_choose'), ENT_QUOTES, 'UTF-8') ?></option>
+									</select>
+								</div>
+								<div class="col-12 col-md-3 d-flex gap-2">
+									<button type="button" class="btn btn-outline-primary flex-fill" id="saveAccessPalette"><?= htmlspecialchars(__('student_passes_palette_save'), ENT_QUOTES, 'UTF-8') ?></button>
+									<button type="button" class="btn btn-outline-danger" id="deleteAccessPalette" aria-label="<?= htmlspecialchars(__('student_passes_palette_delete'), ENT_QUOTES, 'UTF-8') ?>" title="<?= htmlspecialchars(__('student_passes_palette_delete'), ENT_QUOTES, 'UTF-8') ?>" disabled>
+										<i class="bi bi-trash" aria-hidden="true"></i>
+									</button>
+								</div>
+								<div class="col-12">
+									<p class="form-text mb-0"><?= htmlspecialchars(__('student_passes_palette_storage_hint'), ENT_QUOTES, 'UTF-8') ?></p>
+									<div id="accessPaletteStatus" class="small mt-1" role="status" aria-live="polite"></div>
+								</div>
+							</div>
 							<div class="row g-3 align-items-center mt-1">
 								<div class="col-12 col-lg-8">
 									<h3 class="small fw-bold mb-2"><?= __('access_card_palette_preview') ?></h3>
@@ -237,7 +259,58 @@ ob_start();
 	const studentSelect = printForm.querySelector('[name="student_id"]');
 	const orientationInputs = [...printForm.querySelectorAll('.access-card-orientation')];
 	const previewStudentId = <?= (int) $students[0]['id'] ?>;
+	const paletteNameInput = document.getElementById('accessPaletteName');
+	const savedPalettesSelect = document.getElementById('savedAccessPalettes');
+	const savePaletteButton = document.getElementById('saveAccessPalette');
+	const deletePaletteButton = document.getElementById('deleteAccessPalette');
+	const paletteStatus = document.getElementById('accessPaletteStatus');
+	const paletteKeys = colorInputs.map(input => input.id.replace('palette_', ''));
+	const paletteStorageKey = <?= json_encode(
+		'notemaster.accessCardPalettes.v1.' . (int) \App\Core\Session::get('user_id', 0),
+		JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+	) ?>;
+	let savedPalettes = [];
 	let previewTimer;
+
+	const showPaletteStatus = (message, isError = false) => {
+		paletteStatus.textContent = message;
+		paletteStatus.classList.toggle('text-danger', isError);
+		paletteStatus.classList.toggle('text-success', !isError && message !== '');
+	};
+	const currentPalette = () => Object.fromEntries(
+		colorInputs.map(input => [input.id.replace('palette_', ''), input.value.toUpperCase()])
+	);
+	const isValidPalette = palette => paletteKeys.every(key =>
+		typeof palette?.[key] === 'string' && /^#[0-9a-f]{6}$/i.test(palette[key])
+	);
+	const readSavedPalettes = () => {
+		const stored = localStorage.getItem(paletteStorageKey);
+		if (stored === null) return [];
+
+		const parsed = JSON.parse(stored);
+		if (!Array.isArray(parsed)) throw new Error('invalid_palette_data');
+
+		return parsed.filter(preset =>
+			preset
+			&& typeof preset.name === 'string'
+			&& preset.name.trim() !== ''
+			&& isValidPalette(preset.palette)
+		);
+	};
+	const renderSavedPalettes = (selectedIndex = '') => {
+		savedPalettesSelect.replaceChildren(new Option(
+			<?= json_encode(__('student_passes_palette_choose'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
+			''
+		));
+		savedPalettes.forEach((preset, index) => {
+			savedPalettesSelect.add(new Option(preset.name, String(index)));
+		});
+		savedPalettesSelect.value = selectedIndex;
+		deletePaletteButton.disabled = selectedIndex === '';
+	};
+	const persistSavedPalettes = () => {
+		localStorage.setItem(paletteStorageKey, JSON.stringify(savedPalettes));
+	};
 
 	const syncFilterPalette = () => {
 		for (const input of colorInputs) {
@@ -297,6 +370,7 @@ ob_start();
 			const params = new URLSearchParams(new FormData(printForm));
 			params.set('student_id', studentSelect.value === '0' ? String(previewStudentId) : studentSelect.value);
 			params.set('preview', '1');
+			params.set('preview_version', String(Date.now()));
 			preview.src = `${printForm.action}?${params.toString()}`;
 		}, 180);
 	};
@@ -310,8 +384,78 @@ ob_start();
 	studentSelect.addEventListener('change', updatePreview);
 	document.getElementById('resetAccessCardPalette').addEventListener('click', () => {
 		for (const input of colorInputs) input.value = input.dataset.default;
+		showPaletteStatus('');
 		updatePreview();
 	});
+	savedPalettesSelect.addEventListener('change', () => {
+		const index = Number.parseInt(savedPalettesSelect.value, 10);
+		if (!Number.isInteger(index) || !savedPalettes[index]) {
+			deletePaletteButton.disabled = true;
+			return;
+		}
+
+		for (const input of colorInputs) {
+			const key = input.id.replace('palette_', '');
+			input.value = savedPalettes[index].palette[key];
+		}
+		deletePaletteButton.disabled = false;
+		paletteNameInput.value = savedPalettes[index].name;
+		showPaletteStatus(<?= json_encode(__('student_passes_palette_applied'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>);
+		updatePreview();
+	});
+	savePaletteButton.addEventListener('click', () => {
+		const name = paletteNameInput.value.trim();
+		if (!name) {
+			showPaletteStatus(<?= json_encode(__('student_passes_palette_name_required'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>, true);
+			paletteNameInput.focus();
+			return;
+		}
+
+		const existingIndex = savedPalettes.findIndex(preset => preset.name.toLowerCase() === name.toLowerCase());
+		const previousPalettes = savedPalettes;
+		savedPalettes = [...savedPalettes];
+		const preset = { name, palette: currentPalette() };
+		if (existingIndex >= 0) {
+			savedPalettes[existingIndex] = preset;
+		} else {
+			savedPalettes.push(preset);
+		}
+
+		try {
+			persistSavedPalettes();
+			renderSavedPalettes(String(existingIndex >= 0 ? existingIndex : savedPalettes.length - 1));
+			showPaletteStatus(<?= json_encode(__('student_passes_palette_saved'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>);
+		} catch (error) {
+			savedPalettes = previousPalettes;
+			renderSavedPalettes(existingIndex >= 0 ? String(existingIndex) : '');
+			showPaletteStatus(<?= json_encode(__('student_passes_palette_storage_error'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>, true);
+		}
+	});
+	deletePaletteButton.addEventListener('click', () => {
+		const index = Number.parseInt(savedPalettesSelect.value, 10);
+		if (!Number.isInteger(index) || !savedPalettes[index]) return;
+
+		const previousPalettes = savedPalettes;
+		savedPalettes = savedPalettes.filter((preset, presetIndex) => presetIndex !== index);
+		try {
+			persistSavedPalettes();
+			renderSavedPalettes();
+			paletteNameInput.value = '';
+			showPaletteStatus(<?= json_encode(__('student_passes_palette_deleted'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>);
+		} catch (error) {
+			savedPalettes = previousPalettes;
+			renderSavedPalettes(String(index));
+			showPaletteStatus(<?= json_encode(__('student_passes_palette_storage_error'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>, true);
+		}
+	});
+	try {
+		savedPalettes = readSavedPalettes();
+		renderSavedPalettes();
+	} catch (error) {
+		savePaletteButton.disabled = true;
+		deletePaletteButton.disabled = true;
+		showPaletteStatus(<?= json_encode(__('student_passes_palette_storage_error'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>, true);
+	}
 	new ResizeObserver(resizePreview).observe(previewStage);
 	resizePreview();
 	updatePreview();

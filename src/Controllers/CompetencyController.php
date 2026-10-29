@@ -6,6 +6,7 @@ use App\Core\Database;
 use App\Core\Session;
 use App\Core\PermissionManager;
 use App\Services\AcademicYearService;
+use App\Services\TeacherAssignmentExcelService;
 use PDO;
 
 /**
@@ -439,6 +440,86 @@ class CompetencyController
         } catch (\Throwable $e) {
             if ($this->db->inTransaction()) $this->db->rollBack();
             echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        }
+        exit;
+    }
+
+    public function exportTeacherAssignmentsExcel(): void
+    {
+        if (!$this->canManageAssignments()) {
+            http_response_code(403);
+            exit('Non autorisé.');
+        }
+
+        $activeYearId = $this->academicYearService->getActiveYearId();
+        if ($activeYearId <= 0) {
+            http_response_code(400);
+            exit('Aucune année scolaire active.');
+        }
+
+        try {
+            $spreadsheet = (new TeacherAssignmentExcelService($this->db))
+                ->createBulkWorkbook($activeYearId);
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment; filename="Affectations_Enseignants_' . $activeYearId . '.xlsx"');
+            header('Cache-Control: max-age=0, no-cache, must-revalidate');
+            (new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet))->save('php://output');
+            $spreadsheet->disconnectWorksheets();
+            exit;
+        } catch (\Throwable $exception) {
+            error_log('[CompetencyController] Teacher assignment Excel export failed: ' . $exception->getMessage());
+            http_response_code(400);
+            exit('Export impossible : ' . htmlspecialchars($exception->getMessage(), ENT_QUOTES, 'UTF-8'));
+        }
+    }
+
+    public function importTeacherAssignmentsExcel(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+        if (!$this->canManageAssignments()) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Non autorisé.']);
+            exit;
+        }
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST'
+            || !Session::verifyCsrfToken($_POST['csrf_token'] ?? '')
+            || !isset($_FILES['import_file'])
+        ) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Requête invalide ou session expirée.']);
+            exit;
+        }
+
+        $file = $_FILES['import_file'];
+        if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK
+            || !is_uploaded_file((string) ($file['tmp_name'] ?? ''))
+            || (int) ($file['size'] ?? 0) <= 0
+            || (int) $file['size'] > 10 * 1024 * 1024
+            || strtolower(pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION)) !== 'xlsx'
+        ) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Choisissez un fichier .xlsx valide de 10 Mo maximum.']);
+            exit;
+        }
+
+        $activeYearId = $this->academicYearService->getActiveYearId();
+        if ($activeYearId <= 0) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Aucune année scolaire active.']);
+            exit;
+        }
+
+        try {
+            $result = (new TeacherAssignmentExcelService($this->db))
+                ->importBulk((string) $file['tmp_name'], $activeYearId);
+            echo json_encode(['success' => true] + $result);
+        } catch (\Throwable $exception) {
+            error_log('[CompetencyController] Teacher assignment Excel import failed: ' . $exception->getMessage());
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => $exception->getMessage()]);
         }
         exit;
     }

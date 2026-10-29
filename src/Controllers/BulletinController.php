@@ -605,7 +605,7 @@ class BulletinController
         if ($isEnglishSection) {
             $subjects = $this->getSubjectsWithGrades((int) $student['class_id'], [$sequence['label']], (int) $activeYear['id']);
         } else {
-            $subjects = $this->getClassSubjects((int) $student['class_id']);
+            $subjects = $this->getClassSubjects((int) $student['class_id'], (int) $activeYear['id']);
         }
         $notesMap = $precomputedNotesMap ?? $this->getStudentSequenceNotesMap((int) $student['id'], (int) $student['class_id'], [$sequence['label']], (int) $activeYear['id']);
         $subjectStats = $precomputedSubjectStats ?? $this->getSubjectStatsForSequence((int) $student['class_id'], $sequence['label'], (int) $activeYear['id']);
@@ -721,7 +721,7 @@ class BulletinController
             $sequenceLabels = array_column($termSequences, 'label');
             $subjects = $this->getSubjectsWithGrades((int) $student['class_id'], $sequenceLabels, (int) $activeYear['id']);
         } else {
-            $subjects = $this->getClassSubjects((int) $student['class_id']);
+            $subjects = $this->getClassSubjects((int) $student['class_id'], (int) $activeYear['id']);
         }
         $sequenceLabels = array_column($termSequences, 'label');
         $notesMap = $precomputedNotesMap ?? $this->getStudentSequenceNotesMap((int) $student['id'], (int) $student['class_id'], $sequenceLabels, (int) $activeYear['id']);
@@ -955,7 +955,7 @@ class BulletinController
                 $allSeqLabels = array_merge($allSeqLabels, array_column($seqs, 'label'));
             $subjects = $this->getSubjectsWithGrades($classId, $allSeqLabels, (int) $activeYear['id']);
         } else {
-            $subjects = $this->getClassSubjects($classId);
+            $subjects = $this->getClassSubjects($classId, (int) $activeYear['id']);
             $termSequencesByTerm = [
                 1 => $this->getActiveSequencesByTerm(1),
                 2 => $this->getActiveSequencesByTerm(2),
@@ -1108,7 +1108,7 @@ class BulletinController
         if ($this->isEnglishSection($classId)) {
             $subjects = $this->getSubjectsWithGrades($classId, [$sequenceLabel], $academicYearId);
         } else {
-            $subjects = $this->getClassSubjects($classId);
+            $subjects = $this->getClassSubjects($classId, $academicYearId);
         }
         $subjectMap = [];
         foreach ($subjects as $subject) {
@@ -1149,7 +1149,7 @@ class BulletinController
             $sequenceLabels = array_column($termSequences, 'label');
             $subjects = $this->getSubjectsWithGrades($classId, $sequenceLabels, $academicYearId);
         } else {
-            $subjects = $this->getClassSubjects($classId);
+            $subjects = $this->getClassSubjects($classId, $academicYearId);
         }
         $subjectMap = [];
         foreach ($subjects as $subject) {
@@ -1218,7 +1218,7 @@ class BulletinController
             }
             $subjects = $this->getSubjectsWithGrades($classId, $allSequenceLabels, $academicYearId);
         } else {
-            $subjects = $this->getClassSubjects($classId);
+            $subjects = $this->getClassSubjects($classId, $academicYearId);
         }
         $subjectMap = [];
         foreach ($subjects as $subject) {
@@ -1631,7 +1631,7 @@ class BulletinController
         return (bool) $stmtTa->fetchColumn();
     }
 
-    protected function getClassSubjects(int $classId)
+    protected function getClassSubjects(int $classId, int $academicYearId)
     {
         // Les matières du bulletin suivent la forme portée par le département de la classe.
         $departmentTeachingFormId = $this->departmentTeachingFormIdExpression();
@@ -1639,7 +1639,9 @@ class BulletinController
                                     (SELECT CONCAT(u.nom, ' ', u.prenom)
                                      FROM teacher_assignments ta
                                      JOIN users u ON u.id = ta.user_id
-                                     WHERE ta.subject_id = s.id AND ta.class_id = sc.class_id AND u.role = 'enseignant'
+                                     WHERE ta.subject_id = s.id
+                                       AND ta.class_id = sc.class_id
+                                       AND ta.academic_year_id = sc.academic_year_id
                                      LIMIT 1) as teacher_name
             FROM subject_classes sc
             JOIN subjects s ON s.id = sc.subject_id
@@ -1647,7 +1649,7 @@ class BulletinController
             LEFT JOIN departments d ON d.id = c.department_id
             JOIN subject_groups sg ON sg.id = s.subject_group_id
             LEFT JOIN teaching_forms tf ON tf.id = sg.teaching_form_id
-            WHERE sc.class_id = ? AND s.status = 1
+            WHERE sc.class_id = ? AND sc.academic_year_id = ? AND s.status = 1
               AND sg.status = 1
                             AND sg.section_id = c.section_id
               AND (
@@ -1669,7 +1671,7 @@ class BulletinController
             ORDER BY s.nom ASC";
 
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$classId]);
+        $stmt->execute([$classId, $academicYearId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -1689,7 +1691,9 @@ class BulletinController
                                     (SELECT CONCAT(u.nom, ' ', u.prenom)
                                      FROM teacher_assignments ta
                                      JOIN users u ON u.id = ta.user_id
-                                     WHERE ta.subject_id = s.id AND ta.class_id = sc.class_id AND u.role = 'enseignant'
+                                     WHERE ta.subject_id = s.id
+                                       AND ta.class_id = sc.class_id
+                                       AND ta.academic_year_id = sc.academic_year_id
                                      LIMIT 1) as teacher_name
             FROM subject_classes sc
             JOIN subjects s ON s.id = sc.subject_id
@@ -1698,7 +1702,7 @@ class BulletinController
             JOIN subject_groups sg ON sg.id = s.subject_group_id
             LEFT JOIN teaching_forms tf ON tf.id = sg.teaching_form_id
             JOIN grades g ON g.subject_id = s.id
-            WHERE sc.class_id = ? AND s.status = 1
+            WHERE sc.class_id = ? AND sc.academic_year_id = ? AND s.status = 1
               AND sg.status = 1
                             AND sg.section_id = c.section_id
               AND (
@@ -1720,7 +1724,7 @@ class BulletinController
               AND g.periode IN ($placeholders) AND g.academic_year_id = ?
             ORDER BY s.nom ASC";
 
-        $params = array_merge([$classId], $periodLabels, [$academicYearId]);
+        $params = array_merge([$classId, $academicYearId], $periodLabels, [$academicYearId]);
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -2083,6 +2087,7 @@ class BulletinController
         $options->set('isHtml5ParserEnabled', true);
         $options->set('isRemoteEnabled', true);
         $options->set('defaultFont', 'Helvetica');
+        $options->setDefaultMediaType('print');
 
         $dompdf = new \Dompdf\Dompdf($options);
         $dompdf->loadHtml($html);
@@ -2093,6 +2098,7 @@ class BulletinController
             $dompdf->stream($filename, ["Attachment" => true]);
         } catch (\Throwable $e) {
             // Fallback si la génération serveur échoue (souvent dû à la mémoire sur de très gros fichiers)
+            error_log('Bulletin PDF generation failed: ' . $e->getMessage());
             echo "<div style='font-family:sans-serif; padding:40px; text-align:center;'>";
             echo "<h2 style='color:#d32f2f;'>Le fichier est trop volumineux pour l'exportation directe (" . count(explode('bulletin-sheet', $html)) . " pages)</h2>";
             echo "<p>Pour garantir la qualité du document, veuillez utiliser la fonction d'impression de votre navigateur :</p>";

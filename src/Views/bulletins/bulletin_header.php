@@ -524,6 +524,36 @@ if (isset($styleOnly)) {
     .report-card-signatures { display: flex; justify-content: space-between; gap: 10px; padding-top: 8px; font-size: .82em; }
     .col-subject { width: calc(14% + 5px); }
     .col-competence { width: calc(46% - 5px); }
+    body.competences-hidden .report-card-main-table,
+    body.competences-hidden .report-card-header-table,
+    .report-card-grid.competences-hidden .report-card-main-table,
+    .report-card-grid.competences-hidden .report-card-header-table {
+        table-layout: fixed !important;
+    }
+    body.competences-hidden .col-subject,
+    .report-card-grid.competences-hidden .col-subject,
+    body.competences-hidden .report-card-main-table td.report-card-subject,
+    .report-card-grid.competences-hidden .report-card-main-table td.report-card-subject,
+    body.competences-hidden .report-card-header-table th:first-child,
+    .report-card-grid.competences-hidden .report-card-header-table th:first-child {
+        width: 60% !important;
+        min-width: 60% !important;
+        max-width: 60% !important;
+    }
+    body.competences-hidden .col-competence,
+    body.competences-hidden .competence-header,
+    body.competences-hidden .report-card-competence,
+    .report-card-grid.competences-hidden .col-competence,
+    .report-card-grid.competences-hidden .competence-header,
+    .report-card-grid.competences-hidden .report-card-competence {
+        display: none !important;
+        width: 0 !important;
+        min-width: 0 !important;
+        max-width: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        overflow: hidden !important;
+    }
     .col-test { width: 5%; }
     .col-term { width: 5%; }
     .col-average { width: 5.5%; }
@@ -550,6 +580,7 @@ if (isset($styleOnly)) {
     .pv-btn { padding: 7px 18px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold;
     text-decoration: none; transition: opacity 0.2s; display: inline-block; }
     .pv-btn-print { background: #0d6efd; color: white; }
+    .pv-btn-competences { background: #6f42c1; color: white; margin-right: 5px; }
     .pv-btn-back { background: rgba(255,255,255,0.15); color: white; margin-right: 5px; }
     @media screen and (max-width: 600px) {
     .pv-toolbar { flex-direction: column; align-items: stretch; gap: 8px; }
@@ -572,26 +603,101 @@ if (isset($styleOnly)) {
     }
     @media print {
     .print-page-frame { display: none !important; }
-    .bulletin-wrapper { box-sizing: border-box; width: calc(100% - 2mm); max-width: none; min-height: 292mm; margin: 0 auto; border: 2px solid #14347a !important; page-break-after: always; page-break-inside: avoid; break-after: page; break-inside: avoid-page; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .bulletin-sheet { page-break-inside: avoid; border: none; padding: 6px 6px 42px; }
+    .bulletin-wrapper { box-sizing: border-box; display: block; width: calc(100% - 2mm); max-width: none; min-height: 0; margin: 0 auto; border: 2px solid #14347a !important; page-break-after: always; page-break-inside: avoid; break-after: page; break-inside: avoid-page; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .bulletin-wrapper:last-of-type { page-break-after: auto; break-after: auto; }
+    .bulletin-wrapper.bulletin-wrapper-last { page-break-after: auto !important; break-after: auto !important; }
+    .bulletin-sheet { display: flex; flex-direction: column; justify-content: space-between; min-height: 287mm; page-break-inside: avoid; break-inside: avoid-page; border: none; padding: 3px 4px 4px; }
+    .bulletin-sheet > * { flex: 0 0 auto; }
+    .report-card-grid { display: block; flex: none; min-height: 0; margin: 2px 0; overflow: visible; page-break-inside: avoid; break-inside: avoid-page; }
+    .header-wrapper { display: block !important; width: 100%; font-size: 0 !important; }
+    .header-left, .header-center, .header-right { display: inline-block !important; vertical-align: top; font-size: 10px; }
+    .header-left, .header-right { width: 39% !important; }
+    .header-center { width: 20% !important; }
+    .header-side-content { display: block !important; }
+    .header-contact-row { display: block !important; white-space: normal; }
+    .header-contact { display: inline-block !important; margin-right: 3px; }
+    .bulletin-sheet .student-header-layout { display: block !important; font-size: 0 !important; }
+    .bulletin-sheet .student-photo-block,
+    .bulletin-sheet .student-identity-grid { display: inline-block !important; vertical-align: top; }
+    .bulletin-sheet .student-photo-block { width: 9% !important; font-size: 10px; }
+    .bulletin-sheet .student-identity-grid { width: 90% !important; font-size: 10px; }
+    .bulletin-sheet .student-identity-item { display: inline-block !important; width: 24%; vertical-align: top; }
+    .bulletin-sheet .student-identity-item.full { display: block !important; width: 100%; }
+    .bulletin-sheet .student-identity-footer { display: block !important; }
+    .bulletin-sheet .student-identity-footer .student-identity-item { display: inline-block !important; width: 49%; vertical-align: top; }
+    .report-card-legend { display: block; }
+    .report-card-legend strong { display: block; }
+    .report-card-legend span { display: inline-block; margin-right: 4px; }
     table { page-break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     tr { page-break-inside: avoid; }
     th, td { border: 1px solid #14347a; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     th { background-color: #14347a !important; color: white !important; border: 2px solid #14347a !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .report-card-header-table th { border: 1px solid #fff !important; }
     .report-card-header-table thead th { border-bottom-color: #fff !important; }
+    .bulletin-sheet .report-card-header-table { margin-bottom: 2px !important; }
+    .bulletin-sheet .report-card-main-table th,
+    .bulletin-sheet .report-card-main-table td { padding: .5px 1px !important; font-size: 9px !important; line-height: 1.05 !important; }
+    .bulletin-sheet .report-card-main-table .report-card-subject { font-size: 9px !important; line-height: 1.05 !important; }
+    .bulletin-sheet .report-card-main-table .report-card-competence { font-size: 8.5px !important; line-height: 1.05 !important; overflow-wrap: anywhere; }
+    .bulletin-sheet .report-card-main-table td.appreciation-cell { padding: 0 !important; font-size: 8px !important; line-height: 1 !important; overflow-wrap: break-word; word-break: break-word; }
+    .bulletin-sheet .report-card-grid-under-17 .report-card-main-table tbody tr:not(.report-card-group-header):not(.report-card-subtotal):not(.report-card-grand-total) td { padding-top: 3px !important; padding-bottom: 3px !important; }
+    .bulletin-sheet .report-card-main-table .report-card-teacher { font-size: 8px !important; line-height: 1 !important; }
+    .bulletin-sheet .report-card-legend { gap: 2px 6px; padding: 1px 3px; font-size: 8px; line-height: 1; }
+    .bulletin-sheet .student-header-layout { gap: 4px; margin-bottom: 2px; }
+    .bulletin-sheet .student-photo-block { flex-basis: 64px; }
+    .bulletin-sheet .student-photo-block .student-photo-container { width: 64px; height: 69px; }
+    .bulletin-sheet .student-photo-icon { width: 36px; height: 36px; flex-basis: 36px; }
+    .bulletin-sheet .student-identity-grid { overflow: visible; }
+    .bulletin-sheet .student-identity-item { min-height: 15px; padding: 1px 2px; gap: 2px; flex-wrap: wrap; }
+    .bulletin-sheet .student-identity-item.full { min-height: 22px; padding: 2px; }
+    .bulletin-sheet .student-identity-label { font-size: 8.5px; white-space: normal; }
+    .bulletin-sheet .student-identity-value { font-size: 9px; white-space: normal; overflow-wrap: anywhere; flex-shrink: 1; }
+    .bulletin-sheet .student-name-value { font-size: 12px; overflow-wrap: anywhere; }
+    .bulletin-sheet .header-center .logo-box { width: 50px; height: 50px; }
+    .bulletin-sheet .title-box { font-size: 14px; margin-bottom: 2px; padding: 1px 2px; }
+    .report-card-grid-trimestre .col-subject { width: 15%; }
+    .report-card-grid-trimestre .col-competence { width: 37%; }
+    .report-card-grid-trimestre .col-test { width: 5%; }
+    .report-card-grid-trimestre .col-average { width: 7%; }
+    .report-card-grid-trimestre .col-coefficient { width: 5%; }
+    .report-card-grid-trimestre .col-score { width: 7%; }
+    .report-card-grid-trimestre .col-rank { width: 6%; }
+    .report-card-grid-trimestre .col-appreciation { width: 13%; }
+    .report-card-grid-annuel .col-subject { width: 15%; }
+    .report-card-grid-annuel .col-competence { width: 32%; }
+    .report-card-grid-annuel .col-term { width: 5%; }
+    .report-card-grid-annuel .col-average { width: 7%; }
+    .report-card-grid-annuel .col-coefficient { width: 5%; }
+    .report-card-grid-annuel .col-score { width: 7%; }
+    .report-card-grid-annuel .col-rank { width: 6%; }
+    .report-card-grid-annuel .col-appreciation { width: 13%; }
+    .report-card-grid-sequence .col-subject { width: 15%; }
+    .report-card-grid-sequence .col-competence { width: 44%; }
+    .report-card-grid-sequence .col-sequence { width: 5%; }
+    .report-card-grid-sequence .col-average { width: 7%; }
+    .report-card-grid-sequence .col-coefficient { width: 5%; }
+    .report-card-grid-sequence .col-score { width: 7%; }
+    .report-card-grid-sequence .col-rank { width: 6%; }
+    .report-card-grid-sequence .col-appreciation { width: 11%; }
+    .report-card-grid-trimestre.competences-hidden .col-subject,
+    .report-card-grid-trimestre.competences-hidden .report-card-subject,
+    .report-card-grid-trimestre.competences-hidden .report-card-header-table th:first-child { width: 52% !important; min-width: 52% !important; max-width: 52% !important; }
+    .report-card-grid-annuel.competences-hidden .col-subject,
+    .report-card-grid-annuel.competences-hidden .report-card-subject,
+    .report-card-grid-annuel.competences-hidden .report-card-header-table th:first-child { width: 47% !important; min-width: 47% !important; max-width: 47% !important; }
+    .report-card-grid-sequence.competences-hidden .col-subject,
+    .report-card-grid-sequence.competences-hidden .report-card-subject,
+    .report-card-grid-sequence.competences-hidden .report-card-header-table th:first-child { width: 59% !important; min-width: 59% !important; max-width: 59% !important; }
     .bulletin-footer {
         position: relative !important;
         left: auto !important;
         right: auto !important;
         bottom: auto !important;
         z-index: 1 !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: space-between !important;
+        display: block !important;
         width: 100% !important;
-        margin-top: 10px !important;
-        padding: 2px 0 !important;
+        margin-top: 4px !important;
+        padding: 1px 0 !important;
         background: #14347a !important;
         color: #dfeeff !important;
         border-top: none !important;
@@ -599,11 +705,13 @@ if (isset($styleOnly)) {
         print-color-adjust: exact;
         page-break-inside: avoid;
     }
+    .bulletin-footer > span { display: inline-block !important; vertical-align: middle !important; }
+    .bulletin-footer .bulletin-name { width: 20%; }
     .bulletin-footer .bulletin-copyright {
         position: relative !important;
         z-index: 1 !important;
-        display: block !important;
-        width: 100% !important;
+        display: inline-block !important;
+        width: 80% !important;
         padding: 1px 0 !important;
         background: transparent !important;
         color: #dfeeff !important;

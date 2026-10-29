@@ -114,6 +114,7 @@ $studentAcquisitionDescription = match ($studentAcquisitionLevel) {
 $statisticsColumnCount = count($visibleTopRows) + 2;
 $statisticsSideColumnWidth = 18;
 $statisticsEvaluationColumnWidth = (100 - (2 * $statisticsSideColumnWidth)) / max(1, $statisticsColumnCount - 2);
+$statisticsSubjectCount = (int) ($subjectCount ?? 0);
 ?>
 <style>
     .bulletin-statistics { width: 100%; margin: 1px 0 0; font-size: 9px; line-height: 1.05; page-break-inside: avoid; }
@@ -140,10 +141,37 @@ $statisticsEvaluationColumnWidth = (100 - (2 * $statisticsSideColumnWidth)) / ma
     .bulletin-statistics .statistics-decision-content { height: 48px; padding: 2px 5px !important; vertical-align: middle; text-align: left; }
     .bulletin-statistics .statistics-decision-content strong { display: block; line-height: 14px; white-space: nowrap; }
     .bulletin-statistics .statistics-decision-content input { vertical-align: middle; margin: 0 3px 0 8px; }
-    @media print { .bulletin-statistics { page-break-inside: avoid; } }
+    @media print {
+        .bulletin-statistics { page-break-inside: avoid; break-inside: avoid-page; font-size: 8.5px; line-height: 1; }
+        .bulletin-statistics td,
+        .bulletin-statistics th,
+        .bulletin-sheet .bulletin-statistics td,
+        .bulletin-sheet .bulletin-statistics th {
+            height: auto !important;
+            min-height: 0 !important;
+            padding: 0 1px !important;
+            font-size: 8.5px !important;
+            line-height: 1 !important;
+        }
+        .bulletin-sheet .bulletin-statistics-under-17 td,
+        .bulletin-sheet .bulletin-statistics-under-17 th { padding-top: 1.5px !important; padding-bottom: 1.5px !important; }
+        .bulletin-statistics .statistics-remarks { min-height: 0; }
+        .bulletin-statistics .statistics-acquisition-result {
+            min-height: 0;
+            gap: 2px;
+            padding: 3px;
+        }
+        .bulletin-statistics .statistics-acquisition-title,
+        .bulletin-statistics .statistics-acquisition-average { font-size: 8.5px; }
+        .bulletin-statistics .statistics-acquisition-code { font-size: 18px; }
+        .bulletin-statistics .statistics-acquisition-description { font-size: 8px; line-height: 1.05; }
+        .bulletin-statistics .statistics-decision-title { height: auto; padding: 1px 2px !important; }
+        .bulletin-statistics .statistics-decision-content { height: auto; padding: 1px 2px !important; }
+        .bulletin-statistics .statistics-decision-content strong { line-height: 9px; white-space: normal; }
+    }
 </style>
 
-<div class="bulletin-statistics<?= in_array(($bulletinPeriod ?? ''), ['sequence', 'trimestre', 'annuel'], true) ? ' bulletin-statistics-tall-cells' : '' ?>">
+<div class="bulletin-statistics<?= in_array(($bulletinPeriod ?? ''), ['sequence', 'trimestre', 'annuel'], true) ? ' bulletin-statistics-tall-cells' : '' ?><?= $statisticsSubjectCount < 17 ? ' bulletin-statistics-under-17' : '' ?>">
 <table class="statistics-single-table">
     <colgroup>
         <?php if (!$showSecondTerm): ?>
