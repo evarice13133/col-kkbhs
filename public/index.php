@@ -705,6 +705,12 @@ elseif (strpos($path, '/teachers') === 0) {
         $c->index();
     elseif ($path === '/access-cards/print')
         $c->print();
+} elseif (strpos($path, '/student-passes') === 0) {
+    $c = new AccessCardController();
+    if ($path === '/student-passes')
+        $c->passes();
+    elseif ($path === '/student-passes/print')
+        $c->printPasses();
 } elseif (strpos($path, '/identity-cards') === 0) {
     $c = new AccessCardController();
     if ($path === '/identity-cards')
@@ -843,6 +849,10 @@ elseif (strpos($path, '/competencies') === 0) {
         $c->apiTeacherAssignmentImpact();
     elseif ($path === '/competencies/api/assign-teacher-subjects' && $method === 'POST')
         $c->apiAssignTeacherSubjects();
+    elseif ($path === '/competencies/teacher-assignments/export' && $method === 'GET')
+        $c->exportTeacherAssignmentsExcel();
+    elseif ($path === '/competencies/teacher-assignments/import' && $method === 'POST')
+        $c->importTeacherAssignmentsExcel();
     elseif ($path === '/competencies/api/by-subject' && $method === 'GET')
         $c->apiBySubject();
     elseif ($path === '/competencies/api/create' && $method === 'POST')
