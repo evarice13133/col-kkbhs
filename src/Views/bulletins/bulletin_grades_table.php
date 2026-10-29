@@ -16,8 +16,13 @@ if (count($trimesterHeaderLabels) === 0) {
     $fallbackStart = (($fallbackTerm - 1) * 2) + 1;
     $trimesterHeaderLabels = ['SEQ' . $fallbackStart, 'SEQ' . ($fallbackStart + 1)];
 }
-$tableColumns = $showEvaluationTests ? 9 : ($showAnnualTerms ? 10 : 8);
-$groupLabelColspan = $showEvaluationTests ? 4 : ($showAnnualTerms ? 5 : 3);
+$visibleTableColumns = $showEvaluationTests ? 9 : ($showAnnualTerms ? 10 : 8);
+$hiddenTableColumns = $visibleTableColumns - 1;
+$visibleGroupLabelColspan = $showEvaluationTests ? 4 : ($showAnnualTerms ? 5 : 3);
+$hiddenGroupLabelColspan = $visibleGroupLabelColspan - 1;
+$showCompetences = ($_GET['show_competences'] ?? '1') !== '0';
+$tableColumns = $showCompetences ? $visibleTableColumns : $hiddenTableColumns;
+$groupLabelColspan = $showCompetences ? $visibleGroupLabelColspan : $hiddenGroupLabelColspan;
 $grandPoints = 0.0;
 $grandCoefficients = 0.0;
 $passedSubjects = 0;
@@ -27,7 +32,7 @@ if ($reportCardLogo === '' && !empty($institution['school_logo'])) {
     $reportCardLogo = \App\Core\Helpers::normalizeLogoPath((string) $institution['school_logo']);
 }
 ?>
-<div class="report-card-grid <?= $isTechnicalBulletin ? 'report-card-grid-technical' : '' ?><?= $subjectCountForSizing < 17 ? ' report-card-grid-under-17' : '' ?>">
+<div class="report-card-grid report-card-grid-<?= htmlspecialchars($bulletinPeriod, ENT_QUOTES, 'UTF-8') ?> <?= $isTechnicalBulletin ? 'report-card-grid-technical' : '' ?><?= $subjectCountForSizing < 17 ? ' report-card-grid-under-17' : '' ?><?= !$showCompetences ? ' competences-hidden' : '' ?>">
     <?php if ($reportCardLogo !== ''): ?>
         <img class="report-card-watermark" src="<?= htmlspecialchars($reportCardLogo, ENT_QUOTES, 'UTF-8') ?>" alt="" aria-hidden="true">
     <?php endif; ?>
@@ -36,13 +41,13 @@ if ($reportCardLogo === '' && !empty($institution['school_logo'])) {
             <col class="col-subject">
             <col class="col-competence">
             <?php if ($showEvaluationTests): ?><col class="col-test"><col class="col-test"><?php endif; ?>
-            <?php if ($showAnnualTerms): ?><col class="col-term"><col class="col-term"><col class="col-term"><?php endif; ?>
+            <?php if ($showAnnualTerms): ?><col class="col-term"><col class="col-term"><col class="col-term"><?php elseif (!$showEvaluationTests): ?><col class="col-sequence"><?php endif; ?>
             <col class="col-average"><col class="col-coefficient"><col class="col-score"><col class="col-rank"><col class="col-appreciation">
         </colgroup>
         <thead>
             <tr>
                 <th rowspan="2"><?= __('subjects_column') ?></th>
-                <th rowspan="2"><?= __('competences') ?></th>
+                <th rowspan="2" class="competence-header"><?= __('competences') ?></th>
                 <?php if ($showEvaluationTests): ?>
                     <th colspan="<?= count($trimesterHeaderLabels) ?: 2 ?>"><?= htmlspecialchars((string) $trimesterGroupLabel) ?></th>
                 <?php elseif ($showAnnualTerms): ?>
@@ -76,13 +81,13 @@ if ($reportCardLogo === '' && !empty($institution['school_logo'])) {
             <col class="col-subject">
             <col class="col-competence">
             <?php if ($showEvaluationTests): ?><col class="col-test"><col class="col-test"><?php endif; ?>
-            <?php if ($showAnnualTerms): ?><col class="col-term"><col class="col-term"><col class="col-term"><?php endif; ?>
+            <?php if ($showAnnualTerms): ?><col class="col-term"><col class="col-term"><col class="col-term"><?php elseif (!$showEvaluationTests): ?><col class="col-sequence"><?php endif; ?>
             <col class="col-average"><col class="col-coefficient"><col class="col-score"><col class="col-rank"><col class="col-appreciation">
         </colgroup>
         <tbody>
             <?php foreach ($groupedRows as $groupIndex => $group): ?>
                 <tr class="report-card-group-header">
-                    <th colspan="<?= $tableColumns ?>">
+                    <th colspan="<?= $tableColumns ?>" data-colspan-visible="<?= $visibleTableColumns ?>" data-colspan-hidden="<?= $hiddenTableColumns ?>">
                         <?= htmlspecialchars((string) $group['label']) ?>
                     </th>
                 </tr>
@@ -101,7 +106,7 @@ if ($reportCardLogo === '' && !empty($institution['school_logo'])) {
                     <tr>
                         <td class="report-card-subject">
                             <?= htmlspecialchars((string) $row['subject']) ?>
-                            <?php if (trim((string) ($row['teacher'] ?? '')) !== ''): ?>
+                            <?php if (!empty($showTeacherNamesOnBulletins) && trim((string) ($row['teacher'] ?? '')) !== ''): ?>
                                 <span class="report-card-teacher"><?= htmlspecialchars((string) $row['teacher']) ?></span>
                             <?php endif; ?>
                         </td>
@@ -124,7 +129,7 @@ if ($reportCardLogo === '' && !empty($institution['school_logo'])) {
                     </tr>
                 <?php endforeach; ?>
                 <tr class="report-card-subtotal">
-                    <td colspan="<?= $groupLabelColspan ?>"><?= __('subtotal') ?> <?= $groupIndex + 1 ?></td>
+                    <td colspan="<?= $groupLabelColspan ?>" data-colspan-visible="<?= $visibleGroupLabelColspan ?>" data-colspan-hidden="<?= $hiddenGroupLabelColspan ?>"><?= __('subtotal') ?> <?= $groupIndex + 1 ?></td>
                     <td></td>
                     <td><?= formatSimple($groupCoefficients) ?></td>
                     <td><?= formatSimple($groupPoints) ?></td>
@@ -132,7 +137,7 @@ if ($reportCardLogo === '' && !empty($institution['school_logo'])) {
                 </tr>
             <?php endforeach; ?>
             <tr class="report-card-grand-total">
-                <th colspan="<?= $groupLabelColspan ?>"><?= __('grand_total') ?></th>
+                <th colspan="<?= $groupLabelColspan ?>" data-colspan-visible="<?= $visibleGroupLabelColspan ?>" data-colspan-hidden="<?= $hiddenGroupLabelColspan ?>"><?= __('grand_total') ?></th>
                     <th></th>
                     <th><?= formatSimple($grandCoefficients) ?></th>
                     <th><?= formatSimple($grandPoints) ?></th>

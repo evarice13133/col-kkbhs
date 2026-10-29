@@ -54,44 +54,6 @@ $usageCards = [
     ['value' => (int) ($usageMetrics['monthly_activity'] ?? 0), 'label' => __('monthly_activity'), 'hint' => __('activity_events_label'), 'icon' => 'bi-graph-up-arrow', 'accent' => 'danger'],
 ];
 
-$quickAccessLinks = [
-    // ── Ressources humaines ──────────────────────────────────
-    ['url' => '/students', 'icon' => 'bi-people-fill',           'label' => __('students'),            'meta' => (string) ((int) $stats_students)],
-    ['url' => '/teachers', 'icon' => 'bi-person-badge-fill',     'label' => __('teachers'),            'meta' => (string) ((int) $stats_teachers)],
-    // ── Structure ────────────────────────────────────────────
-    ['url' => '/classes',  'icon' => 'bi-door-open-fill',        'label' => __('classes'),             'meta' => (string) ((int) $stats_classes)],
-    ['url' => '/subjects', 'icon' => 'bi-book-fill',             'label' => __('subjects'),            'meta' => (string) ((int) $stats_subjects)],
-// ── Gestion des notes ───────────────────────────────────────
-    ['url' => '/notes',    'icon' => 'bi-pencil-square',         'label' => __('enter_marks'),         'meta' => (string) ((int) $globalPending)],
-    ['url' => '/bulletins/discipline', 'icon' => 'bi-shield-check', 'label' => __('discipline_management'), 'meta' => null],
-    ['url' => '/honors',   'icon' => 'bi-award-fill',            'label' => __('honor_roll_title'),    'meta' => null],
-    ['url' => '/proces-verbal', 'icon' => 'bi-file-earmark-text','label' => __('proces_verbaux'),      'meta' => null],
-    // ── Pilotage ─────────────────────────────────────────────
-    ['url' => '/sequences',       'icon' => 'bi-check2-square',  'label' => __('evaluations'),         'meta' => null],
-    // ── Affectations ─────────────────────────────────────────
-    ['url' => '/teachers', 'icon' => 'bi-diagram-3-fill',        'label' => __('academic_assignment'), 'meta' => (string) ((int) $teachers_without_assignment)],
-    // ── Aide ─────────────────────────────────────────────────
-    ['url' => '/documentation', 'icon' => 'bi-question-circle-fill', 'label' => __('help'),            'meta' => null],
-];
-
-// Ajouter conditionnellement le lien Bulletin si l'impression est activée
-if ($bulletin_printing_enabled ?? true) {
-    array_splice($quickAccessLinks, 6, 0, [['url' => '/bulletins','icon' => 'bi-file-earmark-pdf', 'label' => __('bulletins'), 'meta' => null]]);
-}
-
-if (in_array(\App\Core\Session::get('user_role'), ['superadmin', 'it_manager'])) {
-    $quickAccessLinks[] = ['url' => '/academic_years',  'icon' => 'bi-calendar-event', 'label' => __('academic_years'),      'meta' => null];
-}
-
-$quickAccessLinks[] = ['url' => '/departments', 'icon' => 'bi-building',       'label' => __('departments'),       'meta' => null];
-$quickAccessLinks[] = ['url' => '/sections',    'icon' => 'bi-grid-3x3-gap',   'label' => __('academic_sections'), 'meta' => null];
-$quickAccessLinks[] = ['url' => '/cycles',      'icon' => 'bi-layers',          'label' => __('academic_cycles'),   'meta' => null];
-$quickAccessLinks[] = ['url' => '/settings',    'icon' => 'bi-gear-fill',       'label' => __('settings'),          'meta' => null];
-
-if (\App\Core\Session::get('user_role') === 'superadmin') {
-    $quickAccessLinks[] = ['url' => '/users',       'icon' => 'bi-people-fill',     'label' => __('users'),             'meta' => (string) ((int) $stats_users)];
-}
-
 ob_start();
 ?>
 
@@ -747,33 +709,22 @@ ob_start();
         </div>
     </div>
 
-    <!-- Accès rapide - Scroll horizontal -->
-    <div class="modern-card mb-4 border-0 shadow-sm border-top border-primary border-4 animate-fade-in" style="border-radius: 24px !important;" data-views="general">
-        <div class="modern-card-header border-bottom bg-transparent py-3">
-            <div class="d-flex align-items-center gap-2">
-                <i class="bi bi-lightning-fill text-primary fs-5"></i>
-                <h5 class="modern-card-title m-0 text-main-theme"><?= __('quick_actions') ?></h5>
-            </div>
-            <span class="badge bg-primary bg-opacity-10 text-primary fw-bold"><?= count($quickAccessLinks) ?> <?= __('links') ?></span>
+    <!-- Liens des menus de navigation autorisés -->
+    <section class="quick-access-section mb-4 animate-fade-in" data-views="general" aria-labelledby="quickAccessTitle">
+        <div class="quick-access-heading">
+            <h5 class="quick-access-title" id="quickAccessTitle">
+                <i class="bi bi-lightning-charge-fill" aria-hidden="true"></i>
+                <?= __('quick_actions') ?>
+            </h5>
+            <span class="quick-access-count" id="quickAccessMenuCount" data-count-suffix="<?= h(__('links')) ?>"></span>
         </div>
-        <div class="modern-card-body p-3">
-            <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
-                <div class="d-grid gap-2" style="grid-template-columns: repeat(3, minmax(220px, 1fr)); min-width: 700px;">
-                    <?php foreach ($quickAccessLinks as $link): ?>
-                        <a href="<?= h($link['url']) ?>" class="quick-access-link text-decoration-none">
-                            <span class="quick-access-icon">
-                                <i class="bi <?= h($link['icon']) ?>"></i>
-                            </span>
-                            <span class="quick-access-text"><?= h($link['label']) ?></span>
-                            <?php if (!empty($link['meta'])): ?>
-                                <span class="quick-access-meta"><?= h((string) $link['meta']) ?></span>
-                            <?php endif; ?>
-                        </a>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-        </div>
-    </div>
+        <div
+            class="quick-access-grid"
+            id="quickAccessMenuGrid"
+            role="group"
+            aria-label="<?= h(__('quick_actions')) ?>"
+        ></div>
+    </section>
 
     <!-- ========================================== -->
     <!-- SECTION : TABLEAU DE BORD INTELLIGENT AVANCÉ -->
@@ -2737,51 +2688,157 @@ ob_start();
         }
     }
 
-    .quick-access-link {
+    .quick-access-heading {
         display: flex;
-        align-items: center;
-        gap: 0.7rem;
-        padding: 0.8rem 0.95rem;
-        border: 1px solid var(--border-color);
-        border-radius: 14px;
-        text-decoration: none;
-        color: var(--text-main);
-        background: color-mix(in srgb, var(--bg-card) 88%, transparent);
-        transition: all .2s ease;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 0.9rem;
     }
 
-    .quick-access-link:hover {
-        border-color: color-mix(in srgb, var(--primary-color) 45%, transparent);
-        background: var(--primary-soft);
-        transform: translateY(-1px);
+    .quick-access-title {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        margin: 0;
         color: var(--text-main);
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.15rem;
+        font-weight: 700;
+    }
+
+    .quick-access-title i {
+        color: var(--primary-color, #7c3aed);
+    }
+
+    .quick-access-count {
+        color: var(--text-muted);
+        font-size: 0.8rem;
+        white-space: nowrap;
+    }
+
+    .quick-access-link {
+        display: flex;
+        min-width: 0;
+        aspect-ratio: 1;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.8rem;
+        padding: 1rem 0.75rem;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+        border-radius: 2px;
+        background: var(--bg-card);
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+        color: var(--text-main);
+        text-align: center;
+        text-decoration: none;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+    }
+
+    .quick-access-link--placeholder {
+        cursor: default;
+        border-style: dashed;
+        box-shadow: none;
+    }
+
+    .quick-access-link:not(.quick-access-link--placeholder):hover {
+        transform: translateY(-2px);
+        border-color: var(--primary-color, #7c3aed);
+        background: var(--primary-color, #7c3aed);
+        box-shadow: 0 8px 18px rgba(124, 58, 237, 0.24);
+        color: #ffffff;
+    }
+
+    .quick-access-link:focus-visible {
+        outline: 2px solid var(--primary-color, #7c3aed);
+        outline-offset: 3px;
+        color: #ffffff;
+    }
+
+    .quick-access-link.is-current {
+        border-color: var(--primary-color, #7c3aed);
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary-color, #7c3aed) 35%, transparent), 0 2px 8px rgba(15, 23, 42, 0.06);
     }
 
     .quick-access-icon {
-        width: 32px;
-        height: 32px;
-        border-radius: 10px;
-        background: color-mix(in srgb, var(--primary-color) 20%, transparent);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--primary-color);
-        flex-shrink: 0;
+        display: grid;
+        width: 48px;
+        height: 48px;
+        flex: 0 0 48px;
+        place-items: center;
+        border: 1px solid var(--border-color);
+        border-radius: 2px;
+        background: var(--primary-soft);
+        color: var(--primary-color, #7c3aed);
+        font-size: 1.5rem;
+        transition: color 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
     }
 
     .quick-access-text {
-        font-weight: 700;
-        line-height: 1.2;
-        flex: 1;
+        display: -webkit-box;
+        width: 100%;
+        overflow: hidden;
+        color: inherit;
+        font-size: 0.9rem;
+        font-weight: 650;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
     }
 
-    .quick-access-meta {
-        font-size: .75rem;
-        font-weight: 700;
+    .quick-access-link:not(.quick-access-link--placeholder):hover .quick-access-icon,
+    .quick-access-link:focus-visible .quick-access-icon {
+        border-color: rgba(255, 255, 255, 0.35);
+        background: rgba(255, 255, 255, 0.16);
+        color: #ffffff;
+    }
+
+    .quick-access-link--placeholder .quick-access-text {
+        font-size: 0.82rem;
+    }
+
+    .quick-access-status {
         color: var(--text-muted);
-        background: color-mix(in srgb, var(--border-color) 70%, transparent);
-        border-radius: 999px;
-        padding: .15rem .5rem;
+        font-size: 0.72rem;
+        font-weight: 600;
+        line-height: 1.3;
+    }
+
+    .quick-access-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+        gap: 1rem;
+    }
+
+    @media (max-width: 575.98px) {
+        .quick-access-grid {
+            grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+            gap: 0.7rem;
+        }
+
+        .quick-access-link {
+            gap: 0.65rem;
+            padding: 0.8rem 0.55rem;
+            border-radius: 2px;
+        }
+
+        .quick-access-heading {
+            align-items: flex-start;
+        }
+
+        .quick-access-icon {
+            width: 42px;
+            height: 42px;
+            flex-basis: 42px;
+            font-size: 1.3rem;
+        }
+
+        .quick-access-text {
+            font-size: 0.82rem;
+        }
     }
 
     .admin-pilot-link {

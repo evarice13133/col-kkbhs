@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Database;
+use App\Core\LogoManager;
 use App\Core\PermissionManager;
 use App\Core\Session;
 use App\Services\AccessCardPalette;
@@ -147,6 +148,105 @@ class AccessCardController
             : '/../Views/id_card/access_card/print.php');
     }
 
+    public function passes(): void
+    {
+        $orientation = in_array($_GET['orientation'] ?? '', ['portrait', 'landscape'], true)
+            ? $_GET['orientation']
+            : 'landscape';
+        $activeYear = $this->getActiveAcademicYear();
+        $academicYearId = (int) ($activeYear['id'] ?? 0);
+        $sections = $this->getSections($academicYearId);
+        $sectionId = (int) ($_GET['section_id'] ?? 0);
+        if (!in_array($sectionId, array_map('intval', array_column($sections, 'id')), true)) {
+            $sectionId = 0;
+        }
+
+        $cycles = $this->getPassCycles($academicYearId, $sectionId);
+        $cycleId = (int) ($_GET['cycle_id'] ?? 0);
+        if (!in_array($cycleId, array_map('intval', array_column($cycles, 'id')), true)) {
+            $cycleId = 0;
+        }
+
+        $classes = $this->getPassClasses($academicYearId, $sectionId, $cycleId);
+        $classId = (int) ($_GET['class_id'] ?? 0);
+        if ($classId > 0 && !in_array($classId, array_map('intval', array_column($classes, 'id')), true)) {
+            $classId = 0;
+        }
+        $palette = AccessCardPalette::fromArray($_GET['palette'] ?? []);
+
+        include __DIR__ . '/../Views/id_card/passes/index.php';
+    }
+
+    public function printPasses(): void
+    {
+        $orientation = in_array($_GET['orientation'] ?? '', ['portrait', 'landscape'], true)
+            ? $_GET['orientation']
+            : 'landscape';
+        $activeYear = $this->getActiveAcademicYear();
+        $academicYearId = (int) ($activeYear['id'] ?? 0);
+        $sectionId = (int) ($_GET['section_id'] ?? 0);
+        $classId = (int) ($_GET['class_id'] ?? 0);
+        $sections = $this->getSections($academicYearId);
+        if (!in_array($sectionId, array_map('intval', array_column($sections, 'id')), true)) {
+            if ($sectionId > 0) {
+                header('Location: /student-passes');
+                exit;
+            }
+        }
+
+        $cycles = $this->getPassCycles($academicYearId, $sectionId);
+        $cycleId = (int) ($_GET['cycle_id'] ?? 0);
+        if (!in_array($cycleId, array_map('intval', array_column($cycles, 'id')), true)) {
+            if ($cycleId > 0) {
+                header('Location: /student-passes');
+                exit;
+            }
+        }
+
+        $classes = $this->getPassClasses($academicYearId, $sectionId, $cycleId);
+        if ($classId > 0) {
+            $matchingClass = false;
+            foreach ($classes as $availableClass) {
+                if ((int) $availableClass['id'] === $classId) {
+                    $matchingClass = true;
+                    break;
+                }
+            }
+            if (!$matchingClass) {
+                header('Location: /student-passes');
+                exit;
+            }
+            $classes = array_values(array_filter(
+                $classes,
+                static fn(array $availableClass): bool => (int) $availableClass['id'] === $classId
+            ));
+        }
+
+        if ($academicYearId <= 0 || ($sectionId <= 0 && $cycleId <= 0 && $classId <= 0) || empty($classes)) {
+            header('Location: /student-passes');
+            exit;
+        }
+
+        $cardsPerPage = $orientation === 'portrait' ? 8 : 4;
+        $palette = AccessCardPalette::fromArray($_GET['palette'] ?? []);
+        $printCards = [];
+        foreach ($classes as $class) {
+            $teachingTypeId = (int) $class['teaching_type_id'];
+            $settingsStore = new SettingsStore($this->db, $teachingTypeId);
+            $institution = $settingsStore->all($teachingTypeId);
+            $logoBase64 = LogoManager::getInstance($this->db, $teachingTypeId)->getLogoBase64();
+            $printCards[] = [
+                'class' => $class,
+                'institution' => $institution,
+                'logo_base64' => $logoBase64,
+            ];
+        }
+
+        $printPages = array_chunk($printCards, $cardsPerPage);
+
+        include __DIR__ . '/../Views/id_card/passes/print.php';
+    }
+
     private function getActiveAcademicYear(): array
     {
         $stmt = $this->db->query('SELECT id, nom FROM academic_years WHERE is_active = 1 LIMIT 1');
@@ -202,6 +302,70 @@ class AccessCardController
              ORDER BY c.nom ASC"
         );
         $stmt->execute([$academicYearId, $sectionId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    private function getPassCycles(int $academicYearId, int $sectionId = 0): array
+    {
+        $sql = "SELECT DISTINCT cy.id, cy.nom
+                FROM cycles cy
+                JOIN classes c ON c.cycle_id = cy.id
+                JOIN teaching_types tt ON tt.id = c.teaching_type_id AND tt.actif = 1
+                LEFT JOIN sections sec ON sec.id = c.section_id
+                LEFT JOIN departments d ON d.id = c.department_id
+                JOIN enrollments e ON e.class_id = c.id AND e.academic_year_id = ?
+                JOIN students s ON s.id = e.student_id
+                WHERE cy.status = 1
+                  AND c.status = 1
+                  AND (c.section_id IS NULL OR sec.status = 1)
+                  AND (c.department_id IS NULL OR d.status = 1)
+                  AND s.status = 'Inscrit'
+                  AND s.actif = 1
+                  AND s.is_withdrawn = 0";
+        $params = [$academicYearId];
+        if ($sectionId > 0) {
+            $sql .= ' AND c.section_id = ?';
+            $params[] = $sectionId;
+        }
+        $sql .= ' ORDER BY cy.nom ASC';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    private function getPassClasses(int $academicYearId, int $sectionId = 0, int $cycleId = 0): array
+    {
+        $sql = "SELECT c.id, c.nom, c.teaching_type_id,
+                       sec.nom AS section_name, cy.nom AS cycle_name,
+                       COUNT(DISTINCT e.student_id) AS enrolled_count
+                FROM classes c
+                JOIN teaching_types tt ON tt.id = c.teaching_type_id AND tt.actif = 1
+                LEFT JOIN cycles cy ON cy.id = c.cycle_id
+                LEFT JOIN sections sec ON sec.id = c.section_id
+                LEFT JOIN departments d ON d.id = c.department_id
+                JOIN enrollments e ON e.class_id = c.id AND e.academic_year_id = ?
+                JOIN students s ON s.id = e.student_id
+                WHERE c.status = 1
+                  AND (c.cycle_id IS NULL OR cy.status = 1)
+                  AND (c.section_id IS NULL OR sec.status = 1)
+                  AND (c.department_id IS NULL OR d.status = 1)
+                  AND s.status = 'Inscrit'
+                  AND s.actif = 1
+                  AND s.is_withdrawn = 0";
+        $params = [$academicYearId];
+        if ($sectionId > 0) {
+            $sql .= ' AND c.section_id = ?';
+            $params[] = $sectionId;
+        }
+        if ($cycleId > 0) {
+            $sql .= ' AND c.cycle_id = ?';
+            $params[] = $cycleId;
+        }
+        $sql .= ' GROUP BY c.id, c.nom, c.teaching_type_id, sec.nom, cy.nom ORDER BY c.nom ASC';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
