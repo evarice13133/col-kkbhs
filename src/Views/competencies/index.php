@@ -8,24 +8,23 @@ ob_start();
         #competency-management .nav-tabs .nav-link { border: 1px solid transparent; border-radius: .75rem; color: var(--bs-secondary-color); padding: .75rem 1rem; font-weight: 600; }
         #competency-management .nav-tabs .nav-link:hover { background: var(--bs-tertiary-bg); }
         #competency-management .nav-tabs .nav-link.active { color: var(--bs-primary); background: var(--bs-primary-bg-subtle); border-color: var(--bs-primary-border-subtle); }
-        #competency-management .teacher-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 1rem; box-shadow: 0 .25rem 1rem rgba(16, 24, 40, .08); color: #1f2937; }
-        #competency-management .teacher-panel h2 { color: #0f172a; }
+        #competency-management .teacher-panel { background: var(--bg-card, var(--bs-body-bg)); border: 1px solid var(--border-color, var(--bs-border-color)); border-radius: 1rem; box-shadow: 0 .25rem 1rem rgba(16, 24, 40, .08); color: var(--text-main, var(--bs-body-color)); }
+        #competency-management .teacher-panel h2 { color: var(--text-main, var(--bs-heading-color)); }
         #competency-management .teacher-panel .text-muted,
-        #competency-management .teacher-panel .form-text { color: #64748b !important; }
-        #competency-management .teacher-panel .form-label { color: #334155; }
-        #teacher-assignment-import-modal .teacher-import-modal-content { background: #fff; color: #1f2937; border: 1px solid #e2e8f0; border-radius: 1rem; }
+        #competency-management .teacher-panel .form-text { color: var(--text-muted, var(--bs-secondary-color)) !important; }
+        #competency-management .teacher-panel .form-label { color: var(--text-main, var(--bs-body-color)); }
+        #teacher-assignment-import-modal .teacher-import-modal-content { background: var(--bg-card, var(--bs-body-bg)); color: var(--text-main, var(--bs-body-color)); border: 1px solid var(--border-color, var(--bs-border-color)); border-radius: 1rem; }
         #teacher-assignment-import-modal .teacher-import-modal-content .modal-header,
-        #teacher-assignment-import-modal .teacher-import-modal-content .modal-footer { border-color: #e2e8f0; }
+        #teacher-assignment-import-modal .teacher-import-modal-content .modal-footer { border-color: var(--border-color, var(--bs-border-color)); }
         #teacher-assignment-import-modal .teacher-import-status-icon { display: grid; width: 3.5rem; height: 3.5rem; margin: 0 auto 1rem; place-items: center; border-radius: 50%; background: #eff6ff; color: #2563eb; font-size: 1.5rem; }
         #teacher-assignment-import-modal .teacher-import-status-icon.is-success { background: #ecfdf5; color: #059669; }
         #teacher-assignment-import-modal .teacher-import-status-icon.is-error { background: #fef2f2; color: #dc2626; }
         #teacher-assignment-import-modal .teacher-import-summary { white-space: pre-line; }
-        [data-theme="dark"] #teacher-assignment-import-modal .teacher-import-modal-content { background-color: #111827 !important; color: #e5e7eb !important; border-color: #334155 !important; }
-        [data-theme="dark"] #teacher-assignment-import-modal .teacher-import-modal-content .modal-header,
-        [data-theme="dark"] #teacher-assignment-import-modal .teacher-import-modal-content .modal-footer { border-color: #334155 !important; }
-        [data-theme="dark"] #teacher-assignment-import-modal .teacher-import-modal-content .modal-title { color: #f8fafc !important; }
-        [data-theme="dark"] #teacher-assignment-import-modal .teacher-import-modal-content .text-muted { color: #94a3b8 !important; }
+        [data-theme="dark"] #competency-management .teacher-panel { box-shadow: 0 .25rem 1rem rgba(0, 0, 0, .35); }
+        [data-theme="dark"] #teacher-assignment-import-modal .teacher-import-modal-content .modal-title { color: var(--text-main) !important; }
+        [data-theme="dark"] #teacher-assignment-import-modal .teacher-import-modal-content .text-muted { color: var(--text-muted) !important; }
         [data-theme="dark"] #teacher-assignment-import-modal .teacher-import-modal-content .btn-close { filter: invert(1) grayscale(100%) brightness(200%); }
+        [data-theme="dark"] #competency-management .badge.text-bg-light { background-color: var(--border-color) !important; color: var(--text-main) !important; }
         #competency-management .teacher-panel-heading { display: flex; align-items: flex-start; gap: .85rem; }
         #competency-management .teacher-step-icon { display: grid; flex: 0 0 2.5rem; width: 2.5rem; height: 2.5rem; place-items: center; border-radius: .75rem; color: var(--bs-primary); background: var(--bs-primary-bg-subtle); font-size: 1.15rem; }
         #competency-management .teacher-subject-item { height: 100%; }
@@ -46,7 +45,7 @@ ob_start();
             <h1 class="page-title mb-1"><?= __('competencies_and_assignments') ?></h1>
             <p class="text-muted mb-0"><?= __('competencies_and_assignments_intro') ?></p>
         </div>
-        <a href="/notes" class="btn btn-outline-primary"><i class="bi bi-pencil-square me-2"></i> Saisie des notes</a>
+        <a href="/notes" class="btn btn-outline-primary"><i class="bi bi-pencil-square me-2"></i> <?= __('competencies_notes_entry') ?></a>
     </div>
 
     <ul class="nav nav-tabs mb-4" role="tablist">
@@ -68,8 +67,8 @@ ob_start();
 
         <section class="tab-pane fade" id="assignments-pane">
             <div id="assignments" class="row g-4">
-                <div class="col-lg-4"><div class="border rounded-3 p-3 h-100"><h2 class="h5">1. Choisir le groupe</h2><label class="form-label" for="assignment-class-filter">Classe concernée</label><select id="assignment-class-filter" class="form-select mb-3"><option value="">Toutes les classes</option><?php foreach ($classes as $class): ?><option value="<?= (int) $class['id'] ?>"><?= h($class['nom']) ?></option><?php endforeach; ?></select><label class="form-label" for="teaching-type-filter">Type d'enseignement actif</label><select id="teaching-type-filter" class="form-select mb-3"><option value="">Tous les types actifs</option><?php foreach ($teachingTypes as $type): ?><option value="<?= (int) $type['id'] ?>"><?= h($type['nom']) ?><?= !empty($type['code']) ? ' (' . h($type['code']) . ')' : '' ?></option><?php endforeach; ?></select><label class="form-label" for="teaching-form-filter">Forme d'enseignement active</label><select id="teaching-form-filter" class="form-select mb-3" disabled><option value="">Toutes les formes actives</option><?php foreach ($teachingForms as $form): ?><option value="<?= (int) $form['id'] ?>" data-type="<?= (int) $form['teaching_type_id'] ?>"><?= h($form['nom']) ?></option><?php endforeach; ?></select><label class="form-label" for="group-select">Groupe de matières</label><select id="group-select" class="form-select"><option value="">Sélectionner...</option><?php foreach ($groups as $group): $groupFormLabel = ''; if (!empty($group['teaching_form_id'])) { foreach ($teachingForms as $form) { if ((int)$form['id'] === (int)$group['teaching_form_id']) { $groupFormLabel = ' [' . h($form['nom']) . ']'; break; } } } ?><option value="<?= (int) $group['id'] ?>" data-type="<?= (int) ($group['teaching_type_id'] ?? 0) ?>" data-form="<?= (int) ($group['teaching_form_id'] ?? 0) ?>"><?= h($group['libelle']) ?><?= $groupFormLabel ?></option><?php endforeach; ?></select><p class="small text-muted mt-3 mb-0">Les matières affichées sont enregistrées dans la classe choisie et correspondent au type d’enseignement actif. Les formes peuvent différer sans empêcher l’affectation indépendante.</p></div></div>
-                <div class="col-lg-8"><div class="border rounded-3 p-3"><div class="d-flex justify-content-between align-items-center gap-2 mb-3"><h2 class="h5 mb-0">2. Sélectionner les matières</h2><input id="subject-search" class="form-control form-control-sm" style="max-width:240px" placeholder="Rechercher..."></div><div id="assignment-list" class="row g-2"></div><div class="d-flex justify-content-between align-items-center mt-3"><span id="assignment-count" class="small text-muted">Sélectionnez un groupe et au moins une matière</span><button id="preview-assignment" class="btn btn-primary" disabled title="Sélectionnez un groupe et au moins une matière"><i class="bi bi-check2-circle me-1"></i>Valider l'affectation</button></div></div></div>
+                <div class="col-lg-4"><div class="border rounded-3 p-3 h-100"><h2 class="h5"><?= __('competencies_group_step') ?></h2><label class="form-label" for="assignment-class-filter"><?= __('assignment_class_label') ?></label><select id="assignment-class-filter" class="form-select mb-3"><option value=""><?= __('competencies_all_classes') ?></option><?php foreach ($classes as $class): ?><option value="<?= (int) $class['id'] ?>"><?= h($class['nom']) ?></option><?php endforeach; ?></select><label class="form-label" for="teaching-type-filter"><?= __('active_teaching_type') ?></label><select id="teaching-type-filter" class="form-select mb-3"><option value=""><?= __('competencies_active_types') ?></option><?php foreach ($teachingTypes as $type): ?><option value="<?= (int) $type['id'] ?>"><?= h($type['nom']) ?><?= !empty($type['code']) ? ' (' . h($type['code']) . ')' : '' ?></option><?php endforeach; ?></select><label class="form-label" for="teaching-form-filter"><?= __('active_teaching_form') ?></label><select id="teaching-form-filter" class="form-select mb-3" disabled><option value=""><?= __('competencies_active_forms') ?></option><?php foreach ($teachingForms as $form): ?><option value="<?= (int) $form['id'] ?>" data-type="<?= (int) $form['teaching_type_id'] ?>"><?= h($form['nom']) ?></option><?php endforeach; ?></select><label class="form-label" for="group-select"><?= __('select_group') ?></label><select id="group-select" class="form-select"><option value=""><?= __('competencies_select_placeholder') ?></option><?php foreach ($groups as $group): $groupFormLabel = ''; if (!empty($group['teaching_form_id'])) { foreach ($teachingForms as $form) { if ((int)$form['id'] === (int)$group['teaching_form_id']) { $groupFormLabel = ' [' . h($form['nom']) . ']'; break; } } } ?><option value="<?= (int) $group['id'] ?>" data-type="<?= (int) ($group['teaching_type_id'] ?? 0) ?>" data-form="<?= (int) ($group['teaching_form_id'] ?? 0) ?>"><?= h($group['libelle']) ?><?= $groupFormLabel ?></option><?php endforeach; ?></select><p class="small text-muted mt-3 mb-0"><?= __('competencies_group_hint') ?></p></div></div>
+                <div class="col-lg-8"><div class="border rounded-3 p-3"><div class="d-flex justify-content-between align-items-center gap-2 mb-3"><h2 class="h5 mb-0"><?= __('competencies_subjects_step') ?></h2><input id="subject-search" class="form-control form-control-sm" style="max-width:240px" placeholder="<?= __('competencies_search_placeholder') ?>"></div><div id="assignment-list" class="row g-2"></div><div class="d-flex justify-content-between align-items-center mt-3"><span id="assignment-count" class="small text-muted"><?= __('competencies_select_group_subjects') ?></span><button id="preview-assignment" class="btn btn-primary" disabled title="<?= __('competencies_select_group_subjects') ?>"><i class="bi bi-check2-circle me-1"></i><?= __('validate_assignment') ?></button></div></div></div>
             </div>
         </section>
 
@@ -79,14 +78,14 @@ ob_start();
                     <div class="teacher-panel-heading mb-3">
                         <span class="teacher-step-icon" aria-hidden="true"><i class="bi bi-person-workspace"></i></span>
                         <div>
-                            <h2 class="h5 mb-1" id="teacher-step-title">Choisir le contexte d’affectation</h2>
-                            <p class="small text-muted mb-0">Sélectionnez une classe et un type pour charger les enseignants et leurs matières.</p>
+                            <h2 class="h5 mb-1" id="teacher-step-title"><?= __('competencies_teacher_context_title') ?></h2>
+                            <p class="small text-muted mb-0"><?= __('competencies_teacher_context_intro') ?></p>
                         </div>
                     </div>
                     <div class="row g-3">
-                        <div class="col-md-4"><label class="form-label fw-semibold" for="teacher-assignment-class">Classe concernée</label><select id="teacher-assignment-class" class="form-select"><option value="">Sélectionner une classe...</option><?php foreach ($classes as $class): ?><option value="<?= (int) $class['id'] ?>"><?= h($class['nom']) ?></option><?php endforeach; ?></select></div>
-                        <div class="col-md-4"><label class="form-label fw-semibold" for="teacher-assignment-type">Type d’enseignement</label><select id="teacher-assignment-type" class="form-select"><option value="">Sélectionner un type...</option><?php foreach ($teachingTypes as $type): ?><option value="<?= (int) $type['id'] ?>"><?= h($type['nom']) ?><?= !empty($type['code']) ? ' (' . h($type['code']) . ')' : '' ?></option><?php endforeach; ?></select></div>
-                        <div class="col-md-4"><label class="form-label fw-semibold" for="teacher-assignment-teacher">Enseignant</label><select id="teacher-assignment-teacher" class="form-select" disabled><option value="">Choisissez d’abord la classe et le type...</option></select></div>
+                        <div class="col-md-4"><label class="form-label fw-semibold" for="teacher-assignment-class"><?= __('assignment_class_label') ?></label><select id="teacher-assignment-class" class="form-select"><option value=""><?= __('select_class_placeholder') ?></option><?php foreach ($classes as $class): ?><option value="<?= (int) $class['id'] ?>"><?= h($class['nom']) ?></option><?php endforeach; ?></select></div>
+                        <div class="col-md-4"><label class="form-label fw-semibold" for="teacher-assignment-type"><?= __('teaching_type') ?></label><select id="teacher-assignment-type" class="form-select"><option value=""><?= __('select_teaching_type') ?></option><?php foreach ($teachingTypes as $type): ?><option value="<?= (int) $type['id'] ?>"><?= h($type['nom']) ?><?= !empty($type['code']) ? ' (' . h($type['code']) . ')' : '' ?></option><?php endforeach; ?></select></div>
+                        <div class="col-md-4"><label class="form-label fw-semibold" for="teacher-assignment-teacher"><?= __('teacher') ?></label><select id="teacher-assignment-teacher" class="form-select" disabled><option value=""><?= __('competencies_teacher_placeholder') ?></option></select></div>
                     </div>
                 </section>
 
@@ -95,28 +94,28 @@ ob_start();
                         <div class="teacher-panel-heading">
                             <span class="teacher-step-icon text-success bg-success-subtle" aria-hidden="true"><i class="bi bi-file-earmark-spreadsheet"></i></span>
                             <div>
-                                <h2 class="h5 mb-1" id="teacher-excel-title">Gestion Excel en masse</h2>
-                                <p class="small text-muted mb-0">Téléchargez ou importez un seul classeur pour gérer les classes inscrites.</p>
+                                <h2 class="h5 mb-1" id="teacher-excel-title"><?= __('competencies_excel_title') ?></h2>
+                                <p class="small text-muted mb-0"><?= __('competencies_excel_intro') ?></p>
                             </div>
                         </div>
                         <button type="button" id="export-teacher-assignments" class="btn btn-outline-success">
-                            <i class="bi bi-download me-1"></i> Télécharger le modèle
+                            <i class="bi bi-download me-1"></i> <?= __('competencies_download_template') ?>
                         </button>
                     </div>
                     <form id="import-teacher-assignments-form" class="row g-2 align-items-end" enctype="multipart/form-data" data-ajax>
                         <input type="hidden" name="csrf_token" value="<?= h(\App\Core\Session::generateCsrfToken()) ?>">
                         <div class="col-lg-8">
-                            <label class="form-label fw-semibold" for="teacher-assignment-file">Classeur Excel (.xlsx)</label>
-                            <input type="file" id="teacher-assignment-file" name="import_file" class="form-control" accept=".xlsx" aria-label="Fichier Excel des affectations" required>
-                            <div id="teacher-assignment-file-name" class="form-text">Aucun fichier sélectionné · maximum 10 Mo</div>
+                            <label class="form-label fw-semibold" for="teacher-assignment-file"><?= __('competencies_excel_file') ?></label>
+                            <input type="file" id="teacher-assignment-file" name="import_file" class="form-control" accept=".xlsx" aria-label="<?= __('competencies_file_aria') ?>" required>
+                            <div id="teacher-assignment-file-name" class="form-text"><?= __('competencies_no_file') ?></div>
                         </div>
                         <div class="col-lg-4 d-grid">
                             <button type="submit" id="import-teacher-assignments" class="btn btn-primary" disabled>
-                                <i class="bi bi-upload me-1"></i> Importer les affectations
+                                <i class="bi bi-upload me-1"></i> <?= __('competencies_import') ?>
                             </button>
                         </div>
                     </form>
-                    <div class="small text-muted mt-3"><i class="bi bi-info-circle me-1"></i>Une feuille par classe. Les cellules enseignant vides préservent les affectations existantes.</div>
+                    <div class="small text-muted mt-3"><i class="bi bi-info-circle me-1"></i><?= __('competencies_excel_hint') ?></div>
                 </section>
 
                 <div id="teacher-assignment-notice" class="alert alert-info d-none mb-0" role="status" aria-live="polite"></div>
@@ -127,27 +126,27 @@ ob_start();
                             <span class="teacher-step-icon" aria-hidden="true"><i class="bi bi-journal-check"></i></span>
                             <div>
                                 <div class="d-flex flex-wrap align-items-center gap-2">
-                                    <h2 class="h5 mb-0" id="teacher-subjects-title">Matières de l’enseignant</h2>
-                                    <span id="teacher-subject-total" class="badge text-bg-light">En attente</span>
+                                    <h2 class="h5 mb-0" id="teacher-subjects-title"><?= __('competencies_teacher_subjects') ?></h2>
+                                    <span id="teacher-subject-total" class="badge text-bg-light"><?= __('competencies_pending') ?></span>
                                 </div>
-                                <p class="small text-muted mb-0 mt-1">Les coches signalent les matières à affecter ou à remplacer.</p>
+                                <p class="small text-muted mb-0 mt-1"><?= __('competencies_teacher_subjects_intro') ?></p>
                             </div>
                         </div>
                         <div class="d-flex flex-wrap gap-2">
-                            <button type="button" id="select-visible-teacher-subjects" class="btn btn-sm btn-outline-secondary" disabled>Sélectionner les visibles</button>
-                            <button type="button" id="clear-teacher-subjects" class="btn btn-sm btn-outline-secondary" disabled>Tout décocher</button>
+                            <button type="button" id="select-visible-teacher-subjects" class="btn btn-sm btn-outline-secondary" disabled><?= __('competencies_select_visible') ?></button>
+                            <button type="button" id="clear-teacher-subjects" class="btn btn-sm btn-outline-secondary" disabled><?= __('competencies_clear_all') ?></button>
                         </div>
                     </div>
                     <div class="input-group mb-3">
                         <span class="input-group-text" aria-hidden="true"><i class="bi bi-search"></i></span>
-                        <input type="search" id="teacher-subject-search" class="form-control" placeholder="Rechercher une matière..." aria-label="Rechercher une matière" disabled>
+                        <input type="search" id="teacher-subject-search" class="form-control" placeholder="<?= __('competencies_search_subject') ?>" aria-label="<?= __('competencies_search_subject') ?>" disabled>
                     </div>
                     <div id="teacher-subject-list" class="row g-2 teacher-subject-results">
-                        <div class="col-12 text-center text-muted py-4"><i class="bi bi-hand-index-thumb d-block fs-3 mb-2"></i>Choisissez une classe et un type pour commencer.</div>
+                        <div class="col-12 text-center text-muted py-4"><i class="bi bi-hand-index-thumb d-block fs-3 mb-2"></i><?= __('competencies_choose_context') ?></div>
                     </div>
                     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 border-top mt-3 pt-3">
                         <span id="teacher-assignment-count" class="small text-muted" aria-live="polite">0 matière sélectionnée</span>
-                        <button id="submit-teacher-assignment" class="btn btn-primary" disabled><i class="bi bi-person-check me-1"></i> Analyser l’affectation</button>
+                        <button id="submit-teacher-assignment" class="btn btn-primary" disabled><i class="bi bi-person-check me-1"></i> <?= __('competencies_analyze_assignment') ?></button>
                     </div>
                 </section>
             </div>
@@ -178,8 +177,8 @@ ob_start();
     </div>
 </div>
 
-<div class="modal fade" id="competency-modal" tabindex="-1" aria-hidden="true"><div class="modal-dialog"><form class="modal-content no-loader" id="competency-form" data-ajax="true"><div class="modal-header"><h2 class="modal-title h5" id="competency-modal-title">Ajouter une compétence</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button></div><div class="modal-body"><input type="hidden" id="competency-id"><input type="hidden" id="competency-subject-id"><label class="form-label" for="competency-label">Libellé</label><input class="form-control mb-3" id="competency-label" required maxlength="255"><label class="form-label" for="competency-description">Description</label><textarea class="form-control" id="competency-description" rows="3"></textarea><div id="competency-form-error" class="alert alert-danger d-none mt-3 mb-0"></div></div><div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button><button class="btn btn-primary" type="submit">Enregistrer</button></div></form></div></div>
-<div class="modal fade" id="impact-modal" tabindex="-1" aria-hidden="true"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h2 class="modal-title h5" id="impact-title">Analyse d'impact</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button></div><div class="modal-body" id="impact-body"></div><div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button><button type="button" class="btn btn-danger d-none" id="confirm-delete">Supprimer</button><button type="button" class="btn btn-primary d-none" id="confirm-assignment"><i class="bi bi-check2-circle me-1"></i>Valider définitivement</button><button type="button" class="btn btn-primary d-none" id="confirm-teacher-assignment"><i class="bi bi-person-check me-1"></i>Confirmer le remplacement</button><button type="button" class="btn btn-primary d-none" id="confirm-create">Confirmer la création</button></div></div></div></div>
+<div class="modal fade" id="competency-modal" tabindex="-1" aria-hidden="true"><div class="modal-dialog"><form class="modal-content no-loader" id="competency-form" data-ajax="true"><div class="modal-header"><h2 class="modal-title h5" id="competency-modal-title"><?= __('add_competency') ?></h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= __('close') ?>"></button></div><div class="modal-body"><input type="hidden" id="competency-id"><input type="hidden" id="competency-subject-id"><label class="form-label" for="competency-label"><?= __('competency_label') ?></label><input class="form-control mb-3" id="competency-label" required maxlength="255"><label class="form-label" for="competency-description"><?= __('description') ?></label><textarea class="form-control" id="competency-description" rows="3"></textarea><div id="competency-form-error" class="alert alert-danger d-none mt-3 mb-0"></div></div><div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?= __('cancel') ?></button><button class="btn btn-primary" type="submit"><?= __('save') ?></button></div></form></div></div>
+<div class="modal fade" id="impact-modal" tabindex="-1" aria-hidden="true"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h2 class="modal-title h5" id="impact-title"><?= __('impact_analysis') ?></h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= __('close') ?>"></button></div><div class="modal-body" id="impact-body"></div><div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?= __('cancel') ?></button><button type="button" class="btn btn-danger d-none" id="confirm-delete"><?= __('delete') ?></button><button type="button" class="btn btn-primary d-none" id="confirm-assignment"><i class="bi bi-check2-circle me-1"></i><?= __('confirm_permanently') ?></button><button type="button" class="btn btn-primary d-none" id="confirm-teacher-assignment"><i class="bi bi-person-check me-1"></i><?= __('confirm_replacement') ?></button><button type="button" class="btn btn-primary d-none" id="confirm-create"><?= __('confirm_creation') ?></button></div></div></div></div>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {

@@ -2494,7 +2494,8 @@ small {
 .erp-stat-card::before,
 .erp-stat-card::after,
 .select-card::before,
-.select-card::after {
+.select-card::after,
+.subject-card-glow {
     display: none !important;
     content: none !important;
 }
@@ -4221,283 +4222,334 @@ html, body {
     transform: scale(1.1);
 }
 
-/* Shared data-table presentation for operational lists. Specialized grids and
-   printable/report tables keep their own layouts. */
-.content-inner .table-responsive:has(> table.table-modern:not(.grid-table)) {
+/* Grade history table */
+.grades-history-card:hover {
+    transform: none !important;
+}
+
+.grades-history-card .table-responsive {
     overflow-x: auto;
-    border: 1px solid var(--border-color, #dce5f2);
-    border-radius: 12px;
-    background: var(--bg-card, #fff);
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
 }
 
-.content-inner .table-responsive:has(> table.table-modern:not(.grid-table))::-webkit-scrollbar {
-    height: 6px;
+.grades-history-table {
+    min-width: 960px;
+    table-layout: fixed;
 }
 
-.content-inner .table-responsive:has(> table.table-modern:not(.grid-table))::-webkit-scrollbar-thumb {
-    border-radius: 10px;
-    background: rgba(52, 120, 246, 0.28);
+.grades-history-table .grades-history-col-date { width: 9%; }
+.grades-history-table .grades-history-col-student { width: 17%; }
+.grades-history-table .grades-history-col-class { width: 13%; }
+.grades-history-table .grades-history-col-subject { width: 15%; }
+.grades-history-table .grades-history-col-period { width: 10%; }
+.grades-history-table .grades-history-col-grade { width: 7%; }
+.grades-history-table .grades-history-col-appreciation { width: 12%; }
+.grades-history-table .grades-history-col-teacher { width: 12%; }
+.grades-history-table .grades-history-col-actions { width: 5%; }
+
+.grades-history-table thead {
+    background: #eaf1fb;
 }
 
-.content-inner .table-responsive > table.table-modern:not(.grid-table) {
-    width: 100% !important;
-    min-width: 680px;
-    table-layout: auto !important;
-    border-collapse: separate !important;
-    border-spacing: 0 !important;
-    color: var(--text-main, #17243a);
-    font-size: 0.76rem !important;
-}
-
-.content-inner .table-responsive > table.table-modern:not(.grid-table) thead,
-.content-inner .table-responsive > table.table-modern:not(.grid-table) thead tr,
-.content-inner .table-responsive > table.table-modern:not(.grid-table) thead th {
-    background: #f4f7fb !important;
-}
-
-.content-inner .table-responsive > table.table-modern:not(.grid-table) thead th {
-    padding: 0.7rem 0.8rem !important;
-    border: 0 !important;
-    border-bottom: 1px solid var(--border-color, #dce5f2) !important;
-    color: var(--text-muted, #70809a) !important;
-    font-size: 0.68rem !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.015em !important;
-    line-height: 1.3;
-    text-align: left;
-    text-transform: none !important;
-    vertical-align: middle !important;
+.grades-history-table thead th {
+    padding: 0.8rem 0.65rem;
+    border-bottom: 1px solid #d7e2f2;
+    color: #344563;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: none;
+    vertical-align: middle;
     white-space: nowrap;
 }
 
-.content-inner .table-responsive > table.table-modern:not(.grid-table) tbody tr {
-    background: var(--bg-card, #fff) !important;
-    box-shadow: none !important;
-    transform: none !important;
-    transition: background-color 0.15s ease;
+.grades-history-table thead th:first-child,
+.grades-history-table thead th:last-child {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
 }
 
-.content-inner .table-responsive > table.table-modern:not(.grid-table) tbody tr:hover {
-    background: #f6f9ff !important;
-    box-shadow: none !important;
-    transform: none !important;
+.grades-history-table tbody tr.grades-history-row {
+    border-bottom: 1px solid #e7edf5;
 }
 
-.content-inner .table-responsive > table.table-modern:not(.grid-table) tbody td {
-    padding: 0.65rem 0.8rem !important;
-    border: 0 !important;
-    border-bottom: 1px solid var(--border-color, #e5ebf3) !important;
-    color: var(--text-main, #17243a) !important;
-    font-size: 0.76rem !important;
-    line-height: 1.4 !important;
-    vertical-align: middle !important;
+.grades-history-table tbody tr.grades-history-row:hover {
+    background: #f5f8fd;
+    box-shadow: inset 3px 0 #4f74ed;
 }
 
-.content-inner .table-responsive > table.table-modern:not(.grid-table) tbody tr:last-child td {
-    border-bottom: 0 !important;
-}
-
-.content-inner .table-responsive > table.table-modern:not(.grid-table) tbody tr:hover td {
-    background: transparent !important;
-}
-
-.content-inner .table-responsive > table.table-modern:not(.grid-table) input[type="checkbox"] {
-    width: 15px;
-    height: 15px;
-    accent-color: #3478f6;
+.grades-history-table tbody td {
+    padding: 0.65rem;
+    font-size: 0.78rem;
+    line-height: 1.35;
     vertical-align: middle;
 }
 
-.content-inner .table-responsive > table.table-modern:not(.grid-table) .badge {
-    border-radius: 5px !important;
-    font-size: 0.68rem !important;
-    font-weight: 650 !important;
-    letter-spacing: 0 !important;
-    line-height: 1.25;
-    padding: 0.28rem 0.5rem !important;
-    transform: none !important;
+.grades-history-table tbody td:first-child,
+.grades-history-table tbody td:last-child {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
 }
 
-.content-inner .table-responsive > table.table-modern:not(.grid-table) .badge:hover {
-    box-shadow: none !important;
-    transform: none !important;
+.grades-history-date-day,
+.grades-history-date-time {
+    display: block;
+    white-space: nowrap;
 }
 
-.content-inner .table-responsive > table.table-modern:not(.grid-table) .table-row-actions .btn-action-modern,
-.content-inner .table-responsive > table.table-modern:not(.grid-table) .btn-action-modern {
-    min-width: 30px;
-    min-height: 30px;
-    padding: 0.3rem !important;
-    border-radius: 7px !important;
+.grades-history-date-day {
+    font-weight: 600;
 }
 
-.content-inner .table-responsive > table.table-modern:not(.grid-table) tbody td[colspan] {
-    padding: 2rem 1rem !important;
-    color: var(--text-muted, #70809a) !important;
-    text-align: center !important;
+.grades-history-date-time,
+.grades-history-person-detail {
+    color: #71819b;
+    font-size: 0.72rem;
 }
 
-.content-inner .pagination-modern {
+.grades-history-person {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.3rem;
+    align-items: center;
+    gap: 0.55rem;
+    min-width: 0;
 }
 
-.content-inner .pagination-modern .page-link {
-    display: inline-flex;
-    width: 31px;
-    height: 31px;
+.grades-history-avatar {
+    display: flex;
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
     align-items: center;
     justify-content: center;
-    padding: 0 !important;
-    border: 1px solid var(--border-color, #dce5f2) !important;
-    border-radius: 6px !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    color: var(--text-muted, #70809a) !important;
-    font-size: 0.72rem !important;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.grades-history-person-copy {
+    min-width: 0;
+}
+
+.grades-history-person-name,
+.grades-history-person-detail,
+.grades-history-subject,
+.grades-history-teacher-info span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.grades-history-person-name {
+    font-size: 0.76rem;
+    font-weight: 700;
+}
+
+.grades-history-badge {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    padding: 0.3rem 0.55rem;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.grades-history-badge--class {
+    background: #eee9ff;
+    color: #6540c8;
+}
+
+.grades-history-badge--period {
+    background: #edf2fa;
+    color: #40516e;
+    font-weight: 600;
+}
+
+.grades-history-badge--success {
+    background: #d9f4e9;
+    color: #087c59;
+}
+
+.grades-history-badge--danger {
+    background: #fde4e4;
+    color: #b42332;
+}
+
+.grades-history-teacher-info {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-width: 0;
+}
+
+.grades-history-teacher-info i {
+    flex: 0 0 auto;
+    color: #71819b;
+    font-size: 1rem;
+}
+
+.grades-history-action {
+    display: inline-flex;
+    width: 30px;
+    height: 30px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: #e4efff;
+    color: #2867cf;
     text-decoration: none;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
 
-.content-inner .pagination-modern .page-link:hover:not(.active) {
-    border-color: rgba(52, 120, 246, 0.45) !important;
-    background: rgba(52, 120, 246, 0.08) !important;
-    color: #3478f6 !important;
+.grades-history-action:hover,
+.grades-history-action:focus-visible {
+    background: #2867cf;
+    color: #fff;
+    transform: translateY(-1px);
 }
 
-.content-inner .pagination-modern .page-item.active .page-link {
-    border-color: #3478f6 !important;
-    background: #3478f6 !important;
-    color: #fff !important;
+.grades-history-footer {
+    display: flex;
+    min-height: 52px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.55rem 0.9rem;
+    border-top: 1px solid #e7edf5;
 }
 
-.content-inner .pagination-modern .page-item.disabled .page-link {
-    border-color: transparent !important;
-    background: transparent !important;
-    color: var(--text-muted, #70809a) !important;
+.grades-history-range {
+    color: #71819b;
+    font-size: 0.75rem;
 }
 
-.content-inner .filter-form .form-control:not([type="checkbox"]),
-.content-inner .filter-form .form-select,
-.content-inner #filters-form .search-box-container .form-control {
-    min-height: 39px;
-    border: 1px solid var(--border-color, #dce5f2) !important;
-    border-radius: 7px !important;
-    background-color: var(--bg-card, #fff) !important;
-    color: var(--text-main, #17243a) !important;
-    font-size: 0.78rem;
-    box-shadow: none;
+.grades-history-footer .pagination {
+    gap: 0.25rem;
 }
 
-.content-inner .filter-form .search-pill,
-.content-inner .filter-form .dept-search-pill {
-    min-height: 39px;
-    border: 1px solid var(--border-color, #dce5f2) !important;
-    border-radius: 7px !important;
-    background: var(--bg-card, #fff) !important;
+.grades-history-footer .page-link {
+    display: inline-flex;
+    min-width: 30px;
+    min-height: 30px;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem 0.55rem;
+    border: 0;
+    border-radius: 7px;
+    background: #edf2fa;
+    color: #40516e;
+    font-size: 0.76rem;
 }
 
-.content-inner .filter-form .search-pill .form-control,
-.content-inner .filter-form .search-pill .form-select {
-    min-height: 37px;
-    border: 0 !important;
-    border-radius: 6px !important;
-    background: transparent !important;
-    box-shadow: none !important;
+.grades-history-footer .page-item.active .page-link {
+    background: #4f74ed;
+    color: #fff;
 }
 
-.content-inner .filter-form .form-control:focus,
-.content-inner .filter-form .form-select:focus,
-.content-inner #filters-form .search-box-container .form-control:focus {
-    border-color: #3478f6 !important;
-    box-shadow: 0 0 0 3px rgba(52, 120, 246, 0.12) !important;
-    outline: 0;
+.grades-history-footer .page-item.disabled .page-link {
+    background: transparent;
 }
 
-.content-inner .filter-form button[type="submit"] {
-    min-height: 39px;
-    border-radius: 7px !important;
+.grades-history-table .grades-history-empty {
+    padding: 2.5rem 1rem;
 }
 
-[data-theme="dark"] .content-inner .table-responsive:has(> table.table-modern:not(.grid-table)) {
-    border-color: rgba(84, 132, 199, 0.24);
-    background: #07172d;
+[data-theme="dark"] .grades-history-card {
+    border-color: rgba(91, 126, 181, 0.3) !important;
+    background: #101d35 !important;
 }
 
-[data-theme="dark"] .content-inner .table-responsive > table.table-modern:not(.grid-table) thead,
-[data-theme="dark"] .content-inner .table-responsive > table.table-modern:not(.grid-table) thead tr,
-[data-theme="dark"] .content-inner .table-responsive > table.table-modern:not(.grid-table) thead th {
-    background: #102a49 !important;
+[data-theme="dark"] .grades-history-table thead {
+    background: linear-gradient(180deg, #172b4c, #142440);
 }
 
-[data-theme="dark"] .content-inner .table-responsive > table.table-modern:not(.grid-table) thead th {
-    border-bottom-color: rgba(79, 128, 191, 0.28) !important;
-    color: #b5c9e7 !important;
+[data-theme="dark"] .grades-history-table thead th {
+    border-bottom-color: #263b5e;
+    color: #d8e4f7;
 }
 
-[data-theme="dark"] .content-inner .table-responsive > table.table-modern:not(.grid-table) tbody tr,
-[data-theme="dark"] .content-inner .table-responsive > table.table-modern:not(.grid-table) tbody td {
-    background: #091d36 !important;
-    color: #dce8f8 !important;
+[data-theme="dark"] .grades-history-table tbody tr.grades-history-row {
+    border-bottom-color: rgba(104, 132, 174, 0.2);
 }
 
-[data-theme="dark"] .content-inner .table-responsive > table.table-modern:not(.grid-table) tbody td {
-    border-bottom-color: rgba(79, 128, 191, 0.2) !important;
+[data-theme="dark"] .grades-history-table tbody tr.grades-history-row:hover {
+    background: rgba(63, 105, 176, 0.12);
 }
 
-[data-theme="dark"] .content-inner .table-responsive > table.table-modern:not(.grid-table) tbody tr:hover,
-[data-theme="dark"] .content-inner .table-responsive > table.table-modern:not(.grid-table) tbody tr:hover td {
-    background: #112d4f !important;
+[data-theme="dark"] .grades-history-table tbody td {
+    color: #e1e9f7;
 }
 
-[data-theme="dark"] .content-inner .table-responsive > table.table-modern:not(.grid-table) tbody tr:last-child td {
-    border-bottom: 0 !important;
+[data-theme="dark"] .grades-history-date-time,
+[data-theme="dark"] .grades-history-person-detail,
+[data-theme="dark"] .grades-history-teacher-info i,
+[data-theme="dark"] .grades-history-range {
+    color: #9fb0ca;
 }
 
-[data-theme="dark"] .content-inner .pagination-modern .page-link {
-    border-color: rgba(79, 128, 191, 0.28) !important;
-    color: #b5c9e7 !important;
+[data-theme="dark"] .grades-history-badge--class {
+    background: rgba(115, 82, 220, 0.28);
+    color: #c4b5fd;
 }
 
-[data-theme="dark"] .content-inner .pagination-modern .page-item.active .page-link {
-    border-color: #5d9bff !important;
-    background: #3478f6 !important;
-    color: #fff !important;
+[data-theme="dark"] .grades-history-badge--period {
+    background: #213552;
+    color: #d2def1;
 }
 
-[data-theme="dark"] .content-inner .filter-form .form-control:not([type="checkbox"]),
-[data-theme="dark"] .content-inner .filter-form .form-select,
-[data-theme="dark"] .content-inner #filters-form .search-box-container .form-control,
-[data-theme="dark"] .content-inner .filter-form .search-pill,
-[data-theme="dark"] .content-inner .filter-form .dept-search-pill {
-    border-color: rgba(92, 137, 197, 0.35) !important;
-    background-color: #0b1e38 !important;
-    color: #dce9ff !important;
+[data-theme="dark"] .grades-history-badge--success {
+    background: rgba(16, 145, 105, 0.36);
+    color: #7ee0bd;
 }
 
-[data-theme="dark"] .content-inner .filter-form .search-pill .form-control,
-[data-theme="dark"] .content-inner .filter-form .search-pill .form-select {
-    background: transparent !important;
-    color: #dce9ff !important;
+[data-theme="dark"] .grades-history-badge--danger {
+    background: rgba(185, 55, 66, 0.3);
+    color: #ffaaaa;
 }
 
-@media (max-width: 575.98px) {
-    .content-inner .table-responsive > table.table-modern:not(.grid-table) {
-        min-width: 640px;
+[data-theme="dark"] .grades-history-action {
+    background: #1d4b8a;
+    color: #d8e8ff;
+}
+
+[data-theme="dark"] .grades-history-action:hover,
+[data-theme="dark"] .grades-history-action:focus-visible {
+    background: #3478d3;
+    color: #fff;
+}
+
+[data-theme="dark"] .grades-history-footer {
+    border-top-color: rgba(104, 132, 174, 0.2);
+}
+
+[data-theme="dark"] .grades-history-footer .page-link {
+    background: #1d3150;
+    color: #d2def1;
+}
+
+[data-theme="dark"] .grades-history-footer .page-item.active .page-link {
+    background: #4f74ed;
+    color: #fff;
+}
+
+@media (max-width: 767.98px) {
+    .grades-history-table {
+        min-width: 960px;
     }
 
-    .content-inner .table-responsive > table.table-modern:not(.grid-table) thead th,
-    .content-inner .table-responsive > table.table-modern:not(.grid-table) tbody td {
-        padding-right: 0.65rem !important;
-        padding-left: 0.65rem !important;
+    .grades-history-footer {
+        align-items: flex-start;
+        flex-direction: column;
     }
 
-    .content-inner .filter-form .form-control:not([type="checkbox"]),
-    .content-inner .filter-form .form-select,
-    .content-inner #filters-form .search-box-container .form-control,
-    .content-inner .filter-form button[type="submit"] {
-        min-height: 42px;
+    .grades-history-footer nav,
+    .grades-history-footer .pagination {
+        max-width: 100%;
+        flex-wrap: wrap;
     }
 }
