@@ -27,7 +27,7 @@ class InsolventStudent extends BaseModel
             FROM insolvent_students ins
             JOIN students s ON ins.student_id = s.id
             JOIN enrollments e ON (ins.student_id = e.student_id AND ins.academic_year_id = e.academic_year_id)
-            LEFT JOIN classes c ON s.class_id = c.id
+            LEFT JOIN classes c ON e.class_id = c.id
             LEFT JOIN cycles cy ON c.cycle_id = cy.id
             LEFT JOIN sections sec ON c.section_id = sec.id
             LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id
@@ -39,7 +39,7 @@ class InsolventStudent extends BaseModel
 
         $params = [$academicYearId];
 
-        if (!empty($filters['teaching_type_id'])) {
+        if (array_key_exists('teaching_type_id', $filters)) {
             $sql .= " AND c.teaching_type_id = ?";
             $params[] = (int)$filters['teaching_type_id'];
         }
@@ -52,7 +52,7 @@ class InsolventStudent extends BaseModel
             $params[] = (int)$filters['section_id'];
         }
         if (!empty($filters['class_id'])) {
-            $sql .= " AND s.class_id = ?";
+            $sql .= " AND e.class_id = ?";
             $params[] = (int)$filters['class_id'];
         }
         if (!empty($filters['q'])) {
@@ -175,7 +175,7 @@ class InsolventStudent extends BaseModel
     /**
      * Récupérer les élèves insolvables pour une classe et une tranche spécifique de manière dynamique.
      */
-    public function getInsolventsForTranche(int $academicYearId, int $classId, int $installmentNumber): array
+    public function getInsolventsForTranche(int $academicYearId, int $classId, int $installmentNumber, ?int $teachingTypeId = null): array
     {
         // 1. Résoudre les tranches configurées de la classe pour obtenir le montant attendu
         $feeInstModel = new FeeInstallment();
@@ -190,6 +190,9 @@ class InsolventStudent extends BaseModel
         }
 
         // 2. Récupérer tous les élèves inscrits dans cette classe
+        $teachingTypeFilter = $teachingTypeId !== null
+            ? 'AND c.teaching_type_id = :teaching_type_id AND tt.actif = 1'
+            : '';
         $sql = "
             SELECT 
                 s.id as student_id,
@@ -205,7 +208,7 @@ class InsolventStudent extends BaseModel
                 (coalesce(si.amount_planned, :planned_amount2) - coalesce(si.amount_paid, 0.00)) as reste_a_payer
             FROM enrollments e
             JOIN students s ON e.student_id = s.id
-            LEFT JOIN classes c ON s.class_id = c.id
+            LEFT JOIN classes c ON e.class_id = c.id
             LEFT JOIN sections sec ON c.section_id = sec.id
             LEFT JOIN teaching_types tt ON c.teaching_type_id = tt.id
             LEFT JOIN student_installments si ON (si.student_id = s.id AND si.academic_year_id = e.academic_year_id AND si.installment_number = :installment_number)
@@ -213,18 +216,23 @@ class InsolventStudent extends BaseModel
               AND s.is_withdrawn = 0
               AND s.actif = 1
               AND s.status = 'Inscrit'
-              AND s.class_id = :class_id
+              AND e.class_id = :class_id
+              {$teachingTypeFilter}
             ORDER BY s.nom ASC, s.prenom ASC
         ";
 
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([
+        $params = [
             'planned_amount1' => $plannedAmount,
             'planned_amount2' => $plannedAmount,
             'installment_number' => $installmentNumber,
             'academic_year_id' => $academicYearId,
             'class_id' => $classId
-        ]);
+        ];
+        if ($teachingTypeId !== null) {
+            $params['teaching_type_id'] = $teachingTypeId;
+        }
+        $stmt->execute($params);
 
         $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
 

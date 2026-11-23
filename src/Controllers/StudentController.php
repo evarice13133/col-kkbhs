@@ -650,12 +650,21 @@ class StudentController
 
         \App\Core\PermissionManager::requirePermission('manage_students');
 
-        // Classes are now shared across years, no year filtering
-        $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id, teaching_type_id, frais_inscription, frais_inscription_reinscription, frais_scolarite_brut FROM classes WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $classes = $this->db->query("
+            SELECT c.id, c.nom, c.cycle_id, c.section_id, c.department_id, c.teaching_type_id,
+                   c.frais_inscription, c.frais_inscription_reinscription, c.frais_scolarite_brut
+            FROM classes c
+            LEFT JOIN teaching_types tt ON tt.id = c.teaching_type_id
+            WHERE c.status = 1 AND (c.teaching_type_id IS NULL OR tt.actif = 1)
+            ORDER BY c.nom ASC
+        ")->fetchAll(PDO::FETCH_ASSOC);
 
         $cycles = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id FROM cycles c LEFT JOIN teaching_types t ON c.teaching_type_id = t.id WHERE c.status = 1 AND (t.actif = 1 OR c.teaching_type_id IS NULL) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $typeIds = $this->db->query('SELECT id FROM teaching_types WHERE id > 0')->fetchAll(PDO::FETCH_COLUMN);
+        $registrationSettingsByType = $this->getRegistrationSettingsByType($typeIds);
+        $defaultTeachingTypeId = (new \App\Services\SettingsStore($this->db))->getDefaultTeachingTypeId();
 
         $sections = $this->db->query("SELECT id, nom FROM sections WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -695,6 +704,29 @@ class StudentController
 
         include __DIR__ . '/../Views/students/create.php';
 
+    }
+
+    private function getRegistrationSettingsByType(array $teachingTypeIds): array
+    {
+        $settingsByType = [];
+        $settingsStore = new \App\Services\SettingsStore($this->db);
+        foreach ($teachingTypeIds as $teachingTypeId) {
+            $teachingTypeId = (int) $teachingTypeId;
+            if ($teachingTypeId < 1) {
+                continue;
+            }
+
+            $settings = $settingsStore->all($teachingTypeId);
+            $settingsByType[$teachingTypeId] = [
+                'policy' => (string) ($settings['registration_fee_policy'] ?? 'all'),
+                'payment_methods' => array_values(array_filter(
+                    array_map('trim', explode(',', (string) ($settings['payment_methods'] ?? ''))),
+                    static fn(string $method): bool => $method !== ''
+                )),
+            ];
+        }
+
+        return $settingsByType;
     }
 
 
@@ -849,10 +881,10 @@ class StudentController
                     header("Location: /students");
                     exit;
                 } else {
-                    \App\Core\Session::setFlash('popup_errors', json_encode($result['errors'], JSON_UNESCAPED_UNICODE));
+                    $errors = $result['errors'];
                 }
             } else {
-                \App\Core\Session::setFlash('popup_errors', json_encode($validationResult['errors'], JSON_UNESCAPED_UNICODE));
+                $errors = $validationResult['errors'];
             }
 
             // On reload with errors
@@ -933,7 +965,7 @@ class StudentController
                 $hasError = true;
             } else {
                 // Charger la classe
-                $classStmt = $this->db->prepare("SELECT nom, frais_inscription, frais_inscription_reinscription, frais_scolarite_brut FROM classes WHERE id = ?");
+                $classStmt = $this->db->prepare("SELECT nom, teaching_type_id, frais_inscription, frais_inscription_reinscription, frais_scolarite_brut FROM classes WHERE id = ?");
                 $classStmt->execute([$class_id]);
                 $classInfo = $classStmt->fetch(PDO::FETCH_ASSOC);
 
@@ -942,7 +974,7 @@ class StudentController
                     $hasError = true;
                 } else {
                     // Charger la politique et calculer le montant requis
-                    $settingsStore = new \App\Services\SettingsStore($this->db);
+                    $settingsStore = new \App\Services\SettingsStore($this->db, (int) $classInfo['teaching_type_id']);
                     $policy = $settingsStore->get('registration_fee_policy', 'all');
                     $student_status = $_POST['student_status'] ?? 'nouveau';
 
@@ -964,15 +996,32 @@ class StudentController
                     } elseif ($expectedFee > 0 && empty($payment_method)) {
                         $error = "Le mode de paiement est obligatoire pour régler les frais d'inscription.";
                         $hasError = true;
+                    } elseif ($expectedFee > 0 && !in_array(
+                        $payment_method,
+                        array_map('trim', explode(',', (string) $settingsStore->get('payment_methods', ''))),
+                        true
+                    )) {
+                        $error = "Le mode de paiement sélectionné n'est pas autorisé pour ce type d’enseignement.";
+                        $hasError = true;
                     }
                 }
             }
 
             if ($hasError) {
                 // Rendre les variables nécessaires pour ré-afficher le formulaire create.php
-                $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id, teaching_type_id, frais_inscription, frais_inscription_reinscription, frais_scolarite_brut FROM classes WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $classes = $this->db->query("
+                    SELECT c.id, c.nom, c.cycle_id, c.section_id, c.department_id, c.teaching_type_id,
+                           c.frais_inscription, c.frais_inscription_reinscription, c.frais_scolarite_brut
+                    FROM classes c
+                    LEFT JOIN teaching_types tt ON tt.id = c.teaching_type_id
+                    WHERE c.status = 1 AND (c.teaching_type_id IS NULL OR tt.actif = 1)
+                    ORDER BY c.nom ASC
+                ")->fetchAll(PDO::FETCH_ASSOC);
                 $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $typeIds = $this->db->query('SELECT id FROM teaching_types WHERE id > 0')->fetchAll(PDO::FETCH_COLUMN);
+                $registrationSettingsByType = $this->getRegistrationSettingsByType($typeIds);
+                $defaultTeachingTypeId = (new \App\Services\SettingsStore($this->db))->getDefaultTeachingTypeId();
                 $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
                 $departments = $this->db->query("SELECT id, nom, teaching_type_id FROM departments WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -1239,8 +1288,17 @@ class StudentController
 
         }
 
-        // Classes are now shared across years, no year filtering
-        $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id, teaching_type_id, frais_inscription, frais_inscription_reinscription, frais_scolarite_brut FROM classes WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $classesStmt = $this->db->prepare("
+            SELECT c.id, c.nom, c.cycle_id, c.section_id, c.department_id, c.teaching_type_id,
+                   c.frais_inscription, c.frais_inscription_reinscription, c.frais_scolarite_brut
+            FROM classes c
+            LEFT JOIN teaching_types tt ON tt.id = c.teaching_type_id
+            WHERE c.status = 1
+              AND (c.teaching_type_id IS NULL OR tt.actif = 1 OR c.id = ?)
+            ORDER BY c.nom ASC
+        ");
+        $classesStmt->execute([(int) $student['class_id']]);
+        $classes = $classesStmt->fetchAll(PDO::FETCH_ASSOC);
 
         $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -1444,8 +1502,16 @@ class StudentController
 
                 ];
 
-                // Classes are now shared across years, no year filtering
-                $classes = $this->db->query("SELECT id, nom, cycle_id, section_id, department_id, teaching_type_id FROM classes WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                $classesStmt = $this->db->prepare("
+                    SELECT c.id, c.nom, c.cycle_id, c.section_id, c.department_id, c.teaching_type_id
+                    FROM classes c
+                    LEFT JOIN teaching_types tt ON tt.id = c.teaching_type_id
+                    WHERE c.status = 1
+                      AND (c.teaching_type_id IS NULL OR tt.actif = 1 OR c.id = ?)
+                    ORDER BY c.nom ASC
+                ");
+                $classesStmt->execute([(int) $student['class_id']]);
+                $classes = $classesStmt->fetchAll(PDO::FETCH_ASSOC);
 
                 $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -1762,6 +1828,42 @@ class StudentController
             exit;
         }
 
+        echo json_encode($this->validateEnrollmentIds($ids));
+        exit;
+    }
+
+    public function validateAllImported(): void
+    {
+        \App\Core\PermissionManager::requirePermission('manage_students');
+        header('Content-Type: application/json');
+
+        if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+            echo json_encode(['success' => false, 'message' => __('unauthorized_action')]);
+            exit;
+        }
+
+        $ids = $this->db->query(
+            "SELECT id FROM students
+             WHERE status = 'Non inscrit' AND actif = 1 AND is_withdrawn = 0
+             ORDER BY id ASC"
+        )->fetchAll(PDO::FETCH_COLUMN);
+
+        if (empty($ids)) {
+            echo json_encode(['success' => false, 'message' => 'Aucun élève importé en attente de validation.']);
+            exit;
+        }
+
+        echo json_encode($this->validateEnrollmentIds($ids));
+        exit;
+    }
+
+    private function validateEnrollmentIds(array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn(int $id): bool => $id > 0)));
+        if (empty($ids)) {
+            return ['success' => false, 'message' => 'Aucun élève sélectionné.'];
+        }
+
         try {
             $this->db->beginTransaction();
             $successCount = 0;
@@ -1783,8 +1885,6 @@ class StudentController
             $financialService = new \App\Services\FinancialService($this->db);
 
             foreach ($ids as $id) {
-                $id = (int) $id;
-                
                 // Update student status
                 $updateStudentStmt->execute([$id]);
                 if ($updateStudentStmt->rowCount() > 0) {
@@ -1815,20 +1915,19 @@ class StudentController
             }
 
             $this->db->commit();
-            echo json_encode([
+            return [
                 'success' => true,
                 'message' => "Validation réussie pour $successCount élève(s)."
-            ]);
+            ];
         } catch (\Exception $e) {
             if ($this->db->inTransaction()) {
                 $this->db->rollBack();
             }
-            echo json_encode([
+            return [
                 'success' => false,
                 'message' => 'Erreur lors de la validation: ' . $e->getMessage()
-            ]);
+            ];
         }
-        exit;
     }
 
     public function financialResync(): void

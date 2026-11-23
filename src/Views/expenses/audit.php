@@ -38,7 +38,14 @@ ob_start();
                 </span>
                 <?= __('expense_audit_title') ?>
             </h2>
-            <p class="text-muted-theme small mb-0"><?= __('expense_audit_desc') ?></p>
+            <p class="text-muted-theme small mb-0">
+                <?= __('expense_audit_desc') ?>
+                <?php if ($activeTeachingTypeName !== ''): ?>
+                    <span class="badge bg-primary bg-opacity-10 text-primary ms-2">
+                        <?= __('teaching_type') ?> : <?= h($activeTeachingTypeName) ?>
+                    </span>
+                <?php endif; ?>
+            </p>
         </div>
         <div>
             <a href="/expenses" class="btn btn-outline-secondary rounded-pill px-4 fw-bold">

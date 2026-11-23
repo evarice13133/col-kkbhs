@@ -97,12 +97,12 @@ class ActivityTracker
         $this->recordEvent('settings_updated', 'admin_activity');
     }
 
-    public function recordGradesSaved(int $teacherId, string $periode, int $classId, int $subjectId, int $createdCount, int $updatedCount): void
+    public function recordGradesSaved(int $teacherId, string $periode, int $classId, int $subjectId, int $createdCount, int $updatedCount, string $route = '/notes/store'): void
     {
         $baseContext = [
             'user_id' => $teacherId,
             'user_role' => (string) Session::get('user_role'),
-            'route' => '/notes/store',
+            'route' => $route,
             'http_method' => 'POST',
             'entity_type' => 'gradebook',
             'entity_id' => $subjectId,

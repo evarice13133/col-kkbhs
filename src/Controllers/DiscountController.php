@@ -36,6 +36,7 @@ class DiscountController
     public function index()
     {
         $activeYearId = $this->academicYearService->getActiveYearId();
+        $activeTeachingTypeId = (new \App\Services\SettingsStore($this->db))->getDefaultTeachingTypeId();
 
         // 1. Liste des réductions individuelles actives/inactives
         $studentDiscounts = $this->db->query("
@@ -58,31 +59,69 @@ class DiscountController
         ")->fetchAll(PDO::FETCH_ASSOC);
 
         // 3. Charger les élèves et les classes pour alimenter le formulaire de création
-        $students = $this->db->query("
+        $studentsStmt = $this->db->prepare("
             SELECT s.id, s.nom, s.prenom, s.email as matricule, c.nom as classe_nom 
             FROM students s
-            LEFT JOIN classes c ON s.class_id = c.id
+            JOIN classes c ON s.class_id = c.id
+            JOIN teaching_types tt ON tt.id = c.teaching_type_id AND tt.actif = 1
             WHERE s.is_withdrawn = 0
+              AND s.actif = 1
+              AND s.status = 'Inscrit'
+              AND s.academic_year_id = ?
+              AND c.teaching_type_id = ?
             ORDER BY s.nom ASC, s.prenom ASC
-        ")->fetchAll(PDO::FETCH_ASSOC);
+        ");
+        $studentsStmt->execute([$activeYearId, $activeTeachingTypeId]);
+        $students = $studentsStmt->fetchAll(PDO::FETCH_ASSOC);
 
-                $classesStmt = $this->db->prepare("SELECT c.id, c.nom, c.teaching_type_id, c.section_id, c.cycle_id
-                                                                                     FROM classes c
-                                                                                     WHERE c.status = 1
-                                                                                         AND EXISTS (
-                                                                                                 SELECT 1 FROM students s
-                                                                                                 WHERE s.class_id = c.id
-                                                                                                     AND s.academic_year_id = ?
-                                                                                                     AND s.status = 'Inscrit'
-                                                                                                     AND s.actif = 1
-                                                                                                     AND s.is_withdrawn = 0
-                                                                                         )
-                                                                                     ORDER BY c.nom ASC");
-                $classesStmt->execute([$activeYearId]);
-                $classes = $classesStmt->fetchAll(PDO::FETCH_ASSOC);
-        $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $eligibleClassCriteria = "
+            c.status = 1
+            AND c.teaching_type_id = ?
+            AND EXISTS (
+                SELECT 1 FROM students s
+                WHERE s.class_id = c.id
+                  AND s.academic_year_id = ?
+                  AND s.status = 'Inscrit'
+                  AND s.actif = 1
+                  AND s.is_withdrawn = 0
+            )
+        ";
+        $classesStmt = $this->db->prepare("
+            SELECT c.id, c.nom, c.teaching_type_id, c.section_id, c.cycle_id
+            FROM classes c
+            WHERE $eligibleClassCriteria
+            ORDER BY c.nom ASC
+        ");
+        $classesStmt->execute([$activeTeachingTypeId, $activeYearId]);
+        $classes = $classesStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $teachingTypesStmt = $this->db->prepare("
+            SELECT id, nom FROM teaching_types
+            WHERE actif = 1 AND id = ?
+            ORDER BY position ASC, nom ASC
+        ");
+        $teachingTypesStmt->execute([$activeTeachingTypeId]);
+        $teachingTypes = $teachingTypesStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $sectionsStmt = $this->db->prepare("
+            SELECT DISTINCT sec.id, sec.nom
+            FROM sections sec
+            JOIN classes c ON c.section_id = sec.id
+            WHERE $eligibleClassCriteria
+            ORDER BY sec.nom ASC
+        ");
+        $sectionsStmt->execute([$activeTeachingTypeId, $activeYearId]);
+        $sections = $sectionsStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $cyclesStmt = $this->db->prepare("
+            SELECT DISTINCT cy.id, cy.nom
+            FROM cycles cy
+            JOIN classes c ON c.cycle_id = cy.id
+            WHERE $eligibleClassCriteria
+            ORDER BY cy.nom ASC
+        ");
+        $cyclesStmt->execute([$activeTeachingTypeId, $activeYearId]);
+        $cycles = $cyclesStmt->fetchAll(PDO::FETCH_ASSOC);
 
         $discountTypes = (new \App\Models\DiscountType())->getAllActive();
 
@@ -110,6 +149,7 @@ class DiscountController
             $commentaire = trim((string)($_POST['commentaire'] ?? ''));
 
             $activeYearId = $this->academicYearService->getActiveYearId();
+            $activeTeachingTypeId = (new \App\Services\SettingsStore($this->db))->getDefaultTeachingTypeId();
 
             if ($amount <= 0.0) {
                 Session::setFlash('error', "Le montant/pourcentage de la réduction doit être supérieur à 0.");
@@ -141,6 +181,24 @@ class DiscountController
                     $studentId = (int)$_POST['student_id'];
                     if ($studentId <= 0) {
                         throw new \Exception("Élève invalide.");
+                    }
+
+                    $eligibleStudent = $this->db->prepare("
+                        SELECT s.id
+                        FROM students s
+                        JOIN classes c ON c.id = s.class_id
+                        JOIN teaching_types tt ON tt.id = c.teaching_type_id AND tt.actif = 1
+                        WHERE s.id = ?
+                          AND s.academic_year_id = ?
+                          AND c.teaching_type_id = ?
+                          AND s.status = 'Inscrit'
+                          AND s.actif = 1
+                          AND s.is_withdrawn = 0
+                        LIMIT 1
+                    ");
+                    $eligibleStudent->execute([$studentId, $activeYearId, $activeTeachingTypeId]);
+                    if (!$eligibleStudent->fetchColumn()) {
+                        throw new \Exception("L'élève sélectionné n'est pas inscrit dans le type d'enseignement actif pour l'année en cours.");
                     }
 
                     $stmt = $this->db->prepare("INSERT INTO student_discounts (student_id, discount_type_id, amount, amount_type, motive, date_effet, status, commentaire) 
@@ -180,6 +238,28 @@ class DiscountController
                     $classId = (int)$_POST['class_id'];
                     if ($classId <= 0) {
                         throw new \Exception("Classe invalide.");
+                    }
+
+                    $eligibleClass = $this->db->prepare("
+                        SELECT c.id
+                        FROM classes c
+                        JOIN teaching_types tt ON tt.id = c.teaching_type_id AND tt.actif = 1
+                        WHERE c.id = ?
+                          AND c.status = 1
+                          AND c.teaching_type_id = ?
+                          AND EXISTS (
+                              SELECT 1 FROM students s
+                              WHERE s.class_id = c.id
+                                AND s.academic_year_id = ?
+                                AND s.status = 'Inscrit'
+                                AND s.actif = 1
+                                AND s.is_withdrawn = 0
+                          )
+                        LIMIT 1
+                    ");
+                    $eligibleClass->execute([$classId, $activeTeachingTypeId, $activeYearId]);
+                    if (!$eligibleClass->fetchColumn()) {
+                        throw new \Exception("La classe sélectionnée ne comporte aucun élève inscrit dans le type d'enseignement actif pour l'année en cours.");
                     }
 
                     $stmt = $this->db->prepare("INSERT INTO class_discounts (class_id, discount_type_id, amount, amount_type, motive, date_effet, status, commentaire) 

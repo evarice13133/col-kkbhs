@@ -17,7 +17,6 @@ ob_start(); ?>
 
             <select name="teaching_type_id" class="form-select rounded-pill px-3 py-2 border-theme-light"
                 style="max-width: 220px;" onchange="this.form.submit()">
-                <option value=""><?= __('all_teaching_types') ?? 'Tous les types d\'enseignement' ?></option>
                 <?php foreach ($teachingTypes as $tt): ?>
                     <option value="<?= $tt['id'] ?>" <?= (int) ($filters['teaching_type_id'] ?? 0) === (int) $tt['id'] ? 'selected' : '' ?>>
                         <?= htmlspecialchars((string) $tt['nom']) ?>
@@ -194,6 +193,7 @@ ob_start(); ?>
                             <span class="input-group-text-modern"><i class="bi bi-sort-numeric-down"></i></span>
                             <input type="number" name="position" id="group_position" class="form-control premium-input" min="1" step="1" required>
                         </div>
+                        <small class="text-muted small mt-1">La prochaine position disponible est suggérée selon la section et la forme choisies.</small>
                     </div>
 
                     <div class="mb-3">
@@ -221,7 +221,7 @@ ob_start(); ?>
                                 class="form-select premium-input" <?= !empty($teachingForms) ? 'required' : '' ?>>
                                 <option value="" disabled selected><?= __('select_teaching_form') ?? 'Sélectionner la forme' ?>...</option>
                                 <?php foreach ($teachingForms as $tf): ?>
-                                    <option value="<?= $tf['id'] ?>"><?= htmlspecialchars((string) $tf['nom']) ?></option>
+                                    <option value="<?= (int) $tf['id'] ?>" data-teaching-type="<?= (int) $tf['teaching_type_id'] ?>"><?= htmlspecialchars((string) $tf['nom']) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -241,7 +241,7 @@ ob_start(); ?>
                         </label>
                         <div class="input-group-modern">
                             <span class="input-group-text-modern"><i class="bi bi-tag"></i></span>
-                            <select name="teaching_type_id" id="group_teaching_type_id" class="form-select premium-input" required>
+                            <select name="teaching_type_id" id="group_teaching_type_id" class="form-select premium-input" data-default-type="<?= $modalTeachingTypeId ?>" required>
                                 <option value="" disabled selected><?= __('select_teaching_type') ?? 'Sélectionner le type' ?>...</option>
                                 <?php foreach ($teachingTypes as $tt): ?>
                                     <option value="<?= $tt['id'] ?>"><?= htmlspecialchars((string) $tt['nom']) ?> (<?= htmlspecialchars((string) $tt['code']) ?>)</option>
@@ -322,6 +322,8 @@ ob_start(); ?>
 </style>
 
 <script>
+    const existingGroupPositions = <?= json_encode($groupPositions, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+
     document.addEventListener('DOMContentLoaded', function () {
         // Instant Search Logic
         const searchInput = document.getElementById('instantSearchInput');
@@ -352,13 +354,17 @@ ob_start(); ?>
 
         document.getElementById('group_libelle').value = '';
         document.getElementById('group_position').value = '';
-        const tfSelect = document.getElementById('group_teaching_form_id');
-        if (tfSelect && tfSelect.options.length > 1) tfSelect.selectedIndex = 1;
         const ttSelect = document.getElementById('group_teaching_type_id');
-        if (ttSelect && ttSelect.options.length > 1) ttSelect.selectedIndex = 1;
+        if (ttSelect) {
+            ttSelect.value = ttSelect.dataset.defaultType || (ttSelect.options.length > 1 ? ttSelect.options[1].value : '');
+            syncTeachingForms();
+        }
         const sectionSelect = document.getElementById('group_section_id');
         if (sectionSelect) sectionSelect.value = '';
+        suggestNextGroupPosition();
         document.getElementById('group_status').checked = true;
+        document.getElementById('classes_using_group').classList.add('d-none');
+        document.getElementById('teaching_form_warning').classList.add('d-none');
 
         const modal = new bootstrap.Modal(document.getElementById('subjectGroupModal'));
         modal.show();
@@ -374,14 +380,12 @@ ob_start(); ?>
 
         document.getElementById('group_libelle').value = data.libelle || '';
         document.getElementById('group_position').value = data.position || '';
-        const tfSelect = document.getElementById('group_teaching_form_id');
-        if (data.teaching_form_id && tfSelect) {
-            tfSelect.value = data.teaching_form_id;
-        }
         const ttSelect = document.getElementById('group_teaching_type_id');
         if (data.teaching_type_id && ttSelect) {
             ttSelect.value = data.teaching_type_id;
         }
+        const tfSelect = document.getElementById('group_teaching_form_id');
+        syncTeachingForms(data.teaching_form_id || '');
         const sectionSelect = document.getElementById('group_section_id');
         if (sectionSelect) sectionSelect.value = data.section_id || '';
         document.getElementById('group_status').checked = data.status == 1;
@@ -448,6 +452,49 @@ ob_start(); ?>
         const modal = new bootstrap.Modal(document.getElementById('subjectGroupModal'));
         modal.show();
     }
+
+    function syncTeachingForms(selectedFormId = '') {
+        const typeSelect = document.getElementById('group_teaching_type_id');
+        const formSelect = document.getElementById('group_teaching_form_id');
+        if (!typeSelect || !formSelect) return;
+
+        const selectedTypeId = typeSelect.value;
+        let firstCompatibleForm = '';
+        let selectedFormIsCompatible = false;
+
+        Array.from(formSelect.options).forEach(option => {
+            if (!option.value) return;
+            const compatible = option.dataset.teachingType === selectedTypeId;
+            option.hidden = !compatible;
+            option.disabled = !compatible;
+            if (compatible && !firstCompatibleForm) firstCompatibleForm = option.value;
+            if (compatible && option.value === String(selectedFormId)) selectedFormIsCompatible = true;
+        });
+
+        formSelect.value = selectedFormIsCompatible ? String(selectedFormId) : firstCompatibleForm;
+    }
+
+    function suggestNextGroupPosition() {
+        const groupForm = document.getElementById('subjectGroupForm');
+        if (!groupForm || !groupForm.action.endsWith('/subject-groups/store')) return;
+
+        const sectionId = parseInt(document.getElementById('group_section_id')?.value || '0', 10);
+        const formId = parseInt(document.getElementById('group_teaching_form_id')?.value || '0', 10);
+        const positionInput = document.getElementById('group_position');
+        if (!positionInput || sectionId <= 0 || formId <= 0) return;
+
+        const usedPositions = existingGroupPositions
+            .filter(group => parseInt(group.section_id, 10) === sectionId && parseInt(group.teaching_form_id, 10) === formId)
+            .map(group => parseInt(group.position, 10));
+        positionInput.value = String(usedPositions.length ? Math.max(...usedPositions) + 1 : 1);
+    }
+
+    document.getElementById('group_section_id').addEventListener('change', suggestNextGroupPosition);
+    document.getElementById('group_teaching_form_id').addEventListener('change', suggestNextGroupPosition);
+    document.getElementById('group_teaching_type_id').addEventListener('change', function () {
+        syncTeachingForms();
+        suggestNextGroupPosition();
+    });
 </script>
 
 <?php

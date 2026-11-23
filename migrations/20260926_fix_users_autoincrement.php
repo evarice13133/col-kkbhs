@@ -16,6 +16,13 @@ if ($column['Key'] !== 'PRI' || $column['Null'] !== 'NO') {
 }
 
 if (stripos((string) $column['Extra'], 'auto_increment') === false) {
+    $zeroId = $db->query('SELECT id FROM users WHERE id = 0 LIMIT 1')->fetchColumn();
+    if ($zeroId !== false) {
+        $nextId = (int) $db->query('SELECT COALESCE(MAX(id), 0) + 1 FROM users')->fetchColumn();
+        $stmt = $db->prepare('UPDATE users SET id = ? WHERE id = 0');
+        $stmt->execute([max(1, $nextId)]);
+    }
+
     $columnType = preg_replace('/[^a-zA-Z0-9_(), ]/', '', (string) $column['Type']);
     $db->exec("ALTER TABLE users MODIFY COLUMN id {$columnType} NOT NULL AUTO_INCREMENT");
 }

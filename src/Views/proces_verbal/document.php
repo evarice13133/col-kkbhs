@@ -3,7 +3,7 @@
  * DOCUMENT : Procès-Verbal (PV) de Classe "Gold Standard"
  * STYLE : Institutionnel Premium, Mode Paysage A4
  * DÉVELOPPEUR : Antigravity (Google DeepMind)
- * CONFIGURATION : 20 élèves par page, Pagination automatique, Support Multilingue
+ * CONFIGURATION : 10 élèves par page, pagination automatique et support multilingue
  */
 
 /* ==========================================================================
@@ -14,93 +14,76 @@
 $matieres = $donneesPV['matieres'] ?? [];
 $eleves   = $donneesPV['matriceEleves'] ?? [];
 $nbMatieres = count($matieres);
+$lang = \App\Core\Locale::get();
 
-// --- 1.2 Découpage (Chunking) des élèves par groupes de 20 ---
-// Permet d'assurer une pagination A4 Paysage parfaite sans débordement vertical.
-$chunks = array_chunk($eleves, 20);
-$totalChunks = count($chunks);
+// Le modèle de référence présente dix élèves par page pour garder les notes lisibles.
+$rowsPerPage = 10;
+$chunks = array_chunk($eleves, $rowsPerPage);
+$totalChunks = max(1, count($chunks));
 
-// --- 1.3 Calcul des statistiques globales de la classe ---
-// Détermine le nombre d'élèves admis (moyenne >= 10) et échoués, ainsi que les moyennes extrêmes.
-$nbAdmis = 0; $nbEchoue = 0; $allAverages = [];
+// --- 1.3 Calcul des statistiques globales affichées dans l'en-tête ---
+$nbAdmis = 0;
+$allAverages = [];
+$nbGarcons = $nbFilles = $nbRedoublants = 0;
+$admisGarcons = $admisFilles = $admisRedoublants = 0;
 foreach ($eleves as $ligne) {
+    $sexe = strtoupper((string) ($ligne['sexe'] ?? ''));
+    $isRedoublant = !empty($ligne['is_redoublant']);
+    if ($sexe === 'M') {
+        $nbGarcons++;
+    } elseif ($sexe === 'F') {
+        $nbFilles++;
+    }
+    if ($isRedoublant) {
+        $nbRedoublants++;
+    }
+
     if ($ligne['moyenne'] !== null) {
         $val = (float)$ligne['moyenne'];
         $allAverages[] = $val;
-        if ($val >= 10.0) $nbAdmis++; else $nbEchoue++;
-    }
-}
-$maxAvg = !empty($allAverages) ? max($allAverages) : 0;
-$minAvg = !empty($allAverages) ? min($allAverages) : 0;
-
-// --- 1.4 Récupération sécurisée du logo institutionnel via le LogoManager ---
-// Utilisation du format Base64 ou de l'URL pour assurer l'affichage même lors de l'impression hors-ligne.
-$db = \App\Core\Database::getInstance()->getConnection();
-$teachingTypeId = (int) ($contexte['teaching_type_id'] ?? 0);
-$logoManager = \App\Core\LogoManager::getInstance($db, $teachingTypeId > 0 ? $teachingTypeId : null);
-$logoData = [
-    'has_logo' => $logoManager->hasLogo(),
-    'base64' => $logoManager->hasLogo() ? $logoManager->getLogoBase64() : '',
-    'url' => $logoManager->getLogoUrl(),
-    'fallback_letter' => $logoManager->getFallbackLetter()
-];
-
-// --- 1.5 Regroupement thématique des matières par groupe d'enseignement ---
-// Les matières sont regroupées (ex: Groupe 1, Scientifiques, etc.) pour structurer l'en-tête du tableau.
-$groupedMatieres = [];
-foreach ($matieres as $m) {
-    $grp = $m['groupe_nom'] ?? $m['groupe'] ?? $m['group_name'] ?? 'AUTRES';
-    $groupedMatieres[$grp][] = $m;
-}
-
-// --- 1.6 Analyse Pédagogique fine de la classe ---
-// Détermine pour chaque matière la note maximale, la note minimale et le taux de réussite.
-// Identifie ensuite la "Matière Forte" (plus de moyennes >= 10) et la "Matière Faible".
-$matiereStats = [];
-foreach ($matieres as $m) {
-    $matiereStats[$m['id']] = [
-        'nom' => $m['nom'], 'prof' => $m['enseignant'] ?? $m['teacher'] ?? '-',
-        'above' => 0, 'below' => 0, 'max' => null, 'min' => null
-    ];
-}
-foreach ($eleves as $ligne) {
-    foreach ($matieres as $m) {
-        $mid = $m['id']; $n = $ligne['notesParMatiere'][$mid] ?? null;
-        if ($n !== null) {
-            $n = (float)$n;
-            if ($n >= 10) $matiereStats[$mid]['above']++; else $matiereStats[$mid]['below']++;
-            if ($matiereStats[$mid]['max'] === null || $n > $matiereStats[$mid]['max']) $matiereStats[$mid]['max'] = $n;
-            if ($matiereStats[$mid]['min'] === null || $n < $matiereStats[$mid]['min']) $matiereStats[$mid]['min'] = $n;
+        if ($val >= 10.0) {
+            $nbAdmis++;
+            if ($sexe === 'M') $admisGarcons++;
+            if ($sexe === 'F') $admisFilles++;
+            if ($isRedoublant) $admisRedoublants++;
         }
     }
 }
-$bestSub = null; $worstSub = null;
-foreach ($matiereStats as $ms) {
-    if ($bestSub === null || $ms['above'] > $bestSub['above']) $bestSub = $ms;
-    if ($worstSub === null || $ms['below'] > $worstSub['below']) $worstSub = $ms;
-}
-
-// --- 1.7 Synthèse des performances par groupes de matières ---
-// Calcule la moyenne pondérée (Moyenne = Points / Coefficients) pour chaque groupe de matières.
-$groupStats = [];
-foreach ($groupedMatieres as $grpName => $subs) {
-    $groupStats[$grpName] = ['pts' => 0, 'coefs' => 0, 'above' => 0, 'total' => 0];
-    foreach ($subs as $m) {
-        $mid = $m['id']; $c = (float)$m['coefficient'];
-        foreach ($eleves as $ligne) {
-            $n = $ligne['notesParMatiere'][$mid] ?? null;
-            if ($n !== null) {
-                $n = (float)$n;
-                $groupStats[$grpName]['pts'] += ($n * $c); $groupStats[$grpName]['coefs'] += $c;
-                $groupStats[$grpName]['total']++; if ($n >= 10) $groupStats[$grpName]['above']++;
-            }
-        }
+$decimalSeparator = $lang === 'fr' ? ',' : '.';
+$formatAverage = static fn($value) => $value !== null
+    ? number_format((float) $value, 2, $decimalSeparator, '')
+    : '—';
+$formatRate = static fn(int $passed, int $count) => $count > 0
+    ? number_format(($passed / $count) * 100, 2, $decimalSeparator, '') . '%'
+    : '—';
+$formatRank = static function ($rank) use ($lang) {
+    if (!is_numeric($rank)) {
+        return htmlspecialchars((string) $rank, ENT_QUOTES, 'UTF-8');
     }
-}
+    $rank = (int) $rank;
+    if ($lang === 'fr') {
+        return $rank === 1 ? '1er' : $rank . 'e';
+    }
+    $lastTwo = $rank % 100;
+    $suffix = ($lastTwo >= 11 && $lastTwo <= 13) ? 'th' : ([1 => 'st', 2 => 'nd', 3 => 'rd'][$rank % 10] ?? 'th');
+    return $rank . $suffix;
+};
 
-// --- 1.8 Calcul dynamique des dimensions et détection linguistique ---
-$subWidth = $nbMatieres > 0 ? (75 / $nbMatieres) : 15;
-$lang = \App\Core\Locale::get();
+// --- 1.5 Calcul dynamique des largeurs des colonnes ---
+$fixedColumnWidth = 3.2 + 19 + 4.8 + 4 + 5.5 + 4 + 4 + 7.5;
+$subWidth = $nbMatieres > 0 ? max(0, (100 - $fixedColumnWidth) / $nbMatieres) : 0;
+$institution = $contexte['institution'] ?? [];
+$schoolName = (string) ($institution['school_name'] ?? 'NotesMaster');
+$schoolLogoBase64 = (string) ($institution['school_logo_base64'] ?? '');
+$schoolLogoPath = (string) ($institution['school_logo'] ?? '');
+$schoolAddress = trim(implode(' · ', array_filter([
+    (string) ($institution['school_address'] ?? ''),
+    (string) ($institution['school_city'] ?? ''),
+    !empty($institution['school_phone']) ? __('pv_phone') . ' ' . $institution['school_phone'] : '',
+    !empty($institution['school_po_box']) ? 'B.P. ' . $institution['school_po_box'] : '',
+])));
+$periodValue = (string) ($contexte['periodeValeur'] ?? $contexte['periodeLabel'] ?? '-');
+$teacherName = trim((string) ($contexte['profPrincipal'] ?? ''));
 ?>
 <!DOCTYPE html>
 <html lang="<?= $lang ?>">
@@ -111,9 +94,6 @@ $lang = \App\Core\Locale::get();
         /* ==========================================================================
            2. SYSTÈME DE STYLE & COMPORTEMENT DE MISE EN PAGE
            ========================================================================== */
-        /* Importation de la typographie premium Inter pour un rendu type SaaS moderne */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
-        
         /* Réinitialisation de base */
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Inter', sans-serif; font-size: 10px; color: #1a202c; background: #f7fafc; line-height: 1.2; counter-reset: page_counter; }
@@ -304,6 +284,48 @@ $lang = \App\Core\Locale::get();
             .pv-table thead th, .summary-table th, .table-title { background: #f1f5f9 !important; color: #000000 !important; -webkit-print-color-adjust: exact; }
             .pv-table thead th.group-header { background: #e2e8f0 !important; color: #000000 !important; -webkit-print-color-adjust: exact; }
         }
+
+        body { font-family: Arial, sans-serif; font-size: 8px; color: #172033; background: #fff; }
+        .pv-page-container { height: 210mm; margin: 8px auto; padding: 2mm 8mm 7mm; display: flex; gap: 2mm; box-shadow: none; }
+        .pv-header { display: grid; grid-template-columns: minmax(0, 1fr) 55mm minmax(0, 1fr); column-gap: 3mm; align-items: center; min-height: 23mm; padding: 0 0 1mm; margin: 0; border: 0; }
+        .header-side { width: auto; padding: 0 2mm; font-size: 7.5px; line-height: 1.45; }
+        .header-side:first-child { text-align: left; }
+        .header-side:last-child { text-align: right; }
+        .pv-header-contact { margin-top: 1mm; font-size: 7px; font-weight: 700; line-height: 1.3; }
+        .logo-box { width: 19mm; height: 19mm; margin: 0 auto 1mm; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .logo-box img { display: block; width: 100%; height: 100%; object-fit: contain; }
+        .logo-placeholder { width: 19mm; height: 19mm; display: flex; align-items: center; justify-content: center; border: 1px solid #d1d5db; border-radius: 50%; background: #f4f6f8; color: #64748b; font-size: 7px; font-weight: 700; }
+        .school-name { max-width: 100%; font-size: 10px; line-height: 1.2; margin-top: 1mm; }
+        .header-center { min-width: 0; text-align: center; font-size: 7px; }
+        .pv-title-box { padding: 0; margin: 0; border: 0; background: transparent; }
+        .pv-main-title { font-size: 12px; text-decoration: none; }
+        .pv-meta-grid { display: grid; grid-template-columns: repeat(4, 1fr); border: 0; }
+        .pv-meta-card { min-width: 0; padding: 1.5mm 2mm; border: 0; }
+        .pv-meta-row { display: flex; justify-content: space-between; gap: 2mm; margin-top: .8mm; font-size: 7px; font-weight: 700; }
+        .pv-meta-row span { color: #4b5563; font-size: 10px; font-weight: 700; }
+        .header-side > strong { font-size: 10.5px; }
+        .pv-header-contact { font-size: 10px; }
+        .school-name { font-size: 13px; }
+        .pv-main-title { font-size: 15px; }
+        .pv-meta-row strong { font-size: 10px; text-align: right; }
+        .reference-table { width: 100%; flex: 0 0 auto; border-collapse: collapse; table-layout: fixed; }
+        .reference-table th, .reference-table td { border: 1px solid #374151; padding: 1mm .5mm; text-align: center; font-size: 7px; overflow-wrap: anywhere; }
+        .reference-table th, .reference-table .student-cell, .reference-table .average-cell { font-size: 10px; }
+        .reference-table thead th { color: #fff; background: #243b63; font-weight: 700; text-transform: uppercase; }
+        .reference-table thead th.subject-head { height: 29mm; padding: 1mm .5mm; writing-mode: vertical-rl; transform: rotate(180deg); }
+        .reference-table tbody tr { height: 9mm; }
+        .reference-table .student-cell { text-align: left; padding-left: 1.5mm; font-weight: 600; }
+        .reference-table .average-cell { font-weight: 700; }
+        .logo-placeholder { font-size: 10px; }
+        .reference-table .mention-cell { font-size: 6.5px; }
+        .reference-table .observations-cell { text-align: left; }
+        .pv-page-number { margin-top: auto; padding-top: 1mm; text-align: right; font-size: 7px; }
+        @media print {
+            .pv-page-container { width: 297mm; height: 210mm; margin: 0; padding: 2mm 8mm 7mm; }
+            .reference-table thead th { color: #fff !important; background: #243b63 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .pv-page-container { break-after: page; page-break-after: always; }
+            .pv-page-container:last-of-type { break-after: auto; page-break-after: auto; }
+        }
     </style>
 </head>
 <body>
@@ -316,288 +338,135 @@ $lang = \App\Core\Locale::get();
         </div>
     </div>
 
-    <!-- 3. BOUCLE DE RENDU PAGINÉE (Par groupes de 20 élèves) -->
     <?php foreach ($chunks as $chunkIndex => $currentChunk): ?>
-        <!-- Chaque groupe est rendu dans une feuille A4 Paysage physique distincte -->
-        <div class="pv-page-container">
-            
-            <!-- 3.1 EN-TÊTE OFFICIEL BILINGUE DE L'ÉTABLISSEMENT -->
+        <main class="pv-page-container">
             <header class="pv-header">
-                <!-- Côté gauche : République du Cameroun (Français) -->
                 <div class="header-side">
-                    <div><?= htmlspecialchars($contexte['institution']['school_republic'] ?? 'REPUBLIQUE DU CAMEROUN') ?></div>
-                    <div style="font-weight: bold; font-style: italic;"><?= htmlspecialchars($contexte['institution']['school_motto'] ?? 'Paix - Travail - Patrie') ?></div>
+                    <strong><?= htmlspecialchars($institution['school_republic'] ?? __('school_republic_fr_placeholder'), ENT_QUOTES, 'UTF-8') ?></strong>
+                    <div><?= htmlspecialchars($institution['school_motto'] ?? '', ENT_QUOTES, 'UTF-8') ?></div>
                     <div>**********</div>
-                    <div><?= htmlspecialchars($contexte['institution']['school_ministry'] ?? 'MINISTERE DES ENSEIGNEMENTS SECONDAIRES') ?></div>
-                </div>
-                <!-- Centre : Logo institutionnel et Nom de l'établissement -->
-                <div class="header-center" style="text-align: center;">
-                    <?php if ($logoData['has_logo'] && !empty($logoData['base64'])): ?>
-                        <img src="<?= htmlspecialchars($logoData['base64']) ?>" class="school-logo" alt="Logo">
-                    <?php elseif ($logoData['has_logo'] && !empty($logoData['url'])): ?>
-                        <img src="<?= htmlspecialchars($logoData['url']) ?>" class="school-logo" alt="Logo">
+                    <div><?= htmlspecialchars($institution['school_ministry'] ?? __('school_ministry_fr_placeholder'), ENT_QUOTES, 'UTF-8') ?></div>
+                    <?php if (!empty($institution['school_delegation'])): ?>
+                        <div><?= htmlspecialchars($institution['school_delegation'], ENT_QUOTES, 'UTF-8') ?></div>
                     <?php endif; ?>
-                    <div class="school-name"><?= htmlspecialchars($contexte['institution']['school_name'] ?? 'NotesMaster') ?></div>
+                    <?php if ($schoolAddress !== ''): ?>
+                        <div class="pv-header-contact"><?= htmlspecialchars($schoolAddress, ENT_QUOTES, 'UTF-8') ?></div>
+                    <?php endif; ?>
                 </div>
-                <!-- Côté droit : Republic of Cameroon (Anglais) -->
+                <div class="header-center">
+                    <div class="logo-box">
+                        <?php if ($schoolLogoBase64 !== ''): ?>
+                            <img src="<?= htmlspecialchars($schoolLogoBase64, ENT_QUOTES, 'UTF-8') ?>" alt="<?= __('school_logo_alt') ?>">
+                        <?php elseif ($schoolLogoPath !== ''): ?>
+                            <?php $logoPath = \App\Core\Helpers::normalizeLogoPath($schoolLogoPath); ?>
+                            <img src="<?= htmlspecialchars($logoPath, ENT_QUOTES, 'UTF-8') ?>" alt="<?= __('school_logo_alt') ?>">
+                        <?php else: ?>
+                            <div class="logo-placeholder">LOGO</div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="school-name"><?= htmlspecialchars($schoolName, ENT_QUOTES, 'UTF-8') ?></div>
+                    <?php if (!empty($institution['creation_decree'])): ?>
+                        <div><?= htmlspecialchars($institution['creation_decree'], ENT_QUOTES, 'UTF-8') ?></div>
+                    <?php endif; ?>
+                </div>
                 <div class="header-side">
-                    <div><?= htmlspecialchars($contexte['institution']['school_republic_en'] ?? 'REPUBLIC OF CAMEROON') ?></div>
-                    <div style="font-weight: bold; font-style: italic;"><?= htmlspecialchars($contexte['institution']['school_motto_en'] ?? 'Peace - Work - Fatherland') ?></div>
+                    <strong><?= htmlspecialchars($institution['school_republic_en'] ?? __('school_republic_en_placeholder'), ENT_QUOTES, 'UTF-8') ?></strong>
+                    <div><?= htmlspecialchars($institution['school_motto_en'] ?? '', ENT_QUOTES, 'UTF-8') ?></div>
                     <div>**********</div>
-                    <div><?= htmlspecialchars($contexte['institution']['school_ministry_en'] ?? 'MINISTRY OF SECONDARY EDUCATION') ?></div>
+                    <div><?= htmlspecialchars($institution['school_ministry_en'] ?? __('school_ministry_en_placeholder'), ENT_QUOTES, 'UTF-8') ?></div>
+                    <?php if (!empty($institution['school_delegation_en'])): ?>
+                        <div><?= htmlspecialchars($institution['school_delegation_en'], ENT_QUOTES, 'UTF-8') ?></div>
+                    <?php endif; ?>
+                    <?php if ($schoolAddress !== ''): ?>
+                        <div class="pv-header-contact"><?= htmlspecialchars($schoolAddress, ENT_QUOTES, 'UTF-8') ?></div>
+                    <?php endif; ?>
                 </div>
             </header>
 
-            <!-- 3.2 CARTUCHE DE TITRE (Type de PV, Classe, Année scolaire et Période) -->
             <div class="pv-title-box">
-                <span class="pv-main-title"><?= __('pv_document_title') ?> - <?= $contexte['typeEvaluation'] ?></span>
-                <div style="font-size: 9.5px; font-weight: 700; text-transform: uppercase;">
-                    <?= __('class') ?> : <?= $contexte['classeNom'] ?> | <?= __('year') ?> : <?= $contexte['anneeNom'] ?> | <?= __('period') ?> : <?= $contexte['periodeLabel'] ?>
-                </div>
+                <span class="pv-main-title"><?= __('pv_document_title') ?> — <?= htmlspecialchars(htmlspecialchars_decode((string) $contexte['typeEvaluation'], ENT_QUOTES), ENT_QUOTES, 'UTF-8') ?></span>
             </div>
 
-            <!-- 3.3 TABLEAU DES NOTES ET MOYENNES (Chunk courant de 20 élèves) -->
-            <table class="pv-table">
-                <!-- Définition stricte des largeurs des colonnes pour éviter tout débordement -->
+            <section class="pv-meta-grid" aria-label="<?= __('pv_general_stats') ?>">
+                <div class="pv-meta-card">
+                    <div class="pv-meta-row"><span><?= __('year') ?></span><strong><?= htmlspecialchars(htmlspecialchars_decode((string) $contexte['anneeNom'], ENT_QUOTES), ENT_QUOTES, 'UTF-8') ?></strong></div>
+                    <div class="pv-meta-row"><span><?= __('class') ?></span><strong><?= htmlspecialchars(htmlspecialchars_decode((string) $contexte['classeNom'], ENT_QUOTES), ENT_QUOTES, 'UTF-8') ?></strong></div>
+                    <div class="pv-meta-row"><span><?= __('pv_period') ?></span><strong><?= htmlspecialchars($periodValue, ENT_QUOTES, 'UTF-8') ?></strong></div>
+                    <div class="pv-meta-row"><span><?= __('pv_teacher_in_charge') ?></span><strong><?= $teacherName !== '' ? htmlspecialchars($teacherName, ENT_QUOTES, 'UTF-8') : '—' ?></strong></div>
+                </div>
+                <div class="pv-meta-card">
+                    <div class="pv-meta-row"><span><?= __('pv_students') ?></span><strong><?= count($eleves) ?></strong></div>
+                    <div class="pv-meta-row"><span><?= __('pv_boys') ?></span><strong><?= $nbGarcons ?></strong></div>
+                    <div class="pv-meta-row"><span><?= __('pv_girls') ?></span><strong><?= $nbFilles ?></strong></div>
+                    <div class="pv-meta-row"><span><?= __('pv_repeaters') ?></span><strong><?= $nbRedoublants ?></strong></div>
+                </div>
+                <div class="pv-meta-card">
+                    <div class="pv-meta-row"><span><?= __('pv_general_average') ?></span><strong><?= $formatAverage($donneesPV['moyenneGenerale'] ?? null) ?></strong></div>
+                    <div class="pv-meta-row"><span><?= __('pv_admitted') ?></span><strong><?= $nbAdmis ?> / <?= count($eleves) ?></strong></div>
+                    <div class="pv-meta-row"><span><?= __('pv_top_average') ?></span><strong><?= $allAverages ? $formatAverage(max($allAverages)) : '—' ?></strong></div>
+                    <div class="pv-meta-row"><span><?= __('pv_lowest_average') ?></span><strong><?= $allAverages ? $formatAverage(min($allAverages)) : '—' ?></strong></div>
+                </div>
+                <div class="pv-meta-card">
+                    <div class="pv-meta-row"><span><?= __('pv_boys') ?></span><strong><?= $formatRate($admisGarcons, $nbGarcons) ?></strong></div>
+                    <div class="pv-meta-row"><span><?= __('pv_girls') ?></span><strong><?= $formatRate($admisFilles, $nbFilles) ?></strong></div>
+                    <div class="pv-meta-row"><span><?= __('pv_repeaters') ?></span><strong><?= $formatRate($admisRedoublants, $nbRedoublants) ?></strong></div>
+                    <div class="pv-meta-row"><span><?= __('pv_class_success_rate') ?></span><strong><?= $formatRate($nbAdmis, count($eleves)) ?></strong></div>
+                </div>
+            </section>
+
+            <table class="reference-table">
                 <colgroup>
-                    <col style="width: 3.5%;"> <!-- Colonne RG (remplace N°) -->
-                    <col style="width: 15.5%;">  <!-- Colonne Nom & Prénoms (espace augmenté pour le nom d'élève) -->
-                    <?php foreach ($matieres as $m): ?>
-                        <col style="width: <?= $subWidth ?>%;"> <!-- Colonnes Matières (Dimensionnement dynamique) -->
+                    <col style="width:3.2%">
+                    <col style="width:19%">
+                    <?php foreach ($matieres as $matiere): ?>
+                        <col style="width:<?= number_format($subWidth, 3, '.', '') ?>%">
                     <?php endforeach; ?>
-                    <col style="width: 6%;">  <!-- Colonne Moyenne Individuelle -->
+                    <col style="width:4.8%">
+                    <col style="width:4%">
+                    <col style="width:5.5%">
+                    <col style="width:4%">
+                    <col style="width:4%">
+                    <col style="width:7.5%">
                 </colgroup>
-                <!-- 3.4 EN-TÊTES DE DEUX NIVEAUX : Groupes de matières puis matières individuelles avec coefficients -->
                 <thead>
                     <tr>
-                        <th rowspan="2">RG</th>
-                        <th rowspan="2" class="col-student"><?= __('student_name') ?></th>
-                        <?php foreach ($groupedMatieres as $grp => $subs): ?>
-                            <!-- Affiche le nom du groupe (ex: Scientifique) fusionné sur le nombre de ses matières -->
-                            <th colspan="<?= count($subs) ?>" class="group-header"><?= htmlspecialchars($grp) ?></th>
+                        <th><?= __('pv_serial_number') ?></th>
+                        <th><?= __('student_name') ?></th>
+                        <?php foreach ($matieres as $matiere): ?>
+                            <th class="subject-head"><?= htmlspecialchars($matiere['nom'], ENT_QUOTES, 'UTF-8') ?></th>
                         <?php endforeach; ?>
-                        <th rowspan="2">MOY.</th>
-                    </tr>
-                    <tr>
-                        <?php foreach ($groupedMatieres as $grp => $subs): ?>
-                            <?php foreach ($subs as $m): ?>
-                                <!-- Affiche le nom de la matière et son coefficient (ex: C:4) -->
-                                <th class="subject-header-cell">
-                                    <div class="subject-name-wrap"><?= htmlspecialchars($m['nom']) ?></div>
-                                    <div style="font-size: 6.5px; font-weight: 400; opacity: 0.8; margin-top: 3px; border-top: 0.5px solid #cbd5e0; padding-top: 2px;">
-                                        C:<?= (float)$m['coefficient'] ?>
-                                    </div>
-                                </th>
-                            <?php endforeach; ?>
-                        <?php endforeach; ?>
+                        <th><?= __('pv_col_average') ?></th>
+                        <th><?= __('pv_col_rank') ?></th>
+                        <th><?= __('pv_col_mention') ?></th>
+                        <th><?= __('pv_col_absences') ?></th>
+                        <th><?= __('pv_col_lateness') ?></th>
+                        <th><?= __('pv_col_observations') ?></th>
                     </tr>
                 </thead>
-                <!-- 3.5 CORPS DE LA TABLE : Données des élèves -->
                 <tbody>
-                    <?php foreach ($currentChunk as $i => $el): ?>
-                        <?php 
-                            // Calcul de l'index réel de l'élève sur la classe complète et détection d'échec
-                            $realIdx = ($chunkIndex * 20) + $i;
-                            $isFail = ($el['moyenne'] !== null && $el['moyenne'] < 10);
-                        ?>
-                        <tr class="<?= $isFail ? 'row-fail' : '' ?>">
-                            <td class="cell-rank" style="font-weight: 800;"><?= $realIdx + 1 ?></td>
-                            <td class="col-student"><?= htmlspecialchars($el['nom'] . ' ' . $el['prenom']) ?></td>
-                            <?php foreach ($groupedMatieres as $grp => $subs): ?>
-                                <?php foreach ($subs as $m): ?>
-                                    <?php 
-                                        $n = $el['notesParMatiere'][$m['id']] ?? null; 
-                                        $badgeClass = 'note-pass';
-                                        if ($n !== null) {
-                                            $nVal = (float)$n;
-                                            if ($nVal < 10) {
-                                                // Note sous la moyenne : Badge Rouge
-                                                $badgeClass = 'note-badge note-fail';
-                                            } elseif ($nVal >= 14) {
-                                                // Note excellente : Badge Vert
-                                                $badgeClass = 'note-badge note-good';
-                                            }
-                                        }
-                                    ?>
-                                    <td>
-                                        <?php if ($n !== null): ?>
-                                            <span class="<?= $badgeClass ?>"><?= number_format($n, 2) ?></span>
-                                        <?php else: ?>
-                                            <span style="color: #cbd5e1;">-</span>
-                                        <?php endif; ?>
-                                    </td>
-                                <?php endforeach; ?>
+                    <?php foreach ($currentChunk as $i => $eleve): ?>
+                        <tr>
+                            <td><?= ($chunkIndex * $rowsPerPage) + $i + 1 ?></td>
+                            <td class="student-cell"><?= htmlspecialchars(html_entity_decode((string) $eleve['nom'], ENT_QUOTES, 'UTF-8') . ' ' . html_entity_decode((string) $eleve['prenom'], ENT_QUOTES, 'UTF-8'), ENT_QUOTES, 'UTF-8') ?></td>
+                            <?php foreach ($matieres as $matiere): ?>
+                                <?php $note = $eleve['notesParMatiere'][$matiere['id']] ?? null; ?>
+                                <td><?= $note !== null ? number_format((float) $note, 2, $lang === 'fr' ? ',' : '.', '') : '—' ?></td>
                             <?php endforeach; ?>
-                            <!-- Moyenne générale individuelle -->
-                            <td class="cell-avg <?= $isFail ? 'cell-fail' : '' ?>">
-                                <?= ($el['moyenne'] !== null) ? number_format($el['moyenne'], 2) : '-' ?>
-                            </td>
+                            <td class="average-cell"><?= $formatAverage($eleve['moyenne'] ?? null) ?></td>
+                            <td><?= $formatRank($eleve['rang'] ?? null) ?></td>
+                            <td class="mention-cell"><?= htmlspecialchars((string) ($eleve['mention'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></td>
+                            <td><?= (int) ($eleve['absences'] ?? 0) ?></td>
+                            <td><?= $eleve['retards'] !== null ? (int) $eleve['retards'] : '—' ?></td>
+                            <td class="observations-cell"><?= htmlspecialchars((string) ($eleve['observations'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
-                
-                <!-- 3.6 MOYENNES DE CLASSE PAR MATIÈRE (Affichées en pied de tableau uniquement sur la dernière page) -->
-                <?php if ($chunkIndex === $totalChunks - 1): ?>
-                <tfoot>
-                    <tr style="background: #f1f5f9; font-weight: 800; border-top: 2px solid #0f172a;">
-                        <td colspan="2" style="text-align: left; padding-left: 10px; color: #0f172a; font-size: 8.5px;"><?= __('pv_class_avg_per_subject') ?></td>
-                        <?php foreach ($groupedMatieres as $grp => $subs): ?>
-                            <?php foreach ($subs as $m): ?>
-                                <?php 
-                                    $avgVal = $donneesPV['moyennesClasse'][$m['id']] ?? null;
-                                    $badgeClass = '';
-                                    if ($avgVal !== null && $avgVal !== '-') {
-                                        $avgValNum = (float)$avgVal;
-                                        if ($avgValNum < 10) {
-                                            $badgeClass = 'note-badge note-fail';
-                                        } elseif ($avgValNum >= 14) {
-                                            $badgeClass = 'note-badge note-good';
-                                        }
-                                    }
-                                ?>
-                                <td style="font-weight: 700; color: #0f172a;">
-                                    <?php if ($avgVal !== null && $avgVal !== '-'): ?>
-                                        <span class="<?= $badgeClass ?>"><?= htmlspecialchars($avgVal) ?></span>
-                                    <?php else: ?>
-                                        <span style="color: #cbd5e1;">-</span>
-                                    <?php endif; ?>
-                                </td>
-                            <?php endforeach; ?>
-                        <?php endforeach; ?>
-                        <td class="cell-avg" style="border-top: 2px solid #0f172a; font-size: 9px; font-weight: 900; background: #e2e8f0;">
-                            <?= ($donneesPV['moyenneGenerale'] !== null) ? number_format((float)$donneesPV['moyenneGenerale'], 2) : '-' ?>
-                        </td>
-                    </tr>
-                </tfoot>
-                <?php endif; ?>
             </table>
-
-            <!-- 3.7 PIED DE PAGE DE SYNTHÈSE GLOBALE (Rendu exclusivement sur la dernière page A4) -->
-            <div class="pv-footer">
-                <?php if ($chunkIndex === $totalChunks - 1): ?>
-                    <?php
-                        // Préparation de l'indexation pour la synthèse des groupes de matières (4 maximum)
-                        $sliceGroups = [];
-                        foreach (array_slice($groupStats, 0, 4) as $name => $s) {
-                            $sliceGroups[] = [
-                                'name' => $name,
-                                's' => $s,
-                                'gAvg' => $s['coefs'] > 0 ? ($s['pts'] / $s['coefs']) : 0
-                            ];
-                        }
-
-                        // Calcul des totaux globaux cumulés sur tous les groupes de matières (pour la ligne de synthèse)
-                        $totalPtsAllGroups = 0;
-                        $totalCoefsAllGroups = 0;
-                        $totalAboveAllGroups = 0;
-                        $totalCountAllGroups = 0;
-                        foreach ($groupStats as $s) {
-                            $totalPtsAllGroups += $s['pts'];
-                            $totalCoefsAllGroups += $s['coefs'];
-                            $totalAboveAllGroups += $s['above'];
-                            $totalCountAllGroups += $s['total'];
-                        }
-                        $avgAllGroups = $totalCoefsAllGroups > 0 ? ($totalPtsAllGroups / $totalCoefsAllGroups) : 0;
-                        $pctAllGroups = $totalCountAllGroups > 0 ? ($totalAboveAllGroups / $totalCountAllGroups * 100) : 0;
-                    ?>
-                    <div class="footer-flex">
-                        <!-- TABLEAU DE SYNTHÈSE UNIQUE ET HARMONISÉ (Regroupe Stats, Analyse Pédagogique et Moyennes de Groupes) -->
-                        <table class="summary-table">
-                            <thead>
-                                <tr>
-                                    <th colspan="2" class="table-title"><?= __('pv_general_stats') ?></th>
-                                    <th colspan="2" class="table-title"><?= __('pv_pedagogical_analysis') ?></th>
-                                    <th colspan="3" class="table-title"><?= __('pv_groups_synthesis') ?></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Ligne 1 : Effectif / Matière Forte / Premier Groupe -->
-                                <tr>
-                                    <th><?= __('pv_total_students') ?></th>
-                                    <td><?= $contexte['effectif'] ?></td>
-                                    
-                                    <th><?= __('pv_top_subject') ?></th>
-                                    <td><?= $bestSub ? htmlspecialchars($bestSub['nom']) : '-' ?></td>
-                                    
-                                    <?php if (isset($sliceGroups[0])): ?>
-                                        <td style="font-weight:bold;"><?= htmlspecialchars(mb_substr($sliceGroups[0]['name'], 0, 15)) ?></td>
-                                        <td><?= number_format($sliceGroups[0]['gAvg'], 2) ?></td>
-                                        <td><?= $sliceGroups[0]['s']['total'] > 0 ? number_format(($sliceGroups[0]['s']['above'] / $sliceGroups[0]['s']['total'] * 100), 0) : '0' ?>%</td>
-                                    <?php else: ?>
-                                        <td colspan="3" style="background: #f8fafc;">-</td>
-                                    <?php endif; ?>
-                                </tr>
-                                <!-- Ligne 2 : Admis & Échoués / Matière Faible / Deuxième Groupe -->
-                                <tr>
-                                    <th><?= __('pv_passed_failed') ?></th>
-                                    <td><?= $nbAdmis ?> / <?= $nbEchoue ?></td>
-                                    
-                                    <th><?= __('pv_flop_subject') ?></th>
-                                    <td><?= $worstSub ? htmlspecialchars($worstSub['nom']) : '-' ?></td>
-                                    
-                                    <?php if (isset($sliceGroups[1])): ?>
-                                        <td style="font-weight:bold;"><?= htmlspecialchars(mb_substr($sliceGroups[1]['name'], 0, 15)) ?></td>
-                                        <td><?= number_format($sliceGroups[1]['gAvg'], 2) ?></td>
-                                        <td><?= $sliceGroups[1]['s']['total'] > 0 ? number_format(($sliceGroups[1]['s']['above'] / $sliceGroups[1]['s']['total'] * 100), 0) : '0' ?>%</td>
-                                    <?php else: ?>
-                                        <td colspan="3" style="background: #f8fafc;">-</td>
-                                    <?php endif; ?>
-                                </tr>
-                                <!-- Ligne 3 : Taux de Réussite / Moyenne du Premier / Troisième Groupe -->
-                                <tr>
-                                    <th><?= __('pv_success_rate') ?></th>
-                                    <td style="font-weight: 800;"><?= $donneesPV['tauxReussiteGlobal'] ?? '-' ?>%</td>
-                                    
-                                    <th><?= $lang === 'fr' ? 'MOY. DU PREMIER' : 'TOP AVG' ?></th>
-                                    <td style="font-weight: 700;"><?= number_format($maxAvg, 2) ?></td>
-                                    
-                                    <?php if (isset($sliceGroups[2])): ?>
-                                        <td style="font-weight:bold;"><?= htmlspecialchars(mb_substr($sliceGroups[2]['name'], 0, 15)) ?></td>
-                                        <td><?= number_format($sliceGroups[2]['gAvg'], 2) ?></td>
-                                        <td><?= $sliceGroups[2]['s']['total'] > 0 ? number_format(($sliceGroups[2]['s']['above'] / $sliceGroups[2]['s']['total'] * 100), 0) : '0' ?>%</td>
-                                    <?php else: ?>
-                                        <td colspan="3" style="background: #f8fafc;">-</td>
-                                    <?php endif; ?>
-                                </tr>
-                                <!-- Ligne 4 : Moyenne Générale / Moyenne du Dernier / Quatrième Groupe ou Synthèse cumulée -->
-                                <tr>
-                                    <th><?= __('pv_general_average') ?></th>
-                                    <td style="font-weight: 900; font-size: 11px;"><?= number_format((float)$donneesPV['moyenneGenerale'], 2) ?></td>
-                                    
-                                    <th><?= $lang === 'fr' ? 'MOY. DU DERNIER' : 'LAST AVG' ?></th>
-                                    <td style="font-weight: 700;"><?= number_format($minAvg, 2) ?></td>
-                                    
-                                    <?php if (isset($sliceGroups[3])): ?>
-                                        <td style="font-weight:bold;"><?= htmlspecialchars(mb_substr($sliceGroups[3]['name'], 0, 15)) ?></td>
-                                        <td><?= number_format($sliceGroups[3]['gAvg'], 2) ?></td>
-                                        <td><?= $sliceGroups[3]['s']['total'] > 0 ? number_format(($sliceGroups[3]['s']['above'] / $sliceGroups[3]['s']['total'] * 100), 0) : '0' ?>%</td>
-                                    <?php else: ?>
-                                        <td style="font-weight: 800; background: #f8fafc; color: #000000; font-size: 7.5px;"><?= $lang === 'fr' ? 'SYNTHÈSE CLASSE' : 'CLASS TOTAL' ?></td>
-                                        <td style="font-weight: 800; background: #f8fafc; color: #000000;"><?= number_format($avgAllGroups, 2) ?></td>
-                                        <td style="font-weight: 800; background: #f8fafc; color: #000000;"><?= number_format($pctAllGroups, 0) ?>%</td>
-                                    <?php endif; ?>
-                                </tr>
-                            </tbody>
-                        </table>
-
-                        <!-- Grille de Signature pour l'Authentification Administrative -->
-                        <div class="sig-grid" style="width: 25%;">
-                            <div class="sig-box"><span class="sig-label"><?= __('pv_teacher_in_charge') ?></span></div>
-                            <div class="sig-box"><span class="sig-label"><?= __('pv_principal') ?></span></div>
-                        </div>
-                    </div>
-                <?php endif; ?>
-
-                <!-- 3.8 BANDEAU DE BAS DE PAGE (Métadonnées de sécurité et pagination automatique) -->
-                <div class="minimal-footer">
-                    <span><?= __('pv_official_log') ?> - <?= __('pv_generated_on') ?> <?= date('d/m/Y H:i') ?></span>
-                    <span class="page-num" style="font-weight: bold; border: 1px solid #cbd5e1; padding: 2px 8px; border-radius: 3px;"></span>
-                    <span><?= __('pv_confidential_document') ?></span>
-                </div>
-            </div>
-
-        </div>
+            <div class="pv-page-number"><?= __('page') ?> <?= $chunkIndex + 1 ?> / <?= $totalChunks ?></div>
+        </main>
     <?php endforeach; ?>
+
+
 
 </body>
 </html>

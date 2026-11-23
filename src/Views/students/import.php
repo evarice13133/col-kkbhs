@@ -19,15 +19,20 @@ ob_start();
 
     <?php if (!empty($errors)): ?>
         <div class="mb-4">
-            <div class="alert alert-warning border-0 shadow-sm rounded-4 p-3 d-flex align-items-center justify-content-between">
-                <div class="small text-secondary"><?= __('import_errors_summary') ?? 'Des erreurs ont été détectées lors de l\'import.' ?></div>
-                <div>
+            <div class="alert alert-warning border-0 shadow-sm rounded-4 p-3">
+                <div class="small text-secondary mb-2"><?= __('import_errors_summary') ?? 'Des erreurs ont été détectées lors de l\'import.' ?></div>
+                <ol class="mb-2 ps-4 small text-danger">
+                    <?php foreach ($errors as $error): ?>
+                        <li><?= htmlspecialchars((string) $error, ENT_QUOTES, 'UTF-8') ?></li>
+                    <?php endforeach; ?>
+                </ol>
+                <div class="text-end">
                     <button id="show-import-errors" type="button" class="btn btn-sm btn-outline-danger"><?= __('view_import_errors') ?? 'Voir les erreurs' ?></button>
                 </div>
             </div>
         </div>
 
-        <div id="import-errors-data" style="display:none;" data-errors='<?= json_encode($errors, JSON_UNESCAPED_UNICODE) ?>'></div>
+        <div id="import-errors-data" style="display:none;" data-errors="<?= htmlspecialchars(json_encode($errors, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8') ?>"></div>
     <?php endif; ?>
 
     <div class="row g-4">

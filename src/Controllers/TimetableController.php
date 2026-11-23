@@ -120,18 +120,19 @@ class TimetableController
                 $classesStmt = $this->db->prepare("
                         SELECT c.id, c.nom
                         FROM classes c
+                        INNER JOIN teaching_types tt ON tt.id = c.teaching_type_id AND tt.actif = 1
                         WHERE c.status = 1
                             AND EXISTS (
                                     SELECT 1 FROM students st
                                     WHERE st.class_id = c.id
-                                        AND st.academic_year_id = ?
+                                        AND (? = 0 OR st.academic_year_id = ?)
                                         AND st.status = 'Inscrit'
                                         AND st.actif = 1
                                         AND st.is_withdrawn = 0
                             )
                         ORDER BY c.nom ASC
                 ");
-                $classesStmt->execute([$selectedYear]);
+                $classesStmt->execute([$selectedYear, $selectedYear]);
                 $classes = $classesStmt->fetchAll(PDO::FETCH_ASSOC);
         $weeks = $selectedYear ? $this->weekModel->getByAcademicYear($selectedYear) : $this->weekModel->getAll();
 
@@ -550,7 +551,9 @@ class TimetableController
         } elseif ($step === 'classes') {
             $cycleId = (int)($_GET['cycle_id'] ?? 0);
             $levelId = (int)($_GET['level_id'] ?? 0);
-            $classes = $this->wizardService->getClassesByLevel($cycleId, $levelId);
+            $activeYear = $this->academicYearService->getActiveYear();
+            $academicYearId = $activeYear ? (int)$activeYear['id'] : 0;
+            $classes = $this->wizardService->getClassesByLevel($cycleId, $levelId, $academicYearId);
             echo json_encode(['success' => true, 'classes' => $classes]);
             exit;
         } elseif ($step === 'weeks') {
@@ -577,35 +580,64 @@ class TimetableController
             exit;
         }
 
-        $activeYear = $this->academicYearService->getActiveYear();
-        $activeYearId = $activeYear ? (int)$activeYear['id'] : 0;
-
         $typeId = (int)($_POST['teaching_type_id'] ?? 9);
         $cycleId = (int)($_POST['cycle_id'] ?? 0);
         $levelId = (int)($_POST['level_id'] ?? 0);
-        $weekId = (int)($_POST['week_id'] ?? 0);
+        $weekId = (int)($_POST['week_id'] ?? -1);
 
-        if (!$activeYearId || !$cycleId || !$weekId) {
+        if (!$cycleId || $weekId < 0) {
             Session::setFlash('error', __('timetables_cycle_week_required'));
             header('Location: /timetables/wizard');
             exit;
         }
 
-        // Validation backend de l'existence du cycle
+        $validWeekStmt = $this->db->prepare("SELECT id, academic_year_id FROM timetable_weeks WHERE id = ?");
+        $validWeekStmt->execute([$weekId]);
+        $weekRow = $validWeekStmt->fetch(PDO::FETCH_ASSOC);
+        if (!$weekRow) {
+            Session::setFlash('error', __('timetables_cycle_week_required'));
+            header('Location: /timetables/wizard');
+            exit;
+        }
+
+        // Vérifier que le cycle appartient bien au type d'enseignement sélectionné.
         $validCycleStmt = $this->db->prepare("
-            SELECT c.id 
-            FROM cycles c 
+            SELECT c.id, c.teaching_type_id
+            FROM cycles c
+            INNER JOIN teaching_types tt ON tt.id = c.teaching_type_id AND tt.actif = 1
             WHERE c.id = :cycle_id AND c.status = 1
+              AND c.teaching_type_id = :teaching_type_id
         ");
-        $validCycleStmt->execute(['cycle_id' => $cycleId]);
+        $validCycleStmt->execute([
+            'cycle_id' => $cycleId,
+            'teaching_type_id' => $typeId
+        ]);
         if (!$validCycleStmt->fetch()) {
             Session::setFlash('error', __('timetables_cycle_invalid'));
             header('Location: /timetables/wizard');
             exit;
         }
 
+        if ($levelId > 0) {
+            $validLevelIds = array_map(
+                'intval',
+                array_column($this->wizardService->getLevelsByCycle($cycleId), 'id')
+            );
+            if (!in_array($levelId, $validLevelIds, true)) {
+                Session::setFlash('error', __('timetables_cycle_invalid'));
+                header('Location: /timetables/wizard');
+                exit;
+            }
+        }
+
         // Récupérer les classes du niveau
-        $classes = $this->wizardService->getClassesByLevel($cycleId, $levelId);
+        $academicYearId = (int)$weekRow['academic_year_id'];
+        $classes = $this->wizardService->getClassesByLevel($cycleId, $levelId, $academicYearId);
+        if (empty($classes)) {
+            Session::setFlash('error', __('timetables_no_enrolled_classes'));
+            header('Location: /timetables/wizard');
+            exit;
+        }
 
         // Assurer l'existence d'une entrée dans 'timetables' pour chaque classe du niveau
         foreach ($classes as $cls) {
@@ -615,7 +647,7 @@ class TimetableController
                 $weekRow = $this->db->query("SELECT libelle FROM timetable_weeks WHERE id = $weekId")->fetch(PDO::FETCH_ASSOC);
                 $titre = "Emploi du Temps - " . $cls['nom'] . " (" . ($weekRow['libelle'] ?? 'Semaine') . ")";
                 $this->timetableModel->create([
-                    'academic_year_id' => $activeYearId,
+                    'academic_year_id' => $academicYearId,
                     'teaching_type_id' => $typeId,
                     'cycle_id' => $cycleId,
                     'class_id' => $classId,
@@ -638,10 +670,10 @@ class TimetableController
     {
         $cycleId = (int)($_GET['cycle_id'] ?? 0);
         $levelId = (int)($_GET['level_id'] ?? 0);
-        $weekId = (int)($_GET['week_id'] ?? 0);
+        $weekId = (int)($_GET['week_id'] ?? -1);
         $id = (int)($_GET['id'] ?? 0);
 
-        if ($id > 0 && (!$cycleId || !$weekId)) {
+        if ($id > 0 && (!$cycleId || $weekId < 0)) {
             $timetable = $this->timetableModel->find($id);
             if ($timetable) {
                 $cycleId = (int)$timetable['cycle_id'];
@@ -651,7 +683,7 @@ class TimetableController
             }
         }
 
-        if (!$cycleId || !$weekId) {
+        if (!$cycleId || $weekId < 0) {
             Session::setFlash('error', __('timetables_grid_cycle_week_required'));
             header('Location: /timetables');
             exit;
@@ -707,9 +739,10 @@ class TimetableController
         if (empty($classIds) && !empty($input['class_id'])) {
             $classIds = [(int)$input['class_id']];
         }
+        $classIds = array_values(array_unique(array_filter($classIds)));
         $removedClassIds = !empty($input['removed_class_ids']) ? array_map('intval', (array)$input['removed_class_ids']) : [];
 
-        $weekId = (int)($input['week_id'] ?? 0);
+        $weekId = (int)($input['week_id'] ?? -1);
         $slotId = (int)($input['slot_id'] ?? 0);
         $dayOfWeek = trim($input['day_of_week'] ?? '');
         $subjectId = (int)($input['subject_id'] ?? 0);
@@ -718,8 +751,18 @@ class TimetableController
         $color = trim($input['couleur_hex'] ?? '#3b82f6');
         $userId = (int)Session::get('user_id');
 
-        if (empty($classIds) || !$weekId || !$slotId || !$subjectId || !$teacherId || !$roomId) {
+        if (empty($classIds) || $weekId < 0 || !$slotId || !$subjectId || !$teacherId || !$roomId) {
             echo json_encode(['success' => false, 'message' => __('timetables_invalid_request')]);
+            exit;
+        }
+
+        $weekYearStmt = $this->db->prepare("SELECT academic_year_id FROM timetable_weeks WHERE id = ?");
+        $weekYearStmt->execute([$weekId]);
+        $weekAcademicYearId = (int)$weekYearStmt->fetchColumn();
+        $eligibleClasses = $this->wizardService->getClassesByLevel(0, 0, $weekAcademicYearId);
+        $eligibleClassIds = array_fill_keys(array_map('intval', array_column($eligibleClasses, 'id')), true);
+        if (array_diff($classIds, array_keys($eligibleClassIds))) {
+            echo json_encode(['success' => false, 'message' => __('timetables_no_enrolled_classes')]);
             exit;
         }
 
@@ -740,13 +783,11 @@ class TimetableController
             $timetableId = $timetable ? (int)$timetable['id'] : 0;
 
             if (!$timetableId) {
-                $activeYear = $this->academicYearService->getActiveYear();
-                $activeYearId = $activeYear ? (int)$activeYear['id'] : 0;
                 $classRow = $this->db->query("SELECT nom, cycle_id, teaching_type_id FROM classes WHERE id = $classId")->fetch(PDO::FETCH_ASSOC);
                 $weekRow = $this->db->query("SELECT libelle FROM timetable_weeks WHERE id = $weekId")->fetch(PDO::FETCH_ASSOC);
 
                 $timetableId = $this->timetableModel->create([
-                    'academic_year_id' => $activeYearId,
+                    'academic_year_id' => $weekAcademicYearId,
                     'teaching_type_id' => $classRow['teaching_type_id'] ?? 9,
                     'cycle_id' => $classRow['cycle_id'] ?? 1,
                     'class_id' => $classId,
@@ -793,20 +834,18 @@ class TimetableController
 
             if ($saved) {
                 $savedCount++;
-                $activeYear = $this->academicYearService->getActiveYear();
-                $activeYearId = $activeYear ? (int)$activeYear['id'] : 0;
 
                 // Association Matière-Classe si non existante (avec journalisation)
                 try {
-                    $stmtCheckSubClass = $this->db->prepare("SELECT 1 FROM subject_classes WHERE class_id = ? AND subject_id = ?");
-                    $stmtCheckSubClass->execute([$classId, $subjectId]);
+                    $stmtCheckSubClass = $this->db->prepare("SELECT 1 FROM subject_classes WHERE class_id = ? AND subject_id = ? AND academic_year_id = ? LIMIT 1");
+                    $stmtCheckSubClass->execute([$classId, $subjectId, $weekAcademicYearId]);
                     if (!$stmtCheckSubClass->fetchColumn()) {
                         $stmtInsSubClass = $this->db->prepare("
                             INSERT INTO subject_classes (subject_id, class_id, academic_year_id)
                             VALUES (?, ?, ?)
                             ON DUPLICATE KEY UPDATE subject_id = VALUES(subject_id)
                         ");
-                        $stmtInsSubClass->execute([$subjectId, $classId, $activeYearId]);
+                        $stmtInsSubClass->execute([$subjectId, $classId, $weekAcademicYearId]);
 
                         $subRow = $this->db->query("SELECT nom FROM subjects WHERE id = $subjectId")->fetch(PDO::FETCH_ASSOC);
                         $clsRow = $this->db->query("SELECT nom FROM classes WHERE id = $classId")->fetch(PDO::FETCH_ASSOC);
@@ -843,7 +882,7 @@ class TimetableController
                         VALUES (?, ?, ?, ?, ?)
                         ON DUPLICATE KEY UPDATE user_id = VALUES(user_id)
                     ");
-                    $stmtAssig->execute([$teacherId, $subjectId, $classId ?: null, $activeYearId, $subTtId ?: 9]);
+                    $stmtAssig->execute([$teacherId, $subjectId, $classId ?: null, $weekAcademicYearId, $subTtId ?: 9]);
                 } catch (\Throwable $e) {}
             }
         }
@@ -968,8 +1007,8 @@ class TimetableController
 
             // 3. Association dans subject_classes si la classe est fournie
             if ($classId > 0) {
-                $stmtCheckSubClass = $this->db->prepare("SELECT 1 FROM subject_classes WHERE class_id = ? AND subject_id = ?");
-                $stmtCheckSubClass->execute([$classId, $subjectId]);
+                $stmtCheckSubClass = $this->db->prepare("SELECT 1 FROM subject_classes WHERE class_id = ? AND subject_id = ? AND academic_year_id = ? LIMIT 1");
+                $stmtCheckSubClass->execute([$classId, $subjectId, $activeYearId]);
                 if (!$stmtCheckSubClass->fetchColumn()) {
                     $stmtInsSubClass = $this->db->prepare("
                         INSERT INTO subject_classes (subject_id, class_id, academic_year_id)
@@ -1059,7 +1098,7 @@ class TimetableController
     {
         header('Content-Type: application/json');
         $timetableId = (int)($_GET['timetable_id'] ?? 0);
-        $weekId = (int)($_GET['week_id'] ?? 0);
+        $weekId = (int)($_GET['week_id'] ?? -1);
         $classId = (int)($_GET['class_id'] ?? 0);
         $slotId = (int)($_GET['slot_id'] ?? 0);
         $dayOfWeek = trim($_GET['day_of_week'] ?? '');
@@ -1067,9 +1106,9 @@ class TimetableController
         $teacherId = (int)($_GET['teacher_id'] ?? 0);
         $roomId = (int)($_GET['room_id'] ?? 0);
 
-        if (!$weekId && $timetableId) {
+        if ($weekId < 0 && $timetableId) {
             $tt = $this->timetableModel->find($timetableId);
-            $weekId = $tt ? (int)$tt['week_id'] : 0;
+            $weekId = $tt ? (int)$tt['week_id'] : -1;
             $classId = $tt ? (int)$tt['class_id'] : $classId;
         }
 
@@ -1280,11 +1319,11 @@ class TimetableController
     {
         $cycleId = (int)($_GET['cycle_id'] ?? 0);
         $levelId = (int)($_GET['level_id'] ?? 0);
-        $weekId = (int)($_GET['week_id'] ?? 0);
+        $weekId = (int)($_GET['week_id'] ?? -1);
         $id = (int)($_GET['id'] ?? 0);
         $mode = $_GET['mode'] ?? 'download'; // 'download' ou 'print'
 
-        if ($id > 0 && (!$cycleId || !$weekId)) {
+        if ($id > 0 && (!$cycleId || $weekId < 0)) {
             $timetable = $this->timetableModel->find($id);
             if ($timetable) {
                 $cycleId = (int)$timetable['cycle_id'];
@@ -1299,12 +1338,12 @@ class TimetableController
             $cycleId = $firstCycle ? (int)$firstCycle['id'] : 0;
         }
 
-        if (!$weekId) {
+        if ($weekId < 0) {
             $firstWeek = $this->db->query("SELECT id FROM timetable_weeks ORDER BY id ASC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
-            $weekId = $firstWeek ? (int)$firstWeek['id'] : 0;
+            $weekId = $firstWeek ? (int)$firstWeek['id'] : -1;
         }
 
-        if (!$cycleId || !$weekId) {
+        if (!$cycleId || $weekId < 0) {
             Session::setFlash('error', __('timetables_preview_unavailable'));
             header('Location: /timetables');
             exit;
@@ -1347,8 +1386,28 @@ class TimetableController
         $creation_decree = $this->settingsStore->get('creation_decree', '');
 
         if (empty($creation_decree)) {
-            $stmtDecree = $this->db->query("SELECT setting_value FROM settings WHERE setting_key = 'creation_decree' AND setting_value IS NOT NULL AND TRIM(setting_value) != '' ORDER BY id DESC LIMIT 1");
-            $creation_decree = $stmtDecree ? (string)$stmtDecree->fetchColumn() : '';
+            $defaultTeachingTypeId = $this->settingsStore->getDefaultTeachingTypeId();
+            $stmtDecree = $this->db->prepare("
+                SELECT setting_value
+                FROM settings
+                WHERE setting_key = 'creation_decree'
+                  AND setting_value IS NOT NULL
+                  AND TRIM(setting_value) != ''
+                  AND teaching_type_id IN (?, ?, 0)
+                ORDER BY CASE
+                    WHEN teaching_type_id = ? THEN 0
+                    WHEN teaching_type_id = ? THEN 1
+                    ELSE 2
+                END
+                LIMIT 1
+            ");
+            $stmtDecree->execute([
+                $teachingTypeId ?? 0,
+                $defaultTeachingTypeId,
+                $teachingTypeId ?? 0,
+                $defaultTeachingTypeId,
+            ]);
+            $creation_decree = (string) ($stmtDecree->fetchColumn() ?: '');
         }
 
         $logoBase64 = $logoManager->hasLogo() ? $logoManager->getLogoBase64() : '';
@@ -1477,5 +1536,3 @@ class TimetableController
         require __DIR__ . '/../Views/timetables/print.php';
     }
 }
-
-

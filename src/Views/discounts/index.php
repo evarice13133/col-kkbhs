@@ -387,7 +387,6 @@ ob_start();
                                 <div class="col-md-4">
                                     <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1" style="font-size: 0.68rem; color: var(--text-muted); opacity: 0.85;"><?= __('teaching') ?></label>
                                     <select class="form-select filter-teaching-type premium-select" style="font-size: 0.8rem; height: 38px !important; padding: 4px 12px; border-radius: 8px !important;">
-                                        <option value=""><?= __('all_m') ?></option>
                                         <?php foreach ($teachingTypes as $tt): ?>
                                             <option value="<?= $tt['id'] ?>"><?= h($tt['nom']) ?></option>
                                         <?php endforeach; ?>

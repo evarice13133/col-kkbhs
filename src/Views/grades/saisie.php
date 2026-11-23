@@ -40,29 +40,15 @@ $appreciationLabels = [
         overflow: hidden;
     }
 
-    /* Info Bar (Canva Workspace Style) */
-    .info-header-card {
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #9333ea 100%);
-        color: white;
-        border-radius: 24px;
-        padding: 28px 32px;
-        margin-bottom: 24px;
-        box-shadow: 0 16px 40px rgba(124, 58, 237, 0.25);
-        position: relative;
-        overflow: hidden;
+    .grade-sequence-status {
+        display: block;
+        margin-top: 0.35rem;
+        font-size: 0.75rem;
+        line-height: 1.25;
     }
 
-    .info-header-card::after {
-        content: "";
-        position: absolute;
-        top: -40%;
-        right: -10%;
-        width: 300px;
-        height: 300px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.12);
-        filter: blur(40px);
-        pointer-events: none;
+    .grade-evaluation-select-wrap {
+        min-width: 0;
     }
 
     /* Sticky Toolbar (MS 365 Command Bar) */
@@ -82,23 +68,63 @@ $appreciationLabels = [
         transition: background-color 0.2s ease;
     }
 
-    .grade-workflow-bar {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 12px 20px;
-        border-bottom: 1px solid var(--border-color, #e2e8f0);
-    }
-
-    .grade-workflow-steps {
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 4px;
-    }
-
     .grade-competency-section {
         padding: 18px 20px 16px;
+    }
+
+    .grade-competency-details {
+        margin: 0;
+    }
+
+    .grade-competency-summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        list-style: none;
+        cursor: pointer;
+    }
+
+    .grade-competency-summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .grade-competency-summary:focus-visible {
+        border-radius: 0.35rem;
+        outline: 2px solid var(--primary-color, #7c3aed);
+        outline-offset: 4px;
+    }
+
+    .grade-competency-title {
+        color: var(--bs-info, #0dcaf0);
+        font-size: 1rem;
+        font-weight: 700;
+    }
+
+    .grade-competency-chevron {
+        transition: transform 0.2s ease;
+    }
+
+    .grade-competency-details[open] .grade-competency-chevron {
+        transform: rotate(180deg);
+    }
+
+    .grade-competency-content {
+        padding-top: 1rem;
+    }
+
+    .grade-autosave-status {
+        min-height: 1.25rem;
+        margin: 0.75rem 0;
+        text-align: center;
+    }
+
+    .grade-autosave-status[data-state="saved"] {
+        color: var(--bs-success, #198754);
+    }
+
+    .grade-autosave-status[data-state="error"] {
+        color: var(--bs-danger, #dc3545);
     }
 
     .eval-select-pill {
@@ -183,26 +209,6 @@ $appreciationLabels = [
         border-color: rgba(251, 113, 133, 0.4) !important;
     }
 
-    /* Appreciation Input Field */
-    .input-appr-modern {
-        height: 46px !important;
-        border-radius: 14px !important;
-        border: 1.5px solid var(--border-color) !important;
-        background: color-mix(in srgb, var(--bg-card) 98%, var(--primary-color)) !important;
-        color: var(--text-main) !important;
-        font-weight: 600 !important;
-        font-size: 0.95rem !important;
-        padding: 0 1rem !important;
-        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
-    }
-
-    .input-appr-modern:focus {
-        border-color: #7c3aed !important;
-        background: var(--bg-card) !important;
-        box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15) !important;
-        outline: none !important;
-    }
-
     /* Floating Save Button (Canva CTA) */
     .floating-save {
         position: fixed;
@@ -226,48 +232,7 @@ $appreciationLabels = [
         box-shadow: 0 18px 40px rgba(124, 58, 237, 0.5);
     }
 
-    .workflow-step {
-        display: inline-flex;
-        align-items: center;
-        border-radius: 999px;
-        padding: 5px 10px;
-        color: var(--text-muted, #64748b);
-        background: color-mix(in srgb, var(--bg-card) 88%, var(--text-muted, #64748b));
-        opacity: 0.8;
-        font-size: 0.78rem;
-        font-weight: 600;
-        line-height: 1.2;
-    }
-
-    .workflow-step.active {
-        color: var(--primary-color, #2563eb);
-        background: color-mix(in srgb, var(--primary-color, #2563eb) 12%, var(--bg-card, #ffffff));
-        opacity: 1;
-    }
-
-    .workflow-step.done {
-        color: #047857;
-        background: rgba(16, 185, 129, 0.1);
-        opacity: 1;
-    }
-
-    .workflow-separator {
-        color: var(--text-muted, #64748b);
-        opacity: 0.4;
-    }
-
     @media (max-width: 767.98px) {
-        .info-header-card {
-            padding: 1.25rem 1rem !important;
-            border-radius: 18px !important;
-            margin-bottom: 1rem !important;
-        }
-
-        .info-header-card .d-flex {
-            flex-direction: column !important;
-            gap: 0.75rem !important;
-        }
-
         .sticky-grade-toolbar {
             padding: 0.75rem 0.85rem !important;
             flex-direction: column !important;
@@ -288,15 +253,8 @@ $appreciationLabels = [
             min-height: 44px !important;
         }
 
-        .grade-workflow-bar {
-            align-items: flex-start;
-            flex-direction: column;
-            gap: 8px;
-            padding: 12px 14px;
-        }
-
-        .grade-workflow-steps {
-            gap: 2px;
+        .sticky-grade-toolbar .grade-evaluation-select-wrap {
+            width: 100%;
         }
 
         .grade-competency-section {
@@ -319,47 +277,8 @@ $appreciationLabels = [
 </style>
 
 <div class="grade-saisie-page fade-in">
-    
-    <!-- Header Info (Canva Workspace Banner) -->
-    <div class="info-header-card">
-        <div class="d-flex justify-content-between align-items-start gap-3 position-relative" style="z-index: 2;">
-            <div>
-                <div class="d-flex align-items-center gap-2 mb-2">
-                    <span class="badge rounded-pill px-3 py-1.5 extra-small fw-extrabold text-uppercase tracking-wider shadow-sm" style="background: rgba(255, 255, 255, 0.25) !important; color: #ffffff !important; backdrop-filter: blur(8px);">
-                        <i class="bi bi-mortarboard-fill me-1"></i><?= __('class') ?>
-                    </span>
-                </div>
-                <h2 class="fw-black mb-2 fs-3" style="color: #ffffff !important;"><?= htmlspecialchars((string) $classInfo['nom']) ?></h2>
-                <div class="d-flex flex-wrap align-items-center gap-2">
-                    <span class="badge rounded-pill px-3 py-2 fw-bold shadow-sm" style="background: #ffffff !important; color: #4f46e5 !important;">
-                        <i class="bi bi-book-half me-1"></i><?= htmlspecialchars((string) $subjectInfo['nom']) ?>
-                    </span>
-                    <span class="badge rounded-pill px-3 py-2 fw-bold shadow-sm" style="background: rgba(255, 255, 255, 0.25) !important; color: #ffffff !important; backdrop-filter: blur(8px);">
-                        <i class="bi bi-star-fill text-warning me-1"></i><?= __('coef') ?> <?= (int) $subjectInfo['coefficient'] ?>
-                    </span>
-                </div>
-            </div>
-            <a href="/notes" class="btn rounded-pill px-3 py-2 fw-bold align-self-end align-self-md-start scale-on-hover shadow-sm" style="background: rgba(255, 255, 255, 0.2) !important; color: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.4) !important;">
-                <i class="bi bi-x-lg me-1"></i><?= __('cancel') ?>
-            </a>
-        </div>
-    </div>
-
-    <!-- Alert Messages (Globally handled by AlertService in layout) -->
-
-    <?php if (!empty($entryModal) && !empty($missingEvaluations)): ?>
-        <div class="alert alert-warning d-flex align-items-start gap-2 rounded-3 mb-3" role="alert">
-            <i class="bi bi-exclamation-triangle-fill mt-1"></i>
-            <div>
-                <strong><?= __('active_sequences_state') ?></strong>
-                <div><?= __('grade_entry_missing_evaluations') ?>:
-                    <?= htmlspecialchars(implode(', ', array_column($missingEvaluations, 'label'))) ?>
-                </div>
-            </div>
-        </div>
-    <?php endif; ?>
-
-    <form action="/notes/store" method="POST" id="gradeEntryForm" class="no-loader">
+    <form action="/notes/store" method="POST" id="gradeEntryForm" class="no-loader" data-autosave-url="/notes/autosave">
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\App\Core\Session::generateCsrfToken(), ENT_QUOTES, 'UTF-8') ?>">
         <input type="hidden" name="class_id" value="<?= $class_id ?>">
         <input type="hidden" name="subject_id" value="<?= $subject_id ?>">
         <input type="hidden" name="periode" value="<?= htmlspecialchars((string) $periode) ?>">
@@ -374,14 +293,23 @@ $appreciationLabels = [
                     <i class="bi bi-calendar-event fs-6"></i>
                 </span>
                 <label class="fw-bold text-muted-theme small text-uppercase flex-shrink-0"><?= __('evaluation') ?></label>
-                <select class="form-select eval-select-pill shadow-none flex-grow-1" style="min-height: 44px;" 
-                        onchange="window.location.href='/notes/saisie?class_id=<?= $class_id ?>&subject_id=<?= $subject_id ?>&periode=' + encodeURIComponent(this.value) + '<?= !empty($entryModal) ? '&entry_modal=1' : '' ?>'">
-                    <?php foreach ($periodes as $p): ?>
-                        <option value="<?= htmlspecialchars((string) $p) ?>" <?= $periode === $p ? 'selected' : '' ?>>
-                            <?= htmlspecialchars((string) $p) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
+                <div class="grade-evaluation-select-wrap flex-grow-1">
+                    <select class="form-select eval-select-pill shadow-none w-100" style="min-height: 44px;"
+                            onchange="window.changeGradeEvaluation(this.value)">
+                        <?php foreach ($periodes as $p): ?>
+                            <option value="<?= htmlspecialchars((string) $p) ?>" <?= $periode === $p ? 'selected' : '' ?>>
+                                <?= htmlspecialchars((string) $p) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <?php if (!empty($entryModal) && !empty($missingEvaluations)): ?>
+                        <small class="grade-sequence-status text-muted-theme">
+                            <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+                            <?= __('grade_entry_missing_evaluations') ?>:
+                            <?= htmlspecialchars(implode(', ', array_column($missingEvaluations, 'label')), ENT_QUOTES, 'UTF-8') ?>
+                        </small>
+                    <?php endif; ?>
+                </div>
             </div>
 
             <div class="d-flex align-items-center justify-content-end gap-2">
@@ -393,62 +321,55 @@ $appreciationLabels = [
             </div>
         </div>
 
-            <div class="grade-workflow-bar">
-                <span id="gradeWorkflowSummary" class="grade-workflow-count badge bg-primary-subtle text-primary rounded-pill px-3 py-2">1/4</span>
-                <div class="grade-workflow-steps">
-                <span class="workflow-step step-evaluation" data-step="evaluation"><?= __('evaluation') ?></span>
-                <span class="workflow-separator mx-1">→</span>
-                <span class="workflow-step step-competency" data-step="competency"><?= __('workflow_competency') ?></span>
-                <span class="workflow-separator mx-1">→</span>
-                <span class="workflow-step step-notes" data-step="notes"><?= __('grades') ?></span>
-                <span class="workflow-separator mx-1">→</span>
-                <span class="workflow-step step-save" data-step="save"><?= __('workflow_save') ?></span>
-                </div>
-            </div>
-
             <section class="grade-competency-section" aria-labelledby="gradeCompetencyTitle">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 id="gradeCompetencyTitle" class="fw-bold m-0 text-info d-flex align-items-center gap-2 fs-6">
-                    <i class="bi bi-list-check"></i> <?= __('evaluation_competencies') ?? 'Compétences de l\'évaluation' ?>
-                </h6>
-                <span class="badge bg-info bg-opacity-10 text-info rounded-pill px-3 py-1 extra-small fw-bold">
-                    <?= __('max_2_competencies') ?? 'Max 2 compétences' ?>
-                </span>
-            </div>
-            
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">
-                        <?= __('competency_1') ?? 'Compétence 1' ?>
-                    </label>
-                    <div class="d-flex gap-2">
-                        <select id="competency1Select" name="competency_ids[]" class="form-select premium-input flex-grow-1">
-                            <option value=""><?= __('select_competency') ?? 'Sélectionner une compétence' ?></option>
-                        </select>
-                        <button type="button" class="btn btn-outline-info rounded-circle p-2" onclick="openCompetencyModal(1)" title="<?= __('create_new_competency') ?? 'Créer une nouvelle compétence' ?>">
-                            <i class="bi bi-plus-lg"></i>
-                        </button>
+                <details class="grade-competency-details">
+                    <summary class="grade-competency-summary">
+                        <span id="gradeCompetencyTitle" class="grade-competency-title">
+                            <i class="bi bi-list-check me-2" aria-hidden="true"></i><?= __('evaluation_competencies') ?? 'Compétences de l\'évaluation' ?>
+                        </span>
+                        <span class="d-flex align-items-center gap-2">
+                            <span class="badge bg-info bg-opacity-10 text-info rounded-pill px-3 py-1 extra-small fw-bold">
+                                <?= $competencyRequired ? __('field_required') : __('field_optional') ?> · <?= __('max_2_competencies') ?? 'Max 2 compétences' ?>
+                            </span>
+                            <i class="bi bi-chevron-down grade-competency-chevron" aria-hidden="true"></i>
+                        </span>
+                    </summary>
+                    <div class="grade-competency-content">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="competency1Select" class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">
+                                    <?= __('competency_1') ?? 'Compétence 1' ?>
+                                    <span class="text-muted fw-normal text-lowercase">(<?= strtolower($competencyRequired ? __('field_required') : __('field_optional')) ?>)</span>
+                                </label>
+                                <div class="d-flex gap-2">
+                                    <select id="competency1Select" name="competency_ids[]" class="form-select premium-input flex-grow-1">
+                                        <option value=""><?= __('select_competency_optional') ?? 'Aucune (optionnel)' ?></option>
+                                    </select>
+                                    <button type="button" class="btn btn-outline-info rounded-circle p-2" onclick="openCompetencyModal(1)" title="<?= __('create_new_competency') ?? 'Créer une nouvelle compétence' ?>">
+                                        <i class="bi bi-plus-lg"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="competency2Select" class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">
+                                    <?= __('competency_2') ?? 'Compétence 2 (optionnelle)' ?>
+                                </label>
+                                <div class="d-flex gap-2">
+                                    <select id="competency2Select" name="competency_ids[]" class="form-select premium-input flex-grow-1">
+                                        <option value=""><?= __('select_competency_optional') ?? 'Aucune (optionnel)' ?></option>
+                                    </select>
+                                    <button type="button" class="btn btn-outline-info rounded-circle p-2" onclick="openCompetencyModal(2)" title="<?= __('create_new_competency') ?? 'Créer une nouvelle compétence' ?>">
+                                        <i class="bi bi-plus-lg"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="competencyStatus" class="form-text extra-small text-muted mt-2">
+                            <i class="bi bi-info-circle me-1"></i>
+                            <?= __('competency_selection_info') ?? 'Sélectionnez les compétences évaluées pour cette évaluation. Vous pouvez en créer de nouvelles si nécessaire.' ?>
+                        </div>
                     </div>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">
-                        <?= __('competency_2') ?? 'Compétence 2 (optionnelle)' ?>
-                    </label>
-                    <div class="d-flex gap-2">
-                        <select id="competency2Select" name="competency_ids[]" class="form-select premium-input flex-grow-1">
-                            <option value=""><?= __('select_competency_optional') ?? 'Aucune (optionnel)' ?></option>
-                        </select>
-                        <button type="button" class="btn btn-outline-info rounded-circle p-2" onclick="openCompetencyModal(2)" title="<?= __('create_new_competency') ?? 'Créer une nouvelle compétence' ?>">
-                            <i class="bi bi-plus-lg"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="competencyStatus" class="form-text extra-small text-muted mt-2">
-                <i class="bi bi-info-circle me-1"></i>
-                <?= __('competency_selection_info') ?? 'Sélectionnez les compétences évaluées pour cette évaluation. Vous pouvez en créer de nouvelles si nécessaire.' ?>
-            </div>
+                </details>
             </section>
         </div>
 
@@ -457,9 +378,8 @@ $appreciationLabels = [
                 <table class="table align-middle mb-0 registry-table">
                     <thead>
                         <tr>
-                            <th class="ps-4 py-3" style="width: 40%;"><?= __('student') ?></th>
-                            <th class="text-center py-3" style="width: 15%;"><?= __('grade_out_of_20') ?></th>
-                            <th class="text-start py-3"><?= __('observation') ?> / <?= __('appreciation') ?></th>
+                            <th class="ps-4 py-3" style="width: 65%;"><?= __('student') ?></th>
+                            <th class="text-center py-3" style="width: 35%;"><?= __('grade_out_of_20') ?></th>
                         </tr>
                     </thead>
                     <tbody class="bg-transparent">
@@ -479,14 +399,11 @@ $appreciationLabels = [
                                         data-student-id="<?= $st['student_id'] ?>"
                                         value="<?= isset($st['valeur']) ? htmlspecialchars((string) $st['valeur']) : '' ?>"
                                         placeholder="12.5">
-                                </td>
-                                <td class="pe-4 bg-transparent">
-                                    <input type="text" name="appreciations[<?= $st['student_id'] ?>]"
-                                        class="form-control border-0 input-appr-modern js-appreciation-input w-100"
+                                    <input type="hidden" name="appreciations[<?= $st['student_id'] ?>]"
+                                        class="js-appreciation-input"
                                         data-student-id="<?= $st['student_id'] ?>"
                                         data-auto-filled="<?= !empty($st['appreciation_auto']) ? 'true' : 'false' ?>"
-                                        value="<?= htmlspecialchars((string) ($st['appreciation'] ?? '')) ?>"
-                                        placeholder="<?= __('grade_appreciation_placeholder') ?>">
+                                        value="<?= htmlspecialchars((string) ($st['appreciation'] ?? '')) ?>">
                                     <input type="hidden" name="appreciations_auto[<?= $st['student_id'] ?>]"
                                         class="js-appreciation-auto" value="<?= !empty($st['appreciation_auto']) ? '1' : '0' ?>">
                                 </td>
@@ -495,7 +412,7 @@ $appreciationLabels = [
                         
                         <?php if (empty($students)): ?>
                             <tr>
-                                <td colspan="3" class="text-center py-5 bg-transparent">
+                                <td colspan="2" class="text-center py-5 bg-transparent">
                                     <i class="bi bi-inbox fs-1 opacity-25 d-block mb-2"></i>
                                     <span class="opacity-50 fw-bold"><?= __('student_none_in_class') ?></span>
                                 </td>
@@ -505,6 +422,8 @@ $appreciationLabels = [
                 </table>
             </div>
         </div>
+
+        <div id="gradeAutosaveStatus" class="grade-autosave-status small text-muted" role="status" aria-live="polite" hidden></div>
 
         <?php if (!empty($students)): ?>
             <button type="button" class="btn btn-primary floating-save" onclick="confirmGradeSubmission()">
@@ -561,6 +480,13 @@ $appreciationLabels = [
         const classId = <?= $class_id ?>;
         const subjectId = <?= $subject_id ?>;
         const periode = '<?= htmlspecialchars((string) $periode) ?>';
+        const gradeEntryForm = document.getElementById('gradeEntryForm');
+        const autosaveStatus = document.getElementById('gradeAutosaveStatus');
+        const autosaveLang = <?= __('lang') === 'en' ? 'true' : 'false' ?>;
+        const pendingGradeSaves = new Map();
+        let autosaveTimer = null;
+        let autosaveRequest = null;
+        let autosavePaused = false;
         
         const competency1Select = document.getElementById('competency1Select');
         const competency2Select = document.getElementById('competency2Select');
@@ -581,9 +507,7 @@ $appreciationLabels = [
                         [competency1Select, competency2Select].forEach(select => {
                             if (!select) return;
 
-                            const placeholder = select.id === 'competency2Select'
-                                ? <?= json_encode(__('select_competency_optional') ?? 'Aucune (optionnel)') ?>
-                                : <?= json_encode(__('select_competency') ?? 'Sélectionner une compétence') ?>;
+                            const placeholder = <?= json_encode(__('select_competency_optional') ?? 'Aucune (optionnel)') ?>;
 
                             const currentValue = select.value;
                             const nextOptions = ['<option value="">' + placeholder + '</option>'];
@@ -650,12 +574,7 @@ $appreciationLabels = [
                 .filter(select => select && select.value)
                 .map(select => select.value);
 
-            if (competencyIds.length === 0) {
-                if (savedCompetencyIds.length > 0) {
-                    if (competency1Select) competency1Select.value = savedCompetencyIds[0] || '';
-                    if (competency2Select) competency2Select.value = savedCompetencyIds[1] || '';
-                    updateGradeWorkflowState();
-                }
+            if (competencyIds.length === 0 && savedCompetencyIds.length === 0) {
                 updateCompetencyStatus('loaded');
                 return;
             }
@@ -689,6 +608,7 @@ $appreciationLabels = [
                 }
                 savedCompetencyIds = uniqueCompetencyIds;
                 updateCompetencyStatus('saved');
+                flushPendingGradeSaves();
             })
             .catch(error => {
                 console.error('Error saving competencies:', error);
@@ -780,44 +700,6 @@ $appreciationLabels = [
             });
         }
 
-        function updateGradeWorkflowState() {
-            const stepItems = document.querySelectorAll('.workflow-step');
-            const workflowSummary = document.getElementById('gradeWorkflowSummary');
-            if (!stepItems.length) return;
-
-            const evaluationDone = !!(periode && periode.trim() !== '');
-            const competencyDone = !!Array.from(document.querySelectorAll('#competency1Select, #competency2Select'))
-                .map(select => String(select.value || '').trim())
-                .filter(Boolean).length;
-            const notesDone = !!Array.from(document.querySelectorAll('.js-note-input')).some(input => String(input.value || '').trim() !== '');
-
-            const states = {
-                evaluation: evaluationDone,
-                competency: competencyDone,
-                notes: notesDone,
-                save: competencyDone && notesDone
-            };
-
-            stepItems.forEach(step => {
-                const stepName = step.dataset.step;
-                const isDone = !!states[stepName];
-                const isActive = !isDone && (
-                    (stepName === 'evaluation' && !evaluationDone) ||
-                    (stepName === 'competency' && evaluationDone && !competencyDone) ||
-                    (stepName === 'notes' && evaluationDone && competencyDone && !notesDone) ||
-                    (stepName === 'save' && evaluationDone && competencyDone && notesDone && !states.save)
-                );
-
-                step.classList.toggle('done', isDone);
-                step.classList.toggle('active', isActive);
-            });
-
-            if (workflowSummary) {
-                const completed = Object.values(states).filter(Boolean).length;
-                workflowSummary.textContent = `${completed}/4`;
-            }
-        }
-
         // Update competency status message
         function updateCompetencyStatus(status) {
             if (!competencyStatus) return;
@@ -832,13 +714,6 @@ $appreciationLabels = [
             competencyStatus.innerHTML = messages[status] || competencyStatus.innerHTML;
         }
 
-        document.querySelectorAll('#competency1Select, #competency2Select, .js-note-input').forEach(input => {
-            input.addEventListener('input', updateGradeWorkflowState);
-            input.addEventListener('change', updateGradeWorkflowState);
-        });
-
-        updateGradeWorkflowState();
-
         // Track changes to show unsaved status
         [competency1Select, competency2Select].forEach(select => {
             if (select) {
@@ -846,7 +721,6 @@ $appreciationLabels = [
                     if (competency1Select && competency2Select && competency1Select.value && competency2Select.value && competency1Select.value === competency2Select.value) {
                         alert(<?= json_encode(__('max_2_competencies_error') ?? 'Une compétence ne peut pas être sélectionnée deux fois') ?>);
                         this.value = '';
-                        updateGradeWorkflowState();
                     }
                     updateCompetencyStatus('changed');
                     saveSelectedCompetencies();
@@ -923,23 +797,186 @@ $appreciationLabels = [
             });
         });
 
+        const autosaveMessages = {
+            queued: autosaveLang ? 'Changes waiting to save…' : 'Modification en attente…',
+            saving: autosaveLang ? 'Saving…' : 'Enregistrement…',
+            saved: autosaveLang ? 'Saved automatically' : 'Enregistré automatiquement',
+            empty: autosaveLang ? 'An empty grade is not saved automatically.' : 'Une note vide n’est pas enregistrée automatiquement.',
+            invalid: autosaveLang ? 'The grade must be between 0 and 20.' : 'La note doit être comprise entre 0 et 20.',
+            error: autosaveLang ? 'Automatic saving failed. Use the manual button.' : 'Échec de la sauvegarde automatique. Utilisez le bouton manuel.'
+        };
+
+        function setAutosaveStatus(state, message) {
+            if (!autosaveStatus) return;
+            autosaveStatus.hidden = false;
+            autosaveStatus.dataset.state = state;
+            autosaveStatus.textContent = message;
+        }
+
+        async function sendAutosaveBatch(batch) {
+            const payload = new FormData();
+            payload.append('class_id', gradeEntryForm.elements.namedItem('class_id').value);
+            payload.append('subject_id', gradeEntryForm.elements.namedItem('subject_id').value);
+            payload.append('periode', gradeEntryForm.elements.namedItem('periode').value);
+            payload.append('grades', JSON.stringify(batch));
+
+            const csrfToken = gradeEntryForm.elements.namedItem('csrf_token').value;
+            const selectedCompetencies = Array.from(gradeEntryForm.querySelectorAll('[name="competency_ids[]"]'))
+                .map(select => select.value)
+                .filter(Boolean);
+            selectedCompetencies.forEach(id => payload.append('competency_ids[]', id));
+
+            const response = await fetch(gradeEntryForm.dataset.autosaveUrl, {
+                method: 'POST',
+                body: payload,
+                credentials: 'same-origin',
+                headers: {
+                    Accept: 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                }
+            });
+            const data = await response.json();
+            if (!response.ok || !data || data.success !== true) {
+                throw new Error((data && data.message) || autosaveMessages.error);
+            }
+            return true;
+        }
+
+        async function flushPendingGradeSaves() {
+            if (autosavePaused || !gradeEntryForm) return false;
+            if (autosaveTimer) {
+                clearTimeout(autosaveTimer);
+                autosaveTimer = null;
+            }
+
+            if (autosaveRequest) {
+                const request = autosaveRequest;
+                const succeeded = await request;
+                if (!succeeded) return false;
+                if (pendingGradeSaves.size > 0) return flushPendingGradeSaves();
+                return true;
+            }
+
+            if (pendingGradeSaves.size === 0) return true;
+
+            const batch = Array.from(pendingGradeSaves.values());
+            pendingGradeSaves.clear();
+            setAutosaveStatus('saving', autosaveMessages.saving);
+
+            const request = sendAutosaveBatch(batch).catch(error => {
+                console.error('Grade autosave failed:', error);
+                setAutosaveStatus('error', error.message || autosaveMessages.error);
+                return false;
+            });
+            autosaveRequest = request;
+            const succeeded = await request;
+            if (autosaveRequest === request) autosaveRequest = null;
+
+            if (!succeeded) {
+                if (!autosavePaused) {
+                    const latestPending = Array.from(pendingGradeSaves.entries());
+                    const retryQueue = new Map();
+                    batch.forEach(grade => {
+                        const studentId = String(grade.student_id);
+                        if (!pendingGradeSaves.has(studentId)) retryQueue.set(studentId, grade);
+                    });
+                    latestPending.forEach(([studentId, grade]) => retryQueue.set(studentId, grade));
+                    pendingGradeSaves.clear();
+                    retryQueue.forEach((grade, studentId) => pendingGradeSaves.set(studentId, grade));
+                }
+                return false;
+            }
+
+            setAutosaveStatus('saved', autosaveMessages.saved);
+            if (pendingGradeSaves.size > 0 && !autosavePaused) return flushPendingGradeSaves();
+            return true;
+        }
+
+        function schedulePendingGradeSaves() {
+            if (autosaveTimer) clearTimeout(autosaveTimer);
+            if (pendingGradeSaves.size === 0 || autosavePaused) return;
+            autosaveTimer = setTimeout(function () {
+                autosaveTimer = null;
+                flushPendingGradeSaves();
+            }, 1000);
+        }
+
+        gradeEntryForm.querySelectorAll('.js-note-input').forEach(noteInput => {
+            noteInput.addEventListener('input', function () {
+                const studentId = String(noteInput.dataset.studentId || '');
+                const rawValue = noteInput.value.trim();
+
+                if (rawValue === '') {
+                    pendingGradeSaves.delete(studentId);
+                    setAutosaveStatus(pendingGradeSaves.size > 0 ? 'pending' : 'empty', pendingGradeSaves.size > 0 ? autosaveMessages.queued : autosaveMessages.empty);
+                    schedulePendingGradeSaves();
+                    return;
+                }
+
+                const value = Number(rawValue.replace(',', '.'));
+                if (!Number.isFinite(value) || value < 0 || value > 20) {
+                    pendingGradeSaves.delete(studentId);
+                    noteInput.classList.add('is-invalid', 'border-danger');
+                    setAutosaveStatus('error', autosaveMessages.invalid);
+                    schedulePendingGradeSaves();
+                    return;
+                }
+
+                noteInput.classList.remove('is-invalid', 'border-danger');
+                const appreciationInput = gradeEntryForm.querySelector('.js-appreciation-input[data-student-id="' + studentId + '"]');
+                const automaticInput = gradeEntryForm.querySelector('.js-appreciation-auto[name="appreciations_auto[' + studentId + ']"]');
+                if (!appreciationInput || !automaticInput) {
+                    setAutosaveStatus('error', autosaveMessages.error);
+                    return;
+                }
+
+                pendingGradeSaves.delete(studentId);
+                pendingGradeSaves.set(studentId, {
+                    student_id: studentId,
+                    value: rawValue,
+                    appreciation: appreciationInput.value,
+                    automatic: automaticInput.value === '1'
+                });
+                setAutosaveStatus('pending', autosaveMessages.queued);
+                schedulePendingGradeSaves();
+            });
+        });
+
+        window.changeGradeEvaluation = function (newPeriode) {
+            const entryModalQuery = <?= !empty($entryModal) ? "'&entry_modal=1'" : "''" ?>;
+            const nextUrl = '/notes/saisie?class_id=' + encodeURIComponent(classId)
+                + '&subject_id=' + encodeURIComponent(subjectId)
+                + '&periode=' + encodeURIComponent(newPeriode)
+                + entryModalQuery;
+
+            flushPendingGradeSaves().then(succeeded => {
+                if (succeeded) window.location.href = nextUrl;
+            });
+        };
+
+        function submitManualGradeSave(form, showLoading) {
+            autosavePaused = true;
+            if (autosaveTimer) {
+                clearTimeout(autosaveTimer);
+                autosaveTimer = null;
+            }
+            pendingGradeSaves.clear();
+
+            const activeRequest = autosaveRequest;
+            if (showLoading && typeof AlertService !== 'undefined') {
+                AlertService.loading(<?= json_encode(__('saving'), JSON_UNESCAPED_UNICODE) ?>);
+            }
+            Promise.resolve(activeRequest).finally(function () {
+                pendingGradeSaves.clear();
+                form.dataset.confirmed = 'true';
+                form.submit();
+            });
+        }
+
         // Fonction de confirmation (Noir sur Blanc / Mobile Compact)
         window.confirmGradeSubmission = function() {
-            const form = document.getElementById('gradeEntryForm');
+            const form = gradeEntryForm;
             if (!form) return;
-
-            const selectedCompetencyIds = Array.from(document.querySelectorAll('#competency1Select, #competency2Select'))
-                .map(select => String(select.value || '').trim())
-                .filter(Boolean);
-
-            if (selectedCompetencyIds.length === 0) {
-                if (typeof AlertService !== 'undefined') {
-                    AlertService.toast('error', <?= json_encode(__('select_competency_required'), JSON_UNESCAPED_UNICODE) ?>);
-                } else {
-                    alert(<?= json_encode(__('select_competency_required'), JSON_UNESCAPED_UNICODE) ?>);
-                }
-                return;
-            }
 
             const noteInputs = form.querySelectorAll('.js-note-input');
             let hasInvalidGrade = false;
@@ -969,7 +1006,9 @@ $appreciationLabels = [
             const filledCount = Array.from(noteInputs).filter(input => input.value.trim() !== '').length;
 
             if (typeof AlertService === 'undefined') {
-                if (confirm(<?= json_encode(__('confirm_save_grades'), JSON_UNESCAPED_UNICODE) ?>)) form.submit();
+                if (confirm(<?= json_encode(__('confirm_save_grades'), JSON_UNESCAPED_UNICODE) ?>)) {
+                    submitManualGradeSave(form, false);
+                }
                 return;
             }
 
@@ -999,15 +1038,13 @@ $appreciationLabels = [
                 }
             }).then((result) => {
                 if (result.isConfirmed) {
-                    form.dataset.confirmed = 'true';
-                    AlertService.loading(<?= json_encode(__('saving'), JSON_UNESCAPED_UNICODE) ?>);
-                    setTimeout(() => form.submit(), 50);
+                    submitManualGradeSave(form, true);
                 }
             });
         };
 
         // Empêcher aussi la soumission par "Entrée" sans confirmation
-        const form = document.getElementById('gradeEntryForm');
+        const form = gradeEntryForm;
         if (form) {
             form.addEventListener('submit', function(e) {
                 if (form.dataset.confirmed !== 'true') {

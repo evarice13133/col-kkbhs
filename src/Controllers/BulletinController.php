@@ -30,7 +30,13 @@ class BulletinController
         $this->ensureDisciplineSchema();
 
         // Vérifier si l'impression des bulletins est activée
-        $settingsStore = new SettingsStore($this->db);
+        $classId = (int) ($_GET['class_id'] ?? 0);
+        if ($classId < 1 && (int) ($_GET['student_id'] ?? 0) > 0) {
+            $stmt = $this->db->prepare('SELECT class_id FROM students WHERE id = ?');
+            $stmt->execute([(int) $_GET['student_id']]);
+            $classId = (int) $stmt->fetchColumn();
+        }
+        $settingsStore = new SettingsStore($this->db, $this->getTeachingTypeIdForClass($classId));
         $bulletinPrintingEnabled = $settingsStore->getBool('bulletin_printing_enabled', true);
 
         if (!$bulletinPrintingEnabled && !PermissionManager::hasRole('superadmin')) {
@@ -282,7 +288,7 @@ class BulletinController
         $data['pdf_filename'] = $pdf_filename;
         
         // Récupérer le paramètre d'affichage des noms d'enseignants sur les bulletins
-        $settingsStore = new SettingsStore($this->db);
+        $settingsStore = new SettingsStore($this->db, $this->getTeachingTypeIdForClass((int) $student['class_id']));
         $showTeacherNamesOnBulletins = (bool) $settingsStore->get('show_teacher_names_on_bulletins', '1');
         $data['showTeacherNamesOnBulletins'] = $showTeacherNamesOnBulletins;
         
@@ -324,7 +330,7 @@ class BulletinController
         $data['pdf_filename'] = $pdf_filename;
         
         // Récupérer le paramètre d'affichage des noms d'enseignants sur les bulletins
-        $settingsStore = new SettingsStore($this->db);
+        $settingsStore = new SettingsStore($this->db, $this->getTeachingTypeIdForClass((int) $student['class_id']));
         $showTeacherNamesOnBulletins = (bool) $settingsStore->get('show_teacher_names_on_bulletins', '1');
         $data['showTeacherNamesOnBulletins'] = $showTeacherNamesOnBulletins;
         
@@ -392,7 +398,7 @@ class BulletinController
         $pdf_filename = $this->buildPdfFileNameClass($sequence['label'], $classInfo['nom'] ?? 'classe');
         
         // Récupérer le paramètre d'affichage des noms d'enseignants sur les bulletins
-        $settingsStore = new SettingsStore($this->db);
+        $settingsStore = new SettingsStore($this->db, $this->getTeachingTypeIdForClass($classId));
         $showTeacherNamesOnBulletins = (bool) $settingsStore->get('show_teacher_names_on_bulletins', '1');
 
         if (($_GET['format'] ?? '') === 'pdf') {
@@ -462,7 +468,7 @@ class BulletinController
         $pdf_filename = $this->buildPdfFileNameClass('TRIMESTRE ' . $term, $classInfo['nom'] ?? 'classe');
         
         // Récupérer le paramètre d'affichage des noms d'enseignants sur les bulletins
-        $settingsStore = new SettingsStore($this->db);
+        $settingsStore = new SettingsStore($this->db, $this->getTeachingTypeIdForClass($classId));
         $showTeacherNamesOnBulletins = (bool) $settingsStore->get('show_teacher_names_on_bulletins', '1');
 
         if (($_GET['format'] ?? '') === 'pdf') {
@@ -504,7 +510,7 @@ class BulletinController
         $data['pdf_filename'] = $pdf_filename;
         
         // Récupérer le paramètre d'affichage des noms d'enseignants sur les bulletins
-        $settingsStore = new SettingsStore($this->db);
+        $settingsStore = new SettingsStore($this->db, $this->getTeachingTypeIdForClass((int) $student['class_id']));
         $showTeacherNamesOnBulletins = (bool) $settingsStore->get('show_teacher_names_on_bulletins', '1');
         $data['showTeacherNamesOnBulletins'] = $showTeacherNamesOnBulletins;
         
@@ -582,7 +588,7 @@ class BulletinController
         $pdf_filename = $this->buildPdfFileNameClass('ANNUEL', $classInfo['nom'] ?? 'classe');
         
         // Récupérer le paramètre d'affichage des noms d'enseignants sur les bulletins
-        $settingsStore = new SettingsStore($this->db);
+        $settingsStore = new SettingsStore($this->db, $this->getTeachingTypeIdForClass($classId));
         $showTeacherNamesOnBulletins = (bool) $settingsStore->get('show_teacher_names_on_bulletins', '1');
 
         if (($_GET['format'] ?? '') === 'pdf') {
@@ -748,7 +754,7 @@ class BulletinController
                 return $v !== null;
             }));
             $termNote = !empty($existingValues)
-                ? round(array_sum($existingValues) / (count($termSequences) ?: 1), 2)
+                ? round(array_sum($existingValues) / count($existingValues), 2)
                 : null;
 
             // Utiliser les snapshots si disponibles, sinon les valeurs actuelles de la matière
@@ -998,10 +1004,10 @@ class BulletinController
                 }
             }
 
-            $numTerms = 3;
-            $annualNoteCalc = array_sum(array_map(function ($v) {
-                return $v ?? 0;
-            }, $termNotes)) / $numTerms;
+            $availableTermNotes = array_values(array_filter($termNotes, static fn($value) => $value !== null));
+            $annualNoteCalc = !empty($availableTermNotes)
+                ? array_sum($availableTermNotes) / count($availableTermNotes)
+                : 0.0;
             $annualNote = ($hasTermValue) ? round($annualNoteCalc, 2) : null;
 
             // Utiliser les snapshots si disponibles, sinon les valeurs actuelles de la matière
@@ -1192,10 +1198,12 @@ class BulletinController
 
             foreach ($subjectMap as $subjectId => $coefficient) {
                 $notes = $perStudentSubject[$studentId][$subjectId] ?? [];
-                // Average of sequences in the trimester, missing = 0
-                $termNote = 0.0;
-                if (!empty($notes) || !empty($termSequences)) {
-                    $termNote = array_sum($notes) / count($termSequences);
+                // N'utiliser que les séquences pour lesquelles une note existe.
+                $termNote = !empty($notes)
+                    ? array_sum($notes) / count($notes)
+                    : null;
+                if ($termNote === null) {
+                    continue;
                 }
                 $weightedSum += $termNote * $coefficient;
                 $coeffSum += $coefficient;
@@ -1278,10 +1286,9 @@ class BulletinController
                 $termNotes = [];
                 foreach ([1, 2, 3] as $term) {
                     $values = $perStudentSubjectTerm[$studentId][$subjectId][$term] ?? [];
-                    // Average of sequences in the term, missing = 0
-                    $sequencesInTerm = $this->getActiveSequencesByTerm($term);
-                    $numSeqs = count($sequencesInTerm) ?: 1;
-                    $termNotes[$term] = array_sum($values) / $numSeqs;
+                    $termNotes[$term] = !empty($values)
+                        ? array_sum($values) / count($values)
+                        : null;
                 }
 
                 $annualNote = $this->computeAnnualAverageFromTerms($termNotes);
@@ -1505,15 +1512,30 @@ class BulletinController
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
+    private function getTeachingTypeIdForClass(int $classId): ?int
+    {
+        if ($classId < 1) {
+            return null;
+        }
+
+        $stmt = $this->db->prepare('SELECT teaching_type_id FROM classes WHERE id = ?');
+        $stmt->execute([$classId]);
+        $teachingTypeId = (int) $stmt->fetchColumn();
+        return $teachingTypeId > 0 ? $teachingTypeId : null;
+    }
+
     protected function getHonorRollThreshold(int $classId): float
     {
-        $settingsStore = new SettingsStore($this->db);
-        $defaultThreshold = (float) $settingsStore->get('honor_roll_default_threshold', '12');
-
         // Classes are now shared across years, no year filtering
-        $stmt = $this->db->prepare("SELECT cycle_id, section_id FROM classes WHERE id = ? LIMIT 1");
+        $stmt = $this->db->prepare("SELECT cycle_id, section_id, teaching_type_id FROM classes WHERE id = ? LIMIT 1");
         $stmt->execute([$classId]);
         $class = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        $settingsStore = new SettingsStore(
+            $this->db,
+            $class ? $this->getTeachingTypeIdForClass($classId) : null
+        );
+        $defaultThreshold = (float) $settingsStore->get('honor_roll_default_threshold', '12');
 
         if (!$class) {
             return $defaultThreshold;
@@ -1633,8 +1655,9 @@ class BulletinController
 
     protected function getClassSubjects(int $classId, int $academicYearId)
     {
-        // Les matières du bulletin suivent la forme portée par le département de la classe.
-        $departmentTeachingFormId = $this->departmentTeachingFormIdExpression();
+        // Les affectations matière-classe constituent la source autoritative pour les PV.
+        // Les anciens filtres sur section/forme/type pouvaient exclure des matières déjà
+        // affectées à la classe lors d'une restauration ou d'une migration.
         $sql = "SELECT DISTINCT s.id, s.nom, s.coefficient, sg.libelle AS groupe, sg.position AS group_position,
                                     (SELECT CONCAT(u.nom, ' ', u.prenom)
                                      FROM teacher_assignments ta
@@ -1645,30 +1668,9 @@ class BulletinController
                                      LIMIT 1) as teacher_name
             FROM subject_classes sc
             JOIN subjects s ON s.id = sc.subject_id
-            JOIN classes c ON c.id = sc.class_id
-            LEFT JOIN departments d ON d.id = c.department_id
-            JOIN subject_groups sg ON sg.id = s.subject_group_id
-            LEFT JOIN teaching_forms tf ON tf.id = sg.teaching_form_id
+            LEFT JOIN subject_groups sg ON sg.id = s.subject_group_id
             WHERE sc.class_id = ? AND sc.academic_year_id = ? AND s.status = 1
-              AND sg.status = 1
-                            AND sg.section_id = c.section_id
-              AND (
-                    ({$departmentTeachingFormId} IS NOT NULL
-                        AND sg.teaching_form_id = {$departmentTeachingFormId}
-                        AND tf.status = 1)
-                    OR
-                    ((d.id IS NULL OR {$departmentTeachingFormId} IS NULL)
-                        AND c.teaching_form_id IS NOT NULL
-                        AND sg.teaching_form_id = c.teaching_form_id
-                        AND tf.status = 1
-                        AND sg.teaching_type_id = c.teaching_type_id)
-                    OR
-                    ((d.id IS NULL OR {$departmentTeachingFormId} IS NULL)
-                        AND c.teaching_form_id IS NULL
-                        AND sg.teaching_type_id = c.teaching_type_id
-                        AND (tf.status = 1 OR sg.teaching_form_id IS NULL))
-              )
-            ORDER BY s.nom ASC";
+            ORDER BY COALESCE(sg.position, 999), s.nom ASC";
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$classId, $academicYearId]);
@@ -1685,7 +1687,6 @@ class BulletinController
             return [];
         }
 
-        $departmentTeachingFormId = $this->departmentTeachingFormIdExpression();
         $placeholders = implode(', ', array_fill(0, count($periodLabels), '?'));
         $sql = "SELECT DISTINCT s.id, s.nom, s.coefficient, sg.libelle AS groupe, sg.position AS group_position,
                                     (SELECT CONCAT(u.nom, ' ', u.prenom)
@@ -1697,32 +1698,14 @@ class BulletinController
                                      LIMIT 1) as teacher_name
             FROM subject_classes sc
             JOIN subjects s ON s.id = sc.subject_id
-            JOIN classes c ON c.id = sc.class_id
-            LEFT JOIN departments d ON d.id = c.department_id
-            JOIN subject_groups sg ON sg.id = s.subject_group_id
-            LEFT JOIN teaching_forms tf ON tf.id = sg.teaching_form_id
+            LEFT JOIN subject_groups sg ON sg.id = s.subject_group_id
             JOIN grades g ON g.subject_id = s.id
+            JOIN students st ON st.id = g.student_id
             WHERE sc.class_id = ? AND sc.academic_year_id = ? AND s.status = 1
-              AND sg.status = 1
-                            AND sg.section_id = c.section_id
-              AND (
-                    ({$departmentTeachingFormId} IS NOT NULL
-                        AND sg.teaching_form_id = {$departmentTeachingFormId}
-                        AND tf.status = 1)
-                    OR
-                    ((d.id IS NULL OR {$departmentTeachingFormId} IS NULL)
-                        AND c.teaching_form_id IS NOT NULL
-                        AND sg.teaching_form_id = c.teaching_form_id
-                        AND tf.status = 1
-                        AND sg.teaching_type_id = c.teaching_type_id)
-                    OR
-                    ((d.id IS NULL OR {$departmentTeachingFormId} IS NULL)
-                        AND c.teaching_form_id IS NULL
-                        AND sg.teaching_type_id = c.teaching_type_id
-                        AND (tf.status = 1 OR sg.teaching_form_id IS NULL))
-              )
+              AND st.class_id = sc.class_id
+              AND st.is_withdrawn = 0
               AND g.periode IN ($placeholders) AND g.academic_year_id = ?
-            ORDER BY s.nom ASC";
+            ORDER BY COALESCE(sg.position, 999), s.nom ASC";
 
         $params = array_merge([$classId, $academicYearId], $periodLabels, [$academicYearId]);
         $stmt = $this->db->prepare($sql);
@@ -2317,7 +2300,10 @@ class BulletinController
         $stats = [];
         foreach ($perStudentSubject as $studentId => $subjects) {
             foreach ($subjects as $subjectId => $values) {
-                $termNote = array_sum($values) / count($termSequences);
+                if (empty($values)) {
+                    continue;
+                }
+                $termNote = array_sum($values) / count($values);
                 $stats[$subjectId]['grades'][] = [
                     'student_id' => $studentId,
                     'valeur' => $termNote
@@ -2437,18 +2423,22 @@ class BulletinController
             }
         }
 
-        if (empty($sequences))
-            return 0.0;
-        return round(array_sum($values) / count($sequences), 2);
+        if (empty($values)) {
+            return null;
+        }
+        return round(array_sum($values) / count($values), 2);
     }
 
     protected function computeAnnualAverageFromTerms(array $termNotes): float
     {
-        $sum = 0.0;
-        foreach ([1, 2, 3] as $term) {
-            $sum += (float) ($termNotes[$term] ?? 0);
+        $values = array_values(array_filter(
+            $termNotes,
+            static fn($value) => $value !== null
+        ));
+        if (empty($values)) {
+            return 0.0;
         }
-        return round($sum / 3, 2);
+        return round(array_sum($values) / count($values), 2);
     }
 
     protected function buildDisciplineData(array $student, array $periods, int $academicYearId): array

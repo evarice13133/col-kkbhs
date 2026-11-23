@@ -13,7 +13,6 @@ ob_start();
     <div class="container hero-container">
         <div class="row align-items-center g-5">
             <div class="col-lg-6 hero-copy" data-aos="fade-right">
-                <div class="hero-eyebrow"><span class="hero-eyebrow-dot"></span> La gestion scolaire, enfin réunie</div>
                 <h1 class="hero-title">
                     De l’inscription<br>
                     <span class="text-gradient">au bulletin, tout est lié.</span>

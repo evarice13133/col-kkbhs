@@ -128,6 +128,13 @@ class SchoolFeeController
     public function tranches()
     {
         $activeYearId = $this->academicYearService->getActiveYearId();
+        $activeTeachingTypeId = (new \App\Services\SettingsStore($this->db))->getDefaultTeachingTypeId();
+        $activeTypeStmt = $this->db->prepare("SELECT id, nom FROM teaching_types WHERE id = ? AND actif = 1 LIMIT 1");
+        $activeTypeStmt->execute([$activeTeachingTypeId]);
+        $activeTeachingType = $activeTypeStmt->fetch(PDO::FETCH_ASSOC);
+        if (!$activeTeachingType) {
+            $activeTeachingTypeId = 0;
+        }
 
         // AJAX endpoint to get tranches and tuition amount for a target
         if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
@@ -400,10 +407,30 @@ class SchoolFeeController
             exit;
         }
 
-        // Récupérer les classes, cycles, types d'enseignement
-        $classes = $this->db->query("SELECT id, nom, cycle_id, teaching_type_id FROM classes WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        // Allow tranche setup before students enroll, while keeping targets in the active teaching type.
+        $classes = [];
+        $cycles = [];
+        $teachingTypes = $activeTeachingType ? [$activeTeachingType] : [];
+        if ($activeTeachingTypeId > 0) {
+            $classStmt = $this->db->prepare(
+                "SELECT DISTINCT c.id, c.nom, c.cycle_id, c.teaching_type_id
+                 FROM classes c
+                 WHERE c.status = 1 AND c.teaching_type_id = ?
+                 ORDER BY c.nom ASC"
+            );
+            $classStmt->execute([$activeTeachingTypeId]);
+            $classes = $classStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $cycleStmt = $this->db->prepare(
+                "SELECT DISTINCT cy.id, cy.nom
+                 FROM cycles cy
+                 JOIN classes c ON c.cycle_id = cy.id AND c.status = 1 AND c.teaching_type_id = ?
+                 WHERE cy.status = 1
+                 ORDER BY cy.nom ASC"
+            );
+            $cycleStmt->execute([$activeTeachingTypeId]);
+            $cycles = $cycleStmt->fetchAll(PDO::FETCH_ASSOC);
+        }
 
         // Tranches configurées pour affichage
         $installments = $this->feeInstallmentModel->getAll($activeYearId);
@@ -417,20 +444,29 @@ class SchoolFeeController
     public function versements()
     {
         $activeYearId = $this->academicYearService->getActiveYearId();
+        $activeTeachingTypeId = (new \App\Services\SettingsStore($this->db))->getDefaultTeachingTypeId();
         $search = trim((string) ($_GET['q'] ?? ''));
 
         // Liste des versements récents
         $payments = $this->studentPaymentModel->getAll($activeYearId, $search);
 
-        // Récupérer la liste des élèves actifs par classe pour le formulaire
-        $studentsRaw = $this->db->query("
+        // Restrict payment choices to students enrolled in the active year and teaching type.
+        $studentsStmt = $this->db->prepare("
             SELECT s.id, s.nom, s.prenom, c.nom as class_name, e.reste_a_payer, e.frais_scolarite_brut
             FROM students s
-            JOIN enrollments e ON (s.id = e.student_id AND e.academic_year_id = $activeYearId)
+            JOIN enrollments e ON s.id = e.student_id AND e.academic_year_id = ?
             LEFT JOIN classes c ON s.class_id = c.id
             WHERE s.is_withdrawn = 0 AND s.actif = 1
+              AND s.status = 'Inscrit'
+              AND c.teaching_type_id = ?
+              AND EXISTS (
+                  SELECT 1 FROM teaching_types tt
+                  WHERE tt.id = c.teaching_type_id AND tt.actif = 1
+              )
             ORDER BY c.nom ASC, s.nom ASC
-        ")->fetchAll(PDO::FETCH_ASSOC);
+        ");
+        $studentsStmt->execute([$activeYearId, $activeTeachingTypeId]);
+        $studentsRaw = $studentsStmt->fetchAll(PDO::FETCH_ASSOC);
 
         $groupedStudents = [];
         foreach ($studentsRaw as $s) {
@@ -473,9 +509,26 @@ class SchoolFeeController
         }
 
         // Validation du montant par rapport au solde restant (scolarité)
-        $stmtEnroll = $this->db->prepare("SELECT reste_a_payer FROM enrollments WHERE student_id = ? AND academic_year_id = ?");
-        $stmtEnroll->execute([$studentId, $activeYearId]);
-        $balance = (float) $stmtEnroll->fetchColumn();
+        $activeTeachingTypeId = (new \App\Services\SettingsStore($this->db))->getDefaultTeachingTypeId();
+        $stmtEnroll = $this->db->prepare(
+            "SELECT e.reste_a_payer
+             FROM enrollments e
+             JOIN students s ON s.id = e.student_id
+             JOIN classes c ON c.id = s.class_id
+             JOIN teaching_types tt ON tt.id = c.teaching_type_id AND tt.actif = 1
+             WHERE e.student_id = ? AND e.academic_year_id = ?
+               AND c.teaching_type_id = ?
+               AND s.is_withdrawn = 0 AND s.actif = 1 AND s.status = 'Inscrit'
+             LIMIT 1"
+        );
+        $stmtEnroll->execute([$studentId, $activeYearId, $activeTeachingTypeId]);
+        $enrollment = $stmtEnroll->fetch(PDO::FETCH_ASSOC);
+        if (!$enrollment) {
+            Session::setFlash('error', "L'élève sélectionné n'est pas inscrit dans le type d'enseignement actif pour l'année en cours.");
+            header("Location: /school_fees/versements");
+            exit;
+        }
+        $balance = (float) $enrollment['reste_a_payer'];
 
         if ($amount > $balance) {
             Session::setFlash('error', "Montant supérieur au solde restant de l'élève.");
@@ -585,12 +638,23 @@ class SchoolFeeController
     {
         $activeYearId = $this->academicYearService->getActiveYearId();
 
+        $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $activeTeachingTypeIds = array_map('intval', array_column($teachingTypes, 'id'));
+        $defaultTeachingTypeId = (new \App\Services\SettingsStore($this->db))->getDefaultTeachingTypeId();
+        if (!in_array($defaultTeachingTypeId, $activeTeachingTypeIds, true)) {
+            $defaultTeachingTypeId = (int) ($activeTeachingTypeIds[0] ?? 0);
+        }
+        $requestedTeachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
+        $teachingTypeId = in_array($requestedTeachingTypeId, $activeTeachingTypeIds, true)
+            ? $requestedTeachingTypeId
+            : $defaultTeachingTypeId;
+
         // 1. Forcer la mise à jour du cache d'insolvabilité
         $this->insolventStudentModel->refreshCache($activeYearId);
 
         // Filtres
         $filters = [
-            'teaching_type_id' => (int) ($_GET['teaching_type_id'] ?? 0),
+            'teaching_type_id' => $teachingTypeId,
             'cycle_id' => (int) ($_GET['cycle_id'] ?? 0),
             'section_id' => (int) ($_GET['section_id'] ?? 0),
             'class_id' => (int) ($_GET['class_id'] ?? 0),
@@ -604,70 +668,77 @@ class SchoolFeeController
             header('Content-Type: application/json');
 
             if ($action === 'get_cycles') {
-                $teachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
                 if ($teachingTypeId > 0) {
-                    $sql = "SELECT DISTINCT cy.id, cy.nom FROM cycles cy JOIN classes c ON c.cycle_id = cy.id WHERE c.teaching_type_id = ? ORDER BY cy.nom ASC";
+                    $sql = "SELECT DISTINCT cy.id, cy.nom
+                            FROM cycles cy
+                            JOIN classes c ON c.cycle_id = cy.id
+                            JOIN enrollments e ON e.class_id = c.id AND e.academic_year_id = ?
+                            JOIN teaching_types tt ON tt.id = c.teaching_type_id AND tt.actif = 1
+                            WHERE c.teaching_type_id = ? AND c.status = 1
+                            ORDER BY cy.nom ASC";
                     $stmt = $this->db->prepare($sql);
-                    $stmt->execute([$teachingTypeId]);
+                    $stmt->execute([$activeYearId, $teachingTypeId]);
                     $cycles = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 } else {
-                    $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+                    $cycles = [];
                 }
                 echo json_encode($cycles);
                 exit;
             }
 
             if ($action === 'get_sections') {
-                $teachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
                 $cycleId = (int) ($_GET['cycle_id'] ?? 0);
-                $sql = "SELECT DISTINCT s.id, s.nom FROM sections s JOIN classes c ON c.section_id = s.id WHERE 1=1";
-                $params = [];
+                $sections = [];
                 if ($teachingTypeId > 0) {
-                    $sql .= " AND c.teaching_type_id = ?";
-                    $params[] = $teachingTypeId;
+                    $sql = "SELECT DISTINCT s.id, s.nom
+                            FROM sections s
+                            JOIN classes c ON c.section_id = s.id
+                            JOIN enrollments e ON e.class_id = c.id AND e.academic_year_id = ?
+                            JOIN teaching_types tt ON tt.id = c.teaching_type_id AND tt.actif = 1
+                            WHERE c.teaching_type_id = ? AND c.status = 1";
+                    $params = [$activeYearId, $teachingTypeId];
+                    if ($cycleId > 0) {
+                        $sql .= " AND c.cycle_id = ?";
+                        $params[] = $cycleId;
+                    }
+                    $sql .= " ORDER BY s.nom ASC";
+                    $stmt = $this->db->prepare($sql);
+                    $stmt->execute($params);
+                    $sections = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 }
-                if ($cycleId > 0) {
-                    $sql .= " AND c.cycle_id = ?";
-                    $params[] = $cycleId;
-                }
-                $sql .= " ORDER BY s.nom ASC";
-                $stmt = $this->db->prepare($sql);
-                $stmt->execute($params);
-                $sections = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 echo json_encode($sections);
                 exit;
             }
 
             if ($action === 'get_classes') {
-                $teachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
                 $cycleId = (int) ($_GET['cycle_id'] ?? 0);
                 $sectionId = (int) ($_GET['section_id'] ?? 0);
-                $sql = "SELECT id, nom FROM classes WHERE status = 1
-                    AND EXISTS (
-                        SELECT 1 FROM students st
-                        WHERE st.class_id = classes.id
-                          AND st.academic_year_id = ?
-                          AND st.status = 'Inscrit'
-                          AND st.actif = 1
-                          AND st.is_withdrawn = 0
-                    )";
-                $params = [$activeYearId];
+                $classes = [];
                 if ($teachingTypeId > 0) {
-                    $sql .= " AND teaching_type_id = ?";
-                    $params[] = $teachingTypeId;
+                    $sql = "SELECT DISTINCT c.id, c.nom
+                            FROM classes c
+                            JOIN enrollments e ON e.class_id = c.id AND e.academic_year_id = ?
+                            JOIN students st ON st.id = e.student_id
+                            JOIN teaching_types tt ON tt.id = c.teaching_type_id AND tt.actif = 1
+                            WHERE c.status = 1
+                              AND st.status = 'Inscrit'
+                              AND st.actif = 1
+                              AND st.is_withdrawn = 0
+                              AND c.teaching_type_id = ?";
+                    $params = [$activeYearId, $teachingTypeId];
+                    if ($cycleId > 0) {
+                        $sql .= " AND c.cycle_id = ?";
+                        $params[] = $cycleId;
+                    }
+                    if ($sectionId > 0) {
+                        $sql .= " AND c.section_id = ?";
+                        $params[] = $sectionId;
+                    }
+                    $sql .= " ORDER BY c.nom ASC";
+                    $stmt = $this->db->prepare($sql);
+                    $stmt->execute($params);
+                    $classes = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 }
-                if ($cycleId > 0) {
-                    $sql .= " AND cycle_id = ?";
-                    $params[] = $cycleId;
-                }
-                if ($sectionId > 0) {
-                    $sql .= " AND section_id = ?";
-                    $params[] = $sectionId;
-                }
-                $sql .= " ORDER BY nom ASC";
-                $stmt = $this->db->prepare($sql);
-                $stmt->execute($params);
-                $classes = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 echo json_encode($classes);
                 exit;
             }
@@ -676,14 +747,23 @@ class SchoolFeeController
                 $classId = (int) ($_GET['class_id'] ?? 0);
                 $tranches = [];
                 if ($classId > 0) {
-                    $tranches = $this->feeInstallmentModel->resolveInstallments($activeYearId, $classId);
+                    $classExists = $this->db->prepare(
+                        "SELECT 1 FROM classes c
+                         JOIN teaching_types tt ON tt.id = c.teaching_type_id AND tt.actif = 1
+                         JOIN enrollments e ON e.class_id = c.id AND e.academic_year_id = ?
+                         WHERE c.id = ? AND c.teaching_type_id = ? AND c.status = 1
+                         LIMIT 1"
+                    );
+                    $classExists->execute([$activeYearId, $classId, $teachingTypeId]);
+                    if ($classExists->fetchColumn()) {
+                        $tranches = $this->feeInstallmentModel->resolveInstallments($activeYearId, $classId);
+                    }
                 }
                 echo json_encode($tranches);
                 exit;
             }
 
             if ($action === 'get_insolvables') {
-                $teachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
                 $cycleId = (int) ($_GET['cycle_id'] ?? 0);
                 $sectionId = (int) ($_GET['section_id'] ?? 0);
                 $classId = (int) ($_GET['class_id'] ?? 0);
@@ -692,7 +772,7 @@ class SchoolFeeController
 
                 if ($classId > 0 && $installmentNumber > 0) {
                     // Tranche-specific view
-                    $insolvents = $this->insolventStudentModel->getInsolventsForTranche($activeYearId, $classId, $installmentNumber);
+                    $insolvents = $this->insolventStudentModel->getInsolventsForTranche($activeYearId, $classId, $installmentNumber, $teachingTypeId);
 
                     if ($q !== '') {
                         $qLower = strtolower($q);
@@ -859,22 +939,28 @@ class SchoolFeeController
         // Obtenir la liste initiale (vue générale ou pré-filtrée)
         $insolventStudents = $this->insolventStudentModel->getAll($activeYearId, $filters);
 
-        // Données des filtres en cascade par rapport aux sélections courantes
-        $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        // Construire les filtres à partir des classes inscrites pour l'année active.
+        $cycles = [];
+        $sections = [];
+        $classes = [];
+        if ($teachingTypeId > 0) {
+            $stmtCycles = $this->db->prepare(
+                "SELECT DISTINCT cy.id, cy.nom
+                 FROM cycles cy
+                 JOIN classes c ON c.cycle_id = cy.id
+                 JOIN enrollments e ON e.class_id = c.id AND e.academic_year_id = ?
+                 WHERE c.teaching_type_id = ? AND c.status = 1
+                 ORDER BY cy.nom ASC"
+            );
+            $stmtCycles->execute([$activeYearId, $teachingTypeId]);
+            $cycles = $stmtCycles->fetchAll(PDO::FETCH_ASSOC);
 
-        if ($filters['teaching_type_id'] > 0) {
-            $cycles = $this->db->query("SELECT DISTINCT cy.id, cy.nom FROM cycles cy JOIN classes c ON c.cycle_id = cy.id WHERE c.teaching_type_id = " . $filters['teaching_type_id'] . " ORDER BY cy.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        } else {
-            $cycles = $this->db->query("SELECT id, nom FROM cycles ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        }
-
-        if ($filters['teaching_type_id'] > 0 || $filters['cycle_id'] > 0) {
-            $sqlSec = "SELECT DISTINCT s.id, s.nom FROM sections s JOIN classes c ON c.section_id = s.id WHERE 1=1";
-            $paramsSec = [];
-            if ($filters['teaching_type_id'] > 0) {
-                $sqlSec .= " AND c.teaching_type_id = ?";
-                $paramsSec[] = $filters['teaching_type_id'];
-            }
+            $sqlSec = "SELECT DISTINCT s.id, s.nom
+                       FROM sections s
+                       JOIN classes c ON c.section_id = s.id
+                       JOIN enrollments e ON e.class_id = c.id AND e.academic_year_id = ?
+                       WHERE c.teaching_type_id = ? AND c.status = 1";
+            $paramsSec = [$activeYearId, $teachingTypeId];
             if ($filters['cycle_id'] > 0) {
                 $sqlSec .= " AND c.cycle_id = ?";
                 $paramsSec[] = $filters['cycle_id'];
@@ -883,54 +969,34 @@ class SchoolFeeController
             $stmtSec = $this->db->prepare($sqlSec);
             $stmtSec->execute($paramsSec);
             $sections = $stmtSec->fetchAll(PDO::FETCH_ASSOC);
-        } else {
-            $sections = $this->db->query("SELECT id, nom FROM sections ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        }
 
-        if ($filters['teaching_type_id'] > 0 || $filters['cycle_id'] > 0 || $filters['section_id'] > 0) {
-                        $sqlCla = "SELECT id, nom FROM classes WHERE status = 1
-                                             AND EXISTS (
-                                                     SELECT 1 FROM students st
-                                                     WHERE st.class_id = classes.id
-                                                         AND st.academic_year_id = ?
-                                                         AND st.status = 'Inscrit'
-                                                         AND st.actif = 1
-                                                         AND st.is_withdrawn = 0
-                                             )";
-                        $paramsCla = [$activeYearId];
-            if ($filters['teaching_type_id'] > 0) {
-                $sqlCla .= " AND teaching_type_id = ?";
-                $paramsCla[] = $filters['teaching_type_id'];
-            }
+            $sqlClasses = "SELECT DISTINCT c.id, c.nom
+                           FROM classes c
+                           JOIN enrollments e ON e.class_id = c.id AND e.academic_year_id = ?
+                           JOIN students st ON st.id = e.student_id
+                           WHERE c.status = 1
+                             AND c.teaching_type_id = ?
+                             AND st.status = 'Inscrit'
+                             AND st.actif = 1
+                             AND st.is_withdrawn = 0";
+            $paramsClasses = [$activeYearId, $teachingTypeId];
             if ($filters['cycle_id'] > 0) {
-                $sqlCla .= " AND cycle_id = ?";
-                $paramsCla[] = $filters['cycle_id'];
+                $sqlClasses .= " AND c.cycle_id = ?";
+                $paramsClasses[] = $filters['cycle_id'];
             }
             if ($filters['section_id'] > 0) {
-                $sqlCla .= " AND section_id = ?";
-                $paramsCla[] = $filters['section_id'];
+                $sqlClasses .= " AND c.section_id = ?";
+                $paramsClasses[] = $filters['section_id'];
             }
-            $sqlCla .= " ORDER BY nom ASC";
-            $stmtCla = $this->db->prepare($sqlCla);
-            $stmtCla->execute($paramsCla);
-            $classes = $stmtCla->fetchAll(PDO::FETCH_ASSOC);
-        } else {
-            $classesStmt = $this->db->prepare("SELECT id, nom FROM classes WHERE status = 1
-                                               AND EXISTS (
-                                                   SELECT 1 FROM students st
-                                                   WHERE st.class_id = classes.id
-                                                     AND st.academic_year_id = ?
-                                                     AND st.status = 'Inscrit'
-                                                     AND st.actif = 1
-                                                     AND st.is_withdrawn = 0
-                                               )
-                                               ORDER BY nom ASC");
-            $classesStmt->execute([$activeYearId]);
-            $classes = $classesStmt->fetchAll(PDO::FETCH_ASSOC);
+            $sqlClasses .= " ORDER BY c.nom ASC";
+            $stmtClasses = $this->db->prepare($sqlClasses);
+            $stmtClasses->execute($paramsClasses);
+            $classes = $stmtClasses->fetchAll(PDO::FETCH_ASSOC);
         }
 
         $tranches = [];
-        if ($filters['class_id'] > 0) {
+        $visibleClassIds = array_map('intval', array_column($classes, 'id'));
+        if ($filters['class_id'] > 0 && in_array($filters['class_id'], $visibleClassIds, true)) {
             $tranches = $this->feeInstallmentModel->resolveInstallments($activeYearId, $filters['class_id']);
         }
 
@@ -1203,7 +1269,16 @@ class SchoolFeeController
         // Forcer la mise à jour du cache d'insolvabilité pour garantir la fraîcheur des données
         $this->insolventStudentModel->refreshCache($activeYearId);
 
-        $teachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
+        $teachingTypes = $this->db->query("SELECT id FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_COLUMN);
+        $activeTeachingTypeIds = array_map('intval', $teachingTypes);
+        $defaultTeachingTypeId = (new \App\Services\SettingsStore($this->db))->getDefaultTeachingTypeId();
+        if (!in_array($defaultTeachingTypeId, $activeTeachingTypeIds, true)) {
+            $defaultTeachingTypeId = (int) ($activeTeachingTypeIds[0] ?? 0);
+        }
+        $requestedTeachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
+        $teachingTypeId = in_array($requestedTeachingTypeId, $activeTeachingTypeIds, true)
+            ? $requestedTeachingTypeId
+            : $defaultTeachingTypeId;
         $cycleId = (int) ($_GET['cycle_id'] ?? 0);
         $sectionId = (int) ($_GET['section_id'] ?? 0);
         $classId = (int) ($_GET['class_id'] ?? 0);
@@ -1243,7 +1318,7 @@ class SchoolFeeController
 
         if ($isTrancheView) {
             // Vue par tranche spécifique
-            $insolvents = $this->insolventStudentModel->getInsolventsForTranche($activeYearId, $classId, $installmentNumber);
+            $insolvents = $this->insolventStudentModel->getInsolventsForTranche($activeYearId, $classId, $installmentNumber, $teachingTypeId);
 
             if ($q !== '') {
                 $qLower = strtolower($q);
@@ -1281,11 +1356,11 @@ class SchoolFeeController
         }
 
         // Charger l'institution
-        $settingsStore = new \App\Services\SettingsStore($this->db);
+        $settingsStore = new \App\Services\SettingsStore($this->db, $teachingTypeId);
         $settings = $settingsStore->all();
 
         // Récupérer le logo Base64
-        $logoManager = \App\Core\LogoManager::getInstance($this->db);
+        $logoManager = \App\Core\LogoManager::getInstance($this->db, $teachingTypeId);
         $logoBase64 = $logoManager->hasLogo() ? $logoManager->getLogoBase64() : '';
 
         // Statistiques
@@ -1709,10 +1784,10 @@ class SchoolFeeController
         }
 
         // Charger l'institution et logo
-        $settingsStore = new \App\Services\SettingsStore($this->db);
+        $settingsStore = new \App\Services\SettingsStore($this->db, $teachingTypeId);
         $settings = $settingsStore->all();
 
-        $logoManager = \App\Core\LogoManager::getInstance($this->db);
+        $logoManager = \App\Core\LogoManager::getInstance($this->db, $teachingTypeId);
         $logoBase64 = $logoManager->hasLogo() ? $logoManager->getLogoBase64() : '';
 
         $schoolName = htmlspecialchars($settings['school_name'] ?? '');

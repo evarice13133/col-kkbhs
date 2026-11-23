@@ -9,10 +9,13 @@ $selectedTeachingType = (string) ($formData['teaching_type_id'] ?? '');
 $selectedSexe = (string) ($formData['sexe'] ?? '');
 $isRedoublant = (string) ($formData['is_redoublant'] ?? '0');
 
-$settingsStore = new \App\Services\SettingsStore($this->db);
-$registration_fee_policy = $settingsStore->get('registration_fee_policy', 'all');
-$payment_methods_str = $settingsStore->get('payment_methods', 'Espèces,Mobile Money,Orange Money,MTN Mobile Money,Carte bancaire,Virement bancaire,Chèque,Autre');
-$payment_methods = array_map('trim', explode(',', $payment_methods_str));
+$registrationSettingsByType = $registrationSettingsByType ?? [];
+$defaultTeachingTypeId = (int) ($defaultTeachingTypeId ?? 0);
+$initialRegistrationSettings = $registrationSettingsByType[(int) ($selectedTeachingType ?: $defaultTeachingTypeId)] ?? [
+    'policy' => 'all',
+    'payment_methods' => ['Espèces', 'Mobile Money', 'Orange Money', 'MTN Mobile Money', 'Carte bancaire', 'Virement bancaire', 'Chèque', 'Autre'],
+];
+$payment_methods = $initialRegistrationSettings['payment_methods'];
 
 ob_start();
 ?>
@@ -364,9 +367,9 @@ ob_start();
                         <div class="col-md-4">
                             <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1">Mode de Paiement *</label>
                             <select name="payment_method" id="payment_method" class="form-select premium-input border-primary border-opacity-25" required>
-                                <option value="" disabled selected>Sélectionner...</option>
+                                <option value="" disabled <?= empty($formData['payment_method']) ? 'selected' : '' ?>>Sélectionner...</option>
                                 <?php foreach ($payment_methods as $method): ?>
-                                    <option value="<?= h($method) ?>"><?= h($method) ?></option>
+                                    <option value="<?= h($method) ?>" <?= ($formData['payment_method'] ?? '') === $method ? 'selected' : '' ?>><?= h($method) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -469,7 +472,19 @@ document.addEventListener('DOMContentLoaded', function () {
     const classSelect = document.getElementById('class_select');
 
     // Financial policy configuration
-    const registrationFeePolicy = <?= json_encode($registration_fee_policy) ?>;
+    const registrationSettingsByType = <?= json_encode($registrationSettingsByType, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+    const defaultTeachingTypeId = <?= json_encode($defaultTeachingTypeId) ?>;
+
+    function getCurrentRegistrationSettings() {
+        const selectedOpt = classSelect.options[classSelect.selectedIndex];
+        const typeSelect = document.getElementById('teaching_type_select');
+        const teachingTypeId = selectedOpt && selectedOpt.value
+            ? selectedOpt.getAttribute('data-teaching-type')
+            : (typeSelect ? typeSelect.value : '');
+        return registrationSettingsByType[teachingTypeId]
+            || registrationSettingsByType[defaultTeachingTypeId]
+            || { policy: 'all', payment_methods: [] };
+    }
 
     function getStudentStatus() {
         const checkedRadio = document.querySelector('input[name="student_status"]:checked');
@@ -486,9 +501,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const classReenrollment = parseFloat(selectedOpt.getAttribute('data-frais-reinscription')) || 0;
         const status = getStudentStatus();
 
-        if (registrationFeePolicy === 'new_only') {
+        const policy = getCurrentRegistrationSettings().policy;
+        if (policy === 'new_only') {
             return status === 'nouveau' ? classRegistration : 0;
-        } else if (registrationFeePolicy === 'by_status') {
+        } else if (policy === 'by_status') {
             return status === 'nouveau' ? classRegistration : classReenrollment;
         } else { // 'all'
             return classRegistration;
@@ -551,8 +567,9 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('summary_class_tuition').textContent = formatNumber(classTuition);
         
         let policyLabel = "Tous les élèves";
-        if (registrationFeePolicy === 'new_only') policyLabel = "Nouveaux uniquement";
-        else if (registrationFeePolicy === 'by_status') policyLabel = "Différent selon statut";
+        const policy = getCurrentRegistrationSettings().policy;
+        if (policy === 'new_only') policyLabel = "Nouveaux uniquement";
+        else if (policy === 'by_status') policyLabel = "Différent selon statut";
 
         const statusLabel = getStudentStatus() === 'nouveau' ? "Nouveau" : "Ancien (Réinscription)";
         document.getElementById('summary_class_registration').textContent = `${formatNumber(expectedFee)} FCFA (Règle : ${policyLabel}, Statut : ${statusLabel})`;
@@ -598,6 +615,22 @@ document.addEventListener('DOMContentLoaded', function () {
     const paymentMethodSelect = document.getElementById('payment_method');
     const referenceInput = document.getElementById('reference');
     const referenceLabel = document.getElementById('reference_label');
+
+    function updatePaymentMethodOptions() {
+        const methods = getCurrentRegistrationSettings().payment_methods || [];
+        const currentValue = paymentMethodSelect.value;
+        paymentMethodSelect.innerHTML = '';
+        paymentMethodSelect.add(new Option('Sélectionner...', '', true, !methods.includes(currentValue)));
+
+        methods.forEach(method => {
+            paymentMethodSelect.add(new Option(method, method, false, method === currentValue));
+        });
+
+        if (!methods.includes(currentValue)) {
+            paymentMethodSelect.value = '';
+        }
+        updateReferenceField();
+    }
 
     function updateReferenceField() {
         if (!paymentMethodSelect || !referenceInput) return;
@@ -853,13 +886,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (selectedClassId && !classStillValid) {
             classSelect.value = '';
-            calculateFees();
+            delete document.getElementById('frais_inscription_paid').dataset.modified;
+            updatePaymentMethodOptions();
+            updateFinanceStepSummary();
         }
     }
 
     // Auto-remplissage des filtres si une classe est directement sélectionnée
     classSelect.addEventListener('change', function() {
         const selectedOpt = classSelect.options[classSelect.selectedIndex];
+        delete document.getElementById('frais_inscription_paid').dataset.modified;
+        updatePaymentMethodOptions();
+        updateFinanceStepSummary();
         if (!selectedOpt || !selectedOpt.value) return;
 
         const optTT = selectedOpt.getAttribute('data-teaching-type');

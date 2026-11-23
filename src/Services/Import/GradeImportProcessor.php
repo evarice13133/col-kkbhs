@@ -446,8 +446,8 @@ class GradeImportProcessor
             throw new Exception('Import rejeté : trop de compétences déclarées pour une évaluation. Une seule évaluation accepte au maximum 2 compétences.');
         }
 
-        $subjectCheck = $this->db->prepare('SELECT 1 FROM subject_classes WHERE class_id = ? AND subject_id = ? LIMIT 1');
-        $subjectCheck->execute([$classId, $subjectId]);
+        $subjectCheck = $this->db->prepare('SELECT 1 FROM subject_classes WHERE class_id = ? AND subject_id = ? AND academic_year_id = ? LIMIT 1');
+        $subjectCheck->execute([$classId, $subjectId, $this->activeYearId]);
         if ($subjectCheck->fetchColumn() === false) {
             throw new Exception('La matière sélectionnée n\'est pas affectée à cette classe.');
         }

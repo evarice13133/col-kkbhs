@@ -66,6 +66,7 @@ class CompetencyController
     {
         $userRole = Session::get('user_role');
         $userId = (int) Session::get('user_id');
+        $activeYearId = $this->academicYearService->getActiveYearId();
 
         if (!in_array($userRole, ['admin', 'superadmin'], true) && !PermissionManager::hasPermission('manage_subjects')) {
             header('Location: /');
@@ -104,8 +105,8 @@ class CompetencyController
                     FROM competencies c
                     LEFT JOIN subjects s ON c.subject_id = s.id
                     INNER JOIN teacher_assignments ta ON s.id = ta.subject_id
-                    WHERE ta.user_id = ?";
-            $params = [$userId];
+                    WHERE ta.user_id = ? AND ta.academic_year_id = ?";
+                $params = [$userId, $activeYearId];
             
             if ($subjectId > 0) {
                 $sql .= " AND c.subject_id = ?";
@@ -122,25 +123,26 @@ class CompetencyController
             $subjects = $this->db->prepare("SELECT DISTINCT s.id, s.nom 
                                             FROM subjects s
                                             INNER JOIN teacher_assignments ta ON s.id = ta.subject_id
-                                            WHERE ta.user_id = ? AND s.status = 1
+                                            WHERE ta.user_id = ? AND ta.academic_year_id = ? AND s.status = 1
                                             ORDER BY s.nom ASC");
-            $subjects->execute([$userId]);
+            $subjects->execute([$userId, $activeYearId]);
             $subjects = $subjects->fetchAll(PDO::FETCH_ASSOC);
         }
 
-                $activeYearId = $this->academicYearService->getActiveYearId();
                 $classesStmt = $this->db->prepare("SELECT c.id, c.nom
-                                                                                     FROM classes c
-                                                                                     WHERE c.status = 1
-                                                                                         AND EXISTS (
-                                                                                                 SELECT 1 FROM students st
-                                                                                                 WHERE st.class_id = c.id
-                                                                                                     AND st.academic_year_id = ?
-                                                                                                     AND st.status = 'Inscrit'
-                                                                                                     AND st.actif = 1
-                                                                                                     AND st.is_withdrawn = 0
-                                                                                         )
-                                                                                     ORDER BY c.nom ASC");
+                                                   FROM classes c
+                                                   LEFT JOIN teaching_types tt ON tt.id = c.teaching_type_id
+                                                   WHERE c.status = 1
+                                                     AND (c.teaching_type_id IS NULL OR tt.actif = 1)
+                                                     AND EXISTS (
+                                                         SELECT 1 FROM students st
+                                                         WHERE st.class_id = c.id
+                                                           AND st.academic_year_id = ?
+                                                           AND st.status = 'Inscrit'
+                                                           AND st.actif = 1
+                                                           AND st.is_withdrawn = 0
+                                                     )
+                                                   ORDER BY c.nom ASC");
                 $classesStmt->execute([$activeYearId]);
                 $classes = $classesStmt->fetchAll(PDO::FETCH_ASSOC);
         $teachingTypes = $this->db->query("SELECT id, nom, code FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -157,17 +159,33 @@ class CompetencyController
                                          FROM subjects s
                                          LEFT JOIN subject_groups sg ON sg.id = s.subject_group_id
                                          WHERE s.status = 1 ORDER BY s.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $subjectClassSql = "SELECT DISTINCT sc.subject_id, sc.class_id FROM subject_classes sc JOIN classes c ON c.id = sc.class_id AND c.status = 1";
-        $subjectClassParams = [];
-        if ($activeYearId > 0) {
-            $subjectClassSql .= " WHERE sc.academic_year_id = ?";
-            $subjectClassParams[] = $activeYearId;
-        }
+        $subjectClassSql = "SELECT DISTINCT sc.subject_id, sc.class_id
+                            FROM subject_classes sc
+                            JOIN subjects s ON s.id = sc.subject_id AND s.status = 1
+                            JOIN classes c ON c.id = sc.class_id AND c.status = 1
+                            LEFT JOIN teaching_types tt ON tt.id = c.teaching_type_id
+                            WHERE sc.academic_year_id = ?
+                              AND (c.teaching_type_id IS NULL OR tt.actif = 1)
+                              AND EXISTS (
+                                  SELECT 1 FROM students st
+                                  WHERE st.class_id = c.id
+                                    AND st.academic_year_id = sc.academic_year_id
+                                    AND st.status = 'Inscrit'
+                                    AND st.actif = 1
+                                    AND st.is_withdrawn = 0
+                              )";
+        $subjectClassParams = [$activeYearId];
         $subjectClassStmt = $this->db->prepare($subjectClassSql);
         $subjectClassStmt->execute($subjectClassParams);
         $subjectClassMap = [];
         foreach ($subjectClassStmt->fetchAll(PDO::FETCH_ASSOC) as $association) {
             $subjectClassMap[(int) $association['class_id']][] = (int) $association['subject_id'];
+        }
+        $eligibleSubjectIds = [];
+        foreach ($subjectClassMap as $subjectIds) {
+            foreach ($subjectIds as $eligibleSubjectId) {
+                $eligibleSubjectIds[$eligibleSubjectId] = true;
+            }
         }
 
         include __DIR__ . '/../Views/competencies/index.php';
@@ -353,7 +371,7 @@ class CompetencyController
                        FROM subjects s
                        INNER JOIN subject_classes sc ON sc.subject_id = s.id
                        LEFT JOIN teacher_assignments ta ON ta.subject_id = s.id AND ta.class_id = sc.class_id
-                           AND (ta.academic_year_id = ? OR ta.academic_year_id IS NULL)
+                           AND ta.academic_year_id = ?
                        LEFT JOIN users u ON u.id = ta.user_id
                        INNER JOIN teaching_types tt ON tt.id = s.teaching_type_id AND tt.actif = 1
                        WHERE s.status = 1";
@@ -399,7 +417,7 @@ class CompetencyController
                                     FROM subjects s
                                     INNER JOIN teacher_assignments ta ON ta.subject_id = s.id AND ta.class_id = ?
                                     LEFT JOIN users u ON u.id = ta.user_id
-                                    WHERE (ta.academic_year_id = ? OR ta.academic_year_id IS NULL) AND s.id IN ($placeholders) AND ta.user_id <> ?");
+                                    WHERE ta.academic_year_id = ? AND s.id IN ($placeholders) AND ta.user_id <> ?");
         $stmt->execute(array_merge($params, [$teacherId]));
         $conflicts = $stmt->fetchAll(PDO::FETCH_ASSOC);
         echo json_encode(['success' => true, 'conflicts' => $conflicts, 'has_conflicts' => !empty($conflicts),
@@ -550,16 +568,29 @@ class CompetencyController
 
         if ($classId > 0) {
             $activeYearId = $this->academicYearService->getActiveYearId();
-            $sql = "SELECT COUNT(*) FROM subject_classes WHERE subject_id = ? AND class_id = ?";
-            $params = [$subjectId, $classId];
-            if ($activeYearId > 0) {
-                $sql .= " AND academic_year_id = ?";
-                $params[] = $activeYearId;
-            }
-            $classSubjectCheck = $this->db->prepare($sql);
-            $classSubjectCheck->execute($params);
+            $classSubjectCheck = $this->db->prepare(
+                "SELECT COUNT(*)
+                 FROM subject_classes sc
+                 JOIN subjects s ON s.id = sc.subject_id AND s.status = 1
+                 JOIN classes c ON c.id = sc.class_id AND c.status = 1
+                 LEFT JOIN teaching_types tt ON tt.id = c.teaching_type_id
+                 WHERE sc.subject_id = ?
+                   AND sc.class_id = ?
+                   AND sc.academic_year_id = ?
+                   AND (c.teaching_type_id IS NULL OR tt.actif = 1)
+                   AND EXISTS (
+                       SELECT 1 FROM students st
+                       WHERE st.class_id = c.id
+                         AND st.academic_year_id = sc.academic_year_id
+                         AND st.status = 'Inscrit'
+                         AND st.actif = 1
+                         AND st.is_withdrawn = 0
+                   )"
+            );
+            $classSubjectCheck->execute([$subjectId, $classId, $activeYearId]);
             if ((int) $classSubjectCheck->fetchColumn() === 0) {
-                echo json_encode(['error' => 'Cette matière n’est pas affectée à la classe sélectionnée.']);
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Cette matière n’est pas affectée à une classe active contenant des élèves inscrits pour l’année en cours.']);
                 exit;
             }
         }
@@ -793,11 +824,6 @@ class CompetencyController
             exit;
         }
 
-        if (empty($competencyIds)) {
-            echo json_encode(['error' => 'Veuillez sélectionner au moins une compétence pour cette évaluation']);
-            exit;
-        }
-
         // Limiter à 2 compétences maximum
         if (count($competencyIds) > 2) {
             echo json_encode(['error' => 'Maximum 2 compétences par évaluation']);
@@ -809,9 +835,10 @@ class CompetencyController
         $userId = (int) Session::get('user_id');
 
         if (!in_array($userRole, ['admin', 'superadmin'], true)) {
-            $check = $this->db->prepare("SELECT COUNT(*) FROM teacher_assignments 
-                                         WHERE user_id = ? AND subject_id = ? AND class_id = ?");
-            $check->execute([$userId, $subjectId, $classId]);
+            $activeYearId = $this->academicYearService->getActiveYearId();
+            $check = $this->db->prepare("SELECT COUNT(*) FROM teacher_assignments
+                                         WHERE user_id = ? AND subject_id = ? AND class_id = ? AND academic_year_id = ?");
+            $check->execute([$userId, $subjectId, $classId, $activeYearId]);
             
             if ($check->fetchColumn() == 0) {
                 echo json_encode(['error' => 'Non autorisé']);
@@ -839,21 +866,23 @@ class CompetencyController
                                               AND academic_year_id = ? AND periode = ?");
             $deleteStmt->execute([$classId, $subjectId, $activeYear['id'], $period]);
 
-            // Ajouter les nouvelles associations
-            $insertStmt = $this->db->prepare("INSERT INTO evaluation_competencies 
-                                                (class_id, subject_id, academic_year_id, sequence_id, periode, competency_id, position)
-                                                VALUES (?, ?, ?, ?, ?, ?, ?)");
-            
-            foreach ($competencyIds as $index => $compId) {
-                $insertStmt->execute([
-                    $classId,
-                    $subjectId,
-                    $activeYear['id'],
-                    $sequenceId,
-                    $period,
-                    (int) $compId,
-                    $index + 1
-                ]);
+            // Ajouter les nouvelles associations si fournies
+            if (!empty($competencyIds)) {
+                $insertStmt = $this->db->prepare("INSERT INTO evaluation_competencies 
+                                                    (class_id, subject_id, academic_year_id, sequence_id, periode, competency_id, position)
+                                                    VALUES (?, ?, ?, ?, ?, ?, ?)");
+                
+                foreach ($competencyIds as $index => $compId) {
+                    $insertStmt->execute([
+                        $classId,
+                        $subjectId,
+                        $activeYear['id'],
+                        $sequenceId,
+                        $period,
+                        (int) $compId,
+                        $index + 1
+                    ]);
+                }
             }
 
             $this->db->commit();

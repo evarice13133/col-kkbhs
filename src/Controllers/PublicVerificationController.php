@@ -210,7 +210,13 @@ class PublicVerificationController
         }
 
         // Charger les settings de l'école
-        $settingsStore = new SettingsStore($this->db);
+        $paymentTeachingTypeId = 0;
+        if ($payment && !empty($payment['class_id'])) {
+            $classTypeStmt = $this->db->prepare('SELECT teaching_type_id FROM classes WHERE id = ?');
+            $classTypeStmt->execute([(int) $payment['class_id']]);
+            $paymentTeachingTypeId = (int) ($classTypeStmt->fetchColumn() ?: 0);
+        }
+        $settingsStore = new SettingsStore($this->db, $paymentTeachingTypeId);
         $settings = $settingsStore->all();
 
         // Gestion des actions spéciales (Voir, PDF, Imprimer) pour un reçu valide

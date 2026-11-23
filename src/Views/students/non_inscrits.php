@@ -44,6 +44,10 @@ ob_start(); ?>
                     <a href="/students/non-inscrits" class="btn btn-light rounded-circle p-0 d-flex align-items-center justify-content-center reset-btn" style="width: 42px; height: 42px; min-width: 42px;" title="<?= __('clear_filters') ?? 'Réinitialiser' ?>">
                         <i class="bi bi-arrow-counterclockwise fs-5"></i>
                     </a>
+                    <button type="button" class="btn btn-success rounded-pill px-3 fw-bold d-flex align-items-center gap-2" id="btn-validate-all-imported" style="height: 42px;">
+                        <i class="bi bi-check2-all"></i>
+                        <span>Valider tous les élèves importés</span>
+                    </button>
                 </div>
             </div>
 
@@ -420,6 +424,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const bulkActionsBar = document.getElementById('bulk-actions-bar');
     const selectedCountSpan = document.getElementById('selected-count');
     const btnBulkValidate = document.getElementById('btn-bulk-validate');
+    const btnValidateAllImported = document.getElementById('btn-validate-all-imported');
 
     function updateBulkActionsVisibility() {
         const checkedBoxes = document.querySelectorAll('.student-checkbox:checked');
@@ -500,6 +505,41 @@ document.addEventListener('DOMContentLoaded', function() {
                         Swal.fire(<?= json_encode(__('error_title'), JSON_UNESCAPED_UNICODE) ?>, <?= json_encode(__('communication_error'), JSON_UNESCAPED_UNICODE) ?>, 'error');
                     });
                 }
+            });
+        });
+    }
+
+    if (btnValidateAllImported) {
+        btnValidateAllImported.addEventListener('click', function() {
+            Swal.fire({
+                title: 'Valider tous les élèves importés ?',
+                text: 'Tous les élèves actuellement non inscrits seront inscrits et leurs frais seront synchronisés.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#198754',
+                confirmButtonText: 'Valider les inscriptions',
+                cancelButtonText: <?= json_encode(__('cancel'), JSON_UNESCAPED_UNICODE) ?>
+            }).then((result) => {
+                if (!result.isConfirmed) return;
+
+                const formData = new FormData();
+                formData.append('csrf_token', '<?= \App\Core\Session::generateCsrfToken() ?>');
+                btnValidateAllImported.disabled = true;
+
+                fetch('/students/validate-all-imported', { method: 'POST', body: formData })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire('Validation terminée', data.message, 'success').then(() => window.location.reload());
+                        } else {
+                            Swal.fire(<?= json_encode(__('error_title'), JSON_UNESCAPED_UNICODE) ?>, data.message, 'error');
+                            btnValidateAllImported.disabled = false;
+                        }
+                    })
+                    .catch(() => {
+                        Swal.fire(<?= json_encode(__('error_title'), JSON_UNESCAPED_UNICODE) ?>, <?= json_encode(__('communication_error'), JSON_UNESCAPED_UNICODE) ?>, 'error');
+                        btnValidateAllImported.disabled = false;
+                    });
             });
         });
     }

@@ -36,6 +36,19 @@ class Timetable extends BaseModel
             LEFT JOIN levels l ON cl.level_id = l.id
             LEFT JOIN timetable_weeks w ON t.week_id = w.id
             WHERE 1=1
+              AND EXISTS (
+                  SELECT 1
+                  FROM students st
+                  WHERE st.class_id = t.class_id
+                    AND st.academic_year_id = (
+                        SELECT tw.academic_year_id
+                        FROM timetable_weeks tw
+                        WHERE tw.id = t.week_id
+                    )
+                    AND st.status = 'Inscrit'
+                    AND st.actif = 1
+                    AND st.is_withdrawn = 0
+              )
         ";
         $params = [];
 
@@ -99,6 +112,19 @@ class Timetable extends BaseModel
             LEFT JOIN timetable_weeks w ON t.week_id = w.id
             LEFT JOIN users u ON t.created_by = u.id
             WHERE (tt.code = 'LMD' OR tt.nom LIKE '%Supérieur%' OR tt.nom LIKE '%LMD%' OR t.teaching_type_id = 9 OR cl.teaching_type_id = 9 OR t.teaching_type_id IS NULL)
+              AND EXISTS (
+                  SELECT 1
+                  FROM students st
+                  WHERE st.class_id = t.class_id
+                    AND st.academic_year_id = (
+                        SELECT tw.academic_year_id
+                        FROM timetable_weeks tw
+                        WHERE tw.id = t.week_id
+                    )
+                    AND st.status = 'Inscrit'
+                    AND st.actif = 1
+                    AND st.is_withdrawn = 0
+              )
         ";
         $params = [];
 

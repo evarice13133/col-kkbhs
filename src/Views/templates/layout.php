@@ -1216,6 +1216,7 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                                                 data-bs-target="#<?= $collapseId ?>" 
                                                 aria-expanded="<?= $hasActiveItem ? 'true' : 'false' ?>" 
                                                 aria-controls="<?= $collapseId ?>"
+                                                data-onboarding-tab="<?= htmlspecialchars($tab['id'], ENT_QUOTES, 'UTF-8') ?>"
                                                 style="font-size: 0.9rem; min-height: 48px;">
                                             <i class="bi <?= $tab['icon'] ?> text-primary fs-5 me-2 flex-shrink-0"></i>
                                             <span class="flex-grow-1 text-truncate"><?= htmlspecialchars($tab['title']) ?></span>
@@ -1423,7 +1424,22 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // --- INTERACTIVE SPOTLIGHT GUIDED TOUR CONTROLLER (NO DARK OVERLAY) ---
-            const tourSteps = [
+            const isDesktopNavigation = window.matchMedia('(min-width: 992px)').matches;
+            const navigationSteps = Array.from(document.querySelectorAll(
+                isDesktopNavigation
+                    ? '#desktopNavItems .nav-dropdown-trigger'
+                    : '#mobileRibbonAccordion [data-onboarding-tab]'
+            )).map(target => {
+                const tabId = target.getAttribute('data-onboarding-tab') || target.id.replace('nav-trigger-', '');
+                const title = target.querySelector('span')?.textContent.trim() || target.textContent.trim();
+                return {
+                    target: isDesktopNavigation ? `#${target.id}` : `[data-onboarding-tab="${tabId}"]`,
+                    mobile: !isDesktopNavigation,
+                    title,
+                    body: "<?= addslashes((string) __('layout_tour_menu_body')) ?>"
+                };
+            });
+            const introSteps = [
                 {
                     target: '#tourBrandLogo',
                     title: "<?= addslashes((string) __('layout_tour_step1_title')) ?>",
@@ -1435,20 +1451,22 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                     body: "<?= addslashes((string) __('layout_tour_step2_body')) ?>"
                 },
                 {
-                    target: '#openCmdPaletteTrigger',
+                    target: document.querySelector('#openCmdPaletteTrigger')?.getClientRects().length
+                        ? '#openCmdPaletteTrigger'
+                        : '#openCmdPaletteTriggerMobile',
                     title: "<?= addslashes((string) __('layout_tour_step3_title')) ?>",
                     body: "<?= addslashes((string) __('layout_tour_step3_body')) ?>"
-                },
-                {
-                    target: '#desktopNavItems',
-                    title: "<?= addslashes((string) __('layout_tour_step4_title')) ?>",
-                    body: "<?= addslashes((string) __('layout_tour_step4_body')) ?>"
-                },
-                {
-                    target: '#tourUserAccount',
-                    title: "<?= addslashes((string) __('layout_tour_step5_title')) ?>",
-                    body: "<?= addslashes((string) __('layout_tour_step5_body')) ?>"
                 }
+            ].filter(step => document.querySelector(step.target)?.getClientRects().length > 0);
+            const accountStep = {
+                target: '#tourUserAccount',
+                title: "<?= addslashes((string) __('layout_tour_step5_title')) ?>",
+                body: "<?= addslashes((string) __('layout_tour_step5_body')) ?>"
+            };
+            const tourSteps = [
+                ...introSteps,
+                ...navigationSteps,
+                ...(document.querySelector(accountStep.target)?.getClientRects().length ? [accountStep] : [])
             ];
 
             let currentStepIdx = 0;
@@ -1473,6 +1491,16 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                 currentStepIdx = idx;
                 const step = tourSteps[idx];
                 const targetEl = document.querySelector(step.target);
+                const mobileDrawer = document.getElementById('mobileRibbonDrawer');
+                if (step.mobile && mobileDrawer && window.bootstrap?.Offcanvas) {
+                    window.bootstrap.Offcanvas.getOrCreateInstance(mobileDrawer).show();
+                    const collapse = targetEl?.closest('.accordion-item')?.querySelector('.accordion-collapse');
+                    if (collapse && window.bootstrap.Collapse) {
+                        window.bootstrap.Collapse.getOrCreateInstance(collapse, { toggle: false }).show();
+                    }
+                } else if (mobileDrawer?.classList.contains('show') && window.bootstrap?.Offcanvas) {
+                    window.bootstrap.Offcanvas.getOrCreateInstance(mobileDrawer).hide();
+                }
 
                 stepBadge.textContent = `<?= addslashes((string) __('layout_step')) ?> ${idx + 1} / ${tourSteps.length}`;
                 titleEl.textContent = step.title;
@@ -1484,6 +1512,9 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
                 card.style.display = 'block';
 
                 if (targetEl) {
+                    if (step.mobile) {
+                        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
                     targetEl.classList.add('onboarding-highlight');
                     const rect = targetEl.getBoundingClientRect();
                     const cardHeight = 200;
@@ -1507,7 +1538,11 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
             const endTour = () => {
                 card.style.display = 'none';
                 document.querySelectorAll('.onboarding-highlight').forEach(el => el.classList.remove('onboarding-highlight'));
-                localStorage.setItem('nm_tour_completed', 'true');
+                const mobileDrawer = document.getElementById('mobileRibbonDrawer');
+                if (mobileDrawer?.classList.contains('show') && window.bootstrap?.Offcanvas) {
+                    window.bootstrap.Offcanvas.getOrCreateInstance(mobileDrawer).hide();
+                }
+                localStorage.setItem('nm_tour_completed_v2', 'true');
             };
 
             if (startBtn) {
@@ -1527,7 +1562,7 @@ $onboarding_data = $onboardingService->getOnboardingState($user_id, (string) $us
             }
 
             // Auto-trigger tour for first-time visitors
-            if (!localStorage.getItem('nm_tour_completed')) {
+            if (!localStorage.getItem('nm_tour_completed_v2')) {
                 setTimeout(() => showTourStep(0), 1200);
             }
 

@@ -274,10 +274,6 @@ class AcademicYearController
 
         $cloneClasses = isset($_POST['clone_classes']);
 
-        $cloneSubjects = isset($_POST['clone_subjects']);
-
-        $cloneAssignments = isset($_POST['clone_assignments']);
-
         $archiveCurrent = isset($_POST['archive_current']);
 
 
@@ -326,45 +322,21 @@ class AcademicYearController
 
 
 
-            if ($cloneSubjects) {
-
-                // Classes are now shared across years, so we can directly use the class_id
-                $stmt = $this->db->prepare("
-
-                    INSERT INTO subject_classes (subject_id, class_id, academic_year_id)
-
-                    SELECT subject_id, class_id, ?
-
-                    FROM subject_classes
-
-                    WHERE academic_year_id = ?
-
-                ");
-
-                $stmt->execute([$newYearId, $currentYearId]);
-
-            }
-
-
-
-            if ($cloneAssignments) {
-
-                // Classes are now shared across years, so we can directly use the class_id
-                $stmt = $this->db->prepare("
-
-                    INSERT INTO teacher_assignments (user_id, subject_id, class_id, academic_year_id)
-
-                    SELECT user_id, subject_id, class_id, ?
-
-                    FROM teacher_assignments
-
-                    WHERE academic_year_id = ?
-
-                ");
-
-                $stmt->execute([$newYearId, $currentYearId]);
-
-            }
+            // Matière-classe is structural for the year and must not depend on
+            // whether teacher assignments are copied to the new year.
+            $stmt = $this->db->prepare(
+                'INSERT INTO subject_classes (subject_id, class_id, academic_year_id)
+                 SELECT source.subject_id, source.class_id, ?
+                 FROM subject_classes source
+                 WHERE source.academic_year_id = ?
+                   AND NOT EXISTS (
+                       SELECT 1 FROM subject_classes target
+                       WHERE target.subject_id = source.subject_id
+                         AND target.class_id = source.class_id
+                         AND target.academic_year_id = ?
+                   )'
+            );
+            $stmt->execute([$newYearId, $currentYearId, $newYearId]);
 
 
 

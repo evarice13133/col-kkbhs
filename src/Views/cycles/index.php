@@ -246,10 +246,10 @@ $filters = [
                         </label>
                         <div class="input-group-modern">
                             <span class="input-group-text-modern"><i class="bi bi-diagram-3"></i></span>
-                            <select name="teaching_type_id" id="cycle_teaching_type_id" class="form-select premium-input" required>
-                                <option value="" disabled selected><?= __('select_teaching_type') ?? 'Sélectionner le type' ?></option>
+                            <select name="teaching_type_id" id="cycle_teaching_type_id" class="form-select premium-input" data-default-teaching-type-id="<?= htmlspecialchars((string) ($filters['teaching_type_id'] ?? '')) ?>" required>
+                                <option value="" disabled <?= empty($filters['teaching_type_id']) ? 'selected' : '' ?>><?= __('select_teaching_type') ?? 'Sélectionner le type' ?></option>
                                 <?php foreach ($teachingTypes as $tt): ?>
-                                    <option value="<?= $tt['id'] ?>">
+                                    <option value="<?= $tt['id'] ?>" <?= (int) ($filters['teaching_type_id'] ?? 0) === (int) $tt['id'] ? 'selected' : '' ?>>
                                         <?= htmlspecialchars((string) $tt['nom']) ?>
                                     </option>
                                 <?php endforeach; ?>
@@ -267,7 +267,7 @@ $filters = [
                             <?php foreach ($allLevels as $lvl): ?>
                                 <div class="col-6">
                                     <div class="form-check">
-                                        <input class="form-check-input cycle-level-checkbox" type="checkbox" name="level_ids[]" value="<?= $lvl['id'] ?>" id="level_chk_<?= $lvl['id'] ?>">
+                                        <input class="form-check-input cycle-level-checkbox" type="checkbox" name="level_ids[]" value="<?= $lvl['id'] ?>" data-teaching-type-id="<?= (int) $lvl['teaching_type_id'] ?>" id="level_chk_<?= $lvl['id'] ?>">
                                         <label class="form-check-label small fw-semibold text-main-theme cursor-pointer" for="level_chk_<?= $lvl['id'] ?>">
                                             <?= htmlspecialchars((string)$lvl['nom']) ?>
                                         </label>
@@ -597,9 +597,15 @@ $filters = [
 document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.getElementById('search-input');
     const teachingTypeSelect = document.getElementById('teaching-type-select');
+    const cycleTeachingTypeSelect = document.getElementById('cycle_teaching_type_id');
     const statusSelect = document.getElementById('status-select');
     const filterForm = document.getElementById('cycle-filter-form');
     let debounceTimer;
+
+    if (cycleTeachingTypeSelect) {
+        cycleTeachingTypeSelect.addEventListener('change', updateCycleLevelVisibility);
+        updateCycleLevelVisibility();
+    }
 
     if (searchInput && filterForm) {
         searchInput.addEventListener('input', function () {
@@ -623,6 +629,19 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
+function updateCycleLevelVisibility() {
+    const teachingTypeSelect = document.getElementById('cycle_teaching_type_id');
+    if (!teachingTypeSelect) return;
+
+    const teachingTypeId = teachingTypeSelect.value;
+    document.querySelectorAll('.cycle-level-checkbox').forEach(chk => {
+        const levelContainer = chk.closest('.col-6');
+        const matchesTeachingType = !teachingTypeId || chk.dataset.teachingTypeId === teachingTypeId;
+        if (levelContainer) levelContainer.hidden = !matchesTeachingType;
+        if (!matchesTeachingType) chk.checked = false;
+    });
+}
+
 function openCreateCycleModal() {
     const form = document.getElementById('cycleForm');
     if (!form) return;
@@ -632,7 +651,9 @@ function openCreateCycleModal() {
     document.getElementById('cycleSubmitBtnText').textContent = "<?= addslashes(__('save') ?? 'Enregistrer') ?>";
     document.getElementById('cycleModalIcon').innerHTML = '<i class="bi bi-stack fs-4"></i>';
     document.getElementById('cycle_nom').value = '';
-    document.getElementById('cycle_teaching_type_id').value = '';
+    const teachingTypeSelect = document.getElementById('cycle_teaching_type_id');
+    teachingTypeSelect.value = teachingTypeSelect.dataset.defaultTeachingTypeId || '';
+    updateCycleLevelVisibility();
 
     document.querySelectorAll('.cycle-level-checkbox').forEach(chk => chk.checked = false);
 
@@ -655,6 +676,7 @@ function openEditCycleModal(cy) {
     document.querySelectorAll('.cycle-level-checkbox').forEach(chk => {
         chk.checked = selectedLevelIds.includes(String(chk.value));
     });
+    updateCycleLevelVisibility();
 
     const modal = new bootstrap.Modal(document.getElementById('cycleModal'));
     modal.show();
@@ -688,5 +710,4 @@ function confirmToggleCycle(cycleId, cycleName, isCurrentlyActive) {
 $content = ob_get_clean();
 include __DIR__ . '/../templates/layout.php';
 ?>
-
 

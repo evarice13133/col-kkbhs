@@ -53,6 +53,42 @@
                     </div>
                 </div>
             </div>
+            <div class="col-md-12 border-top border-theme-light pt-4 mt-2">
+                <h6 class="fw-black text-primary m-0 text-uppercase letter-spacing-1"><?= __('matricule_settings') ?></h6>
+            </div>
+            <div class="col-md-6 mt-2">
+                <div class="mb-4">
+                    <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1" for="matricule_format"><?= __('matricule_format_label') ?></label>
+                    <input type="text" name="matricule_format" id="matricule_format" class="form-control premium-input font-monospace"
+                        value="<?= htmlspecialchars((string) ($settings['matricule_format'] ?? '{SCHOOL_CODE}-{CLASS}-MT{COUNTER}')) ?>" maxlength="100" required>
+                    <small class="extra-small text-muted-theme opacity-75 mt-1 d-block"><?= __('matricule_format_help') ?></small>
+                </div>
+            </div>
+            <div class="col-md-6 mt-2">
+                <div class="mb-4 p-3 border-theme-dynamic rounded-4 bg-soft-primary">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="show_teacher_names_on_bulletins" id="show_teacher_names_on_bulletins"
+                            value="1" <?= ($settings['show_teacher_names_on_bulletins'] ?? '1') === '1' ? 'checked' : '' ?>>
+                        <label class="form-check-label fw-bold text-primary" for="show_teacher_names_on_bulletins">
+                            <?= __('show_teacher_names_on_bulletins') ?>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mt-2">
+                <div class="mb-4 p-3 border-theme-dynamic rounded-4 bg-soft-primary">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="grade_entry_competency_required" id="grade_entry_competency_required"
+                            value="1" <?= ($settings['grade_entry_competency_required'] ?? '0') === '1' ? 'checked' : '' ?>>
+                        <label class="form-check-label fw-bold text-primary" for="grade_entry_competency_required">
+                            <?= __('grade_entry_competency_required_label') ?? 'Saisie des compétences obligatoire' ?>
+                        </label>
+                    </div>
+                    <small class="extra-small text-muted-theme opacity-75 d-block mt-1">
+                        <?= __('grade_entry_competency_required_help') ?? 'Si activé, l\'enseignant doit obligatoirement sélectionner au moins une compétence lors de l\'enregistrement des notes.' ?>
+                    </small>
+                </div>
+            </div>
                 <div class="col-md-6 mt-5">
                     <div class="mb-4">
                         <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('honor_roll_default_threshold_label') ?></label>

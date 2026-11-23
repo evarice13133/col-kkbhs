@@ -78,10 +78,10 @@
                             <?php if ($k !== 'tranches'): ?>
                                 <div>
                                     <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-0.5 rounded" style="font-size: 0.7rem; font-weight: 600;">
-                                        <?= getFriendlyFieldName($k) ?>
+                                        <?= $friendlyFieldName($k) ?>
                                     </span>
                                     <span class="text-main-theme ms-1 font-monospace" style="font-size: 0.75rem;">
-                                        <?= formatHistoryValue($k, $v) ?>
+                                        <?= $formatHistoryValue($k, $v) ?>
                                     </span>
                                 </div>
                             <?php endif; ?>
@@ -100,7 +100,7 @@
                             <?php if ($k !== 'tranches'): ?>
                                 <div>
                                     <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-0.5 rounded" style="font-size: 0.7rem; font-weight: 600;">
-                                        <?= getFriendlyFieldName($k) ?>
+                                        <?= $friendlyFieldName($k) ?>
                                     </span>
                                     <?php 
                                     // Highlight if changed
@@ -108,7 +108,7 @@
                                     $style = $changed ? 'color: var(--warning-color); font-weight: bold;' : '';
                                     ?>
                                     <span class="text-main-theme ms-1 font-monospace" style="font-size: 0.75rem; <?= $style ?>">
-                                        <?= formatHistoryValue($k, $v) ?>
+                                        <?= $formatHistoryValue($k, $v) ?>
                                         <?php if ($changed): ?>
                                             <i class="bi bi-arrow-left-short text-warning" title="<?= __('modified') ?>"></i>
                                         <?php endif; ?>

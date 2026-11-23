@@ -165,17 +165,33 @@ ob_start();
     </div>
 
     <!-- Table Card -->
-    <div class="modern-card border-0 shadow-sm rounded-4 overflow-hidden animate-fade-in">
-        <div class="table-responsive">
+    <div class="modern-card border-0 shadow-sm rounded-4 overflow-hidden animate-fade-in timetable-list-card">
+        <div class="timetable-list-heading">
+            <div class="d-flex align-items-center gap-3">
+                <span class="timetable-list-heading-icon" aria-hidden="true">
+                    <i class="bi bi-calendar2-week"></i>
+                </span>
+                <div>
+                    <h3 class="timetable-list-title">Grilles planifiées</h3>
+                    <p class="timetable-list-description">Retrouvez les périodes, classes et actions de chaque grille.</p>
+                </div>
+            </div>
+            <span class="timetable-list-count">
+                <i class="bi bi-grid-3x3-gap me-1" aria-hidden="true"></i><?= count($timetables) ?>
+                <?= count($timetables) > 1 ? 'grilles' : 'grille' ?>
+            </span>
+        </div>
+        <div class="table-responsive timetable-table-scroll">
             <table class="table table-modern align-middle mb-0" id="timetablesTable">
+                <caption class="visually-hidden">Emplois du temps planifiés et actions disponibles</caption>
                 <thead>
                     <tr>
-                        <th class="ps-4 py-3"><?= __('timetables_col_status') ?></th>
-                        <th class="py-3"><?= __('cycle') ?? 'Cycle' ?></th>
-                        <th class="py-3"><?= __('level') ?? 'Niveau' ?></th>
-                        <th class="py-3"><?= __('timetables_col_week') ?></th>
-                        <th class="py-3">Classes concernées</th>
-                        <th class="pe-4 text-end py-3"><?= __('timetables_col_actions') ?></th>
+                        <th scope="col" class="ps-4 py-3"><?= __('timetables_col_status') ?></th>
+                        <th scope="col" class="py-3"><?= __('cycle') ?? 'Cycle' ?></th>
+                        <th scope="col" class="py-3"><?= __('level') ?? 'Niveau' ?></th>
+                        <th scope="col" class="py-3"><?= __('timetables_col_week') ?></th>
+                        <th scope="col" class="py-3">Classes concernées</th>
+                        <th scope="col" class="pe-4 text-end py-3"><?= __('timetables_col_actions') ?></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -267,33 +283,59 @@ ob_start();
 
                                 <!-- Classes concernées -->
                                 <td>
-                                    <div class="d-flex flex-wrap gap-1.5 align-items-center">
-                                        <?php if (!empty($t['classes'])): ?>
-                                            <?php foreach ($t['classes'] as $cls): ?>
-                                                <span class="badge class-badge rounded-pill px-2.5 py-1 fw-bold">
-                                                    <i class="bi bi-mortarboard-fill me-1 opacity-75"></i><?= h($cls['nom']) ?>
-                                                </span>
-                                            <?php endforeach; ?>
-                                        <?php elseif (!empty($t['classes_list'])): ?>
+                                    <?php if (!empty($t['classes'])): ?>
+                                        <?php $classCount = count($t['classes']); ?>
+                                        <?php if ($classCount > 5): ?>
+                                            <details class="timetable-class-details">
+                                                <summary>
+                                                    <span class="timetable-class-count">
+                                                        <i class="bi bi-mortarboard-fill" aria-hidden="true"></i>
+                                                        <?= $classCount ?> classes
+                                                    </span>
+                                                    <span class="timetable-class-toggle">Liste complète</span>
+                                                    <i class="bi bi-chevron-down timetable-class-chevron" aria-hidden="true"></i>
+                                                </summary>
+                                                <div class="timetable-class-list">
+                                                    <?php foreach ($t['classes'] as $cls): ?>
+                                                        <span class="badge class-badge rounded-pill px-2.5 py-1 fw-bold">
+                                                            <i class="bi bi-mortarboard-fill me-1 opacity-75" aria-hidden="true"></i><?= h($cls['nom']) ?>
+                                                        </span>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                            </details>
+                                        <?php else: ?>
+                                            <div class="timetable-class-list">
+                                                <?php foreach ($t['classes'] as $cls): ?>
+                                                    <span class="badge class-badge rounded-pill px-2.5 py-1 fw-bold">
+                                                        <i class="bi bi-mortarboard-fill me-1 opacity-75" aria-hidden="true"></i><?= h($cls['nom']) ?>
+                                                    </span>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    <?php elseif (!empty($t['classes_list'])): ?>
+                                        <div class="timetable-class-list">
                                             <span class="badge class-badge rounded-pill px-2.5 py-1 fw-bold">
                                                 <?= h($t['classes_list']) ?>
                                             </span>
-                                        <?php else: ?>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="timetable-class-list">
                                             <span
                                                 class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 rounded-pill px-2 py-0.5 extra-small">
                                                 Toutes les classes
                                             </span>
-                                        <?php endif; ?>
-                                    </div>
+                                        </div>
+                                    <?php endif; ?>
                                 </td>
 
                                 <!-- Actions -->
                                 <td class="pe-4 text-end">
-                                    <div class="d-flex align-items-center justify-content-end gap-1 table-row-actions">
+                                    <div class="d-flex align-items-center justify-content-end gap-1 table-row-actions"
+                                        role="group" aria-label="Actions de l'emploi du temps">
                                         <a href="/timetables/grid?cycle_id=<?= $t['cycle_id'] ?>&level_id=<?= $t['level_id'] ?>&week_id=<?= $t['week_id'] ?>"
                                             class="btn btn-sm btn-action-modern text-primary hover-scale transition-all"
-                                            title="Consulter et planifier la grille">
-                                            <i class="bi bi-grid-3x3-gap-fill fs-5"></i>
+                                            title="Consulter et planifier la grille" aria-label="Consulter et planifier la grille">
+                                            <i class="bi bi-grid-3x3-gap-fill fs-5" aria-hidden="true"></i>
                                         </a>
 
                                         <?php if ($canManage): ?>
@@ -304,8 +346,8 @@ ob_start();
                                                     <input type="hidden" name="timetable_ids" value="<?= $t['timetable_ids'] ?>">
                                                     <button type="submit"
                                                         class="btn btn-sm btn-action-modern text-warning hover-scale transition-all"
-                                                        title="Dépublier (remettre en brouillon)">
-                                                        <i class="bi bi-arrow-counterclockwise fs-5"></i>
+                                                        title="Dépublier (remettre en brouillon)" aria-label="Dépublier et remettre en brouillon">
+                                                        <i class="bi bi-arrow-counterclockwise fs-5" aria-hidden="true"></i>
                                                     </button>
                                                 </form>
                                             <?php else: ?>
@@ -315,8 +357,8 @@ ob_start();
                                                     <input type="hidden" name="timetable_ids" value="<?= $t['timetable_ids'] ?>">
                                                     <button type="submit"
                                                         class="btn btn-sm btn-action-modern text-success hover-scale transition-all"
-                                                        title="Publier officiellement l'emploi du temps">
-                                                        <i class="bi bi-check-circle-fill fs-5"></i>
+                                                        title="Publier officiellement l'emploi du temps" aria-label="Publier officiellement l'emploi du temps">
+                                                        <i class="bi bi-check-circle-fill fs-5" aria-hidden="true"></i>
                                                     </button>
                                                 </form>
                                             <?php endif; ?>
@@ -325,21 +367,22 @@ ob_start();
                                         <a href="/timetables/pdf?cycle_id=<?= $t['cycle_id'] ?>&level_id=<?= $t['level_id'] ?>&week_id=<?= $t['week_id'] ?>&mode=print"
                                             target="_blank"
                                             class="btn btn-sm btn-action-modern text-secondary hover-scale transition-all"
-                                            title="<?= __('print') ?? 'Imprimer' ?>">
-                                            <i class="bi bi-printer fs-5"></i>
+                                            rel="noopener"
+                                            title="<?= __('print') ?? 'Imprimer' ?>" aria-label="<?= __('print') ?? 'Imprimer' ?>">
+                                            <i class="bi bi-printer fs-5" aria-hidden="true"></i>
                                         </a>
                                         <a href="/timetables/pdf?cycle_id=<?= $t['cycle_id'] ?>&level_id=<?= $t['level_id'] ?>&week_id=<?= $t['week_id'] ?>&mode=download"
                                             class="btn btn-sm btn-action-modern text-danger hover-scale transition-all"
-                                            title="Télécharger l'emploi du temps en PDF">
-                                            <i class="bi bi-file-earmark-pdf-fill fs-5"></i>
+                                            title="Télécharger l'emploi du temps en PDF" aria-label="Télécharger l'emploi du temps en PDF">
+                                            <i class="bi bi-file-earmark-pdf-fill fs-5" aria-hidden="true"></i>
                                         </a>
 
                                         <?php if ($canManage): ?>
                                             <button type="button"
                                                 class="btn btn-sm btn-action-modern text-danger hover-scale transition-all"
                                                 data-impact-delete="timetable" data-id="<?= explode(',', $t['timetable_ids'])[0] ?>"
-                                                title="Radiographie d'impact & Suppression">
-                                                <i class="bi bi-trash3-fill fs-5"></i>
+                                                title="Radiographie d'impact & Suppression" aria-label="Analyser l'impact et supprimer l'emploi du temps">
+                                                <i class="bi bi-trash3-fill fs-5" aria-hidden="true"></i>
                                             </button>
                                         <?php endif; ?>
                                     </div>
@@ -605,6 +648,250 @@ ob_start();
         background-color: #1e293b !important;
         color: #f8fafc !important;
         border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    /* Timetable list */
+    .timetable-list-card,
+    .timetable-list-card:hover {
+        border-style: solid !important;
+        border-color: var(--border-color, rgba(148, 163, 184, 0.18)) !important;
+        transform: none !important;
+    }
+
+    .timetable-list-card {
+        overflow: hidden !important;
+    }
+
+    .timetable-list-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1.15rem 1.35rem;
+        border-bottom: 1px solid var(--border-color, rgba(148, 163, 184, 0.18));
+        background: linear-gradient(110deg, rgba(26, 115, 232, 0.055), transparent 70%);
+    }
+
+    .timetable-list-heading-icon {
+        display: inline-flex;
+        width: 42px;
+        height: 42px;
+        flex: 0 0 42px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 13px;
+        background: rgba(26, 115, 232, 0.1);
+        color: #1a73e8;
+        font-size: 1.15rem;
+    }
+
+    .timetable-list-title {
+        margin: 0;
+        color: var(--text-main, #1e293b);
+        font-size: 1rem;
+        font-weight: 750;
+        letter-spacing: -0.02em;
+    }
+
+    .timetable-list-description {
+        margin: 0.2rem 0 0;
+        color: var(--text-muted, #64748b);
+        font-size: 0.78rem;
+    }
+
+    .timetable-list-count {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.42rem 0.72rem;
+        border: 1px solid rgba(26, 115, 232, 0.16);
+        border-radius: 999px;
+        background: rgba(26, 115, 232, 0.07);
+        color: #1a73e8;
+        font-size: 0.75rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .timetable-table-scroll {
+        overscroll-behavior-x: contain;
+        scrollbar-color: rgba(100, 116, 139, 0.45) transparent;
+        scrollbar-width: thin;
+    }
+
+    #timetablesTable.table-modern {
+        min-width: 1040px;
+        table-layout: auto;
+    }
+
+    #timetablesTable.table-modern thead th {
+        padding-top: 0.9rem;
+        padding-bottom: 0.9rem;
+        border-bottom-width: 1px;
+        font-size: 0.69rem;
+        letter-spacing: 0.075em;
+        white-space: nowrap;
+    }
+
+    #timetablesTable.table-modern tbody td {
+        padding-top: 1.05rem;
+        padding-bottom: 1.05rem;
+        border-bottom: 1px solid var(--border-color, rgba(148, 163, 184, 0.14));
+        vertical-align: middle;
+    }
+
+    #timetablesTable.table-modern tbody tr:last-child td {
+        border-bottom: 0;
+    }
+
+    #timetablesTable .table-row-actions {
+        flex-wrap: nowrap;
+        white-space: nowrap;
+    }
+
+    #timetablesTable .btn-action-modern {
+        width: 38px;
+        height: 38px;
+        flex: 0 0 38px;
+        border-radius: 11px;
+    }
+
+    #timetablesTable .btn-action-modern:focus-visible,
+    .timetable-class-details summary:focus-visible {
+        outline: 3px solid rgba(26, 115, 232, 0.4);
+        outline-offset: 2px;
+    }
+
+    .timetable-class-list {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.38rem;
+    }
+
+    #timetablesTable .class-badge {
+        padding: 0.36rem 0.62rem !important;
+        border-radius: 999px !important;
+        font-size: 0.7rem;
+        letter-spacing: 0.01em;
+        white-space: nowrap;
+    }
+
+    .timetable-class-details {
+        min-width: 145px;
+    }
+
+    .timetable-class-details summary {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        padding: 0.42rem 0.62rem;
+        border: 1px solid rgba(26, 115, 232, 0.16);
+        border-radius: 10px;
+        background: rgba(26, 115, 232, 0.055);
+        cursor: pointer;
+        list-style: none;
+        user-select: none;
+    }
+
+    .timetable-class-details summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .timetable-class-count {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.32rem;
+        color: #1a73e8;
+        font-size: 0.76rem;
+        font-weight: 750;
+        white-space: nowrap;
+    }
+
+    .timetable-class-toggle {
+        color: var(--text-muted, #64748b);
+        font-size: 0.69rem;
+        white-space: nowrap;
+    }
+
+    .timetable-class-chevron {
+        color: var(--text-muted, #64748b);
+        font-size: 0.68rem;
+        transition: transform 0.2s ease;
+    }
+
+    .timetable-class-details[open] summary {
+        margin-bottom: 0.55rem;
+    }
+
+    .timetable-class-details[open] .timetable-class-chevron {
+        transform: rotate(180deg);
+    }
+
+    .timetable-class-details .timetable-class-list {
+        max-width: 340px;
+    }
+
+    [data-theme="dark"] .timetable-list-heading {
+        background: linear-gradient(110deg, rgba(96, 165, 250, 0.1), transparent 70%);
+    }
+
+    [data-theme="dark"] .timetable-list-heading-icon {
+        background: rgba(96, 165, 250, 0.15);
+        color: #93c5fd;
+    }
+
+    [data-theme="dark"] .timetable-list-count,
+    [data-theme="dark"] .timetable-class-details summary {
+        border-color: rgba(96, 165, 250, 0.2);
+        background: rgba(96, 165, 250, 0.1);
+    }
+
+    [data-theme="dark"] .timetable-list-count,
+    [data-theme="dark"] .timetable-class-count {
+        color: #93c5fd;
+    }
+
+    @media (max-width: 767.98px) {
+        .timetable-list-heading {
+            align-items: flex-start;
+            padding: 1rem;
+        }
+
+        .timetable-list-heading-icon {
+            width: 38px;
+            height: 38px;
+            flex-basis: 38px;
+        }
+
+        .timetable-list-description {
+            max-width: 230px;
+            line-height: 1.45;
+        }
+
+        .timetable-list-count {
+            padding: 0.35rem 0.55rem;
+            font-size: 0.7rem;
+        }
+
+        #timetablesTable.table-modern {
+            min-width: 980px;
+        }
+
+        #timetablesTable.table-modern thead th {
+            padding-right: 0.7rem;
+            padding-left: 0.7rem;
+        }
+
+        #timetablesTable.table-modern tbody td {
+            padding-right: 0.7rem;
+            padding-left: 0.7rem;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .timetable-class-chevron {
+            transition: none;
+        }
     }
 </style>
 

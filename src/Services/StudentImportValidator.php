@@ -11,6 +11,7 @@ class StudentImportValidator
     private array $errors = [];
     private array $validRows = [];
     private array $cache = [];
+    private array $seenMatricules = [];
 
     public function __construct(PDO $db)
     {
@@ -22,6 +23,7 @@ class StudentImportValidator
     {
         $this->errors = [];
         $this->validRows = [];
+        $this->seenMatricules = [];
 
         try {
             $spreadsheet = IOFactory::load($filePath);
@@ -32,23 +34,39 @@ class StudentImportValidator
                 if ($sheetTitle === 'DATASOURCES') continue;
 
                 $data = $sheet->toArray(null, true, true, true);
-                if (count($data) < 2) continue;
+                if (count($data) < 1) {
+                    $this->errors[] = "Feuille '{$sheetTitle}' : le fichier ne contient pas de ligne d'en-tête.";
+                    continue;
+                }
 
                 // Validate headers
                 $headers = array_shift($data);
                 $headerMap = $this->parseHeaders($headers, $lang);
 
-                if (empty($headerMap['nom']) || empty($headerMap['prenom'])) {
-                    $this->errors[] = "Feuille '{$sheetTitle}' : Format d'en-tête invalide.";
+                $missingHeaders = [];
+                foreach (['nom' => 'Nom', 'prenom' => 'Prénom', 'class' => 'Classe'] as $key => $label) {
+                    if (empty($headerMap[$key])) {
+                        $missingHeaders[] = $label;
+                    }
+                }
+                if ($missingHeaders !== []) {
+                    $presentHeaders = array_values(array_filter(array_map(static fn($value): string => trim((string) $value), $headers)));
+                    $this->errors[] = "Feuille '{$sheetTitle}' : colonnes obligatoires absentes : " . implode(', ', $missingHeaders) . ". Colonnes détectées : " . ($presentHeaders ? implode(' | ', $presentHeaders) : '[aucune]') . ".";
+                    continue;
+                }
+
+                if (count($data) < 2) {
+                    $this->errors[] = "Feuille '{$sheetTitle}' : aucune ligne élève à importer sous les en-têtes.";
                     continue;
                 }
 
                 // Process rows
                 foreach ($data as $rowIndex => $row) {
                     $line = $rowIndex + 2; // +1 for 0-index, +1 for header
-                    if (empty(trim($row['A'] ?? ''))) continue;
+                    $hasContent = count(array_filter($row, static fn($value): bool => trim((string) $value) !== '')) > 0;
+                    if (!$hasContent) continue;
 
-                    $this->validateRow($row, $line, $headerMap, $teachingTypeId);
+                    $this->validateRow($row, $line, $headerMap, $teachingTypeId, $sheetTitle);
                 }
             }
 
@@ -95,18 +113,19 @@ class StudentImportValidator
         return $headerMap;
     }
 
-    private function validateRow(array $row, int $line, array $headerMap, int $teachingTypeId)
+    private function validateRow(array $row, int $line, array $headerMap, int $teachingTypeId, string $sheetTitle = '')
     {
+        $context = $sheetTitle !== '' ? "Feuille '{$sheetTitle}', ligne {$line}" : "Ligne {$line}";
         $nom = trim($row[$headerMap['nom'] ?? 'A'] ?? '');
         $prenom = trim($row[$headerMap['prenom'] ?? 'B'] ?? '');
-        $sexe = strtoupper(trim($row[$headerMap['sexe'] ?? 'C'] ?? ''));
-        $dob = trim($row[$headerMap['date_naissance'] ?? 'D'] ?? '');
-        $lieuNais = trim($row[$headerMap['lieu_naissance'] ?? 'E'] ?? '');
-        $className = trim($row[$headerMap['class'] ?? 'F'] ?? '');
-        $isRedoublantRaw = strtoupper(trim($row[$headerMap['redoubl'] ?? 'H'] ?? ''));
-        $providedMatricule = trim($row[$headerMap['matricule'] ?? 'C'] ?? '');
-        $parentContact = trim($row[$headerMap['parent_contact'] ?? 'I'] ?? '');
-        $guardianContact = trim($row[$headerMap['guardian_contact'] ?? 'J'] ?? '');
+        $sexe = strtoupper(trim((string) ($row[$headerMap['sexe'] ?? ''] ?? '')));
+        $dob = trim((string) ($row[$headerMap['date_naissance'] ?? ''] ?? ''));
+        $lieuNais = trim((string) ($row[$headerMap['lieu_naissance'] ?? ''] ?? ''));
+        $className = trim((string) ($row[$headerMap['class'] ?? ''] ?? ''));
+        $isRedoublantRaw = strtoupper(trim((string) ($row[$headerMap['redoubl'] ?? ''] ?? '')));
+        $providedMatricule = trim((string) ($row[$headerMap['matricule'] ?? ''] ?? ''));
+        $parentContact = trim((string) ($row[$headerMap['parent_contact'] ?? ''] ?? ''));
+        $guardianContact = trim((string) ($row[$headerMap['guardian_contact'] ?? ''] ?? ''));
 
         // Ignore sample row
         if ($nom === 'Ndogmo' && $prenom === 'Evarice' && strtoupper($providedMatricule) === 'MT-0001') {
@@ -114,19 +133,34 @@ class StudentImportValidator
         }
 
         if (empty($nom) || empty($prenom)) {
-            $this->errors[] = "Ligne {$line} : Nom et Prénom sont requis.";
+            $this->errors[] = "{$context} : les champs Nom et Prénom sont obligatoires (Nom='" . ($nom !== '' ? $nom : '[vide]') . "', Prénom='" . ($prenom !== '' ? $prenom : '[vide]') . "').";
             return;
         }
 
         if (empty($className)) {
-            $this->errors[] = "Ligne {$line} : La classe est obligatoire.";
+            $this->errors[] = "{$context} : le champ Classe est obligatoire (Nom='{$nom}', Prénom='{$prenom}').";
+            return;
+        }
+
+        if ($sexe !== '' && !in_array($sexe, ['M', 'F'], true)) {
+            $this->errors[] = "{$context} : valeur Sexe invalide '{$sexe}'. Valeurs autorisées : M ou F (Nom='{$nom}', Prénom='{$prenom}').";
+            return;
+        }
+
+        if ($dob !== '' && $this->formatDate($dob) === null) {
+            $this->errors[] = "{$context} : date de naissance invalide '{$dob}'. Formats acceptés : JJ/MM/AAAA ou AAAA/MM/JJ (Nom='{$nom}', Prénom='{$prenom}').";
+            return;
+        }
+
+        if ($isRedoublantRaw !== '' && !in_array($isRedoublantRaw, ['OUI', 'NON', 'YES', 'NO'], true)) {
+            $this->errors[] = "{$context} : valeur Redoublant invalide '{$isRedoublantRaw}'. Valeurs acceptées : OUI/NON ou YES/NO (Nom='{$nom}', Prénom='{$prenom}').";
             return;
         }
 
         // Validate Class
         $normalizedClass = $this->normalizeString($className);
         if (!isset($this->cache['classes'][$normalizedClass])) {
-            $this->errors[] = "Ligne {$line} : Classe '{$className}' introuvable dans le système.";
+            $this->errors[] = "{$context} : classe '{$className}' introuvable (Nom='{$nom}', Prénom='{$prenom}').";
             return;
         }
 
@@ -134,22 +168,25 @@ class StudentImportValidator
         $classTeachingTypeId = $this->cache['class_teaching_types'][$classId] ?? null;
 
         if ($classTeachingTypeId !== $teachingTypeId) {
-            $this->errors[] = "Ligne {$line} : La classe '{$className}' n'appartient pas au type d'enseignement sélectionné.";
+            $this->errors[] = "{$context} : la classe '{$className}' (classe_id={$classId}, teaching_type_id={$classTeachingTypeId}) ne correspond pas au type d'enseignement sélectionné (teaching_type_id={$teachingTypeId}).";
             return;
         }
 
         // Validate Matricule
         if ($providedMatricule !== '') {
+            $matriculeKey = mb_strtolower($providedMatricule, 'UTF-8');
+            if (isset($this->seenMatricules[$matriculeKey])) {
+                $this->errors[] = "{$context} : matricule '{$providedMatricule}' dupliqué dans le fichier; il apparaît déjà à la ligne {$this->seenMatricules[$matriculeKey]}.";
+                return;
+            }
+            $this->seenMatricules[$matriculeKey] = $line;
+
             $chk = $this->db->prepare("SELECT COUNT(*) FROM students WHERE email = ?");
             $chk->execute([$providedMatricule]);
             if ((int) $chk->fetchColumn() > 0) {
-                $this->errors[] = "Ligne {$line} : Matricule '{$providedMatricule}' déjà utilisé.";
+                $this->errors[] = "{$context} : matricule '{$providedMatricule}' déjà utilisé pour Nom='{$nom}', Prénom='{$prenom}'.";
                 return;
             }
-        }
-
-        if (!in_array($sexe, ['M', 'F'])) {
-            $sexe = null;
         }
 
         $isRedoublant = in_array($isRedoublantRaw, ['OUI', 'YES']) ? 1 : 0;

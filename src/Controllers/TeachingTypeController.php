@@ -100,6 +100,30 @@ class TeachingTypeController
         }
     }
 
+    public function toggleStatus($id)
+    {
+        try {
+            $stmt = $this->db->prepare("SELECT actif FROM teaching_types WHERE id = ?");
+            $stmt->execute([(int) $id]);
+            $currentStatus = $stmt->fetchColumn();
+
+            if ($currentStatus === false) {
+                Session::setFlash('error', "Type d’enseignement introuvable.");
+            } else {
+                $newStatus = (int) $currentStatus === 1 ? 0 : 1;
+                $update = $this->db->prepare("UPDATE teaching_types SET actif = ? WHERE id = ?");
+                $update->execute([$newStatus, (int) $id]);
+                Session::setFlash('success', __('updated_success') ?? 'Statut du type d’enseignement mis à jour.');
+            }
+        } catch (\PDOException $e) {
+            error_log('Teaching type status update failed: ' . $e->getMessage());
+            Session::setFlash('error', __('error_generic') ?? 'Erreur lors de la mise à jour.');
+        }
+
+        header("Location: /teaching_types");
+        exit;
+    }
+
     public function delete($id)
     {
         if (Session::get('user_role') !== 'superadmin') {

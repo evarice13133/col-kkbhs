@@ -2666,7 +2666,7 @@ small {
 
 /* Layout Resets for Ribbon */
 body {
-    overflow-y: auto !important;
+    overflow-y: visible !important;
 }
 
 .dashboard-wrapper {
@@ -3854,12 +3854,13 @@ body {
 
 /* 1. Global Touch & Overflow Safeguards */
 html, body {
-    overflow-x: hidden !important;
+    overflow-x: clip !important;
     width: 100%;
 }
 
 .dashboard-wrapper {
-    overflow-x: hidden;
+    overflow-x: clip;
+    overflow-y: visible;
     width: 100%;
 }
 

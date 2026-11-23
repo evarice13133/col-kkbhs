@@ -192,62 +192,87 @@ class AcademicYearService
     public function cloneYearData(int $fromYearId, int $toYearId, array $tables = ['classes', 'subjects', 'subject_classes']): array
     {
         $results = [];
-        
+
+        if ($fromYearId <= 0 || $toYearId <= 0 || $fromYearId === $toYearId) {
+            return [
+                'success' => false,
+                'message' => 'Clone failed: source and target academic years must be different and valid.',
+                'details' => []
+            ];
+        }
+
         try {
             $this->db->beginTransaction();
 
             foreach ($tables as $table) {
                 $count = 0;
-                
+
                 switch ($table) {
                     case 'classes':
-                        // Clone classes with new IDs but same structure
-                        $stmt = $this->db->prepare("
-                            INSERT INTO classes (nom, cycle_id, section_id, department_id, main_teacher_id, academic_year_id)
-                            SELECT nom, cycle_id, section_id, department_id, main_teacher_id, ? 
-                            FROM classes WHERE academic_year_id = ?
-                        ");
+                        $classColumns = $this->db->query("SHOW COLUMNS FROM classes")->fetchAll(PDO::FETCH_COLUMN);
+                        $cloneColumns = [];
+                        foreach ($classColumns as $columnName) {
+                            if ($columnName === 'id') {
+                                continue;
+                            }
+                            $cloneColumns[] = $columnName;
+                        }
+
+                        if (in_array('academic_year_id', $cloneColumns, true)) {
+                            $cloneColumns = array_values(array_filter($cloneColumns, static fn (string $column): bool => $column !== 'academic_year_id'));
+                        }
+
+                        if (empty($cloneColumns)) {
+                            throw new \RuntimeException('Aucune colonne exploitable pour cloner les classes.');
+                        }
+
+                        $insertSql = 'INSERT INTO classes (' . implode(', ', $cloneColumns) . ', academic_year_id) '
+                            . 'SELECT ' . implode(', ', array_map(static fn (string $column): string => 'src.' . $column, $cloneColumns))
+                            . ', ? FROM classes src WHERE src.academic_year_id = ?';
+                        $stmt = $this->db->prepare($insertSql);
                         $stmt->execute([$toYearId, $fromYearId]);
                         $count = $stmt->rowCount();
                         break;
-                        
+
                     case 'subjects':
-                        // Subjects are structural, don't clone by year
+                        // Subjects are structural and remain shared across years.
                         $count = 0;
                         break;
-                        
+
                     case 'subject_classes':
-                        // Clone subject-class associations for the new year
-                        $stmt = $this->db->prepare("
-                            INSERT INTO subject_classes (subject_id, class_id, academic_year_id)
-                            SELECT sc.subject_id, c.id, ?
-                            FROM subject_classes sc
-                            JOIN classes c ON c.nom = (
-                                SELECT c2.nom FROM classes c2 WHERE c2.id = sc.class_id AND c2.academic_year_id = ?
-                            )
-                            WHERE sc.academic_year_id = ?
-                        ");
-                        $stmt->execute([$toYearId, $fromYearId, $fromYearId]);
+                        $stmt = $this->db->prepare(
+                            'INSERT INTO subject_classes (subject_id, class_id, academic_year_id)
+                             SELECT sc.subject_id, tc.id, ?
+                             FROM subject_classes sc
+                             JOIN classes src ON src.id = sc.class_id AND src.academic_year_id = ?
+                             JOIN classes tc ON tc.nom = src.nom
+                                AND tc.section_id <=> src.section_id
+                                AND tc.department_id <=> src.department_id
+                                AND tc.academic_year_id = ?
+                             WHERE sc.academic_year_id = ?
+                             ON DUPLICATE KEY UPDATE academic_year_id = VALUES(academic_year_id)'
+                        );
+                        $stmt->execute([$toYearId, $fromYearId, $toYearId, $fromYearId]);
                         $count = $stmt->rowCount();
                         break;
                 }
-                
+
                 $results[$table] = $count;
             }
 
             $this->db->commit();
-            
+
             return [
                 'success' => true,
                 'message' => 'Data cloned successfully',
                 'details' => $results
             ];
-            
+
         } catch (\Exception $e) {
             if ($this->db->inTransaction()) {
                 $this->db->rollBack();
             }
-            
+
             return [
                 'success' => false,
                 'message' => 'Clone failed: ' . $e->getMessage(),

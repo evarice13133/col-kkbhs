@@ -51,7 +51,22 @@ class ClassController
         $limit = 16;
         $offset = ($page - 1) * $limit;
 
-        $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $academicYear = $this->academicYearService->getActiveYear();
+        $academicYearId = (int) ($academicYear['id'] ?? 0);
+        $teachingTypesStmt = $this->db->prepare(
+            "SELECT DISTINCT tt.id, tt.nom
+             FROM teaching_types tt
+             JOIN classes c ON c.teaching_type_id = tt.id AND c.status = 1
+             JOIN enrollments e ON e.class_id = c.id AND e.academic_year_id = ?
+             JOIN students st ON st.id = e.student_id
+             WHERE tt.actif = 1
+               AND st.status = 'Inscrit'
+               AND st.actif = 1
+               AND st.is_withdrawn = 0
+             ORDER BY tt.position ASC, tt.nom ASC"
+        );
+        $teachingTypesStmt->execute([$academicYearId]);
+        $teachingTypes = $teachingTypesStmt->fetchAll(PDO::FETCH_ASSOC);
         $defaultTeachingTypeId = !array_key_exists('teaching_type_id', $_GET) && !empty($teachingTypes)
             ? (int) $teachingTypes[0]['id']
             : null;
@@ -65,29 +80,142 @@ class ClassController
             exit;
         }
         
-        // Listes pour alimenter les menus déroulants de filtrage dans la vue
-        $cycles = $this->db->query("SELECT c.id, c.nom, c.teaching_type_id FROM cycles c LEFT JOIN teaching_types t ON c.teaching_type_id = t.id WHERE c.status = 1 AND (t.actif = 1 OR c.teaching_type_id IS NULL) ORDER BY c.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $sections = $this->db->query("SELECT id, nom FROM sections WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $levels = $this->db->query("SELECT l.id, l.code, l.libelle_fr, l.libelle_en, l.teaching_type_id FROM levels l LEFT JOIN teaching_types tt ON l.teaching_type_id = tt.id WHERE l.status = 1 AND (tt.actif = 1 OR l.teaching_type_id IS NULL) ORDER BY l.code ASC, l.libelle_fr ASC")->fetchAll(PDO::FETCH_ASSOC);
-        
-        // Seuls les départements actifs sont visibles pour le filtrage usuel
-        $departments = $this->db->query("SELECT d.id, d.nom, d.teaching_type_id FROM departments d LEFT JOIN teaching_types t ON d.teaching_type_id = t.id WHERE d.status = 1 AND (t.actif = 1 OR d.teaching_type_id IS NULL) ORDER BY d.nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        // Only offer structures used by active student enrollments in the current year.
+        $optionDimensions = [
+            'cycles' => [
+                'table' => 'cycles',
+                'select' => 'dim.id, dim.nom, dim.teaching_type_id',
+                'filter_key' => 'cycle_id',
+                'class_column' => 'cycle_id',
+                'active_condition' => 'dim.status = 1',
+                'order_by' => 'dim.nom ASC',
+            ],
+            'sections' => [
+                'table' => 'sections',
+                'select' => 'dim.id, dim.nom',
+                'filter_key' => 'section_id',
+                'class_column' => 'section_id',
+                'active_condition' => 'dim.status = 1',
+                'order_by' => 'dim.nom ASC',
+            ],
+            'departments' => [
+                'table' => 'departments',
+                'select' => 'dim.id, dim.nom, dim.teaching_type_id',
+                'filter_key' => 'department_id',
+                'class_column' => 'department_id',
+                'active_condition' => 'dim.status = 1',
+                'order_by' => 'dim.nom ASC',
+            ],
+            'levels' => [
+                'table' => 'levels',
+                'select' => 'dim.id, dim.code, dim.libelle_fr, dim.libelle_en, dim.teaching_type_id',
+                'filter_key' => 'level_id',
+                'class_column' => 'level_id',
+                'active_condition' => 'dim.status = 1',
+                'order_by' => 'dim.code ASC, dim.libelle_fr ASC',
+            ],
+        ];
+        $selectedDimensionFilters = [
+            'teaching_type_id' => 'teaching_type_id',
+            'cycle_id' => 'cycle_id',
+            'section_id' => 'section_id',
+            'department_id' => 'department_id',
+            'level_id' => 'level_id',
+        ];
+        $filterOptions = [];
+        foreach ($optionDimensions as $resultKey => $dimension) {
+            $sql = "SELECT DISTINCT {$dimension['select']}
+                    FROM {$dimension['table']} dim
+                    JOIN classes c ON c.{$dimension['class_column']} = dim.id
+                    JOIN enrollments e ON e.class_id = c.id AND e.academic_year_id = ?
+                    JOIN students st ON st.id = e.student_id
+                    LEFT JOIN teaching_types tt ON tt.id = c.teaching_type_id
+                    WHERE c.status = 1
+                      AND st.status = 'Inscrit'
+                      AND st.actif = 1
+                      AND st.is_withdrawn = 0
+                      AND (c.teaching_type_id IS NULL OR tt.actif = 1)
+                      AND {$dimension['active_condition']}";
+            $params = [$academicYearId];
+            foreach ($selectedDimensionFilters as $filterKey => $classColumn) {
+                if ($filterKey === $dimension['filter_key'] || empty($filters[$filterKey])) {
+                    continue;
+                }
+                $sql .= " AND c.{$classColumn} = ?";
+                $params[] = (int) $filters[$filterKey];
+            }
+            if (in_array($dimension['table'], ['departments', 'levels'], true)) {
+                $sql .= " AND (dim.teaching_type_id IS NULL OR dim.teaching_type_id = c.teaching_type_id)";
+            }
+            $sql .= " ORDER BY {$dimension['order_by']}";
+            $stmtOptions = $this->db->prepare($sql);
+            $stmtOptions->execute($params);
+            $filterOptions[$resultKey] = $stmtOptions->fetchAll(PDO::FETCH_ASSOC);
+        }
+        $cycles = $filterOptions['cycles'];
+        $sections = $filterOptions['sections'];
+        $departments = $filterOptions['departments'];
+        $levels = $filterOptions['levels'];
 
-        $statusClasses = $this->db->query("SELECT id, nom, status FROM classes ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $academicYear = $this->academicYearService->getActiveYear();
-        $academicYearId = (int) ($academicYear['id'] ?? 0);
-        $activeClassCount = count(array_filter(
-            $statusClasses,
-            static fn (array $class): bool => (int) $class['status'] === 1
-        ));
-        $studentStatsStmt = $this->db->prepare(
-            'SELECT COUNT(*) FROM students WHERE academic_year_id = ? AND is_withdrawn = 0 AND actif = 1'
+        $activeTeachingTypeId = (int) ($filters['teaching_type_id'] ?? 0);
+        $statusClasses = [];
+        if (\App\Core\PermissionManager::hasPermission('manage_classes_structure')) {
+            $statusSql = "SELECT DISTINCT c.id, c.nom, c.status
+                          FROM classes c
+                          JOIN teaching_types tt ON tt.id = c.teaching_type_id AND tt.actif = 1
+                          JOIN enrollments e ON e.class_id = c.id AND e.academic_year_id = ?
+                          JOIN students st ON st.id = e.student_id
+                          WHERE st.status = 'Inscrit'
+                            AND st.actif = 1
+                            AND st.is_withdrawn = 0";
+            $statusParams = [$academicYearId];
+            if ($activeTeachingTypeId > 0) {
+                $statusSql .= " AND c.teaching_type_id = ?";
+                $statusParams[] = $activeTeachingTypeId;
+            }
+            $statusSql .= " ORDER BY c.nom ASC";
+            $statusStmt = $this->db->prepare($statusSql);
+            $statusStmt->execute($statusParams);
+            $statusClasses = $statusStmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+
+        $classStatsStmt = $this->db->prepare(
+            'SELECT COUNT(*) AS total_classes,
+                    COALESCE(SUM(c.status = 1), 0) AS active_classes
+             FROM classes c
+             LEFT JOIN teaching_types tt ON tt.id = c.teaching_type_id
+             WHERE (c.teaching_type_id IS NULL OR tt.actif = 1)
+               AND (? = 0 OR c.teaching_type_id = ?)'
         );
-        $studentStatsStmt->execute([$academicYearId]);
+        $classStatsStmt->execute([$activeTeachingTypeId, $activeTeachingTypeId]);
+        $classCounts = $classStatsStmt->fetch(PDO::FETCH_ASSOC);
+
+        $cycleStatsStmt = $this->db->prepare(
+            'SELECT COUNT(*)
+             FROM cycles cy
+             LEFT JOIN teaching_types tt ON tt.id = cy.teaching_type_id
+             WHERE cy.status = 1
+               AND (cy.teaching_type_id IS NULL OR tt.actif = 1)
+               AND (? = 0 OR cy.teaching_type_id = ? OR cy.teaching_type_id IS NULL)'
+        );
+        $cycleStatsStmt->execute([$activeTeachingTypeId, $activeTeachingTypeId]);
+
+        $studentStatsStmt = $this->db->prepare(
+            'SELECT COUNT(*)
+             FROM students s
+             JOIN classes c ON c.id = s.class_id
+             LEFT JOIN teaching_types tt ON tt.id = c.teaching_type_id
+             WHERE s.academic_year_id = ?
+               AND s.is_withdrawn = 0
+               AND s.actif = 1
+               AND (c.teaching_type_id IS NULL OR tt.actif = 1)
+               AND (? = 0 OR c.teaching_type_id = ?)'
+        );
+        $studentStatsStmt->execute([$academicYearId, $activeTeachingTypeId, $activeTeachingTypeId]);
         $classStats = [
-            'total_classes' => count($statusClasses),
-            'active_classes' => $activeClassCount,
-            'cycles' => count($cycles),
+            'total_classes' => (int) ($classCounts['total_classes'] ?? 0),
+            'active_classes' => (int) ($classCounts['active_classes'] ?? 0),
+            'cycles' => (int) $cycleStatsStmt->fetchColumn(),
             'students' => (int) $studentStatsStmt->fetchColumn(),
         ];
         
@@ -296,7 +424,7 @@ class ClassController
 
                 $threshold = trim((string) ($_POST['honor_roll_threshold'] ?? ''));
                 if ($threshold !== '') {
-                    $this->settingsStore->set('honor_roll_threshold_class_' . $newClassId, $threshold);
+                    $this->settingsStore->set('honor_roll_threshold_class_' . $newClassId, $threshold, (int) $teaching_type_id);
                 }
 
                 // Enregistrement de l'historique
@@ -366,7 +494,11 @@ class ClassController
             exit;
         }
 
-        $classe['honor_roll_threshold'] = $this->settingsStore->get('honor_roll_threshold_class_' . $classe['id'], '');
+        $classe['honor_roll_threshold'] = $this->settingsStore->get(
+            'honor_roll_threshold_class_' . $classe['id'],
+            '',
+            (int) ($classe['teaching_type_id'] ?? 0)
+        );
 
         // Récupérer les tranches existantes et leurs échéances
         $stmtTranches = $this->db->prepare("SELECT installment_number, amount FROM class_installments WHERE class_id = ? ORDER BY installment_number ASC");
@@ -573,7 +705,7 @@ class ClassController
                 }
 
                 $threshold = trim((string) ($_POST['honor_roll_threshold'] ?? ''));
-                $this->settingsStore->set('honor_roll_threshold_class_' . $id, $threshold);
+                $this->settingsStore->set('honor_roll_threshold_class_' . $id, $threshold, (int) $teaching_type_id);
 
                 // Log d'historique
                 $fs = new \App\Services\FinancialService($this->db);
@@ -824,7 +956,20 @@ class ClassController
         $status = isset($_GET['status']) && in_array((string) $_GET['status'], ['0', '1'], true)
             ? (int) $_GET['status']
             : null;
-        // Classes are now shared across years, no year filtering needed
+        $academicYearId = $this->academicYearService->getActiveYearId();
+
+        $isHigherEducation = false;
+        if ($teachingTypeId > 0) {
+            $typeStmt = $this->db->prepare('SELECT nom, code FROM teaching_types WHERE id = ? AND actif = 1 LIMIT 1');
+            $typeStmt->execute([$teachingTypeId]);
+            $teachingType = $typeStmt->fetch(PDO::FETCH_ASSOC);
+            if ($teachingType) {
+                $typeName = strtolower((string) $teachingType['nom']);
+                $typeCode = strtolower((string) $teachingType['code']);
+                $isHigherEducation = strpos($typeName, 'sup') !== false
+                    || in_array($typeCode, ['sup', 'superieur', 'higher'], true);
+            }
+        }
 
         // 1. Count total
         $countSql = "SELECT COUNT(*) FROM classes c 
@@ -839,8 +984,17 @@ class ClassController
                        AND (c.department_id IS NULL OR d.status = 1)
                        AND (c.level_id IS NULL OR lvl.status = 1)";
         $countParams = [];
-        
-        // No academic year filtering for classes
+
+        if ($isHigherEducation) {
+            $countSql .= " AND EXISTS (
+                SELECT 1 FROM students enrolled
+                WHERE enrolled.class_id = c.id
+                  AND enrolled.academic_year_id = ?
+                  AND enrolled.is_withdrawn = 0
+                  AND enrolled.actif = 1
+            )";
+            $countParams[] = $academicYearId;
+        }
         
         if ($search !== '') {
             $countSql .= " AND c.nom LIKE ?";
@@ -876,11 +1030,10 @@ class ClassController
 
         // 2. Fetch data
         // Jointures pour récupérer les noms des cycles, sections, départements, niveaux et du professeur principal
-        $academicYearId = $this->academicYearService->getActiveYearId();
         $sql = "SELECT c.id, c.nom, c.status, c.level_id, cy.nom as cycle_nom, s.nom as section_nom, d.nom as department_nom, tt.nom as teaching_type_nom,
                        lvl.code as level_code, lvl.libelle_fr as level_libelle_fr, lvl.libelle_en as level_libelle_en,
                        u.nom as main_teacher_nom, u.prenom as main_teacher_prenom,
-                       (SELECT COUNT(*) FROM students WHERE class_id = c.id AND academic_year_id = {$academicYearId} AND is_withdrawn = 0 AND actif = 1) as student_count
+                       (SELECT COUNT(*) FROM students WHERE class_id = c.id AND academic_year_id = ? AND is_withdrawn = 0 AND actif = 1) as student_count
                 FROM classes c
                 LEFT JOIN cycles cy ON c.cycle_id = cy.id
                 LEFT JOIN sections s ON c.section_id = s.id
@@ -893,9 +1046,18 @@ class ClassController
                   AND (c.section_id IS NULL OR s.status = 1)
                   AND (c.department_id IS NULL OR d.status = 1)
                   AND (c.level_id IS NULL OR lvl.status = 1)";
-        $params = [];
+        $params = [$academicYearId];
 
-        // No academic year filtering for classes
+        if ($isHigherEducation) {
+            $sql .= " AND EXISTS (
+                SELECT 1 FROM students enrolled
+                WHERE enrolled.class_id = c.id
+                  AND enrolled.academic_year_id = ?
+                  AND enrolled.is_withdrawn = 0
+                  AND enrolled.actif = 1
+            )";
+            $params[] = $academicYearId;
+        }
 
         // Application dynamique de la clause WHERE selon les entrées utilisateur
         if ($search !== '') {
@@ -929,7 +1091,9 @@ class ClassController
             $params[] = $status;
         }
 
-        $sql .= " ORDER BY c.nom ASC";
+        $sql .= $isHigherEducation
+            ? " ORDER BY student_count DESC, c.nom ASC"
+            : " ORDER BY c.nom ASC";
 
         if ($limit !== null && $offset !== null) {
             $sql .= " LIMIT " . (int) $limit . " OFFSET " . (int) $offset;

@@ -60,7 +60,6 @@ ob_start();
             <div class="col-md-2">
                 <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('teaching_type') ?></label>
                 <select name="teaching_type_id" id="teaching-type-select" class="form-select premium-select">
-                    <option value=""><?= __('all_m') ?></option>
                     <?php foreach ($teachingTypes as $tt): ?>
                         <option value="<?= $tt['id'] ?>" <?= $filters['teaching_type_id'] === (int)$tt['id'] ? 'selected' : '' ?>><?= h($tt['nom']) ?></option>
                     <?php endforeach; ?>
@@ -504,4 +503,3 @@ document.addEventListener('DOMContentLoaded', function() {
 $content = ob_get_clean();
 include __DIR__ . '/../templates/layout.php';
 ?>
-

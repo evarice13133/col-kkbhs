@@ -35,7 +35,6 @@ $hasActiveFilters = ($filters['period'] !== 'all')
             ?>
             <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-20 rounded-pill px-3 py-1.5 d-flex align-items-center gap-2 small">
                 <span><?= __('teaching_type') ?> : <strong><?= h($ttName) ?></strong></span>
-                <a href="javascript:void(0)" onclick="resetFilter('teaching_type')" class="text-primary hover-danger text-decoration-none fw-bold" style="font-size: 1.1em; line-height: 1;">&times;</a>
             </span>
         <?php endif; ?>
 
