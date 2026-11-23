@@ -29,60 +29,51 @@ class FinancialHistoryController
      */
     public function index()
     {
-        $filters = [
-            'period' => $_GET['period'] ?? 'all',
-            'start_date' => $_GET['start_date'] ?? '',
-            'end_date' => $_GET['end_date'] ?? '',
-            'entity_type' => $_GET['entity_type'] ?? 'all',
-            'action' => $_GET['action'] ?? 'all',
-            'teaching_type_id' => (int)($_GET['teaching_type_id'] ?? 0),
-            'class_id' => (int)($_GET['class_id'] ?? 0)
-        ];
+        $filterContext = $this->getFilterContext();
+        $filters = $filterContext['filters'];
+        $teachingTypes = $filterContext['teachingTypes'];
+        $classes = $filterContext['classes'];
+        $activeYearId = $filterContext['activeYearId'];
 
-        $history = $this->getFilteredHistory($filters);
+        $history = $this->getFilteredHistory($filters, $filterContext['activeTeachingTypeId'], $activeYearId);
 
         // Si requete AJAX, renvoyer la reponse en JSON pour fluidite UX
         if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
             header('Content-Type: application/json');
-            
-            // Helpers necessaires pour le rendu de tbody.php
-            if (!function_exists('getFriendlyFieldName')) {
-                function getFriendlyFieldName($key) {
-                    $map = [
-                        'amount' => __('col_amount'),
-                        'amount_type' => __('type_field'),
-                        'motive' => __('motive'),
-                        'status' => __('status'),
-                        'date_effet' => __('date_effet'),
-                        'commentaire' => __('comment'),
-                        'reference' => __('col_reference'),
-                        'payment_method' => __('col_method'),
-                        'payment_date' => __('col_date'),
-                        'student_id' => __('student_id'),
-                        'class_id' => __('class_id'),
-                        'type' => __('fee_type')
-                    ];
-                    return $map[$key] ?? ucfirst($key);
-                }
-            }
 
-            if (!function_exists('formatHistoryValue')) {
-                function formatHistoryValue($key, $val) {
-                    if ($key === 'amount_type') {
-                        return $val === 'percentage' ? __('percentage_label') : __('amount_fixed_label');
-                    }
-                    if ($key === 'amount' && is_numeric($val)) {
-                        return number_format((float)$val, 0, '.', ' ') . ' FCFA';
-                    }
-                    if ($key === 'status') {
-                        return $val === 'active' ? __('active') : __('inactive');
-                    }
-                    if (is_array($val)) {
-                        return json_encode($val, JSON_UNESCAPED_UNICODE);
-                    }
-                    return htmlspecialchars((string)$val, ENT_QUOTES, 'UTF-8');
+            $friendlyFieldName = static function ($key) {
+                $map = [
+                    'amount' => __('col_amount'),
+                    'amount_type' => __('type_field'),
+                    'motive' => __('motive'),
+                    'status' => __('status'),
+                    'date_effet' => __('date_effet'),
+                    'commentaire' => __('comment'),
+                    'reference' => __('col_reference'),
+                    'payment_method' => __('col_method'),
+                    'payment_date' => __('col_date'),
+                    'student_id' => __('student_id'),
+                    'class_id' => __('class_id'),
+                    'type' => __('fee_type')
+                ];
+                return $map[$key] ?? ucfirst($key);
+            };
+
+            $formatHistoryValue = static function ($key, $val) {
+                if ($key === 'amount_type') {
+                    return $val === 'percentage' ? __('percentage_label') : __('amount_fixed_label');
                 }
-            }
+                if ($key === 'amount' && is_numeric($val)) {
+                    return number_format((float)$val, 0, '.', ' ') . ' FCFA';
+                }
+                if ($key === 'status') {
+                    return $val === 'active' ? __('active') : __('inactive');
+                }
+                if (is_array($val)) {
+                    return json_encode($val, JSON_UNESCAPED_UNICODE);
+                }
+                return htmlspecialchars((string)$val, ENT_QUOTES, 'UTF-8');
+            };
 
             ob_start();
             include __DIR__ . '/../Views/financial_history/tbody.php';
@@ -101,9 +92,6 @@ class FinancialHistoryController
             exit;
         }
 
-        $teachingTypes = $this->db->query("SELECT id, nom FROM teaching_types WHERE actif = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $classes = $this->db->query("SELECT id, nom FROM classes WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-
         include __DIR__ . '/../Views/financial_history/index.php';
     }
 
@@ -112,17 +100,13 @@ class FinancialHistoryController
      */
     public function print()
     {
-        $filters = [
-            'period' => $_GET['period'] ?? 'all',
-            'start_date' => $_GET['start_date'] ?? '',
-            'end_date' => $_GET['end_date'] ?? '',
-            'entity_type' => $_GET['entity_type'] ?? 'all',
-            'action' => $_GET['action'] ?? 'all',
-            'teaching_type_id' => (int)($_GET['teaching_type_id'] ?? 0),
-            'class_id' => (int)($_GET['class_id'] ?? 0)
-        ];
+        $filterContext = $this->getFilterContext();
+        $filters = $filterContext['filters'];
+        $teachingTypes = $filterContext['teachingTypes'];
+        $classes = $filterContext['classes'];
+        $activeYearId = $filterContext['activeYearId'];
 
-        $history = $this->getFilteredHistory($filters);
+        $history = $this->getFilteredHistory($filters, $filterContext['activeTeachingTypeId'], $activeYearId);
 
         // Charger l'institution
         $settingsStore = new \App\Services\SettingsStore($this->db);
@@ -137,16 +121,14 @@ class FinancialHistoryController
         $activeYear = $acYearService->getActiveYear();
 
         // Charger la liste des types d'enseignement pour la correspondance des filtres
-        $teachingTypesList = $this->db->query("SELECT id, nom FROM teaching_types")->fetchAll(PDO::FETCH_ASSOC);
         $teachingTypesMap = [];
-        foreach ($teachingTypesList as $tt) {
+        foreach ($teachingTypes as $tt) {
             $teachingTypesMap[$tt['id']] = $tt['nom'];
         }
 
         // Charger la liste des classes pour la correspondance des filtres
-        $classesList = $this->db->query("SELECT id, nom FROM classes WHERE status = 1")->fetchAll(PDO::FETCH_ASSOC);
         $classesMap = [];
-        foreach ($classesList as $c) {
+        foreach ($classes as $c) {
             $classesMap[$c['id']] = $c['nom'];
         }
 
@@ -535,8 +517,63 @@ class FinancialHistoryController
     /**
      * Construit et exécute la requête filtrée de l'historique financier.
      */
-    private function getFilteredHistory(array $filters): array
+    private function getFilterContext(): array
     {
+        $activeTeachingTypeId = (new \App\Services\SettingsStore($this->db))->getDefaultTeachingTypeId();
+        $activeYearId = (new \App\Services\AcademicYearService($this->db))->getActiveYearId();
+
+        $teachingTypes = [];
+        $classes = [];
+        if ($activeTeachingTypeId > 0) {
+            $teachingTypeStmt = $this->db->prepare(
+                "SELECT id, nom FROM teaching_types WHERE id = ? AND actif = 1"
+            );
+            $teachingTypeStmt->execute([$activeTeachingTypeId]);
+            $teachingTypes = $teachingTypeStmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+
+        if ($activeTeachingTypeId > 0 && $activeYearId > 0) {
+            $classStmt = $this->db->prepare(
+                "SELECT DISTINCT c.id, c.nom
+                 FROM classes c
+                 JOIN enrollments e ON e.class_id = c.id AND e.academic_year_id = ?
+                 WHERE c.status = 1 AND c.teaching_type_id = ?
+                 ORDER BY c.nom ASC"
+            );
+            $classStmt->execute([$activeYearId, $activeTeachingTypeId]);
+            $classes = $classStmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+
+        $filters = [
+            'period' => $_GET['period'] ?? 'all',
+            'start_date' => $_GET['start_date'] ?? '',
+            'end_date' => $_GET['end_date'] ?? '',
+            'entity_type' => $_GET['entity_type'] ?? 'all',
+            'action' => $_GET['action'] ?? 'all',
+            'teaching_type_id' => $activeTeachingTypeId,
+            'class_id' => (int)($_GET['class_id'] ?? 0)
+        ];
+
+        $classIds = array_map('intval', array_column($classes, 'id'));
+        if ($filters['class_id'] > 0 && !in_array($filters['class_id'], $classIds, true)) {
+            $filters['class_id'] = 0;
+        }
+
+        return [
+            'filters' => $filters,
+            'teachingTypes' => $teachingTypes,
+            'classes' => $classes,
+            'activeTeachingTypeId' => $activeTeachingTypeId,
+            'activeYearId' => $activeYearId
+        ];
+    }
+
+    private function getFilteredHistory(array $filters, int $activeTeachingTypeId, int $activeYearId): array
+    {
+        if ($activeTeachingTypeId <= 0 || $activeYearId <= 0) {
+            return [];
+        }
+
         $where = [];
         $params = [];
 
@@ -579,12 +616,14 @@ class FinancialHistoryController
             }
         }
 
-        // Filtre par type d'enseignement
-        $teachingTypeId = (int)($filters['teaching_type_id'] ?? 0);
-        if ($teachingTypeId > 0) {
-            $where[] = "sub.teaching_type_id = ?";
-            $params[] = $teachingTypeId;
-        }
+        $where[] = "c.teaching_type_id = ?";
+        $params[] = $activeTeachingTypeId;
+
+        $where[] = "(sub.user_role IS NULL OR LOWER(TRIM(sub.user_role)) NOT IN ('superadmin', 'super_admin', 'super administrator'))";
+
+        $where[] = "sub.class_id IN (
+            SELECT e.class_id FROM enrollments e WHERE e.academic_year_id = {$activeYearId}
+        )";
 
         // Filtre par classe
         $classId = (int)($filters['class_id'] ?? 0);
@@ -596,101 +635,51 @@ class FinancialHistoryController
         $whereClause = !empty($where) ? "WHERE " . implode(" AND ", $where) : "";
 
         $sql = "
-            SELECT * FROM (
+            SELECT sub.*, c.teaching_type_id
+            FROM (
                 SELECT fh.*, u.nom as user_nom, u.prenom as user_prenom, u.role as user_role,
-                       (
-                           CASE fh.entity_type
-                               WHEN 'payment' THEN (
-                                   SELECT c.teaching_type_id 
-                                   FROM student_payments sp 
-                                   JOIN students s ON sp.student_id = s.id 
-                                   JOIN classes c ON s.class_id = c.id 
-                                   WHERE sp.id = fh.entity_id
-                               )
-                               WHEN 'student_payment' THEN (
-                                   SELECT c.teaching_type_id 
-                                   FROM student_payments sp 
-                                   JOIN students s ON sp.student_id = s.id 
-                                   JOIN classes c ON s.class_id = c.id 
-                                   WHERE sp.id = fh.entity_id
-                               )
-                               WHEN 'student_discount' THEN (
-                                   SELECT c.teaching_type_id 
-                                   FROM student_discounts sd 
-                                   JOIN students s ON sd.student_id = s.id 
-                                   JOIN classes c ON s.class_id = c.id 
-                                   WHERE sd.id = fh.entity_id
-                               )
-                               WHEN 'class_discount' THEN (
-                                   SELECT c.teaching_type_id 
-                                   FROM class_discounts cd 
-                                   JOIN classes c ON cd.class_id = c.id 
-                                   WHERE cd.id = fh.entity_id
-                               )
-                               WHEN 'student_scholarship' THEN (
-                                   SELECT c.teaching_type_id 
-                                   FROM student_scholarships ss 
-                                   JOIN students s ON ss.student_id = s.id 
-                                   JOIN classes c ON s.class_id = c.id 
-                                   WHERE ss.id = fh.entity_id
-                               )
-                               WHEN 'class_scholarship' THEN (
-                                   SELECT c.teaching_type_id 
-                                   FROM class_scholarships cs 
-                                   JOIN classes c ON cs.class_id = c.id 
-                                   WHERE cs.id = fh.entity_id
-                               )
-                               WHEN 'class_finance' THEN (
-                                   SELECT c.teaching_type_id 
-                                   FROM classes c 
-                                   WHERE c.id = fh.entity_id
-                               )
-                               ELSE NULL
-                           END
-                       ) as teaching_type_id,
-                       (
-                           CASE fh.entity_type
-                               WHEN 'payment' THEN (
-                                   SELECT s.class_id 
-                                   FROM student_payments sp 
-                                   JOIN students s ON sp.student_id = s.id 
-                                   WHERE sp.id = fh.entity_id
-                               )
-                               WHEN 'student_payment' THEN (
-                                   SELECT s.class_id 
-                                   FROM student_payments sp 
-                                   JOIN students s ON sp.student_id = s.id 
-                                   WHERE sp.id = fh.entity_id
-                               )
-                               WHEN 'student_discount' THEN (
-                                   SELECT s.class_id 
-                                   FROM student_discounts sd 
-                                   JOIN students s ON sd.student_id = s.id 
-                                   WHERE sd.id = fh.entity_id
-                               )
-                               WHEN 'class_discount' THEN (
-                                   SELECT cd.class_id 
-                                   FROM class_discounts cd 
-                                   WHERE cd.id = fh.entity_id
-                               )
-                               WHEN 'student_scholarship' THEN (
-                                   SELECT s.class_id 
-                                   FROM student_scholarships ss 
-                                   JOIN students s ON ss.student_id = s.id 
-                                   WHERE ss.id = fh.entity_id
-                               )
-                               WHEN 'class_scholarship' THEN (
-                                   SELECT cs.class_id 
-                                   FROM class_scholarships cs 
-                                   WHERE cs.id = fh.entity_id
-                               )
-                               WHEN 'class_finance' THEN fh.entity_id
-                               ELSE NULL
-                           END
-                       ) as class_id
+                       CASE fh.entity_type
+                           WHEN 'payment' THEN (
+                               SELECT e.class_id
+                               FROM payments p
+                               JOIN enrollments e ON e.student_id = p.student_id AND e.academic_year_id = {$activeYearId}
+                               WHERE p.id = fh.entity_id AND p.academic_year_id = {$activeYearId}
+                               LIMIT 1
+                           )
+                           WHEN 'student_payment' THEN (
+                               SELECT e.class_id
+                               FROM student_payments sp
+                               JOIN enrollments e ON e.student_id = sp.student_id AND e.academic_year_id = {$activeYearId}
+                               WHERE sp.id = fh.entity_id AND sp.academic_year_id = {$activeYearId}
+                               LIMIT 1
+                           )
+                           WHEN 'student_discount' THEN (
+                               SELECT e.class_id
+                               FROM student_discounts sd
+                               JOIN enrollments e ON e.student_id = sd.student_id AND e.academic_year_id = {$activeYearId}
+                               WHERE sd.id = fh.entity_id
+                               LIMIT 1
+                           )
+                           WHEN 'class_discount' THEN (
+                               SELECT cd.class_id FROM class_discounts cd WHERE cd.id = fh.entity_id
+                           )
+                           WHEN 'student_scholarship' THEN (
+                               SELECT e.class_id
+                               FROM student_scholarships ss
+                               JOIN enrollments e ON e.student_id = ss.student_id AND e.academic_year_id = {$activeYearId}
+                               WHERE ss.id = fh.entity_id
+                               LIMIT 1
+                           )
+                           WHEN 'class_scholarship' THEN (
+                               SELECT cs.class_id FROM class_scholarships cs WHERE cs.id = fh.entity_id
+                           )
+                           WHEN 'class_finance' THEN fh.entity_id
+                           ELSE NULL
+                       END AS class_id
                 FROM financial_history fh
                 LEFT JOIN users u ON fh.user_id = u.id
-            ) as sub
+            ) AS sub
+            LEFT JOIN classes c ON c.id = sub.class_id
             $whereClause
             ORDER BY sub.event_date DESC, sub.id DESC
         ";

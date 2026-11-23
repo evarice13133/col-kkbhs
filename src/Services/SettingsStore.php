@@ -16,7 +16,17 @@ class SettingsStore
         'school_phone', 'school_po_box', 'school_fax', 'school_email', 'school_website',
         'display_school_year', 'principal_name', 'principal_title', 'principal_signature',
         'school_stamp', 'honor_roll_default_threshold', 'bulletin_printing_enabled',
-        'registration_fee_policy', 'payment_methods'
+        'registration_fee_policy', 'payment_methods', 'show_teacher_names_on_bulletins',
+        'grade_entry_competency_required',
+        'allow_teacher_registration', 'matricule_format', 'matricule_counter',
+        'theme_navbar_bg', 'theme_navbar_hover', 'theme_button_bg', 'theme_button_text',
+        'theme_glow_bg', 'theme_glow_text',
+        'theme_admin_hero_start', 'theme_admin_hero_end', 'theme_admin_hero_glow', 'theme_admin_hero_card',
+        'theme_teacher_hero_start', 'theme_teacher_hero_end', 'theme_teacher_hero_glow', 'theme_teacher_hero_card',
+        'theme_login_bg_start', 'theme_login_bg_mid', 'theme_login_bg_end', 'theme_login_bubble',
+        'theme_login_button', 'theme_login_showcase_start', 'theme_login_showcase_end',
+        'theme_login_showcase_glow', 'theme_login_panel_bg', 'theme_login_panel_badge_bg',
+        'theme_login_panel_badge_text'
     ];
 
     private const DEFAULTS = [
@@ -48,7 +58,7 @@ class SettingsStore
         'principal_signature' => '',
         'school_stamp' => '',
         'theme_navbar_bg' => '#0a1726',
-        'theme_navbar_hover' => '#ffffff14',
+        'theme_navbar_hover' => '#1e293b',
         'theme_button_bg' => '#1f5fbf',
         'theme_button_text' => '#ffffff',
         'theme_glow_bg' => '#eef4fb',
@@ -89,6 +99,11 @@ class SettingsStore
         'backup_git_user_email' => 'backup-bot@notesmaster.local',
         'honor_roll_default_threshold' => '12',
         'bulletin_printing_enabled' => '1',
+        'registration_fee_policy' => 'all',
+        'payment_methods' => 'Espèces,Mobile Money,Orange Money,MTN Mobile Money,Carte bancaire,Virement bancaire,Chèque,Autre',
+        'allow_teacher_registration' => '0',
+        'show_teacher_names_on_bulletins' => '1',
+        'grade_entry_competency_required' => '0',
     ];
 
     public function __construct(PDO $db, ?int $teachingTypeId = null)
@@ -125,16 +140,27 @@ class SettingsStore
     public function getDefaultTeachingTypeId(): int
     {
         try {
-            $stmt = $this->db->query("SELECT id FROM teaching_types WHERE code = 'SEC00' AND actif = 1 LIMIT 1");
+            $stmt = $this->db->query("SELECT id FROM teaching_types WHERE code = 'SEC00' AND actif = 1 AND id > 0 LIMIT 1");
             $id = $stmt->fetchColumn();
-            if ($id) {
+            if ($id !== false && (int) $id > 0) {
                 return (int) $id;
             }
-            $id = $this->db->query("SELECT id FROM teaching_types WHERE actif = 1 ORDER BY position ASC, id ASC LIMIT 1")->fetchColumn();
-            return $id ? (int) $id : 0;
+            $id = $this->db->query("SELECT id FROM teaching_types WHERE actif = 1 AND id > 0 ORDER BY position ASC, id ASC LIMIT 1")->fetchColumn();
+            return $id !== false ? (int) $id : 0;
         } catch (\Throwable $e) {
             return 0;
         }
+    }
+
+    public static function isScopedKey(string $key): bool
+    {
+        return in_array($key, self::SCOPED_KEYS, true)
+            || preg_match('/^honor_roll_threshold_(?:class|cycle|section)_\d+$/', $key) === 1;
+    }
+
+    public static function scopedKeys(): array
+    {
+        return self::SCOPED_KEYS;
     }
 
     public static function defaults(): array
@@ -153,12 +179,21 @@ class SettingsStore
 
     public function ensureDefaults(array $defaults): void
     {
-        $defaultTtId = $this->getDefaultTeachingTypeId();
-        $stmt = $this->db->prepare("INSERT IGNORE INTO settings (setting_key, setting_value, teaching_type_id) VALUES (?, ?, ?)");
+        $scopedStmt = $this->db->prepare("
+            INSERT IGNORE INTO settings (setting_key, setting_value, teaching_type_id)
+            SELECT ?, ?, id FROM teaching_types WHERE id > 0
+        ");
+        $globalStmt = $this->db->prepare("
+            INSERT IGNORE INTO settings (setting_key, setting_value, teaching_type_id)
+            VALUES (?, ?, 0)
+        ");
 
         foreach ($defaults as $key => $value) {
-            $ttId = in_array($key, self::SCOPED_KEYS, true) ? $defaultTtId : 0;
-            $stmt->execute([$key, (string) $value, $ttId]);
+            if (self::isScopedKey((string) $key)) {
+                $scopedStmt->execute([(string) $key, (string) $value]);
+            } else {
+                $globalStmt->execute([(string) $key, (string) $value]);
+            }
         }
     }
 
@@ -179,7 +214,7 @@ class SettingsStore
             $stmtDef = $this->db->prepare("SELECT setting_key, setting_value FROM settings WHERE teaching_type_id = ?");
             $stmtDef->execute([$defaultTtId]);
             foreach ($stmtDef->fetchAll(PDO::FETCH_ASSOC) as $row) {
-                if (in_array($row['setting_key'], self::SCOPED_KEYS, true)) {
+                if (self::isScopedKey($row['setting_key'])) {
                     $settings[$row['setting_key']] = (string) $row['setting_value'];
                 }
             }
@@ -190,7 +225,7 @@ class SettingsStore
             $stmtCur = $this->db->prepare("SELECT setting_key, setting_value FROM settings WHERE teaching_type_id = ?");
             $stmtCur->execute([$ttId]);
             foreach ($stmtCur->fetchAll(PDO::FETCH_ASSOC) as $row) {
-                if (in_array($row['setting_key'], self::SCOPED_KEYS, true)) {
+                if (self::isScopedKey($row['setting_key'])) {
                     $settings[$row['setting_key']] = (string) $row['setting_value'];
                 }
             }
@@ -202,7 +237,7 @@ class SettingsStore
     public function get(string $key, ?string $default = null, ?int $teachingTypeId = null): ?string
     {
         $ttId = $teachingTypeId ?? $this->teachingTypeId ?? $this->getDefaultTeachingTypeId();
-        if (!in_array($key, self::SCOPED_KEYS, true)) {
+        if (!self::isScopedKey($key)) {
             $ttId = 0;
         }
 
@@ -216,7 +251,7 @@ class SettingsStore
 
         // Fallback vers SEC00 si ce n'était pas SEC00
         $defaultTtId = $this->getDefaultTeachingTypeId();
-        if ($ttId !== $defaultTtId && in_array($key, self::SCOPED_KEYS, true)) {
+        if ($ttId !== $defaultTtId && self::isScopedKey($key)) {
             $stmt->execute([$key, $defaultTtId]);
             $value = $stmt->fetchColumn();
             if ($value !== false && $value !== null) {
@@ -251,8 +286,10 @@ class SettingsStore
     public function set(string $key, ?string $value, ?int $teachingTypeId = null): void
     {
         $ttId = $teachingTypeId ?? $this->teachingTypeId ?? $this->getDefaultTeachingTypeId();
-        if (!in_array($key, self::SCOPED_KEYS, true)) {
+        if (!self::isScopedKey($key)) {
             $ttId = 0;
+        } elseif ($ttId <= 0) {
+            $ttId = $this->getDefaultTeachingTypeId();
         }
 
         $stmt = $this->db->prepare("

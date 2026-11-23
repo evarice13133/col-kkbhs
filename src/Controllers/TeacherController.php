@@ -369,6 +369,7 @@ class TeacherController
 
         // Vérifier si l'année sélectionnée est différente de l'année active (mode historique)
         $isHistoricalView = ($selectedYearId !== $activeYearId);
+        $viewYearId = $selectedYearId > 0 ? $selectedYearId : $activeYearId;
 
         // Récupérer les types d'enseignement de l'enseignant
         $stmtTt = $this->db->prepare("SELECT teaching_type_id FROM user_teaching_types WHERE user_id = ?");
@@ -378,29 +379,27 @@ class TeacherController
         $ttCondition = "";
         if (!empty($teacherTeachingTypes)) {
             $inTypes = implode(',', array_map('intval', $teacherTeachingTypes));
-            $ttCondition = " AND (s.teaching_type_id IN ($inTypes) OR s.teaching_type_id IS NULL OR EXISTS (SELECT 1 FROM teacher_assignments ta_chk WHERE ta_chk.subject_id = s.id AND ta_chk.user_id = {$id}) OR EXISTS (SELECT 1 FROM timetable_entries te_chk WHERE te_chk.subject_id = s.id AND te_chk.teacher_id = {$id}))";
+            $ttCondition = " AND (s.teaching_type_id IN ($inTypes) OR s.teaching_type_id IS NULL OR EXISTS (SELECT 1 FROM teacher_assignments ta_chk WHERE ta_chk.subject_id = s.id AND ta_chk.user_id = {$id} AND ta_chk.academic_year_id = {$viewYearId}) OR EXISTS (SELECT 1 FROM timetable_entries te_chk JOIN timetables t_chk ON te_chk.timetable_id = t_chk.id WHERE te_chk.subject_id = s.id AND te_chk.teacher_id = {$id} AND (t_chk.academic_year_id = {$viewYearId} OR t_chk.academic_year_id IS NULL)))";
         }
 
-        // Pour l'interface d'affectation, on utilise toujours l'année active
-        // Le sélecteur sert uniquement à consulter l'historique
         $subjectsRaw = $this->db->query("
             SELECT s.id as subject_id, s.nom as subject_nom, c.id as class_id, c.nom as class_nom,
                    COALESCE(
-                       (SELECT ta.user_id FROM teacher_assignments ta WHERE ta.subject_id = s.id AND (ta.class_id = c.id OR ta.class_id IS NULL) AND ta.user_id = {$id} AND (ta.academic_year_id = {$activeYearId} OR ta.academic_year_id IS NULL) LIMIT 1),
-                       (SELECT te.teacher_id FROM timetable_entries te JOIN timetables t ON te.timetable_id = t.id WHERE te.subject_id = s.id AND t.class_id = c.id AND te.teacher_id = {$id} AND (t.academic_year_id = {$activeYearId} OR t.academic_year_id IS NULL) LIMIT 1),
-                       (SELECT ta.user_id FROM teacher_assignments ta WHERE ta.subject_id = s.id AND (ta.class_id = c.id OR ta.class_id IS NULL) AND (ta.academic_year_id = {$activeYearId} OR ta.academic_year_id IS NULL) LIMIT 1),
-                       (SELECT te.teacher_id FROM timetable_entries te JOIN timetables t ON te.timetable_id = t.id WHERE te.subject_id = s.id AND t.class_id = c.id AND (t.academic_year_id = {$activeYearId} OR t.academic_year_id IS NULL) LIMIT 1)
+                       (SELECT ta.user_id FROM teacher_assignments ta WHERE ta.subject_id = s.id AND (ta.class_id = c.id OR ta.class_id IS NULL) AND ta.user_id = {$id} AND ta.academic_year_id = {$viewYearId} LIMIT 1),
+                       (SELECT te.teacher_id FROM timetable_entries te JOIN timetables t ON te.timetable_id = t.id WHERE te.subject_id = s.id AND t.class_id = c.id AND te.teacher_id = {$id} AND (t.academic_year_id = {$viewYearId} OR t.academic_year_id IS NULL) LIMIT 1),
+                       (SELECT ta.user_id FROM teacher_assignments ta WHERE ta.subject_id = s.id AND (ta.class_id = c.id OR ta.class_id IS NULL) AND ta.academic_year_id = {$viewYearId} LIMIT 1),
+                       (SELECT te.teacher_id FROM timetable_entries te JOIN timetables t ON te.timetable_id = t.id WHERE te.subject_id = s.id AND t.class_id = c.id AND (t.academic_year_id = {$viewYearId} OR t.academic_year_id IS NULL) LIMIT 1)
                    ) as teacher_id,
                    u.nom as teacher_nom, u.prenom as teacher_prenom
             FROM subjects s
             LEFT JOIN teaching_types tt ON s.teaching_type_id = tt.id
-            JOIN subject_classes sc ON s.id = sc.subject_id
+            JOIN subject_classes sc ON s.id = sc.subject_id AND sc.academic_year_id = {$viewYearId}
             JOIN classes c ON sc.class_id = c.id
             LEFT JOIN users u ON u.id = COALESCE(
-                       (SELECT ta.user_id FROM teacher_assignments ta WHERE ta.subject_id = s.id AND (ta.class_id = c.id OR ta.class_id IS NULL) AND ta.user_id = {$id} AND (ta.academic_year_id = {$activeYearId} OR ta.academic_year_id IS NULL) LIMIT 1),
-                       (SELECT te.teacher_id FROM timetable_entries te JOIN timetables t ON te.timetable_id = t.id WHERE te.subject_id = s.id AND t.class_id = c.id AND te.teacher_id = {$id} AND (t.academic_year_id = {$activeYearId} OR t.academic_year_id IS NULL) LIMIT 1),
-                       (SELECT ta.user_id FROM teacher_assignments ta WHERE ta.subject_id = s.id AND (ta.class_id = c.id OR ta.class_id IS NULL) AND (ta.academic_year_id = {$activeYearId} OR ta.academic_year_id IS NULL) LIMIT 1),
-                       (SELECT te.teacher_id FROM timetable_entries te JOIN timetables t ON te.timetable_id = t.id WHERE te.subject_id = s.id AND t.class_id = c.id AND (t.academic_year_id = {$activeYearId} OR t.academic_year_id IS NULL) LIMIT 1)
+                       (SELECT ta.user_id FROM teacher_assignments ta WHERE ta.subject_id = s.id AND (ta.class_id = c.id OR ta.class_id IS NULL) AND ta.user_id = {$id} AND ta.academic_year_id = {$viewYearId} LIMIT 1),
+                       (SELECT te.teacher_id FROM timetable_entries te JOIN timetables t ON te.timetable_id = t.id WHERE te.subject_id = s.id AND t.class_id = c.id AND te.teacher_id = {$id} AND (t.academic_year_id = {$viewYearId} OR t.academic_year_id IS NULL) LIMIT 1),
+                       (SELECT ta.user_id FROM teacher_assignments ta WHERE ta.subject_id = s.id AND (ta.class_id = c.id OR ta.class_id IS NULL) AND ta.academic_year_id = {$viewYearId} LIMIT 1),
+                       (SELECT te.teacher_id FROM timetable_entries te JOIN timetables t ON te.timetable_id = t.id WHERE te.subject_id = s.id AND t.class_id = c.id AND (t.academic_year_id = {$viewYearId} OR t.academic_year_id IS NULL) LIMIT 1)
                    )
             WHERE s.status = 1 AND (tt.actif = 1 OR s.teaching_type_id IS NULL) {$ttCondition}
             ORDER BY s.nom ASC, c.nom ASC
@@ -617,7 +616,7 @@ class TeacherController
                 $stmtDel = $this->db->prepare("
                     DELETE FROM teacher_assignments 
                     WHERE user_id = ? AND subject_id = ? AND (class_id = ? OR class_id IS NULL) 
-                      AND (academic_year_id = ? OR academic_year_id IS NULL)
+                                            AND academic_year_id = ?
                 ");
                 $stmtDel->execute([$teacherId, $subjectId, $classId, $academicYearId]);
 
@@ -705,7 +704,7 @@ class TeacherController
                 $stmtDelOld = $this->db->prepare("
                     DELETE FROM teacher_assignments 
                     WHERE subject_id = ? AND (class_id = ? OR class_id IS NULL) 
-                      AND (academic_year_id = ? OR academic_year_id IS NULL)
+                                            AND academic_year_id = ?
                 ");
                 $stmtDelOld->execute([$subjectId, $classId, $academicYearId]);
 
@@ -730,11 +729,13 @@ class TeacherController
 
                     // 4. Transférer les notes éventuellement déjà saisies par l'ancien enseignant
                     $stmtGrades = $this->db->prepare("
-                        UPDATE grades 
-                        SET teacher_id = ? 
-                        WHERE teacher_id = ? AND subject_id = ? AND class_id = ?
+                                                UPDATE grades g
+                                                JOIN students st ON st.id = g.student_id
+                                                SET g.teacher_id = ?
+                                                WHERE g.teacher_id = ? AND g.subject_id = ?
+                                                    AND st.class_id = ? AND g.academic_year_id = ?
                     ");
-                    $stmtGrades->execute([$targetTeacherId, $sourceTeacherId, $subjectId, $classId]);
+                    $stmtGrades->execute([$targetTeacherId, $sourceTeacherId, $subjectId, $classId, $academicYearId]);
                 }
 
                 $this->db->commit();
@@ -995,7 +996,7 @@ class TeacherController
                    AND (
                        EXISTS (
                            SELECT 1 FROM teacher_assignments ta 
-                           WHERE ta.subject_id = s.id AND ta.user_id = u.id AND (ta.academic_year_id = {$academicYearId} OR ta.academic_year_id IS NULL)
+                           WHERE ta.subject_id = s.id AND ta.user_id = u.id AND ta.academic_year_id = {$academicYearId}
                        )
                        OR EXISTS (
                            SELECT 1 FROM timetable_entries te 
@@ -1012,7 +1013,7 @@ class TeacherController
                      LEFT JOIN teaching_types tt ON s.teaching_type_id = tt.id
                      WHERE ta.user_id = u.id 
                        AND (ta.class_id = c.id OR (ta.class_id IS NULL AND EXISTS (SELECT 1 FROM subject_classes sc WHERE sc.subject_id = ta.subject_id AND sc.class_id = c.id)))
-                       AND (ta.academic_year_id = {$academicYearId} OR ta.academic_year_id IS NULL) 
+                       AND ta.academic_year_id = {$academicYearId}
                        AND (tt.actif = 1 OR s.teaching_type_id IS NULL)
                  ) OR EXISTS (
                      SELECT 1 FROM timetable_entries te
@@ -1032,7 +1033,7 @@ class TeacherController
                    AND (
                        EXISTS (
                            SELECT 1 FROM teacher_assignments ta 
-                           WHERE ta.subject_id = s.id AND ta.user_id = u.id AND (ta.academic_year_id = {$academicYearId} OR ta.academic_year_id IS NULL)
+                           WHERE ta.subject_id = s.id AND ta.user_id = u.id AND ta.academic_year_id = {$academicYearId}
                        )
                        OR EXISTS (
                            SELECT 1 FROM timetable_entries te 

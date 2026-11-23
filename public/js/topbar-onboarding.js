@@ -94,11 +94,6 @@
                 dismissBannerBtn.addEventListener('click', () => this.dismissBanner());
             }
 
-            const startTourBtn = document.getElementById('startGuidedTour');
-            if (startTourBtn) {
-                startTourBtn.addEventListener('click', () => this.relaunch());
-            }
-
             window.addEventListener('resize', () => {
                 if (this.activePopover && this.activePopover.style.display !== 'none') {
                     this.positionPopover();
@@ -354,6 +349,5 @@
     window.TopBarOnboarding.prevStep = () => instance.prevStep();
     window.TopBarOnboarding.closeTour = () => instance.closeTour();
     window.TopBarOnboarding.finishTour = () => instance.finishTour();
-    window.TopBarOnboarding.relaunch = () => instance.relaunch();
     window.TopBarOnboarding.showTourStep = (idx) => instance.showTourStep(idx);
 })();

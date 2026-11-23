@@ -40,6 +40,13 @@ if (!function_exists('formatHistoryValue')) {
     }
 }
 
+$friendlyFieldName = static function ($key) {
+    return getFriendlyFieldName($key);
+};
+$formatHistoryValue = static function ($key, $val) {
+    return formatHistoryValue($key, $val);
+};
+
 ob_start();
 ?>
 
@@ -104,7 +111,6 @@ ob_start();
                     <!-- Advanced Filters Trigger Button -->
                     <?php
                     $advActiveCount = 0;
-                    if ($filters['teaching_type_id'] > 0) $advActiveCount++;
                     if (($filters['class_id'] ?? 0) > 0) $advActiveCount++;
                     if ($filters['entity_type'] !== 'all') $advActiveCount++;
                     if ($filters['action'] !== 'all') $advActiveCount++;
@@ -158,7 +164,6 @@ ob_start();
                         <div class="col-md-3">
                             <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('teaching_type') ?></label>
                             <select name="teaching_type_id" id="teaching-type-select" class="form-select premium-select">
-                                <option value="0" <?= $filters['teaching_type_id'] === 0 ? 'selected' : '' ?>><?= __('all_m') ?></option>
                                 <?php foreach ($teachingTypes as $tt): ?>
                                     <option value="<?= $tt['id'] ?>" <?= $filters['teaching_type_id'] === (int)$tt['id'] ? 'selected' : '' ?>><?= h($tt['nom']) ?></option>
                                 <?php endforeach; ?>
@@ -251,7 +256,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateAdvancedBadge() {
         let count = 0;
-        if (teachingTypeSelect && teachingTypeSelect.value !== '0') count++;
         if (classSelect && classSelect.value !== '0') count++;
         if (entitySelect && entitySelect.value !== 'all') count++;
         if (actionSelect && actionSelect.value !== 'all') count++;
@@ -386,7 +390,7 @@ document.addEventListener('DOMContentLoaded', function() {
             startDateInput.value = '';
             endDateInput.value = '';
         } else if (type === 'teaching_type') {
-            if (teachingTypeSelect) teachingTypeSelect.value = '0';
+            if (teachingTypeSelect) teachingTypeSelect.selectedIndex = 0;
         } else if (type === 'class') {
             if (classSelect) classSelect.value = '0';
         } else if (type === 'entity_type') {

@@ -139,24 +139,50 @@ class SubjectController
 
         $academicYear = $this->academicYearService->getActiveYear();
         $academicYearId = (int) ($academicYear['id'] ?? 0);
+        $activeTeachingTypeId = (int) ($filters['teaching_type_id'] ?? 0);
         $statsStmt = $this->db->prepare(
             "SELECT
                 (SELECT COUNT(*)
                  FROM subjects s
                  LEFT JOIN teaching_types tt ON tt.id = s.teaching_type_id
-                 WHERE tt.actif = 1 OR s.teaching_type_id IS NULL) AS total_subjects,
+                 WHERE ((? = 0 AND (tt.actif = 1 OR s.teaching_type_id IS NULL))
+                        OR s.teaching_type_id = ?)) AS total_subjects,
                 (SELECT COUNT(*)
                  FROM subjects s
                  LEFT JOIN teaching_types tt ON tt.id = s.teaching_type_id
-                 WHERE s.status = 1 AND (tt.actif = 1 OR s.teaching_type_id IS NULL)) AS active_subjects,
-                (SELECT COUNT(*) FROM subject_groups WHERE status = 1) AS subject_groups,
+                 WHERE s.status = 1
+                   AND ((? = 0 AND (tt.actif = 1 OR s.teaching_type_id IS NULL))
+                        OR s.teaching_type_id = ?)) AS active_subjects,
+                (SELECT COUNT(*)
+                 FROM subject_groups sg
+                 LEFT JOIN teaching_types tt ON tt.id = sg.teaching_type_id
+                 WHERE sg.status = 1
+                   AND ((? = 0 AND (tt.actif = 1 OR sg.teaching_type_id IS NULL))
+                        OR sg.teaching_type_id = ?)) AS subject_groups,
                 (SELECT COUNT(DISTINCT sc.class_id)
                  FROM subject_classes sc
                  JOIN subjects s ON s.id = sc.subject_id AND s.status = 1
                  JOIN classes c ON c.id = sc.class_id AND c.status = 1
-                 WHERE sc.academic_year_id = ?) AS associated_classes"
+                 LEFT JOIN teaching_types subject_tt ON subject_tt.id = s.teaching_type_id
+                 LEFT JOIN teaching_types class_tt ON class_tt.id = c.teaching_type_id
+                 WHERE sc.academic_year_id = ?
+                   AND ((? = 0
+                         AND (subject_tt.actif = 1 OR s.teaching_type_id IS NULL)
+                         AND (class_tt.actif = 1 OR c.teaching_type_id IS NULL))
+                        OR (s.teaching_type_id = ? AND c.teaching_type_id = ?))) AS associated_classes"
         );
-        $statsStmt->execute([$academicYearId]);
+        $statsStmt->execute([
+            $activeTeachingTypeId,
+            $activeTeachingTypeId,
+            $activeTeachingTypeId,
+            $activeTeachingTypeId,
+            $activeTeachingTypeId,
+            $activeTeachingTypeId,
+            $academicYearId,
+            $activeTeachingTypeId,
+            $activeTeachingTypeId,
+            $activeTeachingTypeId,
+        ]);
         $subjectStats = $statsStmt->fetch(PDO::FETCH_ASSOC);
 
                 $classesStmt = $this->db->prepare("SELECT c.id, c.nom, c.teaching_type_id, c.teaching_form_id
@@ -1579,7 +1605,7 @@ class SubjectController
                  FROM teacher_assignments ta
                  JOIN users u ON u.id = ta.user_id AND u.role = 'enseignant' AND u.status = 1
                 LEFT JOIN classes c ON c.id = ta.class_id
-                 WHERE (ta.academic_year_id = ? OR ta.academic_year_id IS NULL)
+                 WHERE ta.academic_year_id = ?
                   AND (ta.class_id IS NULL OR c.status = 1)
                   AND ta.subject_id IN ($placeholders)
                  ORDER BY teacher_name ASC"
@@ -1722,7 +1748,7 @@ class SubjectController
                 JOIN users u_none ON u_none.id = ta_none.user_id
                     AND u_none.role = 'enseignant' AND u_none.status = 1
                 WHERE ta_none.subject_id = s.id
-                  AND (ta_none.academic_year_id = ? OR ta_none.academic_year_id IS NULL)
+                  AND ta_none.academic_year_id = ?
             )
         )";
         $countSql .= " AND $eligibleClassAssignment";

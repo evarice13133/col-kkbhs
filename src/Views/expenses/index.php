@@ -212,7 +212,14 @@ ob_start();
                 </span>
                 <?= __('expenses_list') ?>
             </h2>
-            <p class="text-muted-theme small mb-0"><?= __('expenses_desc') ?></p>
+            <p class="text-muted-theme small mb-0">
+                <?= __('expenses_desc') ?>
+                <?php if ($activeTeachingTypeName !== ''): ?>
+                    <span class="badge bg-primary bg-opacity-10 text-primary ms-2">
+                        <?= __('teaching_type') ?> : <?= h($activeTeachingTypeName) ?>
+                    </span>
+                <?php endif; ?>
+            </p>
         </div>
         <div class="d-flex gap-2 expense-page-actions" id="expensePageActions">
             <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm expense-action expense-action-primary" data-bs-toggle="modal" data-bs-target="#addExpenseModal">

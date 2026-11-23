@@ -30,8 +30,9 @@ class StudentImportProcessor
                 try {
                     $matricule = $row['matricule'];
                     if (empty($matricule)) {
-                        $matricule = $this->matriculeService->generate($row['class_id']);
+                        $matricule = $this->matriculeService->generateTemporary($row['class_id']);
                     }
+                    $row['matricule'] = $matricule;
 
                     $sql = "INSERT INTO students (nom, prenom, email, class_id, teaching_type_id, sexe, date_naissance, lieu_naissance, is_redoublant, academic_year_id, parent_contact, guardian_contact, created_by, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Non inscrit')";
                     $stmt = $this->db->prepare($sql);
@@ -76,7 +77,15 @@ class StudentImportProcessor
 
                     $successCount++;
                 } catch (Exception $e) {
-                    $errors[] = "Erreur insertion Ligne {$row['line']} : " . $e->getMessage();
+                    $errors[] = sprintf(
+                        "Ligne %s : échec d'insertion (nom='%s', prénom='%s', matricule='%s', classe_id=%s) : %s",
+                        $row['line'],
+                        $row['nom'] ?? '',
+                        $row['prenom'] ?? '',
+                        $row['matricule'] ?? '[temporaire à générer]',
+                        $row['class_id'] ?? 'NULL',
+                        $e->getMessage()
+                    );
                 }
             }
 

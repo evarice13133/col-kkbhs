@@ -18,6 +18,7 @@ class BulkSchedulingService
     private Timetable $timetableModel;
     private TimetableEntry $entryModel;
     private TimetableAuditLog $auditLogModel;
+    private TimetableWizardService $wizardService;
 
     public function __construct(?PDO $db = null)
     {
@@ -27,6 +28,7 @@ class BulkSchedulingService
         $this->timetableModel = new Timetable();
         $this->entryModel = new TimetableEntry();
         $this->auditLogModel = new TimetableAuditLog();
+        $this->wizardService = new TimetableWizardService($this->db);
     }
 
     /**
@@ -34,10 +36,10 @@ class BulkSchedulingService
      */
     public function validateBulkSchedule(array $params): array
     {
-        $weekId = (int)($params['week_id'] ?? 0);
+        $weekId = (int)($params['week_id'] ?? -1);
         $subjectId = (int)($params['subject_id'] ?? 0);
         $teacherId = (int)($params['teacher_id'] ?? 0);
-        $classIds = array_filter(array_map('intval', (array)($params['class_ids'] ?? [])));
+        $classIds = array_values(array_unique(array_filter(array_map('intval', (array)($params['class_ids'] ?? [])))));
         $days = array_filter((array)($params['days'] ?? []));
         $slotIds = array_filter(array_map('intval', (array)($params['slot_ids'] ?? [])));
         $roomMode = $params['room_mode'] ?? 'auto'; // 'mutualized', 'auto', 'custom_pool'
@@ -45,10 +47,26 @@ class BulkSchedulingService
         $poolRoomIds = array_filter(array_map('intval', (array)($params['room_ids'] ?? [])));
         $colorHex = trim($params['couleur_hex'] ?? '#3b82f6');
 
-        if (!$weekId || !$subjectId || !$teacherId || empty($classIds) || empty($days) || empty($slotIds)) {
+        if ($weekId < 0 || !$subjectId || !$teacherId || empty($classIds) || empty($days) || empty($slotIds)) {
             return [
                 'success' => false,
                 'message' => __('timetables_bulk_fields_required'),
+                'schedules' => [],
+                'total_generated' => 0,
+                'valid_count' => 0,
+                'conflict_count' => 0
+            ];
+        }
+
+        $weekYearStmt = $this->db->prepare("SELECT academic_year_id FROM timetable_weeks WHERE id = ?");
+        $weekYearStmt->execute([$weekId]);
+        $weekAcademicYearId = (int)$weekYearStmt->fetchColumn();
+        $eligibleClasses = $this->wizardService->getClassesByLevel(0, 0, $weekAcademicYearId);
+        $eligibleClassIds = array_fill_keys(array_map('intval', array_column($eligibleClasses, 'id')), true);
+        if (array_diff($classIds, array_keys($eligibleClassIds))) {
+            return [
+                'success' => false,
+                'message' => __('timetables_no_enrolled_classes'),
                 'schedules' => [],
                 'total_generated' => 0,
                 'valid_count' => 0,
@@ -278,13 +296,41 @@ class BulkSchedulingService
             ];
         }
 
+        $eligibleClassesByWeek = [];
+        $academicYearByWeek = [];
+        $weekYearStmt = $this->db->prepare("SELECT academic_year_id FROM timetable_weeks WHERE id = ?");
+        foreach ($schedules as $schedule) {
+            $classId = (int)($schedule['class_id'] ?? 0);
+            $weekId = (int)($schedule['week_id'] ?? -1);
+            if (!$classId || $weekId < 0) {
+                continue;
+            }
+
+            if (!array_key_exists($weekId, $eligibleClassesByWeek)) {
+                $weekYearStmt->execute([$weekId]);
+                $academicYearId = (int)$weekYearStmt->fetchColumn();
+                $academicYearByWeek[$weekId] = $academicYearId;
+                $eligibleClasses = $this->wizardService->getClassesByLevel(0, 0, $academicYearId);
+                $eligibleClassesByWeek[$weekId] = array_fill_keys(
+                    array_map('intval', array_column($eligibleClasses, 'id')),
+                    true
+                );
+            }
+
+            if (!isset($eligibleClassesByWeek[$weekId][$classId])) {
+                return [
+                    'success' => false,
+                    'message' => __('timetables_no_enrolled_classes'),
+                    'saved_count' => 0
+                ];
+            }
+        }
+
         $savedCount = 0;
         $errors = [];
 
         try {
             $this->db->beginTransaction();
-
-            $activeYearId = (int)$this->db->query("SELECT id FROM academic_years WHERE status = 1 ORDER BY id DESC LIMIT 1")->fetchColumn();
 
             foreach ($schedules as $s) {
                 $classId = (int)($s['class_id'] ?? 0);
@@ -295,8 +341,9 @@ class BulkSchedulingService
                 $teacherId = (int)($s['teacher_id'] ?? 0);
                 $roomId = (int)($s['room_id'] ?? 0);
                 $colorHex = trim($s['couleur_hex'] ?? '#3b82f6');
+                $academicYearId = $academicYearByWeek[$weekId] ?? 0;
 
-                if (!$classId || !$weekId || !$slotId || !$dayOfWeek || !$subjectId || !$teacherId || !$roomId) {
+                if (!$classId || $weekId < 0 || !$slotId || !$dayOfWeek || !$subjectId || !$teacherId || !$roomId) {
                     continue;
                 }
 
@@ -306,10 +353,11 @@ class BulkSchedulingService
 
                 if (!$timetableId) {
                     $classRow = $this->db->query("SELECT nom, cycle_id, teaching_type_id FROM classes WHERE id = $classId")->fetch(PDO::FETCH_ASSOC);
-                    $weekRow = $this->db->query("SELECT libelle FROM timetable_weeks WHERE id = $weekId")->fetch(PDO::FETCH_ASSOC);
+                    $weekRow = $this->db->query("SELECT libelle, academic_year_id FROM timetable_weeks WHERE id = $weekId")->fetch(PDO::FETCH_ASSOC);
+                    $academicYearId = (int)($weekRow['academic_year_id'] ?? $academicYearId);
 
                     $timetableId = $this->timetableModel->create([
-                        'academic_year_id' => $activeYearId,
+                        'academic_year_id' => $academicYearId,
                         'teaching_type_id' => $classRow['teaching_type_id'] ?? 9,
                         'cycle_id' => $classRow['cycle_id'] ?? 1,
                         'class_id' => $classId,
@@ -342,15 +390,15 @@ class BulkSchedulingService
                     $savedCount++;
 
                     // Raccordement automatique Subject-Class
-                    $stmtCheckSubClass = $this->db->prepare("SELECT 1 FROM subject_classes WHERE class_id = ? AND subject_id = ?");
-                    $stmtCheckSubClass->execute([$classId, $subjectId]);
+                    $stmtCheckSubClass = $this->db->prepare("SELECT 1 FROM subject_classes WHERE class_id = ? AND subject_id = ? AND academic_year_id = ? LIMIT 1");
+                    $stmtCheckSubClass->execute([$classId, $subjectId, $academicYearId]);
                     if (!$stmtCheckSubClass->fetchColumn()) {
                         $stmtInsSubClass = $this->db->prepare("
                             INSERT INTO subject_classes (subject_id, class_id, academic_year_id)
                             VALUES (?, ?, ?)
                             ON DUPLICATE KEY UPDATE subject_id = VALUES(subject_id)
                         ");
-                        $stmtInsSubClass->execute([$subjectId, $classId, $activeYearId]);
+                        $stmtInsSubClass->execute([$subjectId, $classId, $academicYearId]);
                     }
 
                     // Raccordement automatique Teacher-Assignment
@@ -359,7 +407,7 @@ class BulkSchedulingService
                         VALUES (?, ?, ?, ?)
                         ON DUPLICATE KEY UPDATE user_id = VALUES(user_id)
                     ");
-                    $stmtAssig->execute([$teacherId, $subjectId, $classId, $activeYearId]);
+                    $stmtAssig->execute([$teacherId, $subjectId, $classId, $academicYearId]);
 
                     // Audit Log
                     $this->auditLogModel->logAction(

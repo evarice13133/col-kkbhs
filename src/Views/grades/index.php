@@ -213,389 +213,192 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
 
                 <?php endif; ?>
 
-
-
-                <?php foreach ($dashboard as $class_name => $subjectsRaw): ?>
-
-                    <?php
-
-                        // Récupérer le class_id depuis le premier sujet
-
-                        $class_id = !empty($subjectsRaw) ? $subjectsRaw[0]['class_id'] : 0;
-
-                    ?>
-
-                    <div class="class-section animate-slide-up mb-4" data-class="<?= strtolower($class_name) ?>">
-
-                        <div class="class-header-premium mb-4">
-
-                            <div class="d-flex align-items-center gap-3">
-
-                                <div class="class-header-icon">
-
-                                    <i class="bi bi-door-open-fill"></i>
-
-                                </div>
-
-                                <div>
-
-                                    <div class="d-flex align-items-center gap-2">
-
-                                        <h5 class="m-0 fw-black text-main-theme text-uppercase letter-spacing-2"><?= htmlspecialchars((string) $class_name) ?></h5>
-
-                                    </div>
-
-                                    <div class="small text-muted-theme opacity-50 d-flex align-items-center gap-2 mt-1">
-
-                                        <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2 py-0 extra-small border border-primary border-opacity-10">
-
-                                            <?= count($subjectsRaw) ?> <?= __('subjects') ?>
-
-                                        </span>
-
-                                        <div class="header-line-accent"></div>
-
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-                            <?php if ($isAdmin && $class_id > 0): ?>
-
-                            <button type="button" class="btn btn-outline-success rounded-pill fw-bold shadow-sm text-nowrap flex-shrink-0 grades-import-button" data-bs-toggle="modal" data-bs-target="#gradeImportModal<?= $class_id ?>">
-
-                                <i class="bi bi-upload me-1"></i> <?= __('import_grades') ?>
-
-                            </button>
-
-                            <?php endif; ?>
-
-                        </div>
-
-                        <div class="row g-2 g-md-3">
-
-                            <?php foreach ($subjectsRaw as $sub): ?>
-
-                                <div class="col-12 col-md-4 subject-grid-item"
-
-                                    data-subject-name="<?= strtolower($sub['subject_nom']) ?>">
-
-                                    <?php $gradeEntryModalId = 'gradeEntryModal' . (int) $sub['class_id'] . '_' . (int) $sub['subject_id']; ?>
-
-                                    <div class="subject-card-compact border-theme-dynamic h-100 <?= empty($sub['teacher_nom']) ? 'is-unassigned' : '' ?>">
-
-                                        <div class="subject-card-glow"></div>
-
-                                        <div class="card-body p-2 p-md-3 h-100 position-relative" style="z-index: 1;">
-
-                                            <div class="d-flex flex-column h-100 justify-content-between gap-1">
-
-                                                <div>
-
-                                                    <div class="d-flex align-items-start gap-2 mb-1 text-main-theme">
-
-                                                        <div class="flex-shrink-0 mt-1">
-
-                                                            <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center" style="width: 24px; height: 24px;">
-
-                                                                <i class="bi bi-journal-text text-primary small"></i>
-
-                                                            </div>
-
-                                                        </div>
-
-                                                        <span class="fw-bold lh-sm flex-grow-1" style="font-size: 0.8rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-
-                                                            <?= htmlspecialchars((string) $sub['subject_nom']) ?>
-
-                                                        </span>
-
-                                                    </div>
-
-                                                    
-
-                                                    <?php if ($isAdmin && $sub['teacher_nom']): ?>
-
-                                                        <div class="extra-small text-muted-theme fw-normal opacity-75 d-flex align-items-center gap-1 ps-4 ms-1">
-
-                                                            <i class="bi bi-person text-primary opacity-50"></i>
-
-                                                            <span class="text-truncate"><?= htmlspecialchars($sub['teacher_prenom'] . ' ' . $sub['teacher_nom']) ?></span>
-
-                                                        </div>
-
-                                                    <?php elseif (!$sub['teacher_nom']): ?>
-
-                                                        <?php
-
-                                                            $filled = (int) ($sub['filled_count'] ?? 0);
-
-                                                            $total = (int) ($sub['total_count'] ?? 0);
-
-                                                            $isComplete = (bool) ($sub['is_complete'] ?? ($total > 0 && $filled >= $total));
-
-                                                        ?>
-
-                                                        <div class="extra-small text-warning fw-bold d-flex align-items-center gap-1 ps-4 ms-1">
-
-                                                            <i class="bi bi-exclamation-triangle-fill"></i>
-
-                                                            <span><?= __('not_assigned') ?></span>
-
-                                                            <span class="text-muted-theme fw-semibold opacity-75">
-
-                                                                <?= $filled ?>/<?= $total ?>
-
-                                                            </span>
-
-                                                        </div>
-
-                                                    <?php endif; ?>
-
-                                                </div>
-
-
-
-                                                <div class="mt-auto pt-2 d-flex justify-content-between align-items-center">
-
-                                                    <?php if (!$sub['teacher_nom']): ?>
-
-                                                        <div class="d-flex gap-2 w-100">
-
-                                                            <?php if ($isAdmin): ?>
-                                                                <?php $assignmentModalId = 'assignTeacherModal' . (int) $sub['class_id'] . '_' . (int) $sub['subject_id']; ?>
-                                                                <button type="button" class="btn btn-xs btn-outline-warning rounded-pill py-0 px-2 extra-small fw-bold shadow-sm flex-grow-1" data-bs-toggle="modal" data-bs-target="#<?= $assignmentModalId ?>">
-                                                                    <i class="bi bi-person-plus-fill me-1"></i><?= __('assign') ?>
-                                                                </button>
-                                                            <?php else: ?>
-                                                                <a href="/teachers?assign_subject=<?= $sub['subject_id'] ?>&assign_class=<?= $sub['class_id'] ?>" class="btn btn-xs btn-outline-warning rounded-pill py-0 px-2 extra-small fw-bold shadow-sm flex-grow-1 text-decoration-none text-center">
-                                                                    <i class="bi bi-person-plus-fill me-1"></i><?= __('assign') ?>
-                                                                </a>
-                                                            <?php endif; ?>
-
-                                                            <?php if ($isAdmin): ?>
-
-                                                            <button type="button" class="btn btn-xs btn-outline-primary rounded-pill py-0 px-2 extra-small fw-bold shadow-sm flex-grow-1" data-bs-toggle="modal" data-bs-target="#<?= $gradeEntryModalId ?>">
-                                                                <i class="bi bi-pencil-fill me-1"></i><?= __('enter_grades') ?>
-                                                            </button>
-
-                                                            <?php endif; ?>
-
-                                                        </div>
-
-                                                    <?php else: ?>
-
-                                                        <?php
-
-                                                            $filled = (int) ($sub['filled_count'] ?? 0);
-
-                                                            $total = (int) ($sub['total_count'] ?? 0);
-
-                                                            $isComplete = (bool) ($sub['is_complete'] ?? ($total > 0 && $filled >= $total));
-
-                                                        ?>
-
-                                                        <div class="d-flex align-items-center gap-1">
-
-                                                            <?php if ($total <= 0 || $filled <= 0): ?>
-
-                                                                <span class="d-inline-flex align-items-center gap-2">
-
-                                                                    <!-- <span class="btn btn-xs btn-outline-primary rounded-pill py-0 px-2 extra-small fw-bold shadow-sm text-decoration-none text-center" style="pointer-events:none;">
-
-                                                                        <i class="bi bi-plus-circle-fill me-1"></i> Saisir les notes
-
-                                                                    </span> -->
-
-                                                                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill extra-small px-1 px-md-2 py-0.5 border border-primary border-opacity-10" style="pointer-events:none;" title="À saisir">
-
-                                                                        <i class="bi bi-award-fill me-1"></i><?=__('to_enter')?>
-
-                                                                    </span>
-
-                                                                </span>
-
-                                                            <?php else: ?>
-
-                                                                <?php
-
-                                                                    $success = $isComplete && $filled >= $total;
-
-                                                                    // Partiel : affichage d'avancement (orange)
-
-                                                                    $badgeClass = $success
-
-                                                                        ? 'bg-success bg-opacity-10 text-success border border-success border-opacity-10'
-
-                                                                        : 'bg-warning bg-opacity-10 text-warning border border-warning border-opacity-10';
-
-                                                                    $icon = $success ? 'bi-check-circle-fill' : 'bi-pencil-fill';
-
-                                                                ?>
-
-                                                                <span class="badge <?= $badgeClass ?> rounded-pill extra-small px-1 px-md-2 py-0.5 d-inline-flex align-items-center gap-1" style="pointer-events:none;">
-
-                                                                    <i class="bi <?= $icon ?>"></i>
-
-                                                                    <?= $filled ?>/<?= $total ?><?= $success ? ' ✓' : '' ?>
-
-                                                                </span>
-
-                                                            <?php endif; ?>
-
-                                                            <button type="button" class="btn btn-xs btn-outline-primary rounded-pill py-0 px-2 extra-small fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#<?= $gradeEntryModalId ?>" title="<?= __('enter_grades') ?>">
-                                                                <i class="bi bi-pencil-fill"></i>
-                                                            </button>
-
-                                                        </div>
-
-                                                    <?php endif; ?>
-
-                                                    <div class="card-arrow-container">
-
-                                                        <i class="bi bi-arrow-right-short text-primary opacity-50"></i>
-
-                                                    </div>
-
-                                                </div>
-
-                                            </div>
-
-                                        </div>
-
-                                    </div>
-
-                                    <?php if ($isAdmin || !empty($sub['teacher_nom'])): ?>
-                                        <div class="modal fade grade-entry-modal" id="<?= $gradeEntryModalId ?>" tabindex="-1" aria-labelledby="<?= $gradeEntryModalId ?>Label" aria-hidden="true">
-                                            <div class="modal-dialog modal-dialog-centered modal-xl">
-                                                <div class="modal-content border-0 rounded-4 overflow-hidden">
-                                                    <div class="modal-header">
-                                                        <div>
-                                                            <h5 class="modal-title fw-bold" id="<?= $gradeEntryModalId ?>Label">
-                                                                <i class="bi bi-pencil-square text-primary me-2"></i><?= __('enter_grades') ?>
-                                                            </h5>
-                                                            <p class="small text-muted-theme mb-0"><?= htmlspecialchars((string) $sub['subject_nom']) ?> · <?= htmlspecialchars((string) $class_name) ?></p>
-                                                        </div>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= __('close') ?>"></button>
-                                                    </div>
-                                                    <div class="modal-body p-0">
-                                                        <div class="grade-entry-loading d-flex flex-column align-items-center justify-content-center gap-3" role="status">
-                                                            <div class="spinner-border text-primary" aria-hidden="true"></div>
-                                                            <span><?= __('grade_entry_loading') ?></span>
-                                                        </div>
-                                                        <div class="grade-entry-load-error alert alert-danger m-3 d-none" role="alert">
-                                                            <?= __('grade_entry_load_error') ?>
-                                                        </div>
-                                                        <iframe class="grade-entry-frame w-100 border-0" title="<?= htmlspecialchars(__('enter_grades') . ' - ' . $sub['subject_nom'], ENT_QUOTES) ?>" src="about:blank" data-src="/notes/saisie?class_id=<?= (int) $sub['class_id'] ?>&subject_id=<?= (int) $sub['subject_id'] ?>&entry_modal=1" loading="eager"></iframe>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    <?php endif; ?>
-
-                                    <?php if ($isAdmin && !$sub['teacher_nom']): ?>
-                                        <?php $assignmentModalId = 'assignTeacherModal' . (int) $sub['class_id'] . '_' . (int) $sub['subject_id']; ?>
-                                        <div class="modal fade" id="<?= $assignmentModalId ?>" tabindex="-1" aria-labelledby="<?= $assignmentModalId ?>Label" aria-hidden="true">
-                                            <div class="modal-dialog modal-dialog-centered">
-                                                <div class="modal-content modern-card border-0 rounded-4 overflow-hidden">
-                                                    <div class="modal-header border-bottom">
-                                                        <div>
-                                                            <h5 class="modal-title fw-bold" id="<?= $assignmentModalId ?>Label">
-                                                                <i class="bi bi-person-plus-fill text-warning me-2"></i><?= __('assign') ?>
-                                                            </h5>
-                                                            <p class="small text-muted-theme mb-0">
-                                                                <?= htmlspecialchars((string) $sub['subject_nom']) ?> · <?= htmlspecialchars((string) $class_name) ?>
-                                                            </p>
-                                                        </div>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= __('close') ?? 'Fermer' ?>"></button>
-                                                    </div>
-                                                    <form action="/teachers/direct_assign" method="GET">
-                                                        <input type="hidden" name="subject_id" value="<?= (int) $sub['subject_id'] ?>">
-                                                        <input type="hidden" name="class_id" value="<?= (int) $sub['class_id'] ?>">
-                                                        <input type="hidden" name="return_to" value="notes">
-                                                        <div class="modal-body">
-                                                            <label for="<?= $assignmentModalId ?>Teacher" class="form-label fw-semibold"><?= __('select_teacher') ?></label>
-                                                            <select class="form-select" id="<?= $assignmentModalId ?>Teacher" name="teacher_id" required>
-                                                                <option value=""><?= __('select_teacher') ?></option>
-                                                                <?php foreach ($assignmentTeachers as $assignmentTeacher): ?>
-                                                                    <option value="<?= (int) $assignmentTeacher['id'] ?>">
-                                                                        <?= htmlspecialchars(trim($assignmentTeacher['nom'] . ' ' . $assignmentTeacher['prenom'])) ?>
-                                                                    </option>
-                                                                <?php endforeach; ?>
-                                                            </select>
-                                                        </div>
-                                                        <div class="modal-footer border-top">
-                                                            <button type="button" class="btn btn-light" data-bs-dismiss="modal"><?= __('cancel') ?></button>
-                                                            <button type="submit" class="btn btn-warning fw-bold" <?= empty($assignmentTeachers) ? 'disabled' : '' ?>>
-                                                                <i class="bi bi-check2-circle me-1"></i><?= __('assign') ?>
-                                                            </button>
-                                                        </div>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    <?php endif; ?>
-
-                                </div>
-
-                            <?php endforeach; ?>
-
-                        </div>
-
-                        <?php if ($isAdmin && $class_id > 0): ?>
-                            <?php $importModalId = 'gradeImportModal' . $class_id; ?>
-                            <div class="modal fade" id="<?= $importModalId ?>" tabindex="-1" aria-labelledby="<?= $importModalId ?>Label" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered modal-lg">
-                                    <div class="modal-content modern-card border-0 rounded-4 overflow-hidden">
-                                        <div class="modal-header border-bottom">
-                                            <div>
-                                                <h5 class="modal-title fw-bold" id="<?= $importModalId ?>Label">
-                                                    <i class="bi bi-file-earmark-spreadsheet text-success me-2"></i><?= __('import_grades') ?>
-                                                </h5>
-                                                <p class="small text-muted-theme mb-0"><?= htmlspecialchars((string) $class_name) ?></p>
-                                            </div>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= __('close') ?? 'Fermer' ?>"></button>
-                                        </div>
-                                        <div class="modal-body p-4">
-                                            <p class="text-muted-theme mb-3"><?= __('import_grades_multi_sheet_desc') ?></p>
-                                            <div class="d-flex flex-wrap align-items-end gap-3 mb-4">
-                                                <div class="flex-grow-1">
-                                                    <label class="form-label fw-semibold" for="gradeImportSubject<?= $class_id ?>"><?= __('subject') ?></label>
-                                                    <select id="gradeImportSubject<?= $class_id ?>" class="form-select grade-import-subject">
-                                                        <option value="0"><?= __('all_subjects') ?></option>
-                                                        <?php foreach ($subjectsRaw as $importSubject): ?>
-                                                            <option value="<?= (int) $importSubject['subject_id'] ?>"><?= htmlspecialchars((string) $importSubject['subject_nom']) ?></option>
-                                                        <?php endforeach; ?>
-                                                    </select>
-                                                </div>
-                                                <a href="/notes/downloadTemplate?class_id=<?= $class_id ?>&subject_id=0" class="btn btn-outline-primary fw-semibold grade-import-template" data-class-id="<?= $class_id ?>">
-                                                    <i class="bi bi-download me-2"></i><?= __('download_template') ?>
-                                                </a>
-                                            </div>
-                                            <form action="/notes/upload" method="POST" enctype="multipart/form-data" class="grade-import-form">
-                                                <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
-                                                <input type="hidden" name="class_id" value="<?= $class_id ?>">
-                                                <input type="hidden" name="subject_id" value="0" class="grade-import-subject-id">
-                                                <label class="form-label fw-semibold" for="gradeImportFile<?= $class_id ?>"><?= __('choose_file') ?></label>
-                                                <input type="file" id="gradeImportFile<?= $class_id ?>" name="import_file" class="form-control grade-import-file mb-3" accept=".xlsx" required>
-                                                <p class="small text-muted-theme mb-0"><?= __('import_grades_integrity_desc') ?></p>
-                                                <div class="modal-footer border-0 px-0 pb-0 mt-3">
-                                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal"><?= __('cancel') ?></button>
-                                                    <button type="submit" class="btn btn-success fw-bold grade-import-submit" disabled>
-                                                        <i class="bi bi-cloud-upload me-2"></i><?= __('validate_import_final') ?>
+                <?php if (!empty($dashboard)): ?>
+                    <div class="modern-card p-3 grades-table-card">
+                        <table id="gradesTable" class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th><?= __('class') ?? 'Classe' ?></th>
+                                    <th><?= __('subject') ?? 'Matière' ?></th>
+                                    <th><?= __('teacher') ?? 'Enseignant' ?></th>
+                                    <th><?= __('status') ?? 'Progression' ?></th>
+                                    <th class="text-end"><?= __('actions') ?? 'Actions' ?></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($dashboard as $class_name => $subjectsRaw): ?>
+                                    <?php foreach ($subjectsRaw as $sub): ?>
+                                        <?php
+                                            $classId = (int) $sub['class_id'];
+                                            $subjectId = (int) $sub['subject_id'];
+                                            $hasTeacher = !empty($sub['teacher_nom']);
+                                            $filled = (int) ($sub['filled_count'] ?? 0);
+                                            $total = (int) ($sub['total_count'] ?? 0);
+                                            $isComplete = (bool) ($sub['is_complete'] ?? ($total > 0 && $filled >= $total));
+                                            $entryUrl = '/notes/saisie?class_id=' . $classId . '&subject_id=' . $subjectId . '&entry_modal=1';
+                                            $importModalId = 'gradeImportModal' . $classId;
+                                        ?>
+                                        <tr>
+                                            <td data-label="<?= htmlspecialchars((string) (__('class') ?? 'Classe'), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $class_name) ?></td>
+                                            <td data-label="<?= htmlspecialchars((string) (__('subject') ?? 'Matière'), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $sub['subject_nom']) ?></td>
+                                            <td data-label="<?= htmlspecialchars((string) (__('teacher') ?? 'Enseignant'), ENT_QUOTES, 'UTF-8') ?>">
+                                                <?php if ($hasTeacher): ?>
+                                                    <?= htmlspecialchars(trim((string) $sub['teacher_prenom'] . ' ' . $sub['teacher_nom'])) ?>
+                                                <?php else: ?>
+                                                    <span class="text-warning"><?= __('not_assigned') ?></span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td data-label="<?= htmlspecialchars((string) (__('status') ?? 'Progression'), ENT_QUOTES, 'UTF-8') ?>">
+                                                <span class="badge grade-progress-badge <?= $isComplete ? 'grade-progress-badge--complete' : ($filled > 0 ? 'grade-progress-badge--partial' : 'grade-progress-badge--pending') ?>">
+                                                    <?= $filled ?>/<?= $total ?>
+                                                </span>
+                                            </td>
+                                            <td class="text-end text-nowrap" data-label="<?= htmlspecialchars((string) (__('actions') ?? 'Actions'), ENT_QUOTES, 'UTF-8') ?>">
+                                                <div class="dropdown grades-actions-dropdown">
+                                                    <button type="button" class="grades-row-menu" data-bs-toggle="dropdown" aria-label="<?= htmlspecialchars((string) __('actions'), ENT_QUOTES, 'UTF-8') ?>" aria-expanded="false">
+                                                        <i class="bi bi-three-dots-vertical" aria-hidden="true"></i>
                                                     </button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        <?php endif; ?>
+                                                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 p-2">
+                                                        <?php if ($isAdmin && !$hasTeacher): ?>
+                                                            <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#assignTeacherModal" data-class-id="<?= $classId ?>" data-subject-id="<?= $subjectId ?>" data-class-name="<?= htmlspecialchars((string) $class_name, ENT_QUOTES, 'UTF-8') ?>" data-subject-name="<?= htmlspecialchars((string) $sub['subject_nom'], ENT_QUOTES, 'UTF-8') ?>"><i class="bi bi-person-plus-fill me-2 text-warning"></i><?= __('assign') ?></button></li>
+                                                        <?php elseif (!$isAdmin && !$hasTeacher): ?>
+                                                            <li><a href="/teachers?assign_subject=<?= $subjectId ?>&assign_class=<?= $classId ?>" class="dropdown-item"><i class="bi bi-person-plus-fill me-2 text-warning"></i><?= __('assign') ?></a></li>
+                                                        <?php endif; ?>
 
+                                                        <?php if ($isAdmin || $hasTeacher): ?>
+                                                            <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#gradeEntryModal" data-entry-src="<?= htmlspecialchars($entryUrl, ENT_QUOTES, 'UTF-8') ?>" data-class-name="<?= htmlspecialchars((string) $class_name, ENT_QUOTES, 'UTF-8') ?>" data-subject-name="<?= htmlspecialchars((string) $sub['subject_nom'], ENT_QUOTES, 'UTF-8') ?>"><i class="bi bi-pencil-fill me-2 text-primary"></i><?= __('enter_grades') ?></button></li>
+                                                        <?php endif; ?>
+
+                                                        <?php if ($isAdmin): ?>
+                                                            <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#<?= $importModalId ?>"><i class="bi bi-upload me-2 text-success"></i><?= __('import_grades') ?></button></li>
+                                                        <?php endif; ?>
+                                                    </ul>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
                     </div>
 
-                <?php endforeach; ?>
+                    <?php if ($isAdmin): ?>
+                        <?php foreach ($dashboard as $class_name => $subjectsRaw): ?>
+                            <?php $class_id = (int) ($subjectsRaw[0]['class_id'] ?? 0); ?>
+                            <?php if ($class_id > 0): ?>
+                                <?php $importModalId = 'gradeImportModal' . $class_id; ?>
+                                <div class="modal fade" id="<?= $importModalId ?>" tabindex="-1" aria-labelledby="<?= $importModalId ?>Label" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered modal-lg">
+                                        <div class="modal-content modern-card border-0 rounded-4 overflow-hidden">
+                                            <div class="modal-header border-bottom">
+                                                <div>
+                                                    <h5 class="modal-title fw-bold" id="<?= $importModalId ?>Label">
+                                                        <i class="bi bi-file-earmark-spreadsheet text-success me-2"></i><?= __('import_grades') ?>
+                                                    </h5>
+                                                    <p class="small text-muted-theme mb-0"><?= htmlspecialchars((string) $class_name) ?></p>
+                                                </div>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= __('close') ?? 'Fermer' ?>"></button>
+                                            </div>
+                                            <div class="modal-body p-4">
+                                                <p class="text-muted-theme mb-3"><?= __('import_grades_multi_sheet_desc') ?></p>
+                                                <div class="d-flex flex-wrap align-items-end gap-3 mb-4">
+                                                    <div class="flex-grow-1">
+                                                        <label class="form-label fw-semibold" for="gradeImportSubject<?= $class_id ?>"><?= __('subject') ?></label>
+                                                        <select id="gradeImportSubject<?= $class_id ?>" class="form-select grade-import-subject">
+                                                            <option value="0"><?= __('all_subjects') ?></option>
+                                                            <?php foreach ($subjectsRaw as $importSubject): ?>
+                                                                <option value="<?= (int) $importSubject['subject_id'] ?>"><?= htmlspecialchars((string) $importSubject['subject_nom']) ?></option>
+                                                            <?php endforeach; ?>
+                                                        </select>
+                                                    </div>
+                                                    <a href="/notes/downloadTemplate?class_id=<?= $class_id ?>&subject_id=0" class="btn btn-outline-primary fw-semibold grade-import-template" data-class-id="<?= $class_id ?>">
+                                                        <i class="bi bi-download me-2"></i><?= __('download_template') ?>
+                                                    </a>
+                                                </div>
+                                                <form action="/notes/upload" method="POST" enctype="multipart/form-data" class="grade-import-form">
+                                                    <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::generateCsrfToken() ?>">
+                                                    <input type="hidden" name="class_id" value="<?= $class_id ?>">
+                                                    <input type="hidden" name="subject_id" value="0" class="grade-import-subject-id">
+                                                    <label class="form-label fw-semibold" for="gradeImportFile<?= $class_id ?>"><?= __('choose_file') ?></label>
+                                                    <input type="file" id="gradeImportFile<?= $class_id ?>" name="import_file" class="form-control grade-import-file mb-3" accept=".xlsx" required>
+                                                    <p class="small text-muted-theme mb-0"><?= __('import_grades_integrity_desc') ?></p>
+                                                    <div class="modal-footer border-0 px-0 pb-0 mt-3">
+                                                        <button type="button" class="btn btn-light" data-bs-dismiss="modal"><?= __('cancel') ?></button>
+                                                        <button type="submit" class="btn btn-success fw-bold grade-import-submit" disabled>
+                                                            <i class="bi bi-cloud-upload me-2"></i><?= __('validate_import_final') ?>
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+
+                        <div class="modal fade" id="assignTeacherModal" tabindex="-1" aria-labelledby="assignTeacherModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content modern-card border-0 rounded-4 overflow-hidden">
+                                    <div class="modal-header border-bottom">
+                                        <div>
+                                            <h5 class="modal-title fw-bold" id="assignTeacherModalLabel">
+                                                <i class="bi bi-person-plus-fill text-warning me-2"></i><?= __('assign') ?>
+                                            </h5>
+                                            <p class="small text-muted-theme mb-0"><span data-assignment-class></span> · <span data-assignment-subject></span></p>
+                                        </div>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= __('close') ?? 'Fermer' ?>"></button>
+                                    </div>
+                                    <form action="/teachers/direct_assign" method="GET">
+                                        <input type="hidden" name="subject_id" value="">
+                                        <input type="hidden" name="class_id" value="">
+                                        <input type="hidden" name="return_to" value="notes">
+                                        <div class="modal-body">
+                                            <label for="assignTeacherSelect" class="form-label fw-semibold"><?= __('select_teacher') ?></label>
+                                            <select class="form-select" id="assignTeacherSelect" name="teacher_id" required>
+                                                <option value=""><?= __('select_teacher') ?></option>
+                                                <?php foreach ($assignmentTeachers as $assignmentTeacher): ?>
+                                                    <option value="<?= (int) $assignmentTeacher['id'] ?>"><?= htmlspecialchars(trim($assignmentTeacher['nom'] . ' ' . $assignmentTeacher['prenom'])) ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                        <div class="modal-footer border-top">
+                                            <button type="button" class="btn btn-light" data-bs-dismiss="modal"><?= __('cancel') ?></button>
+                                            <button type="submit" class="btn btn-warning fw-bold" <?= empty($assignmentTeachers) ? 'disabled' : '' ?>>
+                                                <i class="bi bi-check2-circle me-1"></i><?= __('assign') ?>
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <div class="modal fade grade-entry-modal" id="gradeEntryModal" tabindex="-1" aria-labelledby="gradeEntryModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered modal-xl">
+                            <div class="modal-content border-0 rounded-4 overflow-hidden">
+                                <div class="modal-header">
+                                    <div>
+                                        <h5 class="modal-title fw-bold" id="gradeEntryModalLabel">
+                                            <i class="bi bi-pencil-square text-primary me-2"></i><?= __('enter_grades') ?>
+                                        </h5>
+                                        <p class="small text-muted-theme mb-0"><span data-entry-class></span> · <span data-entry-subject></span></p>
+                                    </div>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?= __('close') ?>"></button>
+                                </div>
+                                <div class="modal-body p-0">
+                                    <div class="grade-entry-loading d-flex flex-column align-items-center justify-content-center gap-3" role="status">
+                                        <div class="spinner-border text-primary" aria-hidden="true"></div>
+                                        <span><?= __('grade_entry_loading') ?></span>
+                                    </div>
+                                    <div class="grade-entry-load-error alert alert-danger m-3 d-none" role="alert">
+                                        <?= __('grade_entry_load_error') ?>
+                                    </div>
+                                    <iframe class="grade-entry-frame w-100 border-0" title="<?= htmlspecialchars(__('enter_grades'), ENT_QUOTES, 'UTF-8') ?>" src="about:blank" data-src="" loading="eager"></iframe>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <?php endif; ?>
 
             </div>
 
@@ -603,7 +406,7 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
 
 
 
-        <!-- Latest Activities Side Column (Admin uniquement) -->
+                <!-- Latest Activities Side Column (Admin uniquement) -->
 
         <?php if (in_array(\App\Core\Session::get('user_role'), ['superadmin', 'admin'])): ?>
 
@@ -705,6 +508,256 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
 
 
 <style>
+    #gradesTable {
+        width: 100% !important;
+        color: var(--text-main);
+        --bs-table-color: var(--text-main);
+        --bs-table-bg: var(--bg-card, #fff);
+        --bs-table-border-color: var(--border-color, #e2e8f0);
+        --bs-table-hover-color: var(--text-main);
+        --bs-table-hover-bg: rgba(124, 58, 237, 0.08);
+    }
+
+    #gradesTable thead th {
+        border-color: var(--border-color, #e2e8f0);
+        background: var(--bg-body, #f8fafc);
+        color: var(--text-main);
+    }
+
+    #gradesTable tbody > tr > * {
+        border-color: var(--border-color, #e2e8f0);
+        background: var(--bg-card, #fff);
+        color: var(--text-main);
+    }
+
+    #gradesTable.table-hover > tbody > tr:hover > * {
+        background: rgba(124, 58, 237, 0.08);
+        color: var(--text-main);
+    }
+
+    .grades-row-menu {
+        display: inline-grid;
+        width: 2rem;
+        height: 2rem;
+        place-items: center;
+        border: 1px solid var(--border-color, #e2e8f0);
+        border-radius: 0.5rem;
+        background: var(--bg-card, #fff);
+        color: var(--text-main);
+        cursor: pointer;
+    }
+
+    .grades-row-menu:hover,
+    .grades-row-menu:focus-visible,
+    .grades-row-menu[aria-expanded="true"] {
+        border-color: var(--primary-color, #7c3aed);
+        background: var(--primary-soft, rgba(124, 58, 237, 0.1));
+        color: var(--primary-color, #7c3aed);
+        outline: none;
+    }
+
+    .grades-actions-dropdown .dropdown-menu {
+        min-width: 13rem;
+    }
+
+    .grade-progress-badge {
+        border: 1px solid transparent;
+    }
+
+    .grade-progress-badge--complete {
+        border-color: rgba(22, 163, 74, 0.25);
+        background: rgba(22, 163, 74, 0.12);
+        color: #15803d;
+    }
+
+    .grade-progress-badge--partial {
+        border-color: rgba(217, 119, 6, 0.25);
+        background: rgba(217, 119, 6, 0.12);
+        color: #b45309;
+    }
+
+    .grade-progress-badge--pending {
+        border-color: rgba(124, 58, 237, 0.2);
+        background: rgba(124, 58, 237, 0.1);
+        color: #6d28d9;
+    }
+
+    [data-theme="dark"] .grade-progress-badge--complete {
+        color: #86efac;
+    }
+
+    [data-theme="dark"] .grade-progress-badge--partial {
+        color: #fcd34d;
+    }
+
+    [data-theme="dark"] .grade-progress-badge--pending {
+        color: #c4b5fd;
+    }
+
+    .grades-workspace .dt-container {
+        color: var(--text-main);
+    }
+
+    .grades-workspace .dt-container .dt-layout-row {
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .grades-workspace .dt-container .dt-layout-cell,
+    .grades-workspace .dt-container .dt-info,
+    .grades-workspace .dt-container .dt-length {
+        color: var(--text-muted, var(--text-main));
+    }
+
+    .grades-workspace .dt-container .dt-input,
+    .grades-workspace .dt-container .dt-length select {
+        border: 1px solid var(--border-color, #e2e8f0);
+        border-radius: 0.5rem;
+        background: var(--bg-card, #fff);
+        color: var(--text-main);
+        padding: 0.35rem 0.6rem;
+    }
+
+    [data-theme="dark"] .grades-workspace .dt-container .dt-input,
+    [data-theme="dark"] .grades-workspace .dt-container .dt-length select,
+    [data-theme="dark"] .grades-workspace .dt-container .dt-paging-button {
+        border-color: #334155 !important;
+        background-color: #1e293b !important;
+        color: var(--text-main) !important;
+    }
+
+    .grades-workspace .dt-container .dt-paging nav {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.3rem;
+    }
+
+    .grades-workspace .dt-container .dt-paging-button {
+        margin: 0 !important;
+        border: 1px solid var(--border-color, #e2e8f0) !important;
+        border-radius: 0.45rem !important;
+        background: var(--bg-card, #fff) !important;
+        color: var(--text-main) !important;
+    }
+
+    .grades-workspace .dt-container .dt-paging-button:hover:not(.disabled) {
+        border-color: var(--primary-color, #7c3aed) !important;
+        background: var(--bg-body, #f8fafc) !important;
+        color: var(--primary-color, #7c3aed) !important;
+    }
+
+    .grades-workspace .dt-container .dt-paging-button.current {
+        border-color: var(--primary-color, #7c3aed) !important;
+        background: var(--primary-color, #7c3aed) !important;
+        color: #fff !important;
+    }
+
+    .grades-workspace .dt-container .dt-paging-button.disabled {
+        color: var(--text-muted, #64748b) !important;
+        opacity: 0.55;
+    }
+
+    .grades-workspace .dt-container .dt-paging-button:focus-visible {
+        outline: 2px solid var(--primary-color, #7c3aed);
+        outline-offset: 2px;
+    }
+
+    .grades-workspace .grades-table-card {
+        overflow: visible !important;
+    }
+
+    @media (max-width: 767.98px) {
+        .grades-workspace #gradesTable {
+            display: block;
+            width: 100% !important;
+            min-width: 0;
+        }
+
+        .grades-workspace #gradesTable colgroup {
+            display: none;
+        }
+
+        .grades-workspace #gradesTable thead {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        .grades-workspace #gradesTable tbody {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .grades-workspace #gradesTable tbody tr {
+            display: grid;
+            gap: 0.15rem;
+            padding: 0.65rem 0.75rem;
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 0.75rem;
+            background: var(--bg-card, #fff);
+        }
+
+        .grades-workspace #gradesTable tbody tr > * {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.75rem;
+            min-width: 0;
+            padding: 0.3rem 0 !important;
+            border: 0 !important;
+            background: transparent !important;
+            text-align: right;
+            overflow-wrap: anywhere;
+        }
+
+        .grades-workspace #gradesTable tbody tr > *::before {
+            flex: 0 0 34%;
+            color: var(--text-muted, #64748b);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-align: left;
+            content: attr(data-label);
+        }
+
+        .grades-workspace #gradesTable tbody tr > *:last-child {
+            align-items: center;
+        }
+
+        .grades-workspace .dt-container .dt-layout-row.grades-footer-row {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.5rem;
+        }
+
+        .grades-workspace .dt-container .dt-layout-row.grades-footer-row .dt-layout-cell {
+            width: 100%;
+            text-align: left;
+        }
+
+        .grades-workspace .dt-container .dt-layout-row.grades-footer-row .dt-paging nav {
+            justify-content: center;
+        }
+
+        .grades-workspace .dt-container .dt-paging-button {
+            padding: 0.3rem 0.45rem !important;
+            font-size: 0.78rem;
+        }
+    }
+
+    @media (hover: none) {
+        .grades-workspace .grades-table-card.modern-card:hover {
+            transform: none !important;
+            border-style: solid !important;
+        }
+    }
 
     /* Floating Island Filters */
 
@@ -1322,6 +1375,10 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
             border-radius: 12px;
         }
 
+        .grades-workspace #gradesTable tbody tr {
+            padding: 0.6rem;
+        }
+
         .grades-workspace .class-header-premium {
             margin-bottom: 0.75rem !important;
         }
@@ -1363,6 +1420,8 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
 
 
 
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/datatables.net@2.3.4/js/dataTables.min.js" defer></script>
 <script>
 
     document.addEventListener('DOMContentLoaded', function () {
@@ -1379,9 +1438,46 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
         }
 
         const searchInput = document.getElementById('subject-search');
-
-        const sections = document.querySelectorAll('.class-section');
+        const gradesTable = document.getElementById('gradesTable');
         const workspace = document.querySelector('.grades-workspace');
+        let gradesDataTable = null;
+        const isEnglish = <?= __('lang') === 'en' ? 'true' : 'false' ?>;
+
+        if (gradesTable && typeof DataTable !== 'undefined') {
+            gradesDataTable = new DataTable(gradesTable, {
+                pageLength: 10,
+                lengthMenu: [10, 25, 50, 100],
+                order: [[0, 'asc'], [1, 'asc']],
+                columnDefs: [{ targets: -1, orderable: false, searchable: false }],
+                layout: {
+                    topStart: 'pageLength',
+                    topEnd: null,
+                    bottomStart: 'info',
+                    bottomEnd: 'paging'
+                },
+                language: isEnglish ? {
+                    emptyTable: 'No subjects to display',
+                    info: 'Showing _START_ to _END_ of _TOTAL_ subjects',
+                    infoEmpty: 'No subjects to display',
+                    infoFiltered: '(filtered from _MAX_ total subjects)',
+                    lengthMenu: 'Show _MENU_ subjects',
+                    zeroRecords: 'No matching subjects found',
+                    paginate: { first: 'First', last: 'Last', next: 'Next', previous: 'Previous' }
+                } : {
+                    emptyTable: 'Aucune matière à afficher',
+                    info: 'Affichage de _START_ à _END_ sur _TOTAL_ matières',
+                    infoEmpty: 'Aucune matière à afficher',
+                    infoFiltered: '(filtré parmi _MAX_ matières)',
+                    lengthMenu: 'Afficher _MENU_ matières',
+                    zeroRecords: 'Aucune matière correspondante',
+                    paginate: { first: 'Première', last: 'Dernière', next: 'Suivante', previous: 'Précédente' }
+                }
+            });
+            document.getElementById('gradesTable_info')?.closest('.dt-layout-row')?.classList.add('grades-footer-row');
+        } else if (gradesTable) {
+            console.error('DataTables could not be loaded; the complete grades table is displayed without pagination.');
+        }
+
         const currentUrl = new URL(window.location.href);
         if (currentUrl.searchParams.has('grade_entry_complete')) {
             if (typeof AlertService !== 'undefined' && workspace) {
@@ -1394,41 +1490,9 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
 
 
         if (searchInput) {
-
             searchInput.addEventListener('input', function () {
-
-                const query = this.value.toLowerCase().trim();
-
-                sections.forEach(section => {
-
-                    const className = section.getAttribute('data-class');
-
-                    const items = section.querySelectorAll('.subject-grid-item');
-
-                    let visibleCount = 0;
-
-
-
-                    items.forEach(item => {
-
-                        const subjectName = item.getAttribute('data-subject-name');
-
-                        const match = subjectName.includes(query) || className.includes(query);
-
-                        item.style.display = match ? 'block' : 'none';
-
-                        if (match) visibleCount++;
-
-                    });
-
-
-
-                    section.style.display = visibleCount > 0 ? 'block' : 'none';
-
-                });
-
+                if (gradesDataTable) gradesDataTable.search(this.value).draw();
             });
-
         }
 
         function syncGradeEntryFrameTheme(frameDocument) {
@@ -1464,10 +1528,24 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
             const loadError = modalElement.querySelector('.grade-entry-load-error');
             if (!iframe) return;
 
+            modalElement.addEventListener('show.bs.modal', function (event) {
+                const trigger = event.relatedTarget;
+                if (!trigger || !trigger.dataset.entrySrc) {
+                    console.error('Unable to open grade-entry modal: the subject URL is missing.');
+                    return;
+                }
+
+                iframe.dataset.src = trigger.dataset.entrySrc;
+                iframe.src = 'about:blank';
+                modalElement.querySelector('[data-entry-class]').textContent = trigger.dataset.className || '';
+                modalElement.querySelector('[data-entry-subject]').textContent = trigger.dataset.subjectName || '';
+            });
+
             iframe.addEventListener('load', function () {
                 try {
-                    const framePath = iframe.contentWindow.location.pathname;
-                    if (framePath === 'about:blank') return;
+                    const frameUrl = iframe.contentWindow.location.href;
+                    if (frameUrl === 'about:blank') return;
+                    const framePath = new URL(frameUrl).pathname;
 
                     if (framePath === '/notes') {
                         bootstrap.Modal.getOrCreateInstance(modalElement).hide();
@@ -1543,6 +1621,19 @@ $canExportReport = (int) $filters['class_id'] > 0 && (int) $filters['subject_id'
                 }
             });
         });
+
+        const assignTeacherModal = document.getElementById('assignTeacherModal');
+        if (assignTeacherModal) {
+            assignTeacherModal.addEventListener('show.bs.modal', function (event) {
+                const trigger = event.relatedTarget;
+                if (!trigger) return;
+
+                assignTeacherModal.querySelector('[name="class_id"]').value = trigger.dataset.classId || '';
+                assignTeacherModal.querySelector('[name="subject_id"]').value = trigger.dataset.subjectId || '';
+                assignTeacherModal.querySelector('[data-assignment-class]').textContent = trigger.dataset.className || '';
+                assignTeacherModal.querySelector('[data-assignment-subject]').textContent = trigger.dataset.subjectName || '';
+            });
+        }
 
         document.querySelectorAll('.grade-import-subject').forEach(function (subjectSelect) {
             const modal = subjectSelect.closest('.modal');

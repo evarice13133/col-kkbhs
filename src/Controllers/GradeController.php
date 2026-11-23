@@ -341,15 +341,7 @@ class GradeController
 
 
 
-        [$recentGrades] = $this->getAccessibleGrades();
-
-
-
-        $evaluationTypes = $this->getAvailableEvaluationTypes((int) ($filters['teaching_type_id'] ?? 0));
-
-
-
-
+        [$recentGrades, $recentGradesCount] = $this->getAccessibleGrades(true);
 
 
 
@@ -357,7 +349,7 @@ class GradeController
 
 
 
-        $notesSummary = $this->buildNotesSummary($filteredAssignments, $filters, $recentGrades, $evaluationTypes);
+        $notesSummary = $this->buildNotesSummary($filteredAssignments, $filters, $recentGrades, $evaluationTypes, $recentGradesCount);
 
 
 
@@ -967,11 +959,8 @@ class GradeController
 
         unset($student);
 
-
-
-
-
-
+        $settingsStore = new \App\Services\SettingsStore($this->db, (int) ($classInfo['teaching_type_id'] ?? 0));
+        $competencyRequired = $settingsStore->getBool('grade_entry_competency_required', false);
 
         include __DIR__ . '/../Views/grades/saisie.php';
 
@@ -1000,6 +989,271 @@ class GradeController
      */
 
 
+
+    public function autosave(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->sendAutosaveResponse(['success' => false, 'message' => __('invalid_request')], 405);
+        }
+
+        $csrfToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['csrf_token'] ?? '';
+        if (!Session::verifyCsrfToken($csrfToken)) {
+            $this->sendAutosaveResponse(['success' => false, 'message' => __('invalid_csrf_token')], 403);
+        }
+
+        $classId = (int) ($_POST['class_id'] ?? 0);
+        $subjectId = (int) ($_POST['subject_id'] ?? 0);
+        $periode = trim((string) ($_POST['periode'] ?? ''));
+        $rawGrades = json_decode((string) ($_POST['grades'] ?? ''), true);
+        $rawCompetencyIds = $_POST['competency_ids'] ?? [];
+
+        if (
+            $classId <= 0
+            || $subjectId <= 0
+            || $periode === ''
+            || !is_array($rawGrades)
+            || empty($rawGrades)
+            || !is_array($rawCompetencyIds)
+        ) {
+            $this->sendAutosaveResponse(['success' => false, 'message' => __('invalid_request')], 422);
+        }
+
+        if (!$this->canManageAssignment($subjectId, $classId)) {
+            $this->sendAutosaveResponse(['success' => false, 'message' => __('unauthorized_action')], 403);
+        }
+
+        $typeCheck = $this->fetchOne(
+            'SELECT c.teaching_type_id AS class_type, s.teaching_type_id AS subject_type
+             FROM classes c, subjects s
+             WHERE c.id = ? AND s.id = ?',
+            [$classId, $subjectId]
+        );
+        if (!$typeCheck || (int) $typeCheck['class_type'] !== (int) $typeCheck['subject_type']) {
+            $this->sendAutosaveResponse(['success' => false, 'message' => __('incoherent_teaching_type_grade')], 422);
+        }
+
+        $settingsStore = new \App\Services\SettingsStore($this->db, (int) $typeCheck['class_type']);
+        $competencyRequired = $settingsStore->getBool('grade_entry_competency_required', false);
+        try {
+            $this->normalizeAndValidateCompetencySelection(
+                $classId,
+                $subjectId,
+                $periode,
+                $rawCompetencyIds,
+                $competencyRequired
+            );
+        } catch (\InvalidArgumentException $e) {
+            $this->sendAutosaveResponse(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+
+        $sequenceStmt = $this->db->prepare('SELECT id FROM sequences WHERE label = ? LIMIT 1');
+        $sequenceStmt->execute([$periode]);
+        $sequenceId = (int) $sequenceStmt->fetchColumn();
+        if ($sequenceId <= 0) {
+            $this->sendAutosaveResponse(['success' => false, 'message' => __('invalid_evaluation_type')], 422);
+        }
+
+        $activeYear = $this->getActiveAcademicYear();
+        if (!$activeYear) {
+            $this->sendAutosaveResponse(['success' => false, 'message' => __('no_active_academic_year')], 422);
+        }
+        $academicYearId = (int) $activeYear['id'];
+
+        $grades = [];
+        foreach ($rawGrades as $grade) {
+            if (!is_array($grade) || !isset($grade['student_id']) || !array_key_exists('value', $grade)) {
+                $this->sendAutosaveResponse(['success' => false, 'message' => __('invalid_request')], 422);
+            }
+
+            $studentId = (int) $grade['student_id'];
+            $rawValue = trim((string) $grade['value']);
+            $normalizedValue = str_replace(',', '.', $rawValue);
+            if ($studentId <= 0 || $rawValue === '' || !is_numeric($normalizedValue)) {
+                $this->sendAutosaveResponse(['success' => false, 'message' => __('invalid_request')], 422);
+            }
+
+            $value = (float) $normalizedValue;
+            if (!is_finite($value) || $value < 0 || $value > 20) {
+                $this->sendAutosaveResponse(['success' => false, 'message' => __('grade_max_value')], 422);
+            }
+
+            $appreciation = isset($grade['appreciation']) && is_scalar($grade['appreciation'])
+                ? trim((string) $grade['appreciation'])
+                : '';
+            $isAutomatic = in_array($grade['automatic'] ?? false, [true, 1, '1', 'true'], true);
+            if ($appreciation === '' || $isAutomatic) {
+                $appreciation = $this->generateAppreciation($value);
+            }
+
+            $grades[$studentId] = [
+                'value' => $value,
+                'appreciation' => $appreciation,
+            ];
+        }
+
+        if (empty($grades)) {
+            $this->sendAutosaveResponse(['success' => false, 'message' => __('invalid_request')], 422);
+        }
+
+        $studentIds = array_keys($grades);
+        $placeholders = implode(',', array_fill(0, count($studentIds), '?'));
+        $studentStmt = $this->db->prepare(
+            "SELECT id
+             FROM students
+             WHERE id IN ({$placeholders})
+               AND class_id = ?
+               AND academic_year_id = ?
+               AND actif = 1
+               AND status = 'Inscrit'
+               AND is_withdrawn = 0
+               AND status NOT IN ('Démission', 'Démissionnaire', 'Abandon')"
+        );
+        $studentStmt->execute(array_merge($studentIds, [$classId, $academicYearId]));
+        $validStudentIds = array_map('intval', $studentStmt->fetchAll(PDO::FETCH_COLUMN));
+        if (count($validStudentIds) !== count($grades)) {
+            $this->sendAutosaveResponse(['success' => false, 'message' => __('student_not_found')], 422);
+        }
+
+        $teacherId = (int) Session::get('user_id');
+        $teacherData = $this->fetchOne('SELECT nom, prenom FROM users WHERE id = ?', [$teacherId]) ?: [];
+        $subjectData = $this->fetchOne('SELECT nom FROM subjects WHERE id = ?', [$subjectId]) ?: [];
+        $teacherNom = $teacherData['nom'] ?? 'Enseignant Supprimé';
+        $teacherPrenom = $teacherData['prenom'] ?? '';
+        $subjectNom = $subjectData['nom'] ?? 'Matière Supprimée';
+        $userRole = Session::get('user_role');
+        $createdByType = in_array($userRole, ['admin', 'superadmin'], true) ? 'admin' : 'enseignant';
+        $existingStudentIds = $this->getExistingGradeStudentIds($subjectId, $periode, $academicYearId, $studentIds);
+
+        $createdCount = 0;
+        $updatedCount = 0;
+        try {
+            $this->db->beginTransaction();
+            $insertStmt = $this->db->prepare(
+                'INSERT INTO grades (
+                    student_id, subject_id, teacher_id, academic_year_id, sequence_id, periode,
+                    valeur, appreciation, teacher_nom_snapshot, teacher_prenom_snapshot,
+                    subject_nom_snapshot, created_by_type
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            );
+            $updateStmt = $this->db->prepare(
+                'UPDATE grades
+                 SET valeur = ?, appreciation = ?, teacher_id = ?, sequence_id = ?,
+                     teacher_nom_snapshot = ?, teacher_prenom_snapshot = ?,
+                     subject_nom_snapshot = ?, created_by_type = ?
+                 WHERE student_id = ? AND subject_id = ? AND periode = ? AND academic_year_id = ?'
+            );
+            $verifyStmt = $this->db->prepare(
+                'SELECT valeur, appreciation
+                 FROM grades
+                 WHERE student_id = ? AND subject_id = ? AND periode = ? AND academic_year_id = ?
+                 LIMIT 1'
+            );
+
+            foreach ($grades as $studentId => $grade) {
+                if (isset($existingStudentIds[$studentId])) {
+                    $updateStmt->execute([
+                        $grade['value'],
+                        $grade['appreciation'],
+                        $teacherId,
+                        $sequenceId,
+                        $teacherNom,
+                        $teacherPrenom,
+                        $subjectNom,
+                        $createdByType,
+                        $studentId,
+                        $subjectId,
+                        $periode,
+                        $academicYearId,
+                    ]);
+                    $updatedCount++;
+                } else {
+                    $insertStmt->execute([
+                        $studentId,
+                        $subjectId,
+                        $teacherId,
+                        $academicYearId,
+                        $sequenceId,
+                        $periode,
+                        $grade['value'],
+                        $grade['appreciation'],
+                        $teacherNom,
+                        $teacherPrenom,
+                        $subjectNom,
+                        $createdByType,
+                    ]);
+                    $createdCount++;
+                }
+
+                $verifyStmt->execute([$studentId, $subjectId, $periode, $academicYearId]);
+                $savedGrade = $verifyStmt->fetch(PDO::FETCH_ASSOC);
+                if (
+                    !$savedGrade
+                    || abs((float) $savedGrade['valeur'] - $grade['value']) > 0.001
+                    || (string) $savedGrade['appreciation'] !== $grade['appreciation']
+                ) {
+                    throw new \RuntimeException(__('grade_save_verification_failed'));
+                }
+            }
+
+            $this->db->commit();
+        } catch (\PDOException $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            error_log(sprintf(
+                'Grade autosave failed (class_id=%d, subject_id=%d, academic_year_id=%d, SQLSTATE=%s): %s',
+                $classId,
+                $subjectId,
+                $academicYearId,
+                (string) $e->getCode(),
+                $e->getMessage()
+            ));
+            $this->sendAutosaveResponse(['success' => false, 'message' => __('grade_save_failed')], 500);
+        } catch (\RuntimeException $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            error_log(sprintf(
+                'Grade autosave verification failed (class_id=%d, subject_id=%d): %s',
+                $classId,
+                $subjectId,
+                $e->getMessage()
+            ));
+            $this->sendAutosaveResponse(['success' => false, 'message' => __('grade_save_verification_failed')], 500);
+        }
+
+        try {
+            (new ActivityTracker($this->db))->recordGradesSaved(
+                $teacherId,
+                $periode,
+                $classId,
+                $subjectId,
+                $createdCount,
+                $updatedCount,
+                '/notes/autosave'
+            );
+        } catch (\PDOException $e) {
+            error_log(sprintf(
+                'Grade autosave activity tracking failed (class_id=%d, subject_id=%d): %s',
+                $classId,
+                $subjectId,
+                $e->getMessage()
+            ));
+        }
+
+        $this->sendAutosaveResponse([
+            'success' => true,
+            'saved_count' => count($grades),
+        ]);
+    }
+
+    private function sendAutosaveResponse(array $payload, int $statusCode = 200): void
+    {
+        http_response_code($statusCode);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+        exit;
+    }
 
     public function store()
 
@@ -1079,16 +1333,6 @@ class GradeController
 
         }
 
-        try {
-            $competencyIds = $this->normalizeAndValidateCompetencySelection($class_id, $subject_id, $periode, $rawCompetencyIds);
-        } catch (\InvalidArgumentException $e) {
-            Session::setFlash('error', $e->getMessage());
-            header("Location: /notes/saisie?class_id={$class_id}&subject_id={$subject_id}{$entryModalQuery}");
-            exit;
-        }
-
-
-
         // Vérification de la cohérence Type Enseignement vs Département
         $stmtCheck = $this->db->prepare("
             SELECT c.teaching_type_id as class_type, s.teaching_type_id as subject_type
@@ -1101,6 +1345,18 @@ class GradeController
         if ($typeCheck && $typeCheck['class_type'] != $typeCheck['subject_type']) {
             Session::setFlash('error', __('incoherent_teaching_type_grade') ?? 'Erreur : Incohérence de Type d\'Enseignement entre la classe et la matière.');
             header("Location: /notes/saisie?class_id=$class_id&subject_id=$subject_id{$entryModalQuery}");
+            exit;
+        }
+
+        $teachingTypeId = (int) ($typeCheck['class_type'] ?? 0);
+        $settingsStore = new \App\Services\SettingsStore($this->db, $teachingTypeId);
+        $competencyRequired = $settingsStore->getBool('grade_entry_competency_required', false);
+
+        try {
+            $competencyIds = $this->normalizeAndValidateCompetencySelection($class_id, $subject_id, $periode, $rawCompetencyIds, $competencyRequired);
+        } catch (\InvalidArgumentException $e) {
+            Session::setFlash('error', $e->getMessage());
+            header("Location: /notes/saisie?class_id={$class_id}&subject_id={$subject_id}{$entryModalQuery}");
             exit;
         }
 
@@ -1176,52 +1432,53 @@ class GradeController
             $competencyIds = array_values(array_unique(array_map('intval', $competencyCheck->fetchAll(PDO::FETCH_COLUMN))));
         }
 
-        if (empty($competencyIds)) {
-            Session::setFlash('error', __('select_at_least_one_competency') ?? 'Veuillez sélectionner au moins une compétence pour cette évaluation.');
-            header("Location: /notes/saisie?class_id=$class_id&subject_id=$subject_id{$entryModalQuery}");
-            exit;
-        }
-
         $gradesSaved = false;
         try {
-
             $existingStudentIds = $this->getExistingGradeStudentIds($subject_id, $periode, (int) $activeYear['id'], array_keys($notes));
 
-
-
             $createdCount = 0;
-
-
-
             $updatedCount = 0;
 
-
-
             // Récupérer les informations de l'enseignant et de la matière pour les snapshots
-
             $teacherInfo = $this->db->prepare("SELECT nom, prenom FROM users WHERE id = ?")->execute([$teacher_id]);
-
             $teacherData = $this->db->query("SELECT nom, prenom FROM users WHERE id = $teacher_id LIMIT 1")->fetch(PDO::FETCH_ASSOC);
-
             $teacherNom = $teacherData['nom'] ?? 'Enseignant Supprimé';
-
             $teacherPrenom = $teacherData['prenom'] ?? '';
 
-            
-
             $subjectData = $this->db->query("SELECT nom FROM subjects WHERE id = $subject_id LIMIT 1")->fetch(PDO::FETCH_ASSOC);
-
             $subjectNom = $subjectData['nom'] ?? 'Matière Supprimée';
 
-            
-
             $userRole = Session::get('user_role');
-
             $createdByType = in_array($userRole, ['admin', 'superadmin']) ? 'admin' : 'enseignant';
 
-
-
             $this->db->beginTransaction();
+
+            if (isset($_POST['competency_ids'])) {
+                $deleteCompStmt = $this->db->prepare("
+                    DELETE FROM evaluation_competencies 
+                    WHERE class_id = ? AND subject_id = ? AND academic_year_id = ? AND periode = ?
+                ");
+                $deleteCompStmt->execute([$class_id, $subject_id, (int) $activeYear['id'], $periode]);
+
+                if (!empty($competencyIds)) {
+                    $insertCompStmt = $this->db->prepare("
+                        INSERT INTO evaluation_competencies 
+                        (class_id, subject_id, academic_year_id, sequence_id, periode, competency_id, position)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                    ");
+                    foreach ($competencyIds as $index => $compId) {
+                        $insertCompStmt->execute([
+                            $class_id,
+                            $subject_id,
+                            (int) $activeYear['id'],
+                            $sequence_id,
+                            $periode,
+                            (int) $compId,
+                            $index + 1
+                        ]);
+                    }
+                }
+            }
 
 
 
@@ -1405,9 +1662,15 @@ class GradeController
                 $this->db->rollBack();
             }
 
-
-
-            Session::setFlash('error', __('grade_save_failed', ['message' => $e->getMessage()]));
+            error_log(sprintf(
+                'Grade save failed (class_id=%d, subject_id=%d, academic_year_id=%d, SQLSTATE=%s): %s',
+                $class_id,
+                $subject_id,
+                (int) $activeYear['id'],
+                (string) $e->getCode(),
+                $e->getMessage()
+            ));
+            Session::setFlash('error', __('grade_save_failed'));
 
 
 
@@ -1498,11 +1761,11 @@ class GradeController
 
                                      LEFT JOIN teaching_types tt ON COALESCE(s.teaching_type_id, c.teaching_type_id) = tt.id
 
-                                     LEFT JOIN teacher_assignments ta ON sc.subject_id = ta.subject_id AND sc.class_id = ta.class_id
+                                     LEFT JOIN teacher_assignments ta ON sc.subject_id = ta.subject_id AND sc.class_id = ta.class_id AND ta.academic_year_id = ?
 
                                      LEFT JOIN users u ON ta.user_id = u.id
 
-                                                                         WHERE s.status = 1 AND c.status = 1 AND (tt.actif = 1 OR COALESCE(s.teaching_type_id, c.teaching_type_id) IS NULL)
+                                                                         WHERE sc.academic_year_id = ? AND s.status = 1 AND c.status = 1 AND (tt.actif = 1 OR COALESCE(s.teaching_type_id, c.teaching_type_id) IS NULL)
                                                                              AND EXISTS (
                                                                                      SELECT 1 FROM students st
                                                                                      WHERE st.class_id = c.id
@@ -1512,7 +1775,7 @@ class GradeController
                                                                                          AND st.is_withdrawn = 0
                                                                              )
                                                                          ORDER BY c.nom ASC, s.nom ASC");
-                        $stmt->execute([$academicYearId]);
+                        $stmt->execute([$academicYearId, $academicYearId, $academicYearId]);
                         return $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         }
@@ -1535,7 +1798,7 @@ class GradeController
 
                                     JOIN users u ON ta.user_id = u.id
 
-                                                                        WHERE ta.user_id = ? AND s.status = 1 AND c.status = 1 AND (tt.actif = 1 OR COALESCE(s.teaching_type_id, c.teaching_type_id) IS NULL)
+                                                                        WHERE ta.user_id = ? AND ta.academic_year_id = ? AND s.status = 1 AND c.status = 1 AND (tt.actif = 1 OR COALESCE(s.teaching_type_id, c.teaching_type_id) IS NULL)
                                                                             AND EXISTS (
                                                                                     SELECT 1 FROM students st
                                                                                     WHERE st.class_id = c.id
@@ -1547,7 +1810,7 @@ class GradeController
 
                                     ORDER BY c.nom ASC, s.nom ASC");
 
-        $stmt->execute([$user_id, $academicYearId]);
+        $stmt->execute([$user_id, $academicYearId, $academicYearId]);
 
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -1562,7 +1825,7 @@ class GradeController
 
 
 
-    private function getAccessibleGrades()
+    private function getAccessibleGrades(bool $recentOnly = false)
 
 
 
@@ -1637,51 +1900,68 @@ class GradeController
                 LEFT JOIN academic_years ay ON g.academic_year_id = ay.id
 
                 LEFT JOIN teaching_types tt ON COALESCE(sub.teaching_type_id, c.teaching_type_id) = tt.id
-
                 LEFT JOIN sequences seq ON seq.label = g.periode OR seq.short_label = g.periode OR seq.code = g.periode";
-
+        $countSql = "SELECT COUNT(DISTINCT g.id)
+                     FROM grades g
+                     JOIN students s ON g.student_id = s.id
+                     JOIN classes c ON s.class_id = c.id
+                     JOIN subjects sub ON g.subject_id = sub.id
+                     LEFT JOIN teaching_types tt ON COALESCE(sub.teaching_type_id, c.teaching_type_id) = tt.id";
         $params = [];
 
         if (!in_array($role, ['superadmin', 'admin'], true)) {
-
-            $sql .= " JOIN teacher_assignments ta ON ta.subject_id = g.subject_id AND ta.class_id = c.id AND ta.user_id = ?";
-
+            $teacherAssignmentJoin = " JOIN teacher_assignments ta ON ta.subject_id = g.subject_id AND ta.class_id = c.id AND ta.user_id = ? AND ta.academic_year_id = g.academic_year_id";
+            $sql .= $teacherAssignmentJoin;
+            $countSql .= $teacherAssignmentJoin;
             $params[] = $user_id;
-
         }
 
         $activeYear = $this->getActiveAcademicYear();
         $academicYearId = $activeYear['id'] ?? 0;
 
-        $sql .= " WHERE g.academic_year_id = ? AND s.academic_year_id = ?";
+        $whereSql = " WHERE g.academic_year_id = ? AND s.academic_year_id = ?";
+        $sql .= $whereSql;
+        $countSql .= $whereSql;
         $params[] = $academicYearId;
         $params[] = $academicYearId;
 
         $teachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
         if ($teachingTypeId > 0) {
-            $sql .= " AND COALESCE(sub.teaching_type_id, c.teaching_type_id) = ?";
+            $typeFilter = " AND COALESCE(sub.teaching_type_id, c.teaching_type_id) = ?";
+            $sql .= $typeFilter;
+            $countSql .= $typeFilter;
             $params[] = $teachingTypeId;
         }
 
         if ($classId > 0) {
-            $sql .= " AND c.id = ?";
+            $classFilter = " AND c.id = ?";
+            $sql .= $classFilter;
+            $countSql .= $classFilter;
             $params[] = $classId;
         }
 
         if ($subjectId > 0) {
-            $sql .= " AND sub.id = ?";
+            $subjectFilter = " AND sub.id = ?";
+            $sql .= $subjectFilter;
+            $countSql .= $subjectFilter;
             $params[] = $subjectId;
         }
 
-        $sql .= " AND s.status = 'Inscrit' AND s.is_withdrawn = 0 AND s.actif = 1 AND sub.status = 1 AND (tt.actif = 1 OR COALESCE(sub.teaching_type_id, c.teaching_type_id) IS NULL)";
+        $activeRecordsFilter = " AND s.status = 'Inscrit' AND s.is_withdrawn = 0 AND s.actif = 1 AND sub.status = 1 AND (tt.actif = 1 OR COALESCE(sub.teaching_type_id, c.teaching_type_id) IS NULL)";
+        $sql .= $activeRecordsFilter;
+        $countSql .= $activeRecordsFilter;
 
-
-
-
-
-
+        $accessibleGradesCount = null;
+        if ($recentOnly) {
+            $countStmt = $this->db->prepare($countSql);
+            $countStmt->execute($params);
+            $accessibleGradesCount = (int) $countStmt->fetchColumn();
+        }
 
         $sql .= " ORDER BY g.updated_at DESC, c.nom ASC, sub.nom ASC";
+        if ($recentOnly) {
+            $sql .= " LIMIT 10";
+        }
 
 
 
@@ -1697,7 +1977,10 @@ class GradeController
 
 
 
-        return [$stmt->fetchAll(PDO::FETCH_ASSOC), ['class_id' => $classId, 'subject_id' => $subjectId]];
+        $secondResult = $recentOnly
+            ? $accessibleGradesCount
+            : ['class_id' => $classId, 'subject_id' => $subjectId];
+        return [$stmt->fetchAll(PDO::FETCH_ASSOC), $secondResult];
 
 
 
@@ -1936,7 +2219,7 @@ class GradeController
 
 
 
-    private function buildNotesSummary(array $assignments, array $filters, array $recentGrades, array $evaluationTypes): array
+    private function buildNotesSummary(array $assignments, array $filters, array $recentGrades, array $evaluationTypes, int $recentGradesCount): array
 
 
 
@@ -1948,7 +2231,28 @@ class GradeController
 
 
 
-        $studentsCount = array_sum(array_map([$this, 'countStudentsInClass'], $classIds));
+        $studentCounts = [];
+        if (!empty($classIds)) {
+            $activeYear = $this->getActiveAcademicYear();
+            $academicYearId = (int) ($activeYear['id'] ?? 0);
+            $classPlaceholders = implode(',', array_fill(0, count($classIds), '?'));
+            $stmt = $this->db->prepare("
+                SELECT class_id, COUNT(*) AS student_count
+                FROM students
+                WHERE class_id IN ({$classPlaceholders})
+                  AND academic_year_id = ?
+                  AND actif = 1
+                  AND is_withdrawn = 0
+                  AND status = 'Inscrit'
+                GROUP BY class_id
+            ");
+            $stmt->execute(array_merge($classIds, [$academicYearId]));
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $studentCounts[(int) $row['class_id']] = (int) $row['student_count'];
+            }
+        }
+
+        $studentsCount = array_sum($studentCounts);
 
 
 
@@ -1964,7 +2268,7 @@ class GradeController
 
 
 
-            $expectedCount += $this->countStudentsInClass((int) $a['class_id']) * $evaluationCount;
+            $expectedCount += ($studentCounts[(int) $a['class_id']] ?? 0) * $evaluationCount;
 
 
 
@@ -1980,7 +2284,7 @@ class GradeController
 
 
 
-            'filled_count' => count($recentGrades),
+            'filled_count' => $recentGradesCount,
 
 
 
@@ -1988,7 +2292,7 @@ class GradeController
 
 
 
-            'pending_count' => max(0, $expectedCount - count($recentGrades)),
+            'pending_count' => max(0, $expectedCount - $recentGradesCount),
 
 
 
@@ -2125,29 +2429,25 @@ class GradeController
 
         if (in_array(Session::get('user_role'), ['superadmin', 'admin'], true)) {
 
+            $academicYearId = $this->getActiveAcademicYear()['id'] ?? 0;
+            $stmt = $this->db->prepare("SELECT 1 FROM subject_classes WHERE subject_id = ? AND class_id = ? AND academic_year_id = ? LIMIT 1");
 
 
-            $stmt = $this->db->prepare("SELECT 1 FROM subject_classes WHERE subject_id = ? AND class_id = ?");
-
-
-
-            $stmt->execute([$subject_id, $class_id]);
-
+            $stmt->execute([$subject_id, $class_id, $academicYearId]);
 
 
             return (bool) $stmt->fetchColumn();
 
 
-
         }
 
 
+        $academicYearId = $this->getActiveAcademicYear()['id'] ?? 0;
+        $stmt = $this->db->prepare("SELECT 1 FROM teacher_assignments WHERE user_id = ? AND subject_id = ? AND class_id = ? AND academic_year_id = ?");
 
-        $stmt = $this->db->prepare("SELECT 1 FROM teacher_assignments WHERE user_id = ? AND subject_id = ? AND class_id = ?");
 
 
-
-        $stmt->execute([(int) Session::get('user_id'), $subject_id, $class_id]);
+        $stmt->execute([(int) Session::get('user_id'), $subject_id, $class_id, $academicYearId]);
 
 
 
@@ -2183,24 +2483,35 @@ class GradeController
 
 
 
-    private function normalizeAndValidateCompetencySelection(int $classId, int $subjectId, string $periode, array $rawCompetencyIds): array
+    private function normalizeAndValidateCompetencySelection(
+        int $classId,
+        int $subjectId,
+        string $periode,
+        array $rawCompetencyIds,
+        bool $required = false
+    ): array
     {
         $filtered = array_values(array_unique(array_map('intval', array_filter($rawCompetencyIds, static function ($value) {
             return $value !== null && $value !== '' && $value !== false;
         }))));
 
-        if (empty($filtered)) {
-            throw new \InvalidArgumentException(__('select_at_least_one_competency') ?? 'Veuillez sélectionner au moins une compétence pour cette évaluation.');
+        if ($required && empty($filtered)) {
+            throw new \InvalidArgumentException(__('select_at_least_one_competency'));
         }
 
         if (count($filtered) > 2) {
             throw new \InvalidArgumentException(__('max_2_competencies_error') ?? 'Maximum 2 compétences autorisées pour une évaluation.');
         }
 
-        $stmtCheck = $this->db->prepare("SELECT 1 FROM subject_classes WHERE class_id = ? AND subject_id = ? LIMIT 1");
-        $stmtCheck->execute([$classId, $subjectId]);
+        $activeYearId = $this->getActiveAcademicYear()['id'] ?? 0;
+        $stmtCheck = $this->db->prepare("SELECT 1 FROM subject_classes WHERE class_id = ? AND subject_id = ? AND academic_year_id = ? LIMIT 1");
+        $stmtCheck->execute([$classId, $subjectId, $activeYearId]);
         if ($stmtCheck->fetchColumn() === false) {
             throw new \InvalidArgumentException('La matière sélectionnée n\'est pas affectée à cette classe.');
+        }
+
+        if (empty($filtered)) {
+            return [];
         }
 
         $in = implode(',', array_fill(0, count($filtered), '?'));

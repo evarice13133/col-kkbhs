@@ -12,68 +12,63 @@ $matrix = $gridData['matrix'];
 $timetablesByClass = $gridData['timetablesByClass'];
 ?>
 
-<div class="animate-fade-in container-fluid py-3 px-md-4">
+<div class="animate-fade-in container-fluid py-3 px-md-4 timetable-grid-page">
     <!-- Header -->
-    <div class="modern-card border-0 shadow-sm p-4 mb-4">
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-            <div>
-                <div class="d-flex align-items-center gap-2 mb-1">
+    <div class="modern-card border-0 shadow-sm p-4 mb-4 grid-page-header">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 grid-header-layout">
+            <div class="grid-header-content">
+                <div class="d-flex align-items-center gap-2 mb-1 grid-header-meta">
                     <span
-                        class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2.5 py-1 rounded-pill fw-medium"
-                        style="font-size: 0.75rem;">
+                        class="badge grid-meta-badge grid-meta-type">
                         <i class="bi bi-mortarboard-fill me-1"></i><?= __('timetables_type') ?>
                         <?= h($cycleRow['teaching_type_name'] ?? __('timetables_teaching')) ?>
                     </span>
                     <span
-                        class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2.5 py-1 rounded-pill fw-medium"
-                        style="font-size: 0.75rem;">
+                        class="badge grid-meta-badge grid-meta-cycle">
                         <i class="bi bi-diagram-3-fill me-1"></i><?= __('timetables_cycle') ?> <?= $cycleName ?>
                     </span>
                     <span
-                        class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2.5 py-1 rounded-pill fw-medium"
-                        style="font-size: 0.75rem;">
+                        class="badge grid-meta-badge grid-meta-level">
                         <i class="bi bi-layers-fill me-1"></i><?= __('level') ?>: <?= $levelName ?>
                     </span>
                     <span
-                        class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2.5 py-1 rounded-pill fw-medium"
-                        style="font-size: 0.75rem;">
+                        class="badge grid-meta-badge grid-meta-week">
                         <i class="bi bi-calendar-event me-1"></i><?= __('timetables_week') ?> <?= $weekLibelle ?>
                     </span>
                 </div>
-                <h2 class="fw-black text-main-theme mb-0 fs-3"><?= __('timetables_grid_header_title') ?> -
+                <h2 class="fw-black text-main-theme mb-0 fs-3 grid-header-title"><?= __('timetables_grid_header_title') ?> -
                     <?= $levelName ?>
                 </h2>
-                <p class="text-muted small mb-0">
+                <p class="text-muted small mb-0 grid-header-period">
                     <?= __('timetables_period_from') ?> <?= date('d/m/Y', strtotime($weekRow['date_debut'])) ?>
                     <?= __('timetables_to') ?> <?= date('d/m/Y', strtotime($weekRow['date_fin'])) ?>
                     | <?= count($classes) ?> <?= __('timetables_all_classes') ?>
                 </p>
             </div>
 
-            <div class="d-flex flex-wrap gap-2 align-items-center">
+            <div class="d-flex flex-wrap gap-2 align-items-center grid-header-actions">
                 <?php if ($canEdit): ?>
-                    <button type="button" class="btn btn-sm btn-gradient-primary rounded-pill px-3 py-2 fw-bold shadow-sm"
-                        onclick="openBulkScheduleModal()"
-                        style="background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); color: white; border: none;">
+                    <button type="button" class="btn grid-action-btn grid-action-primary"
+                        onclick="openBulkScheduleModal()">
                         <i class="bi bi-layers-half me-1"></i><?= __('timetables_bulk_plan') ?>
                     </button>
-                    <a href="/timetables/wizard" class="btn btn-sm btn-primary rounded-pill px-3 py-2 fw-bold shadow-sm">
+                    <a href="/timetables/wizard" class="btn grid-action-btn grid-action-secondary">
                         <i class="bi bi-plus-circle me-1"></i><?= __('timetables_new_wizard') ?>
                     </a>
                 <?php endif; ?>
                 <a href="/timetables"
-                    class="btn btn-sm btn-light-theme rounded-pill px-3 py-2 fw-semibold border-theme-light shadow-sm">
+                    class="btn grid-action-btn grid-action-quiet">
                     <i class="bi bi-arrow-left me-1"></i><?= __('back') ?? 'Retour' ?>
                 </a>
 
                 <button type="button"
                     onclick="triggerPrintModel(<?= (int) $cycleId ?>, <?= (int) $levelId ?>, <?= (int) $weekId ?>)"
-                    class="btn btn-sm btn-action-modern text-primary border px-3 rounded-pill fw-semibold"
+                    class="btn grid-action-btn grid-action-quiet"
                     title="<?= __('print') ?? 'Imprimer' ?>">
                     <i class="bi bi-printer-fill me-1"></i><?= __('print') ?? 'Imprimer' ?>
                 </button>
                 <a href="/timetables/pdf?cycle_id=<?= $cycleId ?>&level_id=<?= $levelId ?>&week_id=<?= $weekId ?>&mode=download"
-                    class="btn btn-sm btn-danger rounded-pill px-3 py-2 fw-bold shadow-sm">
+                    class="btn grid-action-btn grid-action-export">
                     <i class="bi bi-file-earmark-pdf-fill me-1"></i><?= __('timetables_pdf_export') ?>
                 </a>
             </div>
@@ -205,26 +200,48 @@ $timetablesByClass = $gridData['timetablesByClass'];
         </div>
     <?php endif; ?>
 
+    <div class="grid-view-toolbar grid-filter-panel d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+        <div>
+            <label for="gridClassFilter" class="form-label fw-semibold text-main-theme small mb-1">
+                <i class="bi bi-layout-three-columns me-1 text-primary"></i><?= __('timetables_grid_view') ?>
+            </label>
+            <div class="text-muted extra-small"><?= __('timetables_grid_view_hint') ?></div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <select id="gridClassFilter" class="form-select form-select-sm grid-class-filter"
+                onchange="filterGridByClass(this.value)" aria-controls="timetableGrid">
+                <option value=""><?= __('timetables_grid_all_classes') ?></option>
+                <?php foreach ($classes as $cls): ?>
+                    <option value="<?= (int) $cls['id'] ?>"><?= h($cls['nom']) ?></option>
+                <?php endforeach; ?>
+            </select>
+            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2"
+                id="visibleGridClassCount"><?= count($classes) ?>
+                <?= count($classes) === 1 ? __('timetables_class') : __('timetables_classes') ?></span>
+        </div>
+    </div>
+
     <!-- Grille Multi-Classes par Niveau -->
-    <div class="modern-card border-0 shadow-sm overflow-hidden mb-4">
-        <div class="timetable-grid-wrapper overflow-auto" style="max-height: calc(100vh - 220px); min-height: 500px;">
-            <table class="table-modern align-middle mb-0 grid-table text-center"
+    <div class="modern-card border-0 shadow-sm overflow-hidden mb-4 grid-surface">
+        <div class="timetable-grid-wrapper overflow-auto grid-scroll-region" style="max-height: calc(100vh - 220px); min-height: 500px;">
+            <table id="timetableGrid" class="table-modern align-middle mb-0 grid-table text-center no-responsive"
                 style="min-width: 950px; border-collapse: separate; border-spacing: 0;">
                 <thead>
                     <tr>
                         <!-- Coin Haut-Gauche Fixe 1: Jours -->
-                        <th style="width: 100px; min-width: 100px;" class="py-3 text-center fw-bold sticky-top-left-1">
+                        <th style="width: 76px; min-width: 76px;" class="py-3 text-center fw-bold sticky-top-left-1">
                             <i class="bi bi-calendar3 me-1"></i><?= __('timetables_days') ?>
                         </th>
                         <!-- Coin Haut-Gauche Fixe 2: Horaires -->
-                        <th style="width: 130px; min-width: 130px;" class="py-3 text-center fw-bold sticky-top-left-2">
+                        <th style="width: 112px; min-width: 112px;" class="py-3 text-center fw-bold sticky-top-left-2">
                             <i class="bi bi-clock-history me-1"></i><?= __('timetables_hours') ?>
                         </th>
                         <!-- Colonnes Fixes en Haut: Classes -->
                         <?php foreach ($classes as $cls): ?>
                             <?php $ttObj = $timetablesByClass[$cls['id']] ?? null; ?>
-                            <th class="py-3 px-3 text-center text-uppercase fw-black text-primary sticky-header-col"
-                                style="min-width: 200px;">
+                            <th data-class-id="<?= (int) $cls['id'] ?>"
+                                class="py-3 px-3 text-center text-uppercase fw-black text-primary sticky-header-col"
+                                style="min-width: 180px;">
                                 <div class="d-flex align-items-center justify-content-center gap-1.5 mb-1">
                                     <span class="fs-6 text-truncate"
                                         title="<?= h($cls['nom']) ?>"><?= h($cls['nom']) ?></span>
@@ -284,20 +301,14 @@ $timetablesByClass = $gridData['timetablesByClass'];
 
                                 <!-- Ligne de Pause (Bandeau Sérénité sur toutes les colonnes) -->
                                 <?php if ($isPause): ?>
-                                    <td colspan="<?= count($classes) ?>" class="p-3 cell-pause-full align-middle">
-                                        <div class="d-flex align-items-center justify-content-center gap-3 py-1">
+                                    <td colspan="<?= count($classes) ?>" data-pause-cell class="cell-pause-full align-middle">
+                                        <div class="d-flex align-items-center justify-content-start gap-2 ps-3 py-1">
                                             <div class="pause-icon-circle rounded-circle bg-success text-white d-flex align-items-center justify-content-center shadow-xs"
-                                                style="width: 32px; height: 32px;">
-                                                <i class="bi bi-cup-hot-fill fs-6"></i>
+                                                style="width: 24px; height: 24px;">
+                                                <i class="bi bi-cup-hot-fill"></i>
                                             </div>
                                             <div class="text-center">
-                                                <span
-                                                    class="fw-black text-uppercase tracking-wider fs-6 pause-text-emerald me-2"><?= __('timetables_pause_interval') ?></span>
-                                                <span class="badge pause-badge rounded-pill font-monospace fw-bold px-2.5 py-1">
-                                                    <?= substr($slot['heure_debut'], 0, 5) ?> -
-                                                    <?= substr($slot['heure_fin'], 0, 5) ?> (<?= (int) $slot['duree_minutes'] ?>
-                                                    min)
-                                                </span>
+                                                <span class="fw-bold pause-text-emerald"><?= __('timetables_pause_interval') ?></span>
                                             </div>
                                         </div>
                                     </td>
@@ -315,7 +326,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
                                         $subjectColor = !empty($entry['couleur_hex']) ? $entry['couleur_hex'] : '#3b82f6';
                                         ?>
 
-                                        <td class="p-2 grid-cell <?= $hasConflict ? 'conflict-cell' : '' ?>" data-day="<?= h($day) ?>"
+                                        <td class="grid-cell <?= $hasConflict ? 'conflict-cell' : '' ?>" data-day="<?= h($day) ?>"
                                             data-slot-id="<?= (int) $slot['id'] ?>" data-class-id="<?= (int) $classId ?>"
                                             data-class-name="<?= h($cls['nom']) ?>" data-timetable-id="<?= (int) $timetableId ?>"
                                             aria-label="<?= $entry ? h($entry['subject_name']) . ' avec ' . h($entry['teacher_name']) . ' en ' . h($entry['room_name']) : 'Créneau libre pour ' . h($cls['nom']) ?>"
@@ -386,10 +397,10 @@ $timetablesByClass = $gridData['timetablesByClass'];
                                             <?php else: ?>
                                                 <!-- Slot Libre -->
                                                 <?php if ($canEdit): ?>
-                                                    <div
-                                                        class="empty-slot-placeholder p-2 text-center rounded-3 transition-all border border-dashed h-100 w-100 d-flex flex-column align-items-center justify-content-center">
-                                                        <i class="bi bi-plus-circle-dotted text-primary fs-5 mb-1 opacity-75"></i>
-                                                        <span class="extra-small fw-bold text-muted-theme"><?= __('timetables_assign') ?></span>
+                                                    <div class="empty-slot-placeholder rounded-3 h-100 w-100 d-flex align-items-center justify-content-center"
+                                                        title="<?= h(__('timetables_assign')) ?>">
+                                                        <i class="bi bi-plus-circle-dotted text-primary" aria-hidden="true"></i>
+                                                        <span class="empty-slot-label extra-small fw-semibold"><?= __('timetables_assign') ?></span>
                                                     </div>
                                                 <?php else: ?>
                                                     <div class="text-muted extra-small py-2 opacity-50 fw-semibold">- <?= __('timetables_free') ?> -</div>
@@ -406,6 +417,35 @@ $timetablesByClass = $gridData['timetablesByClass'];
         </div>
     </div>
 </div>
+
+<script>
+    function filterGridByClass(classId) {
+        const grid = document.getElementById('timetableGrid');
+        const classHeaders = Array.from(grid.querySelectorAll('thead th[data-class-id]'));
+        const selectedClassId = String(classId || '');
+        let visibleCount = 0;
+
+        classHeaders.forEach(header => {
+            const isVisible = !selectedClassId || header.dataset.classId === selectedClassId;
+            header.hidden = !isVisible;
+            if (isVisible) visibleCount++;
+        });
+
+        grid.querySelectorAll('tbody td.grid-cell[data-class-id]').forEach(cell => {
+            cell.hidden = selectedClassId && cell.dataset.classId !== selectedClassId;
+        });
+        grid.querySelectorAll('td[data-pause-cell]').forEach(cell => {
+            cell.colSpan = selectedClassId ? 1 : classHeaders.length;
+        });
+        grid.classList.toggle('grid-table-focused', Boolean(selectedClassId));
+
+        const countLabel = document.getElementById('visibleGridClassCount');
+        const singularClassLabel = <?= json_encode(__('timetables_class'), JSON_UNESCAPED_UNICODE) ?>;
+        const pluralClassLabel = <?= json_encode(__('timetables_classes'), JSON_UNESCAPED_UNICODE) ?>;
+        countLabel.textContent = visibleCount + ' ' + (visibleCount === 1 ? singularClassLabel : pluralClassLabel);
+    }
+
+</script>
 
 <!-- Modal Affectation Cours -->
 <?php if ($canEdit): ?>
@@ -1657,6 +1697,10 @@ $timetablesByClass = $gridData['timetablesByClass'];
 </script>
 
 <style>
+    .grid-class-filter {
+        min-width: 240px;
+    }
+
     /* Drag & Drop Visual Feedback Styles & User Select Fix */
     .palette-subject-chip {
         user-select: none !important;
@@ -1776,10 +1820,16 @@ $timetablesByClass = $gridData['timetablesByClass'];
     }
 
     .grid-table {
+        table-layout: auto !important;
         border-collapse: separate !important;
         border-spacing: 0 !important;
         border-radius: 12px;
         background: var(--bg-card, #ffffff);
+    }
+
+    .grid-table.grid-table-focused {
+        min-width: 0 !important;
+        width: 100% !important;
     }
 
     .grid-table td,
@@ -1790,7 +1840,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
 
     /* Sticky Headers (Top) */
     .sticky-header-col {
-        position: sticky;
+        position: sticky !important;
         top: 0;
         z-index: 10;
         background: var(--bg-card-secondary, #f8fafc);
@@ -1800,7 +1850,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
 
     /* Sticky Left 1 (Jours) */
     .sticky-col-1 {
-        position: sticky;
+        position: sticky !important;
         left: 0;
         z-index: 9;
         background: var(--bg-card-secondary, #f8fafc);
@@ -1810,8 +1860,8 @@ $timetablesByClass = $gridData['timetablesByClass'];
 
     /* Sticky Left 2 (Horaires) */
     .sticky-col-2 {
-        position: sticky;
-        left: 100px;
+        position: sticky !important;
+        left: 76px;
         z-index: 9;
         background: var(--bg-card-secondary, #f8fafc);
         box-shadow: 2px 0 4px rgba(0, 0, 0, 0.03);
@@ -1820,7 +1870,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
 
     /* Top Left Corners (Jours & Horaires Headers) */
     .sticky-top-left-1 {
-        position: sticky;
+        position: sticky !important;
         top: 0;
         left: 0;
         z-index: 20;
@@ -1830,9 +1880,9 @@ $timetablesByClass = $gridData['timetablesByClass'];
     }
 
     .sticky-top-left-2 {
-        position: sticky;
+        position: sticky !important;
         top: 0;
-        left: 100px;
+        left: 76px;
         z-index: 20;
         background: var(--bg-card-secondary, #f1f5f9) !important;
         box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.06);
@@ -1840,8 +1890,9 @@ $timetablesByClass = $gridData['timetablesByClass'];
     }
 
     .grid-cell {
-        min-height: 120px;
-        height: 125px;
+        min-height: 100px;
+        height: 108px;
+        padding: 0.3rem !important;
         cursor: pointer;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
@@ -1923,6 +1974,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
         background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.16) 100%) !important;
         border-top: 1px dashed rgba(16, 185, 129, 0.3) !important;
         border-bottom: 1px dashed rgba(16, 185, 129, 0.3) !important;
+        padding: 0.25rem !important;
     }
 
     .pause-text-emerald {
@@ -1936,15 +1988,36 @@ $timetablesByClass = $gridData['timetablesByClass'];
     }
 
     .empty-slot-placeholder {
+        gap: 0.4rem;
         transition: all 0.2s ease;
-        background-color: rgba(248, 250, 252, 0.6);
-        border-color: rgba(203, 213, 225, 0.7) !important;
+        background-color: transparent;
+        border: 1px dashed transparent !important;
+    }
+
+    .empty-slot-placeholder > i {
+        font-size: 1.15rem;
+        opacity: 0.65;
+    }
+
+    .empty-slot-label {
+        display: none;
+    }
+
+    .grid-cell:hover .empty-slot-label,
+    .grid-cell:focus .empty-slot-label {
+        display: inline;
     }
 
     .empty-slot-placeholder:hover {
         border-color: var(--primary-color, #2563eb) !important;
         background-color: rgba(37, 99, 235, 0.06);
         color: var(--primary-color, #2563eb) !important;
+    }
+
+    .grid-cell:hover .empty-slot-placeholder,
+    .grid-cell:focus .empty-slot-placeholder {
+        border-color: rgba(37, 99, 235, 0.5) !important;
+        background-color: rgba(37, 99, 235, 0.05);
     }
 
     .conflict-cell {
@@ -2035,8 +2108,294 @@ $timetablesByClass = $gridData['timetablesByClass'];
     }
 
     [data-theme="dark"] .empty-slot-placeholder {
-        background-color: rgba(30, 41, 59, 0.5);
-        border-color: rgba(255, 255, 255, 0.12) !important;
+        background-color: transparent;
+        border-color: transparent !important;
+    }
+
+    .grid-page-header {
+        border-left: 4px solid #8b5cf6 !important;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06) !important;
+    }
+
+    .grid-header-meta {
+        flex-wrap: wrap;
+    }
+
+    .grid-meta-badge {
+        padding: 0.35rem 0.6rem;
+        border: 1px solid transparent;
+        border-radius: 0.55rem;
+        font-size: 0.7rem;
+        font-weight: 650;
+        line-height: 1.2;
+        white-space: normal;
+    }
+
+    .grid-meta-type {
+        color: #6d28d9;
+        background: #f3edff;
+        border-color: #e7dcff;
+    }
+
+    .grid-meta-cycle {
+        color: #087e8b;
+        background: #e7f8f8;
+        border-color: #c9eeee;
+    }
+
+    .grid-meta-level {
+        color: #287a54;
+        background: #eaf7ef;
+        border-color: #d3ecdc;
+    }
+
+    .grid-meta-week {
+        color: #936515;
+        background: #fff6df;
+        border-color: #f5e7bb;
+    }
+
+    .grid-action-btn {
+        min-height: 38px;
+        padding: 0.55rem 0.9rem;
+        border: 1px solid transparent;
+        border-radius: 0.7rem;
+        font-size: 0.76rem;
+        font-weight: 650;
+        line-height: 1.2;
+        box-shadow: none !important;
+        transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
+    }
+
+    .grid-action-btn:hover {
+        transform: translateY(-1px);
+    }
+
+    .grid-action-btn:focus-visible {
+        outline: 3px solid rgba(139, 92, 246, 0.28);
+        outline-offset: 2px;
+    }
+
+    .grid-action-primary {
+        color: #fff;
+        background: #7c3aed;
+        border-color: #7c3aed;
+    }
+
+    .grid-action-primary:hover {
+        color: #fff;
+        background: #6d28d9;
+        border-color: #6d28d9;
+    }
+
+    .grid-action-secondary {
+        color: #6d28d9;
+        background: #f3edff;
+        border-color: #e4d8ff;
+    }
+
+    .grid-action-secondary:hover {
+        color: #5b21b6;
+        background: #eae0ff;
+        border-color: #d7c5ff;
+    }
+
+    .grid-action-quiet {
+        color: var(--text-main, #334155);
+        background: var(--bg-card-secondary, #f8fafc);
+        border-color: var(--border-color, #e2e8f0);
+    }
+
+    .grid-action-quiet:hover {
+        color: #6d28d9;
+        background: #f3edff;
+        border-color: #e4d8ff;
+    }
+
+    .grid-action-export {
+        color: #a93650;
+        background: #fff0f2;
+        border-color: #f7d1d9;
+    }
+
+    .grid-action-export:hover {
+        color: #8f2940;
+        background: #ffe4e9;
+        border-color: #efb9c5;
+    }
+
+    [data-theme="dark"] .grid-page-header {
+        border-left-color: #a78bfa !important;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18) !important;
+    }
+
+    [data-theme="dark"] .grid-meta-type {
+        color: #d8c6ff;
+        background: #352957;
+        border-color: #4a3971;
+    }
+
+    [data-theme="dark"] .grid-meta-cycle {
+        color: #a8e8e8;
+        background: #173a42;
+        border-color: #24515a;
+    }
+
+    [data-theme="dark"] .grid-meta-level {
+        color: #b6e4c4;
+        background: #1d3c31;
+        border-color: #2b5542;
+    }
+
+    [data-theme="dark"] .grid-meta-week {
+        color: #f3d48b;
+        background: #45391e;
+        border-color: #5e4d27;
+    }
+
+    [data-theme="dark"] .grid-action-secondary {
+        color: #ddceff;
+        background: #352957;
+        border-color: #4a3971;
+    }
+
+    [data-theme="dark"] .grid-action-secondary:hover,
+    [data-theme="dark"] .grid-action-quiet:hover {
+        color: #eee6ff;
+        background: #43336a;
+        border-color: #66518f;
+    }
+
+    [data-theme="dark"] .grid-action-quiet {
+        color: #e2e8f0;
+        background: #263449;
+        border-color: #3a4b62;
+    }
+
+    [data-theme="dark"] .grid-action-export {
+        color: #ffbec9;
+        background: #482b36;
+        border-color: #673b49;
+    }
+
+    [data-theme="dark"] .grid-action-export:hover {
+        color: #ffe0e5;
+        background: #5a3441;
+        border-color: #7a4657;
+    }
+
+    @media (hover: none) {
+        .grid-cell .empty-slot-placeholder {
+            min-height: 44px;
+            gap: 0.4rem;
+            color: #6d28d9;
+            background: #f7f3ff;
+            border: 1px dashed #d8c7ff !important;
+        }
+
+        .grid-cell .empty-slot-placeholder > i {
+            font-size: 0.9rem;
+            opacity: 1;
+        }
+
+        .grid-cell .empty-slot-label {
+            display: inline;
+            font-size: 0.68rem;
+        }
+
+        [data-theme="dark"] .grid-cell .empty-slot-placeholder {
+            color: #d8c6ff;
+            background: #2c2442;
+            border-color: #5b477e !important;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .grid-page-header {
+            padding: 0.875rem !important;
+            margin-bottom: 1rem !important;
+        }
+
+        .grid-header-layout {
+            align-items: stretch !important;
+            flex-direction: column;
+            gap: 0.75rem !important;
+        }
+
+        .grid-header-content {
+            min-width: 0;
+        }
+
+        .grid-header-meta {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.35rem !important;
+            margin-bottom: 0.65rem !important;
+        }
+
+        .grid-header-meta .badge {
+            min-width: 0;
+            padding: 0.3rem 0.4rem !important;
+            border-radius: 0.5rem !important;
+            font-size: 0.65rem !important;
+            line-height: 1.2;
+            text-align: left;
+            white-space: normal;
+        }
+
+        .grid-header-meta .badge i {
+            margin-right: 0.2rem !important;
+        }
+
+        .grid-header-title {
+            font-size: 1.1rem !important;
+            line-height: 1.25;
+        }
+
+        .grid-header-period {
+            margin-top: 0.25rem;
+            font-size: 0.72rem;
+            line-height: 1.4;
+        }
+
+        .grid-header-actions {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            width: 100%;
+            gap: 0.4rem !important;
+        }
+
+        .grid-header-actions > * {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 0;
+            width: 100%;
+            min-height: 36px;
+            padding: 0.4rem 0.35rem !important;
+            font-size: 0.68rem !important;
+            line-height: 1.2;
+            text-align: center;
+            white-space: normal;
+        }
+
+        .grid-class-filter {
+            min-width: 0;
+            width: 100%;
+        }
+
+        .grid-view-toolbar > div:last-child {
+            width: 100%;
+        }
+    }
+
+    @media (hover: none) {
+        .grid-page-header:hover {
+            transform: none !important;
+            border-style: solid !important;
+            border-color: var(--border-color, rgba(226, 232, 240, 0.8)) !important;
+            box-shadow: var(--card-shadow, 0 4px 12px -2px rgba(15, 23, 42, 0.04)) !important;
+        }
     }
 
     [data-theme="dark"] .cell-pause-full {
@@ -2052,6 +2411,710 @@ $timetablesByClass = $gridData['timetablesByClass'];
         background-color: rgba(16, 185, 129, 0.3) !important;
         color: #34d399 !important;
         border: 1px solid rgba(52, 211, 153, 0.4) !important;
+    }
+
+    .timetable-grid-page {
+        --schedule-ink: #edf1ff;
+        --schedule-muted: #9aa8cc;
+        --schedule-panel: #111a36;
+        --schedule-panel-raised: #182448;
+        --schedule-line: rgba(142, 164, 220, 0.16);
+        --schedule-violet: #8b5cf6;
+        --schedule-blue: #536dfe;
+        color: var(--schedule-ink);
+    }
+
+    .timetable-grid-page .grid-page-header,
+    .timetable-grid-page .grid-filter-panel,
+    .timetable-grid-page .grid-surface {
+        color: var(--schedule-ink) !important;
+        border: 1px solid var(--schedule-line) !important;
+        border-radius: 20px !important;
+        background:
+            radial-gradient(ellipse at 2% 5%, rgba(119, 62, 255, 0.24), transparent 34%),
+            linear-gradient(118deg, #121b39 0%, #0c1430 58%, #171a48 100%) !important;
+        box-shadow: 0 18px 48px rgba(2, 6, 23, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+    }
+
+    .timetable-grid-page .grid-page-header {
+        padding: clamp(1.1rem, 2.4vw, 2rem) !important;
+        border-left: 1px solid var(--schedule-line) !important;
+        position: relative;
+        isolation: isolate;
+        overflow: hidden;
+    }
+
+    .timetable-grid-page .grid-page-header::after {
+        position: absolute;
+        z-index: -1;
+        top: -95px;
+        right: -80px;
+        width: 310px;
+        height: 230px;
+        border: 1px solid rgba(173, 129, 255, 0.12);
+        border-radius: 50%;
+        background: radial-gradient(ellipse, rgba(102, 57, 214, 0.19), transparent 68%);
+        content: "";
+        pointer-events: none;
+    }
+
+    .timetable-grid-page .grid-page-header:hover {
+        transform: translateY(-1px) !important;
+        border-style: solid !important;
+        border-width: 1px !important;
+        border-color: rgba(153, 130, 255, 0.34) !important;
+        box-shadow: 0 22px 54px rgba(2, 6, 23, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+    }
+
+    .timetable-grid-page .grid-header-layout {
+        position: relative;
+        z-index: 1;
+        gap: 1.5rem !important;
+    }
+
+    .timetable-grid-page .grid-header-content {
+        min-width: 250px;
+    }
+
+    .timetable-grid-page .grid-header-title {
+        margin-top: 0.85rem !important;
+        color: #f5f6ff !important;
+        font-size: clamp(1.45rem, 2vw, 2rem) !important;
+        font-weight: 750 !important;
+        letter-spacing: -0.035em;
+        line-height: 1.16;
+    }
+
+    .timetable-grid-page .grid-header-period {
+        margin-top: 0.45rem !important;
+        color: var(--schedule-muted) !important;
+        font-size: 0.84rem;
+    }
+
+    .timetable-grid-page .grid-meta-badge {
+        min-height: 28px;
+        display: inline-flex;
+        align-items: center;
+        padding: 0.38rem 0.68rem;
+        border: 1px solid rgba(162, 146, 255, 0.2);
+        border-radius: 999px;
+        color: #ded8ff;
+        background: rgba(107, 76, 207, 0.2);
+        font-size: 0.72rem;
+        font-weight: 650;
+        line-height: 1.2;
+        white-space: normal;
+    }
+
+    .timetable-grid-page .grid-meta-type {
+        color: #d7c6ff;
+        background: rgba(123, 69, 235, 0.22);
+        border-color: rgba(166, 124, 255, 0.3);
+    }
+
+    .timetable-grid-page .grid-meta-cycle {
+        color: #b6e5ff;
+        background: rgba(46, 124, 207, 0.17);
+        border-color: rgba(91, 166, 238, 0.25);
+    }
+
+    .timetable-grid-page .grid-meta-level {
+        color: #b9f4d0;
+        background: rgba(23, 157, 104, 0.17);
+        border-color: rgba(51, 205, 137, 0.25);
+    }
+
+    .timetable-grid-page .grid-meta-week {
+        color: #ffe2a8;
+        background: rgba(192, 128, 27, 0.18);
+        border-color: rgba(235, 177, 66, 0.28);
+    }
+
+    .timetable-grid-page .grid-header-actions {
+        gap: 0.55rem !important;
+    }
+
+    .timetable-grid-page .grid-action-btn {
+        min-height: 42px;
+        padding: 0.66rem 0.95rem;
+        border: 1px solid rgba(153, 169, 219, 0.2);
+        border-radius: 12px;
+        color: #dce5ff;
+        background: rgba(35, 49, 91, 0.76);
+        font-size: 0.78rem;
+        font-weight: 650;
+        line-height: 1.2;
+        box-shadow: 0 5px 14px rgba(3, 8, 28, 0.18) !important;
+        transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+    }
+
+    .timetable-grid-page .grid-action-btn:hover {
+        transform: translateY(-2px);
+        color: #fff;
+        border-color: rgba(188, 168, 255, 0.48);
+        background: rgba(62, 69, 131, 0.9);
+        box-shadow: 0 8px 20px rgba(3, 8, 28, 0.28) !important;
+    }
+
+    .timetable-grid-page .grid-action-btn:focus-visible {
+        outline: 3px solid rgba(164, 135, 255, 0.55);
+        outline-offset: 2px;
+    }
+
+    .timetable-grid-page .grid-action-primary {
+        color: #fff;
+        border-color: #9b64ff;
+        background: linear-gradient(112deg, #913bfa 0%, #6849f5 54%, #4f5ff4 100%);
+        box-shadow: 0 7px 19px rgba(99, 61, 219, 0.25) !important;
+    }
+
+    .timetable-grid-page .grid-action-primary:hover {
+        background: linear-gradient(112deg, #a14dff 0%, #7558ff 54%, #5f70ff 100%);
+        border-color: #b18aff;
+        box-shadow: 0 10px 24px rgba(99, 61, 219, 0.34) !important;
+    }
+
+    .timetable-grid-page .grid-action-secondary {
+        color: #e7ddff;
+        border-color: rgba(160, 117, 255, 0.36);
+        background: linear-gradient(115deg, rgba(86, 45, 170, 0.62), rgba(54, 53, 142, 0.68));
+    }
+
+    .timetable-grid-page .grid-action-quiet {
+        color: #dce5ff;
+        border-color: rgba(153, 169, 219, 0.2);
+        background: rgba(35, 49, 91, 0.72);
+    }
+
+    .timetable-grid-page .grid-action-export {
+        color: #ffe2e9;
+        border-color: rgba(255, 103, 133, 0.32);
+        background: linear-gradient(115deg, rgba(132, 43, 82, 0.82), rgba(99, 38, 84, 0.8));
+    }
+
+    .timetable-grid-page .grid-action-export:hover {
+        color: #fff;
+        border-color: rgba(255, 139, 162, 0.6);
+        background: linear-gradient(115deg, #a93664, #763677);
+    }
+
+    .timetable-grid-page .grid-filter-panel {
+        min-height: 76px;
+        padding: 1rem 1.2rem !important;
+        margin-bottom: 0.8rem !important;
+        border-radius: 16px !important;
+        background:
+            radial-gradient(ellipse at 100% 0%, rgba(69, 82, 182, 0.16), transparent 42%),
+            linear-gradient(115deg, #101a37, #0d1530) !important;
+    }
+
+    .timetable-grid-page .grid-filter-panel .form-label {
+        margin-bottom: 0.2rem !important;
+        color: #f0f3ff !important;
+        font-size: 0.92rem !important;
+        font-weight: 700 !important;
+    }
+
+    .timetable-grid-page .grid-filter-panel .text-muted {
+        color: var(--schedule-muted) !important;
+    }
+
+    .timetable-grid-page .grid-class-filter {
+        min-width: min(250px, 48vw);
+        min-height: 42px;
+        padding: 0.55rem 2.25rem 0.55rem 0.9rem;
+        border: 1px solid rgba(134, 156, 218, 0.28);
+        border-radius: 11px;
+        color: #eff2ff;
+        background-color: #182448;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+    }
+
+    .timetable-grid-page .grid-class-filter:focus {
+        border-color: #9073ff;
+        box-shadow: 0 0 0 3px rgba(130, 92, 246, 0.2);
+    }
+
+    .timetable-grid-page .grid-class-filter option {
+        color: #edf1ff;
+        background: #182448;
+    }
+
+    .timetable-grid-page #visibleGridClassCount {
+        color: #d9ceff !important;
+        background: rgba(116, 77, 219, 0.2) !important;
+        border: 1px solid rgba(161, 130, 255, 0.22);
+    }
+
+    .timetable-grid-page .grid-surface {
+        padding: 0.65rem !important;
+        overflow: hidden !important;
+        border-radius: 20px !important;
+        background:
+            radial-gradient(ellipse at 96% 95%, rgba(71, 51, 188, 0.2), transparent 36%),
+            linear-gradient(135deg, #111a37, #0a122a 64%, #14183f) !important;
+    }
+
+    .timetable-grid-page .grid-scroll-region {
+        position: relative;
+        max-height: calc(100vh - 250px) !important;
+        min-height: 500px;
+        overflow: auto;
+        border: 1px solid rgba(115, 139, 204, 0.19);
+        border-radius: 15px;
+        background: #09122b;
+        overscroll-behavior: contain;
+        scrollbar-color: #485b9c #111a36;
+        scrollbar-width: thin;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .timetable-grid-page .grid-scroll-region::-webkit-scrollbar {
+        width: 9px;
+        height: 9px;
+    }
+
+    .timetable-grid-page .grid-scroll-region::-webkit-scrollbar-track {
+        border-radius: 9px;
+        background: #111a36;
+    }
+
+    .timetable-grid-page .grid-scroll-region::-webkit-scrollbar-thumb {
+        border: 2px solid #111a36;
+        border-radius: 9px;
+        background: #485b9c;
+    }
+
+    .timetable-grid-page .grid-table {
+        width: max-content;
+        min-width: 100% !important;
+        border-collapse: separate !important;
+        border-spacing: 0 !important;
+        border-radius: 0;
+        color: var(--schedule-ink);
+        background: #09122b !important;
+    }
+
+    .timetable-grid-page .grid-table th,
+    .timetable-grid-page .grid-table td {
+        border-right: 1px solid var(--schedule-line) !important;
+        border-bottom: 1px solid var(--schedule-line) !important;
+    }
+
+    .timetable-grid-page .grid-table thead th {
+        height: 70px;
+        padding: 0.75rem 0.9rem !important;
+        color: #eef1ff !important;
+        background: linear-gradient(180deg, #1a2851, #172344) !important;
+        box-shadow: inset 0 3px 0 #9856ff, 0 7px 15px rgba(2, 6, 23, 0.18);
+        font-size: 0.88rem;
+        letter-spacing: 0.035em;
+        vertical-align: middle;
+    }
+
+    .timetable-grid-page .grid-table thead th[data-class-id] {
+        min-width: 180px;
+        border-top: 1px solid rgba(153, 125, 255, 0.23);
+        text-transform: none !important;
+    }
+
+    .timetable-grid-page .grid-table thead th[data-class-id]:nth-of-type(5n + 1) {
+        box-shadow: inset 0 3px 0 #a855f7, 0 7px 15px rgba(2, 6, 23, 0.18);
+    }
+
+    .timetable-grid-page .grid-table thead th[data-class-id]:nth-of-type(5n + 2) {
+        box-shadow: inset 0 3px 0 #4778ff, 0 7px 15px rgba(2, 6, 23, 0.18);
+    }
+
+    .timetable-grid-page .grid-table thead th[data-class-id]:nth-of-type(5n + 3) {
+        box-shadow: inset 0 3px 0 #16c784, 0 7px 15px rgba(2, 6, 23, 0.18);
+    }
+
+    .timetable-grid-page .grid-table thead th[data-class-id]:nth-of-type(5n + 4) {
+        box-shadow: inset 0 3px 0 #f4b740, 0 7px 15px rgba(2, 6, 23, 0.18);
+    }
+
+    .timetable-grid-page .grid-table thead th[data-class-id]:nth-of-type(5n) {
+        box-shadow: inset 0 3px 0 #27c7dc, 0 7px 15px rgba(2, 6, 23, 0.18);
+    }
+
+    .timetable-grid-page .grid-table thead th[data-class-id] .badge {
+        margin-top: 0.4rem;
+        padding: 0.32rem 0.62rem !important;
+        border: 1px solid rgba(159, 119, 255, 0.24) !important;
+        color: #d8c8ff !important;
+        background: rgba(100, 67, 181, 0.28) !important;
+        font-size: 0.68rem;
+        font-weight: 600 !important;
+    }
+
+    .timetable-grid-page .grid-table.grid-table-focused {
+        width: 100% !important;
+        table-layout: fixed !important;
+    }
+
+    .timetable-grid-page .sticky-header-col,
+    .timetable-grid-page .sticky-col-1,
+    .timetable-grid-page .sticky-col-2,
+    .timetable-grid-page .sticky-top-left-1,
+    .timetable-grid-page .sticky-top-left-2 {
+        color: #e9edff !important;
+        background: #172344 !important;
+        backdrop-filter: blur(14px);
+    }
+
+    .timetable-grid-page .sticky-col-1,
+    .timetable-grid-page .sticky-top-left-1 {
+        border-right: 1px solid rgba(120, 146, 214, 0.25) !important;
+    }
+
+    .timetable-grid-page .sticky-col-2,
+    .timetable-grid-page .sticky-top-left-2 {
+        left: 76px;
+        border-right: 1px solid rgba(120, 146, 214, 0.25) !important;
+        box-shadow: 8px 0 14px rgba(3, 8, 25, 0.12);
+    }
+
+    .timetable-grid-page .sticky-top-left-1,
+    .timetable-grid-page .sticky-top-left-2 {
+        z-index: 22;
+        background: #202e56 !important;
+    }
+
+    .timetable-grid-page .grid-table tbody tr {
+        height: 86px;
+    }
+
+    .timetable-grid-page .grid-cell {
+        height: 86px;
+        min-height: 86px;
+        padding: 0.45rem !important;
+        color: var(--schedule-ink);
+        background: rgba(8, 17, 40, 0.82) !important;
+        vertical-align: middle;
+        transition: background-color 150ms ease, box-shadow 150ms ease;
+    }
+
+    .timetable-grid-page .grid-cell:hover,
+    .timetable-grid-page .grid-cell:focus-visible {
+        z-index: 1;
+        background: #121f43 !important;
+        box-shadow: inset 0 0 0 2px rgba(105, 127, 255, 0.64);
+        outline: none;
+    }
+
+    .timetable-grid-page .day-cell {
+        width: 76px;
+        min-width: 76px;
+        color: #b9c8ff !important;
+        background: #162344 !important;
+    }
+
+    .timetable-grid-page .day-cell > div {
+        color: #a9baff !important;
+        font-size: 0.78rem !important;
+    }
+
+    .timetable-grid-page .slot-time-cell {
+        width: 112px;
+        min-width: 112px;
+        color: #f1f3ff !important;
+        background: #172344 !important;
+        vertical-align: middle;
+    }
+
+    .timetable-grid-page .slot-time-cell .font-monospace {
+        color: #f1f3ff !important;
+        font-size: 0.83rem;
+    }
+
+    .timetable-grid-page .slot-time-cell .badge {
+        padding: 0.34rem 0.55rem !important;
+        border: 1px solid rgba(128, 151, 211, 0.25) !important;
+        color: #c9d4f5 !important;
+        background: rgba(65, 84, 137, 0.32) !important;
+        font-size: 0.66rem;
+    }
+
+    .timetable-grid-page .grid-cell .course-card {
+        min-height: 100%;
+        padding: 0.62rem !important;
+        border: 1px solid color-mix(in srgb, var(--subject-color, #647cff) 38%, transparent) !important;
+        border-left: 3px solid var(--subject-color, #647cff) !important;
+        border-radius: 12px !important;
+        color: #edf1ff;
+        background: linear-gradient(145deg, rgba(35, 48, 91, 0.98), rgba(19, 30, 62, 0.98)) !important;
+        box-shadow: 0 5px 15px rgba(2, 7, 25, 0.24) !important;
+    }
+
+    .timetable-grid-page .grid-cell .course-card:hover {
+        transform: translateY(-1px);
+        border-color: color-mix(in srgb, var(--subject-color, #647cff) 65%, transparent) !important;
+        box-shadow: 0 9px 20px rgba(2, 7, 25, 0.34) !important;
+    }
+
+    .timetable-grid-page .course-title {
+        color: #f4f5ff !important;
+        font-size: 0.86rem;
+        line-height: 1.3;
+    }
+
+    .timetable-grid-page .course-meta {
+        border-top-color: rgba(159, 176, 224, 0.17) !important;
+    }
+
+    .timetable-grid-page .teacher-name,
+    .timetable-grid-page .room-info {
+        color: #c5d0ed !important;
+    }
+
+    .timetable-grid-page .room-badge {
+        border-color: rgba(136, 158, 215, 0.24) !important;
+        color: #dce5ff !important;
+        background: rgba(69, 86, 137, 0.34) !important;
+    }
+
+    .timetable-grid-page .empty-slot-placeholder {
+        min-height: 44px;
+        color: #6d8cff;
+        border: 1px solid transparent !important;
+        border-radius: 10px !important;
+        background: transparent;
+    }
+
+    .timetable-grid-page .empty-slot-placeholder > i {
+        opacity: 1;
+        font-size: 1rem;
+    }
+
+    .timetable-grid-page .grid-cell:hover .empty-slot-placeholder,
+    .timetable-grid-page .grid-cell:focus-visible .empty-slot-placeholder {
+        color: #a8bbff !important;
+        border-color: rgba(113, 139, 255, 0.42) !important;
+        background: rgba(76, 102, 220, 0.12) !important;
+    }
+
+    .timetable-grid-page .cell-pause-full {
+        padding: 0.45rem 0.8rem !important;
+        border-top: 1px solid rgba(25, 219, 171, 0.5) !important;
+        border-bottom: 1px solid rgba(25, 219, 171, 0.5) !important;
+        color: #83f0d1 !important;
+        background:
+            linear-gradient(100deg, rgba(0, 174, 137, 0.32), rgba(0, 125, 149, 0.22)),
+            #073b49 !important;
+    }
+
+    .timetable-grid-page .cell-pause-full .pause-icon-circle {
+        width: 34px !important;
+        height: 34px !important;
+        color: #fff !important;
+        background: #10b981 !important;
+        box-shadow: 0 0 18px rgba(16, 185, 129, 0.24);
+    }
+
+    .timetable-grid-page .pause-text-emerald {
+        color: #7cf0cc !important;
+        font-size: 0.82rem;
+        letter-spacing: 0.02em;
+    }
+
+    .timetable-grid-page .pause-badge {
+        color: #8cf0d2 !important;
+        background: rgba(16, 185, 129, 0.16) !important;
+        border-color: rgba(52, 211, 153, 0.3) !important;
+    }
+
+    .timetable-grid-page .grid-toast-item {
+        border: 1px solid rgba(142, 164, 220, 0.22);
+        border-radius: 14px;
+        color: var(--schedule-ink);
+        background: #182448;
+        box-shadow: 0 16px 38px rgba(2, 6, 23, 0.42);
+    }
+
+    @media (max-width: 767.98px) {
+        .timetable-grid-page {
+            padding-right: 0.65rem !important;
+            padding-left: 0.65rem !important;
+        }
+
+        .timetable-grid-page .grid-page-header {
+            padding: 1rem !important;
+            margin-bottom: 0.8rem !important;
+            border-radius: 17px !important;
+        }
+
+        .timetable-grid-page .grid-header-layout {
+            align-items: stretch !important;
+            flex-direction: column;
+            gap: 0.95rem !important;
+        }
+
+        .timetable-grid-page .grid-header-content {
+            min-width: 0;
+        }
+
+        .timetable-grid-page .grid-header-meta {
+            display: flex !important;
+            flex-wrap: wrap;
+            gap: 0.4rem !important;
+            margin-bottom: 0.65rem !important;
+        }
+
+        .timetable-grid-page .grid-meta-badge {
+            min-height: 26px;
+            padding: 0.3rem 0.55rem;
+            font-size: 0.65rem;
+        }
+
+        .timetable-grid-page .grid-header-title {
+            margin-top: 0.7rem !important;
+            font-size: 1.3rem !important;
+        }
+
+        .timetable-grid-page .grid-header-period {
+            font-size: 0.75rem;
+            line-height: 1.45;
+        }
+
+        .timetable-grid-page .grid-header-actions {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            width: 100%;
+            gap: 0.5rem !important;
+        }
+
+        .timetable-grid-page .grid-header-actions > * {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-width: 0;
+            min-height: 42px;
+            padding: 0.55rem 0.45rem;
+            font-size: 0.72rem;
+            text-align: center;
+            white-space: normal;
+        }
+
+        .timetable-grid-page .grid-filter-panel {
+            align-items: stretch !important;
+            gap: 0.8rem !important;
+            padding: 0.9rem !important;
+            border-radius: 15px !important;
+        }
+
+        .timetable-grid-page .grid-filter-panel > div:last-child {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 0.5rem !important;
+            width: 100%;
+        }
+
+        .timetable-grid-page .grid-class-filter {
+            width: 100%;
+            min-width: 0;
+        }
+
+        .timetable-grid-page #visibleGridClassCount {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+        }
+
+        .timetable-grid-page .grid-surface {
+            padding: 0.4rem !important;
+            border-radius: 16px !important;
+        }
+
+        .timetable-grid-page .grid-scroll-region {
+            max-height: calc(100dvh - 210px) !important;
+            min-height: min(500px, calc(100dvh - 230px)) !important;
+            border-radius: 12px;
+            touch-action: pan-x pan-y;
+        }
+
+        .timetable-grid-page .grid-table {
+            width: max-content !important;
+            min-width: 100% !important;
+        }
+
+        .timetable-grid-page .grid-table thead th {
+            height: 64px;
+            padding: 0.55rem 0.65rem !important;
+            font-size: 0.76rem;
+        }
+
+        .timetable-grid-page .grid-table thead th[data-class-id] {
+            min-width: 166px;
+        }
+
+        .timetable-grid-page .sticky-top-left-1,
+        .timetable-grid-page .sticky-col-1,
+        .timetable-grid-page .day-cell {
+            width: 52px !important;
+            min-width: 52px !important;
+            max-width: 52px;
+            padding-right: 0.2rem !important;
+            padding-left: 0.2rem !important;
+        }
+
+        .timetable-grid-page .sticky-top-left-2,
+        .timetable-grid-page .sticky-col-2,
+        .timetable-grid-page .slot-time-cell {
+            left: 52px !important;
+            width: 104px !important;
+            min-width: 104px !important;
+            max-width: 104px;
+            padding-right: 0.3rem !important;
+            padding-left: 0.3rem !important;
+        }
+
+        .timetable-grid-page .sticky-top-left-1,
+        .timetable-grid-page .sticky-top-left-2 {
+            font-size: 0.62rem !important;
+            line-height: 1.15;
+            white-space: normal;
+        }
+
+        .timetable-grid-page .sticky-top-left-1 i,
+        .timetable-grid-page .sticky-top-left-2 i {
+            display: block;
+            margin: 0 0 0.18rem !important;
+            font-size: 0.88rem !important;
+        }
+
+        .timetable-grid-page .grid-table tbody tr {
+            height: 92px;
+        }
+
+        .timetable-grid-page .grid-cell {
+            width: 166px;
+            min-width: 166px;
+            height: 92px;
+            min-height: 92px;
+            padding: 0.35rem !important;
+        }
+
+        .timetable-grid-page .grid-cell .course-card {
+            padding: 0.5rem !important;
+            border-radius: 10px !important;
+        }
+
+        .timetable-grid-page .course-title {
+            font-size: 0.78rem;
+        }
+
+        .timetable-grid-page .teacher-info,
+        .timetable-grid-page .room-info {
+            font-size: 0.68rem;
+        }
+
+        .timetable-grid-page .slot-time-cell .font-monospace {
+            font-size: 0.72rem;
+        }
+
     }
 
     /* Print Stylesheet for Instant Browser Printing */
@@ -2073,6 +3136,7 @@ $timetablesByClass = $gridData['timetablesByClass'];
         sidebar,
         footer,
         .modal,
+        .grid-view-toolbar,
         #quickAssignPalette,
         .btn-delete-course {
             display: none !important;

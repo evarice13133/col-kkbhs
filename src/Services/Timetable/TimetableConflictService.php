@@ -176,7 +176,7 @@ class TimetableConflictService
      */
     public function getGridConflictsForWeek(int $weekId, array $classIds): array
     {
-        if (empty($classIds) || $weekId <= 0) {
+        if (empty($classIds) || $weekId < 0) {
             return [];
         }
 

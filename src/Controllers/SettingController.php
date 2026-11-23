@@ -28,14 +28,17 @@ class SettingController
 
     public function index()
     {
-        $teachingTypeId = isset($_GET['teaching_type_id']) && (int)$_GET['teaching_type_id'] > 0 
-            ? (int) $_GET['teaching_type_id'] 
-            : null;
-
-        $stmtTT = $this->db->query("SELECT * FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC");
+        $requestedTeachingTypeId = (int) ($_GET['teaching_type_id'] ?? 0);
+        $stmtTT = $this->db->query("SELECT * FROM teaching_types WHERE id > 0 ORDER BY position ASC, nom ASC");
         $teachingTypes = $stmtTT->fetchAll(PDO::FETCH_ASSOC);
 
-        $currentTeachingTypeId = $teachingTypeId ?? $this->settingsStore->getDefaultTeachingTypeId();
+        $currentTeachingTypeId = $requestedTeachingTypeId > 0
+            ? $requestedTeachingTypeId
+            : $this->settingsStore->getDefaultTeachingTypeId();
+        if ($currentTeachingTypeId > 0 && !$this->isConfigurableTeachingType($currentTeachingTypeId)) {
+            Session::set('error_msg', __('settings_teaching_type_invalid') ?? 'Type d’enseignement invalide.');
+            $currentTeachingTypeId = $this->settingsStore->getDefaultTeachingTypeId();
+        }
         $this->settingsStore->setTeachingTypeId($currentTeachingTypeId);
 
         $settings = $this->settingsStore->all($currentTeachingTypeId);
@@ -47,9 +50,12 @@ class SettingController
     public function store()
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $teachingTypeId = isset($_POST['teaching_type_id']) && (int)$_POST['teaching_type_id'] > 0 
-                ? (int) $_POST['teaching_type_id'] 
-                : $this->settingsStore->getDefaultTeachingTypeId();
+            $teachingTypeId = (int) ($_POST['teaching_type_id'] ?? 0);
+            if ($teachingTypeId < 1 || !$this->isConfigurableTeachingType($teachingTypeId)) {
+                Session::set('error_msg', __('settings_teaching_type_invalid') ?? 'Type d’enseignement invalide.');
+                header('Location: /settings');
+                exit;
+            }
 
             $allowed_keys = [
                 'school_name',
@@ -101,7 +107,7 @@ class SettingController
                 'theme_login_panel_badge_text',
                 'allow_teacher_registration',
                 'matricule_format',
-                'matricule_counter',
+                'show_teacher_names_on_bulletins',
                 'creation_decree',
                 'backup_enabled',
                 'backup_push_enabled',
@@ -120,6 +126,7 @@ class SettingController
                 'bulletin_printing_enabled',
                 'registration_fee_policy',
                 'payment_methods',
+                'grade_entry_competency_required',
             ];
 
             $updates = [];
@@ -149,11 +156,21 @@ class SettingController
                 }
             }
 
-            $checkbox_keys = ['bulletin_printing_enabled', 'backup_enabled', 'backup_push_enabled'];
+            $checkbox_keys = ['bulletin_printing_enabled', 'backup_enabled', 'backup_push_enabled', 'show_teacher_names_on_bulletins', 'grade_entry_competency_required'];
             foreach ($checkbox_keys as $key) {
                 if (in_array($key, $allowed_keys)) {
                     $updates[$key] = isset($_POST[$key]) ? '1' : '0';
                 }
+            }
+
+            if (isset($_POST['matricule_format'])) {
+                $matriculeFormat = trim((string) $_POST['matricule_format']);
+                if ($matriculeFormat === '' || strlen($matriculeFormat) > 100 || strpos($matriculeFormat, '{COUNTER}') === false) {
+                    Session::set('error_msg', __('settings_matricule_format_invalid'));
+                    header("Location: /settings?teaching_type_id={$teachingTypeId}#tab-academic");
+                    exit;
+                }
+                $updates['matricule_format'] = $matriculeFormat;
             }
 
             $this->settingsStore->setMany($updates, $teachingTypeId);
@@ -176,16 +193,28 @@ class SettingController
             (new ActivityTracker($this->db))->recordSettingsUpdate();
 
             Session::set('success_msg', \__('settings_saved_success'));
-            header("Location: /settings?teaching_type_id=" . $teachingTypeId);
+            $activeTab = (string) ($_POST['active_tab'] ?? 'tab-general');
+            $allowedTabs = ['tab-general', 'tab-academic', 'tab-appearance', 'tab-login', 'tab-automation'];
+            if (!in_array($activeTab, $allowedTabs, true)) {
+                $activeTab = 'tab-general';
+            }
+            header("Location: /settings?teaching_type_id={$teachingTypeId}#{$activeTab}");
             exit;
         }
     }
 
     public function reset()
     {
+        $teachingTypeId = (int) ($_POST['teaching_type_id'] ?? 0);
+        if ($teachingTypeId < 1 || !$this->isConfigurableTeachingType($teachingTypeId)) {
+            Session::set('error_msg', __('settings_teaching_type_invalid') ?? 'Type d’enseignement invalide.');
+            header('Location: /settings');
+            exit;
+        }
+
         $defaults = [
             'theme_navbar_bg' => '#0a1726',
-            'theme_navbar_hover' => '#ffffff14',
+            'theme_navbar_hover' => '#1e293b',
             'theme_button_bg' => '#1f5fbf',
             'theme_button_text' => '#ffffff',
             'theme_glow_bg' => '#eef4fb',
@@ -212,12 +241,19 @@ class SettingController
         ];
 
         foreach ($defaults as $key => $value) {
-            $this->settingsStore->set($key, $value, 0);
+            $this->settingsStore->set($key, $value, $teachingTypeId);
         }
 
         Session::set('success_msg', \__('theme_reset_success'));
-        header("Location: /settings");
+        header("Location: /settings?teaching_type_id=" . $teachingTypeId);
         exit;
+    }
+
+    private function isConfigurableTeachingType(int $teachingTypeId): bool
+    {
+        $stmt = $this->db->prepare('SELECT 1 FROM teaching_types WHERE id = ? AND id > 0 LIMIT 1');
+        $stmt->execute([$teachingTypeId]);
+        return (bool) $stmt->fetchColumn();
     }
 
     public function runBackup()

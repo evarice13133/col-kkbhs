@@ -432,12 +432,19 @@ $app_lang = \App\Core\Locale::get();
             margin: 0;
             padding: 10px 18px;
             transform: translateX(-50%);
-            border: 1px solid rgba(226, 232, 240, 0.9);
-            border-radius: 18px;
-            background: rgba(255, 255, 255, 0.94);
-            box-shadow: 0 12px 36px rgba(15, 35, 67, 0.1);
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
+            overflow: visible;
+            border: 0;
+            border-radius: 20px;
+            background: transparent;
+            box-shadow: none;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            transition: box-shadow .25s ease, background .25s ease;
+        }
+
+        .landing-page .navbar-landing .container {
+            position: relative;
+            z-index: 1;
         }
 
         .landing-page .navbar-landing .container {
@@ -445,51 +452,149 @@ $app_lang = \App\Core\Locale::get();
             padding: 0 8px;
         }
 
-        .landing-page .navbar-brand > div {
-            width: 48px !important;
-            height: 48px !important;
-            flex: 0 0 48px;
-            overflow: hidden;
-            border-radius: 8px !important;
-            background: #fff !important;
+        .landing-page .navbar-landing.scrolled {
+            background: transparent;
             box-shadow: none;
+        }
+
+        .landing-page .navbar-landing:not(.scrolled) .navbar-brand-wordmark {
+            color: #fff;
+        }
+
+        .landing-page .navbar-landing:not(.scrolled) .navbar-brand-wordmark span {
+            color: #c4b5fd;
+        }
+
+        .landing-page .navbar-landing:not(.scrolled) .navbar-brand-tagline {
+            color: #cbd5e1;
+        }
+
+        .landing-page .navbar-landing:not(.scrolled) .nav-link {
+            color: #fff;
+            text-shadow: 0 1px 3px rgba(15, 23, 42, .55);
+        }
+
+        .landing-page .navbar-landing:not(.scrolled) .nav-link:hover,
+        .landing-page .navbar-landing:not(.scrolled) .nav-link:focus-visible {
+            color: var(--brand-blue);
+            text-shadow: none;
+        }
+
+        .landing-page .navbar-landing:not(.scrolled) .navbar-nav > .nav-item:last-child {
+            border-left-color: rgba(255, 255, 255, .35);
+        }
+
+        .landing-page .navbar-landing.scrolled .nav-link {
+            text-shadow: none;
+        }
+
+        .landing-page .navbar-brand {
+            gap: .75rem !important;
+            margin-right: 1.5rem;
+        }
+
+        .landing-page .navbar-brand-mark {
+            display: grid;
+            width: 46px;
+            height: 46px;
+            flex: 0 0 46px;
+            place-items: center;
+            overflow: hidden;
+            border: 1px solid rgba(109, 40, 217, .12);
+            border-radius: 0;
+            background: linear-gradient(145deg, #fff, #f3efff);
+            box-shadow: 0 5px 14px rgba(109, 40, 217, .12);
         }
 
         .landing-page .navbar-brand-logo {
             display: block;
-            width: 100%;
-            height: 100%;
+            width: 38px;
+            height: 38px;
             object-fit: contain;
         }
 
-        .landing-page .navbar-brand > span {
-            color: var(--ink) !important;
-            font-size: 1.3rem !important;
+        .landing-page .navbar-brand-copy {
+            display: flex;
+            flex-direction: column;
+            line-height: 1;
         }
 
-        .landing-page .navbar-brand .text-primary {
-            color: var(--brand-blue) !important;
+        .landing-page .navbar-brand-wordmark {
+            color: var(--ink);
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 800;
+            letter-spacing: -.06em;
+        }
+
+        .landing-page .navbar-brand-wordmark span {
+            color: var(--brand-blue);
+        }
+
+        .landing-page .navbar-brand-tagline {
+            margin-top: 5px;
+            color: #78849a;
+            font-size: .56rem;
+            font-weight: 700;
+            letter-spacing: .12em;
+            text-transform: uppercase;
         }
 
         .landing-page .navbar-nav {
-            gap: 6px;
+            gap: .1rem;
+            padding: .3rem;
+            border: 0;
+            border-radius: 999px;
+            background: transparent;
         }
 
         .landing-page .nav-link {
-            padding: 10px 14px !important;
-            border-radius: 10px;
-            color: #52627a;
-            font-size: 0.9rem;
-            font-weight: 600;
+            position: relative;
+            display: flex;
+            min-height: 40px;
+            align-items: center;
+            padding: .5rem .85rem !important;
+            border-radius: 999px;
+            color: #536176;
+            font-size: .84rem;
+            font-weight: 650;
+            white-space: nowrap;
+            transition: background .2s ease, color .2s ease, transform .2s ease;
         }
 
         .landing-page .nav-link::after {
-            display: none;
+            position: absolute;
+            right: 13px;
+            bottom: 5px;
+            left: 13px;
+            width: auto;
+            height: 2px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--brand-blue), #9b87f5);
+            content: "";
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform .2s ease;
         }
 
-        .landing-page .nav-link:hover {
-            background: #f3edff;
+        .landing-page .nav-link:hover,
+        .landing-page .nav-link:focus-visible {
+            background: #fff;
             color: var(--brand-blue);
+            box-shadow: 0 2px 7px rgba(37, 45, 70, .07);
+            transform: translateY(-1px);
+        }
+
+        .landing-page .nav-link:hover::after,
+        .landing-page .nav-link:focus-visible::after {
+            transform: scaleX(1);
+        }
+
+        .landing-page .nav-link:focus-visible,
+        .landing-page .btn-nav-login:focus-visible,
+        .landing-page .navbar-toggler:focus-visible {
+            outline: 3px solid rgba(109, 40, 217, .28);
+            outline-offset: 3px;
         }
 
         .landing-page .btn-nav-login {
@@ -497,20 +602,110 @@ $app_lang = \App\Core\Locale::get();
             min-height: 42px;
             align-items: center;
             justify-content: center;
-            padding: 0 20px;
-            border-radius: 11px;
-            background: var(--ink);
+            gap: .65rem;
+            padding: 0 17px;
+            border: 1px solid rgba(255, 255, 255, .18);
+            border-radius: 12px;
+            background: linear-gradient(135deg, #6d28d9 0%, #5541cf 100%);
             color: #fff;
-            font-size: 0.9rem;
-            font-weight: 700;
+            font-size: .85rem;
+            font-weight: 750;
             text-decoration: none;
-            transition: background 0.2s ease, transform 0.2s ease;
+            box-shadow: 0 6px 15px rgba(109, 40, 217, .24);
+            transition: background .2s ease, transform .2s ease, box-shadow .2s ease;
         }
 
         .landing-page .btn-nav-login:hover {
-            transform: translateY(-1px);
-            background: var(--brand-blue);
+            transform: translateY(-2px);
+            background: linear-gradient(135deg, #5b21b6 0%, #4338ca 100%);
             color: #fff;
+            box-shadow: 0 10px 20px rgba(109, 40, 217, .3);
+        }
+
+        .landing-page .btn-nav-login i {
+            font-size: .85rem;
+            transition: transform .2s ease;
+        }
+
+        .landing-page .btn-nav-login:hover i {
+            transform: translate(2px, -2px);
+        }
+
+        .landing-page .navbar-nav > .nav-item:last-child {
+            margin-left: .35rem;
+            padding-left: .45rem;
+            border-left: 1px solid #e1e5ef;
+        }
+
+        .landing-page .navbar-toggler {
+            width: 44px;
+            height: 44px;
+            border: 1px solid #e8e6f4 !important;
+            border-radius: 14px;
+            background: #f7f5ff;
+            transition: background .2s ease, border-color .2s ease, transform .2s ease;
+        }
+
+        .landing-page .navbar-toggler:hover {
+            border-color: rgba(109, 40, 217, .28) !important;
+            background: #efebff;
+            transform: translateY(-1px);
+        }
+
+        .landing-page .navbar-toggler .toggler-icon {
+            left: 11px;
+            width: 20px;
+            height: 2px;
+            background: linear-gradient(90deg, #6d28d9, #8b5cf6);
+        }
+
+        @media (min-width: 992px) and (max-width: 1100px) {
+            .landing-page .navbar-landing,
+            .landing-page .navbar-landing.scrolled {
+                padding-right: 10px;
+                padding-left: 10px;
+            }
+
+            .landing-page .navbar-landing .container {
+                padding-right: 4px;
+                padding-left: 4px;
+            }
+
+            .landing-page .navbar-brand {
+                gap: .55rem !important;
+                margin-right: .65rem;
+            }
+
+            .landing-page .navbar-brand-wordmark {
+                font-size: 1.15rem;
+            }
+
+            .landing-page .navbar-brand-tagline {
+                font-size: .5rem;
+            }
+
+            .landing-page .navbar-nav {
+                gap: 0;
+                padding: .2rem;
+            }
+
+            .landing-page .nav-link {
+                padding-right: .56rem !important;
+                padding-left: .56rem !important;
+                font-size: .77rem;
+            }
+
+            .landing-page .navbar-nav > .nav-item.ms-lg-4 {
+                margin-left: .45rem !important;
+                padding-left: .35rem;
+            }
+
+            .landing-page .btn-nav-login {
+                gap: .4rem;
+                padding-right: 11px;
+                padding-left: 11px;
+                font-size: .78rem;
+            }
         }
 
         .landing-page main {
@@ -524,9 +719,8 @@ $app_lang = \App\Core\Locale::get();
             padding: 150px 0 112px;
             color: #fff;
             background:
-                radial-gradient(ellipse at 78% 44%, rgba(124, 58, 237, 0.34), transparent 42%),
-                radial-gradient(ellipse at 8% 100%, rgba(167, 139, 250, 0.18), transparent 38%),
-                linear-gradient(118deg, #17102b 0%, #241442 57%, #321b59 100%);
+                linear-gradient(90deg, rgba(17, 18, 38, .86) 0%, rgba(17, 18, 38, .66) 48%, rgba(17, 18, 38, .18) 100%),
+                url('/public/assets/hero-student-lab.png') center 44% / cover no-repeat;
             isolation: isolate;
         }
 
@@ -576,7 +770,6 @@ $app_lang = \App\Core\Locale::get();
             z-index: 2;
         }
 
-        .landing-page .hero-eyebrow,
         .landing-page .section-kicker {
             display: inline-flex;
             align-items: center;
@@ -586,24 +779,6 @@ $app_lang = \App\Core\Locale::get();
             font-weight: 700;
             letter-spacing: .12em;
             text-transform: uppercase;
-        }
-
-        .landing-page .hero-eyebrow {
-            margin-bottom: 24px;
-            padding: 9px 13px;
-            border: 1px solid rgba(221, 214, 254, .24);
-            border-radius: 99px;
-            background: rgba(255, 255, 255, .06);
-            letter-spacing: .06em;
-            text-transform: none;
-        }
-
-        .landing-page .hero-eyebrow-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #c4b5fd;
-            box-shadow: 0 0 0 4px rgba(196, 181, 253, .16);
         }
 
         .landing-page .hero-title {
@@ -1118,16 +1293,33 @@ $app_lang = \App\Core\Locale::get();
         }
 
         @media (max-width: 991px) {
+            body.menu-open {
+                overflow: hidden;
+            }
+
             .landing-page .navbar-landing,
             .landing-page .navbar-landing.scrolled {
                 top: 10px;
                 width: calc(100% - 28px);
                 padding: 8px 12px;
-                border-radius: 16px;
+                border-radius: 20px;
             }
 
             .landing-page .navbar-collapse {
-                padding: 12px 8px 8px;
+                margin-top: .65rem;
+                padding: .8rem .35rem .25rem;
+                border-top: 1px solid #edf0f6;
+                text-align: left;
+            }
+
+            .landing-page .navbar-nav {
+                width: 100%;
+                align-items: stretch !important;
+                gap: .15rem;
+                padding: 0;
+                border: 0;
+                border-radius: 0;
+                background: transparent;
             }
 
             .landing-page .hero-section {
@@ -1140,6 +1332,39 @@ $app_lang = \App\Core\Locale::get();
                 margin: 4px auto 0;
             }
 
+            .landing-page .navbar-nav > .nav-item {
+                width: 100%;
+                margin: 0;
+                padding: 0;
+                border: 0;
+            }
+
+            .landing-page .navbar-nav > .nav-item:last-child {
+                margin: .4rem 0 0;
+                padding: .65rem 0 0;
+                border-top: 1px solid #edf0f6;
+                border-left: 0;
+            }
+
+            .landing-page .nav-link {
+                min-height: 46px;
+                justify-content: flex-start;
+                padding: .7rem .85rem !important;
+                border-radius: 12px;
+                font-size: .94rem;
+            }
+
+            .landing-page .nav-link::after {
+                display: none;
+            }
+
+            .landing-page .btn-nav-login {
+                width: 100%;
+                min-height: 48px;
+                justify-content: space-between;
+                padding: 0 16px;
+            }
+
             .landing-page .hero-scroll-cue {
                 display: none;
             }
@@ -1148,6 +1373,10 @@ $app_lang = \App\Core\Locale::get();
         @media (max-width: 767px) {
             .landing-page .hero-section {
                 padding: 118px 0 72px;
+                background-image:
+                    linear-gradient(90deg, rgba(17, 18, 38, .84) 0%, rgba(17, 18, 38, .72) 70%, rgba(17, 18, 38, .6) 100%),
+                    url('/public/assets/hero-student-lab.png');
+                background-position: left center, 70% center;
             }
 
             .landing-page .hero-title {
@@ -1934,14 +2163,15 @@ $app_lang = \App\Core\Locale::get();
     <nav class="navbar navbar-expand-lg navbar-landing fixed-top" id="mainNavbar">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center gap-2" href="/">
-                <div class="d-flex align-items-center justify-content-center">
+                <span class="navbar-brand-mark">
                     <img class="navbar-brand-logo" src="/public/assets/camertech-logo.png" alt="Logo Camertech, éditeur de NoteMaster">
-                </div>
-                <span class="fw-extra-bold fs-4 text-dark" style="font-family: 'Outfit'; letter-spacing: -1px;">
-                    Note<span class="text-primary">Master</span>
+                </span>
+                <span class="navbar-brand-copy">
+                    <span class="navbar-brand-wordmark">Note<span>Master</span></span>
+                    <span class="navbar-brand-tagline"><?= __('lang') === 'en' ? 'SCHOOL MANAGEMENT' : 'GESTION SCOLAIRE' ?></span>
                 </span>
             </a>
-            <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" id="navToggler">
+            <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" id="navToggler" aria-controls="navbarNav" aria-expanded="false" aria-label="<?= __('lang') === 'en' ? 'Toggle navigation' : 'Ouvrir ou fermer le menu de navigation' ?>">
                 <span class="toggler-icon"></span>
                 <span class="toggler-icon"></span>
                 <span class="toggler-icon"></span>
@@ -1955,7 +2185,7 @@ $app_lang = \App\Core\Locale::get();
                     <li class="nav-item"><a class="nav-link" href="#services">Pourquoi NoteMaster</a></li>
                     <li class="nav-item"><a class="nav-link" href="#contact"><?= __('contact') ?></a></li>
                     <li class="nav-item ms-lg-4">
-                        <a href="/login" class="btn-nav-login"><?= __('login') ?></a>
+                        <a href="/login" class="btn-nav-login"><?= __('login') ?><i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
                     </li>
                 </ul>
             </div>
@@ -2038,12 +2268,14 @@ $app_lang = \App\Core\Locale::get();
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
         // Initialisation de AOS
-        AOS.init({
-            duration: 1000,
-            once: true,
-            offset: 100,
-            easing: 'ease-out-cubic'
-        });
+        if (typeof AOS !== 'undefined') {
+            AOS.init({
+                duration: 1000,
+                once: true,
+                offset: 100,
+                easing: 'ease-out-cubic'
+            });
+        }
 
         const mainNavbar = document.getElementById('mainNavbar');
         const navToggler = document.getElementById('navToggler');

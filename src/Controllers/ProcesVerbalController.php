@@ -340,8 +340,12 @@ class ProcesVerbalController extends BulletinController
 
         $contexte = [
             'typeEvaluation' => __('pv_sequence'),
+            'typeCode'       => 'sequence',
+            'periodeTitre'   => __('pv_period_sequence'),
+            'periodeValeur'  => (string) $sequence['label'],
             'periodeLabel'   => $this->formatPeriodeEvaluation($sequence),
             'classeNom'      => htmlspecialchars($classeInfo['nom'] ?? '-'),
+            'profPrincipal'  => trim((string) ($classeInfo['main_teacher_nom'] ?? '') . ' ' . (string) ($classeInfo['main_teacher_prenom'] ?? '')),
             'specialiteNom'  => htmlspecialchars($classeInfo['nom'] ?? '-'),
             'niveauNom'      => htmlspecialchars(!empty($classeInfo['niveau_nom']) ? $classeInfo['niveau_nom'] : '-'),
             'cycleNom'       => htmlspecialchars(!empty($classeInfo['cycle_nom']) ? $classeInfo['cycle_nom'] : '-'),
@@ -416,8 +420,12 @@ class ProcesVerbalController extends BulletinController
 
         $contexte = [
             'typeEvaluation' => __('pv_trimestre') . ' ' . $trimestre,
+            'typeCode'       => 'trimestre',
+            'periodeTitre'   => __('pv_period_trimester'),
+            'periodeValeur'  => (string) $trimestre,
             'periodeLabel'   => $this->formatPeriodeEvaluation($dummySequence),
             'classeNom'      => htmlspecialchars($classeInfo['nom'] ?? '-'),
+            'profPrincipal'  => trim((string) ($classeInfo['main_teacher_nom'] ?? '') . ' ' . (string) ($classeInfo['main_teacher_prenom'] ?? '')),
             'specialiteNom'  => htmlspecialchars($classeInfo['nom'] ?? '-'),
             'niveauNom'      => htmlspecialchars(!empty($classeInfo['niveau_nom']) ? $classeInfo['niveau_nom'] : '-'),
             'cycleNom'       => htmlspecialchars(!empty($classeInfo['cycle_nom']) ? $classeInfo['cycle_nom'] : '-'),
@@ -478,8 +486,12 @@ class ProcesVerbalController extends BulletinController
 
         $contexte = [
             'typeEvaluation' => __('pv_annuel'),
+            'typeCode'       => 'annuel',
+            'periodeTitre'   => __('pv_period_annual'),
+            'periodeValeur'  => __('pv_annual_complete'),
             'periodeLabel'   => $this->formatPeriodeEvaluation(null),
             'classeNom'      => htmlspecialchars($classeInfo['nom'] ?? '-'),
+            'profPrincipal'  => trim((string) ($classeInfo['main_teacher_nom'] ?? '') . ' ' . (string) ($classeInfo['main_teacher_prenom'] ?? '')),
             'specialiteNom'  => htmlspecialchars($classeInfo['nom'] ?? '-'),
             'niveauNom'      => htmlspecialchars(!empty($classeInfo['niveau_nom']) ? $classeInfo['niveau_nom'] : '-'),
             'cycleNom'       => htmlspecialchars(!empty($classeInfo['cycle_nom']) ? $classeInfo['cycle_nom'] : '-'),
@@ -508,7 +520,8 @@ class ProcesVerbalController extends BulletinController
      */
     private function construireDataSequence(int $classeId, array $sequence, array $annee, array $eleves): array
     {
-        $matieres      = $this->getClassSubjects($classeId);
+        $matieres      = $this->getClassSubjects($classeId, (int) $annee['id']);
+        $disciplineMap = $this->getClassDisciplineDataMap($classeId, ['trim_' . (int) ($sequence['trimestre'] ?? 1)], (int) $annee['id']);
         $statsMatieres = $this->getSubjectStatsForSequence($classeId, $sequence['label'], (int) $annee['id']);
         $classement    = $this->computeSequenceRanking($classeId, $sequence['label'], (int) $annee['id'], true);
         $statsClasse   = $this->buildClassStats($classement);
@@ -517,7 +530,7 @@ class ProcesVerbalController extends BulletinController
         $notesMatrice = $this->fetchNotesMatriceSequence($classeId, $sequence['label'], (int) $annee['id']);
 
         // Construction de la matrice élèves × matières avec moyennes individuelles
-        $matriceEleves = $this->buildMatriceEleves($matieres, $eleves, $classement, $notesMatrice);
+        $matriceEleves = $this->buildMatriceEleves($matieres, $eleves, $classement, $notesMatrice, $disciplineMap);
 
         // Ligne de moyennes de classe par matière (pied de tableau)
         $moyennesClasse = $this->buildMoyennesClasseParMatiere($matieres, $statsMatieres);
@@ -544,7 +557,8 @@ class ProcesVerbalController extends BulletinController
      */
     private function construireDataTrimestre(int $classeId, int $trimestre, array $sequencesTrimestre, array $annee, array $eleves): array
     {
-        $matieres      = $this->getClassSubjects($classeId);
+        $matieres      = $this->getClassSubjects($classeId, (int) $annee['id']);
+        $disciplineMap = $this->getClassDisciplineDataMap($classeId, [$trimestre], (int) $annee['id']);
         $statsMatieres = $this->getSubjectStatsForTrimester($classeId, $sequencesTrimestre, (int) $annee['id']);
         $classement    = $this->computeTrimesterRanking($classeId, $sequencesTrimestre, (int) $annee['id'], true);
         $statsClasse   = $this->buildClassStats($classement);
@@ -552,7 +566,7 @@ class ProcesVerbalController extends BulletinController
         // Notes moyennées sur les 2 séquences du trimestre
         $notesMatrice = $this->fetchNotesMatriceTrimestre($classeId, $sequencesTrimestre, (int) $annee['id']);
 
-        $matriceEleves  = $this->buildMatriceEleves($matieres, $eleves, $classement, $notesMatrice);
+        $matriceEleves  = $this->buildMatriceEleves($matieres, $eleves, $classement, $notesMatrice, $disciplineMap);
         $moyennesClasse = $this->buildMoyennesClasseParMatiere($matieres, $statsMatieres);
 
         return [
@@ -577,7 +591,8 @@ class ProcesVerbalController extends BulletinController
      */
     private function construireDataAnnuel(int $classeId, array $annee, array $eleves): array
     {
-        $matieres = $this->getClassSubjects($classeId);
+        $matieres = $this->getClassSubjects($classeId, (int) $annee['id']);
+        $disciplineMap = $this->getClassDisciplineDataMap($classeId, ['trim_1', 'trim_2', 'trim_3'], (int) $annee['id']);
 
         $sequencesParTrimestre = [
             1 => $this->getActiveSequencesByTerm(1),
@@ -592,7 +607,7 @@ class ProcesVerbalController extends BulletinController
         // Notes annuelles (moyenne des 3 trimestres) par élève et par matière
         $notesMatrice = $this->fetchNotesMatriceAnnuel($classeId, $sequencesParTrimestre, (int) $annee['id']);
 
-        $matriceEleves  = $this->buildMatriceEleves($matieres, $eleves, $classement, $notesMatrice);
+        $matriceEleves  = $this->buildMatriceEleves($matieres, $eleves, $classement, $notesMatrice, $disciplineMap);
         $moyennesClasse = $this->buildMoyennesClasseParMatiere($matieres, $statsMatieres);
 
         return [
@@ -759,13 +774,14 @@ class ProcesVerbalController extends BulletinController
      * @param array $notesMatrice  [student_id => [subject_id => note]]
      * @return array               Lignes formatées pour la vue
      */
-    private function buildMatriceEleves(array $matieres, array $eleves, array $classement, array $notesMatrice): array
+    private function buildMatriceEleves(array $matieres, array $eleves, array $classement, array $notesMatrice, array $disciplineMap = []): array
     {
         $lignes = [];
 
         foreach ($eleves as $eleve) {
             $eleveId    = (int) $eleve['id'];
             $notesEleve = $notesMatrice[$eleveId] ?? [];
+            $discipline = $disciplineMap[$eleveId] ?? [];
 
             // Récupération de la moyenne et du rang depuis le classement pré-calculé
             $moyenne = isset($classement[$eleveId]) ? (float) $classement[$eleveId]['average'] : null;
@@ -784,6 +800,12 @@ class ProcesVerbalController extends BulletinController
                 'nom'            => htmlspecialchars(strtoupper(trim($eleve['nom']))),
                 'prenom'         => htmlspecialchars(ucfirst(strtolower(trim($eleve['prenom'])))),
                 'rang'           => $rang,
+                'mention'         => $this->getMention($moyenne),
+                'sexe'            => strtoupper(substr(trim((string) ($eleve['sexe'] ?? '')), 0, 1)),
+                'is_redoublant'   => (bool) ($eleve['is_redoublant'] ?? false),
+                'absences'        => (int) ($discipline['absences']['total'] ?? 0),
+                'retards'         => null,
+                'observations'    => '',
                 'notesParMatiere'=> $notesParMatiere,
                 'moyenne'        => $moyenne,
                 // Flag rouge : en échec si la moyenne est inférieure à 10

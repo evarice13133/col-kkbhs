@@ -159,7 +159,7 @@ $canManage = \App\Core\PermissionManager::hasPermission('manage_classes_structur
         </div>
 
         <div class="classes-table-scroll">
-            <table class="classes-table">
+            <table class="classes-table no-responsive">
                 <thead>
                     <tr>
                         <?php if ($canManage): ?><th class="classes-check-column"><span class="visually-hidden"><?= __('lang') === 'en' ? 'Select' : 'Sélection' ?></span></th><?php endif; ?>
@@ -2194,6 +2194,32 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(err => console.error('Error refreshing classes list:', err));
     }
+
+    const dropdownOverflowStyles = new WeakMap();
+    document.addEventListener('show.bs.dropdown', function(event) {
+        if (!event.target.matches('.classes-row-menu')) return;
+        const scrollContainer = event.target.closest('.classes-table-scroll');
+        if (!scrollContainer) return;
+
+        dropdownOverflowStyles.set(scrollContainer, {
+            overflow: scrollContainer.style.overflow,
+            overflowX: scrollContainer.style.overflowX,
+            overflowY: scrollContainer.style.overflowY
+        });
+        scrollContainer.style.overflow = 'visible';
+    });
+
+    document.addEventListener('hidden.bs.dropdown', function(event) {
+        if (!event.target.matches('.classes-row-menu')) return;
+        const scrollContainer = event.target.closest('.classes-table-scroll');
+        const previousStyles = scrollContainer && dropdownOverflowStyles.get(scrollContainer);
+        if (!previousStyles) return;
+
+        scrollContainer.style.overflow = previousStyles.overflow;
+        scrollContainer.style.overflowX = previousStyles.overflowX;
+        scrollContainer.style.overflowY = previousStyles.overflowY;
+        dropdownOverflowStyles.delete(scrollContainer);
+    });
 
     document.addEventListener('click', async function(event) {
         const toggleButton = event.target.closest('.toggle-status-btn');

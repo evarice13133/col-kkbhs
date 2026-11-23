@@ -50,9 +50,9 @@ class TimetableWizardService
         $stmt = $this->db->prepare("
             SELECT c.id, c.nom 
             FROM cycles c
-                        JOIN teaching_types tt ON tt.id = c.teaching_type_id
+            JOIN teaching_types tt ON tt.id = c.teaching_type_id
             WHERE c.status = 1 
-                            AND tt.actif = 1
+              AND tt.actif = 1
               AND (c.teaching_type_id = ? OR ? = 0)
             ORDER BY c.nom ASC
         ");
@@ -65,7 +65,7 @@ class TimetableWizardService
      */
     public function getLevelsByCycle(int $cycleId): array
     {
-        // 1. Récupération prioritaire via la table pivot cycle_levels si un cycleId est fourni
+        // 1. Récupération prioritaire via la table pivot cycle_levels.
         if ($cycleId > 0) {
             $stmt = $this->db->prepare("
                 SELECT l.id, 
@@ -73,7 +73,10 @@ class TimetableWizardService
                        l.code, l.libelle_fr, l.libelle_en
                 FROM levels l
                 JOIN cycle_levels cl ON cl.level_id = l.id
-                WHERE cl.cycle_id = ? AND l.status = 1
+                JOIN cycles c ON c.id = cl.cycle_id
+                JOIN teaching_types tt ON tt.id = c.teaching_type_id AND tt.actif = 1
+                WHERE cl.cycle_id = ? AND c.status = 1 AND l.status = 1
+                  AND l.teaching_type_id = c.teaching_type_id
                 ORDER BY l.id ASC
             ");
             $stmt->execute([$cycleId]);
@@ -91,29 +94,36 @@ class TimetableWizardService
             }
         }
 
-        // 2. Fallback via les classes rattachées au cycle
+        // 2. Fallback via les classes du cycle, en conservant le type d'enseignement.
         $stmt = $this->db->prepare("
             SELECT DISTINCT l.id, 
                    COALESCE(NULLIF(l.libelle_fr, ''), NULLIF(l.libelle_en, ''), CONCAT('Niveau ', l.code)) as nom, 
                    l.code, l.libelle_fr, l.libelle_en
             FROM levels l
             JOIN classes c ON c.level_id = l.id
-            WHERE (c.cycle_id = ? OR ? = 0) AND l.status = 1
+            JOIN cycles cy ON cy.id = c.cycle_id
+            JOIN teaching_types tt ON tt.id = cy.teaching_type_id AND tt.actif = 1
+            WHERE cy.id = ? AND cy.status = 1 AND c.status = 1 AND l.status = 1
+              AND l.teaching_type_id = cy.teaching_type_id
             ORDER BY l.id ASC
         ");
-        $stmt->execute([$cycleId, $cycleId]);
+        $stmt->execute([$cycleId]);
         $levels = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // 3. Fallback général : tous les niveaux actifs
+        // 3. Fallback aux niveaux du type du cycle, jamais aux niveaux d'autres types.
         if (empty($levels)) {
-            $stmt = $this->db->query("
-                SELECT id, 
-                       COALESCE(NULLIF(libelle_fr, ''), NULLIF(libelle_en, ''), CONCAT('Niveau ', code)) as nom, 
-                       code, libelle_fr, libelle_en
-                FROM levels 
-                WHERE status = 1
-                ORDER BY id ASC
+            $stmt = $this->db->prepare("
+                SELECT l.id,
+                       COALESCE(NULLIF(l.libelle_fr, ''), NULLIF(l.libelle_en, ''), CONCAT('Niveau ', l.code)) as nom,
+                       l.code, l.libelle_fr, l.libelle_en
+                FROM levels l
+                INNER JOIN cycles c ON c.id = ?
+                INNER JOIN teaching_types tt ON tt.id = c.teaching_type_id AND tt.actif = 1
+                WHERE c.status = 1 AND l.status = 1
+                  AND l.teaching_type_id = c.teaching_type_id
+                ORDER BY l.id ASC
             ");
+            $stmt->execute([$cycleId]);
             $levels = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
@@ -132,33 +142,44 @@ class TimetableWizardService
     /**
      * Étape 3b : Récupère les classes appartenant au cycle et au niveau.
      */
-    public function getClassesByLevel(int $cycleId, int $levelId): array
+    public function getClassesByLevel(int $cycleId, int $levelId, ?int $academicYearId = null): array
     {
+        if ($academicYearId === null) {
+            $academicYearId = (int)$this->db->query("
+                SELECT id FROM academic_years
+                WHERE status = 1
+                ORDER BY id DESC
+                LIMIT 1
+            ")->fetchColumn();
+        }
+
+        if ($academicYearId < 1) {
+            return [];
+        }
+
         $stmt = $this->db->prepare("
             SELECT c.id, c.nom, c.level_id, c.cycle_id,
-                   (SELECT COUNT(*) FROM students s WHERE s.class_id = c.id AND s.is_withdrawn = 0 AND s.actif = 1) as effectif
+                   (SELECT COUNT(*) FROM students s
+                    WHERE s.class_id = c.id
+                      AND s.academic_year_id = ?
+                      AND s.status = 'Inscrit'
+                      AND s.is_withdrawn = 0
+                      AND s.actif = 1) as effectif
             FROM classes c
             WHERE c.status = 1 AND (c.cycle_id = ? OR ? = 0)
               AND (c.level_id = ? OR ? = 0)
+              AND EXISTS (
+                  SELECT 1 FROM students s
+                  WHERE s.class_id = c.id
+                    AND s.academic_year_id = ?
+                    AND s.status = 'Inscrit'
+                    AND s.is_withdrawn = 0
+                    AND s.actif = 1
+              )
             ORDER BY c.nom ASC
         ");
-        $stmt->execute([$cycleId, $cycleId, $levelId, $levelId]);
-        $classes = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        if (empty($classes) && $cycleId > 0) {
-            // Si pas de niveau restreint
-            $stmt = $this->db->prepare("
-                SELECT c.id, c.nom, c.level_id, c.cycle_id,
-                       (SELECT COUNT(*) FROM students s WHERE s.class_id = c.id AND s.is_withdrawn = 0 AND s.actif = 1) as effectif
-                FROM classes c
-                WHERE c.status = 1 AND c.cycle_id = ?
-                ORDER BY c.nom ASC
-            ");
-            $stmt->execute([$cycleId]);
-            $classes = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        }
-
-        return $classes;
+        $stmt->execute([$academicYearId, $cycleId, $cycleId, $levelId, $levelId, $academicYearId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
@@ -187,15 +208,11 @@ class TimetableWizardService
      */
     public function getMultiClassGridData(int $cycleId, int $levelId, int $weekId): array
     {
-        // 1. Classes du niveau
-        $classes = $this->getClassesByLevel($cycleId, $levelId);
-
-        if (empty($classes)) {
-            // S'il n'y a aucune classe rattachée au niveau, récupérer toutes les classes du cycle
-            $stmt = $this->db->prepare("SELECT id, nom FROM classes WHERE status = 1 AND cycle_id = ? ORDER BY nom ASC");
-            $stmt->execute([$cycleId]);
-            $classes = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        }
+        // Une classe n'est éligible que si elle a des inscrits pour l'année de la semaine affichée.
+        $weekStmt = $this->db->prepare("SELECT academic_year_id FROM timetable_weeks WHERE id = ?");
+        $weekStmt->execute([$weekId]);
+        $academicYearId = (int)$weekStmt->fetchColumn();
+        $classes = $this->getClassesByLevel($cycleId, $levelId, $academicYearId);
 
         $classIds = array_column($classes, 'id');
 
@@ -269,7 +286,7 @@ class TimetableWizardService
         $matrix = []; // [day_of_week][slot_id][class_id] => entry array
         $timetablesByClass = []; // class_id => timetable record
 
-        if (!empty($classIds) && $weekId > 0) {
+        if (!empty($classIds) && $weekId >= 0) {
             $inClause = implode(',', array_map('intval', $classIds));
             $stmtTt = $this->db->query("
                 SELECT id, class_id, titre, is_locked, statut
@@ -306,7 +323,7 @@ class TimetableWizardService
         }
 
         $days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
-        if ($weekId > 0) {
+        if ($weekId >= 0) {
             $stmtW = $this->db->prepare("SELECT date_debut, date_fin FROM timetable_weeks WHERE id = ?");
             $stmtW->execute([$weekId]);
             $wRow = $stmtW->fetch(PDO::FETCH_ASSOC);

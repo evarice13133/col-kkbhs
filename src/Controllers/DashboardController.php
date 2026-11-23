@@ -487,7 +487,7 @@ class DashboardController
         $teachersWithoutAssignment = (int) $this->db->query("
             SELECT COUNT(*) FROM users u 
             WHERE u.role = 'enseignant' 
-            AND NOT EXISTS (SELECT 1 FROM teacher_assignments ta WHERE ta.user_id = u.id)
+            AND NOT EXISTS (SELECT 1 FROM teacher_assignments ta WHERE ta.user_id = u.id AND ta.academic_year_id = {$activeYearId})
         ")->fetchColumn();
 
         $usageMetrics = $this->getUsageMetrics();

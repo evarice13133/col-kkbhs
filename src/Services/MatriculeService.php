@@ -17,18 +17,18 @@ class MatriculeService
     public function __construct(PDO $db)
     {
         $this->db = $db;
-        $this->ensureSettings();
     }
 
     /**
-     * Génère un matricule unique basé sur la configuration globale.
+     * Génère un matricule unique selon le type d’enseignement de la classe.
      * 
      * @param int|null $classId ID de la classe pour le token {CLASS}
      * @return string Le matricule généré
      */
     public function generate(?int $classId): string
     {
-        $config = $this->getSettings();
+        $settingsStore = $this->getSettingsStore($classId);
+        $config = $settingsStore->all();
 
         $schoolCode = trim((string) ($config['school_code'] ?? 'CMR-COL'));
         $format = trim((string) ($config['matricule_format'] ?? '{SCHOOL_CODE}-{CLASS}-MT{COUNTER}'));
@@ -45,14 +45,35 @@ class MatriculeService
             );
 
             if (!$this->exists($matricule)) {
-                // On met à jour le compteur global
-                $this->db->prepare("UPDATE settings SET setting_value = ? WHERE setting_key = 'matricule_counter'")
-                    ->execute([$counter + 1]);
+                $settingsStore->set('matricule_counter', (string) ($counter + 1));
                 return $matricule;
             }
 
             $counter++;
         }
+    }
+
+    /**
+     * Génère un matricule explicitement temporaire pour les imports.
+     */
+    public function generateTemporary(?int $classId): string
+    {
+        $config = $this->getSettingsStore($classId)->all();
+        $schoolCode = preg_replace('/[^A-Z0-9]+/i', '', strtoupper(trim((string) ($config['school_code'] ?? 'CMR'))));
+        $schoolCode = $schoolCode !== '' ? $schoolCode : 'CMR';
+        $classToken = $this->buildClassToken($classId);
+
+        do {
+            $matricule = sprintf(
+                'TMP-%s-%s-%s-%s',
+                $schoolCode,
+                $classToken,
+                date('YmdHis'),
+                strtoupper(bin2hex(random_bytes(3)))
+            );
+        } while ($this->exists($matricule));
+
+        return $matricule;
     }
 
     private function exists(string $matricule): bool
@@ -62,26 +83,19 @@ class MatriculeService
         return (bool) $stmt->fetchColumn();
     }
 
-    private function ensureSettings(): void
+    private function getSettingsStore(?int $classId): SettingsStore
     {
-        try {
-            $this->db->exec("CREATE TABLE IF NOT EXISTS settings (setting_key VARCHAR(50) PRIMARY KEY, setting_value TEXT)");
-            $this->db->exec("INSERT IGNORE INTO settings (setting_key, setting_value) VALUES
-                ('school_code', 'CMR-COL'),
-                ('matricule_format', '{SCHOOL_CODE}-{CLASS}-MT{COUNTER}'),
-                ('matricule_counter', '1')");
-        } catch (\Exception $e) {
+        $teachingTypeId = null;
+        if ($classId !== null && $classId > 0) {
+            $stmt = $this->db->prepare('SELECT teaching_type_id FROM classes WHERE id = ?');
+            $stmt->execute([$classId]);
+            $value = $stmt->fetchColumn();
+            if ($value !== false && (int) $value > 0) {
+                $teachingTypeId = (int) $value;
+            }
         }
-    }
 
-    private function getSettings(): array
-    {
-        $stmt = $this->db->query("SELECT setting_key, setting_value FROM settings WHERE setting_key IN ('school_code', 'matricule_format', 'matricule_counter')");
-        $config = [];
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $config[$row['setting_key']] = $row['setting_value'];
-        }
-        return $config;
+        return new SettingsStore($this->db, $teachingTypeId);
     }
 
     private function buildClassToken(?int $classId): string

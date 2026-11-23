@@ -134,7 +134,7 @@ class TranscriptController
         }
 
         // Institution & Branding setup
-        $settingsStore = new SettingsStore($this->db);
+        $settingsStore = new SettingsStore($this->db, $reqTeachingTypeId);
         $institution = $settingsStore->all();
 
         $activeYear = $this->getAcademicYearById($academicYearId);
@@ -219,7 +219,7 @@ class TranscriptController
         $teachingTypeId = (int) ($student['class_teaching_type_id'] ?? $student['teaching_type_id'] ?? 0);
 
         // 2. Formatage des métadonnées requises
-        $settingsStore = new SettingsStore($this->db);
+        $settingsStore = new SettingsStore($this->db, $teachingTypeId);
         $schoolCode = (string) $settingsStore->get('school_code', 'FUTURA');
         $displayMatricule = !empty($student['matricule']) 
             ? $student['matricule'] 

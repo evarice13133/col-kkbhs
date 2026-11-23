@@ -38,6 +38,8 @@ class ExpenseController
     public function index()
     {
         $activeYearId = $this->academicYearService->getActiveYearId();
+        $activeTeachingTypeId = $this->settingsStore->getDefaultTeachingTypeId();
+        $activeTeachingTypeName = $this->getActiveTeachingTypeName($activeTeachingTypeId);
 
         // 1. Récupérer les filtres
         $filters = [
@@ -56,9 +58,13 @@ class ExpenseController
                 FROM expenses e
                 JOIN expense_categories ec ON e.category_id = ec.id
                 JOIN users u ON e.user_id = u.id
-                WHERE e.academic_year_id = :academic_year_id";
+                WHERE e.academic_year_id = :academic_year_id
+                  AND (e.teaching_type_id IS NULL OR e.teaching_type_id = :teaching_type_id)";
         
-        $params = [':academic_year_id' => $activeYearId];
+        $params = [
+            ':academic_year_id' => $activeYearId,
+            ':teaching_type_id' => $activeTeachingTypeId
+        ];
 
         // Appliquer les filtres
         if (!empty($filters['start_date'])) {
@@ -159,7 +165,7 @@ class ExpenseController
 
         // Total des dépenses filtrées (somme des montants affichés selon filtres, hors annulés/inactifs si souhaité, mais ici global filtre)
         // Calculer le total avec les mêmes filtres que la liste.
-        $sumFilteredSql = "SELECT COALESCE(SUM(e.amount), 0) FROM expenses e JOIN expense_categories ec ON e.category_id = ec.id WHERE e.academic_year_id = :academic_year_id";
+        $sumFilteredSql = "SELECT COALESCE(SUM(e.amount), 0) FROM expenses e JOIN expense_categories ec ON e.category_id = ec.id WHERE e.academic_year_id = :academic_year_id AND (e.teaching_type_id IS NULL OR e.teaching_type_id = :teaching_type_id)";
         if (!empty($filters['start_date'])) { $sumFilteredSql .= " AND e.expense_date >= :start_date"; }
         if (!empty($filters['end_date'])) { $sumFilteredSql .= " AND e.expense_date <= :end_date"; }
         if (!empty($filters['category'])) { $sumFilteredSql .= " AND e.category_id = :category_id"; }
@@ -197,12 +203,15 @@ class ExpenseController
             $motive = trim((string)($_POST['motive'] ?? ''));
             $description = trim((string)($_POST['description'] ?? ''));
             $activeYearId = $this->academicYearService->getActiveYearId();
+            $activeTeachingTypeId = $this->settingsStore->getDefaultTeachingTypeId();
             $userId = (int)Session::get('user_id');
             $allocation = $this->validateDisbursements($_POST['disbursements'] ?? [], $amountInput);
 
-            if ($category_id <= 0 || $amount <= 0 || empty($motive) || $allocation['error'] !== null) {
+            if ($activeTeachingTypeId <= 0 || $category_id <= 0 || $amount <= 0 || empty($motive) || $allocation['error'] !== null) {
                 if ($allocation['error'] !== null) {
                     Session::setFlash('error', __($allocation['error'], $allocation['params']));
+                } elseif ($activeTeachingTypeId <= 0) {
+                    Session::setFlash('error', "Aucun type d'enseignement actif n'est configuré.");
                 } else {
                     Session::setFlash('error', "Veuillez remplir tous les champs obligatoires (Catégorie, Montant, Motif).");
                 }
@@ -239,8 +248,8 @@ class ExpenseController
 
                 // Insertion
                 $stmt = $this->db->prepare("
-                    INSERT INTO expenses (reference, expense_date, category_id, amount, motive, description, user_id, academic_year_id, status)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active')
+                    INSERT INTO expenses (reference, expense_date, category_id, amount, motive, description, user_id, academic_year_id, teaching_type_id, status)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')
                 ");
                 $stmt->execute([
                     $reference,
@@ -250,7 +259,8 @@ class ExpenseController
                     $motive,
                     $description ?: null,
                     $userId,
-                    $activeYearId
+                    $activeYearId,
+                    $activeTeachingTypeId
                 ]);
                 $expenseId = (int)$this->db->lastInsertId();
                 $this->saveExpenseDisbursements($expenseId, $allocation['disbursements']);
@@ -301,6 +311,8 @@ class ExpenseController
             $motive = trim((string)($_POST['motive'] ?? ''));
             $description = trim((string)($_POST['description'] ?? ''));
             $userId = (int)Session::get('user_id');
+            $activeYearId = $this->academicYearService->getActiveYearId();
+            $activeTeachingTypeId = $this->settingsStore->getDefaultTeachingTypeId();
             $allocation = $this->validateDisbursements($_POST['disbursements'] ?? [], $amountInput);
 
             if ($id <= 0 || $category_id <= 0 || $amount <= 0 || empty($motive) || $allocation['error'] !== null) {
@@ -314,8 +326,12 @@ class ExpenseController
             }
 
             // Récupérer l'ancienne dépense
-            $stmtOld = $this->db->prepare("SELECT * FROM expenses WHERE id = ?");
-            $stmtOld->execute([$id]);
+            $stmtOld = $this->db->prepare(
+                "SELECT * FROM expenses
+                 WHERE id = ? AND academic_year_id = ?
+                   AND (teaching_type_id IS NULL OR teaching_type_id = ?)"
+            );
+            $stmtOld->execute([$id, $activeYearId, $activeTeachingTypeId]);
             $oldExpense = $stmtOld->fetch(PDO::FETCH_ASSOC);
 
             if (!$oldExpense) {
@@ -337,7 +353,8 @@ class ExpenseController
                 $stmt = $this->db->prepare("
                     UPDATE expenses 
                     SET category_id = ?, expense_date = ?, amount = ?, motive = ?, description = ?
-                    WHERE id = ?
+                    WHERE id = ? AND academic_year_id = ?
+                      AND (teaching_type_id IS NULL OR teaching_type_id = ?)
                 ");
                 $stmt->execute([
                     $category_id,
@@ -345,7 +362,9 @@ class ExpenseController
                     $amount,
                     $motive,
                     $description ?: null,
-                    $id
+                    $id,
+                    $activeYearId,
+                    $activeTeachingTypeId
                 ]);
                 $this->saveExpenseDisbursements($id, $allocation['disbursements']);
 
@@ -398,6 +417,8 @@ class ExpenseController
             $id = (int)($_POST['id'] ?? 0);
             $cancel_reason = trim((string)($_POST['cancel_reason'] ?? ''));
             $userId = (int)Session::get('user_id');
+            $activeYearId = $this->academicYearService->getActiveYearId();
+            $activeTeachingTypeId = $this->settingsStore->getDefaultTeachingTypeId();
 
             if ($id <= 0 || empty($cancel_reason)) {
                 Session::setFlash('error', "Le motif d'annulation est obligatoire.");
@@ -406,8 +427,12 @@ class ExpenseController
             }
 
             // Récupérer la dépense
-            $stmtExp = $this->db->prepare("SELECT * FROM expenses WHERE id = ?");
-            $stmtExp->execute([$id]);
+            $stmtExp = $this->db->prepare(
+                "SELECT * FROM expenses
+                 WHERE id = ? AND academic_year_id = ?
+                   AND (teaching_type_id IS NULL OR teaching_type_id = ?)"
+            );
+            $stmtExp->execute([$id, $activeYearId, $activeTeachingTypeId]);
             $expense = $stmtExp->fetch(PDO::FETCH_ASSOC);
 
             if (!$expense) {
@@ -425,8 +450,12 @@ class ExpenseController
             try {
                 $this->db->beginTransaction();
 
-                $stmt = $this->db->prepare("UPDATE expenses SET status = 'cancelled', cancel_reason = ? WHERE id = ?");
-                $stmt->execute([$cancel_reason, $id]);
+                $stmt = $this->db->prepare(
+                    "UPDATE expenses SET status = 'cancelled', cancel_reason = ?
+                     WHERE id = ? AND academic_year_id = ?
+                       AND (teaching_type_id IS NULL OR teaching_type_id = ?)"
+                );
+                $stmt->execute([$cancel_reason, $id, $activeYearId, $activeTeachingTypeId]);
 
                 // Journal d'audit
                 $oldValues = ['status' => $expense['status']];
@@ -455,6 +484,8 @@ class ExpenseController
     {
         $activeYear = $this->academicYearService->getActiveYear();
         $activeYearId = (int)($activeYear['id'] ?? 0);
+        $activeTeachingTypeId = $this->settingsStore->getDefaultTeachingTypeId();
+        $activeTeachingTypeName = $this->getActiveTeachingTypeName($activeTeachingTypeId);
 
         // Récupérer les filtres
         $filters = [
@@ -473,9 +504,13 @@ class ExpenseController
                 FROM expenses e
                 JOIN expense_categories ec ON e.category_id = ec.id
                 JOIN users u ON e.user_id = u.id
-                WHERE e.academic_year_id = :academic_year_id";
+                WHERE e.academic_year_id = :academic_year_id
+                  AND (e.teaching_type_id IS NULL OR e.teaching_type_id = :teaching_type_id)";
         
-        $params = [':academic_year_id' => $activeYearId];
+        $params = [
+            ':academic_year_id' => $activeYearId,
+            ':teaching_type_id' => $activeTeachingTypeId
+        ];
 
         // Appliquer filtres
         if (!empty($filters['start_date'])) {
@@ -540,6 +575,9 @@ class ExpenseController
 
         // Infos filtres textuels pour le PDF
         $filterTexts = [];
+        if ($activeTeachingTypeName !== '') {
+            $filterTexts[] = "Type d'enseignement : " . $activeTeachingTypeName;
+        }
         if (!empty($filters['start_date']) || !empty($filters['end_date'])) {
             $start = !empty($filters['start_date']) ? date('d/m/Y', strtotime($filters['start_date'])) : 'Début';
             $end = !empty($filters['end_date']) ? date('d/m/Y', strtotime($filters['end_date'])) : 'Fin';
@@ -992,6 +1030,9 @@ class ExpenseController
      */
     public function auditLogs()
     {
+        $activeYearId = $this->academicYearService->getActiveYearId();
+        $activeTeachingTypeId = $this->settingsStore->getDefaultTeachingTypeId();
+        $activeTeachingTypeName = $this->getActiveTeachingTypeName($activeTeachingTypeId);
         $sql = "
             SELECT l.*, CONCAT(u.prenom, ' ', u.nom) as user_name, u.role as user_role,
                    e.reference as expense_ref, ec.name as category_name
@@ -999,12 +1040,50 @@ class ExpenseController
             JOIN users u ON l.user_id = u.id
             LEFT JOIN expenses e ON l.expense_id = e.id
             LEFT JOIN expense_categories ec ON l.category_id = ec.id
+            WHERE (
+                    l.expense_id IS NOT NULL
+                    AND e.academic_year_id = :academic_year_id
+                    AND (e.teaching_type_id IS NULL OR e.teaching_type_id = :teaching_type_id)
+                  )
+               OR (
+                    l.expense_id IS NULL
+                    AND l.category_id IS NOT NULL
+                    AND EXISTS (
+                        SELECT 1
+                        FROM expenses scoped_expense
+                        WHERE scoped_expense.category_id = l.category_id
+                          AND scoped_expense.academic_year_id = :category_year_id
+                          AND (
+                              scoped_expense.teaching_type_id IS NULL
+                              OR scoped_expense.teaching_type_id = :category_teaching_type_id
+                          )
+                    )
+                  )
             ORDER BY l.created_at DESC
             LIMIT 100
         ";
-        $logs = $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':academic_year_id' => $activeYearId,
+            ':teaching_type_id' => $activeTeachingTypeId,
+            ':category_year_id' => $activeYearId,
+            ':category_teaching_type_id' => $activeTeachingTypeId
+        ]);
+        $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         include __DIR__ . '/../Views/expenses/audit.php';
+    }
+
+    private function getActiveTeachingTypeName(int $teachingTypeId): string
+    {
+        if ($teachingTypeId <= 0) {
+            return '';
+        }
+
+        $stmt = $this->db->prepare("SELECT nom FROM teaching_types WHERE id = ? AND actif = 1");
+        $stmt->execute([$teachingTypeId]);
+        $name = $stmt->fetchColumn();
+        return $name === false ? '' : (string)$name;
     }
 
     /**

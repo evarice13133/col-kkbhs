@@ -45,8 +45,7 @@ ob_start(); ?>
                         <i class="bi bi-calendar3"></i>
                     </span>
                     <select id="academic_year_selector"
-                        class="form-select border-0 bg-transparent shadow-none py-2 text-main-theme fw-bold"
-                        onchange="changeAcademicYear(this.value)">
+                        class="form-select border-0 bg-transparent shadow-none py-2 text-main-theme fw-bold">
                         <?php foreach ($academicYears as $year): ?>
                             <option value="<?= $year['id'] ?>" <?= $selectedYearId == $year['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($year['nom']) ?>
@@ -400,7 +399,14 @@ ob_start(); ?>
     document.addEventListener('DOMContentLoaded', function () {
         const form = document.getElementById('mainAssignmentForm');
         const searchInput = document.getElementById('assignment-search');
+        const academicYearSelector = document.getElementById('academic_year_selector');
         const panes = document.querySelectorAll('.tab-pane');
+
+        if (academicYearSelector) {
+            academicYearSelector.addEventListener('change', function () {
+                window.location.href = '/teachers/assign?id=<?= (int) $teacher['id'] ?>&academic_year_id=' + encodeURIComponent(this.value);
+            });
+        }
 
         // Search logic
         function filterAssignments() {
@@ -440,13 +446,6 @@ ob_start(); ?>
         document.querySelectorAll('.js-asg-checkbox').forEach(cb => {
             cb.addEventListener('change', () => updateVisuals(cb));
         });
-
-        // --- CHANGEMENT D'ANNÉE SCOLAIRE ---
-        function changeAcademicYear(yearId) {
-            const url = new URL(window.location.href);
-            url.searchParams.set('academic_year_id', yearId);
-            window.location.href = url.toString();
-        }
 
         // --- PREMIUM CONFIRMATION POPUP ---
         if (form) {

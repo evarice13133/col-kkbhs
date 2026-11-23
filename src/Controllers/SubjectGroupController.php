@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\Database;
 use App\Core\Session;
 use App\Core\PermissionManager;
+use App\Services\SettingsStore;
 use PDO;
 
 /**
@@ -33,10 +34,13 @@ class SubjectGroupController
     public function index()
     {
         $q = trim((string) ($_GET['q'] ?? ''));
-        $teachingTypes = $this->db->query("SELECT id, nom, code FROM teaching_types WHERE actif = 1 ORDER BY position ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $teaching_type_id = array_key_exists('teaching_type_id', $_GET)
-            ? (!empty($_GET['teaching_type_id']) ? (int) $_GET['teaching_type_id'] : null)
-            : (!empty($teachingTypes) ? (int) $teachingTypes[0]['id'] : null);
+        $teaching_type_id = (new SettingsStore($this->db))->getDefaultTeachingTypeId();
+        $teachingTypes = [];
+        if ($teaching_type_id > 0) {
+            $typeStmt = $this->db->prepare("SELECT id, nom, code FROM teaching_types WHERE id = ? AND actif = 1 LIMIT 1");
+            $typeStmt->execute([$teaching_type_id]);
+            $teachingTypes = $typeStmt->fetchAll(PDO::FETCH_ASSOC);
+        }
 
         $sectionsTableExists = (bool) $this->db->query("SHOW TABLES LIKE 'sections'")->fetchColumn();
         $sections = $sectionsTableExists
@@ -91,9 +95,11 @@ class SubjectGroupController
             $sql .= " AND LOWER(sg.libelle) LIKE ?";
             $params[] = '%' . strtolower($q) . '%';
         }
-        if ($teaching_type_id) {
+        if ($teaching_type_id > 0) {
             $sql .= " AND sg.teaching_type_id = ?";
             $params[] = $teaching_type_id;
+        } else {
+            $sql .= " AND 1 = 0";
         }
         if ($section_id !== null) {
             $sql .= " AND sg.section_id = ?";
@@ -120,12 +126,28 @@ class SubjectGroupController
         $stmt->execute($params);
         $groups = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+        $groupPositions = [];
+        if ($teaching_type_id > 0 && $hasSectionCol && $hasTeachingFormCol && $hasPositionCol) {
+            $positionScopesStmt = $this->db->prepare("
+                SELECT section_id, teaching_form_id, position
+                FROM subject_groups
+                WHERE teaching_type_id = ?
+                  AND section_id IS NOT NULL
+                  AND teaching_form_id IS NOT NULL
+            ");
+            $positionScopesStmt->execute([$teaching_type_id]);
+            $groupPositions = $positionScopesStmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+
         // Formes d'enseignement actives pour la modale (si la table existe)
-        if ($teachingFormsTableExists) {
-            $teachingForms = $this->db->query("SELECT id, nom, teaching_type_id FROM teaching_forms WHERE status = 1 ORDER BY teaching_type_id ASC, nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        if ($teachingFormsTableExists && $teaching_type_id > 0) {
+            $formsStmt = $this->db->prepare("SELECT id, nom, teaching_type_id FROM teaching_forms WHERE status = 1 AND teaching_type_id = ? ORDER BY nom ASC");
+            $formsStmt->execute([$teaching_type_id]);
+            $teachingForms = $formsStmt->fetchAll(PDO::FETCH_ASSOC);
         } else {
             $teachingForms = [];
         }
+        $modalTeachingTypeId = $teaching_type_id;
 
         // Récupérer les classes utilisant chaque groupe pour afficher les formes d'enseignement compatibles
         $groupClasses = [];
@@ -186,6 +208,7 @@ class SubjectGroupController
                 exit;
             }
 
+            $activeTeachingTypeId = (new SettingsStore($this->db))->getDefaultTeachingTypeId();
             $libelle = trim($_POST['libelle'] ?? '');
             $teaching_form_id = !empty($_POST['teaching_form_id']) ? (int) $_POST['teaching_form_id'] : null;
             $section_id = !empty($_POST['section_id']) ? (int) $_POST['section_id'] : null;
@@ -197,6 +220,11 @@ class SubjectGroupController
 
             // Valider les champs: la forme vient en addition du type
             $teaching_type_id = !empty($_POST['teaching_type_id']) ? (int) $_POST['teaching_type_id'] : null;
+            if ($activeTeachingTypeId <= 0 || $teaching_type_id !== $activeTeachingTypeId) {
+                Session::setFlash('error', __('invalid_teaching_type') ?? 'Type d\'enseignement invalide.');
+                header("Location: /subject-groups");
+                exit;
+            }
 
             if ($hasTeachingFormCol) {
                 // Exiger à la fois le type et la forme (forme obligatoire selon règle métier)
@@ -257,8 +285,8 @@ class SubjectGroupController
                     header("Location: /subject-groups");
                     exit;
                 }
-                $positionStmt = $this->db->prepare("SELECT 1 FROM subject_groups WHERE section_id = ? AND teaching_form_id = ? AND position = ? LIMIT 1");
-                $positionStmt->execute([$section_id, $teaching_form_id, $position]);
+                $positionStmt = $this->db->prepare("SELECT 1 FROM subject_groups WHERE teaching_type_id = ? AND section_id = ? AND teaching_form_id = ? AND position = ? LIMIT 1");
+                $positionStmt->execute([$teaching_type_id, $section_id, $teaching_form_id, $position]);
                 if ($positionStmt->fetchColumn()) {
                     $this->db->rollBack();
                     Session::setFlash('error', __('subject_group_position_taken') ?? 'Cette position est déjà utilisée pour cette forme d’enseignement.');
@@ -291,6 +319,7 @@ class SubjectGroupController
                 exit;
             }
 
+            $activeTeachingTypeId = (new SettingsStore($this->db))->getDefaultTeachingTypeId();
             $id = (int) $id;
             $libelle = trim($_POST['libelle'] ?? '');
             $teaching_form_id = !empty($_POST['teaching_form_id']) ? (int) $_POST['teaching_form_id'] : null;
@@ -303,8 +332,8 @@ class SubjectGroupController
             $hasTeachingFormCol = !empty($colCheck);
 
             // Récupérer les valeurs actuelles pour permettre la modification partielle
-            $currentGroupStmt = $this->db->prepare("SELECT libelle, teaching_type_id, teaching_form_id, section_id, position FROM subject_groups WHERE id = ? LIMIT 1");
-            $currentGroupStmt->execute([$id]);
+            $currentGroupStmt = $this->db->prepare("SELECT libelle, teaching_type_id, teaching_form_id, section_id, position FROM subject_groups WHERE id = ? AND teaching_type_id = ? LIMIT 1");
+            $currentGroupStmt->execute([$id, $activeTeachingTypeId]);
             $currentGroup = $currentGroupStmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$currentGroup) {
@@ -315,6 +344,11 @@ class SubjectGroupController
 
             // Valider les champs: la forme vient en addition du type
             $teaching_type_id = !empty($_POST['teaching_type_id']) ? (int) $_POST['teaching_type_id'] : null;
+            if ($activeTeachingTypeId <= 0 || ($teaching_type_id !== null && $teaching_type_id !== $activeTeachingTypeId)) {
+                Session::setFlash('error', __('invalid_teaching_type') ?? 'Type d\'enseignement invalide.');
+                header("Location: /subject-groups");
+                exit;
+            }
 
             if ($hasTeachingFormCol) {
                 // Si des champs ne sont pas fournis, utiliser les valeurs existantes
@@ -397,8 +431,8 @@ class SubjectGroupController
                     exit;
                 }
 
-                $positionStmt = $this->db->prepare("SELECT 1 FROM subject_groups WHERE section_id = ? AND (teaching_form_id = ? OR (teaching_form_id IS NULL AND ? IS NULL)) AND position = ? AND id <> ? LIMIT 1");
-                $positionStmt->execute([$section_id, $teaching_form_id, $teaching_form_id, $position, $id]);
+                $positionStmt = $this->db->prepare("SELECT 1 FROM subject_groups WHERE teaching_type_id = ? AND section_id = ? AND (teaching_form_id = ? OR (teaching_form_id IS NULL AND ? IS NULL)) AND position = ? AND id <> ? LIMIT 1");
+                $positionStmt->execute([$teaching_type_id, $section_id, $teaching_form_id, $teaching_form_id, $position, $id]);
                 if ($positionStmt->fetchColumn()) {
                     $this->db->rollBack();
                     Session::setFlash('error', __('subject_group_position_taken') ?? 'Cette position est déjà utilisée pour cette forme d’enseignement.');
@@ -437,10 +471,11 @@ class SubjectGroupController
             exit;
         }
 
-        $groupStmt = $this->db->prepare('SELECT libelle, teaching_type_id, teaching_form_id, section_id, status FROM subject_groups WHERE id = ? FOR UPDATE');
+        $activeTeachingTypeId = (new SettingsStore($this->db))->getDefaultTeachingTypeId();
+        $groupStmt = $this->db->prepare('SELECT libelle, teaching_type_id, teaching_form_id, section_id, status FROM subject_groups WHERE id = ? AND teaching_type_id = ? FOR UPDATE');
         $this->db->beginTransaction();
         try {
-            $groupStmt->execute([$id]);
+            $groupStmt->execute([$id, $activeTeachingTypeId]);
             $group = $groupStmt->fetch(PDO::FETCH_ASSOC);
             if (!$group) {
                 throw new \RuntimeException('Groupe introuvable.');
@@ -486,6 +521,15 @@ class SubjectGroupController
         $id = (int) $id;
         if ($id <= 0) {
             Session::setFlash('error', __('invalid_id') ?? 'Identifiant invalide.');
+            header("Location: /subject-groups");
+            exit;
+        }
+
+        $activeTeachingTypeId = (new SettingsStore($this->db))->getDefaultTeachingTypeId();
+        $groupStmt = $this->db->prepare('SELECT id FROM subject_groups WHERE id = ? AND teaching_type_id = ? LIMIT 1');
+        $groupStmt->execute([$id, $activeTeachingTypeId]);
+        if ($activeTeachingTypeId <= 0 || !$groupStmt->fetchColumn()) {
+            Session::setFlash('error', __('invalid_id') ?? 'Groupe introuvable.');
             header("Location: /subject-groups");
             exit;
         }

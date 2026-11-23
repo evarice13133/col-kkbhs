@@ -37,13 +37,23 @@ class PaymentController
     public function index()
     {
         $activeYearId = $this->academicYearService->getActiveYearId();
+        $teachingTypeId = (new \App\Services\SettingsStore($this->db))->getDefaultTeachingTypeId();
 
         $search = trim((string) ($_GET['q'] ?? ''));
         $classId = (int) ($_GET['class_id'] ?? 0);
         $status = trim((string) ($_GET['status'] ?? '')); // 'paid', 'unpaid', 'debt' (reste à payer > 0)
 
-        // Récupérer les classes pour le sélecteur
-        $classes = $this->db->query("SELECT id, nom FROM classes WHERE status = 1 ORDER BY nom ASC")->fetchAll(PDO::FETCH_ASSOC);
+        // Classes ayant au moins une inscription pour l'année et le type actifs.
+        $classStmt = $this->db->prepare(
+            "SELECT DISTINCT c.id, c.nom
+             FROM classes c
+             JOIN teaching_types tt ON tt.id = c.teaching_type_id AND tt.actif = 1
+             JOIN enrollments e ON e.class_id = c.id AND e.academic_year_id = ?
+             WHERE c.status = 1 AND c.teaching_type_id = ?
+             ORDER BY c.nom ASC"
+        );
+        $classStmt->execute([$activeYearId, $teachingTypeId]);
+        $classes = $classStmt->fetchAll(PDO::FETCH_ASSOC);
 
         // Requête principale
         $sql = "SELECT s.id, s.nom, s.prenom, s.email as matricule, c.nom as classe_nom, 
@@ -51,10 +61,11 @@ class PaymentController
                        (e.frais_scolarite_brut - e.total_reductions - e.total_bourses) as scolarite_nette
                 FROM students s
                 JOIN enrollments e ON s.id = e.student_id AND e.academic_year_id = ?
-                LEFT JOIN classes c ON e.class_id = c.id
+                JOIN classes c ON e.class_id = c.id AND c.teaching_type_id = ?
+                JOIN teaching_types tt ON tt.id = c.teaching_type_id AND tt.actif = 1
                 WHERE s.is_withdrawn = 0 AND s.actif = 1";
 
-        $params = [$activeYearId];
+        $params = [$activeYearId, $teachingTypeId];
 
         if ($search !== '') {
             $sql .= " AND (s.nom LIKE ? OR s.prenom LIKE ? OR s.email LIKE ?)";
@@ -385,7 +396,7 @@ class PaymentController
 
         // Récupérer le paiement et les détails de l'élève
         $stmt = $this->db->prepare("SELECT p.*, s.nom as student_nom, s.prenom as student_prenom, s.email as matricule, s.sexe, s.date_naissance, s.lieu_naissance, s.adresse,
-                                           c.nom as classe_nom, c.frais_inscription, c.frais_inscription_reinscription, c.frais_scolarite_brut, 
+                                           c.nom as classe_nom, c.teaching_type_id, c.frais_inscription, c.frais_inscription_reinscription, c.frais_scolarite_brut,
                                            u.nom as user_nom, u.prenom as user_prenom
                                     FROM payments p
                                     JOIN students s ON p.student_id = s.id
@@ -470,7 +481,7 @@ class PaymentController
         $printLogs = $stmtLogs->fetchAll(PDO::FETCH_ASSOC);
 
         // 5. Récupérer les informations de l'établissement (Settings)
-        $settingsStore = new \App\Services\SettingsStore($this->db);
+        $settingsStore = new \App\Services\SettingsStore($this->db, (int) ($payment['teaching_type_id'] ?? 0));
         $settings = $settingsStore->all();
         $school_name = $settings['school_name'] ?? 'NotesMaster';
 
@@ -522,7 +533,7 @@ class PaymentController
 
         // 1. Informations de l'élève (avec alias matricule = s.email / s.matricule)
         $stmt = $this->db->prepare("
-            SELECT s.*, s.email as matricule, c.nom as classe_nom 
+            SELECT s.*, s.email as matricule, c.nom as classe_nom, c.teaching_type_id
             FROM students s 
             LEFT JOIN classes c ON s.class_id = c.id 
             WHERE s.id = ?
@@ -553,7 +564,7 @@ class PaymentController
         $paymentsHistory = $studentPaymentModel->getByStudent($studentId, $activeYearId);
 
         // 4. Settings de l'établissement
-        $settingsStore = new \App\Services\SettingsStore($this->db);
+        $settingsStore = new \App\Services\SettingsStore($this->db, (int) ($student['teaching_type_id'] ?? 0));
         $settings = $settingsStore->all();
 
         $isPdf = isset($_GET['pdf']) && $_GET['pdf'] == 1;
@@ -602,7 +613,7 @@ class PaymentController
             // Rechercher le paiement par le code de vérification
             $stmt = $this->db->prepare("
                 SELECT p.*, s.nom as student_nom, s.prenom as student_prenom, s.email as matricule, s.sexe, s.date_naissance, s.lieu_naissance, s.adresse,
-                       c.nom as classe_nom, u.nom as user_nom, u.prenom as user_prenom
+                       c.nom as classe_nom, c.teaching_type_id, u.nom as user_nom, u.prenom as user_prenom
                 FROM payments p
                 JOIN students s ON p.student_id = s.id
                 LEFT JOIN classes c ON s.class_id = c.id
@@ -625,7 +636,10 @@ class PaymentController
         }
 
         // Charger les settings de l'école
-        $settingsStore = new \App\Services\SettingsStore($this->db);
+        $settingsStore = new \App\Services\SettingsStore(
+            $this->db,
+            (int) ($payment['teaching_type_id'] ?? 0)
+        );
         $settings = $settingsStore->all();
 
         include __DIR__ . '/../Views/payments/verify.php';

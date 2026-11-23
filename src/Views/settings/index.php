@@ -1,4 +1,14 @@
-<?php $title = __('system_configuration'); ob_start(); ?>
+<?php
+$title = __('system_configuration');
+$currentTeachingType = null;
+foreach ($teachingTypes as $teachingType) {
+    if ((int) $teachingType['id'] === (int) $currentTeachingTypeId) {
+        $currentTeachingType = $teachingType;
+        break;
+    }
+}
+ob_start();
+?>
 
 <div class="animate-fade-in container-fluid pt-0 pb-4 px-3 px-md-4 settings-page-container">
     <!-- EN-TÊTE DE SECTION & BARRE D'ACTIONS COMPLÈTE -->
@@ -15,7 +25,7 @@
                         <span class="badge bg-primary-subtle text-primary rounded-pill fs-7 fw-semibold px-2 py-1">v2.5</span>
                     </h4>
                     <p class="text-muted small mb-0">
-                        <?= __('Gérez les paramètres globaux, la charte graphique et la configuration par type d\'enseignement.') ?>
+                        <?= __('settings_scope_hint') ?>
                     </p>
                 </div>
             </div>
@@ -31,7 +41,7 @@
                             <select name="teaching_type_id" class="form-select border-0 bg-transparent fw-bold text-dark pe-4" style="cursor: pointer;" onchange="document.getElementById('ttSelectForm').submit()">
                                 <?php foreach ($teachingTypes as $tt): ?>
                                     <option value="<?= $tt['id'] ?>" <?= ((int)$currentTeachingTypeId === (int)$tt['id']) ? 'selected' : '' ?>>
-                                        <?= htmlspecialchars((string)$tt['nom']) ?> (<?= htmlspecialchars((string)$tt['code']) ?>)
+                                        <?= htmlspecialchars((string)$tt['nom']) ?> (<?= htmlspecialchars((string)$tt['code']) ?>)<?= (int) $tt['actif'] === 1 ? '' : ' — ' . __('inactive') ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
@@ -40,10 +50,6 @@
                 <?php endif; ?>
 
                 <div class="d-flex align-items-center gap-2">
-                    <button type="submit" form="settingsForm" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm scale-on-hover d-flex align-items-center gap-2">
-                        <i class="bi bi-check-circle-fill fs-6"></i>
-                        <span><?= __('save') ?></span>
-                    </button>
                     <button type="button" class="btn btn-outline-secondary rounded-pill shadow-none px-3 py-2 d-flex align-items-center gap-1 scale-on-hover" onclick="confirmReset()" title="<?= __('default_theme') ?>">
                         <i class="bi bi-arrow-counterclockwise fs-6"></i>
                         <span class="small fw-semibold d-none d-sm-inline"><?= __('default_theme') ?></span>
@@ -124,7 +130,7 @@
     <div class="settings-save-dock" role="region" aria-label="<?= htmlspecialchars((string) __('settings_save_actions'), ENT_QUOTES, 'UTF-8') ?>">
         <span class="settings-save-dock-context">
             <i class="bi bi-sliders2-vertical" aria-hidden="true"></i>
-            <span><?= __('system_configuration') ?></span>
+            <span><?= htmlspecialchars((string) ($currentTeachingType['nom'] ?? __('system_configuration'))) ?></span>
         </span>
         <button type="submit" form="settingsForm" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm d-inline-flex align-items-center justify-content-center gap-2">
             <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
@@ -134,6 +140,7 @@
 
     <form action="/settings/store" method="POST" enctype="multipart/form-data" id="settingsForm">
         <input type="hidden" name="teaching_type_id" value="<?= (int)$currentTeachingTypeId ?>">
+        <input type="hidden" name="active_tab" id="activeSettingsTab" value="tab-general">
         <div class="tab-content" id="settingsTabsContent">
             <div class="tab-pane fade show active" id="tab-general" role="tabpanel">
                 <?php include __DIR__ . '/partials/institution.php'; ?>
@@ -157,6 +164,10 @@
             </div>
             <?php endif; ?>
         </div>
+    </form>
+
+    <form action="/settings/reset" method="POST" id="resetThemeForm" class="d-none">
+        <input type="hidden" name="teaching_type_id" value="<?= (int) $currentTeachingTypeId ?>">
     </form>
     
     <!-- Formulaire de sauvegarde manuelle (externe pour éviter l'imbrication) -->
@@ -321,6 +332,53 @@
 
     .settings-page-container {
         padding-bottom: 6rem !important;
+        max-width: 1680px;
+        margin-inline: auto;
+    }
+
+    .settings-header-card .custom-select-group {
+        min-width: min(100%, 290px);
+    }
+
+    .settings-header-card .custom-select-group .form-select {
+        color: var(--text-main, #0f172a);
+        min-height: 40px;
+    }
+
+    .settings-tabs-wrapper {
+        overflow: visible !important;
+        border-bottom: 0;
+    }
+
+    .custom-settings-tabs {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0.6rem;
+        padding: 0;
+    }
+
+    .custom-settings-tabs .nav-link {
+        justify-content: center;
+        min-height: 44px;
+        border-color: var(--border-color, rgba(148, 163, 184, 0.2));
+        background: var(--bg-card, rgba(255, 255, 255, 0.04)) !important;
+    }
+
+    .custom-settings-tabs .nav-link.active {
+        background: var(--primary-color, #7c3aed) !important;
+    }
+
+    #settingsTabsContent .modern-card .card-body {
+        padding: clamp(1rem, 2vw, 2rem) !important;
+    }
+
+    #settingsTabsContent .row.g-4 {
+        --bs-gutter-x: 1.15rem;
+        --bs-gutter-y: 1.15rem;
+    }
+
+    #settingsTabsContent [class*="mt-5"] {
+        margin-top: 1.5rem !important;
     }
 
     @media (max-width: 1024px) {
@@ -345,6 +403,19 @@
     }
 
     @media (max-width: 575.98px) {
+        .settings-header-card .custom-select-group {
+            width: 100%;
+        }
+
+        .custom-settings-tabs {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .custom-settings-tabs .nav-link {
+            padding: 0.6rem 0.45rem;
+            font-size: 0.78rem;
+        }
+
         .settings-save-dock {
             bottom: max(0.5rem, env(safe-area-inset-bottom));
             padding: 0.5rem;
@@ -374,7 +445,7 @@
             cancelButtonText: <?= json_encode(__('cancel'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
         }).then((result) => {
             if (result.isConfirmed) {
-                window.location.href = '/settings/reset';
+                document.getElementById('resetThemeForm').submit();
             }
         })
     }
@@ -405,11 +476,43 @@
         }
 
         const tabButtons = document.querySelectorAll('#settingsTabs [data-bs-toggle="pill"]');
+        const activeTabInput = document.getElementById('activeSettingsTab');
         tabButtons.forEach(button => {
             button.addEventListener('shown.bs.tab', () => {
+                if (activeTabInput) {
+                    activeTabInput.value = button.dataset.bsTarget.replace('#', '');
+                }
                 button.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
             });
         });
+
+        const settingsForm = document.getElementById('settingsForm');
+        if (settingsForm) {
+            settingsForm.noValidate = true;
+            settingsForm.addEventListener('submit', event => {
+                if (settingsForm.checkValidity()) {
+                    return;
+                }
+
+                event.preventDefault();
+                const invalidField = settingsForm.querySelector(':invalid');
+                const panel = invalidField?.closest('.tab-pane');
+                const tabButton = panel
+                    ? document.querySelector(`[data-bs-target="#${panel.id}"]`)
+                    : null;
+
+                if (tabButton && window.bootstrap?.Tab) {
+                    bootstrap.Tab.getOrCreateInstance(tabButton).show();
+                    window.setTimeout(() => {
+                        invalidField.focus();
+                        invalidField.reportValidity();
+                    }, 180);
+                } else if (invalidField) {
+                    invalidField.focus();
+                    invalidField.reportValidity();
+                }
+            });
+        }
 
         const hash = window.location.hash;
         if (!hash) {
@@ -419,6 +522,9 @@
         const tabButton = document.querySelector(`[data-bs-target="${hash}"]`);
         if (tabButton && window.bootstrap?.Tab) {
             new bootstrap.Tab(tabButton).show();
+            if (activeTabInput) {
+                activeTabInput.value = hash.slice(1);
+            }
         }
     });
 </script>
