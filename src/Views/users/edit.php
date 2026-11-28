@@ -97,10 +97,10 @@
                         </div>
 
                         <div class="form-check form-switch mb-3">
-                            <input class="form-check-input" type="checkbox" name="is_staff" id="user-edit-is-staff" value="1" <?= !empty($user['is_staff']) || in_array($user['role'], ['enseignant', 'personnel'], true) ? 'checked' : '' ?>>
+                            <input class="form-check-input" type="checkbox" name="is_staff" id="user-edit-is-staff" value="1" <?= !empty($user['is_staff']) || $user['role'] === 'personnel' ? 'checked' : '' ?>>
                             <label class="form-check-label fw-semibold" for="user-edit-is-staff"><?= __('user_is_staff') ?></label>
                         </div>
-                        <fieldset id="user-edit-personnel-fields" class="row g-3 mb-4" <?= !empty($user['is_staff']) || in_array($user['role'], ['enseignant', 'personnel'], true) ? '' : 'hidden disabled' ?>>
+                        <fieldset id="user-edit-personnel-fields" class="row g-3 mb-4" <?= !empty($user['is_staff']) || $user['role'] === 'personnel' ? '' : 'hidden disabled' ?>>
                             <legend class="col-12 border-bottom border-theme-light pb-2 mb-2">
                                 <span class="fw-black text-primary text-uppercase letter-spacing-1"><?= __('staff_information') ?></span>
                             </legend>
@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded', function () {
         };
         staffToggle.addEventListener('change', updatePersonnelFields);
         roleSelect.addEventListener('change', function () {
-            if (roleSelect.value === 'enseignant' || roleSelect.value === 'personnel') {
+            if (roleSelect.value === 'personnel') {
                 staffToggle.checked = true;
                 updatePersonnelFields();
             }

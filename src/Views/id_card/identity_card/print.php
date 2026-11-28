@@ -79,9 +79,11 @@ $formatDate = static function (?string $date): string {
         .motto { margin-top: .5mm; color: var(--card-muted); font-size: 2.4mm; font-style: italic; }
         .card-title { margin: 1.1mm 0; color: var(--card-accent); font-size: 2.2mm; font-weight: 800; text-align: center; text-decoration: underline; text-underline-offset: .5mm; text-transform: uppercase; }
         .card-body { display: grid; grid-template-columns: 16mm minmax(0, 1fr); gap: 2mm; min-height: 20mm; flex: 1 0 20mm; }
+        .card-body.no-photo { grid-template-columns: minmax(0, 1fr); }
         .student-photo { width: 16mm; height: 20mm; align-self: center; overflow: hidden; border: .35mm solid var(--card-border); background: var(--card-tranche-1); object-fit: cover; }
         .photo-fallback { display: grid; place-items: center; color: var(--card-muted); font-size: 2mm; font-weight: 700; text-transform: uppercase; }
         .student-info { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) 15mm; align-items: center; gap: 1.5mm; }
+        .student-info.no-qr { grid-template-columns: minmax(0, 1fr); }
         .student-details { min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: .8mm; }
         .student-qr { display: block; width: 15mm; height: 15mm; padding: .5mm; border: .25mm solid var(--card-border); background: #fff; image-rendering: crisp-edges; }
         .student-name { overflow: hidden; color: var(--card-text); font-size: 3.3mm; font-weight: 900; line-height: 1.05; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
@@ -126,7 +128,7 @@ $formatDate = static function (?string $date): string {
                 isset($_GET['section_id'])
                     ? ['section_id' => $sectionId, 'class_id' => $classId]
                     : ['academic_year_id' => $activeYear['id'], 'teaching_type_id' => $teachingTypeId, 'class_id' => $class['id']],
-                ['orientation' => $orientation, 'palette' => $palette]
+                ['orientation' => $orientation, 'palette' => $palette, 'fields' => $cardFields]
             )), ENT_QUOTES, 'UTF-8') ?>"><?= __('back') ?></a>
             <button type="button" onclick="window.print()"><?= __('print') ?></button>
         </div>
@@ -173,27 +175,50 @@ $formatDate = static function (?string $date): string {
                             <div class="motto"><?= htmlspecialchars($schoolSlogan, ENT_QUOTES, 'UTF-8') ?></div>
                         </div>
                         <div class="card-title"><?= __('identity_card') ?></div>
-                        <div class="card-body">
-                            <?php if ($photo !== ''): ?>
-                                <img class="student-photo" src="<?= htmlspecialchars($photo, ENT_QUOTES, 'UTF-8') ?>" alt="">
-                            <?php else: ?>
-                                <div class="student-photo photo-fallback"><?= __('access_card_no_photo') ?></div>
+                        <div class="card-body <?= in_array('photo', $cardFields, true) ? '' : 'no-photo' ?>">
+                            <?php if (in_array('photo', $cardFields, true)): ?>
+                                <?php if ($photo !== ''): ?>
+                                    <img class="student-photo" src="<?= htmlspecialchars($photo, ENT_QUOTES, 'UTF-8') ?>" alt="">
+                                <?php else: ?>
+                                    <div class="student-photo photo-fallback"><?= __('access_card_no_photo') ?></div>
+                                <?php endif; ?>
                             <?php endif; ?>
-                            <div class="student-info">
+                            <div class="student-info <?= in_array('qr_code', $cardFields, true) ? '' : 'no-qr' ?>">
                                 <div class="student-details">
-                                    <div class="student-name"><?= htmlspecialchars((string) ($student['nom'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
-                                    <div class="student-first-name"><?= htmlspecialchars((string) ($student['prenom'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
-                                    <div class="detail-row"><span class="detail-label"><?= __('access_card_birth') ?></span><span class="detail-value"><?= htmlspecialchars($formatDate($student['date_naissance'] ?? null), ENT_QUOTES, 'UTF-8') ?></span></div>
-                                    <div class="detail-row"><span class="detail-label"><?= __('access_card_birth_place') ?></span><span class="detail-value"><?= htmlspecialchars((string) (($student['lieu_naissance'] ?? '') ?: '-'), ENT_QUOTES, 'UTF-8') ?></span></div>
-                                    <div class="detail-row"><span class="detail-label"><?= __('access_card_sex') ?></span><span class="detail-value"><?= htmlspecialchars((string) (($student['sexe'] ?? '') ?: '-'), ENT_QUOTES, 'UTF-8') ?></span><span class="detail-label"><?= __('class') ?></span><span class="detail-value"><?= htmlspecialchars((string) $student['class_name'], ENT_QUOTES, 'UTF-8') ?></span></div>
-                                    <div class="detail-row"><span class="detail-label"><?= __('access_card_contact') ?></span><span class="detail-value"><?= htmlspecialchars($contact !== '' ? $contact : '-', ENT_QUOTES, 'UTF-8') ?></span></div>
+                                    <?php if (in_array('last_name', $cardFields, true)): ?>
+                                        <div class="student-name"><?= htmlspecialchars((string) ($student['nom'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
+                                    <?php endif; ?>
+                                    <?php if (in_array('first_name', $cardFields, true)): ?>
+                                        <div class="student-first-name"><?= htmlspecialchars((string) ($student['prenom'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
+                                    <?php endif; ?>
+                                    <?php if (in_array('birth', $cardFields, true)): ?>
+                                        <div class="detail-row"><span class="detail-label"><?= __('access_card_birth') ?></span><span class="detail-value"><?= htmlspecialchars($formatDate($student['date_naissance'] ?? null), ENT_QUOTES, 'UTF-8') ?></span></div>
+                                    <?php endif; ?>
+                                    <?php if (in_array('birth_place', $cardFields, true)): ?>
+                                        <div class="detail-row"><span class="detail-label"><?= __('access_card_birth_place') ?></span><span class="detail-value"><?= htmlspecialchars((string) (($student['lieu_naissance'] ?? '') ?: '-'), ENT_QUOTES, 'UTF-8') ?></span></div>
+                                    <?php endif; ?>
+                                    <?php if (in_array('sex', $cardFields, true)): ?>
+                                        <div class="detail-row"><span class="detail-label"><?= __('access_card_sex') ?></span><span class="detail-value"><?= htmlspecialchars((string) (($student['sexe'] ?? '') ?: '-'), ENT_QUOTES, 'UTF-8') ?></span></div>
+                                    <?php endif; ?>
+                                    <?php if (in_array('class_name', $cardFields, true)): ?>
+                                        <div class="detail-row"><span class="detail-label"><?= __('class') ?></span><span class="detail-value"><?= htmlspecialchars((string) $student['class_name'], ENT_QUOTES, 'UTF-8') ?></span></div>
+                                    <?php endif; ?>
+                                    <?php if (in_array('contact', $cardFields, true)): ?>
+                                        <div class="detail-row"><span class="detail-label"><?= __('access_card_contact') ?></span><span class="detail-value"><?= htmlspecialchars($contact !== '' ? $contact : '-', ENT_QUOTES, 'UTF-8') ?></span></div>
+                                    <?php endif; ?>
                                 </div>
-                                <img class="student-qr" src="<?= htmlspecialchars($qrDataUri, ENT_QUOTES, 'UTF-8') ?>" alt="QR code de la carte">
+                                <?php if (in_array('qr_code', $cardFields, true)): ?>
+                                    <img class="student-qr" src="<?= htmlspecialchars($qrDataUri, ENT_QUOTES, 'UTF-8') ?>" alt="QR code de la carte">
+                                <?php endif; ?>
                             </div>
                         </div>
                         <footer class="card-foot">
-                            <div><div class="matricule-label"><?= __('matricule') ?></div><div class="matricule"><?= htmlspecialchars((string) (($student['email'] ?? '') ?: '-'), ENT_QUOTES, 'UTF-8') ?></div></div>
-                            <div class="year-badge"><?= htmlspecialchars((string) $activeYear['nom'], ENT_QUOTES, 'UTF-8') ?></div>
+                            <?php if (in_array('matricule', $cardFields, true)): ?>
+                                <div><div class="matricule-label"><?= __('matricule') ?></div><div class="matricule"><?= htmlspecialchars((string) (($student['email'] ?? '') ?: '-'), ENT_QUOTES, 'UTF-8') ?></div></div>
+                            <?php endif; ?>
+                            <?php if (in_array('school_year', $cardFields, true)): ?>
+                                <div class="year-badge"><?= htmlspecialchars((string) $activeYear['nom'], ENT_QUOTES, 'UTF-8') ?></div>
+                            <?php endif; ?>
                         </footer>
                     </div>
                 </article>

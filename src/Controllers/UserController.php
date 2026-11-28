@@ -67,6 +67,12 @@ class UserController
             $role = is_string($_POST['role'] ?? null) ? $_POST['role'] : 'enseignant';
             $personnelData = $this->getPersonnelDataFromRequest($role);
             $formData = array_merge(compact('nom', 'prenom', 'username', 'email', 'role'), $personnelData);
+            if ($role === 'enseignant') {
+                $error = \__('teacher_creation_must_use_teacher_module');
+                $errorField = 'role';
+                include __DIR__ . '/../Views/users/create.php';
+                return;
+            }
             //verification de la permission
             if (Session::get('user_role') === 'admin' && in_array($role, ['superadmin'], true)) {
                 $error = \__('admin_cannot_manage_admin_roles');

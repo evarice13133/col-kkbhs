@@ -52,6 +52,9 @@ class AccessCardController
             ? $this->getEnrolledStudentsForSection($sectionId, $academicYearId, $classId)
             : [];
         $teachingTypeId = (int) ($classes[0]['teaching_type_id'] ?? 0);
+        $cardFields = $identityCard
+            ? $this->normalizeIdentityCardFields($_GET['fields'] ?? null)
+            : $this->normalizeCardFields($_GET['fields'] ?? null);
 
         include __DIR__ . ($identityCard
             ? '/../Views/id_card/identity_card/index.php'
@@ -141,6 +144,9 @@ class AccessCardController
         $settingsStore = new SettingsStore($this->db, $teachingTypeId);
         $institution = $settingsStore->all($teachingTypeId);
         $palette = AccessCardPalette::fromArray($_GET['palette'] ?? []);
+        $cardFields = $identityCard
+            ? $this->normalizeIdentityCardFields($_GET['fields'] ?? null)
+            : $this->normalizeCardFields($_GET['fields'] ?? null);
         $pages = array_chunk($students, $cardsPerPage);
 
         include __DIR__ . ($identityCard
@@ -245,6 +251,36 @@ class AccessCardController
         $printPages = array_chunk($printCards, $cardsPerPage);
 
         include __DIR__ . '/../Views/id_card/passes/print.php';
+    }
+
+    private function normalizeCardFields($values): array
+    {
+        $allowed = ['school_year', 'last_name', 'first_name', 'matricule', 'level_cycle', 'photo', 'class_name', 'tranches'];
+        if (!is_array($values)) {
+            return $allowed;
+        }
+
+        $values = array_values(array_filter(
+            $values,
+            static fn($value): bool => is_string($value) && in_array($value, $allowed, true)
+        ));
+
+        return $values;
+    }
+
+    private function normalizeIdentityCardFields($values): array
+    {
+        $allowed = ['last_name', 'first_name', 'birth', 'birth_place', 'sex', 'class_name', 'contact', 'photo', 'matricule', 'school_year', 'qr_code'];
+        if (!is_array($values)) {
+            return $allowed;
+        }
+
+        $values = array_values(array_filter(
+            $values,
+            static fn($value): bool => is_string($value) && in_array($value, $allowed, true)
+        ));
+
+        return $values;
     }
 
     private function getActiveAcademicYear(): array

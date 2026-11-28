@@ -154,7 +154,7 @@ $imagePath = static function (?string $path): string {
     <div class="toolbar">
             <h1><?= htmlspecialchars(__('access_cards_title') . ' · ' . $printTitle, ENT_QUOTES, 'UTF-8') ?></h1>
             <div class="toolbar-actions">
-                <a href="/access-cards?<?= htmlspecialchars(http_build_query(['section_id' => $sectionId, 'class_id' => $classId, 'orientation' => $orientation, 'palette' => $palette]), ENT_QUOTES, 'UTF-8') ?>"><?= __('back') ?></a>
+                <a href="/access-cards?<?= htmlspecialchars(http_build_query(['section_id' => $sectionId, 'class_id' => $classId, 'orientation' => $orientation, 'palette' => $palette, 'fields' => $cardFields]), ENT_QUOTES, 'UTF-8') ?>"><?= __('back') ?></a>
             <button type="button" onclick="window.print()"><?= __('print') ?></button>
             </div>
     </div>
@@ -217,13 +217,24 @@ $imagePath = static function (?string $path): string {
 
                     <div class="body-section">
                         <div class="info-col">
-                            <div class="form-row year-row"><span class="form-label"><?= __('access_card_school_year') ?> :</span><span class="form-value"><?= htmlspecialchars((string) $activeYear['nom'], ENT_QUOTES, 'UTF-8') ?></span></div>
-                            <div class="form-row last-name-row"><span class="form-label"><?= __('access_card_last_name') ?> :</span><span class="form-value"><?= htmlspecialchars((string) ($student['nom'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span></div>
-                            <div class="form-row first-name-row"><span class="form-label"><?= __('access_card_first_name') ?> :</span><span class="form-value"><?= htmlspecialchars((string) ($student['prenom'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span></div>
-                            <div class="form-row matricule-row"><span class="form-label"><?= __('matricule') ?> :</span><span class="form-value"><?= htmlspecialchars((string) (($student['email'] ?? '') ?: '-'), ENT_QUOTES, 'UTF-8') ?></span></div>
-                            <div class="form-row split-row"><span class="form-label"><?= __('access_card_school_level') ?> &amp; <?= __('access_card_cycle') ?> :</span><span class="form-value"><?= htmlspecialchars($studentLevel !== '' ? $studentLevel : '-', ENT_QUOTES, 'UTF-8') ?></span></div>
+                            <?php if (in_array('school_year', $cardFields, true)): ?>
+                                <div class="form-row year-row"><span class="form-label"><?= __('access_card_school_year') ?> :</span><span class="form-value"><?= htmlspecialchars((string) $activeYear['nom'], ENT_QUOTES, 'UTF-8') ?></span></div>
+                            <?php endif; ?>
+                            <?php if (in_array('last_name', $cardFields, true)): ?>
+                                <div class="form-row last-name-row"><span class="form-label"><?= __('access_card_last_name') ?> :</span><span class="form-value"><?= htmlspecialchars((string) ($student['nom'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span></div>
+                            <?php endif; ?>
+                            <?php if (in_array('first_name', $cardFields, true)): ?>
+                                <div class="form-row first-name-row"><span class="form-label"><?= __('access_card_first_name') ?> :</span><span class="form-value"><?= htmlspecialchars((string) ($student['prenom'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span></div>
+                            <?php endif; ?>
+                            <?php if (in_array('matricule', $cardFields, true)): ?>
+                                <div class="form-row matricule-row"><span class="form-label"><?= __('matricule') ?> :</span><span class="form-value"><?= htmlspecialchars((string) (($student['email'] ?? '') ?: '-'), ENT_QUOTES, 'UTF-8') ?></span></div>
+                            <?php endif; ?>
+                            <?php if (in_array('level_cycle', $cardFields, true)): ?>
+                                <div class="form-row split-row"><span class="form-label"><?= __('access_card_school_level') ?> &amp; <?= __('access_card_cycle') ?> :</span><span class="form-value"><?= htmlspecialchars($studentLevel !== '' ? $studentLevel : '-', ENT_QUOTES, 'UTF-8') ?></span></div>
+                            <?php endif; ?>
                         </div>
                         <div class="photo-col">
+                            <?php if (in_array('photo', $cardFields, true)): ?>
                             <div class="photo-box">
                                 <?php if ($photo !== ''): ?>
                                     <img class="student-photo" src="<?= htmlspecialchars($photo, ENT_QUOTES, 'UTF-8') ?>" alt="">
@@ -231,15 +242,20 @@ $imagePath = static function (?string $path): string {
                                     <span><?= __('access_card_no_photo') ?></span>
                                 <?php endif; ?>
                             </div>
-                            <div class="photo-class"><span class="form-label"><?= __('class') ?> :</span><span class="form-value"><?= htmlspecialchars((string) ($student['class_name'] ?? $class['nom']), ENT_QUOTES, 'UTF-8') ?></span></div>
+                            <?php endif; ?>
+                            <?php if (in_array('class_name', $cardFields, true)): ?>
+                                <div class="photo-class"><span class="form-label"><?= __('class') ?> :</span><span class="form-value"><?= htmlspecialchars((string) ($student['class_name'] ?? $class['nom']), ENT_QUOTES, 'UTF-8') ?></span></div>
+                            <?php endif; ?>
                         </div>
                     </div>
 
+                    <?php if (in_array('tranches', $cardFields, true)): ?>
                     <footer class="tranches-section">
                         <?php for ($tranche = 1; $tranche <= 3; $tranche++): ?>
                             <div class="tranche-box"><span><?= __('access_card_installment') ?> <?= $tranche ?></span><span class="tranche-line"></span></div>
                         <?php endfor; ?>
                     </footer>
+                    <?php endif; ?>
                 </article>
                 </div>
             <?php endforeach; ?>

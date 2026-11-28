@@ -8,6 +8,20 @@ $paletteLabels = [
     'text' => __('access_card_palette_text'),
     'muted' => __('access_card_palette_muted'),
 ];
+$cardFieldLabels = [
+    'last_name' => __('access_card_last_name'),
+    'first_name' => __('access_card_first_name'),
+    'birth' => __('access_card_birth'),
+    'birth_place' => __('access_card_birth_place'),
+    'sex' => __('access_card_sex'),
+    'class_name' => __('class'),
+    'contact' => __('access_card_contact'),
+    'photo' => __('access_card_no_photo'),
+    'matricule' => __('matricule'),
+    'school_year' => __('access_card_school_year'),
+    'qr_code' => __('identity_card_qr_code'),
+];
+$cardFieldKeys = array_keys($cardFieldLabels);
 $paletteKeys = array_keys($paletteLabels);
 $tranchePaletteDefaults = array_intersect_key($paletteDefaults, array_flip(['tranche1', 'tranche2', 'tranche3']));
 $selectedSection = null;
@@ -89,6 +103,9 @@ ob_start();
                 <?php foreach ($paletteKeys as $key): ?>
                     <input type="hidden" name="palette[<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>]" value="<?= htmlspecialchars($palette[$key], ENT_QUOTES, 'UTF-8') ?>" data-filter-palette="<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>">
                 <?php endforeach; ?>
+                <?php foreach ($cardFields as $fieldKey): ?>
+                    <input type="hidden" name="fields[]" value="<?= htmlspecialchars($fieldKey, ENT_QUOTES, 'UTF-8') ?>" data-filter-field>
+                <?php endforeach; ?>
             </form>
         </div>
     </div>
@@ -125,6 +142,20 @@ ob_start();
                                     <label class="form-check-label" for="identity_orientation_<?= $printOrientation ?>"><?= __('access_card_orientation_' . $printOrientation) ?></label>
                                 </div>
                             <?php endforeach; ?>
+                            <fieldset class="mt-3">
+                                <legend class="form-label fw-semibold mb-2"><?= htmlspecialchars(__('access_card_fields_title'), ENT_QUOTES, 'UTF-8') ?></legend>
+                                <p class="small text-muted mb-2"><?= htmlspecialchars(__('access_card_fields_description'), ENT_QUOTES, 'UTF-8') ?></p>
+                                <div class="row g-2">
+                                    <?php foreach ($cardFieldLabels as $fieldKey => $fieldLabel): ?>
+                                        <div class="col-6 col-md-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input identity-card-field" type="checkbox" name="fields[]" value="<?= htmlspecialchars($fieldKey, ENT_QUOTES, 'UTF-8') ?>" id="identity_card_field_<?= htmlspecialchars($fieldKey, ENT_QUOTES, 'UTF-8') ?>" <?= in_array($fieldKey, $cardFields, true) ? 'checked' : '' ?>>
+                                                <label class="form-check-label" for="identity_card_field_<?= htmlspecialchars($fieldKey, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($fieldLabel, ENT_QUOTES, 'UTF-8') ?></label>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </fieldset>
                         </div>
                     </fieldset>
                     <section class="col-12 access-card-palette" aria-labelledby="accessCardPaletteTitle">
@@ -243,6 +274,7 @@ ob_start();
     if (!filterForm || !printForm) return;
 
     const colorInputs = [...printForm.querySelectorAll('.access-card-color')];
+    const fieldInputs = [...printForm.querySelectorAll('.identity-card-field')];
     const preview = document.getElementById('accessCardPreview');
     const previewStage = document.getElementById('accessCardPreviewStage');
     const contrastStatus = document.getElementById('accessCardContrast');
@@ -257,6 +289,7 @@ ob_start();
     const deletePaletteButton = document.getElementById('deleteIdentityPalette');
     const paletteStatus = document.getElementById('identityPaletteStatus');
     const paletteKeys = colorInputs.map((input) => input.id.replace('palette_', ''));
+    const cardFieldKeys = <?= json_encode($cardFieldKeys, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     const tranchePaletteDefaults = <?= json_encode($tranchePaletteDefaults, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     const paletteStorageKey = <?= json_encode(
         'notemaster.studentPassPalettes.v1.' . (int) \App\Core\Session::get('user_id', 0),
@@ -273,9 +306,14 @@ ob_start();
     const currentPalette = () => Object.fromEntries(
         colorInputs.map((input) => [input.id.replace('palette_', ''), input.value.toUpperCase()])
     );
+    const currentFields = () => fieldInputs
+        .filter(input => input.checked)
+        .map(input => input.value);
     const isValidPalette = palette => paletteKeys.every(key =>
         typeof palette?.[key] === 'string' && /^#[0-9a-f]{6}$/i.test(palette[key])
     );
+    const isValidFields = fields => fields === undefined
+        || (Array.isArray(fields) && fields.every(field => cardFieldKeys.includes(field)));
     const readSavedPalettes = () => {
         const stored = localStorage.getItem(paletteStorageKey);
         if (stored === null) return [];
@@ -288,6 +326,7 @@ ob_start();
             && typeof preset.name === 'string'
             && preset.name.trim() !== ''
             && isValidPalette(preset.palette)
+            && isValidFields(preset.fields)
         );
     };
     const renderSavedPalettes = (selectedIndex = '') => {
@@ -309,6 +348,15 @@ ob_start();
         for (const input of colorInputs) {
             const hidden = filterForm.querySelector(`[data-filter-palette="${input.id.replace('palette_', '')}"]`);
             if (hidden) hidden.value = input.value;
+        }
+        filterForm.querySelectorAll('[data-filter-field]').forEach(hidden => hidden.remove());
+        for (const input of fieldInputs.filter(field => field.checked)) {
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = 'fields[]';
+            hidden.value = input.value;
+            hidden.dataset.filterField = '';
+            filterForm.appendChild(hidden);
         }
     });
     const luminance = hex => {
@@ -372,10 +420,12 @@ ob_start();
         preview.style.transform = `scale(${previewStage.clientWidth / width})`;
     };
     for (const input of colorInputs) input.addEventListener('input', updatePreview);
+    for (const input of fieldInputs) input.addEventListener('change', updatePreview);
     studentSelect.addEventListener('change', updatePreview);
     for (const input of orientationRadios) input.addEventListener('change', updatePreview);
     document.getElementById('resetAccessCardPalette').addEventListener('click', () => {
         for (const input of colorInputs) input.value = input.dataset.default;
+        for (const input of fieldInputs) input.checked = true;
         showPaletteStatus('');
         updatePreview();
     });
@@ -389,6 +439,12 @@ ob_start();
         for (const input of colorInputs) {
             const key = input.id.replace('palette_', '');
             input.value = savedPalettes[index].palette[key];
+        }
+        const selectedFields = Array.isArray(savedPalettes[index].fields)
+            ? savedPalettes[index].fields
+            : cardFieldKeys;
+        for (const input of fieldInputs) {
+            input.checked = selectedFields.includes(input.value);
         }
         deletePaletteButton.disabled = false;
         paletteNameInput.value = savedPalettes[index].name;
@@ -406,7 +462,7 @@ ob_start();
         const existingIndex = savedPalettes.findIndex(preset => preset.name.toLowerCase() === name.toLowerCase());
         const previousPalettes = savedPalettes;
         savedPalettes = [...savedPalettes];
-        const preset = { name, palette: currentPalette() };
+        const preset = { name, palette: currentPalette(), fields: currentFields() };
         if (existingIndex >= 0) {
             savedPalettes[existingIndex] = preset;
         } else {
