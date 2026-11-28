@@ -11,6 +11,17 @@ $paletteLabels = [
 	'tranche2' => __('access_card_palette_tranche_2'),
 	'tranche3' => __('access_card_palette_tranche_3'),
 ];
+$cardFieldLabels = [
+	'school_year' => __('access_card_school_year'),
+	'last_name' => __('access_card_last_name'),
+	'first_name' => __('access_card_first_name'),
+	'matricule' => __('matricule'),
+	'level_cycle' => __('access_card_school_level'),
+	'photo' => __('access_card_no_photo'),
+	'class_name' => __('class'),
+	'tranches' => __('access_card_installment'),
+];
+$cardFieldKeys = array_keys($cardFieldLabels);
 $selectedSection = null;
 foreach ($sections as $section) {
 	if ((int) $section['id'] === $sectionId) {
@@ -91,6 +102,9 @@ ob_start();
 				<?php foreach ($palette as $key => $color): ?>
 					<input type="hidden" name="palette[<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>]" value="<?= htmlspecialchars($color, ENT_QUOTES, 'UTF-8') ?>" data-filter-palette="<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>">
 				<?php endforeach; ?>
+				<?php foreach ($cardFields as $fieldKey): ?>
+					<input type="hidden" name="fields[]" value="<?= htmlspecialchars($fieldKey, ENT_QUOTES, 'UTF-8') ?>" data-filter-field>
+				<?php endforeach; ?>
 			</form>
 		</div>
 	</div>
@@ -117,6 +131,7 @@ ob_start();
 					<input type="hidden" name="academic_year_id" value="<?= (int) $academicYearId ?>">
 					<input type="hidden" name="section_id" value="<?= (int) $sectionId ?>">
 					<input type="hidden" name="class_id" value="<?= (int) $classId ?>">
+					<input type="hidden" name="fields[]" value="">
 						<fieldset class="col-12">
 							<legend class="form-label fw-semibold mb-2"><?= __('access_card_orientation') ?></legend>
 							<div class="d-flex flex-wrap gap-3">
@@ -149,6 +164,20 @@ ob_start();
 									</div>
 								<?php endforeach; ?>
 							</div>
+							<fieldset class="mt-3">
+								<legend class="form-label fw-semibold mb-2"><?= htmlspecialchars(__('access_card_fields_title'), ENT_QUOTES, 'UTF-8') ?></legend>
+								<p class="small text-muted mb-2"><?= htmlspecialchars(__('access_card_fields_description'), ENT_QUOTES, 'UTF-8') ?></p>
+								<div class="row g-2">
+									<?php foreach ($cardFieldLabels as $fieldKey => $fieldLabel): ?>
+										<div class="col-6 col-md-3">
+											<div class="form-check">
+												<input class="form-check-input access-card-field" type="checkbox" name="fields[]" value="<?= htmlspecialchars($fieldKey, ENT_QUOTES, 'UTF-8') ?>" id="access_card_field_<?= htmlspecialchars($fieldKey, ENT_QUOTES, 'UTF-8') ?>" <?= in_array($fieldKey, $cardFields, true) ? 'checked' : '' ?>>
+												<label class="form-check-label" for="access_card_field_<?= htmlspecialchars($fieldKey, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($fieldLabel, ENT_QUOTES, 'UTF-8') ?></label>
+											</div>
+										</div>
+									<?php endforeach; ?>
+								</div>
+							</fieldset>
 							<div class="row g-2 align-items-end mt-2">
 								<div class="col-12 col-md-5">
 									<label for="accessPaletteName" class="form-label small fw-semibold mb-1"><?= htmlspecialchars(__('student_passes_palette_name'), ENT_QUOTES, 'UTF-8') ?></label>
@@ -253,6 +282,7 @@ ob_start();
 	if (!filterForm || !printForm) return;
 
 	const colorInputs = [...printForm.querySelectorAll('.access-card-color')];
+	const fieldInputs = [...printForm.querySelectorAll('.access-card-field')];
 	const preview = document.getElementById('accessCardPreview');
 	const previewStage = document.getElementById('accessCardPreviewStage');
 	const contrastStatus = document.getElementById('accessCardContrast');
@@ -265,6 +295,7 @@ ob_start();
 	const deletePaletteButton = document.getElementById('deleteAccessPalette');
 	const paletteStatus = document.getElementById('accessPaletteStatus');
 	const paletteKeys = colorInputs.map(input => input.id.replace('palette_', ''));
+	const cardFieldKeys = <?= json_encode($cardFieldKeys, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 	const paletteStorageKey = <?= json_encode(
 		'notemaster.accessCardPalettes.v1.' . (int) \App\Core\Session::get('user_id', 0),
 		JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
@@ -280,9 +311,14 @@ ob_start();
 	const currentPalette = () => Object.fromEntries(
 		colorInputs.map(input => [input.id.replace('palette_', ''), input.value.toUpperCase()])
 	);
+	const currentFields = () => fieldInputs
+		.filter(input => input.checked)
+		.map(input => input.value);
 	const isValidPalette = palette => paletteKeys.every(key =>
 		typeof palette?.[key] === 'string' && /^#[0-9a-f]{6}$/i.test(palette[key])
 	);
+	const isValidFields = fields => fields === undefined
+		|| (Array.isArray(fields) && fields.every(field => cardFieldKeys.includes(field)));
 	const readSavedPalettes = () => {
 		const stored = localStorage.getItem(paletteStorageKey);
 		if (stored === null) return [];
@@ -295,6 +331,7 @@ ob_start();
 			&& typeof preset.name === 'string'
 			&& preset.name.trim() !== ''
 			&& isValidPalette(preset.palette)
+			&& isValidFields(preset.fields)
 		);
 	};
 	const renderSavedPalettes = (selectedIndex = '') => {
@@ -316,6 +353,15 @@ ob_start();
 		for (const input of colorInputs) {
 			const hidden = filterForm.querySelector(`[data-filter-palette="${input.id.replace('palette_', '')}"]`);
 			if (hidden) hidden.value = input.value;
+		}
+		filterForm.querySelectorAll('[data-filter-field]').forEach(hidden => hidden.remove());
+		for (const input of fieldInputs.filter(field => field.checked)) {
+			const hidden = document.createElement('input');
+			hidden.type = 'hidden';
+			hidden.name = 'fields[]';
+			hidden.value = input.value;
+			hidden.dataset.filterField = '';
+			filterForm.appendChild(hidden);
 		}
 	};
 	filterForm.addEventListener('submit', syncFilterPalette);
@@ -380,10 +426,12 @@ ob_start();
 		preview.style.transform = `scale(${previewStage.clientWidth / width})`;
 	};
 	for (const input of colorInputs) input.addEventListener('input', updatePreview);
+	for (const input of fieldInputs) input.addEventListener('change', updatePreview);
 	for (const input of orientationInputs) input.addEventListener('change', updatePreview);
 	studentSelect.addEventListener('change', updatePreview);
 	document.getElementById('resetAccessCardPalette').addEventListener('click', () => {
 		for (const input of colorInputs) input.value = input.dataset.default;
+		for (const input of fieldInputs) input.checked = true;
 		showPaletteStatus('');
 		updatePreview();
 	});
@@ -397,6 +445,12 @@ ob_start();
 		for (const input of colorInputs) {
 			const key = input.id.replace('palette_', '');
 			input.value = savedPalettes[index].palette[key];
+		}
+		const selectedFields = Array.isArray(savedPalettes[index].fields)
+			? savedPalettes[index].fields
+			: cardFieldKeys;
+		for (const input of fieldInputs) {
+			input.checked = selectedFields.includes(input.value);
 		}
 		deletePaletteButton.disabled = false;
 		paletteNameInput.value = savedPalettes[index].name;
@@ -414,7 +468,7 @@ ob_start();
 		const existingIndex = savedPalettes.findIndex(preset => preset.name.toLowerCase() === name.toLowerCase());
 		const previousPalettes = savedPalettes;
 		savedPalettes = [...savedPalettes];
-		const preset = { name, palette: currentPalette() };
+		const preset = { name, palette: currentPalette(), fields: currentFields() };
 		if (existingIndex >= 0) {
 			savedPalettes[existingIndex] = preset;
 		} else {

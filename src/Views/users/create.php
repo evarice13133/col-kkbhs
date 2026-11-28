@@ -83,7 +83,6 @@ ob_start();
                             <div class="col-md-6 mt-0">
                                 <label class="form-label text-muted-theme fw-bold extra-small text-uppercase mb-1"><?= __('access_profile') ?></label>
                                 <select name="role" id="user-create-role" class="form-select premium-select">
-                                    <option value="enseignant" <?= ($formData['role'] ?? 'enseignant') === 'enseignant' ? 'selected' : '' ?>><?= __('teacher_classic') ?></option>
                                     <option value="personnel" <?= ($formData['role'] ?? '') === 'personnel' ? 'selected' : '' ?>><?= __('role_personnel_access') ?></option>
                                     <option value="direction_academique" <?= ($formData['role'] ?? '') === 'direction_academique' ? 'selected' : '' ?>><?= __('direction_academique_role_label') ?></option>
                                     <option value="caissier" <?= ($formData['role'] ?? '') === 'caissier' ? 'selected' : '' ?>><?= __('role_caissier_option') ?></option>
@@ -101,10 +100,10 @@ ob_start();
                         </div>
 
                         <div class="form-check form-switch mb-3">
-                            <input class="form-check-input" type="checkbox" name="is_staff" id="user-create-is-staff" value="1" <?= !empty($formData['is_staff']) || in_array($formData['role'] ?? 'enseignant', ['enseignant', 'personnel'], true) ? 'checked' : '' ?>>
+                            <input class="form-check-input" type="checkbox" name="is_staff" id="user-create-is-staff" value="1" <?= !empty($formData['is_staff']) || ($formData['role'] ?? 'personnel') === 'personnel' ? 'checked' : '' ?>>
                             <label class="form-check-label fw-semibold" for="user-create-is-staff"><?= __('user_is_staff') ?></label>
                         </div>
-                        <fieldset id="user-create-personnel-fields" class="row g-3 mb-4" <?= !empty($formData['is_staff']) || in_array($formData['role'] ?? 'enseignant', ['enseignant', 'personnel'], true) ? '' : 'hidden disabled' ?>>
+                        <fieldset id="user-create-personnel-fields" class="row g-3 mb-4" <?= !empty($formData['is_staff']) || ($formData['role'] ?? 'personnel') === 'personnel' ? '' : 'hidden disabled' ?>>
                             <legend class="col-12 border-bottom border-theme-light pb-2 mb-2">
                                 <span class="fw-black text-primary text-uppercase letter-spacing-1" style="font-size: 0.75rem;"><?= __('staff_information') ?></span>
                             </legend>
@@ -199,7 +198,7 @@ document.addEventListener('DOMContentLoaded', function () {
         };
         staffToggle.addEventListener('change', updatePersonnelFields);
         roleSelect.addEventListener('change', function () {
-            if (roleSelect.value === 'enseignant' || roleSelect.value === 'personnel') {
+            if (roleSelect.value === 'personnel') {
                 staffToggle.checked = true;
                 updatePersonnelFields();
             }
