@@ -763,55 +763,35 @@ class DashboardController
             JOIN subjects s ON s.id = sc.subject_id
             JOIN classes c ON c.id = sc.class_id
             LEFT JOIN teacher_assignments ta ON ta.class_id = sc.class_id AND ta.subject_id = sc.subject_id AND ta.academic_year_id = {$activeYearId}
-            WHERE ta.user_id IS NULL AND s.status = 1 {$andClass}
+            WHERE ta.user_id IS NULL
+              AND sc.academic_year_id = {$activeYearId}
+              AND s.status = 1
+              AND c.status = 1
+              AND EXISTS (
+                  SELECT 1
+                  FROM students st
+                  WHERE st.class_id = c.id
+                    AND st.academic_year_id = {$activeYearId}
+                    AND st.status = 'Inscrit'
+                    AND st.actif = 1
+                    AND st.is_withdrawn = 0
+              )
+              {$andClass}
             ORDER BY c.nom ASC, s.nom ASC
         ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        // Top & struggling students
-        $stmtTop = $this->db->prepare("
-            SELECT st.id as student_id, st.nom, st.prenom, c.nom as classe_nom,
-                   SUM(g.valeur * s.coefficient) / SUM(s.coefficient) as moyenne
-            FROM grades g
-            JOIN students st ON st.id = g.student_id
-            JOIN classes c ON c.id = st.class_id
-            JOIN subjects s ON s.id = g.subject_id
-            WHERE g.academic_year_id = ? AND st.is_withdrawn = 0 {$andClass}
-            GROUP BY st.id, st.nom, st.prenom, c.nom
-            ORDER BY moyenne DESC
-            LIMIT 5
-        ");
-        $stmtTop->execute([$activeYearId]);
-        $topStudents = $stmtTop->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-        $stmtStrug = $this->db->prepare("
-            SELECT st.id as student_id, st.nom, st.prenom, c.nom as classe_nom,
-                   SUM(g.valeur * s.coefficient) / SUM(s.coefficient) as moyenne
-            FROM grades g
-            JOIN students st ON st.id = g.student_id
-            JOIN classes c ON c.id = st.class_id
-            JOIN subjects s ON s.id = g.subject_id
-            WHERE g.academic_year_id = ? AND st.is_withdrawn = 0 {$andClass}
-            GROUP BY st.id, st.nom, st.prenom, c.nom
-            HAVING moyenne < 10
-            ORDER BY moyenne ASC
-            LIMIT 5
-        ");
-        $stmtStrug->execute([$activeYearId]);
-        $strugglingStudents = $stmtStrug->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-        // Class avgs
-        $stmtClassAvgs = $this->db->prepare("
-            SELECT st.class_id, c.nom as class_name, st.id as student_id,
-                   SUM(g.valeur * s.coefficient) / SUM(s.coefficient) as moyenne
-            FROM grades g
-            JOIN students st ON st.id = g.student_id
-            JOIN classes c ON c.id = st.class_id
-            JOIN subjects s ON s.id = g.subject_id
-            WHERE g.academic_year_id = ? AND st.is_withdrawn = 0 {$andClass}
-            GROUP BY st.class_id, c.nom, st.id
-        ");
-        $stmtClassAvgs->execute([$activeYearId]);
-        $avgs = $stmtClassAvgs->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        // Moyennes générales : moyenne pondérée de toutes les matières,
+        // sur les évaluations actives uniquement.
+        $avgs = $this->getStudentGeneralAverages($activeYearId, $activeEvaluations, $andClass);
+        $topStudents = array_slice($avgs, 0, 5);
+        $strugglingStudents = array_values(array_filter(
+            $avgs,
+            static fn(array $row): bool => (float) $row['moyenne'] < 10
+        ));
+        usort($strugglingStudents, static fn(array $a, array $b): int =>
+            (float) $a['moyenne'] <=> (float) $b['moyenne']
+        );
+        $strugglingStudents = array_slice($strugglingStudents, 0, 5);
 
         $classStats = [];
         $distribution = ['elite' => 0, 'satisfait' => 0, 'passable' => 0, 'soutien' => 0];
@@ -904,19 +884,23 @@ class DashboardController
         $successRate = $totalWithAverage > 0 ? round(($passingCount / $totalWithAverage) * 100, 1) : 0;
 
         // Subjects stats
-        $stmtSubjectStatsClean = $this->db->prepare("
-            SELECT s.id, s.nom, AVG(g.valeur) as moyenne,
-                   GROUP_CONCAT(DISTINCT c.nom SEPARATOR ', ') as classes
-            FROM grades g
-            JOIN students st ON st.id = g.student_id
-            JOIN classes c ON c.id = st.class_id
-            JOIN subjects s ON s.id = g.subject_id
-            WHERE g.academic_year_id = ? AND s.status = 1 {$andClass}
-            GROUP BY s.id, s.nom
-            ORDER BY moyenne DESC
-        ");
-        $stmtSubjectStatsClean->execute([$activeYearId]);
-        $subjectStats = $stmtSubjectStatsClean->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $subjectStats = [];
+        if (!empty($activeEvaluations)) {
+            $placeholders = implode(',', array_fill(0, count($activeEvaluations), '?'));
+            $stmtSubjectStatsClean = $this->db->prepare("
+                SELECT s.id, s.nom, AVG(g.valeur) as moyenne,
+                       GROUP_CONCAT(DISTINCT c.nom SEPARATOR ', ') as classes
+                FROM grades g
+                JOIN students st ON st.id = g.student_id
+                JOIN classes c ON c.id = st.class_id
+                JOIN subjects s ON s.id = g.subject_id
+                WHERE g.academic_year_id = ? AND g.periode IN ($placeholders) AND s.status = 1 {$andClass}
+                GROUP BY s.id, s.nom
+                ORDER BY moyenne DESC
+            ");
+            $stmtSubjectStatsClean->execute(array_merge([$activeYearId], $activeEvaluations));
+            $subjectStats = $stmtSubjectStatsClean->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        }
 
         $bestSubject = !empty($subjectStats) ? $subjectStats[0] : null;
         $worstSubject = !empty($subjectStats) && count($subjectStats) > 1 ? end($subjectStats) : null;
@@ -1185,6 +1169,52 @@ class DashboardController
 
 
 
+    private function getStudentGeneralAverages(int $activeYearId, array $activeEvaluations, string $andClass): array
+    {
+        if ($activeYearId <= 0 || empty($activeEvaluations)) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($activeEvaluations), '?'));
+        $sql = "
+            WITH subject_averages AS (
+                SELECT
+                    st.id AS student_id,
+                    st.class_id,
+                    st.nom,
+                    st.prenom,
+                    c.nom AS classe_nom,
+                    g.subject_id,
+                    AVG(g.valeur) AS subject_average
+                FROM grades g
+                JOIN students st ON st.id = g.student_id
+                JOIN classes c ON c.id = st.class_id
+                WHERE g.academic_year_id = ?
+                  AND g.periode IN ({$placeholders})
+                  AND st.is_withdrawn = 0
+                  AND st.actif = 1
+                  AND st.status = 'Inscrit'
+                  {$andClass}
+                GROUP BY st.id, st.class_id, st.nom, st.prenom, c.nom, g.subject_id
+            )
+            SELECT
+                sa.student_id,
+                sa.class_id,
+                sa.nom,
+                sa.prenom,
+                sa.classe_nom,
+                SUM(sa.subject_average * s.coefficient) / NULLIF(SUM(s.coefficient), 0) AS moyenne
+            FROM subject_averages sa
+            JOIN subjects s ON s.id = sa.subject_id
+            GROUP BY sa.student_id, sa.class_id, sa.nom, sa.prenom, sa.classe_nom
+            ORDER BY moyenne DESC
+        ";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(array_merge([$activeYearId], $activeEvaluations));
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
     private function getActiveAcademicYearId()
     {
         return (int) $this->db->query("SELECT id FROM academic_years WHERE is_active = 1 LIMIT 1")->fetchColumn();
@@ -1435,18 +1465,8 @@ class DashboardController
         $stmtCycles->execute([$activeYearId]);
         $cycleRepartition = $stmtCycles->fetchAll(PDO::FETCH_ASSOC);
 
-        // overall success rate
-        $stmtClassAvgs = $this->db->prepare("
-            SELECT st.id as student_id,
-                   SUM(g.valeur * s.coefficient) / SUM(s.coefficient) as moyenne
-            FROM grades g
-            JOIN students st ON st.id = g.student_id
-            JOIN subjects s ON s.id = g.subject_id
-            WHERE g.academic_year_id = ? AND st.is_withdrawn = 0 AND st.actif = 1
-            GROUP BY st.id
-        ");
-        $stmtClassAvgs->execute([$activeYearId]);
-        $avgs = $stmtClassAvgs->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        // overall success rate based on active evaluations and all subject coefficients
+        $avgs = $this->getStudentGeneralAverages($activeYearId, $this->getActiveEvaluations(), '');
         $totalWithAverage = count($avgs);
         $passingCount = 0;
         foreach ($avgs as $row) {
@@ -1499,18 +1519,8 @@ class DashboardController
         $stmtClasses->execute([$activeYearId]);
         $classRepartition = $stmtClasses->fetchAll(PDO::FETCH_ASSOC);
 
-        // overall success rate
-        $stmtClassAvgs = $this->db->prepare("
-            SELECT st.id as student_id,
-                   SUM(g.valeur * s.coefficient) / SUM(s.coefficient) as moyenne
-            FROM grades g
-            JOIN students st ON st.id = g.student_id
-            JOIN subjects s ON s.id = g.subject_id
-            WHERE g.academic_year_id = ? AND st.is_withdrawn = 0 AND st.actif = 1
-            GROUP BY st.id
-        ");
-        $stmtClassAvgs->execute([$activeYearId]);
-        $avgs = $stmtClassAvgs->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        // overall success rate based on active evaluations and all subject coefficients
+        $avgs = $this->getStudentGeneralAverages($activeYearId, $this->getActiveEvaluations(), '');
         $totalWithAverage = count($avgs);
         $passingCount = 0;
         foreach ($avgs as $row) {

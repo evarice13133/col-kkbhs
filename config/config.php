@@ -21,7 +21,7 @@
 /* en developpement pour la configuration locale    
    
    define('DB_HOST', 'localhost');
-    define('DB_NAME', 'u290233073_col_col_kkbhs_db1');
+    define('DB_NAME', 'kemuel_prod1');
     define('DB_USER', 'root');
     define('DB_PASS', '');
     define('DB_CHARSET', 'utf8mb4'); 
